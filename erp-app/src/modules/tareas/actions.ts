@@ -28,6 +28,7 @@ import {
   filtrosTareasSchema,
   posponerHiloSchema,
   posponerTareaSchema,
+  reasignarTareaSchema,
   type ActualizarEstadoForm,
   type ActualizarRecurrenciaTareaForm,
   type AgregarDesdePlantillaForm,
@@ -35,12 +36,13 @@ import {
   type AsociarHiloForm,
   type CrearHiloForm,
   type CrearPlantillaForm,
-  type CrearTareaForm,
+  type CrearTareaValues,
   type FiltrosAuditoria,
   type FiltrosTareas,
   type ModoTareas,
   type PosponerHiloForm,
   type PosponerTareaForm,
+  type ReasignarTareaForm,
 } from "./types";
 
 export async function crearHilo(input: CrearHiloForm) {
@@ -61,7 +63,7 @@ export async function crearHilo(input: CrearHiloForm) {
 
   const { data, error } = await supabase
     .from("tareas_hilos")
-    .insert({ ...parsed.data, creado_por: user.id })
+    .insert({ ...parsed.data, descripcion: parsed.data.descripcion || null, creado_por: user.id })
     .select("id")
     .single();
 
@@ -82,7 +84,10 @@ export async function actualizarHilo(hiloId: string, input: CrearHiloForm) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("tareas_hilos").update(parsed.data).eq("id", hiloId);
+  const { error } = await supabase
+    .from("tareas_hilos")
+    .update({ ...parsed.data, descripcion: parsed.data.descripcion || null })
+    .eq("id", hiloId);
 
   if (error) return { success: false as const, error: error.message };
 
@@ -90,7 +95,7 @@ export async function actualizarHilo(hiloId: string, input: CrearHiloForm) {
   return { success: true as const };
 }
 
-export async function crearTarea(input: CrearTareaForm) {
+export async function crearTarea(input: CrearTareaValues) {
   if (!(await puedeCrearTarea())) {
     return { success: false as const, error: "No autorizado" };
   }
@@ -110,11 +115,7 @@ export async function crearTarea(input: CrearTareaForm) {
     return { success: false as const, error: "No autorizado para asignar a otro usuario" };
   }
 
-  const { error } = await supabase.from("tareas").insert({
-    ...parsed.data,
-    fecha_vencimiento: parsed.data.fecha_vencimiento || null,
-    creado_por: user.id,
-  });
+  const { error } = await supabase.from("tareas").insert({ ...parsed.data, creado_por: user.id });
 
   if (error) return { success: false as const, error: error.message };
 
@@ -132,6 +133,28 @@ export async function actualizarEstadoTarea(input: ActualizarEstadoForm) {
   const { error } = await supabase
     .from("tareas")
     .update({ estado: parsed.data.estado })
+    .eq("id", parsed.data.tarea_id);
+
+  if (error) return { success: false as const, error: error.message };
+
+  revalidatePath("/tareas");
+  return { success: true as const };
+}
+
+export async function reasignarTarea(input: ReasignarTareaForm) {
+  if (!(await puedeAsignarTarea())) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const parsed = reasignarTareaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tareas")
+    .update({ asignado_a: parsed.data.asignado_a })
     .eq("id", parsed.data.tarea_id);
 
   if (error) return { success: false as const, error: error.message };

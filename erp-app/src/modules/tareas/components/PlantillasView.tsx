@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, Pencil } from "lucide-react";
+import { Ban, Plus, Pencil } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { desactivarPlantilla } from "../actions";
 import type { TareaPlantilla } from "../types";
@@ -34,7 +34,9 @@ export function PlantillasView({ plantillas }: { plantillas: TareaPlantilla[] })
         </button>
       </div>
 
-      <p className="t-caption mb-2">{plantillas.length} plantillas</p>
+      <p className="t-caption mb-2">
+        {plantillas.length} plantilla{plantillas.length === 1 ? "" : "s"}
+      </p>
 
       {plantillas.length === 0 ? (
         <div className="empty-state">
@@ -50,15 +52,18 @@ export function PlantillasView({ plantillas }: { plantillas: TareaPlantilla[] })
             >
               <div>
                 <p className="t-body-m font-medium text-text-primary">{plantilla.nombre}</p>
-                <p className="t-caption">{plantilla.items.length} tareas</p>
+                <p className="t-caption">
+                  {plantilla.items.length} tarea{plantilla.items.length === 1 ? "" : "s"}
+                </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button className="btn btn-ghost btn-sm" onClick={() => setPlantillaEditar(plantilla)}>
+              <div className="flex shrink-0 items-center gap-2">
+                <button className="btn btn-secondary btn-sm" onClick={() => setPlantillaEditar(plantilla)}>
                   <Pencil size={14} />
                   Editar
                 </button>
                 <button className="btn btn-ghost btn-sm text-error" onClick={() => setPlantillaDesactivar(plantilla)}>
+                  <Ban size={14} />
                   Desactivar
                 </button>
               </div>

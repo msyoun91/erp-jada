@@ -7,8 +7,17 @@ import { actualizarHilo, crearHilo } from "../actions";
 import type { CrearHiloForm, TareaHilo } from "../types";
 import { RecurrenciaFields, type RecurrenciaValue } from "./RecurrenciaFields";
 
-export function CrearHiloPanel({ hilo, onClose }: { hilo?: TareaHilo | null; onClose: () => void }) {
+export function CrearHiloPanel({
+  hilo,
+  onClose,
+  onCreado,
+}: {
+  hilo?: TareaHilo | null;
+  onClose: () => void;
+  onCreado?: (hilo: { id: string; titulo: string }) => void;
+}) {
   const [titulo, setTitulo] = useState(hilo?.titulo ?? "");
+  const [descripcion, setDescripcion] = useState(hilo?.descripcion ?? "");
   const [recurrencia, setRecurrencia] = useState<RecurrenciaValue>({
     recurrencia_activa: hilo?.recurrencia_activa ?? false,
     recurrencia_una_vez: hilo?.recurrencia_una_vez ?? false,
@@ -18,7 +27,7 @@ export function CrearHiloPanel({ hilo, onClose }: { hilo?: TareaHilo | null; onC
   });
   const [enviando, setEnviando] = useState(false);
 
-  async function onSubmit() {
+  async function onSubmit(seguirConTarea = false) {
     if (!titulo.trim()) {
       toast.error("El título es obligatorio");
       return;
@@ -29,16 +38,29 @@ export function CrearHiloPanel({ hilo, onClose }: { hilo?: TareaHilo | null; onC
     }
 
     setEnviando(true);
-    const data: CrearHiloForm = { titulo, ...recurrencia };
-    const result = hilo ? await actualizarHilo(hilo.id, data) : await crearHilo(data);
-    setEnviando(false);
+    const data: CrearHiloForm = { titulo, descripcion, ...recurrencia };
 
+    if (hilo) {
+      const result = await actualizarHilo(hilo.id, data);
+      setEnviando(false);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Hilo actualizado");
+      onClose();
+      return;
+    }
+
+    const result = await crearHilo(data);
+    setEnviando(false);
     if (!result.success) {
       toast.error(result.error);
       return;
     }
-    toast.success(hilo ? "Hilo actualizado" : "Hilo creado");
-    onClose();
+    toast.success("Hilo creado");
+    if (seguirConTarea) onCreado?.({ id: result.hilo_id, titulo });
+    else onClose();
   }
 
   return (
@@ -50,7 +72,17 @@ export function CrearHiloPanel({ hilo, onClose }: { hilo?: TareaHilo | null; onC
           <button type="button" className="btn btn-secondary" onClick={onClose}>
             Cancelar
           </button>
-          <button type="button" className="btn btn-primary" onClick={onSubmit} disabled={enviando}>
+          {!hilo && onCreado && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => onSubmit(true)}
+              disabled={enviando}
+            >
+              Crear y agregar tarea
+            </button>
+          )}
+          <button type="button" className="btn btn-primary" onClick={() => onSubmit()} disabled={enviando}>
             {enviando ? "Guardando..." : hilo ? "Guardar" : "Crear hilo"}
           </button>
         </>
@@ -62,7 +94,18 @@ export function CrearHiloPanel({ hilo, onClose }: { hilo?: TareaHilo | null; onC
           <input className="input" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
         </div>
 
+        <div>
+          <label className="t-label mb-1 block">Descripción</label>
+          <textarea
+            className="input"
+            rows={3}
+            value={descripcion}
+            onChange={(e) => setDescripcion(e.target.value)}
+          />
+        </div>
+
         <div className="border-t border-border pt-4">
+          <p className="t-label mb-2">Recurrencia</p>
           <RecurrenciaFields value={recurrencia} onChange={setRecurrencia} />
         </div>
       </div>

@@ -5,19 +5,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { aISO, desdeISO, hoyISO } from "@/lib/utils";
-import { crearHilo, crearTarea } from "../actions";
-import { crearTareaSchema, type CrearTareaForm, type TareaHilo } from "../types";
+import { hoyISO, sumarDias } from "@/lib/utils";
+import { crearTarea } from "../actions";
+import { crearTareaSchema, type CrearTareaForm, type CrearTareaValues, type TareaHilo } from "../types";
 import { HiloBuscador } from "./HiloBuscador";
 import { RecurrenciaFields, type RecurrenciaValue } from "./RecurrenciaFields";
 
-type ModoHilo = "ninguno" | "existente" | "nuevo";
+type ModoHilo = "ninguno" | "existente";
 
-function manana(): string {
-  const d = desdeISO(hoyISO());
-  d.setDate(d.getDate() + 1);
-  return aISO(d);
-}
+const VENCIMIENTOS_RAPIDOS = [1, 3, 7];
 
 export function CrearTareaPanel({
   usuarioActualId,
@@ -37,8 +33,6 @@ export function CrearTareaPanel({
   const [enviando, setEnviando] = useState(false);
   const [modoHilo, setModoHilo] = useState<ModoHilo>("ninguno");
   const [hiloExistenteId, setHiloExistenteId] = useState("");
-  const [hiloNuevoTitulo, setHiloNuevoTitulo] = useState("");
-  const [hiloCreadoId, setHiloCreadoId] = useState<string | null>(null);
   const [recurrencia, setRecurrencia] = useState<RecurrenciaValue>({
     recurrencia_activa: false,
     recurrencia_una_vez: false,
@@ -51,19 +45,16 @@ export function CrearTareaPanel({
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
-  } = useForm<CrearTareaForm>({
+  } = useForm<CrearTareaForm, unknown, CrearTareaValues>({
     resolver: zodResolver(crearTareaSchema),
-    defaultValues: { asignado_a: usuarioActualId, fecha_vencimiento: manana() },
+    defaultValues: { asignado_a: usuarioActualId, fecha_vencimiento: sumarDias(hoyISO(), 1) },
   });
 
-  async function onSubmit(data: CrearTareaForm) {
+  async function onSubmit(data: CrearTareaValues) {
     if (!hiloFijo && modoHilo === "existente" && !hiloExistenteId) {
       toast.error("Elegí un hilo");
-      return;
-    }
-    if (!hiloFijo && modoHilo === "nuevo" && !hiloNuevoTitulo.trim()) {
-      toast.error("El título del hilo es obligatorio");
       return;
     }
     if (tareaSerSuelta && recurrencia.recurrencia_activa && !recurrencia.recurrencia_proxima) {
@@ -73,23 +64,7 @@ export function CrearTareaPanel({
 
     setEnviando(true);
 
-    let hilo_id: string | undefined = hiloFijo?.id;
-    if (!hiloFijo && modoHilo === "existente") {
-      hilo_id = hiloExistenteId;
-    } else if (!hiloFijo && modoHilo === "nuevo") {
-      if (hiloCreadoId) {
-        hilo_id = hiloCreadoId;
-      } else {
-        const resultHilo = await crearHilo({ titulo: hiloNuevoTitulo });
-        if (!resultHilo.success) {
-          setEnviando(false);
-          toast.error(resultHilo.error);
-          return;
-        }
-        hilo_id = resultHilo.hilo_id;
-        setHiloCreadoId(resultHilo.hilo_id);
-      }
-    }
+    const hilo_id = hiloFijo?.id ?? (modoHilo === "existente" ? hiloExistenteId : undefined);
 
     const result = await crearTarea({
       ...data,
@@ -152,7 +127,19 @@ export function CrearTareaPanel({
 
         <div>
           <label className="t-label mb-1 block">Vencimiento</label>
-          <input type="date" className="input" min={hoyISO()} {...register("fecha_vencimiento")} />
+          <div className="flex items-center gap-2">
+            <input type="date" className="input" min={hoyISO()} {...register("fecha_vencimiento")} />
+            {VENCIMIENTOS_RAPIDOS.map((dias) => (
+              <button
+                key={dias}
+                type="button"
+                className="btn btn-secondary btn-sm shrink-0"
+                onClick={() => setValue("fecha_vencimiento", sumarDias(hoyISO(), dias))}
+              >
+                {dias}d
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="border-t border-border pt-4">
@@ -171,7 +158,6 @@ export function CrearTareaPanel({
               >
                 <option value="ninguno">Tarea suelta, sin hilo</option>
                 <option value="existente">Agregar a hilo existente</option>
-                <option value="nuevo">Crear hilo nuevo</option>
               </select>
 
               {modoHilo === "existente" && (
@@ -179,21 +165,13 @@ export function CrearTareaPanel({
                   <HiloBuscador hilos={hilos} value={hiloExistenteId} onChange={setHiloExistenteId} />
                 </div>
               )}
-
-              {modoHilo === "nuevo" && (
-                <input
-                  className="input mt-2"
-                  placeholder="Título del hilo"
-                  value={hiloNuevoTitulo}
-                  onChange={(e) => setHiloNuevoTitulo(e.target.value)}
-                />
-              )}
             </>
           )}
         </div>
 
         {tareaSerSuelta && (
           <div className="border-t border-border pt-4">
+            <p className="t-label mb-2">Recurrencia</p>
             <RecurrenciaFields value={recurrencia} onChange={setRecurrencia} />
           </div>
         )}

@@ -115,6 +115,7 @@
   a { @apply text-text-brand; }
   a:hover { @apply text-brand-500; }
   [data-theme="dark"] .logo { filter: brightness(0) invert(1); }
+  [data-theme="dark"] .input::-webkit-calendar-picker-indicator { filter: invert(1) opacity(.65); }
 }
 
 @layer components {
@@ -139,7 +140,7 @@
 
   .input { @apply w-full font-body text-sm rounded-md border-[1.5px] border-border-strong bg-bg-surface text-text-primary px-3 py-[9px] outline-none; }
   .input:focus { @apply border-brand-500 ring-[3px] ring-[rgba(26,109,200,.12)]; }
-  .input-error { @apply border-error ring-[3px] ring-[rgba(220,38,38,.12)]; }
+  .input-error, .input-error:focus { @apply border-error ring-[3px] ring-[rgba(220,38,38,.12)]; }
   .input-error-text { @apply text-error text-xs mt-1; }
 
   .badge { @apply font-body font-semibold text-[11px] rounded-full px-[9px] py-[3px]; }
@@ -149,6 +150,13 @@
   .badge-error { @apply bg-error-bg text-error-text; }
   .badge-info { @apply bg-info-bg text-info-text; }
   .badge-neutral { @apply bg-bg-subtle text-text-tertiary; }
+
+  /* Semáforos (vencimiento, antigüedad): contorno, para no confundirse con el
+     badge sólido de estado — el verde de "Completada" y el de "plazo sano" son
+     dos cosas distintas y aparecen en la misma fila. */
+  .badge-outline-success { @apply border border-success text-success; }
+  .badge-outline-warning { @apply border border-warning text-warning; }
+  .badge-outline-error { @apply border border-error text-error; }
 
   .card { @apply relative bg-bg-surface border border-border rounded-lg p-[22px] transition-shadow; }
   .card:hover { @apply shadow-md; }

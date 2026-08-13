@@ -1,5 +1,18 @@
+import { Circle, CircleCheck, CircleDot, type LucideIcon } from "lucide-react";
 import { diaISO, diasEntre, formatFecha, hoyISO } from "@/lib/utils";
 import type { EstadoHilo, EstadoTarea, RecurrenciaIntervalo } from "../types";
+
+export const ESTADO_ICON: Record<EstadoTarea, LucideIcon> = {
+  pendiente: Circle,
+  en_progreso: CircleDot,
+  completada: CircleCheck,
+};
+
+export const ESTADO_ICON_COLOR: Record<EstadoTarea, string> = {
+  pendiente: "text-text-tertiary",
+  en_progreso: "text-info",
+  completada: "text-success",
+};
 
 export const ESTADO_LABEL: Record<EstadoTarea, string> = {
   pendiente: "Pendiente",
@@ -49,19 +62,22 @@ export function formatPosponer(r: { posponer_hasta: string | null }): string | n
 }
 
 export function formatVencimiento(t: {
+  estado: EstadoTarea;
   fecha_vencimiento: string | null;
   created_at: string;
 }): { texto: string; badge: string } | null {
-  if (!t.fecha_vencimiento) return null;
+  // Una tarea cerrada no vence: el semáforo al lado de "Completada" es ruido.
+  if (t.estado === "completada" || !t.fecha_vencimiento) return null;
 
   const hoy = hoyISO();
   const diasRestantes = diasEntre(hoy, t.fecha_vencimiento);
 
-  if (diasRestantes < 0) return { texto: "Vencido", badge: "badge-error" };
+  if (diasRestantes < 0) return { texto: "Vencido", badge: "badge-outline-error" };
 
   const plazoDias = Math.max(1, diasEntre(diaISO(new Date(t.created_at)), t.fecha_vencimiento));
   const pctRestante = diasRestantes / plazoDias;
-  const badge = pctRestante > 2 / 3 ? "badge-success" : pctRestante > 1 / 3 ? "badge-warning" : "badge-error";
+  const badge =
+    pctRestante > 2 / 3 ? "badge-outline-success" : pctRestante > 1 / 3 ? "badge-outline-warning" : "badge-outline-error";
   const texto = diasRestantes === 0 ? "Vence hoy" : `Vence en ${diasRestantes} día${diasRestantes === 1 ? "" : "s"}`;
 
   return { texto, badge };
@@ -69,7 +85,8 @@ export function formatVencimiento(t: {
 
 export function formatAntiguedad(h: { created_at: string }): { texto: string; badge: string } {
   const dias = Math.max(0, diasEntre(diaISO(new Date(h.created_at)), hoyISO()));
-  const badge = dias <= 7 ? "badge-success" : dias <= 21 ? "badge-warning" : "badge-error";
+  const badge =
+    dias <= 7 ? "badge-outline-success" : dias <= 21 ? "badge-outline-warning" : "badge-outline-error";
   const texto = dias === 0 ? "Creado hoy" : `${dias} día${dias === 1 ? "" : "s"}`;
   return { texto, badge };
 }

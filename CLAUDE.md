@@ -85,6 +85,7 @@ La regla más alta prevalece.
 - **Sin comentarios** salvo que el WHY sea no obvio
 - **Premisas de auditorías/planes: verificar contra código antes de construir.** Si el código contradice el plan, corregir el plan primero
 - **Cargar guides solo cuando la tarea lo pide**, y solo el guide necesario. Cada guide leído queda en contexto el resto de la sesión.
+- **Todo SQL va en `sql/` en la raíz del repo**, numerado y correlativo (`015_hilos_descripcion.sql`). Nunca dentro de `erp-app/`, `erp-cliente/` ni `packages/` — el esquema es uno solo y lo comparten las dos apps
 - **`db_schema.md` siempre sincronizado.** Ante cualquier cambio en tablas, columnas o enums — ya sea en `database.types.ts`, SQL, o migración — actualizar `db_schema.md` antes de cerrar la tarea.
 - **`/clear` entre tareas.** Terminás un módulo o cambiás de tema → `/clear`. El costo dominante son tokens de contexto reenviados cada turno (cache_read); sesiones de 200+ turnos cuestan ~3× por turno que las cortas.
 - Antes de modificar un módulo, leer `DECISIONES.md`.
@@ -189,7 +190,7 @@ erp-app/src/
 1. `npx tsc --noEmit` — cero errores nuevos
 2. Suite de tests, si existe — corre y pasa
 3. ¿Tocaste tablas/enums? → `db_schema.md` + `database.types.ts` sincronizados
-4. ¿Hay SQL sin correr? → archivo en `sql/` + avisar al usuario
+4. ¿Hay SQL sin correr? → archivo en `sql/` de la raíz del repo + avisar al usuario
 5. ¿Decisión no obvia? → registrar en `DECISIONES.md`
 6. Estado de módulos actualizado
 

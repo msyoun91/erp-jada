@@ -4,17 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { X } from "lucide-react";
 import { Pagination } from "@/components/ui/Pagination";
-import { formatFecha } from "@/lib/utils";
+import { formatFecha, formatHora } from "@/lib/utils";
 import { obtenerAuditoria } from "../actions";
 import { TAREAS_PAGE_SIZE, type DiaAuditoria, type FiltrosAuditoria } from "../types";
-
-function formatHora(iso: string): string {
-  return new Date(iso).toLocaleTimeString("es-AR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "America/Argentina/Buenos_Aires",
-  });
-}
 
 export function AuditoriaView({
   diasIniciales,

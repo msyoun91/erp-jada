@@ -148,6 +148,7 @@ export type Database = {
           activo: boolean
           creado_por: string
           created_at: string
+          descripcion: string | null
           estado: Database["public"]["Enums"]["estado_hilo"]
           id: string
           posponer_hasta: string | null
@@ -163,6 +164,7 @@ export type Database = {
           activo?: boolean
           creado_por: string
           created_at?: string
+          descripcion?: string | null
           estado?: Database["public"]["Enums"]["estado_hilo"]
           id?: string
           posponer_hasta?: string | null
@@ -178,6 +180,7 @@ export type Database = {
           activo?: boolean
           creado_por?: string
           created_at?: string
+          descripcion?: string | null
           estado?: Database["public"]["Enums"]["estado_hilo"]
           id?: string
           posponer_hasta?: string | null

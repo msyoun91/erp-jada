@@ -237,3 +237,50 @@ Pedido: ver por día las tareas realizadas, filtrando por usuario. **El dato no 
 - **Nueva vista = nuevo submódulo `tareas_auditoria`** (`tipo = 'vista'`, orden 4), sin rol nuevo ni permiso por módulo. La vista muestra actividad de todos los usuarios, así que el permiso es la barrera: está en la policy RLS de la tabla, en la action (`obtenerAuditoria`) y en la page.
 - **Rango de fechas: el filtro convierte el día AR a instante con offset fijo `-03:00`.** PostgREST no puede hacer `AT TIME ZONE` en un filtro y Argentina no usa horario de verano desde 2009; una función RPC solo para esto sería más maquinaria por el mismo resultado. Si el país vuelve a mover el reloj, `inicioDelDiaAR` en `queries.ts` es el único lugar a tocar.
 - **Agrupado por día en el mapper, no en SQL.** El `GROUP BY` habría necesitado una RPC o una vista; con página de 20 eventos agrupar en JS es una pasada sobre un array ya ordenado por `created_at DESC`. Efecto aceptado: un día con más de 20 eventos se parte entre páginas y su encabezado se repite.
+
+---
+
+## Tareas: auditoría visual en browser — semáforos de contorno, un solo formato de fecha
+
+Ronda de fixes sobre lo encontrado recorriendo el módulo en el navegador. Los tres arreglos de `globals.css` valen para toda la app, no solo tareas.
+
+- **Semáforos con badge de contorno, estados con badge sólido.** `badge-success` significaba cuatro cosas a la vez (tarea "Completada", hilo "Cerrado", plazo sano, hilo nuevo) y dos de ellas aparecían en la misma fila. Las escalas de semáforo (`formatVencimiento`, `formatAntiguedad`) pasaron a `badge-outline-*` — mismo color semántico, forma distinta. Se eligió contorno vs. sólido antes que inventar una paleta nueva: el color ya comunica bien, lo que faltaba era separar "estado" de "medición".
+- **`formatVencimiento` recibe `estado` y devuelve `null` si la tarea está completada.** Se mostraba "Vence en 1 día" al lado de "Completada". El fix va en la función, no en los dos callers (`TareasView`, `TareaNotasCard`) — ambos ya le pasaban la tarea entera, así que la firma cambió sin tocar ningún call site.
+- **`.input-error:focus` explícito.** `.input:focus` (especificidad clase+pseudoclase) le ganaba a `.input-error`: el campo inválido enfocado mostraba borde azul de foco en vez de rojo de error, en todo formulario del sistema.
+- **`recurrencia_proxima` en el pasado se rechaza en el schema Zod**, no solo con el `min` de los date inputs (que es UI y no barrera). Había un hilo guardado con "próxima 15/4/1991" — una recurrencia que el cron nunca dispara. Efecto aceptado: editar la recurrencia de un registro viejo con fecha pasada ahora falla hasta corregir la fecha; es la señal correcta.
+- **`formatFecha` con `2-digit`**, para que coincida con lo que muestra un `<input type="date">` en es-AR (`13/08/2026`, no `13/8/2026`) — había dos formatos en la misma pantalla de Auditoría. `formatHora` subió de `AuditoriaView` a `lib/utils` y se sumó `formatFechaHora`, para no tener una tercera implementación de hora en AR.
+- **Fecha y hora de creación visible en el encabezado del hilo** (lista y panel). Dos hilos con el mismo título y el mismo badge "Creado hoy" eran indistinguibles; nada en el dato mostrado los separaba.
+- **`TareaNotasCard` acepta `ocultarTitulo`.** El panel de detalle repetía el título de la tarea (encabezado del `RightPanel` + card). No se sacó el `<p>` sin condición porque en `HiloHistorialPanel` la misma card se usa para varias tareas y ahí el título es lo que las identifica.
+- **Toolbar del panel de hilo con `flex-wrap`.** Seis controles en una fila sin wrap dentro de un panel `max-w-md` recortaban los íconos y generaban scroll horizontal en el body de la página entera.
+- **Acción destructiva separada con `border-l`** en `TareaNotasCard` y `HiloHistorialPanel` — el tacho estaba a 4px del select de estado, que es el control de uso frecuente.
+- **`RecurrenciaFields`: el checkbox "Repetir automáticamente" dejó de ser `t-label`.** `t-label` es el estilo de encabezado de sección; usado en un control lo hacía competir visualmente con el título de la sección que lo contiene. Los tres paneles que usan el componente ahora encabezan la sección con `t-label` "Recurrencia".
+
+**No se unificó el footer del panel de detalle con el de creación.** `CrearTareaPanel`/`CrearHiloPanel` tienen un footer fijo Cancelar/Guardar porque hay un único submit; el panel de detalle tiene dos guardados independientes (recurrencia, asociar a hilo) y un footer único mentiría sobre qué guarda. Se alineó lo demás (secciones etiquetadas, botones primarios) y se dejó el footer afuera a propósito.
+
+---
+
+## Tareas: descripción de hilo, un solo camino para crear hilos, vencimientos rápidos, orden de completadas
+
+- **`tareas_hilos.descripcion`** (`sql/015_hilos_descripcion.sql`, nullable): se muestra en el body de `HiloHistorialPanel`, no en la card de la lista — un párrafo por hilo en la pantalla principal ahogaría las tareas, que son lo que se lee ahí. **No entra en la búsqueda**: `getTareasFiltradas` sigue matcheando `titulo` de hilo y `titulo`/`descripcion` de tarea. Si aparece el caso de buscar por descripción de hilo, se agrega ahí, no se duplica el filtro.
+
+- **El hilo nace en un solo lugar: `CrearHiloPanel`.** Se eliminó la opción "Crear hilo nuevo" del select de `CrearTareaPanel` (junto con su estado `hiloNuevoTitulo`/`hiloCreadoId` y el fix de duplicados de la entrada de más arriba). Motivo: ese camino creaba hilos sin descripción ni recurrencia — las dos propiedades que solo se configuran en el panel del hilo. En su lugar, `CrearHiloPanel` acepta `onCreado?` y ofrece "Crear y agregar tarea", que cierra el panel del hilo y abre `CrearTareaPanel` con `hiloFijo` ya seteado. Nunca dos `RightPanel` abiertos a la vez. Efecto aceptado: si se cancela la tarea, queda un hilo vacío — ya es un estado válido y visible (regla "hilos sin tareas se listan igual") y se puede borrar con `desactivarHilo`.
+
+- **Accesos rápidos de vencimiento 1/3/7 días** junto al date input de `CrearTareaPanel` (mismos saltos que `PosponerModal`). El default sigue siendo hoy+1. De paso murió `manana()` local, que duplicaba `sumarDias` de `lib/utils`.
+
+- **Completadas ordenadas por `updated_at DESC` (último cerrado arriba)**, tanto en el bucket global (`getTareasFiltradas`) como en la sección colapsable de `HiloHistorialPanel`. El instante real del cierre solo existe en `tareas_eventos`, cuya RLS exige `tareas_auditoria` — usarla acá dejaría el orden roto para los usuarios sin ese permiso. `updated_at` es la aproximación legible por cualquiera; la mueve cualquier edición posterior (posponer, asociar, editar), así que una tarea completada hace un mes y editada hoy sube. Se descarta una columna `completada_at` por el mismo motivo ya registrado en la entrada de auditoría: `generar_tareas_recurrentes()` la pisaría en cada ciclo.
+
+- **`overflow-hidden` en los contenedores `rounded-lg` de `ListaTareas` y `GrupoHilo`.** El fondo de hover de las filas (`hover:bg-bg-subtle`) es rectangular y pisaba las esquinas redondeadas del contenedor: al pasar el mouse por la primera o la última fila aparecían esquinas cuadradas.
+
+- **Hilo y tarea diferenciados visualmente**: ícono `Layers` en color de marca en el encabezado del hilo, y las tareas de un hilo se renderizan con sangría y riel izquierdo (`TareaRow` con `anidada`). Antes hilo y tarea eran dos filas del mismo alto y el mismo peso tipográfico dentro de la misma card.
+
+---
+
+## Tareas: reasignar, fechas vacías, íconos de estado
+
+- **Fecha vacía → `null` en el schema, no en cada action.** Un `<input type="date">` vacío manda `""`, y Postgres devolvía `invalid input syntax for type date: ""` al crear tarea suelta sin recurrencia (`recurrencia_proxima: ""` viajaba tal cual) y al dejar el vencimiento vacío. Se normaliza en un solo lugar: `fechaOpcional` en `types.ts` (`z.string().nullish().transform(v => v || null)`), usado por `fecha_vencimiento` y `recurrencia_proxima`. Es `nullish` y no `optional` porque el cliente ya manda el valor transformado (`null`) al server action, que vuelve a hacer `safeParse`. Efecto en tipos: `CrearTareaValues` (`z.output`) se suma a `CrearTareaForm` (`z.input`); `useForm` de `CrearTareaPanel` usa el tercer genérico (`TTransformedValues`) y `crearTarea` recibe el tipo de salida.
+
+- **Reasignar tarea desde `TareaNotasCard`**, no una acción nueva de UI: el nombre del asignado se vuelve un `select` cuando el usuario tiene `tareas_asignar`, y texto plano si no. Server: `reasignarTarea` verifica `puedeAsignarTarea()` antes de parsear. No se creó submódulo nuevo — reasignar es la misma autorización que asignar al crear.
+
+- **Sin permiso `tareas_asignar`, "Agregar desde plantilla" asigna a uno mismo** (comportamiento ya existente, verificado): el modal oculta el picker y manda `usuarioActualId`, y el server rechaza cualquier `asignado_a` distinto del propio. No es un caso de error.
+
+- **Ícono de estado por tarea** (`ESTADO_ICON`/`ESTADO_ICON_COLOR` en `estado.ts`): `Circle` gris pendiente, `CircleDot` info en progreso, `CircleCheck` success completada. Se lee en `TareaRow` y en el título de `TareaNotasCard`. El badge de estado sigue ahí — el ícono da el estado de un vistazo en listas largas, el badge lo nombra.

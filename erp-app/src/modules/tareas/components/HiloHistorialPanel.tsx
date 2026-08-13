@@ -15,6 +15,7 @@ import {
   posponerHilo,
   quitarPosposicionHilo,
 } from "../actions";
+import { formatFechaHora } from "@/lib/utils";
 import type { TareaConRelaciones, TareaHilo, TareaNota, TareaPlantilla } from "../types";
 import { formatAntiguedad, formatPosponer, formatRecurrencia, HILO_ESTADO_BADGE, HILO_ESTADO_LABEL } from "./estado";
 import { CrearHiloPanel } from "./CrearHiloPanel";
@@ -99,28 +100,38 @@ export function HiloHistorialPanel({
   }
 
   const pendientes = tareas.filter((t) => t.estado !== "completada");
-  const completadas = tareas.filter((t) => t.estado === "completada");
+  // Último completado arriba — mismo criterio (y misma aproximación con
+  // `updated_at`) que el bucket "completadas" de `getTareasFiltradas`.
+  const completadas = tareas
+    .filter((t) => t.estado === "completada")
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   const antiguedad = hilo ? formatAntiguedad(hilo) : null;
 
   return (
     <RightPanel
       title={hilo?.titulo ?? "Historial del hilo"}
-      subtitle={hilo ? [formatRecurrencia(hilo), formatPosponer(hilo)].filter(Boolean).join(" · ") : undefined}
+      subtitle={
+        hilo
+          ? [`Creado ${formatFechaHora(hilo.created_at)}`, formatRecurrencia(hilo), formatPosponer(hilo)]
+              .filter(Boolean)
+              .join(" · ")
+          : undefined
+      }
       onClose={onClose}
     >
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         {cargando ? (
-          <p className="t-caption">Cargando...</p>
+          <p className="t-caption py-6 text-center">Cargando...</p>
         ) : (
           <>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               {hilo && (
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <span className={`badge ${HILO_ESTADO_BADGE[hilo.estado]}`}>{HILO_ESTADO_LABEL[hilo.estado]}</span>
-                  <span className={`badge ${antiguedad?.badge}`}>{antiguedad?.texto}</span>
+                  <span className={`badge whitespace-nowrap ${antiguedad?.badge}`}>{antiguedad?.texto}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
                 {puedeCrear && (
                   <>
                     <button className="btn btn-secondary btn-sm" onClick={() => setModalCrearTarea(true)}>
@@ -155,7 +166,7 @@ export function HiloHistorialPanel({
                     )}
                     {tareas.length === 0 && (
                       <button
-                        className="text-text-tertiary hover:text-error"
+                        className="border-l border-border pl-2 text-text-tertiary hover:text-error"
                         onClick={() => setConfirmarEliminar(true)}
                         aria-label="Eliminar hilo"
                       >
@@ -167,6 +178,10 @@ export function HiloHistorialPanel({
               </div>
             </div>
 
+            {hilo?.descripcion && (
+              <p className="t-body-m mb-3 whitespace-pre-wrap text-text-secondary">{hilo.descripcion}</p>
+            )}
+
             {tareas.length === 0 ? (
               <div className="empty-state">Sin tareas en este hilo todavía.</div>
             ) : (
@@ -177,6 +192,8 @@ export function HiloHistorialPanel({
                       key={tarea.id}
                       tarea={tarea}
                       notas={notas.filter((n) => n.tarea_id === tarea.id)}
+                      usuarios={usuarios}
+                      puedeAsignar={puedeAsignar}
                       onCambio={cargar}
                     />
                   ))}
@@ -202,6 +219,8 @@ export function HiloHistorialPanel({
                             key={tarea.id}
                             tarea={tarea}
                             notas={notas.filter((n) => n.tarea_id === tarea.id)}
+                            usuarios={usuarios}
+                            puedeAsignar={puedeAsignar}
                             onCambio={cargar}
                           />
                         ))}

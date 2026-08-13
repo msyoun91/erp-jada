@@ -16,10 +16,10 @@ import {
 } from "./types";
 
 const SELECT_HILO =
-  "id, titulo, estado, creado_por, activo, created_at, recurrencia_activa, recurrencia_una_vez, recurrencia_intervalo, recurrencia_cada, recurrencia_proxima, posponer_hasta";
+  "id, titulo, descripcion, estado, creado_por, activo, created_at, recurrencia_activa, recurrencia_una_vez, recurrencia_intervalo, recurrencia_cada, recurrencia_proxima, posponer_hasta";
 
 const SELECT_TAREA_CON_RELACIONES = `
-  id, hilo_id, titulo, descripcion, asignado_a, creado_por, estado, fecha_vencimiento, activo, created_at,
+  id, hilo_id, titulo, descripcion, asignado_a, creado_por, estado, fecha_vencimiento, activo, created_at, updated_at,
   recurrencia_activa, recurrencia_una_vez, recurrencia_intervalo, recurrencia_cada, recurrencia_proxima, posponer_hasta,
   asignado:usuarios!tareas_asignado_a_fkey(nombre),
   creador:usuarios!tareas_creado_por_fkey(nombre),
@@ -44,6 +44,7 @@ function mapTareaConRelaciones(row: TareaRow): TareaConRelaciones {
     fecha_vencimiento: row.fecha_vencimiento,
     activo: row.activo,
     created_at: row.created_at,
+    updated_at: row.updated_at,
     recurrencia_activa: row.recurrencia_activa,
     recurrencia_una_vez: row.recurrencia_una_vez,
     recurrencia_intervalo: row.recurrencia_intervalo,
@@ -106,7 +107,10 @@ async function getTareasFiltradas({
   if (texto) query = query.or(`titulo.ilike.%${texto}%,descripcion.ilike.%${texto}%`);
 
   const from = page * TAREAS_PAGE_SIZE;
-  const orderBy = modo === "pospuestas" ? "posponer_hasta" : "created_at";
+  // Completadas: lo último cerrado arriba. El instante exacto del cierre solo
+  // vive en `tareas_eventos`, que exige `tareas_auditoria` — `updated_at` es la
+  // aproximación que cualquier usuario puede leer (la mueve cualquier edición).
+  const orderBy = modo === "pospuestas" ? "posponer_hasta" : modo === "completadas" ? "updated_at" : "created_at";
   const ascending = modo === "pospuestas";
 
   const { data, error, count } = await query

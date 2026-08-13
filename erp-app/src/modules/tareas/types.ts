@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hoyISO } from "@/lib/utils";
 
 export const TAREAS_PAGE_SIZE = 20;
 export type ModoTareas = "abiertas" | "completadas" | "pospuestas";
@@ -13,17 +14,36 @@ export type FiltrosTareas = z.infer<typeof filtrosTareasSchema>;
 export const recurrenciaIntervaloEnum = z.enum(["dia", "mes", "anio"]);
 export type RecurrenciaIntervalo = z.infer<typeof recurrenciaIntervaloEnum>;
 
+// Un input date vacío manda "", que Postgres rechaza en una columna date.
+// `nullish`: el cliente reenvía al server action el valor ya transformado.
+const fechaOpcional = z
+  .string()
+  .nullish()
+  .transform((v) => v || null);
+
 const recurrenciaFields = {
   recurrencia_activa: z.boolean().default(false),
   recurrencia_una_vez: z.boolean().default(false),
   recurrencia_intervalo: recurrenciaIntervaloEnum.optional(),
   recurrencia_cada: z.coerce.number().int().min(1).default(1),
-  recurrencia_proxima: z.string().optional(),
+  recurrencia_proxima: fechaOpcional,
 };
 
 function recurrenciaCompleta(d: { recurrencia_activa: boolean; recurrencia_intervalo?: unknown; recurrencia_proxima?: unknown }) {
   return !d.recurrencia_activa || (Boolean(d.recurrencia_intervalo) && Boolean(d.recurrencia_proxima));
 }
+
+// El `min` de los date inputs es solo UI: sin esto, una fecha pasada se guarda
+// y queda una recurrencia que el cron nunca dispara.
+function recurrenciaFechaFutura(d: { recurrencia_activa: boolean; recurrencia_proxima?: unknown }) {
+  if (!d.recurrencia_activa || typeof d.recurrencia_proxima !== "string") return true;
+  return d.recurrencia_proxima >= hoyISO();
+}
+
+const fechaPasada = {
+  message: "La próxima repetición no puede ser una fecha pasada",
+  path: ["recurrencia_proxima"],
+};
 
 export const crearTareaSchema = z
   .object({
@@ -31,25 +51,29 @@ export const crearTareaSchema = z
     descripcion: z.string().optional(),
     hilo_id: z.string().uuid().optional(),
     asignado_a: z.string().uuid("Elegí un usuario asignado"),
-    fecha_vencimiento: z.string().optional(),
+    fecha_vencimiento: fechaOpcional,
     ...recurrenciaFields,
   })
   .refine(recurrenciaCompleta, {
     message: "Elegí intervalo y próxima fecha de repetición",
     path: ["recurrencia_proxima"],
-  });
+  })
+  .refine(recurrenciaFechaFutura, fechaPasada);
 
 export type CrearTareaForm = z.input<typeof crearTareaSchema>;
+export type CrearTareaValues = z.output<typeof crearTareaSchema>;
 
 export const crearHiloSchema = z
   .object({
     titulo: z.string().min(1, "El título es obligatorio"),
+    descripcion: z.string().optional(),
     ...recurrenciaFields,
   })
   .refine(recurrenciaCompleta, {
     message: "Elegí intervalo y próxima fecha de repetición",
     path: ["recurrencia_proxima"],
-  });
+  })
+  .refine(recurrenciaFechaFutura, fechaPasada);
 
 export type CrearHiloForm = z.input<typeof crearHiloSchema>;
 
@@ -61,7 +85,8 @@ export const actualizarRecurrenciaTareaSchema = z
   .refine(recurrenciaCompleta, {
     message: "Elegí intervalo y próxima fecha de repetición",
     path: ["recurrencia_proxima"],
-  });
+  })
+  .refine(recurrenciaFechaFutura, fechaPasada);
 
 export type ActualizarRecurrenciaTareaForm = z.input<typeof actualizarRecurrenciaTareaSchema>;
 
@@ -92,6 +117,13 @@ export const agregarNotaSchema = z.object({
 });
 
 export type AgregarNotaForm = z.infer<typeof agregarNotaSchema>;
+
+export const reasignarTareaSchema = z.object({
+  tarea_id: z.string().uuid(),
+  asignado_a: z.string().uuid("Elegí un usuario asignado"),
+});
+
+export type ReasignarTareaForm = z.infer<typeof reasignarTareaSchema>;
 
 export const actualizarEstadoSchema = z.object({
   tarea_id: z.string().uuid(),
@@ -134,6 +166,7 @@ export type Tarea = {
   fecha_vencimiento: string | null;
   activo: boolean;
   created_at: string;
+  updated_at: string;
   recurrencia_activa: boolean;
   recurrencia_una_vez: boolean;
   recurrencia_intervalo: RecurrenciaIntervalo | null;
@@ -151,6 +184,7 @@ export type TareaConRelaciones = Tarea & {
 export type TareaHilo = {
   id: string;
   titulo: string;
+  descripcion: string | null;
   estado: EstadoHilo;
   creado_por: string;
   activo: boolean;

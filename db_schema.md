@@ -82,6 +82,7 @@ Agrupador manual de tareas relacionadas. Puede crearse independiente o al vuelo 
 |---|---|---|
 | id | uuid PK | |
 | titulo | text | |
+| descripcion | text, nullable | `sql/015_hilos_descripcion.sql` — se muestra en el panel de historial del hilo |
 | estado | enum estado_hilo | `abierto` \| `cerrado` — automático, ver trigger abajo |
 | creado_por | uuid FK → usuarios | |
 | recurrencia_activa | boolean | default `false` |
@@ -110,9 +111,9 @@ Agrupador manual de tareas relacionadas. Puede crearse independiente o al vuelo 
 | estado | enum estado_tarea | `pendiente` \| `en_progreso` \| `completada` |
 | recurrencia_activa / recurrencia_una_vez / recurrencia_intervalo / recurrencia_cada / recurrencia_proxima | — | mismas columnas y semántica que `tareas_hilos` (`sql/011_recurrencia_tareas.sql`, `sql/013_recurrencia_una_vez.sql`) — solo tiene efecto si `hilo_id IS NULL` (tarea suelta); si la tarea se asocia a un hilo, `asociarTareaHilo` apaga `recurrencia_activa` porque pasa a mandar la del hilo |
 | posponer_hasta | date, nullable | "snooze" (`sql/012_posponer.sql`) — a diferencia de la recurrencia, funciona con o sin `hilo_id` (una tarea dentro de un hilo puede posponerse individualmente sin afectar al hilo) |
-| fecha_vencimiento | date, nullable | UI la precarga en "hoy + 1 día" al crear una tarea (default de formulario, no de columna) |
+| fecha_vencimiento | date, nullable | UI la precarga en "hoy + 1 día" al crear una tarea (default de formulario, no de columna) + accesos rápidos 1/3/7 días |
 | activo | boolean | |
-| created_at / updated_at | timestamptz | |
+| created_at / updated_at | timestamptz | `updated_at` además ordena el bucket "completadas" (último cerrado arriba) — aproximación, ver `DECISIONES.md` |
 
 ## tareas_eventos
 

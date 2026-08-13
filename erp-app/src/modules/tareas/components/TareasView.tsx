@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plus, History, ChevronDown, ChevronRight, Search, X } from "lucide-react";
+import { Plus, History, ChevronDown, ChevronRight, Layers, Search, X } from "lucide-react";
 import { Pagination } from "@/components/ui/Pagination";
-import { hoyISO } from "@/lib/utils";
+import { formatFechaHora, hoyISO } from "@/lib/utils";
 import { obtenerTareas } from "../actions";
 import {
   TAREAS_PAGE_SIZE,
@@ -13,7 +13,16 @@ import {
   type TareaConRelaciones,
   type TareaHilo,
 } from "../types";
-import { ESTADO_BADGE, ESTADO_LABEL, formatAntiguedad, formatPosponer, formatRecurrencia, formatVencimiento } from "./estado";
+import {
+  ESTADO_BADGE,
+  ESTADO_ICON,
+  ESTADO_ICON_COLOR,
+  ESTADO_LABEL,
+  formatAntiguedad,
+  formatPosponer,
+  formatRecurrencia,
+  formatVencimiento,
+} from "./estado";
 import { CrearTareaPanel } from "./CrearTareaPanel";
 import { CrearHiloPanel } from "./CrearHiloPanel";
 import { HiloHistorialPanel } from "./HiloHistorialPanel";
@@ -167,6 +176,7 @@ export function TareasView({
 }) {
   const [modalCrearTarea, setModalCrearTarea] = useState(false);
   const [modalCrearHilo, setModalCrearHilo] = useState(false);
+  const [hiloParaTarea, setHiloParaTarea] = useState<{ id: string; titulo: string } | null>(null);
   const [hiloAbierto, setHiloAbierto] = useState<string | null>(null);
   const [tareaAbierta, setTareaAbierta] = useState<TareaConRelaciones | null>(null);
   const [verCompletadas, setVerCompletadas] = useState(false);
@@ -278,36 +288,46 @@ export function TareasView({
       )}
 
       {!vacio && (
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <div className="relative min-w-[200px] flex-1">
-            <Search
-              size={15}
-              strokeWidth={1.75}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
-            />
-            <input
-              className="input pl-9"
-              placeholder="Buscar por título o descripción..."
-              aria-label="Buscar tareas"
-              value={texto}
-              onChange={(e) => setTexto(e.target.value)}
-            />
+        <div className="mb-4 flex flex-wrap items-end gap-2">
+          <div className="min-w-[200px] flex-1">
+            <label className="t-label mb-1 block" htmlFor="tareas-buscar">
+              Buscar
+            </label>
+            <div className="relative">
+              <Search
+                size={15}
+                strokeWidth={1.75}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
+              />
+              <input
+                id="tareas-buscar"
+                className="input pl-9"
+                placeholder="Buscar por título o descripción..."
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+              />
+            </div>
           </div>
 
           {modo === "todas" && (
-            <select
-              className="input !w-auto"
-              aria-label="Filtrar por asignado"
-              value={asignado}
-              onChange={(e) => setAsignado(e.target.value)}
-            >
-              <option value="">Todos los asignados</option>
-              {usuarios.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.id === usuarioActualId ? `${u.nombre} (vos)` : u.nombre}
-                </option>
-              ))}
-            </select>
+            <div>
+              <label className="t-label mb-1 block" htmlFor="tareas-asignado">
+                Asignado
+              </label>
+              <select
+                id="tareas-asignado"
+                className="input !w-auto"
+                value={asignado}
+                onChange={(e) => setAsignado(e.target.value)}
+              >
+                <option value="">Todos los asignados</option>
+                {usuarios.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.id === usuarioActualId ? `${u.nombre} (vos)` : u.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
           {(texto || asignado) && (
@@ -370,7 +390,7 @@ export function TareasView({
                   ))}
 
                   {pospuestas.cargando && !pospuestas.cargado ? (
-                    <p className="t-caption">Cargando...</p>
+                    <p className="t-caption py-6 text-center">Cargando...</p>
                   ) : (
                     <>
                       {pospuestas.tareas.length > 0 && (
@@ -405,7 +425,7 @@ export function TareasView({
               {verCompletadas && (
                 <div className="mt-2 flex flex-col gap-4">
                   {completadas.cargando && !completadas.cargado ? (
-                    <p className="t-caption">Cargando...</p>
+                    <p className="t-caption py-6 text-center">Cargando...</p>
                   ) : (
                     <>
                       {gruposCerrados.map((grupo) => (
@@ -441,12 +461,25 @@ export function TareasView({
           usuarioActualId={usuarioActualId}
           usuarios={usuarios}
           hilos={hilos}
+          hiloFijo={hiloParaTarea ?? undefined}
           puedeAsignar={puedeAsignar}
-          onClose={() => setModalCrearTarea(false)}
+          onClose={() => {
+            setModalCrearTarea(false);
+            setHiloParaTarea(null);
+          }}
         />
       )}
 
-      {modalCrearHilo && <CrearHiloPanel onClose={() => setModalCrearHilo(false)} />}
+      {modalCrearHilo && (
+        <CrearHiloPanel
+          onClose={() => setModalCrearHilo(false)}
+          onCreado={(hiloCreado) => {
+            setModalCrearHilo(false);
+            setHiloParaTarea(hiloCreado);
+            setModalCrearTarea(true);
+          }}
+        />
+      )}
 
       {hiloAbierto && (
         <HiloHistorialPanel
@@ -460,7 +493,13 @@ export function TareasView({
       )}
 
       {tareaAbierta && (
-        <TareaDetallePanel tarea={tareaAbierta} hilos={hilos} onClose={() => setTareaAbierta(null)} />
+        <TareaDetallePanel
+          tarea={tareaAbierta}
+          hilos={hilos}
+          usuarios={usuarios}
+          puedeAsignar={puedeAsignar}
+          onClose={() => setTareaAbierta(null)}
+        />
       )}
     </div>
   );
@@ -474,7 +513,7 @@ function ListaTareas({
   onAbrir: (tarea: TareaConRelaciones) => void;
 }) {
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
+    <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-bg-surface">
       {tareas.map((tarea) => (
         <button key={tarea.id} onClick={() => onAbrir(tarea)} className="block text-left hover:bg-bg-subtle">
           <TareaRow tarea={tarea} />
@@ -488,17 +527,20 @@ function GrupoHilo({ grupo, onVerHistorial }: { grupo: Grupo; onVerHistorial: ()
   const antiguedad = formatAntiguedad({ created_at: grupo.hiloCreatedAt });
 
   return (
-    <div className="rounded-lg border border-border bg-bg-surface">
+    <div className="overflow-hidden rounded-lg border border-border bg-bg-surface">
       <button
         onClick={onVerHistorial}
         className="flex w-full items-center justify-between gap-3 border-b border-border px-5 py-3 text-left hover:bg-bg-subtle"
       >
         <div className="min-w-0">
           <div className="flex items-center gap-2">
+            <Layers size={16} strokeWidth={1.75} className="shrink-0 text-brand-500" />
             <p className="t-body-m truncate font-medium text-text-primary">{grupo.hiloTitulo}</p>
-            <span className="badge badge-neutral">{grupo.tareas.length}</span>
-            <span className={`badge ${antiguedad.badge}`}>{antiguedad.texto}</span>
+            <span className="badge badge-neutral shrink-0">{grupo.tareas.length}</span>
+            <span className={`badge shrink-0 whitespace-nowrap ${antiguedad.badge}`}>{antiguedad.texto}</span>
           </div>
+          {/* La fecha exacta distingue dos hilos con el mismo título */}
+          <p className="t-caption truncate">Creado {formatFechaHora(grupo.hiloCreatedAt)}</p>
           {grupo.recurrencia && <p className="t-caption truncate">{grupo.recurrencia}</p>}
           {grupo.pospuesto && <p className="t-caption truncate">{grupo.pospuesto}</p>}
         </div>
@@ -510,7 +552,7 @@ function GrupoHilo({ grupo, onVerHistorial }: { grupo: Grupo; onVerHistorial: ()
       {grupo.tareas.length > 0 && (
         <div className="flex flex-col">
           {grupo.tareas.map((tarea) => (
-            <TareaRow key={tarea.id} tarea={tarea} />
+            <TareaRow key={tarea.id} tarea={tarea} anidada />
           ))}
         </div>
       )}
@@ -518,21 +560,34 @@ function GrupoHilo({ grupo, onVerHistorial }: { grupo: Grupo; onVerHistorial: ()
   );
 }
 
-function TareaRow({ tarea }: { tarea: TareaConRelaciones }) {
+function TareaRow({ tarea, anidada = false }: { tarea: TareaConRelaciones; anidada?: boolean }) {
   const vencimiento = formatVencimiento(tarea);
   const recurrencia = formatRecurrencia(tarea);
   const pospuesta = formatPosponer(tarea);
+  const IconoEstado = ESTADO_ICON[tarea.estado];
 
   return (
-    <div className="flex w-full items-center justify-between gap-3 border-b border-border p-[13px] px-5 last:border-b-0">
-      <div className="min-w-0">
-        <p className="t-body-m truncate font-medium text-text-primary">{tarea.titulo}</p>
-        <p className="t-caption truncate">
-          {tarea.asignado_a_nombre}
-          {tarea.hilo_titulo && ` · ${tarea.hilo_titulo}`}
-          {recurrencia && ` · ${recurrencia}`}
-          {pospuesta && ` · ${pospuesta}`}
-        </p>
+    <div
+      className={`flex w-full items-center justify-between gap-3 border-b border-border p-[13px] px-5 last:border-b-0 ${
+        anidada ? "border-l-2 border-l-brand-500/40 pl-9" : ""
+      }`}
+    >
+      <div className="flex min-w-0 items-center gap-2">
+        <IconoEstado
+          size={16}
+          strokeWidth={1.75}
+          className={`shrink-0 ${ESTADO_ICON_COLOR[tarea.estado]}`}
+          aria-label={ESTADO_LABEL[tarea.estado]}
+        />
+        <div className="min-w-0">
+          <p className="t-body-m truncate font-medium text-text-primary">{tarea.titulo}</p>
+          <p className="t-caption truncate">
+            {tarea.asignado_a_nombre}
+            {tarea.hilo_titulo && ` · ${tarea.hilo_titulo}`}
+            {recurrencia && ` · ${recurrencia}`}
+            {pospuesta && ` · ${pospuesta}`}
+          </p>
+        </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {vencimiento && <span className={`badge ${vencimiento.badge}`}>{vencimiento.texto}</span>}

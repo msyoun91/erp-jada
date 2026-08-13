@@ -44,7 +44,7 @@ export function RecurrenciaFields({
             onChange({ ...value, recurrencia_activa: activa, recurrencia_proxima: proxima });
           }}
         />
-        <span className="t-label">Repetir automáticamente</span>
+        <span className="t-body-m text-text-primary">Repetir automáticamente</span>
       </label>
 
       {value.recurrencia_activa && (
