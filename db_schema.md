@@ -84,12 +84,18 @@ Agrupador manual de tareas relacionadas. Puede crearse independiente o al vuelo 
 | titulo | text | |
 | estado | enum estado_hilo | `abierto` \| `cerrado` — automático, ver trigger abajo |
 | creado_por | uuid FK → usuarios | |
+| recurrencia_activa | boolean | default `false` |
+| recurrencia_intervalo | enum recurrencia_intervalo, nullable | `dia` \| `mes` \| `anio` — requerido si `recurrencia_activa` |
+| recurrencia_cada | int | default `1` — "cada N día/mes/año" |
+| recurrencia_proxima | date, nullable | requerido si `recurrencia_activa` |
+| recurrencia_una_vez | boolean | default `false` — dispara un solo ciclo y `generar_tareas_recurrentes()` apaga `recurrencia_activa` en vez de avanzar `recurrencia_proxima` (`sql/013_recurrencia_una_vez.sql`) |
+| posponer_hasta | date, nullable | "snooze" — hilo oculto de la vista principal mientras `posponer_hasta > hoy` (`sql/012_posponer.sql`) |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
 **Cierre/apertura automática** (`sql/007_tareas_hilos_estado.sql`): trigger `sync_estado_hilo` en `tareas` (INSERT/DELETE/UPDATE de `estado`, `hilo_id`, `activo`) llama `sync_estado_hilo(hilo_id)` — `SECURITY DEFINER`, cierra el hilo si tiene ≥1 tarea activa y ninguna pendiente, lo reabre en cualquier otro caso (nueva tarea, tarea revertida, tarea reasignada de/a otro hilo). Nunca se cierra manualmente desde la UI.
 
-**Recurrencia eliminada** (estaba en `columnas recurrencia/asignado_a_default/ultima_generacion` + función `generar_tareas_recurrentes()` + `pg_cron`, sacada a pedido en `sql/007`).
+**Recurrencia reintroducida** (`sql/010_recurrencia_hilos.sql` — revierte la eliminación de `sql/007`, ver DECISIONES.md). CHECK `recurrencia_completa` exige intervalo+próxima+cada>0 cuando `recurrencia_activa`. `generar_tareas_recurrentes()` (`SECURITY DEFINER`, pensada para `pg_cron` diario, ver `sql/011`) resetea a `pendiente` las tareas activas del hilo cuando `recurrencia_proxima <= hoy` y agenda la próxima fecha vía `avanzar_recurrencia()` (con catch-up si el cron estuvo caído varios períodos) — el trigger `sync_estado_hilo` ya existente reabre el hilo solo, sin lógica extra.
 
 ## tareas
 
@@ -102,7 +108,9 @@ Agrupador manual de tareas relacionadas. Puede crearse independiente o al vuelo 
 | asignado_a | uuid FK → usuarios | requiere `tareas_asignar` para asignar a otro que no sea uno mismo |
 | creado_por | uuid FK → usuarios | |
 | estado | enum estado_tarea | `pendiente` \| `en_progreso` \| `completada` |
-| fecha_vencimiento | date, nullable | |
+| recurrencia_activa / recurrencia_una_vez / recurrencia_intervalo / recurrencia_cada / recurrencia_proxima | — | mismas columnas y semántica que `tareas_hilos` (`sql/011_recurrencia_tareas.sql`, `sql/013_recurrencia_una_vez.sql`) — solo tiene efecto si `hilo_id IS NULL` (tarea suelta); si la tarea se asocia a un hilo, `asociarTareaHilo` apaga `recurrencia_activa` porque pasa a mandar la del hilo |
+| posponer_hasta | date, nullable | "snooze" (`sql/012_posponer.sql`) — a diferencia de la recurrencia, funciona con o sin `hilo_id` (una tarea dentro de un hilo puede posponerse individualmente sin afectar al hilo) |
+| fecha_vencimiento | date, nullable | UI la precarga en "hoy + 1 día" al crear una tarea (default de formulario, no de columna) |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 

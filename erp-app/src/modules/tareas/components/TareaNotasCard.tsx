@@ -2,11 +2,19 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Clock, Trash2 } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { agregarNota, actualizarEstadoTarea, desactivarTarea, desasociarTareaHilo } from "../actions";
+import { PosponerModal } from "@/components/ui/PosponerModal";
+import {
+  agregarNota,
+  actualizarEstadoTarea,
+  desactivarTarea,
+  desasociarTareaHilo,
+  posponerTarea,
+  quitarPosposicionTarea,
+} from "../actions";
 import type { EstadoTarea, TareaConRelaciones, TareaNota } from "../types";
-import { ESTADO_LABEL } from "./estado";
+import { ESTADO_LABEL, formatPosponer, formatVencimiento } from "./estado";
 
 export function TareaNotasCard({
   tarea,
@@ -22,6 +30,7 @@ export function TareaNotasCard({
   const [nota, setNota] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [confirmarEliminar, setConfirmarEliminar] = useState(false);
+  const [modalPosponer, setModalPosponer] = useState(false);
 
   async function onCambiarEstado(estado: EstadoTarea) {
     const result = await actualizarEstadoTarea({ tarea_id: tarea.id, estado });
@@ -65,6 +74,28 @@ export function TareaNotasCard({
     (onEliminado ?? onCambio)();
   }
 
+  async function onPosponer(fecha: string) {
+    const result = await posponerTarea({ tarea_id: tarea.id, posponer_hasta: fecha });
+    setModalPosponer(false);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Tarea pospuesta");
+    onCambio();
+  }
+
+  async function onQuitarPosposicion() {
+    const result = await quitarPosposicionTarea(tarea.id);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    onCambio();
+  }
+
+  const vencimiento = formatVencimiento(tarea);
+
   return (
     <div className="rounded-lg border border-border p-3">
       <div className="flex items-start justify-between gap-2">
@@ -80,9 +111,20 @@ export function TareaNotasCard({
                 </button>
               </>
             )}
+            {tarea.posponer_hasta && (
+              <>
+                {" · "}
+                {formatPosponer(tarea)}
+                {" · "}
+                <button type="button" className="text-text-brand" onClick={onQuitarPosposicion}>
+                  Quitar posposición
+                </button>
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-1">
+          {vencimiento && <span className={`badge ${vencimiento.badge}`}>{vencimiento.texto}</span>}
           <select
             className="input !w-auto py-1 text-[12px]"
             value={tarea.estado}
@@ -94,6 +136,13 @@ export function TareaNotasCard({
               </option>
             ))}
           </select>
+          <button
+            className="text-text-tertiary hover:text-text-brand"
+            onClick={() => setModalPosponer(true)}
+            aria-label="Posponer tarea"
+          >
+            <Clock size={16} />
+          </button>
           <button
             className="text-text-tertiary hover:text-error"
             onClick={() => setConfirmarEliminar(true)}
@@ -137,6 +186,10 @@ export function TareaNotasCard({
           onConfirm={onEliminar}
           onCancel={() => setConfirmarEliminar(false)}
         />
+      )}
+
+      {modalPosponer && (
+        <PosponerModal title="Posponer tarea" onConfirm={onPosponer} onClose={() => setModalPosponer(false)} />
       )}
     </div>
   );

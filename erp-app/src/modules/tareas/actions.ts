@@ -5,26 +5,37 @@ import { createClient } from "@/lib/supabase/server";
 import { puedeAsignarTarea, puedeCrearTarea, puedeVerPlantillas } from "./permissions";
 import {
   getHistorialHilo,
+  getMisTareasAbiertas,
   getMisTareasCompletadas,
+  getMisTareasPospuestas,
   getNotasDeTarea,
   getPlantillas,
+  getTodasLasTareasAbiertas,
   getTodasLasTareasCompletadas,
+  getTodasLasTareasPospuestas,
 } from "./queries";
 import {
   actualizarEstadoSchema,
+  actualizarRecurrenciaTareaSchema,
   agregarDesdePlantillaSchema,
   agregarNotaSchema,
   asociarHiloSchema,
   crearHiloSchema,
   crearPlantillaSchema,
   crearTareaSchema,
+  posponerHiloSchema,
+  posponerTareaSchema,
   type ActualizarEstadoForm,
+  type ActualizarRecurrenciaTareaForm,
   type AgregarDesdePlantillaForm,
   type AgregarNotaForm,
   type AsociarHiloForm,
   type CrearHiloForm,
   type CrearPlantillaForm,
   type CrearTareaForm,
+  type ModoTareas,
+  type PosponerHiloForm,
+  type PosponerTareaForm,
 } from "./types";
 
 export async function crearHilo(input: CrearHiloForm) {
@@ -53,6 +64,25 @@ export async function crearHilo(input: CrearHiloForm) {
 
   revalidatePath("/tareas");
   return { success: true as const, hilo_id: data.id };
+}
+
+export async function actualizarHilo(hiloId: string, input: CrearHiloForm) {
+  if (!(await puedeCrearTarea())) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const parsed = crearHiloSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("tareas_hilos").update(parsed.data).eq("id", hiloId);
+
+  if (error) return { success: false as const, error: error.message };
+
+  revalidatePath("/tareas");
+  return { success: true as const };
 }
 
 export async function crearTarea(input: CrearTareaForm) {
@@ -154,8 +184,25 @@ export async function asociarTareaHilo(input: AsociarHiloForm) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("tareas")
-    .update({ hilo_id: parsed.data.hilo_id })
+    .update({ hilo_id: parsed.data.hilo_id, recurrencia_activa: false })
     .eq("id", parsed.data.tarea_id);
+
+  if (error) return { success: false as const, error: error.message };
+
+  revalidatePath("/tareas");
+  return { success: true as const };
+}
+
+export async function actualizarRecurrenciaTarea(input: ActualizarRecurrenciaTareaForm) {
+  const parsed = actualizarRecurrenciaTareaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const { tarea_id, ...recurrencia } = parsed.data;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("tareas").update(recurrencia).eq("id", tarea_id);
 
   if (error) return { success: false as const, error: error.message };
 
@@ -173,8 +220,70 @@ export async function desasociarTareaHilo(tareaId: string) {
   return { success: true as const };
 }
 
-export async function obtenerTareasCompletadas(modo: "mis" | "todas") {
-  return modo === "mis" ? getMisTareasCompletadas() : getTodasLasTareasCompletadas();
+export async function obtenerTareas(vista: "mis" | "todas", modo: ModoTareas, page: number) {
+  const porModo = {
+    abiertas: { mis: getMisTareasAbiertas, todas: getTodasLasTareasAbiertas },
+    completadas: { mis: getMisTareasCompletadas, todas: getTodasLasTareasCompletadas },
+    pospuestas: { mis: getMisTareasPospuestas, todas: getTodasLasTareasPospuestas },
+  } as const;
+
+  return porModo[modo][vista](page);
+}
+
+export async function posponerTarea(input: PosponerTareaForm) {
+  const parsed = posponerTareaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tareas")
+    .update({ posponer_hasta: parsed.data.posponer_hasta })
+    .eq("id", parsed.data.tarea_id);
+
+  if (error) return { success: false as const, error: error.message };
+
+  revalidatePath("/tareas");
+  return { success: true as const };
+}
+
+export async function quitarPosposicionTarea(tareaId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("tareas").update({ posponer_hasta: null }).eq("id", tareaId);
+
+  if (error) return { success: false as const, error: error.message };
+
+  revalidatePath("/tareas");
+  return { success: true as const };
+}
+
+export async function posponerHilo(input: PosponerHiloForm) {
+  const parsed = posponerHiloSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tareas_hilos")
+    .update({ posponer_hasta: parsed.data.posponer_hasta })
+    .eq("id", parsed.data.hilo_id);
+
+  if (error) return { success: false as const, error: error.message };
+
+  revalidatePath("/tareas");
+  return { success: true as const };
+}
+
+export async function quitarPosposicionHilo(hiloId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("tareas_hilos").update({ posponer_hasta: null }).eq("id", hiloId);
+
+  if (error) return { success: false as const, error: error.message };
+
+  revalidatePath("/tareas");
+  return { success: true as const };
 }
 
 export async function desactivarHilo(hiloId: string) {

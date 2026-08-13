@@ -1,10 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Tarea, TareaConRelaciones, TareaHilo, TareaNota, TareaPlantilla } from "./types";
+import { TAREAS_PAGE_SIZE, type ModoTareas, type Tarea, type TareaConRelaciones, type TareaHilo, type TareaNota, type TareaPlantilla } from "./types";
 
-const SELECT_HILO = "id, titulo, estado, creado_por, activo, created_at";
+const SELECT_HILO =
+  "id, titulo, estado, creado_por, activo, created_at, recurrencia_activa, recurrencia_una_vez, recurrencia_intervalo, recurrencia_cada, recurrencia_proxima, posponer_hasta";
 
 const SELECT_TAREA_CON_RELACIONES = `
   id, hilo_id, titulo, descripcion, asignado_a, creado_por, estado, fecha_vencimiento, activo, created_at,
+  recurrencia_activa, recurrencia_una_vez, recurrencia_intervalo, recurrencia_cada, recurrencia_proxima, posponer_hasta,
   asignado:usuarios!tareas_asignado_a_fkey(nombre),
   creador:usuarios!tareas_creado_por_fkey(nombre),
   hilo:tareas_hilos(titulo)
@@ -28,6 +30,12 @@ function mapTareaConRelaciones(row: TareaRow): TareaConRelaciones {
     fecha_vencimiento: row.fecha_vencimiento,
     activo: row.activo,
     created_at: row.created_at,
+    recurrencia_activa: row.recurrencia_activa,
+    recurrencia_una_vez: row.recurrencia_una_vez,
+    recurrencia_intervalo: row.recurrencia_intervalo,
+    recurrencia_cada: row.recurrencia_cada,
+    recurrencia_proxima: row.recurrencia_proxima,
+    posponer_hasta: row.posponer_hasta,
     asignado_a_nombre: row.asignado?.nombre ?? "",
     creado_por_nombre: row.creador?.nombre ?? "",
     hilo_titulo: row.hilo?.titulo ?? null,
@@ -41,41 +49,70 @@ async function getUserId(supabase: Awaited<ReturnType<typeof createClient>>) {
   return user?.id ?? null;
 }
 
+function hoyISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 async function getTareasFiltradas({
   soloPropias,
-  completadas,
+  modo,
+  page,
 }: {
   soloPropias: boolean;
-  completadas: boolean;
-}): Promise<TareaConRelaciones[]> {
+  modo: ModoTareas;
+  page: number;
+}): Promise<{ tareas: TareaConRelaciones[]; total: number }> {
   const supabase = await createClient();
 
-  let query = supabase.from("tareas").select(SELECT_TAREA_CON_RELACIONES).eq("activo", true);
-  query = completadas ? query.eq("estado", "completada") : query.neq("estado", "completada");
+  let query = supabase.from("tareas").select(SELECT_TAREA_CON_RELACIONES, { count: "exact" }).eq("activo", true);
+
+  if (modo === "completadas") {
+    query = query.eq("estado", "completada");
+  } else {
+    query = query.neq("estado", "completada");
+    query =
+      modo === "abiertas"
+        ? query.or(`posponer_hasta.is.null,posponer_hasta.lte.${hoyISO()}`)
+        : query.gt("posponer_hasta", hoyISO());
+  }
 
   if (soloPropias) {
     const userId = await getUserId(supabase);
-    if (!userId) return [];
+    if (!userId) return { tareas: [], total: 0 };
     query = query.or(`asignado_a.eq.${userId},creado_por.eq.${userId}`);
   }
 
-  const { data, error } = await query.order("created_at", { ascending: false });
+  const from = page * TAREAS_PAGE_SIZE;
+  const orderBy = modo === "pospuestas" ? "posponer_hasta" : "created_at";
+  const ascending = modo === "pospuestas";
+
+  const { data, error, count } = await query
+    .order(orderBy, { ascending })
+    .range(from, from + TAREAS_PAGE_SIZE - 1);
+
   if (error) throw error;
-  return (data as unknown as TareaRow[]).map(mapTareaConRelaciones);
+  return { tareas: (data as unknown as TareaRow[]).map(mapTareaConRelaciones), total: count ?? 0 };
 }
 
-export const getMisTareasAbiertas = () => getTareasFiltradas({ soloPropias: true, completadas: false });
-export const getMisTareasCompletadas = () => getTareasFiltradas({ soloPropias: true, completadas: true });
-export const getTodasLasTareasAbiertas = () => getTareasFiltradas({ soloPropias: false, completadas: false });
-export const getTodasLasTareasCompletadas = () => getTareasFiltradas({ soloPropias: false, completadas: true });
+export const getMisTareasAbiertas = (page = 0) => getTareasFiltradas({ soloPropias: true, modo: "abiertas", page });
+export const getMisTareasCompletadas = (page = 0) =>
+  getTareasFiltradas({ soloPropias: true, modo: "completadas", page });
+export const getMisTareasPospuestas = (page = 0) =>
+  getTareasFiltradas({ soloPropias: true, modo: "pospuestas", page });
 
-async function getTareasCompletadasCount(soloPropias: boolean): Promise<number> {
+export const getTodasLasTareasAbiertas = (page = 0) =>
+  getTareasFiltradas({ soloPropias: false, modo: "abiertas", page });
+export const getTodasLasTareasCompletadas = (page = 0) =>
+  getTareasFiltradas({ soloPropias: false, modo: "completadas", page });
+export const getTodasLasTareasPospuestas = (page = 0) =>
+  getTareasFiltradas({ soloPropias: false, modo: "pospuestas", page });
+
+async function getTareasCount(soloPropias: boolean, modo: Exclude<ModoTareas, "abiertas">): Promise<number> {
   const supabase = await createClient();
-  let query = supabase
-    .from("tareas")
-    .select("id", { count: "exact", head: true })
-    .eq("activo", true)
-    .eq("estado", "completada");
+  let query = supabase.from("tareas").select("id", { count: "exact", head: true }).eq("activo", true);
+
+  query =
+    modo === "completadas" ? query.eq("estado", "completada") : query.neq("estado", "completada").gt("posponer_hasta", hoyISO());
 
   if (soloPropias) {
     const userId = await getUserId(supabase);
@@ -88,8 +125,10 @@ async function getTareasCompletadasCount(soloPropias: boolean): Promise<number> 
   return count ?? 0;
 }
 
-export const getMisTareasCompletadasCount = () => getTareasCompletadasCount(true);
-export const getTodasLasTareasCompletadasCount = () => getTareasCompletadasCount(false);
+export const getMisTareasCompletadasCount = () => getTareasCount(true, "completadas");
+export const getTodasLasTareasCompletadasCount = () => getTareasCount(false, "completadas");
+export const getMisTareasPospuestasCount = () => getTareasCount(true, "pospuestas");
+export const getTodasLasTareasPospuestasCount = () => getTareasCount(false, "pospuestas");
 
 export async function getHilosDisponibles(): Promise<TareaHilo[]> {
   const supabase = await createClient();

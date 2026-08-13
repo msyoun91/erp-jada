@@ -2,12 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock, ClipboardList, Pencil, Plus, Trash2 } from "lucide-react";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
-import { agregarTareasDesdePlantilla, desactivarHilo, obtenerHistorialHilo, obtenerPlantillas } from "../actions";
+import { PosponerModal } from "@/components/ui/PosponerModal";
+import {
+  agregarTareasDesdePlantilla,
+  desactivarHilo,
+  obtenerHistorialHilo,
+  obtenerPlantillas,
+  posponerHilo,
+  quitarPosposicionHilo,
+} from "../actions";
 import type { TareaConRelaciones, TareaHilo, TareaNota, TareaPlantilla } from "../types";
-import { HILO_ESTADO_BADGE, HILO_ESTADO_LABEL } from "./estado";
+import { formatAntiguedad, formatPosponer, formatRecurrencia, HILO_ESTADO_BADGE, HILO_ESTADO_LABEL } from "./estado";
+import { CrearHiloPanel } from "./CrearHiloPanel";
 import { CrearTareaPanel } from "./CrearTareaPanel";
 import { TareaNotasCard } from "./TareaNotasCard";
 
@@ -32,8 +41,12 @@ export function HiloHistorialPanel({
   const [notas, setNotas] = useState<TareaNota[]>([]);
   const [plantillas, setPlantillas] = useState<TareaPlantilla[]>([]);
   const [modalCrearTarea, setModalCrearTarea] = useState(false);
+  const [modalPlantilla, setModalPlantilla] = useState(false);
+  const [modalEditarHilo, setModalEditarHilo] = useState(false);
+  const [modalPosponer, setModalPosponer] = useState(false);
   const [confirmarEliminar, setConfirmarEliminar] = useState(false);
   const [eliminando, setEliminando] = useState(false);
+  const [verCompletadas, setVerCompletadas] = useState(false);
 
   async function cargar() {
     const data = await obtenerHistorialHilo(hiloId);
@@ -64,10 +77,38 @@ export function HiloHistorialPanel({
     onClose();
   }
 
+  async function onPosponer(fecha: string) {
+    const result = await posponerHilo({ hilo_id: hiloId, posponer_hasta: fecha });
+    setModalPosponer(false);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Hilo pospuesto");
+    cargar();
+  }
+
+  async function onQuitarPosposicion() {
+    const result = await quitarPosposicionHilo(hiloId);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    cargar();
+  }
+
+  const pendientes = tareas.filter((t) => t.estado !== "completada");
+  const completadas = tareas.filter((t) => t.estado === "completada");
+  const antiguedad = hilo ? formatAntiguedad(hilo) : null;
+
   return (
     <RightPanel
       title={hilo?.titulo ?? "Historial del hilo"}
-      subtitle={hilo ? HILO_ESTADO_LABEL[hilo.estado] : undefined}
+      subtitle={
+        hilo
+          ? [HILO_ESTADO_LABEL[hilo.estado], formatRecurrencia(hilo), formatPosponer(hilo)].filter(Boolean).join(" · ")
+          : undefined
+      }
       onClose={onClose}
     >
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
@@ -77,14 +118,45 @@ export function HiloHistorialPanel({
           <>
             <div className="mb-3 flex items-center justify-between">
               {hilo && (
-                <span className={`badge ${HILO_ESTADO_BADGE[hilo.estado]}`}>{HILO_ESTADO_LABEL[hilo.estado]}</span>
+                <div className="flex items-center gap-2">
+                  <span className={`badge ${HILO_ESTADO_BADGE[hilo.estado]}`}>{HILO_ESTADO_LABEL[hilo.estado]}</span>
+                  <span className={`badge ${antiguedad?.badge}`}>{antiguedad?.texto}</span>
+                </div>
               )}
               <div className="flex items-center gap-2">
                 {puedeCrear && (
-                  <button className="btn btn-secondary btn-sm" onClick={() => setModalCrearTarea(true)}>
-                    <Plus size={14} />
-                    Nueva tarea
-                  </button>
+                  <>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setModalCrearTarea(true)}>
+                      <Plus size={14} />
+                      Nueva tarea
+                    </button>
+                    {plantillas.length > 0 && (
+                      <button className="btn btn-secondary btn-sm" onClick={() => setModalPlantilla(true)}>
+                        <ClipboardList size={14} />
+                        Desde plantilla
+                      </button>
+                    )}
+                    <button
+                      className="text-text-tertiary hover:text-text-brand"
+                      onClick={() => setModalEditarHilo(true)}
+                      aria-label="Editar hilo"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    {hilo?.posponer_hasta ? (
+                      <button className="t-caption text-text-brand" onClick={onQuitarPosposicion}>
+                        Quitar posposición
+                      </button>
+                    ) : (
+                      <button
+                        className="text-text-tertiary hover:text-text-brand"
+                        onClick={() => setModalPosponer(true)}
+                        aria-label="Posponer hilo"
+                      >
+                        <Clock size={16} />
+                      </button>
+                    )}
+                  </>
                 )}
                 {tareas.length === 0 && (
                   <button
@@ -98,30 +170,49 @@ export function HiloHistorialPanel({
               </div>
             </div>
 
-            {puedeCrear && plantillas.length > 0 && (
-              <AgregarDesdePlantilla
-                hiloId={hiloId}
-                plantillas={plantillas}
-                usuarios={usuarios}
-                usuarioActualId={usuarioActualId}
-                puedeAsignar={puedeAsignar}
-                onAgregado={cargar}
-              />
-            )}
-
             {tareas.length === 0 ? (
               <div className="empty-state">Sin tareas en este hilo todavía.</div>
             ) : (
-              <div className="flex flex-col gap-3">
-                {tareas.map((tarea) => (
-                  <TareaNotasCard
-                    key={tarea.id}
-                    tarea={tarea}
-                    notas={notas.filter((n) => n.tarea_id === tarea.id)}
-                    onCambio={cargar}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="flex flex-col gap-3">
+                  {pendientes.map((tarea) => (
+                    <TareaNotasCard
+                      key={tarea.id}
+                      tarea={tarea}
+                      notas={notas.filter((n) => n.tarea_id === tarea.id)}
+                      onCambio={cargar}
+                    />
+                  ))}
+                  {pendientes.length === 0 && (
+                    <div className="empty-state">Sin tareas pendientes.</div>
+                  )}
+                </div>
+
+                {completadas.length > 0 && (
+                  <div className="mt-3">
+                    <button
+                      className="t-caption flex items-center gap-1 text-text-brand"
+                      onClick={() => setVerCompletadas((v) => !v)}
+                    >
+                      {verCompletadas ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      Tareas completadas ({completadas.length})
+                    </button>
+
+                    {verCompletadas && (
+                      <div className="mt-2 flex flex-col gap-3">
+                        {completadas.map((tarea) => (
+                          <TareaNotasCard
+                            key={tarea.id}
+                            tarea={tarea}
+                            notas={notas.filter((n) => n.tarea_id === tarea.id)}
+                            onCambio={cargar}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -141,6 +232,31 @@ export function HiloHistorialPanel({
         />
       )}
 
+      {modalEditarHilo && hilo && (
+        <CrearHiloPanel
+          hilo={hilo}
+          onClose={() => {
+            setModalEditarHilo(false);
+            cargar();
+          }}
+        />
+      )}
+
+      {modalPlantilla && (
+        <AgregarDesdePlantillaModal
+          hiloId={hiloId}
+          plantillas={plantillas}
+          usuarios={usuarios}
+          usuarioActualId={usuarioActualId}
+          puedeAsignar={puedeAsignar}
+          onAgregado={() => {
+            setModalPlantilla(false);
+            cargar();
+          }}
+          onClose={() => setModalPlantilla(false)}
+        />
+      )}
+
       {confirmarEliminar && (
         <ConfirmModal
           title="Eliminar hilo"
@@ -151,17 +267,22 @@ export function HiloHistorialPanel({
           onCancel={() => setConfirmarEliminar(false)}
         />
       )}
+
+      {modalPosponer && (
+        <PosponerModal title="Posponer hilo" onConfirm={onPosponer} onClose={() => setModalPosponer(false)} />
+      )}
     </RightPanel>
   );
 }
 
-function AgregarDesdePlantilla({
+function AgregarDesdePlantillaModal({
   hiloId,
   plantillas,
   usuarios,
   usuarioActualId,
   puedeAsignar,
   onAgregado,
+  onClose,
 }: {
   hiloId: string;
   plantillas: TareaPlantilla[];
@@ -169,6 +290,7 @@ function AgregarDesdePlantilla({
   usuarioActualId: string;
   puedeAsignar: boolean;
   onAgregado: () => void;
+  onClose: () => void;
 }) {
   const [plantillaId, setPlantillaId] = useState("");
   const [asignadoA, setAsignadoA] = useState(usuarioActualId);
@@ -189,35 +311,44 @@ function AgregarDesdePlantilla({
       return;
     }
     toast.success("Tareas agregadas");
-    setPlantillaId("");
     onAgregado();
   }
 
   return (
-    <div className="mb-4 flex flex-col gap-2 rounded-lg border border-dashed border-border-strong p-3">
-      <p className="t-label">Agregar desde plantilla</p>
-      <select className="input" value={plantillaId} onChange={(e) => setPlantillaId(e.target.value)}>
-        <option value="">Elegí una plantilla</option>
-        {plantillas.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.nombre} ({p.items.length})
-          </option>
-        ))}
-      </select>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(7,11,20,.55)] p-4">
+      <div className="w-full max-w-[400px] rounded-xl bg-bg-surface p-[30px] shadow-lg">
+        <h2 className="t-h3 mb-4">Agregar desde plantilla</h2>
 
-      {puedeAsignar && (
-        <select className="input" value={asignadoA} onChange={(e) => setAsignadoA(e.target.value)}>
-          {usuarios.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.id === usuarioActualId ? `${u.nombre} (vos)` : u.nombre}
-            </option>
-          ))}
-        </select>
-      )}
+        <div className="flex flex-col gap-3">
+          <select className="input" value={plantillaId} onChange={(e) => setPlantillaId(e.target.value)}>
+            <option value="">Elegí una plantilla</option>
+            {plantillas.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nombre} ({p.items.length})
+              </option>
+            ))}
+          </select>
 
-      <button className="btn btn-secondary btn-sm" onClick={onAgregar} disabled={!plantillaId || enviando}>
-        {enviando ? "Agregando..." : "Agregar tareas"}
-      </button>
+          {puedeAsignar && (
+            <select className="input" value={asignadoA} onChange={(e) => setAsignadoA(e.target.value)}>
+              {usuarios.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.id === usuarioActualId ? `${u.nombre} (vos)` : u.nombre}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        <div className="mt-5 flex justify-end gap-3">
+          <button className="btn btn-secondary" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="btn btn-primary" onClick={onAgregar} disabled={!plantillaId || enviando}>
+            {enviando ? "Agregando..." : "Agregar tareas"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

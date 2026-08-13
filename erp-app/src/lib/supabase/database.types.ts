@@ -72,6 +72,12 @@ export type Database = {
           fecha_vencimiento: string | null
           hilo_id: string | null
           id: string
+          posponer_hasta: string | null
+          recurrencia_activa: boolean
+          recurrencia_cada: number
+          recurrencia_intervalo: Database["public"]["Enums"]["recurrencia_intervalo"] | null
+          recurrencia_proxima: string | null
+          recurrencia_una_vez: boolean
           titulo: string
           updated_at: string
         }
@@ -85,6 +91,12 @@ export type Database = {
           fecha_vencimiento?: string | null
           hilo_id?: string | null
           id?: string
+          posponer_hasta?: string | null
+          recurrencia_activa?: boolean
+          recurrencia_cada?: number
+          recurrencia_intervalo?: Database["public"]["Enums"]["recurrencia_intervalo"] | null
+          recurrencia_proxima?: string | null
+          recurrencia_una_vez?: boolean
           titulo: string
           updated_at?: string
         }
@@ -98,6 +110,12 @@ export type Database = {
           fecha_vencimiento?: string | null
           hilo_id?: string | null
           id?: string
+          posponer_hasta?: string | null
+          recurrencia_activa?: boolean
+          recurrencia_cada?: number
+          recurrencia_intervalo?: Database["public"]["Enums"]["recurrencia_intervalo"] | null
+          recurrencia_proxima?: string | null
+          recurrencia_una_vez?: boolean
           titulo?: string
           updated_at?: string
         }
@@ -132,6 +150,12 @@ export type Database = {
           created_at: string
           estado: Database["public"]["Enums"]["estado_hilo"]
           id: string
+          posponer_hasta: string | null
+          recurrencia_activa: boolean
+          recurrencia_cada: number
+          recurrencia_intervalo: Database["public"]["Enums"]["recurrencia_intervalo"] | null
+          recurrencia_proxima: string | null
+          recurrencia_una_vez: boolean
           titulo: string
           updated_at: string
         }
@@ -141,6 +165,12 @@ export type Database = {
           created_at?: string
           estado?: Database["public"]["Enums"]["estado_hilo"]
           id?: string
+          posponer_hasta?: string | null
+          recurrencia_activa?: boolean
+          recurrencia_cada?: number
+          recurrencia_intervalo?: Database["public"]["Enums"]["recurrencia_intervalo"] | null
+          recurrencia_proxima?: string | null
+          recurrencia_una_vez?: boolean
           titulo: string
           updated_at?: string
         }
@@ -150,6 +180,12 @@ export type Database = {
           created_at?: string
           estado?: Database["public"]["Enums"]["estado_hilo"]
           id?: string
+          posponer_hasta?: string | null
+          recurrencia_activa?: boolean
+          recurrencia_cada?: number
+          recurrencia_intervalo?: Database["public"]["Enums"]["recurrencia_intervalo"] | null
+          recurrencia_proxima?: string | null
+          recurrencia_una_vez?: boolean
           titulo?: string
           updated_at?: string
         }
@@ -393,12 +429,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      avanzar_recurrencia: {
+        Args: { p_cada: number; p_fecha: string; p_intervalo: Database["public"]["Enums"]["recurrencia_intervalo"] }
+        Returns: string
+      }
+      generar_tareas_recurrentes: { Args: Record<PropertyKey, never>; Returns: undefined }
       sync_estado_hilo: { Args: { p_hilo_id: string }; Returns: undefined }
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
     }
     Enums: {
       estado_hilo: "abierto" | "cerrado"
       estado_tarea: "pendiente" | "en_progreso" | "completada"
+      recurrencia_intervalo: "dia" | "mes" | "anio"
       tipo_submodulo: "vista" | "funcion"
     }
     CompositeTypes: {
@@ -529,6 +571,7 @@ export const Constants = {
     Enums: {
       estado_hilo: ["abierto", "cerrado"],
       estado_tarea: ["pendiente", "en_progreso", "completada"],
+      recurrencia_intervalo: ["dia", "mes", "anio"],
       tipo_submodulo: ["vista", "funcion"],
     },
   },

@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { asociarTareaHilo, obtenerNotasTarea } from "../actions";
+import { actualizarRecurrenciaTarea, asociarTareaHilo, obtenerNotasTarea } from "../actions";
 import type { TareaConRelaciones, TareaHilo, TareaNota } from "../types";
 import { HiloBuscador } from "./HiloBuscador";
+import { RecurrenciaFields, type RecurrenciaValue } from "./RecurrenciaFields";
 import { TareaNotasCard } from "./TareaNotasCard";
 
 export function TareaDetallePanel({
@@ -21,6 +22,14 @@ export function TareaDetallePanel({
   const [notas, setNotas] = useState<TareaNota[]>([]);
   const [hiloId, setHiloId] = useState("");
   const [asociando, setAsociando] = useState(false);
+  const [recurrencia, setRecurrencia] = useState<RecurrenciaValue>({
+    recurrencia_activa: tarea.recurrencia_activa,
+    recurrencia_una_vez: tarea.recurrencia_una_vez,
+    recurrencia_intervalo: tarea.recurrencia_intervalo ?? "mes",
+    recurrencia_cada: tarea.recurrencia_cada,
+    recurrencia_proxima: tarea.recurrencia_proxima ?? "",
+  });
+  const [guardandoRecurrencia, setGuardandoRecurrencia] = useState(false);
 
   async function cargar() {
     setNotas(await obtenerNotasTarea(tarea.id));
@@ -47,6 +56,24 @@ export function TareaDetallePanel({
     onClose();
   }
 
+  async function onGuardarRecurrencia() {
+    if (recurrencia.recurrencia_activa && !recurrencia.recurrencia_proxima) {
+      toast.error("Elegí la próxima fecha de repetición");
+      return;
+    }
+
+    setGuardandoRecurrencia(true);
+    const result = await actualizarRecurrenciaTarea({ tarea_id: tarea.id, ...recurrencia });
+    setGuardandoRecurrencia(false);
+
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Recurrencia actualizada");
+    onClose();
+  }
+
   return (
     <RightPanel title={tarea.titulo} onClose={onClose}>
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
@@ -57,15 +84,28 @@ export function TareaDetallePanel({
             <TareaNotasCard tarea={tarea} notas={notas} onCambio={cargar} onEliminado={onClose} />
 
             {!tarea.hilo_id && (
-              <div className="mt-4 border-t border-border pt-4">
-                <label className="t-label mb-2 block">Asociar a un hilo</label>
-                <HiloBuscador hilos={hilos} value={hiloId} onChange={setHiloId} />
-                {hiloId && (
-                  <button className="btn btn-primary btn-sm mt-2" onClick={onAsociar} disabled={asociando}>
-                    {asociando ? "Asociando..." : "Asociar"}
+              <>
+                <div className="mt-4 border-t border-border pt-4">
+                  <RecurrenciaFields value={recurrencia} onChange={setRecurrencia} />
+                  <button
+                    className="btn btn-secondary btn-sm mt-3"
+                    onClick={onGuardarRecurrencia}
+                    disabled={guardandoRecurrencia}
+                  >
+                    {guardandoRecurrencia ? "Guardando..." : "Guardar recurrencia"}
                   </button>
-                )}
-              </div>
+                </div>
+
+                <div className="mt-4 border-t border-border pt-4">
+                  <label className="t-label mb-2 block">Asociar a un hilo</label>
+                  <HiloBuscador hilos={hilos} value={hiloId} onChange={setHiloId} />
+                  {hiloId && (
+                    <button className="btn btn-primary btn-sm mt-2" onClick={onAsociar} disabled={asociando}>
+                      {asociando ? "Asociando..." : "Asociar"}
+                    </button>
+                  )}
+                </div>
+              </>
             )}
           </>
         )}

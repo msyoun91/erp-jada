@@ -149,3 +149,48 @@ El botón "Eliminar tarea" usaba `confirm()` nativo — bloquea el renderer del 
 **Borrar hilo** (`desactivarHilo`): solo permitido si el hilo no tiene tareas activas (`count` antes del soft-delete) — evita el caso ambiguo de qué hacer con las tareas de un hilo no vacío. El botón de la UI solo aparece cuando `tareas.length === 0`, coincide exactamente con el guard del server. Sin esto, el hilo huérfano de las pruebas (`sql/009`) habría quedado sin forma de limpiarse desde la UI.
 
 **Crear tarea directo en el hilo**: `CrearTareaPanel` ahora acepta `hiloFijo?: {id, titulo}` — si viene seteado, oculta toda la sección de elegir/crear hilo (ya está fijo) y lo manda directo en el insert. Botón "Nueva tarea" nuevo en `HiloHistorialPanel`, gateado por `tareas_crear` (mismo permiso que crear cualquier tarea, no uno nuevo).
+
+---
+
+## Tareas: recurrencia reintroducida, plantilla en modal, hilo editable, completadas colapsables por hilo
+
+Revierte la entrada "Tareas: recurrencia eliminada..." de más arriba — pedido explícito del usuario. Config por día/mes/año en vez de diaria/semanal/mensual fija (`sql/010_recurrencia_hilos.sql`, ver `db_schema.md`).
+
+- **Recurrencia vive en `tareas_hilos`, no en `tareas`.** Config aplica al hilo entero (dispara todas sus tareas activas), no por tarea individual — coincide con el pedido ("recurrencia... configurarían la recurrencia de las tareas dentro de los hilos").
+- **`generar_tareas_recurrentes()` resetea, no clona.** Al llegar `recurrencia_proxima`, las tareas activas del hilo vuelven a `pendiente` y se agenda la próxima fecha — reusa el mismo hilo en vez de crear uno nuevo cada ciclo (mismo criterio que "hilos vacíos visibles": un hilo es una entidad persistente, no una plantilla que clona instancias). El trigger `sync_estado_hilo` (ya existente) reabre el hilo solo, sin lógica nueva.
+- **`CrearHiloPanel` ahora sirve para crear y editar** (`hilo?: TareaHilo | null`, mismo patrón que `PlantillaPanel`) — la config de recurrencia es propiedad del hilo, se edita una vez, no es una acción por-apertura del panel de historial. Botón de lápiz nuevo en `HiloHistorialPanel`.
+- **"Agregar desde plantilla" pasó de caja inline siempre visible a modal** (botón "Desde plantilla" junto a "Nueva tarea") — la caja ocupaba espacio permanente aunque no se usara y no se distinguía bien de crear una tarea suelta. Es pick+confirm corto, no un formulario largo, así que modal encaja con la regla ya escrita (panel para crear/editar, modal para interrupción corta) mejor que un tercer `RightPanel`.
+- **Overflow de tareas dentro de un hilo:** mismo patrón ya usado en `TareasView` a nivel global — completadas colapsadas detrás de un toggle, pendientes siempre visibles. Acá no hace falta carga perezosa aparte (ya viene todo en un solo `getHistorialHilo` por ser scope de un hilo, no la lista global) — el split es puramente client-side.
+
+**database.types.ts actualizado a mano** (columnas `recurrencia_*` + enum `recurrencia_intervalo` + función `generar_tareas_recurrentes`) porque `sql/010` todavía no corrió contra Supabase — regenerar con el CLI una vez corrida la migración, para no dejar el archivo desincronizado del schema real.
+
+---
+
+## Tareas: recurrencia también en tareas sueltas (no solo hilos)
+
+`sql/010` solo la dejó en `tareas_hilos` — al probar, tareas sin hilo no tenían forma de repetirse. `sql/011_recurrencia_tareas.sql` agrega las mismas 4 columnas a `tareas`.
+
+- **Dueño de la recurrencia es exclusivo: hilo o tarea suelta, nunca los dos.** Si una tarea con recurrencia propia se asocia a un hilo (`asociarTareaHilo`), se apaga `recurrencia_activa` en el mismo update — evita que quede una config fantasma que nunca se procesa (el cron de tareas sueltas filtra `hilo_id IS NULL`) y evita tener que decidir cuál de las dos manda si ambas quedaran activas.
+- **`avanzar_recurrencia()` extraída como función compartida** entre el loop de hilos y el de tareas sueltas dentro de `generar_tareas_recurrentes()` — mismo cálculo de próxima fecha (con catch-up), un solo lugar si cambia. Un solo `pg_cron.schedule(...)` (el de `sql/010`) cubre ambos loops.
+- **`RecurrenciaFields.tsx`** (componente controlado, `value`/`onChange`, sin RHF) compartido por `CrearHiloPanel`, `CrearTareaPanel` (solo visible si la tarea va a quedar suelta — sin hilo elegido/fijo) y `TareaDetallePanel` (edición, solo si `!tarea.hilo_id`) — evita repetir el mismo bloque de checkbox+cada+intervalo+fecha en 3 componentes con 3 estados de formulario distintos (uno usa RHF, dos no).
+
+---
+
+## Tareas: posponer (snooze), paginación, semáforos de vencimiento/antigüedad, recurrencia manual vs automática
+
+Ronda grande de UX tras probar recurrencia en browser. Cinco cambios independientes:
+
+- **Posponer sin cron** (`sql/012_posponer.sql`, columna `posponer_hasta date` en `tareas` y `tareas_hilos`): las queries de "abiertas" excluyen `posponer_hasta > hoy`, las de "pospuestas" exigen lo contrario — el ítem "despierta" solo porque deja de cumplir el filtro, sin job que lo reactive. Mismo espíritu que la recurrencia sin cron para reabrir hilos.
+- **Posponer es independiente por entidad.** Un hilo pospuesto oculta el hilo entero (sus tareas se recalculan del mismo array ya cargado, sin query nueva — mismo patrón que la partición `abierto`/`cerrado` que ya existía). Una tarea pospuesta se oculta individualmente, tenga o no `hilo_id` — a diferencia de la recurrencia (que sí es exclusiva hilo-o-tarea-suelta), acá no hay conflicto porque posponer no dispara ninguna lógica automática, es puro filtro de visibilidad.
+- **`PosponerModal`** (`components/ui/`) genérico: accesos rápidos 1/3/7 días + fecha custom, reusado por tarea y por hilo — mismo criterio que `RecurrenciaFields`, un componente controlado en vez de duplicar el formulario.
+- **Paginación** (`TAREAS_PAGE_SIZE = 20`, `components/ui/Pagination.tsx`): aplica a las tareas de los 3 buckets (abiertas/completadas/pospuestas) vía `.range()` + `count: "exact"`. **Los hilos como agrupador NO se paginan** — solo hay unos pocos hilos activos típicamente, lo que crece sin límite son las tareas. Efecto secundario aceptado: si un hilo tiene tareas en más de una página, el contador visible en su card refleja solo las tareas de la página cargada, no el total real del hilo.
+- **Semáforo de vencimiento** (`formatVencimiento` en `estado.ts`): color por % de plazo consumido (`creado_at` → `fecha_vencimiento`), no por fecha absoluta — verde >66.66% restante, amarillo >33.33%, rojo por debajo o vencido. Texto en días (no horas — pedido explícito, aunque `fecha_vencimiento` es `date` sin hora, así que horas no habrían sido precisas de todos modos).
+- **Semáforo de antigüedad de hilo** (`formatAntiguedad`): días desde `created_at`, verde ≤7d, amarillo ≤21d, rojo más — sin relación con vencimiento de tareas, es un indicador de hilo "viejo"/desatendido.
+- **Recurrencia: fecha manual vs automática ahora explícito.** `RecurrenciaFields` suma un checkbox "Elegir fecha de inicio manualmente" — off (default) recalcula `recurrencia_proxima` cada vez que cambian cada/intervalo y la muestra como texto fijo (no editable); on expone el date input. Este modo es puramente de UI (estado local del componente, no se persiste en DB) — al reabrir el formulario de edición siempre arranca en automático, aunque la fecha guardada haya sido elegida a mano la vez anterior. Se aceptó no agregar columna nueva solo para recordar el modo — es un detalle de formulario, no de datos.
+
+---
+
+## Tareas: recurrencia "una sola vez", vencimiento default a 1 día
+
+- **`recurrencia_una_vez`** (`sql/013_recurrencia_una_vez.sql`, columna en `tareas` y `tareas_hilos`): al activarla en `RecurrenciaFields`, se esconden los controles de cada/intervalo (no aplican, no hay ciclo siguiente) y solo se pide una fecha. `generar_tareas_recurrentes()` chequea el flag: si es `true`, al disparar apaga `recurrencia_activa` en vez de llamar `avanzar_recurrencia()` — no hace falta un cron ni lógica nueva aparte, reusa el mismo paso.
+- **Vencimiento de tarea nueva precargado en "hoy + 1 día"** — default de formulario (`defaultValues` de RHF en `CrearTareaPanel`), no de columna: `fecha_vencimiento` sigue nullable en DB, cualquier tarea creada por otro camino (plantilla, etc.) no lo tiene. Se eligió no forzarlo a nivel columna porque no toda tarea nace con vencimiento (ej: las agregadas desde plantilla no pasan por este formulario).

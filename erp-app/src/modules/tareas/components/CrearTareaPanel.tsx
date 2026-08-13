@@ -8,8 +8,16 @@ import { RightPanel } from "@/components/ui/RightPanel";
 import { crearHilo, crearTarea } from "../actions";
 import { crearTareaSchema, type CrearTareaForm, type TareaHilo } from "../types";
 import { HiloBuscador } from "./HiloBuscador";
+import { RecurrenciaFields, type RecurrenciaValue } from "./RecurrenciaFields";
 
 type ModoHilo = "ninguno" | "existente" | "nuevo";
+
+function manana(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 export function CrearTareaPanel({
   usuarioActualId,
@@ -31,6 +39,14 @@ export function CrearTareaPanel({
   const [hiloExistenteId, setHiloExistenteId] = useState("");
   const [hiloNuevoTitulo, setHiloNuevoTitulo] = useState("");
   const [hiloCreadoId, setHiloCreadoId] = useState<string | null>(null);
+  const [recurrencia, setRecurrencia] = useState<RecurrenciaValue>({
+    recurrencia_activa: false,
+    recurrencia_una_vez: false,
+    recurrencia_intervalo: "mes",
+    recurrencia_cada: 1,
+    recurrencia_proxima: "",
+  });
+  const tareaSerSuelta = !hiloFijo && modoHilo === "ninguno";
 
   const {
     register,
@@ -38,7 +54,7 @@ export function CrearTareaPanel({
     formState: { errors },
   } = useForm<CrearTareaForm>({
     resolver: zodResolver(crearTareaSchema),
-    defaultValues: { asignado_a: usuarioActualId },
+    defaultValues: { asignado_a: usuarioActualId, fecha_vencimiento: manana() },
   });
 
   async function onSubmit(data: CrearTareaForm) {
@@ -48,6 +64,10 @@ export function CrearTareaPanel({
     }
     if (!hiloFijo && modoHilo === "nuevo" && !hiloNuevoTitulo.trim()) {
       toast.error("El título del hilo es obligatorio");
+      return;
+    }
+    if (tareaSerSuelta && recurrencia.recurrencia_activa && !recurrencia.recurrencia_proxima) {
+      toast.error("Elegí la próxima fecha de repetición");
       return;
     }
 
@@ -71,7 +91,11 @@ export function CrearTareaPanel({
       }
     }
 
-    const result = await crearTarea({ ...data, hilo_id });
+    const result = await crearTarea({
+      ...data,
+      hilo_id,
+      ...(tareaSerSuelta ? recurrencia : {}),
+    });
     setEnviando(false);
 
     if (!result.success) {
@@ -167,6 +191,12 @@ export function CrearTareaPanel({
             </>
           )}
         </div>
+
+        {tareaSerSuelta && (
+          <div className="border-t border-border pt-4">
+            <RecurrenciaFields value={recurrencia} onChange={setRecurrencia} />
+          </div>
+        )}
       </form>
     </RightPanel>
   );

@@ -5,6 +5,7 @@ import {
   getHilosDisponibles,
   getTodasLasTareasAbiertas,
   getTodasLasTareasCompletadasCount,
+  getTodasLasTareasPospuestasCount,
   getUsuariosParaAsignar,
 } from "@/modules/tareas/queries";
 import { TareasView } from "@/modules/tareas/components/TareasView";
@@ -18,9 +19,10 @@ export default async function TodasLasTareasPage() {
   } = await supabase.auth.getUser();
   if (!user) notFound();
 
-  const [tareasAbiertas, totalCompletadas, hilos, usuarios, puedeCrear, puedeAsignar] = await Promise.all([
+  const [abiertas, totalCompletadas, totalPospuestas, hilos, usuarios, puedeCrear, puedeAsignar] = await Promise.all([
     getTodasLasTareasAbiertas(),
     getTodasLasTareasCompletadasCount(),
+    getTodasLasTareasPospuestasCount(),
     getHilosDisponibles(),
     getUsuariosParaAsignar(),
     puedeCrearTarea(),
@@ -29,8 +31,10 @@ export default async function TodasLasTareasPage() {
 
   return (
     <TareasView
-      tareasAbiertas={tareasAbiertas}
+      tareasAbiertas={abiertas.tareas}
+      totalAbiertas={abiertas.total}
       totalCompletadas={totalCompletadas}
+      totalPospuestas={totalPospuestas}
       hilos={hilos}
       usuarios={usuarios}
       usuarioActualId={user.id}
