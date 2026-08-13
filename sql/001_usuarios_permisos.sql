@@ -36,11 +36,11 @@ CREATE TRIGGER set_updated_at
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO usuarios (id, nombre, email)
+  INSERT INTO public.usuarios (id, nombre, email)
   VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'nombre', NEW.email), NEW.email);
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -52,7 +52,12 @@ ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
 -- ============================================================
 -- submodulos — catálogo (única unidad de autorización, sin roles)
 -- ============================================================
-CREATE TYPE tipo_submodulo AS ENUM ('seccion', 'funcion');
+DO $$
+BEGIN
+  CREATE TYPE tipo_submodulo AS ENUM ('seccion', 'funcion');
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS submodulos (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -113,11 +118,12 @@ RETURNS boolean
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
+SET search_path = public
 AS $$
   SELECT EXISTS (
     SELECT 1
-    FROM usuario_submodulos us
-    JOIN submodulos s ON s.id = us.submodulo_id
+    FROM public.usuario_submodulos us
+    JOIN public.submodulos s ON s.id = us.submodulo_id
     WHERE us.usuario_id = auth.uid()
       AND us.activo
       AND s.activo

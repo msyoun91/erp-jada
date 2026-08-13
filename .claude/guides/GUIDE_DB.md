@@ -80,6 +80,12 @@ CREATE POLICY "usuarios ven sus propios registros"
 
 Toda modificación de estado importante se registra con: quién, qué, cuándo y valor anterior.
 
+### Naming de tablas
+
+Prefijo con el nombre completo del módulo dueño: `{modulo}_{entidad}` (ej: `pedidos_items`, `cobranza_pagos`). No usar iniciales/abreviaturas — generan ambigüedad (`ped` → ¿pedidos? ¿pedidos_especiales?). Mismo criterio que `submodulos.codigo`.
+
+Excepción: tablas de infraestructura cross-módulo (`usuarios`, `submodulos`, `usuario_submodulos`) no llevan prefijo — no pertenecen a un módulo de negocio específico.
+
 ### Enums
 
 Los estados posibles se definen como enums en Supabase, no como strings libres:
