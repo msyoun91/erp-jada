@@ -1,0 +1,13 @@
+{
+  "name": "@erp/sync-contracts",
+  "version": "0.0.0",
+  "private": true,
+  "types": "./src/index.ts",
+  "main": "./src/index.ts",
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
