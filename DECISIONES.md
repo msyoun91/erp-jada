@@ -94,3 +94,58 @@ Modelo anterior (`sql/001`): `submodulos.tipo` era `seccion`/`funcion`, y una fu
 **Por qué:** decisión explícita de UX — crear/editar es una tarea de mayor foco/duración, panel lateral no bloquea el contexto de la lista detrás. Confirmación es una interrupción corta, modal sigue siendo más directo.
 
 **Excepción ya existente:** `PermisosModal.tsx` sigue modal — creado antes de esta regla. No migrar sin pedido explícito.
+
+---
+
+## `usuarios_select` RLS extendida para `tareas_asignar`
+
+Módulo tareas necesita listar usuarios activos para el picker de "asignar a" (`getUsuariosParaAsignar()`). La policy original (`sql/001`) solo dejaba ver la fila propia o con `usuarios_ver` — alguien con `tareas_asignar` pero sin `usuarios_ver` recibía solo su propia fila, rompiendo el picker en silencio (sin error, lista vacía).
+
+**Cambio (`sql/005_tareas_asignar_usuarios_rls.sql`):** se agregó `OR tiene_permiso('tareas_asignar')` a `usuarios_select`.
+
+**Por qué:** `usuarios` es tabla de infraestructura cross-módulo (sin prefijo, ver `GUIDE_DB.md`) — extender su policy de lectura para un caso de uso legítimo de otro módulo es reutilizar estructura existente (regla "elegir la que reutilice estructuras existentes") en vez de crear una función RPC nueva solo para esto. Si aparecen más módulos que necesiten listar usuarios para asignar, evaluar generalizar recién ahí — no antes.
+
+---
+
+## GRANT faltante para `service_role` en `usuarios`/`usuario_submodulos` (bug pre-existente)
+
+Al probar el módulo tareas en el navegador, guardar permisos en `PermisosModal` tiraba `permission denied for table usuario_submodulos` (42501). No es un bug de tareas — `sql/001` solo otorgó `GRANT ... TO authenticated`, nunca a `service_role`. El cliente admin de `modules/usuarios/actions.ts` (`asignarSubmodulos`, `desactivarUsuario`) usa `service_role` para saltear RLS, pero sin `GRANT` explícito el rol tampoco tiene el privilegio de tabla — mismo gotcha que "RLS no alcanza sin GRANT" de más arriba, pero para `service_role` en vez de `authenticated`. Confirmado pegándole directo a PostgREST con la key de servidor (403, mensaje exacto de Postgres con el `GRANT` faltante).
+
+**Fix:** `sql/006_grant_service_role_usuarios.sql`, corrido.
+
+**Por qué:** service_role en Supabase bypasea RLS pero sigue sujeto al modelo estándar de privilegios de Postgres — hay que otorgar GRANT explícito igual que a cualquier otro rol.
+
+---
+
+## Tareas: recurrencia eliminada, hilos con estado automático, plantillas, asociar/borrar
+
+Pedido explícito de simplificar y ampliar el módulo después de la primera prueba:
+
+- **Recurrencia de hilos eliminada** (columnas + enum + `generar_tareas_recurrentes()` + `pg_cron`, `sql/007`). No se usaba, no vale la complejidad todavía.
+- **`tareas_hilos.estado`** (`abierto`/`cerrado`) automático vía trigger — nunca manual. Se cierra solo cuando todas sus tareas activas están `completada`, se reabre en cualquier otro caso. Trigger `SECURITY DEFINER` porque quien completa una tarea puede no tener permiso de `UPDATE` sobre `tareas_hilos` directamente (RLS exige ser creador o `tareas_todas`) — es un campo derivado del sistema, no una edición autorizada por el usuario.
+- **Vista "completadas" sin permiso nuevo:** en vez de una vista/ruta gateada aparte, las tareas completadas (y los hilos enteramente completados) se agrupan en una sección colapsable al pie de "Mis Tareas"/"Todas las Tareas" — es un filtro de lo mismo, no una autorización distinta. Decisión mía, el usuario dejó abierto a sugerencia.
+- **Plantillas** (`tareas_plantillas`/`tareas_plantillas_items`, `sql/008`): recurso compartido del equipo (no por creador) gateado por la vista `tareas_plantillas` — sin función separada de lectura/escritura porque no hay evidencia todavía de necesitar dos audiencias distintas (a diferencia de usuarios, que sí las tiene). Usarlas para poblar un hilo solo requiere `tareas_crear`, no acceso a la vista de gestión.
+- **Asociar tarea suelta a hilo** y **borrar tarea** (soft-delete, ya existía `desactivarTarea()` sin botón) agregados a `TareaNotasCard`.
+
+**Bug encontrado y corregido:** `CrearTareaPanel` con modo "Crear hilo nuevo" creaba el hilo ANTES de crear la tarea; si el segundo paso fallaba (ej: fecha inválida, ver bug de abajo) y el usuario reintentaba el submit, se creaba un hilo nuevo de vuelta — mismo título duplicado, uno huérfano sin tareas. Fix: el `hilo_id` ya creado se guarda en estado del componente (`hiloCreadoId`) y un reintento lo reusa en vez de crear otro. Un duplicado real quedó en la base de una prueba anterior — limpieza puntual en `sql/009_fix_hilo_duplicado.sql` (dato, no esquema).
+
+---
+
+## Tareas: hilos vacíos visibles, completadas lazy, desasociar
+
+Segunda ronda de ajustes tras probar:
+
+- **Hilos sin tareas se listan igual.** El agrupamiento de `TareasView` dejó de derivarse solo de las tareas cargadas (`tareas.reduce` por `hilo_id`) y ahora arranca desde `hilos` (todos los activos, vía `getHilosDisponibles()`) y les cuelga las tareas que tengan — un hilo recién creado sin tareas aparece con badge "0". Como efecto lateral, esto también resuelve el `cerrado` derivado: ya no se calcula client-side (`every tarea === completada`) sino que se lee directo de `tareas_hilos.estado` (la columna real, mantenida por el trigger) — más simple y más correcto que derivarlo de una lista de tareas que ahora es parcial (ver punto siguiente).
+- **"Tareas completadas" carga perezosa.** Antes `getMisTareas()`/`getTodasLasTareas()` traían TODO (pendientes + completadas) en un solo request al abrir la página — con muchas tareas completadas históricas eso crece sin límite. Ahora el server solo manda `tareasAbiertas` (`estado <> 'completada'`) + un `count` liviano (`head: true`) de completadas. El listado completo de completadas solo se pide (`obtenerTareasCompletadas`, server action) la primera vez que el usuario expande esa sección, y se cachea en estado del cliente — no se vuelve a pedir al colapsar/expandir de nuevo.
+- **Desasociar tarea de un hilo** (`desasociarTareaHilo`, `hilo_id = null`) — botón "Quitar del hilo" en `TareaNotasCard`, solo visible si la tarea tiene `hilo_id`. Sin confirmación (a diferencia de eliminar) — es reversible con "Asociar" de nuevo, no hace falta el mismo peso que un soft-delete.
+- **`HiloBuscador` no lista nada hasta que se escribe.** Con pocos hilos mostrar todos de entrada no molestaba, pero no era el comportamiento pedido — ahora el resultado solo aparece con `busqueda.trim() !== ""`.
+
+---
+
+## `ConfirmModal` compartido, borrar hilo, crear tarea dentro del hilo
+
+El botón "Eliminar tarea" usaba `confirm()` nativo — bloquea el renderer del browser (lo pisó la automatización de Chrome mid-prueba). Se creó `components/ui/ConfirmModal.tsx` y se reemplazó en los 3 lugares que usaban `confirm()`: `TareaNotasCard` (eliminar tarea), `PlantillasView` (desactivar plantilla) y `UsuariosView` (desactivar usuario) — no solo en tareas, para no dejar el resto del sistema con dos patrones de confirmación distintos.
+
+**Borrar hilo** (`desactivarHilo`): solo permitido si el hilo no tiene tareas activas (`count` antes del soft-delete) — evita el caso ambiguo de qué hacer con las tareas de un hilo no vacío. El botón de la UI solo aparece cuando `tareas.length === 0`, coincide exactamente con el guard del server. Sin esto, el hilo huérfano de las pruebas (`sql/009`) habría quedado sin forma de limpiarse desde la UI.
+
+**Crear tarea directo en el hilo**: `CrearTareaPanel` ahora acepta `hiloFijo?: {id, titulo}` — si viene seteado, oculta toda la sección de elegir/crear hilo (ya está fijo) y lo manda directo en el insert. Botón "Nueva tarea" nuevo en `HiloHistorialPanel`, gateado por `tareas_crear` (mismo permiso que crear cualquier tarea, no uno nuevo).

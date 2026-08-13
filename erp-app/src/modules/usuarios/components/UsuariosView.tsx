@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { UserPlus, ShieldCheck } from "lucide-react";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { desactivarUsuario } from "../actions";
 import type { Submodulo, Usuario } from "../types";
 import { CrearUsuarioModal } from "./CrearUsuarioModal";
@@ -21,11 +22,13 @@ export function UsuariosView({
 }) {
   const [modalCrear, setModalCrear] = useState(false);
   const [usuarioPermisos, setUsuarioPermisos] = useState<Usuario | null>(null);
+  const [usuarioDesactivar, setUsuarioDesactivar] = useState<Usuario | null>(null);
 
-  async function onDesactivar(usuario: Usuario) {
-    if (!confirm(`¿Desactivar a ${usuario.nombre}?`)) return;
+  async function onDesactivar() {
+    if (!usuarioDesactivar) return;
+    const result = await desactivarUsuario(usuarioDesactivar.id);
+    setUsuarioDesactivar(null);
 
-    const result = await desactivarUsuario(usuario.id);
     if (!result.success) {
       toast.error(result.error);
       return;
@@ -80,7 +83,7 @@ export function UsuariosView({
                     {usuario.activo && (
                       <button
                         className="btn btn-ghost btn-sm text-error"
-                        onClick={() => onDesactivar(usuario)}
+                        onClick={() => setUsuarioDesactivar(usuario)}
                       >
                         Desactivar
                       </button>
@@ -102,6 +105,17 @@ export function UsuariosView({
           submodulos={submodulos}
           asignaciones={asignaciones}
           onClose={() => setUsuarioPermisos(null)}
+        />
+      )}
+
+      {usuarioDesactivar && (
+        <ConfirmModal
+          title="Desactivar usuario"
+          message={`¿Desactivar a ${usuarioDesactivar.nombre}?`}
+          confirmLabel="Desactivar"
+          danger
+          onConfirm={onDesactivar}
+          onCancel={() => setUsuarioDesactivar(null)}
         />
       )}
     </div>
