@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
+import { aISO, desdeISO, hoyISO } from "@/lib/utils";
 import { crearHilo, crearTarea } from "../actions";
 import { crearTareaSchema, type CrearTareaForm, type TareaHilo } from "../types";
 import { HiloBuscador } from "./HiloBuscador";
@@ -13,10 +14,9 @@ import { RecurrenciaFields, type RecurrenciaValue } from "./RecurrenciaFields";
 type ModoHilo = "ninguno" | "existente" | "nuevo";
 
 function manana(): string {
-  const d = new Date();
+  const d = desdeISO(hoyISO());
   d.setDate(d.getDate() + 1);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return aISO(d);
 }
 
 export function CrearTareaPanel({
@@ -152,7 +152,7 @@ export function CrearTareaPanel({
 
         <div>
           <label className="t-label mb-1 block">Vencimiento</label>
-          <input type="date" className="input" {...register("fecha_vencimiento")} />
+          <input type="date" className="input" min={hoyISO()} {...register("fecha_vencimiento")} />
         </div>
 
         <div className="border-t border-border pt-4">

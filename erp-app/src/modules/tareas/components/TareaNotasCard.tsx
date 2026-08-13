@@ -42,7 +42,7 @@ export function TareaNotasCard({
   }
 
   async function onAgregarNota() {
-    if (!nota.trim()) return;
+    if (!nota.trim() || enviando) return;
     setEnviando(true);
     const result = await agregarNota({ tarea_id: tarea.id, nota });
     setEnviando(false);
@@ -101,6 +101,7 @@ export function TareaNotasCard({
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="t-body-m font-medium text-text-primary">{tarea.titulo}</p>
+          {tarea.descripcion && <p className="t-caption whitespace-pre-line">{tarea.descripcion}</p>}
           <p className="t-caption">
             {tarea.asignado_a_nombre}
             {tarea.hilo_id && (
@@ -169,10 +170,12 @@ export function TareaNotasCard({
           className="input py-1 text-[13px]"
           placeholder="Agregar nota..."
           value={nota}
+          disabled={enviando}
+          aria-label="Agregar nota"
           onChange={(e) => setNota(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && onAgregarNota()}
         />
-        <button className="btn btn-secondary btn-sm" onClick={onAgregarNota} disabled={enviando}>
+        <button className="btn btn-secondary btn-sm" onClick={onAgregarNota} disabled={enviando || !nota.trim()}>
           Agregar
         </button>
       </div>

@@ -114,6 +114,23 @@ Agrupador manual de tareas relacionadas. Puede crearse independiente o al vuelo 
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
+## tareas_eventos
+
+Log append-only de cambios de estado (`sql/014_tareas_eventos.sql`) — base de la vista Auditoría. Existe porque el dato no era derivable: `tareas.estado` es el valor actual y `generar_tareas_recurrentes()` lo pisa a `pendiente` cada ciclo, así que las veces que una tarea recurrente se completó no dejaban rastro.
+
+**Sin columna `activo`** — excepción explícita a la regla "nunca DELETE, siempre `activo`", registrada en `DECISIONES.md`. **Append-only por permisos**: `GRANT SELECT` a `authenticated` y nada más; el INSERT lo hace solo el trigger `log_evento_tarea_trigger` (`SECURITY DEFINER`, `AFTER UPDATE OF estado ... WHEN (OLD.estado IS DISTINCT FROM NEW.estado)`).
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| tarea_id | uuid FK → tareas | |
+| usuario_id | uuid FK → usuarios, nullable | NULL = sistema: el cron de recurrencia corre `SECURITY DEFINER`, sin `auth.uid()` |
+| estado_anterior | enum estado_tarea, nullable | |
+| estado_nuevo | enum estado_tarea | |
+| created_at | timestamptz | la vista agrupa por día en zona AR: `(created_at AT TIME ZONE 'America/Argentina/Buenos_Aires')::date` |
+
+Índices: `(created_at DESC)`, `(usuario_id, created_at DESC)`, `(tarea_id)`. RLS `SELECT` exige `tiene_permiso('tareas_auditoria')`.
+
 ## tareas_notas
 
 Historial de notas por tarea — se lista completo en el panel de historial del hilo (`RightPanel`), sin abrir tarea por tarea.

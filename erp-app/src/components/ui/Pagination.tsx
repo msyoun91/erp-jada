@@ -6,11 +6,13 @@ export function Pagination({
   page,
   pageSize,
   total,
+  cargando,
   onPageChange,
 }: {
   page: number;
   pageSize: number;
   total: number;
+  cargando?: boolean;
   onPageChange: (page: number) => void;
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -22,19 +24,19 @@ export function Pagination({
         type="button"
         className="btn btn-secondary btn-sm"
         onClick={() => onPageChange(page - 1)}
-        disabled={page === 0}
+        disabled={page === 0 || cargando}
         aria-label="Página anterior"
       >
         <ChevronLeft size={14} />
       </button>
       <span className="t-caption">
-        Página {page + 1} de {totalPages}
+        {cargando ? "Cargando..." : `Página ${page + 1} de ${totalPages}`}
       </span>
       <button
         type="button"
         className="btn btn-secondary btn-sm"
         onClick={() => onPageChange(page + 1)}
-        disabled={page >= totalPages - 1}
+        disabled={page >= totalPages - 1 || cargando}
         aria-label="Página siguiente"
       >
         <ChevronRight size={14} />

@@ -16,6 +16,10 @@ export function puedeAsignarTarea() {
   return tienePermiso("tareas_asignar");
 }
 
+export function puedeVerAuditoria() {
+  return tienePermiso("tareas_auditoria");
+}
+
 export function puedeVerPlantillas() {
   return tienePermiso("tareas_plantillas");
 }

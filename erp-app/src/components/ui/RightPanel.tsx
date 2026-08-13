@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { X } from "lucide-react";
 
 export function RightPanel({
@@ -15,11 +16,24 @@ export function RightPanel({
   footer?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-[rgba(7,11,20,.55)]" onClick={onClose} />
 
-      <div className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-bg-surface shadow-lg">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-bg-surface shadow-lg"
+      >
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
           <div>
             <h2 className="t-h3">{title}</h2>

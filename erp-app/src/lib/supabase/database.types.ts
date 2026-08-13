@@ -199,6 +199,48 @@ export type Database = {
           },
         ]
       }
+      tareas_eventos: {
+        Row: {
+          created_at: string
+          estado_anterior: Database["public"]["Enums"]["estado_tarea"] | null
+          estado_nuevo: Database["public"]["Enums"]["estado_tarea"]
+          id: string
+          tarea_id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          estado_anterior?: Database["public"]["Enums"]["estado_tarea"] | null
+          estado_nuevo: Database["public"]["Enums"]["estado_tarea"]
+          id?: string
+          tarea_id: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          estado_anterior?: Database["public"]["Enums"]["estado_tarea"] | null
+          estado_nuevo?: Database["public"]["Enums"]["estado_tarea"]
+          id?: string
+          tarea_id?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_eventos_tarea_id_fkey"
+            columns: ["tarea_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_eventos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tareas_notas: {
         Row: {
           activo: boolean

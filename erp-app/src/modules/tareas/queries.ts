@@ -1,5 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
-import { TAREAS_PAGE_SIZE, type ModoTareas, type Tarea, type TareaConRelaciones, type TareaHilo, type TareaNota, type TareaPlantilla } from "./types";
+import { diaISO, hoyISO, sumarDias } from "@/lib/utils";
+import {
+  TAREAS_PAGE_SIZE,
+  type DiaAuditoria,
+  type EstadoTarea,
+  type FiltrosAuditoria,
+  type FiltrosTareas,
+  type ModoTareas,
+  type Tarea,
+  type TareaConRelaciones,
+  type TareaEvento,
+  type TareaHilo,
+  type TareaNota,
+  type TareaPlantilla,
+} from "./types";
 
 const SELECT_HILO =
   "id, titulo, estado, creado_por, activo, created_at, recurrencia_activa, recurrencia_una_vez, recurrencia_intervalo, recurrencia_cada, recurrencia_proxima, posponer_hasta";
@@ -49,18 +63,22 @@ async function getUserId(supabase: Awaited<ReturnType<typeof createClient>>) {
   return user?.id ?? null;
 }
 
-function hoyISO() {
-  return new Date().toISOString().slice(0, 10);
+// PostgREST parsea `or=(...)` con comas y paréntesis: si el texto del usuario
+// los trae, rompe la query. Se van, no se escapan — son ruido en una búsqueda.
+function textoBusqueda(texto: string | undefined): string {
+  return (texto ?? "").replace(/[,()"\\%*]/g, " ").trim();
 }
 
 async function getTareasFiltradas({
   soloPropias,
   modo,
   page,
+  filtros,
 }: {
   soloPropias: boolean;
   modo: ModoTareas;
   page: number;
+  filtros?: FiltrosTareas;
 }): Promise<{ tareas: TareaConRelaciones[]; total: number }> {
   const supabase = await createClient();
 
@@ -82,6 +100,11 @@ async function getTareasFiltradas({
     query = query.or(`asignado_a.eq.${userId},creado_por.eq.${userId}`);
   }
 
+  if (filtros?.asignado_a) query = query.eq("asignado_a", filtros.asignado_a);
+
+  const texto = textoBusqueda(filtros?.texto);
+  if (texto) query = query.or(`titulo.ilike.%${texto}%,descripcion.ilike.%${texto}%`);
+
   const from = page * TAREAS_PAGE_SIZE;
   const orderBy = modo === "pospuestas" ? "posponer_hasta" : "created_at";
   const ascending = modo === "pospuestas";
@@ -94,18 +117,19 @@ async function getTareasFiltradas({
   return { tareas: (data as unknown as TareaRow[]).map(mapTareaConRelaciones), total: count ?? 0 };
 }
 
-export const getMisTareasAbiertas = (page = 0) => getTareasFiltradas({ soloPropias: true, modo: "abiertas", page });
-export const getMisTareasCompletadas = (page = 0) =>
-  getTareasFiltradas({ soloPropias: true, modo: "completadas", page });
-export const getMisTareasPospuestas = (page = 0) =>
-  getTareasFiltradas({ soloPropias: true, modo: "pospuestas", page });
+export const getMisTareasAbiertas = (page = 0, filtros?: FiltrosTareas) =>
+  getTareasFiltradas({ soloPropias: true, modo: "abiertas", page, filtros });
+export const getMisTareasCompletadas = (page = 0, filtros?: FiltrosTareas) =>
+  getTareasFiltradas({ soloPropias: true, modo: "completadas", page, filtros });
+export const getMisTareasPospuestas = (page = 0, filtros?: FiltrosTareas) =>
+  getTareasFiltradas({ soloPropias: true, modo: "pospuestas", page, filtros });
 
-export const getTodasLasTareasAbiertas = (page = 0) =>
-  getTareasFiltradas({ soloPropias: false, modo: "abiertas", page });
-export const getTodasLasTareasCompletadas = (page = 0) =>
-  getTareasFiltradas({ soloPropias: false, modo: "completadas", page });
-export const getTodasLasTareasPospuestas = (page = 0) =>
-  getTareasFiltradas({ soloPropias: false, modo: "pospuestas", page });
+export const getTodasLasTareasAbiertas = (page = 0, filtros?: FiltrosTareas) =>
+  getTareasFiltradas({ soloPropias: false, modo: "abiertas", page, filtros });
+export const getTodasLasTareasCompletadas = (page = 0, filtros?: FiltrosTareas) =>
+  getTareasFiltradas({ soloPropias: false, modo: "completadas", page, filtros });
+export const getTodasLasTareasPospuestas = (page = 0, filtros?: FiltrosTareas) =>
+  getTareasFiltradas({ soloPropias: false, modo: "pospuestas", page, filtros });
 
 async function getTareasCount(soloPropias: boolean, modo: Exclude<ModoTareas, "abiertas">): Promise<number> {
   const supabase = await createClient();
@@ -207,6 +231,71 @@ export async function getUsuariosParaAsignar(): Promise<{ id: string; nombre: st
 
   if (error) throw error;
   return data;
+}
+
+type EventoRow = {
+  id: string;
+  tarea_id: string;
+  estado_anterior: EstadoTarea | null;
+  estado_nuevo: EstadoTarea;
+  created_at: string;
+  tarea: { titulo: string; hilo: { titulo: string } | null } | null;
+  usuario: { nombre: string } | null;
+};
+
+// Argentina no usa horario de verano desde 2009, así que el offset fijo -03:00
+// alcanza para convertir el día elegido en el filtro al instante que guarda
+// `created_at` (timestamptz). PostgREST no puede hacer `AT TIME ZONE` en un
+// filtro; hacerlo con una función RPC sería más maquinaria por el mismo
+// resultado mientras el offset no cambie.
+function inicioDelDiaAR(dia: string): string {
+  return `${dia}T00:00:00-03:00`;
+}
+
+export async function getAuditoria(
+  filtros: FiltrosAuditoria,
+  page = 0
+): Promise<{ dias: DiaAuditoria[]; total: number }> {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("tareas_eventos")
+    .select(
+      "id, tarea_id, estado_anterior, estado_nuevo, created_at, tarea:tareas(titulo, hilo:tareas_hilos(titulo)), usuario:usuarios(nombre)",
+      { count: "exact" }
+    )
+    .eq("estado_nuevo", "completada");
+
+  if (filtros.usuario_id) query = query.eq("usuario_id", filtros.usuario_id);
+  if (filtros.desde) query = query.gte("created_at", inicioDelDiaAR(filtros.desde));
+  if (filtros.hasta) query = query.lt("created_at", inicioDelDiaAR(sumarDias(filtros.hasta, 1)));
+
+  const from = page * TAREAS_PAGE_SIZE;
+  const { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .range(from, from + TAREAS_PAGE_SIZE - 1);
+
+  if (error) throw error;
+
+  const dias: DiaAuditoria[] = [];
+  for (const row of data as unknown as EventoRow[]) {
+    const dia = diaISO(new Date(row.created_at));
+    const evento: TareaEvento = {
+      id: row.id,
+      tarea_id: row.tarea_id,
+      tarea_titulo: row.tarea?.titulo ?? "",
+      hilo_titulo: row.tarea?.hilo?.titulo ?? null,
+      usuario_nombre: row.usuario?.nombre ?? null,
+      estado_anterior: row.estado_anterior,
+      estado_nuevo: row.estado_nuevo,
+      created_at: row.created_at,
+    };
+    const ultimo = dias.at(-1);
+    if (ultimo?.dia === dia) ultimo.eventos.push(evento);
+    else dias.push({ dia, eventos: [evento] });
+  }
+
+  return { dias, total: count ?? 0 };
 }
 
 export async function getPlantillas(): Promise<TareaPlantilla[]> {

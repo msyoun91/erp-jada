@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ChevronDown, ChevronRight, Clock, ClipboardList, Pencil, Plus, Trash2 } from "lucide-react";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Modal } from "@/components/ui/Modal";
 import { PosponerModal } from "@/components/ui/PosponerModal";
 import {
   agregarTareasDesdePlantilla,
@@ -104,11 +105,7 @@ export function HiloHistorialPanel({
   return (
     <RightPanel
       title={hilo?.titulo ?? "Historial del hilo"}
-      subtitle={
-        hilo
-          ? [HILO_ESTADO_LABEL[hilo.estado], formatRecurrencia(hilo), formatPosponer(hilo)].filter(Boolean).join(" · ")
-          : undefined
-      }
+      subtitle={hilo ? [formatRecurrencia(hilo), formatPosponer(hilo)].filter(Boolean).join(" · ") : undefined}
       onClose={onClose}
     >
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
@@ -156,16 +153,16 @@ export function HiloHistorialPanel({
                         <Clock size={16} />
                       </button>
                     )}
+                    {tareas.length === 0 && (
+                      <button
+                        className="text-text-tertiary hover:text-error"
+                        onClick={() => setConfirmarEliminar(true)}
+                        aria-label="Eliminar hilo"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </>
-                )}
-                {tareas.length === 0 && (
-                  <button
-                    className="text-text-tertiary hover:text-error"
-                    onClick={() => setConfirmarEliminar(true)}
-                    aria-label="Eliminar hilo"
-                  >
-                    <Trash2 size={16} />
-                  </button>
                 )}
               </div>
             </div>
@@ -315,12 +312,26 @@ function AgregarDesdePlantillaModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(7,11,20,.55)] p-4">
-      <div className="w-full max-w-[400px] rounded-xl bg-bg-surface p-[30px] shadow-lg">
-        <h2 className="t-h3 mb-4">Agregar desde plantilla</h2>
-
-        <div className="flex flex-col gap-3">
-          <select className="input" value={plantillaId} onChange={(e) => setPlantillaId(e.target.value)}>
+    <Modal
+      title="Agregar desde plantilla"
+      onClose={onClose}
+      footer={
+        <>
+          <button className="btn btn-secondary" onClick={onClose}>
+            Cancelar
+          </button>
+          <button className="btn btn-primary" onClick={onAgregar} disabled={!plantillaId || enviando}>
+            {enviando ? "Agregando..." : "Agregar tareas"}
+          </button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-3">
+        <div>
+          <label className="t-label mb-1 block" htmlFor="plantilla">
+            Plantilla
+          </label>
+          <select id="plantilla" className="input" value={plantillaId} onChange={(e) => setPlantillaId(e.target.value)}>
             <option value="">Elegí una plantilla</option>
             {plantillas.map((p) => (
               <option key={p.id} value={p.id}>
@@ -328,27 +339,28 @@ function AgregarDesdePlantillaModal({
               </option>
             ))}
           </select>
+        </div>
 
-          {puedeAsignar && (
-            <select className="input" value={asignadoA} onChange={(e) => setAsignadoA(e.target.value)}>
+        {puedeAsignar && (
+          <div>
+            <label className="t-label mb-1 block" htmlFor="plantilla-asignado">
+              Asignar a
+            </label>
+            <select
+              id="plantilla-asignado"
+              className="input"
+              value={asignadoA}
+              onChange={(e) => setAsignadoA(e.target.value)}
+            >
               {usuarios.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.id === usuarioActualId ? `${u.nombre} (vos)` : u.nombre}
                 </option>
               ))}
             </select>
-          )}
-        </div>
-
-        <div className="mt-5 flex justify-end gap-3">
-          <button className="btn btn-secondary" onClick={onClose}>
-            Cancelar
-          </button>
-          <button className="btn btn-primary" onClick={onAgregar} disabled={!plantillaId || enviando}>
-            {enviando ? "Agregando..." : "Agregar tareas"}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
-    </div>
+    </Modal>
   );
 }

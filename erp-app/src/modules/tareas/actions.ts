@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { puedeAsignarTarea, puedeCrearTarea, puedeVerPlantillas } from "./permissions";
+import { puedeAsignarTarea, puedeCrearTarea, puedeVerAuditoria, puedeVerPlantillas } from "./permissions";
 import {
+  getAuditoria,
   getHistorialHilo,
   getMisTareasAbiertas,
   getMisTareasCompletadas,
@@ -23,6 +24,8 @@ import {
   crearHiloSchema,
   crearPlantillaSchema,
   crearTareaSchema,
+  filtrosAuditoriaSchema,
+  filtrosTareasSchema,
   posponerHiloSchema,
   posponerTareaSchema,
   type ActualizarEstadoForm,
@@ -33,6 +36,8 @@ import {
   type CrearHiloForm,
   type CrearPlantillaForm,
   type CrearTareaForm,
+  type FiltrosAuditoria,
+  type FiltrosTareas,
   type ModoTareas,
   type PosponerHiloForm,
   type PosponerTareaForm,
@@ -220,14 +225,20 @@ export async function desasociarTareaHilo(tareaId: string) {
   return { success: true as const };
 }
 
-export async function obtenerTareas(vista: "mis" | "todas", modo: ModoTareas, page: number) {
+export async function obtenerTareas(
+  vista: "mis" | "todas",
+  modo: ModoTareas,
+  page: number,
+  filtros?: FiltrosTareas
+) {
   const porModo = {
     abiertas: { mis: getMisTareasAbiertas, todas: getTodasLasTareasAbiertas },
     completadas: { mis: getMisTareasCompletadas, todas: getTodasLasTareasCompletadas },
     pospuestas: { mis: getMisTareasPospuestas, todas: getTodasLasTareasPospuestas },
   } as const;
 
-  return porModo[modo][vista](page);
+  const parsed = filtrosTareasSchema.safeParse(filtros ?? {});
+  return porModo[modo][vista](page, parsed.success ? parsed.data : {});
 }
 
 export async function posponerTarea(input: PosponerTareaForm) {
@@ -402,6 +413,13 @@ export async function desactivarPlantilla(plantillaId: string) {
 
   revalidatePath("/tareas/plantillas");
   return { success: true as const };
+}
+
+export async function obtenerAuditoria(filtros: FiltrosAuditoria, page: number) {
+  if (!(await puedeVerAuditoria())) return { dias: [], total: 0 };
+
+  const parsed = filtrosAuditoriaSchema.safeParse(filtros);
+  return getAuditoria(parsed.success ? parsed.data : {}, page);
 }
 
 export async function obtenerPlantillas() {

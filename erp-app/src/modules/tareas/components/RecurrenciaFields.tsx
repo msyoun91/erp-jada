@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { aISO, desdeISO, formatFecha, hoyISO } from "@/lib/utils";
 import type { RecurrenciaIntervalo } from "../types";
 
 export type RecurrenciaValue = {
@@ -12,19 +13,11 @@ export type RecurrenciaValue = {
 };
 
 function calcularProxima(intervalo: RecurrenciaIntervalo, cada: number): string {
-  const hoy = new Date();
-  const d = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  const d = desdeISO(hoyISO());
   if (intervalo === "dia") d.setDate(d.getDate() + cada);
   else if (intervalo === "mes") d.setMonth(d.getMonth() + cada);
   else d.setFullYear(d.getFullYear() + cada);
-
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function formatFecha(fecha: string): string {
-  if (!fecha) return "";
-  return new Date(fecha + "T00:00:00").toLocaleDateString("es-AR");
+  return aISO(d);
 }
 
 export function RecurrenciaFields({
@@ -78,6 +71,7 @@ export function RecurrenciaFields({
               <input
                 type="date"
                 className="input"
+                min={hoyISO()}
                 value={value.recurrencia_proxima}
                 onChange={(e) => onChange({ ...value, recurrencia_proxima: e.target.value })}
               />
@@ -135,6 +129,7 @@ export function RecurrenciaFields({
                   <input
                     type="date"
                     className="input mt-2"
+                    min={hoyISO()}
                     value={value.recurrencia_proxima}
                     onChange={(e) => onChange({ ...value, recurrencia_proxima: e.target.value })}
                   />

@@ -3,6 +3,13 @@ import { z } from "zod";
 export const TAREAS_PAGE_SIZE = 20;
 export type ModoTareas = "abiertas" | "completadas" | "pospuestas";
 
+export const filtrosTareasSchema = z.object({
+  texto: z.string().trim().max(100).optional(),
+  asignado_a: z.string().uuid().optional(),
+});
+
+export type FiltrosTareas = z.infer<typeof filtrosTareasSchema>;
+
 export const recurrenciaIntervaloEnum = z.enum(["dia", "mes", "anio"]);
 export type RecurrenciaIntervalo = z.infer<typeof recurrenciaIntervaloEnum>;
 
@@ -154,6 +161,30 @@ export type TareaHilo = {
   recurrencia_cada: number;
   recurrencia_proxima: string | null;
   posponer_hasta: string | null;
+};
+
+export const filtrosAuditoriaSchema = z.object({
+  usuario_id: z.string().uuid().optional(),
+  desde: z.string().optional(),
+  hasta: z.string().optional(),
+});
+
+export type FiltrosAuditoria = z.infer<typeof filtrosAuditoriaSchema>;
+
+export type TareaEvento = {
+  id: string;
+  tarea_id: string;
+  tarea_titulo: string;
+  hilo_titulo: string | null;
+  usuario_nombre: string | null;
+  estado_anterior: EstadoTarea | null;
+  estado_nuevo: EstadoTarea;
+  created_at: string;
+};
+
+export type DiaAuditoria = {
+  dia: string;
+  eventos: TareaEvento[];
 };
 
 export type TareaNota = {

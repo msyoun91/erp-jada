@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { aISO, desdeISO, hoyISO } from "@/lib/utils";
+import { Modal } from "./Modal";
 
-function calcularFecha(dias: number): string {
-  const d = new Date();
+function enDias(dias: number): string {
+  const d = desdeISO(hoyISO());
   d.setDate(d.getDate() + dias);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return aISO(d);
 }
 
 export function PosponerModal({
@@ -20,6 +21,7 @@ export function PosponerModal({
 }) {
   const [fecha, setFecha] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const manana = enDias(1);
 
   async function confirmar(f: string) {
     setEnviando(true);
@@ -28,43 +30,52 @@ export function PosponerModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(7,11,20,.55)] p-4">
-      <div className="w-full max-w-[400px] rounded-xl bg-bg-surface p-[30px] shadow-lg">
-        <h2 className="t-h3 mb-4">{title}</h2>
-
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="btn btn-secondary btn-sm" disabled={enviando} onClick={() => confirmar(calcularFecha(1))}>
-            1 día
+    <Modal
+      title={title}
+      onClose={onClose}
+      footer={
+        <button type="button" className="btn btn-secondary" onClick={onClose} disabled={enviando}>
+          Cancelar
+        </button>
+      }
+    >
+      <div className="flex flex-wrap gap-2">
+        {[1, 3, 7].map((dias) => (
+          <button
+            key={dias}
+            type="button"
+            className="btn btn-secondary btn-sm"
+            disabled={enviando}
+            onClick={() => confirmar(enDias(dias))}
+          >
+            {dias} día{dias === 1 ? "" : "s"}
           </button>
-          <button type="button" className="btn btn-secondary btn-sm" disabled={enviando} onClick={() => confirmar(calcularFecha(3))}>
-            3 días
-          </button>
-          <button type="button" className="btn btn-secondary btn-sm" disabled={enviando} onClick={() => confirmar(calcularFecha(7))}>
-            7 días
-          </button>
-        </div>
+        ))}
+      </div>
 
-        <div className="mt-4">
-          <label className="t-label mb-1 block">O elegí una fecha</label>
-          <div className="flex gap-2">
-            <input type="date" className="input" value={fecha} onChange={(e) => setFecha(e.target.value)} />
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              disabled={!fecha || enviando}
-              onClick={() => confirmar(fecha)}
-            >
-              Posponer
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-5 flex justify-end">
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={enviando}>
-            Cancelar
+      <div className="mt-4">
+        <label className="t-label mb-1 block" htmlFor="posponer-fecha">
+          O elegí una fecha
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="posponer-fecha"
+            type="date"
+            className="input"
+            min={manana}
+            value={fecha}
+            onChange={(e) => setFecha(e.target.value)}
+          />
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            disabled={!fecha || fecha < manana || enviando}
+            onClick={() => confirmar(fecha)}
+          >
+            Posponer
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

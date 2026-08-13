@@ -1,18 +1,25 @@
 import { ListTodo } from "lucide-react";
 import { ModuleTabs } from "@/components/layout/ModuleTabs";
-import { puedeVerMisTareas, puedeVerPlantillas, puedeVerTodasLasTareas } from "@/modules/tareas/permissions";
+import {
+  puedeVerAuditoria,
+  puedeVerMisTareas,
+  puedeVerPlantillas,
+  puedeVerTodasLasTareas,
+} from "@/modules/tareas/permissions";
 
 export default async function TareasLayout({ children }: { children: React.ReactNode }) {
-  const [misTareas, todas, plantillas] = await Promise.all([
+  const [misTareas, todas, plantillas, auditoria] = await Promise.all([
     puedeVerMisTareas(),
     puedeVerTodasLasTareas(),
     puedeVerPlantillas(),
+    puedeVerAuditoria(),
   ]);
 
   const tabs = [
     ...(misTareas ? [{ codigo: "tareas_mistareas", label: "Mis Tareas", href: "/tareas" }] : []),
     ...(todas ? [{ codigo: "tareas_todas", label: "Todas las Tareas", href: "/tareas/todas" }] : []),
     ...(plantillas ? [{ codigo: "tareas_plantillas", label: "Plantillas", href: "/tareas/plantillas" }] : []),
+    ...(auditoria ? [{ codigo: "tareas_auditoria", label: "Auditoría", href: "/tareas/auditoria" }] : []),
   ];
 
   return (
