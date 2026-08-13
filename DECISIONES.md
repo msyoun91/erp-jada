@@ -17,3 +17,21 @@ Spec completa extraída y volcada en `.claude/guides/design-system/JADA-design-s
 - **Dark mode**: sí es first-class en el sistema fuente, activado con `<html data-theme="dark">` (no clase `.dark`). Pensado como modo alto-contraste/exterior, no solo nocturno — relevante para uso en obra con sol.
 
 **Por qué:** el JADA Design System fue creado para un dashboard de escritorio; el ERP necesita mobile-first en obra, así que hay piezas sin precedente en el spec. Se prioriza mantener coherencia visual con lo que sí existe antes que inventar un patrón nuevo.
+
+---
+
+## database.types.ts escrito a mano (excepción temporal)
+
+`GUIDE_TYPESCRIPT.md` prohíbe tipos de BD a mano — deben generarse con `supabase gen types`. Ese comando requiere `supabase login` o `SUPABASE_ACCESS_TOKEN`, no disponibles en este entorno.
+
+**Excepción:** mientras no se corra la generación real, `database.types.ts` se escribe a mano reflejando exactamente el SQL en `sql/`. Corregir apenas se pueda correr `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public` (comando en `db_schema.md`).
+
+**Por qué:** desbloquear desarrollo del módulo usuarios sin esperar acceso al CLI. Riesgo: los tipos a mano pueden divergir del schema real si el SQL no se corrió tal cual — revisar contra `sql/001_usuarios_permisos.sql` ante cualquier duda.
+
+---
+
+## `middleware.ts` → `proxy.ts` (Next.js 16)
+
+Next 16 deprecó la convención `middleware.ts` en la raíz (`src/`) — se renombró a `proxy.ts` con función exportada `proxy` (no `middleware`). El archivo `src/lib/supabase/middleware.ts` (helper `updateSession`, nombre fijado por `GUIDE_DB.md`) no cambia — solo el entry point de Next en `src/proxy.ts` lo importa y expone.
+
+**Por qué:** `erp-app/AGENTS.md` (autogenerado por `next dev`) advierte que esta versión de Next tiene breaking changes vs. el training data. Toda lógica de proxy/middleware futura va en `src/proxy.ts`, no crear `src/middleware.ts`.
