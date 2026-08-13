@@ -156,7 +156,7 @@
 
   .empty-state { @apply bg-bg-surface border border-dashed border-border-strong rounded-lg p-[60px] text-center text-text-tertiary; }
 
-  .nav-item { @apply flex items-center gap-[9px] rounded-sm px-[10px] py-2 text-[11.5px] font-medium text-text-tertiary cursor-pointer; }
+  .nav-item { @apply flex items-center gap-[9px] rounded-sm px-[10px] py-2 text-[15px] font-medium text-text-tertiary cursor-pointer; }
   .nav-item:hover { @apply bg-bg-subtle text-text-secondary; }
   .nav-item-active { @apply bg-brand-50 text-brand-700; }
 
