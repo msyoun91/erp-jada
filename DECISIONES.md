@@ -20,16 +20,6 @@ Spec completa extraída y volcada en `.claude/guides/design-system/JADA-design-s
 
 ---
 
-## database.types.ts escrito a mano (excepción temporal)
-
-`GUIDE_TYPESCRIPT.md` prohíbe tipos de BD a mano — deben generarse con `supabase gen types`. Ese comando requiere `supabase login` o `SUPABASE_ACCESS_TOKEN`, no disponibles en este entorno.
-
-**Excepción:** mientras no se corra la generación real, `database.types.ts` se escribe a mano reflejando exactamente el SQL en `sql/`. Corregir apenas se pueda correr `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public` (comando en `db_schema.md`).
-
-**Por qué:** desbloquear desarrollo del módulo usuarios sin esperar acceso al CLI. Riesgo: los tipos a mano pueden divergir del schema real si el SQL no se corrió tal cual — revisar contra `sql/001_usuarios_permisos.sql` ante cualquier duda.
-
----
-
 ## `middleware.ts` → `proxy.ts` (Next.js 16)
 
 Next 16 deprecó la convención `middleware.ts` en la raíz (`src/`) — se renombró a `proxy.ts` con función exportada `proxy` (no `middleware`). El archivo `src/lib/supabase/middleware.ts` (helper `updateSession`, nombre fijado por `GUIDE_DB.md`) no cambia — solo el entry point de Next en `src/proxy.ts` lo importa y expone.

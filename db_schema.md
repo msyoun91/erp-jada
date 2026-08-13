@@ -6,7 +6,7 @@ Proyecto Supabase: `qbpudocgdvpeadcyyhfh`. Regenerar tipos tras cada migración:
 `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public > erp-app/src/lib/supabase/database.types.ts`
 (requiere `supabase login` o `SUPABASE_ACCESS_TOKEN`)
 
-Estado actual: `sql/001_usuarios_permisos.sql` (sin correr todavía — avisar/ejecutar en Supabase SQL Editor). `database.types.ts` escrito a mano reflejando este SQL; regenerar con el comando de arriba en cuanto se corra la migración.
+Estado actual: `sql/001_usuarios_permisos.sql` corrido en Supabase. `database.types.ts` generado real (comando de arriba).
 
 ---
 
