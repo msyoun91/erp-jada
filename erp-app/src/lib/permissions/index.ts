@@ -24,7 +24,7 @@ export async function tienePermiso(codigo: string): Promise<boolean> {
   return codigos.includes(codigo);
 }
 
-export async function getSeccionesDeModulo(modulo: string) {
+export async function getVistasDeModulo(modulo: string) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -41,7 +41,7 @@ export async function getSeccionesDeModulo(modulo: string) {
     .map((row) => row.submodulos)
     .filter(
       (s): s is NonNullable<typeof s> =>
-        s !== null && s.modulo === modulo && s.tipo === "seccion"
+        s !== null && s.modulo === modulo && s.tipo === "vista"
     )
     .sort((a, b) => a.orden - b.orden);
 }

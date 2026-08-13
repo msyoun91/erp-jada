@@ -38,7 +38,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/usuarios");
+    router.push("/");
     router.refresh();
   }
 

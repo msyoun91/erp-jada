@@ -29,20 +29,25 @@ La unidad real de autorización es el submódulo.
 
 ## Tipos de submódulo
 
-### seccion
+Un módulo tiene 1 o más vistas. Cada vista puede tener 0 o más funciones, ligadas a
+esa vista puntual vía `submodulos.vista_id` (no solo por compartir `modulo`).
+
+### vista
 
 Controla:
 
-* navegación
+* navegación (tab)
 * acceso a rutas
 * middleware
 * visibilidad de sidebar
+
+`vista_id`: `NULL` (una vista no depende de otra).
 
 Ejemplos:
 
 * clientes_ver
 * pedidos_ver
-* cobranzas_ver
+* pedidos_facturacion
 
 ### funcion
 
@@ -53,11 +58,15 @@ Controla:
 * operaciones de negocio
 * server actions
 
+`vista_id`: obligatorio — apunta a la vista dueña (misma `modulo`, verificado por trigger).
+Una vista puede no tener ninguna función (solo acceso de lectura) — se autoriza
+directo, sin función que la sincronice.
+
 Ejemplos:
 
-* pedidos_anular
-* pedidos_editar
-* cobranza_registrar_pago
+* pedidos_anular (vista_id → pedidos_ver)
+* pedidos_editar (vista_id → pedidos_ver)
+* cobranza_registrar_pago (vista_id → cobranza_ver)
 
 ---
 
@@ -65,15 +74,16 @@ Ejemplos:
 
 ```
 Pedidos
-├── pedidos_ver
-├── pedidos_crear
-├── pedidos_editar
-└── pedidos_anular
+├── pedidos_ver (vista)
+│   ├── pedidos_crear (funcion)
+│   ├── pedidos_editar (funcion)
+│   └── pedidos_anular (funcion)
+└── pedidos_facturacion (vista, sin funciones)
 
 Cobranza
-├── cobranza_ver
-├── cobranza_registrar_pago
-└── cobranza_anular_pago
+├── cobranza_ver (vista)
+│   ├── cobranza_registrar_pago (funcion)
+│   └── cobranza_anular_pago (funcion)
 ```
 
 ---
@@ -123,16 +133,18 @@ codigo: agenda_transferir → funcion (no genera tab, no genera ruta)
 
 El slug del URL se deriva automáticamente: `codigo.slice(modulo.length + 1)`.
 
-### Agregar un nuevo módulo
+`nombre` de la vista básica (`{modulo}_ver`) es siempre **"Ver"**, nunca repite el label del módulo — el modal de permisos ya muestra el módulo como encabezado (`LABEL_MAP`), repetirlo en la vista es ruido y ambigüedad ("Usuarios" arriba de "Usuarios"). Vistas no-básicas usan un nombre descriptivo propio (ej: "Calendario", "Facturación").
 
-1. Insertar submodulo en DB con `tipo: 'seccion'`, ej: `{ codigo: 'agenda_clientes', modulo: 'agenda', tipo: 'seccion' }`
+### Agregar una nueva vista
+
+1. Insertar submodulo en DB con `tipo: 'vista'`, `vista_id: null`, ej: `{ codigo: 'agenda_clientes', modulo: 'agenda', tipo: 'vista' }`
 2. Asignar a usuario en `usuario_submodulos`
-3. Agregar el módulo al sidebar en `Sidebar.tsx` → `NAV_ITEMS`
+3. Agregar el módulo al sidebar en `Sidebar.tsx` → `NAV_ITEMS` (si es la primera vista del módulo)
 4. Crear la página: `app/(erp-app)/agenda/clientes/page.tsx` (ruta estática tiene prioridad sobre `[modulo]/[submodulo]`)
 
 ### Agregar una funcion (botón de acción)
 
-1. Insertar submodulo en DB con `tipo: 'funcion'`, ej: `{ codigo: 'agenda_transferir', modulo: 'agenda', tipo: 'funcion' }`
+1. Insertar submodulo en DB con `tipo: 'funcion'`, `vista_id` apuntando a la vista dueña, ej: `{ codigo: 'agenda_transferir', modulo: 'agenda', tipo: 'funcion', vista_id: <id de agenda_clientes> }`
 2. En el componente vista:
 
 ```tsx
@@ -153,7 +165,7 @@ const puedeTransferir = await tienePermiso('agenda_transferir')
 |---|---|
 | `getUserSubmodulos()` | Lista de codigos del usuario |
 | `tienePermiso(codigo)` | Verifica un permiso específico |
-| `getSeccionesDeModulo(modulo)` | Secciones autorizadas de un módulo (para tabs) |
+| `getVistasDeModulo(modulo)` | Vistas autorizadas de un módulo (para tabs) |
 
 Todas usan `cache()` de React — una sola query DB por request.
 

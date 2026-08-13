@@ -25,6 +25,7 @@ export type Database = {
           orden: number
           tipo: Database["public"]["Enums"]["tipo_submodulo"]
           updated_at: string
+          vista_id: string | null
         }
         Insert: {
           activo?: boolean
@@ -36,6 +37,7 @@ export type Database = {
           orden?: number
           tipo: Database["public"]["Enums"]["tipo_submodulo"]
           updated_at?: string
+          vista_id?: string | null
         }
         Update: {
           activo?: boolean
@@ -47,8 +49,17 @@ export type Database = {
           orden?: number
           tipo?: Database["public"]["Enums"]["tipo_submodulo"]
           updated_at?: string
+          vista_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "submodulos_vista_id_fkey"
+            columns: ["vista_id"]
+            isOneToOne: false
+            referencedRelation: "submodulos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usuario_submodulos: {
         Row: {
@@ -92,6 +103,41 @@ export type Database = {
           },
         ]
       }
+      usuario_widgets: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          usuario_id: string
+          visible: boolean
+          widget_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          usuario_id: string
+          visible?: boolean
+          widget_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          usuario_id?: string
+          visible?: boolean
+          widget_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_widgets_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuarios: {
         Row: {
           activo: boolean
@@ -127,7 +173,7 @@ export type Database = {
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
     }
     Enums: {
-      tipo_submodulo: "seccion" | "funcion"
+      tipo_submodulo: "vista" | "funcion"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -255,7 +301,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      tipo_submodulo: ["seccion", "funcion"],
+      tipo_submodulo: ["vista", "funcion"],
     },
   },
 } as const

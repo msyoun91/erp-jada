@@ -27,7 +27,8 @@ export type Submodulo = {
   id: string;
   codigo: string;
   modulo: string;
-  tipo: "seccion" | "funcion";
+  tipo: "vista" | "funcion";
+  vista_id: string | null;
   nombre: string;
   orden: number;
 };

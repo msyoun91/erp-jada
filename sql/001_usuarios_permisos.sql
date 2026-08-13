@@ -155,6 +155,12 @@ CREATE POLICY usuario_submodulos_select ON usuario_submodulos FOR SELECT
 -- Sin policies de INSERT/UPDATE/DELETE: esas operaciones pasan siempre
 -- por server actions con service_role (ver modules/usuarios/actions.ts).
 
+-- RLS no alcanza sin GRANT: sin esto, SELECT falla con
+-- "permission denied for table" (42501) aunque la policy sea correcta.
+GRANT SELECT ON public.usuarios TO authenticated;
+GRANT SELECT ON public.submodulos TO authenticated;
+GRANT SELECT ON public.usuario_submodulos TO authenticated;
+
 -- ============================================================
 -- Seed — submódulos del propio módulo usuarios
 -- ============================================================

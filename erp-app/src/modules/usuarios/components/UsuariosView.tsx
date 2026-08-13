@@ -98,8 +98,9 @@ export function UsuariosView({
       {usuarioPermisos && (
         <PermisosModal
           usuario={usuarioPermisos}
+          todos={usuarios}
           submodulos={submodulos}
-          asignados={asignaciones[usuarioPermisos.id] ?? []}
+          asignaciones={asignaciones}
           onClose={() => setUsuarioPermisos(null)}
         />
       )}

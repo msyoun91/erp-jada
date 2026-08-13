@@ -15,23 +15,25 @@
   --bg-page: #F5F7FB; --bg-surface: #FFFFFF; --bg-subtle: #EBF0F8; --bg-nav: #FFFFFF;
   --text-primary: #0D1220; --text-secondary: #2B3352; --text-tertiary: #566B92; --text-brand: #1A6DC8;
   --border-default: rgba(13,18,32,.12); --border-strong: rgba(13,18,32,.22);
+  --brand-50: #EBF2FD; --brand-700: #064379; --neutral-100: #EBF0F8;
 }
 [data-theme="dark"] {
   --bg-page: #070B14; --bg-surface: #0E1525; --bg-subtle: #131C30; --bg-nav: #0B1322;
   --text-primary: #EDF2FF; --text-secondary: #9DB2D8; --text-tertiary: #6F86AE; --text-brand: #5FA3E0;
   --border-default: rgba(255,255,255,.09); --border-strong: rgba(255,255,255,.18);
+  --brand-50: #0D2040; --brand-700: #5FA3E0; --neutral-100: #1A2B45;
 }
 
 @theme inline {
-  --color-brand-50: #EBF2FD;
+  --color-brand-50: var(--brand-50);
   --color-brand-100: #C8DEFA;
   --color-brand-300: #5FA3E0;
   --color-brand-500: #1A6DC8;
-  --color-brand-700: #064379;
+  --color-brand-700: var(--brand-700);
   --color-brand-900: #011F51;
 
   --color-neutral-50: #F5F7FB;
-  --color-neutral-100: #EBF0F8;
+  --color-neutral-100: var(--neutral-100);
   --color-neutral-300: #A5B6D0;
   --color-neutral-500: #566B92;
   --color-neutral-700: #2B3352;
@@ -112,6 +114,7 @@
   body { @apply bg-bg-page text-text-primary font-body; -webkit-font-smoothing: antialiased; }
   a { @apply text-text-brand; }
   a:hover { @apply text-brand-500; }
+  [data-theme="dark"] .logo { filter: brightness(0) invert(1); }
 }
 
 @layer components {
@@ -140,7 +143,7 @@
   .input-error-text { @apply text-error text-xs mt-1; }
 
   .badge { @apply font-body font-semibold text-[11px] rounded-full px-[9px] py-[3px]; }
-  .badge-brand { @apply bg-brand-50 text-brand-900; }
+  .badge-brand { @apply bg-brand-50 text-text-brand; }
   .badge-success { @apply bg-success-bg text-success-text; }
   .badge-warning { @apply bg-warning-bg text-warning-text; }
   .badge-error { @apply bg-error-bg text-error-text; }

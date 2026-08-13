@@ -16,7 +16,7 @@ export async function getSubmodulos(): Promise<Submodulo[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("submodulos")
-    .select("id, codigo, modulo, tipo, nombre, orden")
+    .select("id, codigo, modulo, tipo, vista_id, nombre, orden")
     .eq("activo", true)
     .order("modulo")
     .order("orden");

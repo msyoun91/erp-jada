@@ -137,6 +137,15 @@ erp-app/src/
 
 # ORDEN DE CONSTRUCCIÓN — siempre este orden, sin saltar pasos
 
+0. **Módulo nuevo: listar vistas y funciones por vista, confirmar con el usuario antes de escribir código.** Formato:
+   ```
+   Módulo: Nombre
+   ├── modulo_vista1 (vista)
+   │   ├── modulo_accion1 (funcion)
+   │   └── modulo_accion2 (funcion)
+   └── modulo_vista2 (vista, sin funciones)
+   ```
+   Toda vista arranca con mayúscula. Todo módulo tiene al menos 1 vista. Una vista puede no tener funciones. No avanzar a SQL sin esta lista aprobada.
 1. SQL y tipos de base de datos (leer `GUIDE_DB.md`)
 2. `types.ts` — schema Zod + tipos TypeScript
 3. `permissions.ts` — verificación de acceso (leer `GUIDE_PERMISSIONS.md`)
@@ -147,6 +156,7 @@ erp-app/src/
 
 ## Checklist de módulo nuevo
 
+- [ ] Vistas y funciones por vista listadas y aprobadas
 - [ ] SQL creado
 - [ ] RLS creado
 - [ ] Trigger updated_at creado
