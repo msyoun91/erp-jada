@@ -4,26 +4,31 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { MessageSquarePlus } from "lucide-react";
 import { agregarNotaHilo, agregarNotaTarea, listarNotasHilo, listarNotasTarea } from "../actions";
+import { formatFecha } from "@/lib/utils";
 import type { HiloNota, TareaNota } from "../types";
 
 // Reusado por TareaRow (notas de tarea) y HiloDetailPanel (notas de hilo) —
-// mismo componente, cambia solo qué action llama. Fetch on-mount porque el
-// componente solo se monta cuando el usuario abre la sección (no precarga
-// notas de todo lo visible en la página).
+// mismo componente, cambia solo qué action llama. Las notas de tarea llegan
+// precargadas por getListaTareas (`notasIniciales`); las de hilo se piden
+// on-mount, que solo pasa al abrir el panel del hilo.
 export function NotasSection({
   tipo,
   id,
   puedeAgregar,
+  notasIniciales,
 }: {
   tipo: "tarea" | "hilo";
   id: string;
   puedeAgregar: boolean;
+  notasIniciales?: TareaNota[];
 }) {
-  const [notas, setNotas] = useState<(TareaNota | HiloNota)[] | null>(null);
+  const [notas, setNotas] = useState<(TareaNota | HiloNota)[] | null>(notasIniciales ?? null);
   const [nota, setNota] = useState("");
+  const [agregando, setAgregando] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
   useEffect(() => {
+    if (notasIniciales) return;
     let cancelado = false;
     async function cargar() {
       const result = tipo === "tarea" ? await listarNotasTarea(id) : await listarNotasHilo(id);
@@ -33,7 +38,7 @@ export function NotasSection({
     return () => {
       cancelado = true;
     };
-  }, [tipo, id]);
+  }, [tipo, id, notasIniciales]);
 
   async function agregar() {
     if (!nota.trim()) return;
@@ -49,6 +54,7 @@ export function NotasSection({
       return;
     }
     setNota("");
+    setAgregando(false);
     const refrescado = tipo === "tarea" ? await listarNotasTarea(id) : await listarNotasHilo(id);
     if (refrescado.success) setNotas(refrescado.data);
   }
@@ -65,33 +71,43 @@ export function NotasSection({
             <div key={n.id} className="rounded-md bg-bg-subtle p-2">
               <p className="t-body-m whitespace-pre-wrap">{n.nota}</p>
               <p className="t-caption mt-1">
-                {n.usuarios?.nombre ?? "—"} · {n.created_at.slice(0, 10)}
+                {n.usuarios?.nombre ?? "—"} · {formatFecha(n.created_at)}
               </p>
             </div>
           ))}
         </div>
       )}
 
-      {puedeAgregar && (
-        <div className="flex items-end gap-2">
-          <textarea
-            rows={2}
-            className="input flex-1"
-            placeholder="Agregar nota…"
-            value={nota}
-            onChange={(e) => setNota(e.target.value)}
-          />
+      {puedeAgregar &&
+        (agregando ? (
+          <div className="flex items-end gap-2">
+            <textarea
+              rows={2}
+              className="input flex-1"
+              placeholder="Agregar nota…"
+              value={nota}
+              onChange={(e) => setNota(e.target.value)}
+              autoFocus
+            />
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm shrink-0"
+              onClick={agregar}
+              disabled={enviando || !nota.trim()}
+            >
+              Guardar
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
-            className="btn btn-secondary btn-sm shrink-0"
-            onClick={agregar}
-            disabled={enviando || !nota.trim()}
+            className="btn btn-ghost btn-sm self-start"
+            onClick={() => setAgregando(true)}
           >
             <MessageSquarePlus size={14} strokeWidth={1.75} />
-            Agregar
+            Agregar nota
           </button>
-        </div>
-      )}
+        ))}
     </div>
   );
 }

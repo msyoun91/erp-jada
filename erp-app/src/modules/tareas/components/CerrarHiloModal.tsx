@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, X } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
+import { CheckCircle2 } from "lucide-react";
 import { cerrarHilo } from "../actions";
 import type { TareaConAsignados } from "../types";
 
@@ -35,37 +36,28 @@ export function CerrarHiloModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(7,11,20,.55)] p-4">
-      <div className="w-full max-w-[440px] rounded-xl bg-bg-surface p-[30px] shadow-lg">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="t-h3">¿Cerrar hilo?</h2>
-          <button onClick={onMantenerAbierto} className="text-text-tertiary" aria-label="Cerrar">
-            <X size={20} />
-          </button>
-        </div>
+    <Modal title="¿Cerrar hilo?" onClose={onMantenerAbierto} maxWidth={440}>
+      <p className="t-body-m mb-4">
+        Todas las tareas de &quot;{hiloTitulo}&quot; están completadas o canceladas.
+      </p>
 
-        <p className="t-body-m mb-4">
-          Todas las tareas de &quot;{hiloTitulo}&quot; están completadas o canceladas.
-        </p>
-
-        <div className="mb-5 flex flex-col rounded-lg border border-border">
-          {tareas.map((t) => (
-            <div key={t.id} className="flex items-center gap-2 border-b border-border p-2.5 px-3 last:border-b-0">
-              <CheckCircle2 size={15} strokeWidth={1.75} className="shrink-0 text-success" />
-              <span className="t-body-m">{t.titulo}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <button type="button" className="btn btn-secondary" onClick={onMantenerAbierto} disabled={enviando}>
-            Mantener abierto
-          </button>
-          <button type="button" className="btn btn-primary" onClick={confirmar} disabled={enviando}>
-            {enviando ? "Cerrando…" : "Cerrar hilo"}
-          </button>
-        </div>
+      <div className="mb-5 flex flex-col rounded-lg border border-border">
+        {tareas.map((t) => (
+          <div key={t.id} className="flex items-center gap-2 border-b border-border p-2.5 px-3 last:border-b-0">
+            <CheckCircle2 size={15} strokeWidth={1.75} className="shrink-0 text-success" />
+            <span className="t-body-m">{t.titulo}</span>
+          </div>
+        ))}
       </div>
-    </div>
+
+      <div className="flex justify-end gap-3">
+        <button type="button" className="btn btn-secondary" onClick={onMantenerAbierto} disabled={enviando}>
+          Mantener abierto
+        </button>
+        <button type="button" className="btn btn-primary" onClick={confirmar} disabled={enviando}>
+          {enviando ? "Cerrando…" : "Cerrar hilo"}
+        </button>
+      </div>
+    </Modal>
   );
 }

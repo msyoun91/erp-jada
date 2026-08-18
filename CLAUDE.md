@@ -87,7 +87,7 @@ La regla más alta prevalece.
 - **Cargar guides solo cuando la tarea lo pide**, y solo el guide necesario. Cada guide leído queda en contexto el resto de la sesión.
 - **`db_schema.md` siempre sincronizado.** Ante cualquier cambio en tablas, columnas o enums — ya sea en `database.types.ts`, SQL, o migración — actualizar `db_schema.md` antes de cerrar la tarea.
 - **`/clear` entre tareas.** Terminás un módulo o cambiás de tema → `/clear`. El costo dominante son tokens de contexto reenviados cada turno (cache_read); sesiones de 200+ turnos cuestan ~3× por turno que las cortas.
-- Antes de modificar un módulo, leer `DECISIONES.md`.
+- Antes de modificar un módulo, leer su sección en `DECISIONES.md` (no el archivo completo — crece por módulo).
 - No crear roles. No crear permisos por módulo. Toda autorización nueva se implementa mediante submódulos, incluso si el permiso parece más fino que un submódulo (ej: por fila o por campo) — si un caso real no puede resolverse así, se registra en `DECISIONES.md` como excepción explícita antes de romper la regla, no se decide ad-hoc
 - No crear nuevas dependencias sin necesidad demostrada.
 
@@ -180,7 +180,8 @@ erp-app/src/
 | `.claude/guides/GUIDE_DESIGN.md` | UI, UX, mobile, diseño visual, feedback |
 | `.claude/guides/GUIDE_DASHBOARD.md` | widgets, dashboard, KPIs |
 | `.claude/guides/GUIDE_SYNC.md` | sincronización erp-app ↔ erp-cliente |
-| `DECISIONES.md` | modificar cualquier módulo existente |
+| `DECISIONES.md` | modificar cualquier módulo existente — leer **solo la sección de ese módulo**, no el archivo entero |
+| `BACKLOG.md` | retomar pendientes o elegir la próxima tarea |
 
 ---
 

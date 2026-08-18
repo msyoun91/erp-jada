@@ -21,7 +21,7 @@ export async function Sidebar() {
 
   return (
     <>
-      <aside className="hidden w-[220px] shrink-0 flex-col border-r border-border bg-bg-nav p-3 lg:sticky lg:top-0 lg:flex lg:h-screen">
+      <aside className="hidden w-[220px] shrink-0 flex-col border-r border-border bg-bg-nav p-3 md:sticky md:top-0 md:flex md:h-screen">
         <Image src="/logo.svg" alt="JADA" width={72} height={26} className="logo mb-4 ml-1" priority />
         <SidebarNav modulosVisibles={modulosVisibles} nombre={nombre} />
       </aside>

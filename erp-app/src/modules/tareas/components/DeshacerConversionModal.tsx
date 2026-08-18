@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { X, AlertTriangle } from "lucide-react";
+import { Modal } from "@/components/ui/Modal";
+import { AlertTriangle } from "lucide-react";
 import { deshacerConversionHilo } from "../actions";
 import type { TareaConAsignados } from "../types";
 
@@ -48,53 +49,44 @@ export function DeshacerConversionModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(7,11,20,.55)] p-4">
-      <div className="w-full max-w-[460px] rounded-xl bg-bg-surface p-[30px] shadow-lg">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="t-h3">Deshacer conversión</h2>
-          <button onClick={onClose} className="text-text-tertiary" aria-label="Cerrar">
-            <X size={20} />
-          </button>
+    <Modal title="Deshacer conversión" onClose={onClose} maxWidth={460}>
+      <p className="t-body-m mb-4">
+        &quot;{hiloTitulo}&quot; vuelve a ser una tarea suelta.
+      </p>
+
+      {hayPerdida && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg bg-warning-bg p-3 text-warning-text">
+          <AlertTriangle size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+          <p className="t-caption">
+            Este hilo tiene más de un paso o alguno ya completado. Se conserva solo el más antiguo — el
+            resto queda desactivado (no se pierde, pero sale de las listas).
+          </p>
         </div>
+      )}
 
-        <p className="t-body-m mb-4">
-          &quot;{hiloTitulo}&quot; vuelve a ser una tarea suelta.
-        </p>
-
-        {hayPerdida && (
-          <div className="mb-4 flex items-start gap-2 rounded-lg bg-warning-bg p-3 text-warning-text">
-            <AlertTriangle size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
-            <p className="t-caption">
-              Este hilo tiene más de un paso o alguno ya completado. Se conserva solo el más antiguo — el
-              resto queda desactivado (no se pierde, pero sale de las listas).
-            </p>
+      <div className="mb-5 flex flex-col rounded-lg border border-border">
+        {primera && (
+          <div className="flex items-center justify-between border-b border-border p-2.5 px-3 last:border-b-0">
+            <span className="t-body-m">{primera.titulo}</span>
+            <span className="badge badge-success">Se conserva</span>
           </div>
         )}
-
-        <div className="mb-5 flex flex-col rounded-lg border border-border">
-          {primera && (
-            <div className="flex items-center justify-between border-b border-border p-2.5 px-3 last:border-b-0">
-              <span className="t-body-m">{primera.titulo}</span>
-              <span className="badge badge-success">Se conserva</span>
-            </div>
-          )}
-          {resto.map((t) => (
-            <div key={t.id} className="flex items-center justify-between border-b border-border p-2.5 px-3 last:border-b-0">
-              <span className="t-body-m">{t.titulo}</span>
-              <span className="badge badge-neutral">Se desactiva · {ESTADO_LABEL[t.estado]}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Cancelar
-          </button>
-          <button type="button" className="btn btn-primary" onClick={confirmar} disabled={enviando}>
-            {enviando ? "Deshaciendo…" : "Deshacer conversión"}
-          </button>
-        </div>
+        {resto.map((t) => (
+          <div key={t.id} className="flex items-center justify-between border-b border-border p-2.5 px-3 last:border-b-0">
+            <span className="t-body-m">{t.titulo}</span>
+            <span className="badge badge-neutral">Se desactiva · {ESTADO_LABEL[t.estado]}</span>
+          </div>
+        ))}
       </div>
-    </div>
+
+      <div className="flex justify-end gap-3">
+        <button type="button" className="btn btn-secondary" onClick={onClose}>
+          Cancelar
+        </button>
+        <button type="button" className="btn btn-primary" onClick={confirmar} disabled={enviando}>
+          {enviando ? "Deshaciendo…" : "Deshacer conversión"}
+        </button>
+      </div>
+    </Modal>
   );
 }

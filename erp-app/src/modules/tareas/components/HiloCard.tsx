@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CalendarClock, Clock, History, Lock } from "lucide-react";
 import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
-import { diasEntreISO, hoyISO } from "@/lib/utils";
+import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
 import { HiloDetailPanel } from "./HiloDetailPanel";
 import { CerrarHiloModal } from "./CerrarHiloModal";
 
@@ -24,6 +24,7 @@ export function HiloCard({
   plantillas,
   usuarioActualId,
   gestionarAjenas,
+  autoAbrir,
 }: {
   hilo: TareaHilo;
   tareas: TareaConAsignados[];
@@ -32,8 +33,19 @@ export function HiloCard({
   plantillas: TareaPlantilla[];
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
+  autoAbrir?: boolean;
 }) {
-  const [detalleAbierto, setDetalleAbierto] = useState(false);
+  const [detalleAbierto, setDetalleAbierto] = useState(autoAbrir ?? false);
+
+  // Al convertir una tarea en hilo el padre pide abrir este panel. La card
+  // puede montarse antes o después de ese pedido (depende de si el
+  // revalidatePath llega primero), así que se reacciona al cambio de prop
+  // durante el render — no en un efecto (react-hooks/set-state-in-effect).
+  const [autoAbrirBase, setAutoAbrirBase] = useState(autoAbrir);
+  if (autoAbrir !== autoAbrirBase) {
+    setAutoAbrirBase(autoAbrir);
+    if (autoAbrir) setDetalleAbierto(true);
+  }
 
   const tareasDelHilo = tareas.filter((t) => t.hilo_id === hilo.id);
   const proyecto = hilo.proyecto_id ? (proyectos.find((p) => p.id === hilo.proyecto_id) ?? null) : null;
@@ -52,6 +64,7 @@ export function HiloCard({
     if (todasCompletas && hilo.estado === "abierto") setMostrarCierreAuto(true);
   }
 
+  const completadas = tareasDelHilo.filter((t) => t.estado === "completada").length;
   const creadoFecha = hilo.created_at.slice(0, 10);
   const diasTranscurridos = diasEntreISO(creadoFecha, hoyISO());
 
@@ -67,26 +80,29 @@ export function HiloCard({
         className="flex w-full items-center gap-2 p-[13px] px-5 text-left"
         onClick={() => setDetalleAbierto(true)}
       >
-        {hilo.visibilidad === "privado" && (
-          <Lock size={13} strokeWidth={1.75} className="shrink-0 text-text-tertiary" title="Privado" />
-        )}
-        <p className="t-body-m flex-1 font-semibold text-text-primary">{hilo.titulo}</p>
-        {proyecto && <span className="badge badge-neutral">{proyecto.nombre}</span>}
-        <span className={`badge ${hilo.estado === "cerrado" ? "badge-neutral" : "badge-info"}`}>
+        <p className="t-body-m min-w-0 flex-1 truncate font-semibold text-text-primary">{hilo.titulo}</p>
+        {proyecto && <span className="badge badge-neutral shrink-0">{proyecto.nombre}</span>}
+        <span className={`badge shrink-0 ${hilo.estado === "cerrado" ? "badge-neutral" : "badge-info"}`}>
           {hilo.estado === "cerrado" ? "Cerrado" : "Abierto"}
         </span>
-        {hilo.posponer_hasta && (
-          <Clock
-            size={14}
-            strokeWidth={1.75}
-            className="shrink-0 text-warning"
-            title={`Pospuesto hasta ${hilo.posponer_hasta}`}
-          />
-        )}
-        <span className="t-caption">{tareasDelHilo.length}</span>
+        <span className="t-caption shrink-0 whitespace-nowrap">
+          {completadas}/{tareasDelHilo.length} completadas
+        </span>
       </button>
 
-      <div className="flex flex-wrap items-center gap-3 px-5 pb-3 pl-9 t-caption">
+      <div className="flex flex-wrap items-center gap-3 px-5 pb-3 t-caption">
+        {hilo.visibilidad === "privado" && (
+          <span className="flex items-center gap-1">
+            <Lock size={13} strokeWidth={1.75} />
+            Privado
+          </span>
+        )}
+        {hilo.posponer_hasta && (
+          <span className="flex items-center gap-1 text-warning">
+            <Clock size={13} strokeWidth={1.75} />
+            Pospuesto hasta {formatFecha(hilo.posponer_hasta)}
+          </span>
+        )}
         <span className="flex items-center gap-1">
           <History size={13} strokeWidth={1.75} />
           Hace {diasTranscurridos} {diasTranscurridos === 1 ? "día" : "días"}

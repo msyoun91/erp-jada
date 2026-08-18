@@ -52,7 +52,9 @@ export async function getListaTareas(): Promise<{ hilos: TareaHilo[]; tareas: Ta
       .order("created_at", { ascending: false }),
     supabase
       .from("tareas")
-      .select("*, tareas_asignados(usuario_id, activo, usuarios(nombre))")
+      .select(
+        "*, tareas_asignados(usuario_id, activo, usuarios(nombre)), tareas_notas(id, tarea_id, usuario_id, nota, activo, created_at, usuarios(nombre))",
+      )
       .eq("activo", true)
       .order("created_at", { ascending: false }),
   ]);
@@ -60,7 +62,16 @@ export async function getListaTareas(): Promise<{ hilos: TareaHilo[]; tareas: Ta
   if (errorHilos) throw errorHilos;
   if (errorTareas) throw errorTareas;
 
-  return { hilos: hilos ?? [], tareas: tareas ?? [] };
+  // activo/orden de las notas se resuelven acá y no en la query: filtrar un
+  // embed en PostgREST lo vuelve inner join y perderíamos las tareas sin notas.
+  const conNotas = (tareas ?? []).map((t) => ({
+    ...t,
+    tareas_notas: t.tareas_notas
+      .filter((n) => n.activo)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+  }));
+
+  return { hilos: hilos ?? [], tareas: conNotas };
 }
 
 export async function getHiloTareas(hiloId: string): Promise<TareaConAsignados[]> {

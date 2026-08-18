@@ -6,10 +6,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Plus, X } from "lucide-react";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { crearPlantilla } from "../actions";
+import { crearPlantilla, editarPlantilla } from "../actions";
 import { crearPlantillaSchema, type CrearPlantillaForm } from "../types";
+import type { TareaPlantilla, TareaPlantillaItem } from "../types";
 
-export function PlantillaFormPanel({ onClose }: { onClose: () => void }) {
+// Con `plantilla` presente pasa a modo edición. Mismo schema para los dos:
+// los pasos existentes viajan con su `id` (se actualizan), los nuevos sin él.
+export function PlantillaFormPanel({
+  plantilla,
+  items,
+  onClose,
+}: {
+  plantilla?: TareaPlantilla;
+  items?: TareaPlantillaItem[];
+  onClose: () => void;
+}) {
   const [enviando, setEnviando] = useState(false);
   const {
     register,
@@ -18,29 +29,36 @@ export function PlantillaFormPanel({ onClose }: { onClose: () => void }) {
     formState: { errors },
   } = useForm<CrearPlantillaForm>({
     resolver: zodResolver(crearPlantillaSchema),
-    defaultValues: { items: [{ titulo: "", orden: 0 }] },
+    defaultValues: plantilla
+      ? {
+          nombre: plantilla.nombre,
+          descripcion: plantilla.descripcion ?? undefined,
+          items: (items ?? []).map((item, i) => ({ id: item.id, titulo: item.titulo, orden: i })),
+        }
+      : { items: [{ titulo: "", orden: 0 }] },
   });
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
 
   async function onSubmit(data: CrearPlantillaForm) {
+    // El orden se toma de la posición en el form, no de un campo editable.
+    const conOrden = { ...data, items: data.items.map((item, i) => ({ ...item, orden: i })) };
     setEnviando(true);
-    const result = await crearPlantilla({
-      ...data,
-      items: data.items.map((item, i) => ({ ...item, orden: i })),
-    });
+    const result = plantilla
+      ? await editarPlantilla({ ...conOrden, id: plantilla.id })
+      : await crearPlantilla(conOrden);
     setEnviando(false);
 
     if (!result.success) {
       toast.error(result.error);
       return;
     }
-    toast.success("Plantilla creada");
+    toast.success(plantilla ? "Plantilla actualizada" : "Plantilla creada");
     onClose();
   }
 
   return (
     <RightPanel
-      title="Nueva plantilla"
+      title={plantilla ? "Editar plantilla" : "Nueva plantilla"}
       onClose={onClose}
       footer={
         <>
@@ -48,7 +66,7 @@ export function PlantillaFormPanel({ onClose }: { onClose: () => void }) {
             Cancelar
           </button>
           <button type="submit" form="form-plantilla" className="btn btn-primary btn-sm" disabled={enviando}>
-            {enviando ? "Creando…" : "Crear plantilla"}
+            {enviando ? "Guardando…" : plantilla ? "Guardar" : "Crear plantilla"}
           </button>
         </>
       }
@@ -68,6 +86,12 @@ export function PlantillaFormPanel({ onClose }: { onClose: () => void }) {
           <label className="t-label mb-1 block">Descripción</label>
           <textarea rows={2} className="input" {...register("descripcion")} />
         </div>
+
+        {plantilla && (
+          <p className="t-caption">
+            Los cambios aplican a los próximos usos — las tareas ya generadas desde esta plantilla no se tocan.
+          </p>
+        )}
 
         <div>
           <label className="t-label mb-1 block">Pasos</label>

@@ -38,6 +38,8 @@ export function ProyectoDetailPanel({
   const [creandoTarea, setCreandoTarea] = useState(false);
   const [creandoHilo, setCreandoHilo] = useState(false);
   const { ordenar, onTemperaturaChange } = useOrdenTemperatura();
+  // Hilo recién creado al convertir una tarea: se abre su panel solo.
+  const [hiloConvertido, setHiloConvertido] = useState<string | null>(null);
 
   const hilosDelProyecto = hilos.filter((h) => h.proyecto_id === proyecto.id);
   const tareasSueltas = ordenar(tareas.filter((t) => t.proyecto_id === proyecto.id && t.hilo_id === null));
@@ -73,6 +75,7 @@ export function ProyectoDetailPanel({
                     plantillas={plantillas}
                     usuarioActualId={usuarioActualId}
                     gestionarAjenas={gestionarAjenas}
+                    autoAbrir={hiloConvertido === h.id}
                   />
                 ))}
               </div>
@@ -86,10 +89,12 @@ export function ProyectoDetailPanel({
                     <TareaRow
                       tarea={t}
                       usuarios={usuarios}
+                      proyectos={proyectos}
                       hilosDisponibles={hilos}
                       usuarioActualId={usuarioActualId}
                       gestionarAjenas={gestionarAjenas}
                       onTemperaturaChange={onTemperaturaChange}
+                      onConvertida={setHiloConvertido}
                     />
                   </div>
                 ))}

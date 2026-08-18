@@ -30,7 +30,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
         {children}
         <ThemeToggle />
-        <Toaster position="top-right" richColors />
+        {/* En mobile el toaster ocupa el ancho completo y el topbar mide 56px: sin offset lo tapa. */}
+        <Toaster position="top-right" richColors mobileOffset={{ top: "72px" }} />
       </body>
     </html>
   );

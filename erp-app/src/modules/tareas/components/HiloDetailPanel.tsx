@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Archive, CheckCircle2, Clock, ListPlus, Plus, Undo2 } from "lucide-react";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
+import { ConfirmModal } from "@/components/ui/Modal";
 import { desactivarHilo } from "../actions";
 import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
 import { TareaRow } from "./TareaRow";
@@ -14,6 +15,7 @@ import { UsarPlantillaPanel } from "./UsarPlantillaPanel";
 import { CerrarHiloModal } from "./CerrarHiloModal";
 import { DeshacerConversionModal } from "./DeshacerConversionModal";
 import { NotasSection } from "./NotasSection";
+import { useOrdenTemperatura } from "../useOrdenTemperatura";
 
 // Contenido que antes vivía inline en HiloCard (expandido) — spec pedida:
 // la vista Lista no muestra tareas/acciones del hilo, solo en este panel.
@@ -43,12 +45,13 @@ export function HiloDetailPanel({
   const [usandoPlantilla, setUsandoPlantilla] = useState(false);
   const [deshaciendo, setDeshaciendo] = useState(false);
   const [cerrandoManual, setCerrandoManual] = useState(false);
+  const [desactivando, setDesactivando] = useState(false);
+  const { ordenar, onTemperaturaChange } = useOrdenTemperatura();
 
   const puedeGestionar =
     gestionarAjenas || hilo.creado_por === usuarioActualId || hilo.responsable_id === usuarioActualId;
 
   async function onDesactivar() {
-    if (!confirm(`¿Desactivar hilo "${hilo.titulo}"?`)) return;
     const result = await desactivarHilo(hilo.id);
     if (!result.success) toast.error(result.error);
     else onClose();
@@ -94,7 +97,7 @@ export function HiloDetailPanel({
                       {
                         label: "Desactivar",
                         icon: <Archive size={14} strokeWidth={1.75} />,
-                        onClick: onDesactivar,
+                        onClick: () => setDesactivando(true),
                         destructive: true,
                       },
                     ]
@@ -108,9 +111,16 @@ export function HiloDetailPanel({
           <p className="t-caption px-5 py-3">Sin tareas todavía.</p>
         ) : (
           <div className="flex flex-col">
-            {tareasDelHilo.map((t) => (
+            {ordenar(tareasDelHilo).map((t) => (
               <div key={t.id} className="border-b border-border last:border-b-0">
-                <TareaRow tarea={t} usuarios={usuarios} usuarioActualId={usuarioActualId} gestionarAjenas={gestionarAjenas} />
+                <TareaRow
+                  tarea={t}
+                  usuarios={usuarios}
+                  proyectos={proyectos}
+                  usuarioActualId={usuarioActualId}
+                  gestionarAjenas={gestionarAjenas}
+                  onTemperaturaChange={onTemperaturaChange}
+                />
               </div>
             ))}
           </div>
@@ -158,6 +168,14 @@ export function HiloDetailPanel({
           tareas={tareasDelHilo}
           onClose={() => setCerrandoManual(false)}
           onMantenerAbierto={() => setCerrandoManual(false)}
+        />
+      )}
+      {desactivando && (
+        <ConfirmModal
+          title="Desactivar hilo"
+          mensaje={`¿Desactivar el hilo "${hilo.titulo}"?`}
+          onConfirm={onDesactivar}
+          onClose={() => setDesactivando(false)}
         />
       )}
     </RightPanel>

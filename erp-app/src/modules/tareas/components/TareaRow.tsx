@@ -10,26 +10,27 @@ import {
   ExternalLink,
   GitBranch,
   Lock,
-  MessageSquare,
   Repeat,
   Thermometer,
   Unlink,
   UserCog,
 } from "lucide-react";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
+import { ConfirmModal } from "@/components/ui/Modal";
 import {
   actualizarTemperatura,
   asociarTareaHilo,
   cambiarEstadoTarea,
+  convertirTareaEnHilo,
   desactivarTarea,
   desasociarTareaHilo,
 } from "../actions";
-import type { TareaConAsignados, TareaHilo, Usuario } from "../types";
-import { diasEntreISO, hoyISO } from "@/lib/utils";
+import type { TareaConAsignados, TareaHilo, TareaProyecto, Usuario } from "../types";
+import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
 import { ReasignarPanel } from "./ReasignarPanel";
 import { PosponerPanel } from "./PosponerPanel";
 import { CompletarModal } from "./CompletarModal";
-import { AgregarPasoPanel } from "./AgregarPasoPanel";
+import { TareaFormPanel } from "./TareaFormPanel";
 import { NotasSection } from "./NotasSection";
 
 const ESTADO_LABEL: Record<string, string> = {
@@ -48,6 +49,14 @@ const ESTADO_BADGE: Record<string, string> = {
 
 const RECURRENCIA_LABEL: Record<string, string> = { dia: "día(s)", mes: "mes(es)" };
 
+// "🌡 61" no significa nada para el usuario: el número queda como ajuste fino y
+// el rango es lo que se lee. Umbrales en tercios.
+function temperaturaRango(t: number) {
+  if (t >= 67) return { label: "Alta", clase: "text-error" };
+  if (t >= 34) return { label: "Media", clase: "text-warning" };
+  return { label: "Baja", clase: "" };
+}
+
 // Umbrales fijos — spec pide "configurable" pero no hay un segundo caso real
 // todavía que justifique una UI de settings para esto (simplicidad antes que
 // abstracción). Ajustar acá si en el futuro se necesita por tipo de tarea.
@@ -64,17 +73,21 @@ function iniciales(nombre: string) {
 export function TareaRow({
   tarea,
   usuarios,
+  proyectos,
   hilosDisponibles,
   usuarioActualId,
   gestionarAjenas,
   onTemperaturaChange,
+  onConvertida,
 }: {
   tarea: TareaConAsignados;
   usuarios: Usuario[];
+  proyectos: TareaProyecto[];
   hilosDisponibles?: TareaHilo[];
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   onTemperaturaChange?: (id: string, temperatura: number) => void;
+  onConvertida?: (hiloId: string) => void;
 }) {
   const [estadoBase, setEstadoBase] = useState(tarea.estado);
   const [estadoLocal, setEstadoLocal] = useState(tarea.estado);
@@ -93,9 +106,9 @@ export function TareaRow({
   const [reasignando, setReasignando] = useState(false);
   const [posponiendo, setPosponiendo] = useState(false);
   const [completando, setCompletando] = useState(false);
-  const [agregandoPaso, setAgregandoPaso] = useState(false);
-  const [mostrandoNotas, setMostrandoNotas] = useState(false);
+  const [editando, setEditando] = useState(false);
   const [mostrandoMoverHilo, setMostrandoMoverHilo] = useState(false);
+  const [desactivando, setDesactivando] = useState(false);
 
   const asignadosActivos = tarea.tareas_asignados.filter((a) => a.activo);
   const esAsignado =
@@ -152,8 +165,18 @@ export function TareaRow({
     if (!result.success) toast.error(result.error);
   }
 
+  // La tarea pasa a ser el primer paso de un hilo nuevo con su mismo título y
+  // descripción; el padre abre el panel del hilo para seguir agregando pasos.
+  async function convertirEnHilo() {
+    const result = await convertirTareaEnHilo(tarea.id);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    onConvertida?.(result.hiloId);
+  }
+
   async function desactivar() {
-    if (!confirm(`¿Desactivar "${tarea.titulo}"?`)) return;
     const result = await desactivarTarea(tarea.id);
     if (!result.success) toast.error(result.error);
   }
@@ -161,34 +184,17 @@ export function TareaRow({
   return (
     <div className="p-[13px] px-5">
       <div className="flex flex-wrap items-center gap-2">
-        {tarea.visibilidad === "privado" && (
-          <Lock size={13} strokeWidth={1.75} className="shrink-0 text-text-tertiary" title="Privada" />
+        {esAsignado ? (
+          <button
+            className="t-body-m text-left font-medium text-text-primary hover:underline"
+            onClick={() => setEditando(true)}
+            title="Modificar tarea"
+          >
+            {tarea.titulo}
+          </button>
+        ) : (
+          <p className="t-body-m font-medium text-text-primary">{tarea.titulo}</p>
         )}
-        {tarea.recurrencia_cantidad != null && (
-          <Repeat
-            size={13}
-            strokeWidth={1.75}
-            className="shrink-0 text-text-tertiary"
-            title={`Se repite cada ${tarea.recurrencia_cantidad} ${RECURRENCIA_LABEL[tarea.recurrencia_unidad ?? "dia"]}`}
-          />
-        )}
-        {tarea.origen_app && (
-          <ExternalLink
-            size={13}
-            strokeWidth={1.75}
-            className="shrink-0 text-text-tertiary"
-            title={`Vinculada a ${tarea.origen_app}`}
-          />
-        )}
-        {tarea.posponer_hasta && (
-          <Clock
-            size={13}
-            strokeWidth={1.75}
-            className="shrink-0 text-warning"
-            title={`Pospuesta hasta ${tarea.posponer_hasta}`}
-          />
-        )}
-        <p className="t-body-m font-medium text-text-primary">{tarea.titulo}</p>
         <span className={`badge ${ESTADO_BADGE[estadoLocal]}`}>{ESTADO_LABEL[estadoLocal]}</span>
       </div>
 
@@ -198,7 +204,7 @@ export function TareaRow({
         {tarea.fecha_vencimiento ? (
           <span className={`flex items-center gap-1 ${fechaClase}`}>
             <CalendarClock size={13} strokeWidth={1.75} />
-            {tarea.fecha_vencimiento}
+            {formatFecha(tarea.fecha_vencimiento)}
           </span>
         ) : (
           <span className={`flex items-center gap-1 ${antiguedadClase}`}>
@@ -206,10 +212,36 @@ export function TareaRow({
             Creada hace {diasAntiguedad} {diasAntiguedad === 1 ? "día" : "días"}
           </span>
         )}
-        <span className="flex items-center gap-1">
-          <Thermometer size={13} strokeWidth={1.75} />
-          {tempLocal}
-        </span>
+        {activa && (
+          <span className={`flex items-center gap-1 ${temperaturaRango(tempLocal).clase}`}>
+            <Thermometer size={13} strokeWidth={1.75} />
+            {temperaturaRango(tempLocal).label} ({tempLocal})
+          </span>
+        )}
+        {tarea.visibilidad === "privado" && (
+          <span className="flex items-center gap-1">
+            <Lock size={13} strokeWidth={1.75} />
+            Privada
+          </span>
+        )}
+        {tarea.recurrencia_cantidad != null && (
+          <span className="flex items-center gap-1">
+            <Repeat size={13} strokeWidth={1.75} />
+            Cada {tarea.recurrencia_cantidad} {RECURRENCIA_LABEL[tarea.recurrencia_unidad ?? "dia"]}
+          </span>
+        )}
+        {tarea.origen_app && (
+          <span className="flex items-center gap-1">
+            <ExternalLink size={13} strokeWidth={1.75} />
+            {tarea.origen_app}
+          </span>
+        )}
+        {tarea.posponer_hasta && (
+          <span className="flex items-center gap-1 text-warning">
+            <Clock size={13} strokeWidth={1.75} />
+            Pospuesta hasta {formatFecha(tarea.posponer_hasta)}
+          </span>
+        )}
         {asignadosActivos.length > 0 && (
           <span className="flex items-center">
             {asignadosActivos.map((a, i) => (
@@ -247,41 +279,40 @@ export function TareaRow({
                 <option value="en_progreso">En progreso</option>
                 <option value="cancelada">Cancelada</option>
               </select>
-              <input
-                type="range"
-                min={1}
-                max={100}
-                value={tempLocal}
-                onChange={(e) => {
-                  const valor = Number(e.target.value);
-                  setTempLocal(valor);
-                  onTemperaturaChange?.(tarea.id, valor);
-                }}
-                onMouseUp={commitTemperatura}
-                onTouchEnd={commitTemperatura}
-                className="w-24 accent-brand-700"
-                title="Temperatura"
-              />
+              {activa && (
+                <input
+                  type="range"
+                  min={1}
+                  max={100}
+                  value={tempLocal}
+                  onChange={(e) => {
+                    const valor = Number(e.target.value);
+                    setTempLocal(valor);
+                    onTemperaturaChange?.(tarea.id, valor);
+                  }}
+                  onMouseUp={commitTemperatura}
+                  onTouchEnd={commitTemperatura}
+                  onKeyUp={commitTemperatura}
+                  onBlur={commitTemperatura}
+                  className="w-24 accent-brand-700"
+                  title="Temperatura"
+                />
+              )}
             </>
           )}
-
-          <button className="btn btn-ghost btn-sm" onClick={() => setMostrandoNotas((v) => !v)}>
-            <MessageSquare size={14} strokeWidth={1.75} />
-            Notas
-          </button>
 
           {puedeGestionar && (
             <OverflowMenu
               items={[
-                { label: "Reasignar", icon: <UserCog size={14} strokeWidth={1.75} />, onClick: () => setReasignando(true) },
                 { label: "Posponer", icon: <Clock size={14} strokeWidth={1.75} />, onClick: () => setPosponiendo(true) },
+                { label: "Reasignar", icon: <UserCog size={14} strokeWidth={1.75} />, onClick: () => setReasignando(true) },
                 ...(tarea.hilo_id
                   ? [{ label: "Quitar del hilo", icon: <Unlink size={14} strokeWidth={1.75} />, onClick: quitarDeHilo }]
                   : [
                       {
                         label: "Agregar paso",
                         icon: <GitBranch size={14} strokeWidth={1.75} />,
-                        onClick: () => setAgregandoPaso(true),
+                        onClick: convertirEnHilo,
                       },
                       ...(hilosDisponibles && hilosDisponibles.length > 0
                         ? [
@@ -293,7 +324,12 @@ export function TareaRow({
                           ]
                         : []),
                     ]),
-                { label: "Desactivar", icon: <Archive size={14} strokeWidth={1.75} />, onClick: desactivar, destructive: true },
+                {
+                  label: "Desactivar",
+                  icon: <Archive size={14} strokeWidth={1.75} />,
+                  onClick: () => setDesactivando(true),
+                  destructive: true,
+                },
               ]}
             />
           )}
@@ -320,12 +356,23 @@ export function TareaRow({
         </select>
       )}
 
-      {mostrandoNotas && (
-        <div className="mt-3">
-          <NotasSection tipo="tarea" id={tarea.id} puedeAgregar={esAsignado} />
-        </div>
-      )}
+      <div className="mt-3">
+        <NotasSection
+          tipo="tarea"
+          id={tarea.id}
+          puedeAgregar={esAsignado}
+          notasIniciales={tarea.tareas_notas}
+        />
+      </div>
 
+      {desactivando && (
+        <ConfirmModal
+          title="Desactivar tarea"
+          mensaje={`¿Desactivar la tarea "${tarea.titulo}"?`}
+          onConfirm={desactivar}
+          onClose={() => setDesactivando(false)}
+        />
+      )}
       {reasignando && (
         <ReasignarPanel
           tareaId={tarea.id}
@@ -341,8 +388,14 @@ export function TareaRow({
       {completando && (
         <CompletarModal tareaId={tarea.id} titulo={tarea.titulo} onClose={() => setCompletando(false)} />
       )}
-      {agregandoPaso && (
-        <AgregarPasoPanel tareaId={tarea.id} titulo={tarea.titulo} onClose={() => setAgregandoPaso(false)} />
+      {editando && (
+        <TareaFormPanel
+          usuarios={usuarios}
+          proyectos={proyectos}
+          usuarioActualId={usuarioActualId}
+          tarea={tarea}
+          onClose={() => setEditando(false)}
+        />
       )}
     </div>
   );

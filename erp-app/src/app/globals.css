@@ -115,6 +115,11 @@
   a { @apply text-text-brand; }
   a:hover { @apply text-brand-500; }
   [data-theme="dark"] .logo { filter: brightness(0) invert(1); }
+  /* Un solo foco visible para todo lo interactivo: .input tiene el suyo
+     propio abajo, y estos selectores no lo pisan. */
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
 }
 
 @layer components {
@@ -162,5 +167,8 @@
 
   @media (max-width: 767px) {
     .btn, .input, .nav-item, .icon-btn { min-height: 44px; }
+    /* t-caption carga la info clave de cada fila (fecha, temperatura,
+       asignados): 11px es ilegible en un celular. */
+    .t-caption { font-size: 13px; }
   }
 }

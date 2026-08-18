@@ -6,9 +6,9 @@ export default async function ErpAppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-full flex-col lg:flex-row">
+    <div className="flex min-h-full flex-col md:flex-row">
       <Sidebar />
-      <main className="flex-1 p-4 lg:p-8">{children}</main>
+      <main className="mx-auto w-full max-w-[1280px] flex-1 p-4 lg:p-8">{children}</main>
     </div>
   );
 }

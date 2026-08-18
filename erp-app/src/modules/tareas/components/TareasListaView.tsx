@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
+import { SearchInput } from "@/components/ui/SearchInput";
 import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
 import { HiloCard } from "./HiloCard";
 import { TareaRow } from "./TareaRow";
@@ -38,6 +39,8 @@ export function TareasListaView({
   const [creandoTarea, setCreandoTarea] = useState(false);
   const [creandoHilo, setCreandoHilo] = useState(false);
   const { ordenar, onTemperaturaChange } = useOrdenTemperatura();
+  // Hilo recién creado al convertir una tarea: se abre su panel solo.
+  const [hiloConvertido, setHiloConvertido] = useState<string | null>(null);
 
   function coincide(t: TareaConAsignados) {
     if (!esPropia(t, usuarioActualId)) return false;
@@ -67,20 +70,7 @@ export function TareasListaView({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[180px]">
-          <Search
-            size={14}
-            strokeWidth={1.75}
-            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary"
-          />
-          <input
-            type="text"
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            placeholder="Buscar tarea o hilo…"
-            className="input py-1.5 pl-8"
-          />
-        </div>
+        <SearchInput value={texto} onChange={setTexto} placeholder="Buscar tarea o hilo…" />
         <button className="btn btn-secondary" onClick={() => setCreandoHilo(true)}>
           <Plus size={16} />
           Nuevo hilo
@@ -90,6 +80,12 @@ export function TareasListaView({
           Nueva tarea
         </button>
       </div>
+
+      {/* ponytail: sin paginación — la vista agrupa hilos (cards con tareas anidadas) y tareas sueltas;
+          paginar la concatenación de los dos grupos confunde. Paginar por grupo si alguien pasa de ~20 hilos. */}
+      <p className="t-caption mb-2">
+        {hilosFiltrados.length} hilos · {tareasSueltas.length} tareas sueltas
+      </p>
 
       {sinResultados ? (
         <div className="empty-state">
@@ -111,6 +107,7 @@ export function TareasListaView({
                   plantillas={plantillas}
                   usuarioActualId={usuarioActualId}
                   gestionarAjenas={gestionarAjenas}
+                  autoAbrir={hiloConvertido === h.id}
                 />
               ))}
             </div>
@@ -124,10 +121,12 @@ export function TareasListaView({
                   <TareaRow
                     tarea={t}
                     usuarios={usuarios}
+                    proyectos={proyectos}
                     hilosDisponibles={hilos}
                     usuarioActualId={usuarioActualId}
                     gestionarAjenas={gestionarAjenas}
                     onTemperaturaChange={onTemperaturaChange}
+                    onConvertida={setHiloConvertido}
                   />
                 </div>
               ))}

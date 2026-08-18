@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { FolderPlus, ListTodo, Users } from "lucide-react";
+import { Archive, FolderPlus, ListTodo, Users } from "lucide-react";
+import { ConfirmModal } from "@/components/ui/Modal";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
+import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
+import { SearchInput } from "@/components/ui/SearchInput";
 import { desactivarProyecto } from "../actions";
 import type { ProyectoMiembro, TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
 import { ProyectoFormPanel } from "./ProyectoFormPanel";
@@ -30,72 +34,111 @@ export function ProyectosView({
   gestionarAjenas: boolean;
   puedeCrear: boolean;
 }) {
+  const [texto, setTexto] = useState("");
   const [creando, setCreando] = useState(false);
   const [miembrosDe, setMiembrosDe] = useState<TareaProyecto | null>(null);
   const [detalleDe, setDetalleDe] = useState<TareaProyecto | null>(null);
+  const [desactivando, setDesactivando] = useState<TareaProyecto | null>(null);
 
   async function onDesactivar(proyecto: TareaProyecto) {
-    if (!confirm(`¿Desactivar proyecto "${proyecto.nombre}"?`)) return;
     const result = await desactivarProyecto(proyecto.id);
     if (!result.success) toast.error(result.error);
   }
 
+  const q = texto.trim().toLowerCase();
+  const filtrados = proyectos.filter(
+    (p) => p.nombre.toLowerCase().includes(q) || (p.descripcion ?? "").toLowerCase().includes(q),
+  );
+  const { visibles, ...paginado } = usePaginado(filtrados);
+
   return (
     <div>
-      {puedeCrear && (
-        <div className="mb-4 flex justify-end">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <SearchInput value={texto} onChange={setTexto} placeholder="Buscar proyecto…" />
+        {puedeCrear && (
           <button className="btn btn-primary" onClick={() => setCreando(true)}>
             <FolderPlus size={16} />
             Nuevo proyecto
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
-      {proyectos.length === 0 ? (
+      <Paginacion {...paginado} etiqueta="proyectos" />
+
+      {filtrados.length === 0 ? (
         <div className="empty-state">
-          <p className="t-h3">Sin proyectos todavía</p>
-          <p className="t-body-m mt-1">Creá el primero con &quot;Nuevo proyecto&quot;.</p>
+          <p className="t-h3">{texto ? "Sin resultados" : "Sin proyectos todavía"}</p>
+          <p className="t-body-m mt-1">
+            {texto ? "Probá con otro término de búsqueda." : 'Creá el primero con "Nuevo proyecto".'}
+          </p>
         </div>
       ) : (
         <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
-          {proyectos.map((p) => {
+          {visibles.map((p) => {
             const puedeGestionar = gestionarAjenas || p.creado_por === usuarioActualId;
             return (
               <div
                 key={p.id}
-                className="flex items-center justify-between border-b border-border p-[13px] px-5 last:border-b-0"
+                className="flex items-center gap-2 border-b border-border p-[13px] px-5 last:border-b-0"
               >
-                <div>
-                  <p className="t-body-m font-medium text-text-primary">{p.nombre}</p>
-                  {p.descripcion && <p className="t-caption">{p.descripcion}</p>}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className={`badge ${p.visibilidad === "privado" ? "badge-warning" : "badge-neutral"}`}>
-                    {p.visibilidad === "privado" ? "Privado" : "Público"}
-                  </span>
-
-                  <button className="btn btn-ghost btn-sm" onClick={() => setDetalleDe(p)}>
-                    <ListTodo size={14} strokeWidth={1.75} />
-                    Ver tareas
+                <div className="min-w-0 flex-1">
+                  <button
+                    className="t-body-m block max-w-full truncate text-left font-medium text-text-primary hover:underline"
+                    onClick={() => setDetalleDe(p)}
+                    title="Ver tareas"
+                  >
+                    {p.nombre}
                   </button>
-
-                  {puedeGestionar && p.visibilidad === "privado" && (
-                    <button className="btn btn-ghost btn-sm" onClick={() => setMiembrosDe(p)}>
-                      <Users size={14} strokeWidth={1.75} />
-                      Miembros
-                    </button>
-                  )}
-                  {puedeGestionar && (
-                    <button className="btn btn-ghost btn-sm text-error" onClick={() => onDesactivar(p)}>
-                      Desactivar
-                    </button>
-                  )}
+                  {p.descripcion && <p className="t-caption truncate">{p.descripcion}</p>}
                 </div>
+
+                <span
+                  className={`badge shrink-0 ${p.visibilidad === "privado" ? "badge-warning" : "badge-neutral"}`}
+                >
+                  {p.visibilidad === "privado" ? "Privado" : "Público"}
+                </span>
+
+                <OverflowMenu
+                  items={[
+                    {
+                      label: "Ver tareas",
+                      icon: <ListTodo size={14} strokeWidth={1.75} />,
+                      onClick: () => setDetalleDe(p),
+                    },
+                    ...(puedeGestionar && p.visibilidad === "privado"
+                      ? [
+                          {
+                            label: "Miembros",
+                            icon: <Users size={14} strokeWidth={1.75} />,
+                            onClick: () => setMiembrosDe(p),
+                          },
+                        ]
+                      : []),
+                    ...(puedeGestionar
+                      ? [
+                          {
+                            label: "Desactivar",
+                            icon: <Archive size={14} strokeWidth={1.75} />,
+                            onClick: () => setDesactivando(p),
+                            destructive: true,
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
               </div>
             );
           })}
         </div>
+      )}
+
+      {desactivando && (
+        <ConfirmModal
+          title="Desactivar proyecto"
+          mensaje={`¿Desactivar el proyecto "${desactivando.nombre}"?`}
+          onConfirm={() => onDesactivar(desactivando)}
+          onClose={() => setDesactivando(null)}
+        />
       )}
 
       {creando && <ProyectoFormPanel usuarios={usuarios} onClose={() => setCreando(false)} />}

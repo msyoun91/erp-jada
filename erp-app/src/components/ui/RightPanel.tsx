@@ -1,7 +1,13 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 
+// <dialog> + showModal(): el panel vive en el top layer del browser, así que
+// no lo puede tapar ni recortar ningún ancestro (stacking context, overflow,
+// transform) — y con paneles anidados (TareaRow dentro de HiloDetailPanel)
+// el último abierto queda arriba y Escape cierra solo ese, sin manejar
+// z-index ni listeners propios.
 export function RightPanel({
   title,
   subtitle,
@@ -15,10 +21,24 @@ export function RightPanel({
   footer?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-[rgba(7,11,20,.55)]" onClick={onClose} />
+  const ref = useRef<HTMLDialogElement>(null);
 
+  useEffect(() => {
+    ref.current?.showModal();
+  }, []);
+
+  return (
+    <dialog
+      ref={ref}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 m-0 h-full max-h-none w-full max-w-none justify-end overflow-hidden border-0 bg-transparent p-0 backdrop:bg-[rgba(7,11,20,.55)] open:flex"
+    >
       <div className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-bg-surface shadow-lg">
         <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
           <div>
@@ -38,6 +58,6 @@ export function RightPanel({
           </div>
         )}
       </div>
-    </div>
+    </dialog>
   );
 }

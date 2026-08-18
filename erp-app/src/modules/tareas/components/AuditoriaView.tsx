@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { ListTodo } from "lucide-react";
+import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
+import { formatFecha, formatFechaHora } from "@/lib/utils";
 import type { EventoAuditoria, TareaPendiente, Usuario } from "../types";
 
 const ESTADO_LABEL: Record<string, string> = {
@@ -26,6 +28,7 @@ export function AuditoriaView({
 }) {
   const router = useRouter();
   const usuarioNombre = usuarios.find((u) => u.id === usuarioId)?.nombre;
+  const { visibles, ...paginado } = usePaginado(eventos);
 
   function actualizarFiltro(next: { desde?: string; hasta?: string; usuario?: string }) {
     const params = new URLSearchParams({
@@ -85,14 +88,14 @@ export function AuditoriaView({
             <p className="t-caption p-3 px-5">Sin tareas pendientes — está al día.</p>
           ) : (
             pendientes.map((p) => (
-              <div key={p.id} className="flex items-center justify-between border-b border-border p-2.5 px-5 last:border-b-0">
-                <div>
+              <div key={p.id} className="flex items-center gap-2 border-b border-border p-2.5 px-5 last:border-b-0">
+                <div className="min-w-0 flex-1 truncate">
                   <span className="t-body-m">{p.titulo}</span>
                   {p.hilo_titulo && <span className="t-caption ml-2">· {p.hilo_titulo}</span>}
                 </div>
-                <div className="flex items-center gap-2 t-caption">
+                <div className="flex shrink-0 items-center gap-2 t-caption">
                   <span className="badge badge-neutral">{ESTADO_LABEL[p.estado] ?? p.estado}</span>
-                  {p.fecha_vencimiento && <span>{p.fecha_vencimiento}</span>}
+                  {p.fecha_vencimiento && <span>{formatFecha(p.fecha_vencimiento)}</span>}
                 </div>
               </div>
             ))
@@ -100,7 +103,7 @@ export function AuditoriaView({
         </div>
       )}
 
-      <p className="t-caption mb-2">{eventos.length} tareas completadas</p>
+      <Paginacion {...paginado} etiqueta="tareas completadas" />
 
       {eventos.length === 0 ? (
         <div className="empty-state">
@@ -109,21 +112,21 @@ export function AuditoriaView({
         </div>
       ) : (
         <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
-          {eventos.map((e) => (
-            <div key={e.id} className="flex items-center justify-between border-b border-border p-[13px] px-5 last:border-b-0">
-              <div>
-                <p className="t-body-m font-medium text-text-primary">{e.tareas?.titulo}</p>
-                <p className="t-caption">{e.usuarios?.nombre ?? "Sistema"}</p>
+          {visibles.map((e) => (
+            <div key={e.id} className="flex items-center gap-2 border-b border-border p-[13px] px-5 last:border-b-0">
+              <div className="min-w-0 flex-1">
+                <p className="t-body-m truncate font-medium text-text-primary">{e.tareas?.titulo}</p>
+                <p className="t-caption truncate">{e.usuarios?.nombre ?? "Sistema"}</p>
               </div>
-              <div className="text-right t-caption">
-                <p>Completada: {new Date(e.created_at).toLocaleString("es-AR")}</p>
-                {e.tareas?.created_at && (
-                  <p>Creada: {new Date(e.tareas.created_at).toLocaleDateString("es-AR")}</p>
-                )}
-                {e.fecha_asignacion && (
-                  <p>Asignada: {new Date(e.fecha_asignacion).toLocaleDateString("es-AR")}</p>
-                )}
-              </div>
+              <p className="t-caption text-right">
+                {[
+                  e.tareas?.created_at && `Creada ${formatFecha(e.tareas.created_at)}`,
+                  e.fecha_asignacion && `Asignada ${formatFecha(e.fecha_asignacion)}`,
+                  `Completada ${formatFechaHora(e.created_at)}`,
+                ]
+                  .filter(Boolean)
+                  .join(" → ")}
+              </p>
             </div>
           ))}
         </div>

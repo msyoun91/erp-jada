@@ -3,6 +3,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/lib/supabase/database.types";
+import { mensajeError } from "@/lib/utils";
 import { puedeGestionarUsuarios } from "./permissions";
 import {
   asignarSubmodulosSchema,
@@ -37,7 +38,7 @@ export async function crearUsuario(input: CrearUsuarioForm) {
   });
 
   if (error) {
-    return { success: false as const, error: error.message };
+    return { success: false as const, error: mensajeError(error) };
   }
 
   revalidatePath("/usuarios");
@@ -56,7 +57,7 @@ export async function desactivarUsuario(usuarioId: string) {
     .eq("id", usuarioId);
 
   if (error) {
-    return { success: false as const, error: error.message };
+    return { success: false as const, error: mensajeError(error) };
   }
 
   revalidatePath("/usuarios");
@@ -82,7 +83,7 @@ export async function asignarSubmodulos(input: AsignarSubmodulosForm) {
     .eq("usuario_id", usuario_id);
 
   if (deactivateError) {
-    return { success: false as const, error: deactivateError.message };
+    return { success: false as const, error: mensajeError(deactivateError) };
   }
 
   if (submodulo_ids.length > 0) {
@@ -98,7 +99,7 @@ export async function asignarSubmodulos(input: AsignarSubmodulosForm) {
       );
 
     if (upsertError) {
-      return { success: false as const, error: upsertError.message };
+      return { success: false as const, error: mensajeError(upsertError) };
     }
   }
 

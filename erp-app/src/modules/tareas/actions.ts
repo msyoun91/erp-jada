@@ -2,31 +2,33 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { hoyISO } from "@/lib/utils";
+import { hoyISO, mensajeError } from "@/lib/utils";
 import {
   crearTareaSchema,
+  editarTareaSchema,
   crearHiloSchema,
   crearProyectoSchema,
   crearPlantillaSchema,
+  editarPlantillaSchema,
   reasignarTareaSchema,
   posponerSchema,
   completarTareaSchema,
   cerrarHiloSchema,
   agregarDesdePlantillaSchema,
-  agregarPasoSchema,
   deshacerConversionSchema,
   agregarNotaTareaSchema,
   agregarNotaHiloSchema,
   type CrearTareaForm,
+  type EditarTareaForm,
   type CrearHiloForm,
   type CrearProyectoForm,
   type CrearPlantillaForm,
+  type EditarPlantillaForm,
   type ReasignarTareaForm,
   type PosponerForm,
   type CompletarTareaForm,
   type CerrarHiloForm,
   type AgregarDesdePlantillaForm,
-  type AgregarPasoForm,
   type DeshacerConversionForm,
   type AgregarNotaTareaForm,
   type AgregarNotaHiloForm,
@@ -64,16 +66,32 @@ export async function crearTarea(input: CrearTareaForm) {
     .select("id")
     .single();
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   const { error: errorAsignados } = await supabase
     .from("tareas_asignados")
     .insert(asignados.map((usuario_id) => ({ tarea_id: data.id, usuario_id })));
 
-  if (errorAsignados) return { success: false as const, error: errorAsignados.message };
+  if (errorAsignados) return { success: false as const, error: mensajeError(errorAsignados) };
 
   revalidatePath("/tareas");
   return { success: true as const, id: data.id };
+}
+
+export async function editarTarea(input: EditarTareaForm) {
+  const parsed = editarTareaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { id, ...campos } = parsed.data;
+
+  const { error } = await supabase.from("tareas").update(campos).eq("id", id);
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath("/tareas");
+  return { success: true as const };
 }
 
 export async function crearHilo(input: CrearHiloForm) {
@@ -92,42 +110,29 @@ export async function crearHilo(input: CrearHiloForm) {
 
   const { error } = await supabase.from("tareas_hilos").insert({ id, ...parsed.data, creado_por });
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const, id };
 }
 
-// §1 spec: una tarea suelta se convierte en hilo recién al agregarle un 2do
-// paso — no hay pantalla de "convertir", el cambio de estructura es real.
-// creado_por del hilo/paso nuevo es siempre quien ejecuta la acción (no el
-// creador original) porque tareas_hilos_insert/tareas_insert exigen
+// §1 spec: una tarea suelta se convierte en hilo. El título/descripción de
+// la tarea pasan a ser los del hilo y la tarea original queda como su primer
+// paso — no se crea un paso extra acá: la UI abre el panel del hilo para que
+// el usuario agregue los que quiera. creado_por del hilo es siempre quien
+// ejecuta la acción (no el creador original) porque tareas_hilos_insert exige
 // creado_por = auth.uid() en su WITH CHECK.
-export async function agregarPasoATarea(input: AgregarPasoForm) {
-  const parsed = agregarPasoSchema.safeParse(input);
-  if (!parsed.success) {
-    return { success: false as const, error: parsed.error.issues[0].message };
-  }
-
+export async function convertirTareaEnHilo(tareaId: string) {
   const supabase = await createClient();
   const usuarioId = await usuarioActualId();
-  const { tarea_id, titulo_paso } = parsed.data;
 
   const { data: original, error: errorOriginal } = await supabase
     .from("tareas")
     .select("titulo, descripcion, visibilidad, proyecto_id, responsable_id")
-    .eq("id", tarea_id)
+    .eq("id", tareaId)
     .single();
 
-  if (errorOriginal) return { success: false as const, error: errorOriginal.message };
-
-  const { data: asignados, error: errorAsignados } = await supabase
-    .from("tareas_asignados")
-    .select("usuario_id")
-    .eq("tarea_id", tarea_id)
-    .eq("activo", true);
-
-  if (errorAsignados) return { success: false as const, error: errorAsignados.message };
+  if (errorOriginal) return { success: false as const, error: mensajeError(errorOriginal) };
 
   // id generado en el server: mismo motivo que crearHilo — evita el
   // RETURNING sobre tareas_hilos, cuya policy de SELECT relee la propia tabla.
@@ -143,36 +148,14 @@ export async function agregarPasoATarea(input: AgregarPasoForm) {
     creado_por: usuarioId,
   });
 
-  if (errorHilo) return { success: false as const, error: errorHilo.message };
+  if (errorHilo) return { success: false as const, error: mensajeError(errorHilo) };
 
-  const { error: errorMoverOriginal } = await supabase
+  const { error: errorMover } = await supabase
     .from("tareas")
     .update({ hilo_id: hiloId, proyecto_id: null })
-    .eq("id", tarea_id);
+    .eq("id", tareaId);
 
-  if (errorMoverOriginal) return { success: false as const, error: errorMoverOriginal.message };
-
-  const { data: nuevoPaso, error: errorPaso } = await supabase
-    .from("tareas")
-    .insert({
-      titulo: titulo_paso,
-      hilo_id: hiloId,
-      responsable_id: original.responsable_id,
-      creado_por: usuarioId,
-      visibilidad: original.visibilidad,
-    })
-    .select("id")
-    .single();
-
-  if (errorPaso) return { success: false as const, error: errorPaso.message };
-
-  if (asignados && asignados.length > 0) {
-    const { error: errorAsignar } = await supabase
-      .from("tareas_asignados")
-      .insert(asignados.map((a) => ({ tarea_id: nuevoPaso.id, usuario_id: a.usuario_id })));
-
-    if (errorAsignar) return { success: false as const, error: errorAsignar.message };
-  }
+  if (errorMover) return { success: false as const, error: mensajeError(errorMover) };
 
   revalidatePath("/tareas");
   return { success: true as const, hiloId };
@@ -198,7 +181,7 @@ export async function deshacerConversionHilo(input: DeshacerConversionForm) {
     .eq("id", hilo_id)
     .single();
 
-  if (errorHilo) return { success: false as const, error: errorHilo.message };
+  if (errorHilo) return { success: false as const, error: mensajeError(errorHilo) };
 
   const { data: tareasDelHilo, error: errorTareas } = await supabase
     .from("tareas")
@@ -207,7 +190,7 @@ export async function deshacerConversionHilo(input: DeshacerConversionForm) {
     .eq("activo", true)
     .order("created_at", { ascending: true });
 
-  if (errorTareas) return { success: false as const, error: errorTareas.message };
+  if (errorTareas) return { success: false as const, error: mensajeError(errorTareas) };
 
   const [primera, ...resto] = tareasDelHilo ?? [];
 
@@ -217,7 +200,7 @@ export async function deshacerConversionHilo(input: DeshacerConversionForm) {
       .update({ hilo_id: null, proyecto_id: hilo.proyecto_id })
       .eq("id", primera.id);
 
-    if (errorRestaurar) return { success: false as const, error: errorRestaurar.message };
+    if (errorRestaurar) return { success: false as const, error: mensajeError(errorRestaurar) };
   }
 
   if (resto.length > 0) {
@@ -229,7 +212,7 @@ export async function deshacerConversionHilo(input: DeshacerConversionForm) {
         resto.map((t) => t.id)
       );
 
-    if (errorDesactivarResto) return { success: false as const, error: errorDesactivarResto.message };
+    if (errorDesactivarResto) return { success: false as const, error: mensajeError(errorDesactivarResto) };
   }
 
   const { error: errorDesactivarHilo } = await supabase
@@ -237,7 +220,7 @@ export async function deshacerConversionHilo(input: DeshacerConversionForm) {
     .update({ activo: false })
     .eq("id", hilo_id);
 
-  if (errorDesactivarHilo) return { success: false as const, error: errorDesactivarHilo.message };
+  if (errorDesactivarHilo) return { success: false as const, error: mensajeError(errorDesactivarHilo) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -259,14 +242,14 @@ export async function crearProyecto(input: CrearProyectoForm) {
     .select("id")
     .single();
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   if (miembros && miembros.length > 0) {
     const { error: errorMiembros } = await supabase
       .from("tareas_proyectos_miembros")
       .insert(miembros.map((usuario_id) => ({ proyecto_id: data.id, usuario_id })));
 
-    if (errorMiembros) return { success: false as const, error: errorMiembros.message };
+    if (errorMiembros) return { success: false as const, error: mensajeError(errorMiembros) };
   }
 
   revalidatePath("/tareas/proyectos");
@@ -282,14 +265,14 @@ export async function gestionarMiembrosProyecto(proyectoId: string, usuarioIds: 
     .eq("proyecto_id", proyectoId)
     .eq("activo", true);
 
-  if (errorDesactivar) return { success: false as const, error: errorDesactivar.message };
+  if (errorDesactivar) return { success: false as const, error: mensajeError(errorDesactivar) };
 
   if (usuarioIds.length > 0) {
     const { error: errorInsertar } = await supabase
       .from("tareas_proyectos_miembros")
       .insert(usuarioIds.map((usuario_id) => ({ proyecto_id: proyectoId, usuario_id })));
 
-    if (errorInsertar) return { success: false as const, error: errorInsertar.message };
+    if (errorInsertar) return { success: false as const, error: mensajeError(errorInsertar) };
   }
 
   revalidatePath("/tareas/proyectos");
@@ -299,7 +282,7 @@ export async function gestionarMiembrosProyecto(proyectoId: string, usuarioIds: 
 export async function desactivarProyecto(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("tareas_proyectos").update({ activo: false }).eq("id", id);
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/tareas/proyectos");
   return { success: true as const };
 }
@@ -320,22 +303,83 @@ export async function crearPlantilla(input: CrearPlantillaForm) {
     .select("id")
     .single();
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   const { error: errorItems } = await supabase
     .from("tareas_plantillas_items")
     .insert(items.map((item) => ({ plantilla_id: data.id, titulo: item.titulo, orden: item.orden })));
 
-  if (errorItems) return { success: false as const, error: errorItems.message };
+  if (errorItems) return { success: false as const, error: mensajeError(errorItems) };
 
   revalidatePath("/tareas/plantillas");
   return { success: true as const, id: data.id };
 }
 
+// Editar plantilla no toca las tareas ya generadas: agregarTareasDesdePlantilla
+// copia los títulos, no referencia los items. Los cambios aplican a usos futuros.
+export async function editarPlantilla(input: EditarPlantillaForm) {
+  const parsed = editarPlantillaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { id, items, ...plantilla } = parsed.data;
+
+  const { error } = await supabase.from("tareas_plantillas").update(plantilla).eq("id", id);
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  const { data: actuales, error: errorActuales } = await supabase
+    .from("tareas_plantillas_items")
+    .select("id")
+    .eq("plantilla_id", id)
+    .eq("activo", true);
+
+  if (errorActuales) return { success: false as const, error: mensajeError(errorActuales) };
+
+  const conservados = new Set(items.map((item) => item.id).filter(Boolean));
+  const aDesactivar = (actuales ?? []).filter((a) => !conservados.has(a.id)).map((a) => a.id);
+
+  if (aDesactivar.length > 0) {
+    const { error: errorDesactivar } = await supabase
+      .from("tareas_plantillas_items")
+      .update({ activo: false })
+      .in("id", aDesactivar);
+
+    if (errorDesactivar) return { success: false as const, error: mensajeError(errorDesactivar) };
+  }
+
+  const nuevos = items.filter((item) => !item.id);
+  if (nuevos.length > 0) {
+    const { error: errorNuevos } = await supabase
+      .from("tareas_plantillas_items")
+      .insert(nuevos.map((item) => ({ plantilla_id: id, titulo: item.titulo, orden: item.orden })));
+
+    if (errorNuevos) return { success: false as const, error: mensajeError(errorNuevos) };
+  }
+
+  // Un update por paso existente: son un puñado por plantilla, no vale armar
+  // un upsert con todas las columnas para ahorrar round-trips.
+  const existentes = items.filter((item) => item.id);
+  const resultados = await Promise.all(
+    existentes.map((item) =>
+      supabase
+        .from("tareas_plantillas_items")
+        .update({ titulo: item.titulo, orden: item.orden })
+        .eq("id", item.id!),
+    ),
+  );
+  const falla = resultados.find((r) => r.error);
+  if (falla?.error) return { success: false as const, error: mensajeError(falla.error) };
+
+  revalidatePath("/tareas/plantillas");
+  return { success: true as const };
+}
+
 export async function desactivarPlantilla(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("tareas_plantillas").update({ activo: false }).eq("id", id);
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/tareas/plantillas");
   return { success: true as const };
 }
@@ -357,7 +401,7 @@ export async function agregarTareasDesdePlantilla(input: AgregarDesdePlantillaFo
     .eq("activo", true)
     .order("orden");
 
-  if (errorItems) return { success: false as const, error: errorItems.message };
+  if (errorItems) return { success: false as const, error: mensajeError(errorItems) };
   if (!items || items.length === 0) {
     return { success: false as const, error: "La plantilla no tiene pasos" };
   }
@@ -374,13 +418,13 @@ export async function agregarTareasDesdePlantilla(input: AgregarDesdePlantillaFo
     )
     .select("id");
 
-  if (errorInsertar) return { success: false as const, error: errorInsertar.message };
+  if (errorInsertar) return { success: false as const, error: mensajeError(errorInsertar) };
 
   const { error: errorAsignar } = await supabase
     .from("tareas_asignados")
     .insert((tareasCreadas ?? []).flatMap((t) => asignados.map((usuario_id) => ({ tarea_id: t.id, usuario_id }))));
 
-  if (errorAsignar) return { success: false as const, error: errorAsignar.message };
+  if (errorAsignar) return { success: false as const, error: mensajeError(errorAsignar) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -400,7 +444,7 @@ export async function completarTarea(input: CompletarTareaForm) {
     .update({ estado: "completada", ...(nota_siguiente !== undefined ? { nota_siguiente } : {}) })
     .eq("id", tarea_id);
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -412,7 +456,7 @@ export async function cambiarEstadoTarea(
 ) {
   const supabase = await createClient();
   const { error } = await supabase.from("tareas").update({ estado }).eq("id", tareaId);
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/tareas");
   return { success: true as const };
 }
@@ -431,7 +475,7 @@ export async function reasignarTarea(input: ReasignarTareaForm) {
     .update({ responsable_id })
     .eq("id", tarea_id);
 
-  if (errorResponsable) return { success: false as const, error: errorResponsable.message };
+  if (errorResponsable) return { success: false as const, error: mensajeError(errorResponsable) };
 
   // Desactiva y reinserta en vez de upsert: el índice único de
   // tareas_asignados es parcial (WHERE activo) — el upsert de Supabase no
@@ -443,13 +487,13 @@ export async function reasignarTarea(input: ReasignarTareaForm) {
     .eq("tarea_id", tarea_id)
     .eq("activo", true);
 
-  if (errorDesactivar) return { success: false as const, error: errorDesactivar.message };
+  if (errorDesactivar) return { success: false as const, error: mensajeError(errorDesactivar) };
 
   const { error: errorAsignar } = await supabase
     .from("tareas_asignados")
     .insert(asignados.map((usuario_id) => ({ tarea_id, usuario_id })));
 
-  if (errorAsignar) return { success: false as const, error: errorAsignar.message };
+  if (errorAsignar) return { success: false as const, error: mensajeError(errorAsignar) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -467,7 +511,7 @@ export async function posponerTarea(input: PosponerForm) {
     .update({ posponer_desde: hoyISO(), posponer_hasta: parsed.data.hasta })
     .eq("id", parsed.data.id);
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -485,7 +529,7 @@ export async function posponerHilo(input: PosponerForm) {
     .update({ posponer_desde: hoyISO(), posponer_hasta: parsed.data.hasta })
     .eq("id", parsed.data.id);
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -503,7 +547,7 @@ export async function cerrarHilo(input: CerrarHiloForm) {
     .update({ estado: "cerrado" })
     .eq("id", parsed.data.hilo_id);
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -512,7 +556,7 @@ export async function cerrarHilo(input: CerrarHiloForm) {
 export async function desactivarHilo(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("tareas_hilos").update({ activo: false }).eq("id", id);
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/tareas");
   return { success: true as const };
 }
@@ -520,7 +564,7 @@ export async function desactivarHilo(id: string) {
 export async function desactivarTarea(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("tareas").update({ activo: false }).eq("id", id);
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/tareas");
   return { success: true as const };
 }
@@ -531,7 +575,7 @@ export async function asociarTareaHilo(tareaId: string, hiloId: string) {
     .from("tareas")
     .update({ hilo_id: hiloId, proyecto_id: null })
     .eq("id", tareaId);
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/tareas");
   return { success: true as const };
 }
@@ -539,7 +583,7 @@ export async function asociarTareaHilo(tareaId: string, hiloId: string) {
 export async function desasociarTareaHilo(tareaId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("tareas").update({ hilo_id: null }).eq("id", tareaId);
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/tareas");
   return { success: true as const };
 }
@@ -550,7 +594,7 @@ export async function actualizarTemperatura(tareaId: string, temperatura: number
   }
   const supabase = await createClient();
   const { error } = await supabase.from("tareas").update({ temperatura }).eq("id", tareaId);
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/tareas");
   return { success: true as const };
 }
@@ -568,7 +612,7 @@ export async function agregarNotaTarea(input: AgregarNotaTareaForm) {
   const supabase = await createClient();
   const usuario_id = await usuarioActualId();
   const { error } = await supabase.from("tareas_notas").insert({ ...parsed.data, usuario_id });
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -583,7 +627,7 @@ export async function agregarNotaHilo(input: AgregarNotaHiloForm) {
   const supabase = await createClient();
   const usuario_id = await usuarioActualId();
   const { error } = await supabase.from("tareas_hilos_notas").insert({ ...parsed.data, usuario_id });
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -598,7 +642,7 @@ export async function listarNotasTarea(tareaId: string) {
     .eq("activo", true)
     .order("created_at", { ascending: false });
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
   return { success: true as const, data: (data ?? []) as TareaNota[] };
 }
 
@@ -611,6 +655,6 @@ export async function listarNotasHilo(hiloId: string) {
     .eq("activo", true)
     .order("created_at", { ascending: false });
 
-  if (error) return { success: false as const, error: error.message };
+  if (error) return { success: false as const, error: mensajeError(error) };
   return { success: true as const, data: (data ?? []) as HiloNota[] };
 }

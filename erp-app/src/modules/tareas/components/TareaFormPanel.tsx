@@ -5,17 +5,25 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { crearTarea } from "../actions";
+import { crearTarea, editarTarea } from "../actions";
 import { crearTareaSchema, type CrearTareaForm } from "../types";
-import type { TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados, TareaProyecto, Usuario } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
+import { hoyISO, sumarDiasISO } from "@/lib/utils";
 
+const VENCIMIENTO_PRESETS = [1, 3, 7];
+
+// Un solo panel para crear y editar: con `tarea` presente pasa a modo
+// edición. El schema sigue siendo crearTareaSchema (superset) — asignados y
+// responsable viajan como defaults ocultos porque en edición se cambian por
+// "Reasignar", que ya es la única autoridad sobre tareas_asignados.
 export function TareaFormPanel({
   usuarios,
   proyectos,
   usuarioActualId,
   hiloId,
   proyectoId,
+  tarea,
   onClose,
 }: {
   usuarios: Usuario[];
@@ -23,10 +31,11 @@ export function TareaFormPanel({
   usuarioActualId: string | null;
   hiloId?: string;
   proyectoId?: string;
+  tarea?: TareaConAsignados;
   onClose: () => void;
 }) {
   const [enviando, setEnviando] = useState(false);
-  const [tieneRecurrencia, setTieneRecurrencia] = useState(false);
+  const [tieneRecurrencia, setTieneRecurrencia] = useState(tarea?.recurrencia_cantidad != null);
   const {
     register,
     handleSubmit,
@@ -35,32 +44,46 @@ export function TareaFormPanel({
     formState: { errors },
   } = useForm<CrearTareaForm>({
     resolver: zodResolver(crearTareaSchema),
-    defaultValues: {
-      hilo_id: hiloId ?? null,
-      proyecto_id: proyectoId ?? null,
-      visibilidad: "privado",
-      responsable_id: usuarioActualId ?? "",
-      asignados: usuarioActualId ? [usuarioActualId] : [],
-      temperatura: 50,
-    },
+    defaultValues: tarea
+      ? {
+          titulo: tarea.titulo,
+          descripcion: tarea.descripcion ?? undefined,
+          hilo_id: tarea.hilo_id,
+          proyecto_id: tarea.proyecto_id,
+          visibilidad: tarea.visibilidad,
+          responsable_id: tarea.responsable_id,
+          asignados: tarea.tareas_asignados.filter((a) => a.activo).map((a) => a.usuario_id),
+          fecha_vencimiento: tarea.fecha_vencimiento,
+          temperatura: tarea.temperatura,
+          recurrencia_cantidad: tarea.recurrencia_cantidad,
+          recurrencia_unidad: tarea.recurrencia_unidad,
+        }
+      : {
+          hilo_id: hiloId ?? null,
+          proyecto_id: proyectoId ?? null,
+          visibilidad: "privado",
+          responsable_id: usuarioActualId ?? "",
+          asignados: usuarioActualId ? [usuarioActualId] : [],
+          temperatura: 50,
+        },
   });
 
   async function onSubmit(data: CrearTareaForm) {
     setEnviando(true);
-    const result = await crearTarea(data);
+    const result = tarea ? await editarTarea({ ...data, id: tarea.id }) : await crearTarea(data);
     setEnviando(false);
 
     if (!result.success) {
       toast.error(result.error);
       return;
     }
-    toast.success("Tarea creada");
+    toast.success(tarea ? "Tarea actualizada" : "Tarea creada");
     onClose();
   }
 
   return (
     <RightPanel
-      title="Nueva tarea"
+      title={tarea ? "Editar tarea" : "Nueva tarea"}
       onClose={onClose}
       footer={
         <>
@@ -68,7 +91,7 @@ export function TareaFormPanel({
             Cancelar
           </button>
           <button type="submit" form="form-tarea" className="btn btn-primary btn-sm" disabled={enviando}>
-            {enviando ? "Creando…" : "Crear tarea"}
+            {enviando ? "Guardando…" : tarea ? "Guardar" : "Crear tarea"}
           </button>
         </>
       }
@@ -89,7 +112,7 @@ export function TareaFormPanel({
           <textarea rows={3} className="input" {...register("descripcion")} />
         </div>
 
-        {!hiloId && !proyectoId && (
+        {!hiloId && !proyectoId && !tarea?.hilo_id && (
           <div>
             <label className="t-label mb-1 block">Proyecto</label>
             <select className="input" {...register("proyecto_id")}>
@@ -111,11 +134,23 @@ export function TareaFormPanel({
           </select>
         </div>
 
-        <AsignadosPicker control={control} usuarios={usuarios} />
+        {!tarea && <AsignadosPicker control={control} usuarios={usuarios} />}
 
         <div>
           <label className="t-label mb-1 block">Vencimiento</label>
           <input type="date" className="input" {...register("fecha_vencimiento")} />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {VENCIMIENTO_PRESETS.map((dias) => (
+              <button
+                key={dias}
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setValue("fecha_vencimiento", sumarDiasISO(hoyISO(), dias))}
+              >
+                {dias} {dias === 1 ? "día" : "días"}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div>
