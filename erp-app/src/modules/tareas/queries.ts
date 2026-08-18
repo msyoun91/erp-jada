@@ -2,7 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { sumarDiasISO } from "@/lib/utils";
 import type {
   EventoAuditoria,
-  ProyectoMiembro,
   TareaConAsignados,
   TareaHilo,
   TareaPendiente,
@@ -99,16 +98,23 @@ export async function getProyectos(): Promise<TareaProyecto[]> {
   return data ?? [];
 }
 
-export async function getProyectoMiembros(proyectoId: string): Promise<ProyectoMiembro[]> {
+// Mapa proyecto -> ids de miembros activos, en una sola query para todos los
+// proyectos que el usuario ve (RLS ya filtra): el picker de asignados lo
+// necesita en cada vista, y pedirlo por proyecto eran N requests.
+export async function getMiembrosPorProyecto(): Promise<Record<string, string[]>> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tareas_proyectos_miembros")
-    .select("usuario_id, usuarios(nombre)")
-    .eq("proyecto_id", proyectoId)
+    .select("proyecto_id, usuario_id")
     .eq("activo", true);
 
   if (error) throw error;
-  return data ?? [];
+
+  const mapa: Record<string, string[]> = {};
+  for (const m of data ?? []) {
+    (mapa[m.proyecto_id] ??= []).push(m.usuario_id);
+  }
+  return mapa;
 }
 
 export async function getPlantillas(): Promise<TareaPlantilla[]> {

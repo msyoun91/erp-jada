@@ -9,22 +9,28 @@ import { crearProyecto } from "../actions";
 import { crearProyectoSchema, type CrearProyectoForm } from "../types";
 import type { Usuario } from "../types";
 
-export function ProyectoFormPanel({ usuarios, onClose }: { usuarios: Usuario[]; onClose: () => void }) {
+export function ProyectoFormPanel({
+  usuarios,
+  usuarioActualId,
+  onClose,
+}: {
+  usuarios: Usuario[];
+  usuarioActualId: string | null;
+  onClose: () => void;
+}) {
   const [enviando, setEnviando] = useState(false);
   const {
     register,
     handleSubmit,
     control,
-    watch,
     formState: { errors },
   } = useForm<CrearProyectoForm>({
     resolver: zodResolver(crearProyectoSchema),
-    defaultValues: { visibilidad: "privado", miembros: [] },
+    defaultValues: { visibilidad: "privado", miembros: usuarioActualId ? [usuarioActualId] : [] },
   });
 
   const miembrosField = useController({ name: "miembros", control });
   const seleccionados = miembrosField.field.value ?? [];
-  const esPrivado = watch("visibilidad") === "privado";
 
   function toggle(id: string) {
     miembrosField.field.onChange(
@@ -84,28 +90,27 @@ export function ProyectoFormPanel({ usuarios, onClose }: { usuarios: Usuario[]; 
           </select>
         </div>
 
-        {esPrivado && (
-          <div>
-            <label className="t-label mb-1 block">Miembros</label>
-            <div className="max-h-40 overflow-y-auto rounded-md border-[1.5px] border-border-strong">
-              {usuarios.map((u) => (
-                <label
-                  key={u.id}
-                  className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-bg-subtle"
-                >
-                  <input
-                    type="checkbox"
-                    checked={seleccionados.includes(u.id)}
-                    onChange={() => toggle(u.id)}
-                    className="h-4 w-4 shrink-0 accent-brand-700"
-                  />
-                  <span className="t-body-m">{u.nombre}</span>
-                </label>
-              ))}
-            </div>
-            {errors.miembros && <p className="input-error-text">{errors.miembros.message}</p>}
+        <div>
+          <label className="t-label mb-1 block">Miembros</label>
+          <p className="t-caption mb-1">Solo los miembros pueden recibir tareas del proyecto.</p>
+          <div className="max-h-40 overflow-y-auto rounded-md border-[1.5px] border-border-strong">
+            {usuarios.map((u) => (
+              <label
+                key={u.id}
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-bg-subtle"
+              >
+                <input
+                  type="checkbox"
+                  checked={seleccionados.includes(u.id)}
+                  onChange={() => toggle(u.id)}
+                  className="h-4 w-4 shrink-0 accent-brand-700"
+                />
+                <span className="t-body-m">{u.nombre}</span>
+              </label>
+            ))}
           </div>
-        )}
+          {errors.miembros && <p className="input-error-text">{errors.miembros.message}</p>}
+        </div>
       </form>
     </RightPanel>
   );

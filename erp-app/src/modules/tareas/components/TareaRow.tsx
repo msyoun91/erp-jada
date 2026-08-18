@@ -74,7 +74,9 @@ export function TareaRow({
   tarea,
   usuarios,
   proyectos,
+  miembrosPorProyecto,
   hilosDisponibles,
+  proyectoHeredadoId,
   usuarioActualId,
   gestionarAjenas,
   onTemperaturaChange,
@@ -83,7 +85,10 @@ export function TareaRow({
   tarea: TareaConAsignados;
   usuarios: Usuario[];
   proyectos: TareaProyecto[];
+  miembrosPorProyecto: Record<string, string[]>;
   hilosDisponibles?: TareaHilo[];
+  // Proyecto del hilo que contiene la tarea (la tarea no lo guarda).
+  proyectoHeredadoId?: string | null;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   onTemperaturaChange?: (id: string, temperatura: number) => void;
@@ -109,6 +114,9 @@ export function TareaRow({
   const [editando, setEditando] = useState(false);
   const [mostrandoMoverHilo, setMostrandoMoverHilo] = useState(false);
   const [desactivando, setDesactivando] = useState(false);
+
+  const proyectoEfectivo = tarea.proyecto_id ?? proyectoHeredadoId ?? null;
+  const miembros = proyectoEfectivo ? (miembrosPorProyecto[proyectoEfectivo] ?? []) : null;
 
   const asignadosActivos = tarea.tareas_asignados.filter((a) => a.activo);
   const esAsignado =
@@ -379,6 +387,7 @@ export function TareaRow({
           asignadosActuales={asignadosActivos.map((a) => a.usuario_id)}
           responsableActual={tarea.responsable_id}
           usuarios={usuarios}
+          miembros={miembros}
           onClose={() => setReasignando(false)}
         />
       )}
@@ -392,6 +401,7 @@ export function TareaRow({
         <TareaFormPanel
           usuarios={usuarios}
           proyectos={proyectos}
+          miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
           tarea={tarea}
           onClose={() => setEditando(false)}

@@ -24,6 +24,7 @@ export function TareasListaView({
   usuarios,
   proyectos,
   plantillas,
+  miembrosPorProyecto,
   gestionarAjenas,
   usuarioActualId,
 }: {
@@ -32,6 +33,7 @@ export function TareasListaView({
   usuarios: Usuario[];
   proyectos: TareaProyecto[];
   plantillas: TareaPlantilla[];
+  miembrosPorProyecto: Record<string, string[]>;
   gestionarAjenas: boolean;
   usuarioActualId: string | null;
 }) {
@@ -105,6 +107,7 @@ export function TareasListaView({
                   proyectos={proyectos}
                   usuarios={usuarios}
                   plantillas={plantillas}
+                  miembrosPorProyecto={miembrosPorProyecto}
                   usuarioActualId={usuarioActualId}
                   gestionarAjenas={gestionarAjenas}
                   autoAbrir={hiloConvertido === h.id}
@@ -122,6 +125,7 @@ export function TareasListaView({
                     tarea={t}
                     usuarios={usuarios}
                     proyectos={proyectos}
+                    miembrosPorProyecto={miembrosPorProyecto}
                     hilosDisponibles={hilos}
                     usuarioActualId={usuarioActualId}
                     gestionarAjenas={gestionarAjenas}
@@ -139,6 +143,7 @@ export function TareasListaView({
         <TareaFormPanel
           usuarios={usuarios}
           proyectos={proyectos}
+          miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
           onClose={() => setCreandoTarea(false)}
         />

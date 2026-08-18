@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
@@ -20,27 +20,41 @@ const VENCIMIENTO_PRESETS = [1, 3, 7];
 export function TareaFormPanel({
   usuarios,
   proyectos,
+  miembrosPorProyecto,
   usuarioActualId,
   hiloId,
   proyectoId,
+  proyectoHeredadoId,
   tarea,
   onClose,
 }: {
   usuarios: Usuario[];
   proyectos: TareaProyecto[];
+  miembrosPorProyecto: Record<string, string[]>;
   usuarioActualId: string | null;
   hiloId?: string;
   proyectoId?: string;
+  // Proyecto del hilo al que se agrega la tarea: la tarea no lo guarda (lo
+  // hereda), pero limita igual quiénes pueden recibirla.
+  proyectoHeredadoId?: string | null;
   tarea?: TareaConAsignados;
   onClose: () => void;
 }) {
   const [enviando, setEnviando] = useState(false);
   const [tieneRecurrencia, setTieneRecurrencia] = useState(tarea?.recurrencia_cantidad != null);
+  const proyectoInicial = proyectoHeredadoId ?? proyectoId ?? tarea?.proyecto_id ?? null;
+  const miembrosIniciales = proyectoInicial ? (miembrosPorProyecto[proyectoInicial] ?? []) : null;
+  // Auto-asignarse solo si el usuario puede trabajar en ese proyecto.
+  const autoAsignado =
+    usuarioActualId && (!miembrosIniciales || miembrosIniciales.includes(usuarioActualId))
+      ? usuarioActualId
+      : null;
   const {
     register,
     handleSubmit,
     control,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<CrearTareaForm>({
     resolver: zodResolver(crearTareaSchema),
@@ -62,11 +76,25 @@ export function TareaFormPanel({
           hilo_id: hiloId ?? null,
           proyecto_id: proyectoId ?? null,
           visibilidad: "privado",
-          responsable_id: usuarioActualId ?? "",
-          asignados: usuarioActualId ? [usuarioActualId] : [],
+          responsable_id: autoAsignado ?? "",
+          asignados: autoAsignado ? [autoAsignado] : [],
           temperatura: 50,
         },
   });
+
+  const proyectoElegido = useWatch({ control, name: "proyecto_id" });
+  const proyectoEfectivo = proyectoHeredadoId ?? proyectoElegido ?? null;
+  const miembros = proyectoEfectivo ? (miembrosPorProyecto[proyectoEfectivo] ?? []) : null;
+
+  // Cambiar de proyecto cambia quiénes pueden recibir la tarea: los ya
+  // seleccionados que no son miembros del nuevo proyecto se descartan.
+  function podarAsignados(nuevoProyectoId: string) {
+    const permitidos = nuevoProyectoId ? (miembrosPorProyecto[nuevoProyectoId] ?? []) : null;
+    if (!permitidos) return;
+    const validos = (getValues("asignados") ?? []).filter((id) => permitidos.includes(id));
+    setValue("asignados", validos);
+    if (!validos.includes(getValues("responsable_id"))) setValue("responsable_id", validos[0] ?? "");
+  }
 
   async function onSubmit(data: CrearTareaForm) {
     setEnviando(true);
@@ -115,7 +143,10 @@ export function TareaFormPanel({
         {!hiloId && !proyectoId && !tarea?.hilo_id && (
           <div>
             <label className="t-label mb-1 block">Proyecto</label>
-            <select className="input" {...register("proyecto_id")}>
+            <select
+              className="input"
+              {...register("proyecto_id", { onChange: (e) => podarAsignados(e.target.value) })}
+            >
               <option value="">Sin proyecto</option>
               {proyectos.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -134,7 +165,7 @@ export function TareaFormPanel({
           </select>
         </div>
 
-        {!tarea && <AsignadosPicker control={control} usuarios={usuarios} />}
+        {!tarea && <AsignadosPicker control={control} usuarios={usuarios} miembros={miembros} />}
 
         <div>
           <label className="t-label mb-1 block">Vencimiento</label>

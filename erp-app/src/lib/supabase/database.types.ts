@@ -673,6 +673,14 @@ export type Database = {
     Functions: {
       es_asignado_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
       es_creador_proyecto: { Args: { p_proyecto_id: string }; Returns: boolean }
+      es_miembro_proyecto: {
+        Args: { p_proyecto_id: string; p_usuario_id: string }
+        Returns: boolean
+      }
+      es_miembro_proyecto_de_tarea: {
+        Args: { p_tarea_id: string; p_usuario_id: string }
+        Returns: boolean
+      }
       es_responsable_o_creador_tarea: {
         Args: { p_tarea_id: string }
         Returns: boolean

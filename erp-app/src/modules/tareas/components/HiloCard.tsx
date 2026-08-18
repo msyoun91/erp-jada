@@ -22,6 +22,7 @@ export function HiloCard({
   proyectos,
   usuarios,
   plantillas,
+  miembrosPorProyecto,
   usuarioActualId,
   gestionarAjenas,
   autoAbrir,
@@ -31,6 +32,7 @@ export function HiloCard({
   proyectos: TareaProyecto[];
   usuarios: Usuario[];
   plantillas: TareaPlantilla[];
+  miembrosPorProyecto: Record<string, string[]>;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   autoAbrir?: boolean;
@@ -140,6 +142,7 @@ export function HiloCard({
           proyectos={proyectos}
           usuarios={usuarios}
           plantillas={plantillas}
+          miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
           gestionarAjenas={gestionarAjenas}
           onClose={() => setDetalleAbierto(false)}

@@ -244,38 +244,59 @@ export async function crearProyecto(input: CrearProyectoForm) {
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  if (miembros && miembros.length > 0) {
-    const { error: errorMiembros } = await supabase
-      .from("tareas_proyectos_miembros")
-      .insert(miembros.map((usuario_id) => ({ proyecto_id: data.id, usuario_id })));
+  const { error: errorMiembros } = await supabase
+    .from("tareas_proyectos_miembros")
+    .insert(miembros.map((usuario_id) => ({ proyecto_id: data.id, usuario_id })));
 
-    if (errorMiembros) return { success: false as const, error: mensajeError(errorMiembros) };
-  }
+  if (errorMiembros) return { success: false as const, error: mensajeError(errorMiembros) };
 
   revalidatePath("/tareas/proyectos");
+  revalidatePath("/tareas");
   return { success: true as const, id: data.id };
 }
 
+// Diff en vez de desactivar-todo-y-reinsertar: el trigger que bloquea quitar
+// un miembro con tareas activas se dispararía también sobre los que quedan.
 export async function gestionarMiembrosProyecto(proyectoId: string, usuarioIds: string[]) {
+  if (usuarioIds.length === 0) {
+    return { success: false as const, error: "El proyecto necesita al menos un miembro" };
+  }
+
   const supabase = await createClient();
 
-  const { error: errorDesactivar } = await supabase
+  const { data: actuales, error: errorLeer } = await supabase
     .from("tareas_proyectos_miembros")
-    .update({ activo: false })
+    .select("usuario_id")
     .eq("proyecto_id", proyectoId)
     .eq("activo", true);
 
-  if (errorDesactivar) return { success: false as const, error: mensajeError(errorDesactivar) };
+  if (errorLeer) return { success: false as const, error: mensajeError(errorLeer) };
 
-  if (usuarioIds.length > 0) {
+  const previos = new Set((actuales ?? []).map((m) => m.usuario_id));
+  const quitados = [...previos].filter((id) => !usuarioIds.includes(id));
+  const agregados = usuarioIds.filter((id) => !previos.has(id));
+
+  if (quitados.length > 0) {
+    const { error: errorDesactivar } = await supabase
+      .from("tareas_proyectos_miembros")
+      .update({ activo: false })
+      .eq("proyecto_id", proyectoId)
+      .eq("activo", true)
+      .in("usuario_id", quitados);
+
+    if (errorDesactivar) return { success: false as const, error: mensajeError(errorDesactivar) };
+  }
+
+  if (agregados.length > 0) {
     const { error: errorInsertar } = await supabase
       .from("tareas_proyectos_miembros")
-      .insert(usuarioIds.map((usuario_id) => ({ proyecto_id: proyectoId, usuario_id })));
+      .insert(agregados.map((usuario_id) => ({ proyecto_id: proyectoId, usuario_id })));
 
     if (errorInsertar) return { success: false as const, error: mensajeError(errorInsertar) };
   }
 
   revalidatePath("/tareas/proyectos");
+  revalidatePath("/tareas");
   return { success: true as const };
 }
 

@@ -14,12 +14,14 @@ export function UsarPlantillaPanel({
   hiloId,
   plantillas,
   usuarios,
+  miembros,
   usuarioActualId,
   onClose,
 }: {
   hiloId: string;
   plantillas: TareaPlantilla[];
   usuarios: Usuario[];
+  miembros: string[] | null;
   usuarioActualId: string | null;
   onClose: () => void;
 }) {
@@ -87,7 +89,7 @@ export function UsarPlantillaPanel({
           {errors.plantilla_id && <p className="input-error-text">{errors.plantilla_id.message}</p>}
         </div>
 
-        <AsignadosPicker control={control} usuarios={usuarios} />
+        <AsignadosPicker control={control} usuarios={usuarios} miembros={miembros} />
       </form>
     </RightPanel>
   );

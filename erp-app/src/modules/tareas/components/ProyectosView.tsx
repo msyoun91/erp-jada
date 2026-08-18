@@ -8,7 +8,7 @@ import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { desactivarProyecto } from "../actions";
-import type { ProyectoMiembro, TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
 import { ProyectoFormPanel } from "./ProyectoFormPanel";
 import { MiembrosPanel } from "./MiembrosPanel";
 import { ProyectoDetailPanel } from "./ProyectoDetailPanel";
@@ -29,7 +29,7 @@ export function ProyectosView({
   tareas: TareaConAsignados[];
   usuarios: Usuario[];
   plantillas: TareaPlantilla[];
-  miembrosPorProyecto: Record<string, ProyectoMiembro[]>;
+  miembrosPorProyecto: Record<string, string[]>;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   puedeCrear: boolean;
@@ -105,17 +105,13 @@ export function ProyectosView({
                       icon: <ListTodo size={14} strokeWidth={1.75} />,
                       onClick: () => setDetalleDe(p),
                     },
-                    ...(puedeGestionar && p.visibilidad === "privado"
+                    ...(puedeGestionar
                       ? [
                           {
                             label: "Miembros",
                             icon: <Users size={14} strokeWidth={1.75} />,
                             onClick: () => setMiembrosDe(p),
                           },
-                        ]
-                      : []),
-                    ...(puedeGestionar
-                      ? [
                           {
                             label: "Desactivar",
                             icon: <Archive size={14} strokeWidth={1.75} />,
@@ -141,13 +137,19 @@ export function ProyectosView({
         />
       )}
 
-      {creando && <ProyectoFormPanel usuarios={usuarios} onClose={() => setCreando(false)} />}
+      {creando && (
+        <ProyectoFormPanel
+          usuarios={usuarios}
+          usuarioActualId={usuarioActualId}
+          onClose={() => setCreando(false)}
+        />
+      )}
 
       {miembrosDe && (
         <MiembrosPanel
           proyecto={miembrosDe}
           usuarios={usuarios}
-          miembrosActuales={(miembrosPorProyecto[miembrosDe.id] ?? []).map((m) => m.usuario_id)}
+          miembrosActuales={miembrosPorProyecto[miembrosDe.id] ?? []}
           onClose={() => setMiembrosDe(null)}
         />
       )}
@@ -160,6 +162,7 @@ export function ProyectosView({
           proyectos={proyectos}
           usuarios={usuarios}
           plantillas={plantillas}
+          miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
           gestionarAjenas={gestionarAjenas}
           onClose={() => setDetalleDe(null)}

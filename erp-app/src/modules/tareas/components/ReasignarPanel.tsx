@@ -15,12 +15,14 @@ export function ReasignarPanel({
   asignadosActuales,
   responsableActual,
   usuarios,
+  miembros,
   onClose,
 }: {
   tareaId: string;
   asignadosActuales: string[];
   responsableActual: string;
   usuarios: Usuario[];
+  miembros: string[] | null;
   onClose: () => void;
 }) {
   const [enviando, setEnviando] = useState(false);
@@ -66,7 +68,7 @@ export function ReasignarPanel({
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-4 overflow-y-auto px-5 py-4"
       >
-        <AsignadosPicker control={control} usuarios={usuarios} />
+        <AsignadosPicker control={control} usuarios={usuarios} miembros={miembros} />
       </form>
     </RightPanel>
   );

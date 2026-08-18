@@ -72,7 +72,7 @@ SQL function, `SECURITY DEFINER`, usada en RLS de las 3 tablas y disponible como
 
 ---
 
-## Módulo tareas (`sql/005_tareas.sql` + `sql/006_tareas_hardening.sql` + `sql/007_tareas_reactivar_posponer.sql` + `sql/008_tareas_notas_visibilidad.sql` — corridos en Supabase vía MCP)
+## Módulo tareas (`sql/005_tareas.sql` + `sql/006_tareas_hardening.sql` + `sql/007_tareas_reactivar_posponer.sql` + `sql/008_tareas_notas_visibilidad.sql` + `sql/009_tareas_miembros_asignables.sql` — corridos en Supabase vía MCP)
 
 Reemplaza un intento anterior (rama `tareas-v1`, revertido en `sql/004_rollback_tareas.sql`) — requisitos de negocio cambiaron (proyectos + visibilidad en cascada, multi-asignado, `responsable_id`, `temperatura`). No comparte schema con esa rama.
 
@@ -92,7 +92,7 @@ Contenedor organizacional. Pone el techo de visibilidad para sus hilos/tareas.
 
 ### tareas_proyectos_miembros
 
-Lista explícita de membresía — solo relevante si el proyecto es privado.
+Lista explícita de membresía: **quién puede recibir tareas del proyecto** (`sql/009`). Ortogonal a `visibilidad`, que decide quién lo ve. Todo proyecto — público o privado — necesita al menos un miembro.
 
 | columna | tipo | notas |
 |---|---|---|
@@ -206,6 +206,19 @@ Auditoría append-only. **Excepción a "nunca DELETE, siempre `activo`": sin col
 ### Funciones `es_creador_proyecto(uuid)` / `es_responsable_o_creador_tarea(uuid)` / `es_asignado_tarea(uuid)`
 
 `SECURITY DEFINER`, `STABLE` — mismo criterio que `puede_ver_hilo`. Usadas en las policies de `tareas_proyectos_miembros` y `tareas_asignados` para no consultar directamente `tareas_proyectos`/`tareas`/`tareas_asignados` desde dentro de su propia política: dos tablas con policies que se referencian mutuamente (`tareas_proyectos` ↔ `tareas_proyectos_miembros`, `tareas` ↔ `tareas_asignados`) causan `42P17 infinite recursion detected in policy` si la referencia es un `EXISTS` directo bajo RLS. Envolver el lado "de vuelta" en una función `SECURITY DEFINER` rompe el ciclo (`sql/005`, fix aplicado post-creación).
+
+### Funciones `es_miembro_proyecto(uuid, uuid)` / `es_miembro_proyecto_de_tarea(uuid, uuid)` (`sql/009`)
+
+`SECURITY DEFINER`, `STABLE` — mismo criterio anti-recursión que `es_creador_proyecto`. La segunda resuelve el proyecto **efectivo** de una tarea (`COALESCE(tareas.proyecto_id, tareas_hilos.proyecto_id)`) y devuelve `true` si la tarea no tiene proyecto. Usadas por `tareas_asignados_insert`/`update` (`AND (NOT activo OR es_miembro_proyecto_de_tarea(tarea_id, usuario_id))` — la regla se exige solo sobre filas activas, para no bloquear la desactivación al reasignar) y por `tareas_proyectos_miembros_select`, extendida para que un miembro vea a los demás miembros (sin eso el picker de asignados queda vacío para quien no es creador del proyecto). Ni `tareas_gestionar_ajenas` saltea la regla: es regla de negocio, no nivel de permiso.
+
+### Triggers `validar_proyecto_tarea` / `validar_quitar_miembro` (`sql/009`)
+
+Las policies cubren "cambian los asignados"; estos dos triggers cubren las otras dos caras de la misma regla:
+
+- `validar_proyecto_tarea` — `BEFORE UPDATE OF proyecto_id, hilo_id ON tareas`: mover una tarea a un proyecto donde algún asignado activo no es miembro falla con `ERRCODE = 'TA002'`.
+- `validar_quitar_miembro` — `BEFORE UPDATE ON tareas_proyectos_miembros WHEN (OLD.activo AND NOT NEW.activo)`: quitar un miembro con tareas `pendiente`/`en_progreso` en el proyecto falla con `ERRCODE = 'TA001'`, en vez de desactivar sus asignaciones por detrás.
+
+Ambos SQLSTATE están mapeados a mensaje en `MENSAJES_ERROR` (`lib/utils.ts`). Por eso `gestionarMiembrosProyecto` guarda un diff (quitados/agregados) en vez de desactivar todo y reinsertar: lo segundo dispararía `TA001` sobre los miembros que se quedan.
 
 ### Función `reactivar_posponer_vencidos()`
 

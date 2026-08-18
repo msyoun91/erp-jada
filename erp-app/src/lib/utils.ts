@@ -41,6 +41,8 @@ const MENSAJES_ERROR: Record<string, string> = {
   "23503": "El registro relacionado no existe",
   "23514": "Los datos no cumplen una regla del sistema",
   "42501": "No tenés permiso para hacer esto",
+  TA001: "Ese miembro tiene tareas activas en el proyecto — reasignalas antes de quitarlo",
+  TA002: "Hay asignados que no son miembros del proyecto destino",
   email_exists: "Ese email ya está registrado",
   weak_password: "La contraseña es demasiado débil",
 };

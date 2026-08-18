@@ -20,8 +20,6 @@ export type TareaConAsignados = Tarea & {
   tareas_notas?: TareaNota[];
 };
 
-export type ProyectoMiembro = { usuario_id: string; usuarios: UsuarioNombre | null };
-
 export type EventoAuditoria = {
   id: string;
   tarea_id: string;
@@ -132,17 +130,14 @@ export const crearHiloSchema = z.object({
 
 export type CrearHiloForm = z.input<typeof crearHiloSchema>;
 
-export const crearProyectoSchema = z
-  .object({
-    nombre: z.string().min(1, "El nombre es obligatorio").max(200),
-    descripcion: z.string().max(2000).optional(),
-    visibilidad: z.enum(["publico", "privado"]).default("privado"),
-    miembros: z.array(z.string().uuid()).optional(),
-  })
-  .refine((d) => d.visibilidad === "publico" || (d.miembros?.length ?? 0) > 0, {
-    message: "Un proyecto privado necesita al menos un miembro",
-    path: ["miembros"],
-  });
+// Miembros obligatorios en todo proyecto (público o privado): la membresía
+// define quién puede recibir tareas del proyecto, no quién lo ve.
+export const crearProyectoSchema = z.object({
+  nombre: z.string().min(1, "El nombre es obligatorio").max(200),
+  descripcion: z.string().max(2000).optional(),
+  visibilidad: z.enum(["publico", "privado"]).default("privado"),
+  miembros: z.array(z.string().uuid()).min(1, "El proyecto necesita al menos un miembro"),
+});
 
 export type CrearProyectoForm = z.input<typeof crearProyectoSchema>;
 

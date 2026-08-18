@@ -26,6 +26,7 @@ export function HiloDetailPanel({
   proyectos,
   usuarios,
   plantillas,
+  miembrosPorProyecto,
   usuarioActualId,
   gestionarAjenas,
   onClose,
@@ -36,6 +37,7 @@ export function HiloDetailPanel({
   proyectos: TareaProyecto[];
   usuarios: Usuario[];
   plantillas: TareaPlantilla[];
+  miembrosPorProyecto: Record<string, string[]>;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   onClose: () => void;
@@ -50,6 +52,10 @@ export function HiloDetailPanel({
 
   const puedeGestionar =
     gestionarAjenas || hilo.creado_por === usuarioActualId || hilo.responsable_id === usuarioActualId;
+
+  // Las tareas del hilo heredan su proyecto: quiénes pueden recibirlas sale
+  // de los miembros de ese proyecto.
+  const miembros = proyecto ? (miembrosPorProyecto[proyecto.id] ?? []) : null;
 
   async function onDesactivar() {
     const result = await desactivarHilo(hilo.id);
@@ -117,6 +123,8 @@ export function HiloDetailPanel({
                   tarea={t}
                   usuarios={usuarios}
                   proyectos={proyectos}
+                  miembrosPorProyecto={miembrosPorProyecto}
+                  proyectoHeredadoId={proyecto?.id ?? null}
                   usuarioActualId={usuarioActualId}
                   gestionarAjenas={gestionarAjenas}
                   onTemperaturaChange={onTemperaturaChange}
@@ -136,8 +144,10 @@ export function HiloDetailPanel({
         <TareaFormPanel
           usuarios={usuarios}
           proyectos={proyectos}
+          miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
           hiloId={hilo.id}
+          proyectoHeredadoId={proyecto?.id ?? null}
           onClose={() => setAgregandoTarea(false)}
         />
       )}
@@ -149,6 +159,7 @@ export function HiloDetailPanel({
           hiloId={hilo.id}
           plantillas={plantillas}
           usuarios={usuarios}
+          miembros={miembros}
           usuarioActualId={usuarioActualId}
           onClose={() => setUsandoPlantilla(false)}
         />

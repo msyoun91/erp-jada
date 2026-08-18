@@ -21,6 +21,7 @@ export function ProyectoDetailPanel({
   proyectos,
   usuarios,
   plantillas,
+  miembrosPorProyecto,
   usuarioActualId,
   gestionarAjenas,
   onClose,
@@ -31,6 +32,7 @@ export function ProyectoDetailPanel({
   proyectos: TareaProyecto[];
   usuarios: Usuario[];
   plantillas: TareaPlantilla[];
+  miembrosPorProyecto: Record<string, string[]>;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   onClose: () => void;
@@ -73,6 +75,7 @@ export function ProyectoDetailPanel({
                     proyectos={proyectos}
                     usuarios={usuarios}
                     plantillas={plantillas}
+                    miembrosPorProyecto={miembrosPorProyecto}
                     usuarioActualId={usuarioActualId}
                     gestionarAjenas={gestionarAjenas}
                     autoAbrir={hiloConvertido === h.id}
@@ -90,6 +93,7 @@ export function ProyectoDetailPanel({
                       tarea={t}
                       usuarios={usuarios}
                       proyectos={proyectos}
+                      miembrosPorProyecto={miembrosPorProyecto}
                       hilosDisponibles={hilos}
                       usuarioActualId={usuarioActualId}
                       gestionarAjenas={gestionarAjenas}
@@ -108,6 +112,7 @@ export function ProyectoDetailPanel({
         <TareaFormPanel
           usuarios={usuarios}
           proyectos={proyectos}
+          miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
           proyectoId={proyecto.id}
           onClose={() => setCreandoTarea(false)}

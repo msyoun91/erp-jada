@@ -3,16 +3,22 @@
 import { useController, type Control, type Path } from "react-hook-form";
 import type { Usuario } from "../types";
 
+// `miembros` = ids habilitados para recibir la tarea (miembros del proyecto);
+// null = la tarea no tiene proyecto y cualquiera puede recibirla. El filtro es
+// UX: la barrera real está en la policy de tareas_asignados.
 export function AsignadosPicker<T extends { asignados: string[]; responsable_id: string }>({
   control,
   usuarios,
+  miembros,
 }: {
   control: Control<T>;
   usuarios: Usuario[];
+  miembros: string[] | null;
 }) {
   const asignadosField = useController({ name: "asignados" as Path<T>, control });
   const responsableField = useController({ name: "responsable_id" as Path<T>, control });
 
+  const elegibles = miembros ? usuarios.filter((u) => miembros.includes(u.id)) : usuarios;
   const seleccionados = (asignadosField.field.value as string[] | undefined) ?? [];
   const responsableId = (responsableField.field.value as string | undefined) ?? "";
 
@@ -30,7 +36,10 @@ export function AsignadosPicker<T extends { asignados: string[]; responsable_id:
     <div>
       <label className="t-label mb-1 block">Asignados</label>
       <div className="max-h-40 overflow-y-auto rounded-md border-[1.5px] border-border-strong">
-        {usuarios.map((u) => (
+        {elegibles.length === 0 && (
+          <p className="t-caption px-3 py-2">Solo los miembros del proyecto pueden recibir tareas.</p>
+        )}
+        {elegibles.map((u) => (
           <label
             key={u.id}
             className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-bg-subtle"
@@ -57,7 +66,7 @@ export function AsignadosPicker<T extends { asignados: string[]; responsable_id:
         disabled={seleccionados.length === 0}
       >
         <option value="">— seleccionar —</option>
-        {usuarios
+        {elegibles
           .filter((u) => seleccionados.includes(u.id))
           .map((u) => (
             <option key={u.id} value={u.id}>
