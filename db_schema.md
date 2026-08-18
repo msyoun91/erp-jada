@@ -71,3 +71,159 @@ UNIQUE normal (usuario_id, widget_id) — no parcial, por upsert (misma razón q
 SQL function, `SECURITY DEFINER`, usada en RLS de las 3 tablas y disponible como fuente de verdad de autorización en DB.
 
 ---
+
+## Módulo tareas (`sql/005_tareas.sql` + `sql/006_tareas_hardening.sql` + `sql/007_tareas_reactivar_posponer.sql` + `sql/008_tareas_notas_visibilidad.sql` — corridos en Supabase vía MCP)
+
+Reemplaza un intento anterior (rama `tareas-v1`, revertido en `sql/004_rollback_tareas.sql`) — requisitos de negocio cambiaron (proyectos + visibilidad en cascada, multi-asignado, `responsable_id`, `temperatura`). No comparte schema con esa rama.
+
+### tareas_proyectos
+
+Contenedor organizacional. Pone el techo de visibilidad para sus hilos/tareas.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| nombre | text | |
+| descripcion | text | nullable |
+| visibilidad | enum `visibilidad` (`publico`\|`privado`) | default `privado` (`sql/008`, antes `publico`) |
+| creado_por | uuid FK → usuarios | |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | |
+
+### tareas_proyectos_miembros
+
+Lista explícita de membresía — solo relevante si el proyecto es privado.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| proyecto_id | uuid FK → tareas_proyectos | |
+| usuario_id | uuid FK → usuarios | |
+| activo | boolean | unique parcial (proyecto_id, usuario_id) WHERE activo |
+| created_at | timestamptz | |
+
+### tareas_hilos
+
+Agrupador de tareas relacionadas. Sin vencimiento propio (se deriva de sus tareas en `queries.ts`).
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| proyecto_id | uuid FK → tareas_proyectos, nullable | null = hilo personal |
+| titulo | text | |
+| descripcion | text | nullable |
+| visibilidad | enum `visibilidad` | default `privado` (`sql/008`, antes `publico`) — solo importa si proyecto_id no es null |
+| estado | enum `estado_hilo` (`abierto`\|`cerrado`) | default `abierto`. Cierre manual (modal en UI) bloqueado por trigger si queda alguna tarea sin completar. Reapertura automática al agregar/mover una tarea al hilo |
+| responsable_id | uuid FK → usuarios | dueño — default = creador |
+| creado_por | uuid FK → usuarios | |
+| posponer_desde / posponer_hasta | date | nullable — oculta el hilo entero de la lista activa mientras esté vigente |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | |
+
+### tareas
+
+Unidad mínima de trabajo. `proyecto_id` solo se usa cuando la tarea está suelta (sin `hilo_id`) — si tiene hilo, el proyecto/visibilidad se heredan del hilo (`CHECK (hilo_id IS NULL OR proyecto_id IS NULL)`, fuente única).
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| hilo_id | uuid FK → tareas_hilos, nullable | |
+| proyecto_id | uuid FK → tareas_proyectos, nullable | solo si hilo_id es null |
+| titulo / descripcion | text | |
+| visibilidad | enum `visibilidad` | default `privado` (`sql/008`, antes `publico`) — solo importa si hilo_id es null y proyecto_id no |
+| estado | enum `estado_tarea` (`pendiente`\|`en_progreso`\|`completada`\|`cancelada`) | default `pendiente` |
+| temperatura | int | default 50, CHECK 1-100 — orden personal en UI, cualquier asignado la mueve |
+| responsable_id | uuid FK → usuarios | dueño — default = creador. Gatea "forzar completado" (modo híbrido) y aparece en auditoría |
+| creado_por | uuid FK → usuarios | |
+| fecha_vencimiento | date | nullable |
+| posponer_desde / posponer_hasta | date | nullable — sin cron: se recalcula al leer (`queries.ts`), no vía job |
+| recurrencia_cantidad | int | nullable, junto con recurrencia_unidad (ambos o ninguno) |
+| recurrencia_unidad | enum `recurrencia_unidad` (`dia`\|`mes`) | nullable |
+| nota_anterior / nota_siguiente | text | nullable — "nota de la última vez" de tareas recurrentes |
+| origen_app / origen_punto | text | nullable — qué app externa la generó y el deep link, si existe |
+| modo_completado | enum `modo_completado` (`manual`\|`automatico`\|`hibrido`) | default `manual` |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | |
+
+**Recurrencia sin `pg_cron`:** la próxima instancia se genera al completar la actual (trigger `generar_recurrencia`), no por fecha de calendario — copia asignados y `nota_siguiente` → `nota_anterior` de la nueva.
+
+### tareas_asignados
+
+Multi-asignado — cualquiera puede completar la tarea.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| tarea_id | uuid FK → tareas | |
+| usuario_id | uuid FK → usuarios | |
+| activo | boolean | unique parcial (tarea_id, usuario_id) WHERE activo |
+| created_at | timestamptz | |
+
+### tareas_notas / tareas_hilos_notas (`sql/008`)
+
+Historial de notas — "agregar", no "editar": sin UPDATE de texto, solo `activo` para ocultar una nota propia (nunca DELETE). `tareas_notas.tarea_id` FK → `tareas`; `tareas_hilos_notas.hilo_id` FK → `tareas_hilos`. Ambas con `usuario_id` FK → `usuarios` (autor) y `nota text`.
+
+SELECT vía `EXISTS` directo sobre la tabla padre (`tareas`/`tareas_hilos`) — sin función `SECURITY DEFINER`: la RLS de la tabla padre ya resuelve visibilidad en cascada para el rol que consulta, y no hay recursión porque esa policy no mira hacia las tablas de notas. INSERT: mismo actor que puede gestionar la fila padre (`tareas_notas` reusa `es_responsable_o_creador_tarea`/`es_asignado_tarea`; `tareas_hilos_notas` usa `creado_por`/`responsable_id` del hilo), más `tareas_gestionar_ajenas`. UPDATE (solo `activo=false`): autor o ajenas.
+
+### tareas_plantillas / tareas_plantillas_items
+
+Recurso compartido del equipo, gateado solo por la vista `tareas_plantillas` (sin función separada de lectura/escritura).
+
+| tareas_plantillas | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| nombre / descripcion | text | descripcion nullable |
+| creado_por | uuid FK → usuarios | |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | |
+
+| tareas_plantillas_items | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| plantilla_id | uuid FK → tareas_plantillas | |
+| titulo | text | |
+| orden | int | default 0 |
+| activo | boolean | |
+| created_at | timestamptz | |
+
+### tareas_eventos
+
+Auditoría append-only. **Excepción a "nunca DELETE, siempre `activo`": sin columna `activo`** — una auditoría no debe poder ocultar sus propias filas. Necesaria porque `estado` se resetea en cada ciclo de recurrencia y `updated_at` se mueve con cualquier edición — ninguna columna sobre `tareas` puede reconstruir el historial. `GRANT SELECT` únicamente — el INSERT entra solo por el trigger `log_evento_tarea` (`SECURITY DEFINER`).
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| tarea_id | uuid FK → tareas | |
+| usuario_id | uuid FK → usuarios, nullable | null = evento del sistema |
+| estado_anterior | enum `estado_tarea`, nullable | |
+| estado_nuevo | enum `estado_tarea` | |
+| created_at | timestamptz | |
+
+### Función `puede_ver_hilo(uuid)`
+
+`SECURITY DEFINER`, `STABLE` — resuelve visibilidad en cascada de un hilo (creador/responsable/asignado a alguna de sus tareas/permiso `tareas_gestionar_ajenas`/cascada proyecto público-o-miembro). Usada en RLS de `tareas_hilos` y `tareas`. `EXECUTE` revocado de `PUBLIC`, otorgado solo a `authenticated` (`sql/006`).
+
+### Funciones `es_creador_proyecto(uuid)` / `es_responsable_o_creador_tarea(uuid)` / `es_asignado_tarea(uuid)`
+
+`SECURITY DEFINER`, `STABLE` — mismo criterio que `puede_ver_hilo`. Usadas en las policies de `tareas_proyectos_miembros` y `tareas_asignados` para no consultar directamente `tareas_proyectos`/`tareas`/`tareas_asignados` desde dentro de su propia política: dos tablas con policies que se referencian mutuamente (`tareas_proyectos` ↔ `tareas_proyectos_miembros`, `tareas` ↔ `tareas_asignados`) causan `42P17 infinite recursion detected in policy` si la referencia es un `EXISTS` directo bajo RLS. Envolver el lado "de vuelta" en una función `SECURITY DEFINER` rompe el ciclo (`sql/005`, fix aplicado post-creación).
+
+### Función `reactivar_posponer_vencidos()`
+
+`SECURITY DEFINER` — sin cron: `queries.getListaTareas()` la invoca (`supabase.rpc(...)`) antes de leer la lista. Limpia `posponer_desde`/`posponer_hasta` de `tareas`/`tareas_hilos` cuyo `posponer_hasta` ya venció, y en `tareas` corre `fecha_vencimiento` el mismo intervalo que duró el pospuesto. `EXECUTE` solo para `authenticated` (`sql/007`).
+
+**Hardening (`sql/006`):** `EXECUTE` revocado de `PUBLIC` en las funciones `SECURITY DEFINER` de solo-trigger (`generar_recurrencia`, `log_evento_tarea`, `reabrir_hilo_en_tarea`, `validar_cierre_hilo`) — PostgREST expone toda función a `PUBLIC` por default y estas no necesitan ser invocables vía RPC. Índices agregados en FKs `creado_por`/`responsable_id` sin cobertura.
+
+### Permisos (submódulos `modulo = 'tareas'`)
+
+| codigo | tipo | vista_id | notas |
+|---|---|---|---|
+| tareas_lista | vista | — | listado unificado personal + proyectos visibles |
+| tareas_proyectos | vista | — | |
+| tareas_plantillas | vista | — | |
+| tareas_auditoria | vista | — | solo-lectura, se asigna directo a managers |
+| tareas_gestionar_ajenas | funcion | tareas_lista | completar/cerrar hilo/reasignar tarea **ajena** — acciones sobre lo propio no requieren función |
+| tareas_proyectos_crear | funcion | tareas_proyectos | |
+
+`usuarios_select` extendida con `OR tiene_permiso('tareas_lista') OR tiene_permiso('tareas_proyectos')` — picker de asignados/miembros necesita listar usuarios activos.
+
+---

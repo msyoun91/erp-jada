@@ -61,6 +61,507 @@ export type Database = {
           },
         ]
       }
+      tareas: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          descripcion: string | null
+          estado: Database["public"]["Enums"]["estado_tarea"]
+          fecha_vencimiento: string | null
+          hilo_id: string | null
+          id: string
+          modo_completado: Database["public"]["Enums"]["modo_completado"]
+          nota_anterior: string | null
+          nota_siguiente: string | null
+          origen_app: string | null
+          origen_punto: string | null
+          posponer_desde: string | null
+          posponer_hasta: string | null
+          proyecto_id: string | null
+          recurrencia_cantidad: number | null
+          recurrencia_unidad:
+            | Database["public"]["Enums"]["recurrencia_unidad"]
+            | null
+          responsable_id: string
+          temperatura: number
+          titulo: string
+          updated_at: string
+          visibilidad: Database["public"]["Enums"]["visibilidad"]
+        }
+        Insert: {
+          activo?: boolean
+          creado_por: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database["public"]["Enums"]["estado_tarea"]
+          fecha_vencimiento?: string | null
+          hilo_id?: string | null
+          id?: string
+          modo_completado?: Database["public"]["Enums"]["modo_completado"]
+          nota_anterior?: string | null
+          nota_siguiente?: string | null
+          origen_app?: string | null
+          origen_punto?: string | null
+          posponer_desde?: string | null
+          posponer_hasta?: string | null
+          proyecto_id?: string | null
+          recurrencia_cantidad?: number | null
+          recurrencia_unidad?:
+            | Database["public"]["Enums"]["recurrencia_unidad"]
+            | null
+          responsable_id: string
+          temperatura?: number
+          titulo: string
+          updated_at?: string
+          visibilidad?: Database["public"]["Enums"]["visibilidad"]
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database["public"]["Enums"]["estado_tarea"]
+          fecha_vencimiento?: string | null
+          hilo_id?: string | null
+          id?: string
+          modo_completado?: Database["public"]["Enums"]["modo_completado"]
+          nota_anterior?: string | null
+          nota_siguiente?: string | null
+          origen_app?: string | null
+          origen_punto?: string | null
+          posponer_desde?: string | null
+          posponer_hasta?: string | null
+          proyecto_id?: string | null
+          recurrencia_cantidad?: number | null
+          recurrencia_unidad?:
+            | Database["public"]["Enums"]["recurrencia_unidad"]
+            | null
+          responsable_id?: string
+          temperatura?: number
+          titulo?: string
+          updated_at?: string
+          visibilidad?: Database["public"]["Enums"]["visibilidad"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_hilo_id_fkey"
+            columns: ["hilo_id"]
+            isOneToOne: false
+            referencedRelation: "tareas_hilos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_proyecto_id_fkey"
+            columns: ["proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "tareas_proyectos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_asignados: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          tarea_id: string
+          usuario_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          tarea_id: string
+          usuario_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          tarea_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_asignados_tarea_id_fkey"
+            columns: ["tarea_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_asignados_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_eventos: {
+        Row: {
+          created_at: string
+          estado_anterior: Database["public"]["Enums"]["estado_tarea"] | null
+          estado_nuevo: Database["public"]["Enums"]["estado_tarea"]
+          id: string
+          tarea_id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          estado_anterior?: Database["public"]["Enums"]["estado_tarea"] | null
+          estado_nuevo: Database["public"]["Enums"]["estado_tarea"]
+          id?: string
+          tarea_id: string
+          usuario_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          estado_anterior?: Database["public"]["Enums"]["estado_tarea"] | null
+          estado_nuevo?: Database["public"]["Enums"]["estado_tarea"]
+          id?: string
+          tarea_id?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_eventos_tarea_id_fkey"
+            columns: ["tarea_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_eventos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_hilos: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          descripcion: string | null
+          estado: Database["public"]["Enums"]["estado_hilo"]
+          id: string
+          posponer_desde: string | null
+          posponer_hasta: string | null
+          proyecto_id: string | null
+          responsable_id: string
+          titulo: string
+          updated_at: string
+          visibilidad: Database["public"]["Enums"]["visibilidad"]
+        }
+        Insert: {
+          activo?: boolean
+          creado_por: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database["public"]["Enums"]["estado_hilo"]
+          id?: string
+          posponer_desde?: string | null
+          posponer_hasta?: string | null
+          proyecto_id?: string | null
+          responsable_id: string
+          titulo: string
+          updated_at?: string
+          visibilidad?: Database["public"]["Enums"]["visibilidad"]
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          descripcion?: string | null
+          estado?: Database["public"]["Enums"]["estado_hilo"]
+          id?: string
+          posponer_desde?: string | null
+          posponer_hasta?: string | null
+          proyecto_id?: string | null
+          responsable_id?: string
+          titulo?: string
+          updated_at?: string
+          visibilidad?: Database["public"]["Enums"]["visibilidad"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_hilos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_hilos_proyecto_id_fkey"
+            columns: ["proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "tareas_proyectos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_hilos_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_hilos_notas: {
+        Row: {
+          activo: boolean
+          created_at: string
+          hilo_id: string
+          id: string
+          nota: string
+          usuario_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          hilo_id: string
+          id?: string
+          nota: string
+          usuario_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          hilo_id?: string
+          id?: string
+          nota?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_hilos_notas_hilo_id_fkey"
+            columns: ["hilo_id"]
+            isOneToOne: false
+            referencedRelation: "tareas_hilos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_hilos_notas_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_notas: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          nota: string
+          tarea_id: string
+          usuario_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nota: string
+          tarea_id: string
+          usuario_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nota?: string
+          tarea_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_notas_tarea_id_fkey"
+            columns: ["tarea_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_notas_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_plantillas: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          creado_por: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_plantillas_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_plantillas_items: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          orden: number
+          plantilla_id: string
+          titulo: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          orden?: number
+          plantilla_id: string
+          titulo: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          orden?: number
+          plantilla_id?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_plantillas_items_plantilla_id_fkey"
+            columns: ["plantilla_id"]
+            isOneToOne: false
+            referencedRelation: "tareas_plantillas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_proyectos: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          updated_at: string
+          visibilidad: Database["public"]["Enums"]["visibilidad"]
+        }
+        Insert: {
+          activo?: boolean
+          creado_por: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+          visibilidad?: Database["public"]["Enums"]["visibilidad"]
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+          visibilidad?: Database["public"]["Enums"]["visibilidad"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_proyectos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_proyectos_miembros: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          proyecto_id: string
+          usuario_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          proyecto_id: string
+          usuario_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          proyecto_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_proyectos_miembros_proyecto_id_fkey"
+            columns: ["proyecto_id"]
+            isOneToOne: false
+            referencedRelation: "tareas_proyectos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_proyectos_miembros_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuario_submodulos: {
         Row: {
           activo: boolean
@@ -170,10 +671,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      es_asignado_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
+      es_creador_proyecto: { Args: { p_proyecto_id: string }; Returns: boolean }
+      es_responsable_o_creador_tarea: {
+        Args: { p_tarea_id: string }
+        Returns: boolean
+      }
+      puede_ver_hilo: { Args: { p_hilo_id: string }; Returns: boolean }
+      reactivar_posponer_vencidos: { Args: never; Returns: undefined }
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
     }
     Enums: {
+      estado_hilo: "abierto" | "cerrado"
+      estado_tarea: "pendiente" | "en_progreso" | "completada" | "cancelada"
+      modo_completado: "manual" | "automatico" | "hibrido"
+      recurrencia_unidad: "dia" | "mes"
       tipo_submodulo: "vista" | "funcion"
+      visibilidad: "publico" | "privado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -301,7 +815,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      estado_hilo: ["abierto", "cerrado"],
+      estado_tarea: ["pendiente", "en_progreso", "completada", "cancelada"],
+      modo_completado: ["manual", "automatico", "hibrido"],
+      recurrencia_unidad: ["dia", "mes"],
       tipo_submodulo: ["vista", "funcion"],
+      visibilidad: ["publico", "privado"],
     },
   },
 } as const
