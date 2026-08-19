@@ -15,3 +15,26 @@ Cerrado (ver `DECISIONES.md`, sección "P1 responsive y legibilidad"). Queda pen
 
 - [ ] **#2a Proyecto con cara de hilo.** Progreso "X/Y completadas" + métricas ("hace N días", "próxima vence en X") en `ProyectoDetailPanel` — cálculo puro sobre datos que ya llegan al panel, 0 SQL. Notas de proyecto (tabla `tareas_proyectos_notas` copiando `tareas_hilos_notas`) solo si se pide. Decidido: el proyecto **no** gana `estado` abierto/cerrado.
 - [ ] **Historial de acciones + deshacer** (conversación previa, sin decidir alcance). Hoy `tareas_eventos` (`sql/005:231`) solo loguea cambios de estado — el trigger es `AFTER UPDATE OF estado`. Camino barato: ampliar a `AFTER INSERT OR UPDATE` + columnas `datos_anteriores`/`datos_nuevos` jsonb, y "deshacer" = restaurar el snapshot. Techo real: sirve para ediciones de una fila; las acciones estructurales (convertir en hilo, reasignar, plantilla → N tareas) necesitan su inverso escrito a mano, como ya lo tiene `deshacerConversionHilo`.
+
+---
+
+## Trabajo descartado — recuperable por tiempo limitado
+
+Stash de la sesión del 2026-08-18, dropeado a pedido. Nunca se commiteó: el SHA es la única vía de vuelta.
+
+```
+9cc8e8ede68ff028e8f910d55222d22ecc6f8f9f
+
+git show 9cc8e8e --stat     # ver contenido
+git stash apply 9cc8e8e     # recuperar todo
+```
+
+**Caduca pronto.** Al dropear el stash se borró su entrada de reflog, así que el commit quedó inalcanzable y lo que manda es `gc.pruneExpire` (default `2.weeks.ago`), no los 90 días de `gc.reflogExpire`. Cualquier `git gc` — y corre solo cuando se acumulan objetos sueltos — lo borra definitivo a partir del ~2026-09-01.
+
+Para volverlo permanente, hacerlo ya: `git branch rescate/sesion-010 9cc8e8e`.
+
+Contenía tres bloques, revertidos en `06f812b`:
+
+- Progreso y métricas del proyecto en `ProyectoDetailPanel` + `MetricasResumen.tsx` extraído de `HiloCard` (esto cerraba el ítem #2a de arriba, que volvió a quedar abierto).
+- `ProyectoFormPanel` como panel único de crear/modificar proyecto, absorbiendo `MiembrosPanel.tsx`; `gestionarMiembrosProyecto` → `editarProyecto`.
+- `sql/010`: trigger `validar_estado_tarea` (`TA003`, solo responsable o asignado cambia el estado) + traspaso al dueño de las asignaciones sobre tareas cerradas al salir un miembro, con `sql/tests/rls_estado_y_salida_miembro.sql` (14 casos). Dropeado de la base en `sql/011` y `sql/012`; el backfill de datos no se revirtió.
