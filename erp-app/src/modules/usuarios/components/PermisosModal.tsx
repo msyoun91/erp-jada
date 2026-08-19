@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Search } from "lucide-react";
+import { AlertTriangle, Search } from "lucide-react";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { LABEL_MAP } from "@/components/layout/SidebarNav";
 import { asignarSubmodulos } from "../actions";
@@ -33,40 +33,36 @@ export function PermisosModal({
 
   const porModulo = Object.groupBy(submodulos, (s) => s.modulo);
 
-  // La vista es prerrequisito implícito de sus funciones — nunca se autoriza por
-  // separado, se sincroniza sola según si esa vista puntual tiene alguna función marcada.
-  function syncVista(next: Set<string>, vistaId: string) {
-    const funciones = submodulos.filter((s) => s.tipo === "funcion" && s.vista_id === vistaId);
-    if (funciones.length === 0) return; // vista sin funciones: se autoriza manualmente
-    const tieneFuncion = funciones.some((s) => next.has(s.id));
-    if (tieneFuncion) next.add(vistaId);
-    else next.delete(vistaId);
-  }
-
   function toggle(id: string) {
     setSeleccionados((prev) => {
       const next = new Set(prev);
-      const item = submodulos.find((s) => s.id === id);
-      if (!item) return next;
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      if (item.tipo === "funcion" && item.vista_id) syncVista(next, item.vista_id);
       return next;
     });
   }
 
-  function toggleVista(vista: Submodulo, funciones: Submodulo[], value: boolean) {
+  function toggleVarios(ids: string[], value: boolean) {
     setSeleccionados((prev) => {
       const next = new Set(prev);
-      if (value) next.add(vista.id);
-      else next.delete(vista.id);
-      for (const s of funciones) {
-        if (value) next.add(s.id);
-        else next.delete(s.id);
+      for (const id of ids) {
+        if (value) next.add(id);
+        else next.delete(id);
       }
       return next;
     });
   }
+
+  // Una función solo es alcanzable desde su vista: sin ella el permiso existe en
+  // servidor pero nadie puede verlo en la UI. La server action rechaza ese estado.
+  const huerfanas = useMemo(() => {
+    const ids = new Set<string>();
+    for (const s of submodulos) {
+      if (s.tipo !== "funcion" || !s.vista_id) continue;
+      if (seleccionados.has(s.id) && !seleccionados.has(s.vista_id)) ids.add(s.id);
+    }
+    return ids;
+  }, [submodulos, seleccionados]);
 
   function copiarPermisos() {
     if (!copiarDe) return;
@@ -108,8 +104,10 @@ export function PermisosModal({
       footer={
         <>
           <div className="flex-1 t-caption">
-            {cambiosPendientes > 0 &&
-              `${cambiosPendientes} cambio${cambiosPendientes !== 1 ? "s" : ""} pendiente${cambiosPendientes !== 1 ? "s" : ""}`}
+            {huerfanas.size > 0
+              ? `${huerfanas.size} función${huerfanas.size !== 1 ? "es" : ""} sin su vista autorizada`
+              : cambiosPendientes > 0 &&
+                `${cambiosPendientes} cambio${cambiosPendientes !== 1 ? "s" : ""} pendiente${cambiosPendientes !== 1 ? "s" : ""}`}
           </div>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
             Cancelar
@@ -117,7 +115,7 @@ export function PermisosModal({
           <button
             className="btn btn-primary btn-sm"
             onClick={guardar}
-            disabled={enviando || cambiosPendientes === 0}
+            disabled={enviando || cambiosPendientes === 0 || huerfanas.size > 0}
           >
             {enviando ? "Guardando…" : "Guardar"}
           </button>
@@ -186,49 +184,85 @@ export function PermisosModal({
 
             if (bloques.length === 0) return null;
 
+            // El checkbox del módulo opera solo sobre lo que la búsqueda deja a la vista:
+            // marcar permisos que no están en pantalla sería un cambio invisible.
+            const idsVisibles = bloques.flatMap(({ vista, funciones }) => [
+              vista.id,
+              ...funciones.map((s) => s.id),
+            ]);
+            const marcados = idsVisibles.filter((id) => seleccionados.has(id)).length;
+            const moduloCompleto = marcados === idsVisibles.length;
+
             return (
               <div key={modulo} className="border-b border-border last:border-b-0">
-                <div className="px-5 pb-1 pt-3 t-body-m font-semibold text-text-primary">{labelModulo(modulo)}</div>
+                <label className="flex cursor-pointer items-center gap-3 px-5 pb-1 pt-3 hover:bg-bg-subtle">
+                  <input
+                    type="checkbox"
+                    checked={moduloCompleto}
+                    ref={(el) => {
+                      if (el) el.indeterminate = marcados > 0 && !moduloCompleto;
+                    }}
+                    onChange={(e) => toggleVarios(idsVisibles, e.target.checked)}
+                    className="h-4 w-4 shrink-0 accent-brand-700"
+                  />
+                  <span className="t-body-m font-semibold text-text-primary">{labelModulo(modulo)}</span>
+                  <span className="t-caption">
+                    {marcados}/{idsVisibles.length}
+                  </span>
+                </label>
 
                 {bloques.map(({ vista, funciones }) => {
-                  const activos = funciones.filter((s) => seleccionados.has(s.id)).length;
-                  const todosMarcados = funciones.length > 0 && activos === funciones.length;
-                  const algunoMarcado = activos > 0 && !todosMarcados;
+                  const idsBloque = [vista.id, ...funciones.map((s) => s.id)];
+                  const bloqueCompleto = idsBloque.every((id) => seleccionados.has(id));
 
                   return (
-                    <div key={vista.id}>
-                      <label className="flex cursor-pointer items-center gap-3 py-2 pl-8 pr-5 hover:bg-bg-subtle">
+                  <div key={vista.id}>
+                    <div className="flex items-center gap-3 py-2 pl-8 pr-5 hover:bg-bg-subtle">
+                      <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
                         <input
                           type="checkbox"
-                          checked={funciones.length > 0 ? todosMarcados : seleccionados.has(vista.id)}
-                          ref={(el) => {
-                            if (el) el.indeterminate = funciones.length > 0 && algunoMarcado;
-                          }}
-                          onChange={(e) =>
-                            funciones.length > 0
-                              ? toggleVista(vista, funciones, e.target.checked)
-                              : toggle(vista.id)
-                          }
+                          checked={seleccionados.has(vista.id)}
+                          onChange={() => toggle(vista.id)}
                           className="h-4 w-4 shrink-0 accent-brand-700"
                         />
-                        <span className="t-body-m text-text-primary">{vista.nombre}</span>
+                        <span className="truncate t-body-m text-text-primary">{vista.nombre}</span>
+                        <span className="badge badge-info shrink-0">Vista</span>
                       </label>
-
-                      {funciones.map((s) => (
-                        <label
-                          key={s.id}
-                          className="flex cursor-pointer items-center gap-3 py-2.5 pl-14 pr-5 hover:bg-bg-subtle"
+                      {funciones.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => toggleVarios(idsBloque, !bloqueCompleto)}
+                          className="shrink-0 t-caption underline-offset-2 hover:text-text-primary hover:underline"
                         >
-                          <input
-                            type="checkbox"
-                            checked={seleccionados.has(s.id)}
-                            onChange={() => toggle(s.id)}
-                            className="h-4 w-4 shrink-0 accent-brand-700"
-                          />
-                          <span className="truncate t-body-m text-text-primary">{s.nombre}</span>
-                        </label>
-                      ))}
+                          {bloqueCompleto ? "Ninguna" : "Todas"}
+                        </button>
+                      )}
                     </div>
+
+                    {funciones.map((s) => (
+                      <label
+                        key={s.id}
+                        className="flex cursor-pointer items-center gap-3 py-2.5 pl-14 pr-5 hover:bg-bg-subtle"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={seleccionados.has(s.id)}
+                          onChange={() => toggle(s.id)}
+                          className="h-4 w-4 shrink-0 accent-brand-700"
+                        />
+                        <span className="truncate t-body-m text-text-primary">{s.nombre}</span>
+                        <span className="badge badge-neutral shrink-0">Función</span>
+                        {huerfanas.has(s.id) && (
+                          <AlertTriangle
+                            size={14}
+                            strokeWidth={1.75}
+                            className="shrink-0 text-warning-text"
+                            aria-label="Requiere que su vista esté autorizada"
+                          />
+                        )}
+                      </label>
+                    ))}
+                  </div>
                   );
                 })}
               </div>

@@ -93,7 +93,7 @@ Modelo anterior (`sql/001`): `submodulos.tipo` era `seccion`/`funcion`, y una fu
 
 **Por qué:** decisión explícita de UX — crear/editar es una tarea de mayor foco/duración, panel lateral no bloquea el contexto de la lista detrás. Confirmación es una interrupción corta, modal sigue siendo más directo.
 
-**Excepción ya existente:** `PermisosModal.tsx` sigue modal — creado antes de esta regla. No migrar sin pedido explícito.
+**Sin excepciones vigentes.** `PermisosModal.tsx` figuraba como una (creado antes de la regla) pero ya usa `RightPanel`; solo el nombre del archivo quedó viejo.
 
 ---
 
@@ -280,3 +280,23 @@ Fuera de alcance por ahora: `tareas_hilos.responsable_id` y `tareas.responsable_
 ## Decidido, pendiente de implementar: proyecto con cara de hilo
 
 El proyecto **no se convierte en hilo** (sin `estado` abierto/cerrado ni cierre automático): se le da la *cara* de hilo — progreso "X/Y completadas" y métricas en `ProyectoDetailPanel`, que es cálculo puro sobre datos que ya llegan al panel. Si el proyecto tuviera estado propio, el nivel del medio (hilo) se quedaría sin razón de existir.
+
+---
+
+## Permisos: vista y función se autorizan por separado (`PermisosModal`)
+
+Hasta ahora `syncVista()` derivaba el checkbox de la vista de sus funciones: marcar una función encendía la vista, desmarcar la última la apagaba. La vista no era un permiso que se pudiera tocar — era un cálculo. Pedido explícito de usuario: **vista y función son checkboxes independientes**.
+
+- `syncVista()` y `toggleVista()` eliminados. `toggle()` es add/remove puro.
+- Checkbox tri-state en el nombre del módulo: marca/desmarca todo. **Opera solo sobre los submódulos que la búsqueda deja visibles** — el contador `marcados/visibles` al lado del label se calcula sobre el mismo set. Marcar permisos fuera de pantalla sería un cambio invisible.
+- Badge `Vista` (`badge-info`) / `Función` (`badge-neutral`) en cada fila. La indentación sola deja de alcanzar cuando la búsqueda filtra y rompe la jerarquía visual.
+- El bulk-toggle por vista sobrevive pero como control aparte: botón de texto `Todas`/`Ninguna` a la derecha de la fila, solo si la vista tiene funciones visibles. Opera sobre `[vista, ...funciones visibles]` — incluye la vista a propósito: marcar solo las funciones generaría huérfanas y bloquearía el guardado. El checkbox de la vista queda libre para lo que es, su propio permiso.
+- La fila de vista dejó de ser un `<label>` envolvente: un `<button>` dentro de un label dispara el checkbox al click. Ahora es un `div` con el label en `flex-1` y el botón afuera.
+
+**Función sin su vista queda prohibida, y la barrera está en servidor.** El desacople hace posible un estado que antes era inalcanzable: función autorizada, vista no. Ese permiso no se ve en la UI (el botón vive dentro de una vista que el usuario no puede abrir) pero **sí se ejecuta por server action** — la action chequea el código de la función, nunca el de su vista. `asignarSubmodulos()` rechaza el payload consultando `submodulos.vista_id` de cada función entrante contra el set autorizado. La UI valida lo mismo (`huerfanas`): warning en la fila y `Guardar` deshabilitado.
+
+**Orden en `asignarSubmodulos()`:** la validación va **antes** del `update activo:false`. Al revés, un payload inválido dejaba al usuario sin ningún permiso y después devolvía error — la desactivación y el upsert no comparten transacción.
+
+Datos existentes verificados sin huérfanos antes del cambio (el modelo viejo los hacía imposibles), así que no hizo falta backfill.
+
+**Corrección a la sección "UI: panel lateral derecho reemplaza modal":** la excepción anotada ahí ("`PermisosModal.tsx` sigue modal") está desactualizada — ya usa `RightPanel`. Solo el nombre del archivo quedó viejo.

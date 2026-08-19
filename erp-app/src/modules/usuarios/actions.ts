@@ -77,6 +77,28 @@ export async function asignarSubmodulos(input: AsignarSubmodulosForm) {
   const admin = createAdminClient();
   const { usuario_id, submodulo_ids } = parsed.data;
 
+  // Antes de desactivar nada: una función sin su vista es un permiso inalcanzable
+  // desde la UI pero ejecutable por server action.
+  if (submodulo_ids.length > 0) {
+    const { data: funciones, error: funcionesError } = await admin
+      .from("submodulos")
+      .select("vista_id")
+      .in("id", submodulo_ids)
+      .eq("tipo", "funcion");
+
+    if (funcionesError) {
+      return { success: false as const, error: mensajeError(funcionesError) };
+    }
+
+    const autorizados = new Set(submodulo_ids);
+    if (funciones.some((f) => f.vista_id && !autorizados.has(f.vista_id))) {
+      return {
+        success: false as const,
+        error: "Cada función requiere que su vista esté autorizada",
+      };
+    }
+  }
+
   const { error: deactivateError } = await admin
     .from("usuario_submodulos")
     .update({ activo: false })
