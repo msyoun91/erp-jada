@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 
 // <dialog> + showModal(): el panel vive en el top layer del browser, así que
 // no lo puede tapar ni recortar ningún ancestro (stacking context, overflow,
-// transform) — y con paneles anidados (TareaRow dentro de HiloDetailPanel)
+// transform) — y con paneles anidados (TareaDetailPanel dentro de HiloDetailPanel)
 // el último abierto queda arriba y Escape cierra solo ese, sin manejar
 // z-index ni listeners propios.
 export function RightPanel({

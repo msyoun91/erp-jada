@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarClock, Clock, History, Lock } from "lucide-react";
+import { Clock, Lock, UserRound } from "lucide-react";
 import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
-import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
+import { formatFecha } from "@/lib/utils";
 import { HiloDetailPanel } from "./HiloDetailPanel";
 import { CerrarHiloModal } from "./CerrarHiloModal";
+import { Isla } from "./Isla";
+import { MetricasResumen, contarCompletadas } from "./MetricasResumen";
 
 function calcSig(tareas: TareaConAsignados[]) {
   return tareas
@@ -53,11 +55,12 @@ export function HiloCard({
 
   const tareasDelHilo = tareas.filter((t) => t.hilo_id === hilo.id);
   const proyecto = hilo.proyecto_id ? (proyectos.find((p) => p.id === hilo.proyecto_id) ?? null) : null;
+  const responsable = usuarios.find((u) => u.id === hilo.responsable_id)?.nombre ?? null;
 
   // §5 spec: al completarse la última tarea pendiente del hilo, preguntar si
   // se quiere cerrar — se dispara solo en la transición (no en cada render)
   // comparando contra la última "firma" de estados vista, mismo patrón que
-  // TareaRow usa para reconciliar estado optimista sin useEffect(setState).
+  // TareaCard usa para reconciliar estado optimista sin useEffect(setState).
   const sigActual = calcSig(tareasDelHilo);
   const [sigBase, setSigBase] = useState(sigActual);
   const [mostrarCierreAuto, setMostrarCierreAuto] = useState(false);
@@ -68,73 +71,48 @@ export function HiloCard({
     if (todasCompletas && hilo.estado === "abierto") setMostrarCierreAuto(true);
   }
 
-  const completadas = tareasDelHilo.filter((t) => t.estado === "completada").length;
-  const creadoFecha = hilo.created_at.slice(0, 10);
-  const diasTranscurridos = diasEntreISO(creadoFecha, hoyISO());
-
-  const proximaFecha = tareasDelHilo
-    .filter((t) => (t.estado === "pendiente" || t.estado === "en_progreso") && !t.posponer_hasta && t.fecha_vencimiento)
-    .map((t) => t.fecha_vencimiento as string)
-    .sort()[0];
-  const diasProxima = proximaFecha ? diasEntreISO(hoyISO(), proximaFecha) : null;
+  const completadas = contarCompletadas(tareasDelHilo);
 
   return (
-    <div className="rounded-lg border border-border bg-bg-surface">
-      <button
-        className="flex w-full items-center gap-2 p-[13px] px-5 text-left"
-        onClick={() => setDetalleAbierto(true)}
-      >
-        <p className="t-body-m min-w-0 flex-1 truncate font-semibold text-text-primary">{hilo.titulo}</p>
-        {proyecto && <span className="badge badge-neutral shrink-0">{proyecto.nombre}</span>}
-        <span className={`badge shrink-0 ${hilo.estado === "cerrado" ? "badge-neutral" : "badge-info"}`}>
-          {hilo.estado === "cerrado" ? "Cerrado" : "Abierto"}
-        </span>
-        <span className="t-caption shrink-0 whitespace-nowrap">
-          {completadas}/{tareasDelHilo.length} completadas
-        </span>
-      </button>
-
-      <div className="flex flex-wrap items-center gap-3 px-5 pb-3 t-caption">
-        {hilo.visibilidad === "privado" && (
-          <span className="flex items-center gap-1">
-            <Lock size={13} strokeWidth={1.75} />
-            Privado
-          </span>
-        )}
-        {hilo.posponer_hasta && (
-          <span className="flex items-center gap-1 text-warning">
-            <Clock size={13} strokeWidth={1.75} />
-            Pospuesto hasta {formatFecha(hilo.posponer_hasta)}
-          </span>
-        )}
-        <span className="flex items-center gap-1">
-          <History size={13} strokeWidth={1.75} />
-          Hace {diasTranscurridos} {diasTranscurridos === 1 ? "día" : "días"}
-        </span>
-        {proximaFecha ? (
-          <span
-            className={`flex items-center gap-1 ${
-              diasProxima !== null && diasProxima < 0
-                ? "text-error"
-                : diasProxima !== null && diasProxima <= 3
-                  ? "text-warning"
-                  : ""
-            }`}
-          >
-            <CalendarClock size={13} strokeWidth={1.75} />
-            {diasProxima !== null && diasProxima < 0
-              ? `Próxima tarea vencida hace ${Math.abs(diasProxima)} días`
-              : diasProxima === 0
-                ? "Próxima tarea vence hoy"
-                : `Próxima tarea vence en ${diasProxima} días`}
-          </span>
-        ) : (
-          <span className="flex items-center gap-1">
-            <CalendarClock size={13} strokeWidth={1.75} />
-            Sin tareas activas con vencimiento
-          </span>
-        )}
-      </div>
+    <>
+      <Isla
+        titulo={hilo.titulo}
+        onAbrir={() => setDetalleAbierto(true)}
+        badges={
+          <>
+            {proyecto && <span className="badge badge-neutral shrink-0">{proyecto.nombre}</span>}
+            <span className={`badge shrink-0 ${hilo.estado === "cerrado" ? "badge-neutral" : "badge-info"}`}>
+              {hilo.estado === "cerrado" ? "Cerrado" : "Abierto"}
+            </span>
+            <span className="t-caption shrink-0 whitespace-nowrap">
+              {completadas}/{tareasDelHilo.length} completadas
+            </span>
+          </>
+        }
+        meta={
+          <>
+            {responsable && (
+              <span className="flex items-center gap-1" title="Dueño del hilo">
+                <UserRound size={13} strokeWidth={1.75} />
+                {responsable}
+              </span>
+            )}
+            {hilo.visibilidad === "privado" && (
+              <span className="flex items-center gap-1">
+                <Lock size={13} strokeWidth={1.75} />
+                Privado
+              </span>
+            )}
+            {hilo.posponer_hasta && (
+              <span className="flex items-center gap-1 text-warning">
+                <Clock size={13} strokeWidth={1.75} />
+                Pospuesto hasta {formatFecha(hilo.posponer_hasta)}
+              </span>
+            )}
+            <MetricasResumen createdAt={hilo.created_at} tareas={tareasDelHilo} />
+          </>
+        }
+      />
 
       {detalleAbierto && (
         <HiloDetailPanel
@@ -161,6 +139,6 @@ export function HiloCard({
           onMantenerAbierto={() => setMostrarCierreAuto(false)}
         />
       )}
-    </div>
+    </>
   );
 }

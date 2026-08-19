@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import { SearchInput } from "@/components/ui/SearchInput";
 import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
 import { HiloCard } from "./HiloCard";
-import { TareaRow } from "./TareaRow";
+import { TareaCard } from "./TareaCard";
 import { TareaFormPanel } from "./TareaFormPanel";
 import { HiloFormPanel } from "./HiloFormPanel";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
@@ -77,6 +77,12 @@ export function TareasListaView({
 
   const sinResultados = hilosFiltrados.length === 0 && tareasSueltas.length === 0;
 
+  // Sin tareas_gestionar_ajenas el filtro no ofrece la lista del equipo: solo
+  // "yo" y "Todos los usuarios" (lo propio + lo público, que es todo lo que
+  // RLS devuelve). No es una barrera — recortar por otro usuario nunca mostró
+  // de más — sino no ofrecer un recorte que no es de quien mira.
+  const opcionesUsuario = gestionarAjenas ? usuarios : usuarios.filter((u) => u.id === usuarioActualId);
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -88,7 +94,7 @@ export function TareasListaView({
           aria-label="Filtrar por usuario"
         >
           <option value="">Todos los usuarios</option>
-          {usuarios.map((u) => (
+          {opcionesUsuario.map((u) => (
             <option key={u.id} value={u.id}>
               {u.nombre}
             </option>
@@ -142,20 +148,19 @@ export function TareasListaView({
             <div className="flex flex-col gap-3">
               <p className="t-label text-text-tertiary">Tareas sueltas</p>
               {tareasSueltas.map((t) => (
-                <div key={t.id} className="rounded-lg border border-border bg-bg-surface">
-                  <TareaRow
-                    tarea={t}
-                    usuarios={usuarios}
-                    proyectos={proyectos}
-                    miembrosPorProyecto={miembrosPorProyecto}
-                    hilosDisponibles={hilos}
-                    usuarioActualId={usuarioActualId}
-                    gestionarAjenas={gestionarAjenas}
-                    relacionCon={asignadoId || usuarioActualId}
-                    onTemperaturaChange={onTemperaturaChange}
-                    onConvertida={setHiloConvertido}
-                  />
-                </div>
+                <TareaCard
+                  key={t.id}
+                  tarea={t}
+                  usuarios={usuarios}
+                  proyectos={proyectos}
+                  miembrosPorProyecto={miembrosPorProyecto}
+                  hilosDisponibles={hilos}
+                  usuarioActualId={usuarioActualId}
+                  gestionarAjenas={gestionarAjenas}
+                  relacionCon={asignadoId || usuarioActualId}
+                  onTemperaturaChange={onTemperaturaChange}
+                  onConvertida={setHiloConvertido}
+                />
               ))}
             </div>
           )}

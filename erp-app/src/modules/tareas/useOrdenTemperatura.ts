@@ -5,7 +5,7 @@ import type { TareaConAsignados } from "./types";
 
 // Orden de "Mis tareas": temperatura más alta arriba, se refresca en vivo
 // mientras se arrastra el slider (no recién al confirmar en el server) —
-// por eso el override vive acá, no en cada TareaRow por separado.
+// por eso el override vive acá, no en cada TareaCard por separado.
 export function useOrdenTemperatura() {
   const [overrides, setOverrides] = useState<Record<string, number>>({});
 

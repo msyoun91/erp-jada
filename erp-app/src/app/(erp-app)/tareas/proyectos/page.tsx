@@ -1,5 +1,10 @@
 import { notFound } from "next/navigation";
-import { puedeCrearProyecto, puedeGestionarAjenas, puedeVerProyectos } from "@/modules/tareas/permissions";
+import {
+  puedeCrearProyecto,
+  puedeGestionarAjenas,
+  puedeGestionarMiembros,
+  puedeVerProyectos,
+} from "@/modules/tareas/permissions";
 import {
   getListaTareas,
   getMiembrosPorProyecto,
@@ -21,6 +26,7 @@ export default async function TareasProyectosPage() {
     miembrosPorProyecto,
     puedeCrear,
     gestionarAjenas,
+    gestionarMiembros,
     usuarioActualId,
   ] = await Promise.all([
     getProyectos(),
@@ -30,6 +36,7 @@ export default async function TareasProyectosPage() {
     getMiembrosPorProyecto(),
     puedeCrearProyecto(),
     puedeGestionarAjenas(),
+    puedeGestionarMiembros(),
     getUsuarioActualId(),
   ]);
 
@@ -43,6 +50,7 @@ export default async function TareasProyectosPage() {
       miembrosPorProyecto={miembrosPorProyecto}
       usuarioActualId={usuarioActualId}
       gestionarAjenas={gestionarAjenas}
+      gestionarMiembros={gestionarMiembros}
       puedeCrear={puedeCrear}
     />
   );

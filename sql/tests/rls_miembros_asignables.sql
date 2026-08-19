@@ -2,7 +2,9 @@
 -- NO es una migración: todo corre dentro de una transacción que termina en
 -- ROLLBACK — no persiste ningún dato ni cambio de permisos. Volver a correrlo
 -- entero después de tocar tareas_asignados_insert/update o
--- tareas_proyectos_miembros_select.
+-- tareas_proyectos_miembros_select. Desde sql/013 esas policies usan
+-- es_responsable_tarea (sin la rama del creador): acá TESTER es responsable de
+-- las tareas que creó, así que ningún caso cambia de resultado.
 --
 -- Por qué existe: como `postgres` las policies no se ejercitan (el owner
 -- bypasea RLS). Acá se cambia a rol `authenticated` y se setea
@@ -198,7 +200,7 @@ BEGIN
 
   SELECT count(*) INTO v_n FROM tareas_proyectos_miembros
    WHERE proyecto_id = 'aaaa0000-0000-4000-8000-000000000002';
-  INSERT INTO r VALUES ('14 ADMIN select miembros de Q (creador)', '1', v_n::text, v_n = 1);
+  INSERT INTO r VALUES ('14 ADMIN select miembros de Q (miembro)', '1', v_n::text, v_n = 1);
 END $$;
 
 RESET ROLE;

@@ -7,7 +7,9 @@ import {
   crearTareaSchema,
   editarTareaSchema,
   crearHiloSchema,
+  editarHiloSchema,
   crearProyectoSchema,
+  editarProyectoSchema,
   crearPlantillaSchema,
   editarPlantillaSchema,
   reasignarTareaSchema,
@@ -21,7 +23,9 @@ import {
   type CrearTareaForm,
   type EditarTareaForm,
   type CrearHiloForm,
+  type EditarHiloForm,
   type CrearProyectoForm,
+  type EditarProyectoForm,
   type CrearPlantillaForm,
   type EditarPlantillaForm,
   type ReasignarTareaForm,
@@ -59,23 +63,23 @@ export async function crearTarea(input: CrearTareaForm) {
   const supabase = await createClient();
   const creado_por = await usuarioActualId();
   const { asignados, ...tarea } = parsed.data;
+  // id generado en el server: mismo motivo que crearHilo — tareas_select ya no
+  // mira creado_por, así que la fila recién insertada todavía no es visible
+  // (sus asignados se insertan después) y pedir RETURNING rompería con RLS.
+  const id = crypto.randomUUID();
 
-  const { data, error } = await supabase
-    .from("tareas")
-    .insert({ ...tarea, creado_por })
-    .select("id")
-    .single();
+  const { error } = await supabase.from("tareas").insert({ id, ...tarea, creado_por });
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
   const { error: errorAsignados } = await supabase
     .from("tareas_asignados")
-    .insert(asignados.map((usuario_id) => ({ tarea_id: data.id, usuario_id })));
+    .insert(asignados.map((usuario_id) => ({ tarea_id: id, usuario_id })));
 
   if (errorAsignados) return { success: false as const, error: mensajeError(errorAsignados) };
 
   revalidatePath("/tareas");
-  return { success: true as const, id: data.id };
+  return { success: true as const, id };
 }
 
 export async function editarTarea(input: EditarTareaForm) {
@@ -114,6 +118,23 @@ export async function crearHilo(input: CrearHiloForm) {
 
   revalidatePath("/tareas");
   return { success: true as const, id };
+}
+
+export async function editarHilo(input: EditarHiloForm) {
+  const parsed = editarHiloSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { id, ...campos } = parsed.data;
+
+  const { error } = await supabase.from("tareas_hilos").update(campos).eq("id", id);
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath("/tareas");
+  revalidatePath("/tareas/proyectos");
+  return { success: true as const };
 }
 
 // §1 spec: una tarea suelta se convierte en hilo. El título/descripción de
@@ -235,34 +256,44 @@ export async function crearProyecto(input: CrearProyectoForm) {
   const supabase = await createClient();
   const creado_por = await usuarioActualId();
   const { miembros, ...proyecto } = parsed.data;
+  // id generado en el server: mismo motivo que crearTarea — un proyecto
+  // privado no es visible para su creador hasta que se inserten los miembros.
+  const id = crypto.randomUUID();
 
-  const { data, error } = await supabase
-    .from("tareas_proyectos")
-    .insert({ ...proyecto, creado_por })
-    .select("id")
-    .single();
+  const { error } = await supabase.from("tareas_proyectos").insert({ id, ...proyecto, creado_por });
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
   const { error: errorMiembros } = await supabase
     .from("tareas_proyectos_miembros")
-    .insert(miembros.map((usuario_id) => ({ proyecto_id: data.id, usuario_id })));
+    .insert(miembros.map((usuario_id) => ({ proyecto_id: id, usuario_id })));
 
   if (errorMiembros) return { success: false as const, error: mensajeError(errorMiembros) };
 
   revalidatePath("/tareas/proyectos");
   revalidatePath("/tareas");
-  return { success: true as const, id: data.id };
+  return { success: true as const, id };
 }
 
-// Diff en vez de desactivar-todo-y-reinsertar: el trigger que bloquea quitar
-// un miembro con tareas activas se dispararía también sobre los que quedan.
-export async function gestionarMiembrosProyecto(proyectoId: string, usuarioIds: string[]) {
-  if (usuarioIds.length === 0) {
-    return { success: false as const, error: "El proyecto necesita al menos un miembro" };
+// Miembros van en el mismo panel que el resto del proyecto: un solo lugar
+// donde se modifica todo. El diff (en vez de desactivar-todo-y-reinsertar)
+// evita que el trigger que bloquea quitar un miembro con tareas activas se
+// dispare también sobre los que quedan.
+export async function editarProyecto(input: EditarProyectoForm) {
+  const parsed = editarProyectoSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
   }
 
   const supabase = await createClient();
+  const { id: proyectoId, miembros: usuarioIds, ...proyecto } = parsed.data;
+
+  const { error: errorProyecto } = await supabase
+    .from("tareas_proyectos")
+    .update(proyecto)
+    .eq("id", proyectoId);
+
+  if (errorProyecto) return { success: false as const, error: mensajeError(errorProyecto) };
 
   const { data: actuales, error: errorLeer } = await supabase
     .from("tareas_proyectos_miembros")
@@ -427,23 +458,22 @@ export async function agregarTareasDesdePlantilla(input: AgregarDesdePlantillaFo
     return { success: false as const, error: "La plantilla no tiene pasos" };
   }
 
-  const { data: tareasCreadas, error: errorInsertar } = await supabase
-    .from("tareas")
-    .insert(
-      items.map((item) => ({
-        titulo: item.titulo,
-        hilo_id,
-        responsable_id,
-        creado_por,
-      }))
-    )
-    .select("id");
+  // ids generados en el server: mismo motivo que crearTarea.
+  const nuevas = items.map((item) => ({
+    id: crypto.randomUUID(),
+    titulo: item.titulo,
+    hilo_id,
+    responsable_id,
+    creado_por,
+  }));
+
+  const { error: errorInsertar } = await supabase.from("tareas").insert(nuevas);
 
   if (errorInsertar) return { success: false as const, error: mensajeError(errorInsertar) };
 
   const { error: errorAsignar } = await supabase
     .from("tareas_asignados")
-    .insert((tareasCreadas ?? []).flatMap((t) => asignados.map((usuario_id) => ({ tarea_id: t.id, usuario_id }))));
+    .insert(nuevas.flatMap((t) => asignados.map((usuario_id) => ({ tarea_id: t.id, usuario_id }))));
 
   if (errorAsignar) return { success: false as const, error: mensajeError(errorAsignar) };
 

@@ -2,19 +2,21 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Archive, CheckCircle2, Clock, ListPlus, Plus, Undo2 } from "lucide-react";
+import { Archive, CheckCircle2, Clock, ListPlus, Pencil, Plus, Undo2, UserRound } from "lucide-react";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { desactivarHilo } from "../actions";
 import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
-import { TareaRow } from "./TareaRow";
+import { TareaCard } from "./TareaCard";
 import { TareaFormPanel } from "./TareaFormPanel";
+import { HiloFormPanel } from "./HiloFormPanel";
 import { PosponerPanel } from "./PosponerPanel";
 import { UsarPlantillaPanel } from "./UsarPlantillaPanel";
 import { CerrarHiloModal } from "./CerrarHiloModal";
 import { DeshacerConversionModal } from "./DeshacerConversionModal";
 import { NotasSection } from "./NotasSection";
+import { MetricasResumen, contarCompletadas } from "./MetricasResumen";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
 
 // Contenido que antes vivía inline en HiloCard (expandido) — spec pedida:
@@ -45,6 +47,7 @@ export function HiloDetailPanel({
   onClose: () => void;
 }) {
   const [agregandoTarea, setAgregandoTarea] = useState(false);
+  const [editando, setEditando] = useState(false);
   const [posponiendo, setPosponiendo] = useState(false);
   const [usandoPlantilla, setUsandoPlantilla] = useState(false);
   const [deshaciendo, setDeshaciendo] = useState(false);
@@ -52,12 +55,16 @@ export function HiloDetailPanel({
   const [desactivando, setDesactivando] = useState(false);
   const { ordenar, onTemperaturaChange } = useOrdenTemperatura();
 
-  const puedeGestionar =
-    gestionarAjenas || hilo.creado_por === usuarioActualId || hilo.responsable_id === usuarioActualId;
+  // Sin creado_por: crear un hilo no da autoridad sobre él, la da ser su
+  // responsable. Mostrar acciones que la RLS después descarta en silencio
+  // (un UPDATE denegado afecta 0 filas, no tira error) es peor que ocultarlas.
+  const puedeGestionar = gestionarAjenas || hilo.responsable_id === usuarioActualId;
 
   // Las tareas del hilo heredan su proyecto: quiénes pueden recibirlas sale
   // de los miembros de ese proyecto.
   const miembros = proyecto ? (miembrosPorProyecto[proyecto.id] ?? []) : null;
+  const responsable = usuarios.find((u) => u.id === hilo.responsable_id)?.nombre ?? null;
+  const completadas = contarCompletadas(tareasDelHilo);
 
   async function onDesactivar() {
     const result = await desactivarHilo(hilo.id);
@@ -73,6 +80,12 @@ export function HiloDetailPanel({
             <Plus size={14} strokeWidth={1.75} />
             Agregar tarea
           </button>
+          {puedeGestionar && (
+            <button className="btn btn-ghost btn-sm" onClick={() => setEditando(true)}>
+              <Pencil size={14} strokeWidth={1.75} />
+              Modificar hilo
+            </button>
+          )}
           {(plantillas.length > 0 || puedeGestionar) && (
             <OverflowMenu
               items={[
@@ -115,24 +128,39 @@ export function HiloDetailPanel({
           )}
         </div>
 
+        <div className="flex flex-col gap-2 border-b border-border p-[13px] px-5">
+          {hilo.descripcion && <p className="t-body-m whitespace-pre-wrap">{hilo.descripcion}</p>}
+          <div className="t-caption flex flex-wrap items-center gap-3">
+            {responsable && (
+              <span className="flex items-center gap-1" title="Dueño del hilo">
+                <UserRound size={13} strokeWidth={1.75} />
+                {responsable}
+              </span>
+            )}
+            <span>
+              {completadas}/{tareasDelHilo.length} completadas
+            </span>
+            <MetricasResumen createdAt={hilo.created_at} tareas={tareasDelHilo} />
+          </div>
+        </div>
+
         {tareasDelHilo.length === 0 ? (
           <p className="t-caption px-5 py-3">Sin tareas todavía.</p>
         ) : (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-3 p-[13px] px-5">
             {ordenar(tareasDelHilo).map((t) => (
-              <div key={t.id} className="border-b border-border last:border-b-0">
-                <TareaRow
-                  tarea={t}
-                  usuarios={usuarios}
-                  proyectos={proyectos}
-                  miembrosPorProyecto={miembrosPorProyecto}
-                  proyectoHeredadoId={proyecto?.id ?? null}
-                  usuarioActualId={usuarioActualId}
-                  gestionarAjenas={gestionarAjenas}
-                  relacionCon={relacionCon}
-                  onTemperaturaChange={onTemperaturaChange}
-                />
-              </div>
+              <TareaCard
+                key={t.id}
+                tarea={t}
+                usuarios={usuarios}
+                proyectos={proyectos}
+                miembrosPorProyecto={miembrosPorProyecto}
+                proyectoHeredadoId={proyecto?.id ?? null}
+                usuarioActualId={usuarioActualId}
+                gestionarAjenas={gestionarAjenas}
+                relacionCon={relacionCon}
+                onTemperaturaChange={onTemperaturaChange}
+              />
             ))}
           </div>
         )}
@@ -152,6 +180,15 @@ export function HiloDetailPanel({
           hiloId={hilo.id}
           proyectoHeredadoId={proyecto?.id ?? null}
           onClose={() => setAgregandoTarea(false)}
+        />
+      )}
+      {editando && (
+        <HiloFormPanel
+          usuarios={usuarios}
+          proyectos={proyectos}
+          usuarioActualId={usuarioActualId}
+          hilo={hilo}
+          onClose={() => setEditando(false)}
         />
       )}
       {posponiendo && (

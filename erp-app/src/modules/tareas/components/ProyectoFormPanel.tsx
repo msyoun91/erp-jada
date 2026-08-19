@@ -5,17 +5,29 @@ import { useForm, useController } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { crearProyecto } from "../actions";
+import { crearProyecto, editarProyecto } from "../actions";
 import { crearProyectoSchema, type CrearProyectoForm } from "../types";
-import type { Usuario } from "../types";
+import type { TareaProyecto, Usuario } from "../types";
 
+// Crear y modificar en el mismo panel (prop `proyecto`), mismo patrón que
+// TareaFormPanel/PlantillaFormPanel. Los miembros se editan acá: son una
+// característica más del proyecto, no una pantalla aparte — pero quién puede
+// tocarlos es su propia función (`tareas_proyectos_miembros`). Sin ella el
+// bloque no se muestra y la membresía viaja como default oculto, igual que
+// proyecto/visibilidad en HiloFormPanel.
 export function ProyectoFormPanel({
+  proyecto,
+  miembrosActuales,
   usuarios,
   usuarioActualId,
+  gestionarMiembros,
   onClose,
 }: {
+  proyecto?: TareaProyecto;
+  miembrosActuales?: string[];
   usuarios: Usuario[];
   usuarioActualId: string | null;
+  gestionarMiembros: boolean;
   onClose: () => void;
 }) {
   const [enviando, setEnviando] = useState(false);
@@ -26,7 +38,14 @@ export function ProyectoFormPanel({
     formState: { errors },
   } = useForm<CrearProyectoForm>({
     resolver: zodResolver(crearProyectoSchema),
-    defaultValues: { visibilidad: "privado", miembros: usuarioActualId ? [usuarioActualId] : [] },
+    defaultValues: proyecto
+      ? {
+          nombre: proyecto.nombre,
+          descripcion: proyecto.descripcion ?? undefined,
+          visibilidad: proyecto.visibilidad,
+          miembros: miembrosActuales ?? [],
+        }
+      : { visibilidad: "privado", miembros: usuarioActualId ? [usuarioActualId] : [] },
   });
 
   const miembrosField = useController({ name: "miembros", control });
@@ -40,20 +59,21 @@ export function ProyectoFormPanel({
 
   async function onSubmit(data: CrearProyectoForm) {
     setEnviando(true);
-    const result = await crearProyecto(data);
+    const result = proyecto ? await editarProyecto({ ...data, id: proyecto.id }) : await crearProyecto(data);
     setEnviando(false);
 
     if (!result.success) {
       toast.error(result.error);
       return;
     }
-    toast.success("Proyecto creado");
+    toast.success(proyecto ? "Proyecto actualizado" : "Proyecto creado");
     onClose();
   }
 
   return (
     <RightPanel
-      title="Nuevo proyecto"
+      title={proyecto ? "Modificar proyecto" : "Nuevo proyecto"}
+      subtitle={proyecto?.nombre}
       onClose={onClose}
       footer={
         <>
@@ -61,7 +81,7 @@ export function ProyectoFormPanel({
             Cancelar
           </button>
           <button type="submit" form="form-proyecto" className="btn btn-primary btn-sm" disabled={enviando}>
-            {enviando ? "Creando…" : "Crear proyecto"}
+            {enviando ? "Guardando…" : proyecto ? "Guardar cambios" : "Crear proyecto"}
           </button>
         </>
       }
@@ -90,27 +110,29 @@ export function ProyectoFormPanel({
           </select>
         </div>
 
-        <div>
-          <label className="t-label mb-1 block">Miembros</label>
-          <p className="t-caption mb-1">Solo los miembros pueden recibir tareas del proyecto.</p>
-          <div className="max-h-40 overflow-y-auto rounded-md border-[1.5px] border-border-strong">
-            {usuarios.map((u) => (
-              <label
-                key={u.id}
-                className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-bg-subtle"
-              >
-                <input
-                  type="checkbox"
-                  checked={seleccionados.includes(u.id)}
-                  onChange={() => toggle(u.id)}
-                  className="h-4 w-4 shrink-0 accent-brand-700"
-                />
-                <span className="t-body-m">{u.nombre}</span>
-              </label>
-            ))}
+        {gestionarMiembros && (
+          <div>
+            <label className="t-label mb-1 block">Miembros</label>
+            <p className="t-caption mb-1">Solo los miembros pueden recibir tareas del proyecto.</p>
+            <div className="max-h-40 overflow-y-auto rounded-md border-[1.5px] border-border-strong">
+              {usuarios.map((u) => (
+                <label
+                  key={u.id}
+                  className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-bg-subtle"
+                >
+                  <input
+                    type="checkbox"
+                    checked={seleccionados.includes(u.id)}
+                    onChange={() => toggle(u.id)}
+                    className="h-4 w-4 shrink-0 accent-brand-700"
+                  />
+                  <span className="t-body-m">{u.nombre}</span>
+                </label>
+              ))}
+            </div>
+            {errors.miembros && <p className="input-error-text">{errors.miembros.message}</p>}
           </div>
-          {errors.miembros && <p className="input-error-text">{errors.miembros.message}</p>}
-        </div>
+        )}
       </form>
     </RightPanel>
   );

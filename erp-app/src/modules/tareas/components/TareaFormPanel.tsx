@@ -55,7 +55,7 @@ export function TareaFormPanel({
     control,
     setValue,
     getValues,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useForm<CrearTareaForm>({
     resolver: zodResolver(crearTareaSchema),
     defaultValues: tarea
@@ -75,7 +75,9 @@ export function TareaFormPanel({
       : {
           hilo_id: hiloId ?? null,
           proyecto_id: proyectoId ?? null,
-          visibilidad: "privado",
+          // Lo que vive en un proyecto es del equipo del proyecto: con proyecto
+          // el default es público. Sigue siendo un default, no una regla.
+          visibilidad: proyectoInicial ? "publico" : "privado",
           responsable_id: autoAsignado ?? "",
           asignados: autoAsignado ? [autoAsignado] : [],
           temperatura: 50,
@@ -87,8 +89,13 @@ export function TareaFormPanel({
   const miembros = proyectoEfectivo ? (miembrosPorProyecto[proyectoEfectivo] ?? []) : null;
 
   // Cambiar de proyecto cambia quiénes pueden recibir la tarea: los ya
-  // seleccionados que no son miembros del nuevo proyecto se descartan.
-  function podarAsignados(nuevoProyectoId: string) {
+  // seleccionados que no son miembros del nuevo proyecto se descartan. Y mueve
+  // el default de visibilidad, salvo que el usuario ya lo haya tocado.
+  function alCambiarProyecto(nuevoProyectoId: string) {
+    if (!dirtyFields.visibilidad) {
+      setValue("visibilidad", nuevoProyectoId ? "publico" : "privado");
+    }
+
     const permitidos = nuevoProyectoId ? (miembrosPorProyecto[nuevoProyectoId] ?? []) : null;
     if (!permitidos) return;
     const validos = (getValues("asignados") ?? []).filter((id) => permitidos.includes(id));
@@ -145,7 +152,7 @@ export function TareaFormPanel({
             <label className="t-label mb-1 block">Proyecto</label>
             <select
               className="input"
-              {...register("proyecto_id", { onChange: (e) => podarAsignados(e.target.value) })}
+              {...register("proyecto_id", { onChange: (e) => alCambiarProyecto(e.target.value) })}
             >
               <option value="">Sin proyecto</option>
               {proyectos.map((p) => (

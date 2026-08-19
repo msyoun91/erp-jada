@@ -5,7 +5,7 @@ import { X } from "lucide-react";
 
 // Mismo criterio que RightPanel: <dialog> + showModal() para que el modal
 // viva en el top layer del browser. Como div `fixed z-50` quedaba por debajo
-// de un panel abierto (top layer) — un modal lanzado desde TareaRow dentro de
+// de un panel abierto (top layer) — un modal lanzado desde TareaDetailPanel dentro de
 // HiloDetailPanel aparecía tapado por el panel.
 export function Modal({
   title,

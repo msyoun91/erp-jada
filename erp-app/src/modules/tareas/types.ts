@@ -16,7 +16,7 @@ type UsuarioNombre = { nombre: string };
 export type TareaConAsignados = Tarea & {
   tareas_asignados: { usuario_id: string; activo: boolean; usuarios: UsuarioNombre | null }[];
   // Precargadas por getListaTareas — con las notas visibles por defecto en
-  // cada TareaRow, pedirlas de a una desde el cliente serían N requests.
+  // cada panel de tarea, pedirlas de a una desde el cliente serían N requests.
   tareas_notas?: TareaNota[];
 };
 
@@ -120,15 +120,31 @@ export const editarTareaSchema = tareaEditableSchema.extend({ id: z.string().uui
 
 export type EditarTareaForm = z.input<typeof editarTareaSchema>;
 
-export const crearHiloSchema = z.object({
+// Mover un hilo de proyecto no está permitido: la membresía de sus tareas se
+// hereda del proyecto y ningún trigger la revalida sobre tareas_hilos (sql/009
+// valida UPDATE OF proyecto_id sobre `tareas`, no sobre el hilo). La
+// visibilidad sí se edita — no toca la membresía, solo quién ve el hilo.
+const hiloEditableSchema = z.object({
   titulo: z.string().min(1, "El título es obligatorio").max(200),
   descripcion: z.string().max(2000).optional(),
+});
+
+export const crearHiloSchema = hiloEditableSchema.extend({
   proyecto_id: uuidOpcional,
   visibilidad: z.enum(["publico", "privado"]).default("privado"),
   responsable_id: z.string().uuid(),
 });
 
 export type CrearHiloForm = z.input<typeof crearHiloSchema>;
+
+// `visibilidad` acá va sin `.default()` a propósito: en un update, omitirla
+// dejaría el hilo en 'privado' sin que nadie lo haya pedido.
+export const editarHiloSchema = hiloEditableSchema.extend({
+  id: z.string().uuid(),
+  visibilidad: z.enum(["publico", "privado"]),
+});
+
+export type EditarHiloForm = z.input<typeof editarHiloSchema>;
 
 // Miembros obligatorios en todo proyecto (público o privado): la membresía
 // define quién puede recibir tareas del proyecto, no quién lo ve.
@@ -140,6 +156,10 @@ export const crearProyectoSchema = z.object({
 });
 
 export type CrearProyectoForm = z.input<typeof crearProyectoSchema>;
+
+export const editarProyectoSchema = crearProyectoSchema.extend({ id: z.string().uuid() });
+
+export type EditarProyectoForm = z.input<typeof editarProyectoSchema>;
 
 // `id` presente = paso que ya existe (se actualiza); ausente = paso nuevo.
 // crearPlantilla lo ignora — mismo schema para crear y editar.

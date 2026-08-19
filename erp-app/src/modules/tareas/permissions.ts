@@ -16,6 +16,10 @@ export function puedeCrearProyecto() {
   return tienePermiso("tareas_proyectos_crear");
 }
 
+export function puedeGestionarMiembros() {
+  return tienePermiso("tareas_proyectos_miembros");
+}
+
 export function puedeVerPlantillas() {
   return tienePermiso("tareas_plantillas");
 }

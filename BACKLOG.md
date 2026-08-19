@@ -13,7 +13,8 @@ Cerrado (ver `DECISIONES.md`, sección "P1 responsive y legibilidad"). Queda pen
 
 ## Features pedidas
 
-- [ ] **#2a Proyecto con cara de hilo.** Progreso "X/Y completadas" + métricas ("hace N días", "próxima vence en X") en `ProyectoDetailPanel` — cálculo puro sobre datos que ya llegan al panel, 0 SQL. Notas de proyecto (tabla `tareas_proyectos_notas` copiando `tareas_hilos_notas`) solo si se pide. Decidido: el proyecto **no** gana `estado` abierto/cerrado.
+- [ ] **Notas de proyecto** (tabla `tareas_proyectos_notas` copiando `tareas_hilos_notas`) — lo único que quedó fuera del ítem "#2a Proyecto con cara de hilo", cerrado el 2026-08-19 (progreso, métricas e islas: ver `DECISIONES.md`, "isla compartida, panel de proyecto y edición de hilo"). Decidido: el proyecto **no** gana `estado` abierto/cerrado.
+- [ ] **Quitar un miembro con asignaciones sobre tareas cerradas.** Salteado a pedido del usuario el 2026-08-19. Hoy `validar_quitar_miembro` solo bloquea (`TA001`) si el miembro tiene tareas `pendiente`/`en_progreso`: sobre tareas completadas/canceladas su asignación queda activa, y reabrir esa tarea le devuelve trabajo vivo a alguien que ya no es miembro. Opciones evaluadas: bloquear siempre, desasignar las cerradas, o traspasar al dueño (`sql/010`, revertido).
 - [ ] **Historial de acciones + deshacer** (conversación previa, sin decidir alcance). Hoy `tareas_eventos` (`sql/005:231`) solo loguea cambios de estado — el trigger es `AFTER UPDATE OF estado`. Camino barato: ampliar a `AFTER INSERT OR UPDATE` + columnas `datos_anteriores`/`datos_nuevos` jsonb, y "deshacer" = restaurar el snapshot. Techo real: sirve para ediciones de una fila; las acciones estructurales (convertir en hilo, reasignar, plantilla → N tareas) necesitan su inverso escrito a mano, como ya lo tiene `deshacerConversionHilo`.
 
 ---
@@ -33,8 +34,8 @@ git stash apply 9cc8e8e     # recuperar todo
 
 Para volverlo permanente, hacerlo ya: `git branch rescate/sesion-010 9cc8e8e`.
 
-Contenía tres bloques, revertidos en `06f812b`:
+Contenía tres bloques, revertidos en `06f812b`. **Los dos primeros ya se recuperaron** el 2026-08-19 (están en el árbol, no hace falta el stash para ellos):
 
-- Progreso y métricas del proyecto en `ProyectoDetailPanel` + `MetricasResumen.tsx` extraído de `HiloCard` (esto cerraba el ítem #2a de arriba, que volvió a quedar abierto).
-- `ProyectoFormPanel` como panel único de crear/modificar proyecto, absorbiendo `MiembrosPanel.tsx`; `gestionarMiembrosProyecto` → `editarProyecto`.
+- ~~Progreso y métricas del proyecto en `ProyectoDetailPanel` + `MetricasResumen.tsx` extraído de `HiloCard`.~~ Recuperado.
+- ~~`ProyectoFormPanel` como panel único de crear/modificar proyecto, absorbiendo `MiembrosPanel.tsx`; `gestionarMiembrosProyecto` → `editarProyecto`.~~ Recuperado.
 - `sql/010`: trigger `validar_estado_tarea` (`TA003`, solo responsable o asignado cambia el estado) + traspaso al dueño de las asignaciones sobre tareas cerradas al salir un miembro, con `sql/tests/rls_estado_y_salida_miembro.sql` (14 casos). Dropeado de la base en `sql/011` y `sql/012`; el backfill de datos no se revirtió.

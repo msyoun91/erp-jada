@@ -7,7 +7,7 @@ import { agregarNotaHilo, agregarNotaTarea, listarNotasHilo, listarNotasTarea } 
 import { formatFecha } from "@/lib/utils";
 import type { HiloNota, TareaNota } from "../types";
 
-// Reusado por TareaRow (notas de tarea) y HiloDetailPanel (notas de hilo) —
+// Reusado por TareaDetailPanel (notas de tarea) y HiloDetailPanel (notas de hilo) —
 // mismo componente, cambia solo qué action llama. Las notas de tarea llegan
 // precargadas por getListaTareas (`notasIniciales`); las de hilo se piden
 // on-mount, que solo pasa al abrir el panel del hilo.

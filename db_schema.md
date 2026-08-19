@@ -72,9 +72,11 @@ SQL function, `SECURITY DEFINER`, usada en RLS de las 3 tablas y disponible como
 
 ---
 
-## Módulo tareas (`sql/005_tareas.sql` + `sql/006_tareas_hardening.sql` + `sql/007_tareas_reactivar_posponer.sql` + `sql/008_tareas_notas_visibilidad.sql` + `sql/009_tareas_miembros_asignables.sql` — corridos en Supabase vía MCP)
+## Módulo tareas (`sql/005_tareas.sql` + `sql/006_tareas_hardening.sql` + `sql/007_tareas_reactivar_posponer.sql` + `sql/008_tareas_notas_visibilidad.sql` + `sql/009_tareas_miembros_asignables.sql` + `sql/013_tareas_visibilidad_y_miembros.sql` — corridos en Supabase vía MCP)
 
 Reemplaza un intento anterior (rama `tareas-v1`, revertido en `sql/004_rollback_tareas.sql`) — requisitos de negocio cambiaron (proyectos + visibilidad en cascada, multi-asignado, `responsable_id`, `temperatura`). No comparte schema con esa rama.
+
+**Regla de visibilidad (`sql/013`): se ve lo asignado y lo público, nada más.** `creado_por` no autoriza: quien crea una tarea y después pierde la asignación deja de verla, y lo mismo con el hilo o el proyecto donde vivía. Excepciones: `tareas_gestionar_ajenas` (ve todo) y `tareas_hilos.responsable_id` (dueño del hilo — no es una asignación). Los UPDATE están alineados con los SELECT, para que no exista fila modificable pero invisible.
 
 ### tareas_proyectos
 
@@ -92,7 +94,9 @@ Contenedor organizacional. Pone el techo de visibilidad para sus hilos/tareas.
 
 ### tareas_proyectos_miembros
 
-Lista explícita de membresía: **quién puede recibir tareas del proyecto** (`sql/009`). Ortogonal a `visibilidad`, que decide quién lo ve. Todo proyecto — público o privado — necesita al menos un miembro.
+Lista explícita de membresía: **quién puede recibir tareas del proyecto** (`sql/009`). Ortogonal a `visibilidad`, que decide quién lo ve — aunque desde `sql/013` la membresía también da acceso a los proyectos privados, porque el creador dejó de tenerlo por serlo. Todo proyecto — público o privado — necesita al menos un miembro.
+
+Alta y baja de miembros exigen la función `tareas_proyectos_miembros` (o `tareas_gestionar_ajenas`). Única excepción: la siembra inicial, acotada por `proyecto_tiene_miembros()` — sin ella `tareas_proyectos_crear` no alcanzaría para crear nada, ya que el proyecto exige al menos un miembro. **El SELECT de la tabla no mira esa función**: leer la membresía sigue siendo de miembros y managers (agregarla filtraba los miembros de proyectos que el usuario ni ve — lo detectó el caso 02 de `sql/tests/rls_miembros_asignables.sql`).
 
 | columna | tipo | notas |
 |---|---|---|
@@ -163,7 +167,7 @@ Multi-asignado — cualquiera puede completar la tarea.
 
 Historial de notas — "agregar", no "editar": sin UPDATE de texto, solo `activo` para ocultar una nota propia (nunca DELETE). `tareas_notas.tarea_id` FK → `tareas`; `tareas_hilos_notas.hilo_id` FK → `tareas_hilos`. Ambas con `usuario_id` FK → `usuarios` (autor) y `nota text`.
 
-SELECT vía `EXISTS` directo sobre la tabla padre (`tareas`/`tareas_hilos`) — sin función `SECURITY DEFINER`: la RLS de la tabla padre ya resuelve visibilidad en cascada para el rol que consulta, y no hay recursión porque esa policy no mira hacia las tablas de notas. INSERT: mismo actor que puede gestionar la fila padre (`tareas_notas` reusa `es_responsable_o_creador_tarea`/`es_asignado_tarea`; `tareas_hilos_notas` usa `creado_por`/`responsable_id` del hilo), más `tareas_gestionar_ajenas`. UPDATE (solo `activo=false`): autor o ajenas.
+SELECT vía `EXISTS` directo sobre la tabla padre (`tareas`/`tareas_hilos`) — sin función `SECURITY DEFINER`: la RLS de la tabla padre ya resuelve visibilidad en cascada para el rol que consulta, y no hay recursión porque esa policy no mira hacia las tablas de notas. INSERT: mismo actor que puede gestionar la fila padre (`tareas_notas` reusa `es_responsable_tarea`/`es_asignado_tarea`; `tareas_hilos_notas` usa `responsable_id` del hilo), más `tareas_gestionar_ajenas`. UPDATE (solo `activo=false`): autor o ajenas.
 
 ### tareas_plantillas / tareas_plantillas_items
 
@@ -201,11 +205,13 @@ Auditoría append-only. **Excepción a "nunca DELETE, siempre `activo`": sin col
 
 ### Función `puede_ver_hilo(uuid)`
 
-`SECURITY DEFINER`, `STABLE` — resuelve visibilidad en cascada de un hilo (creador/responsable/asignado a alguna de sus tareas/permiso `tareas_gestionar_ajenas`/cascada proyecto público-o-miembro). Usada en RLS de `tareas_hilos` y `tareas`. `EXECUTE` revocado de `PUBLIC`, otorgado solo a `authenticated` (`sql/006`).
+`SECURITY DEFINER`, `STABLE` — resuelve visibilidad en cascada de un hilo (responsable/asignado a alguna de sus tareas/permiso `tareas_gestionar_ajenas`/cascada proyecto público-o-miembro). **Sin `creado_por` desde `sql/013`.** Usada en RLS de `tareas_hilos` y `tareas`. `EXECUTE` revocado de `PUBLIC`, otorgado solo a `authenticated` (`sql/006`).
 
-### Funciones `es_creador_proyecto(uuid)` / `es_responsable_o_creador_tarea(uuid)` / `es_asignado_tarea(uuid)`
+### Funciones `es_creador_proyecto(uuid)` / `es_responsable_tarea(uuid)` / `es_asignado_tarea(uuid)` / `proyecto_tiene_miembros(uuid)`
 
 `SECURITY DEFINER`, `STABLE` — mismo criterio que `puede_ver_hilo`. Usadas en las policies de `tareas_proyectos_miembros` y `tareas_asignados` para no consultar directamente `tareas_proyectos`/`tareas`/`tareas_asignados` desde dentro de su propia política: dos tablas con policies que se referencian mutuamente (`tareas_proyectos` ↔ `tareas_proyectos_miembros`, `tareas` ↔ `tareas_asignados`) causan `42P17 infinite recursion detected in policy` si la referencia es un `EXISTS` directo bajo RLS. Envolver el lado "de vuelta" en una función `SECURITY DEFINER` rompe el ciclo (`sql/005`, fix aplicado post-creación).
+
+`es_responsable_tarea` reemplaza a `es_responsable_o_creador_tarea` (borrada en `sql/013`): con la rama del creador, quien perdía la asignación se la devolvía a sí mismo por API insertando en `tareas_asignados`. No hace falta esa rama para crear — `tareas_insert` ya exige `responsable_id = auth.uid()` a quien no tiene `tareas_gestionar_ajenas`. Por el mismo motivo, `tareas_asignados_update` acota `usuario_id = auth.uid()` a `NOT activo` en su `WITH CHECK`: sacarme de una tarea es mío, re-agregarme no.
 
 ### Funciones `es_miembro_proyecto(uuid, uuid)` / `es_miembro_proyecto_de_tarea(uuid, uuid)` (`sql/009`)
 
@@ -218,7 +224,7 @@ Las policies cubren "cambian los asignados"; estos dos triggers cubren las otras
 - `validar_proyecto_tarea` — `BEFORE UPDATE OF proyecto_id, hilo_id ON tareas`: mover una tarea a un proyecto donde algún asignado activo no es miembro falla con `ERRCODE = 'TA002'`.
 - `validar_quitar_miembro` — `BEFORE UPDATE ON tareas_proyectos_miembros WHEN (OLD.activo AND NOT NEW.activo)`: quitar un miembro con tareas `pendiente`/`en_progreso` en el proyecto falla con `ERRCODE = 'TA001'`, en vez de desactivar sus asignaciones por detrás.
 
-Ambos SQLSTATE están mapeados a mensaje en `MENSAJES_ERROR` (`lib/utils.ts`). Por eso `gestionarMiembrosProyecto` guarda un diff (quitados/agregados) en vez de desactivar todo y reinsertar: lo segundo dispararía `TA001` sobre los miembros que se quedan.
+Ambos SQLSTATE están mapeados a mensaje en `MENSAJES_ERROR` (`lib/utils.ts`). Por eso `editarProyecto` guarda un diff (quitados/agregados) en vez de desactivar todo y reinsertar: lo segundo dispararía `TA001` sobre los miembros que se quedan.
 
 ### Función `reactivar_posponer_vencidos()`
 
@@ -236,6 +242,7 @@ Ambos SQLSTATE están mapeados a mensaje en `MENSAJES_ERROR` (`lib/utils.ts`). P
 | tareas_auditoria | vista | — | solo-lectura, se asigna directo a managers |
 | tareas_gestionar_ajenas | funcion | tareas_lista | completar/cerrar hilo/reasignar tarea **ajena** — acciones sobre lo propio no requieren función |
 | tareas_proyectos_crear | funcion | tareas_proyectos | |
+| tareas_proyectos_miembros | funcion | tareas_proyectos | "Asignar miembros" (`sql/013`) — alta/baja de miembros. Sin ella el bloque Miembros no se muestra en `ProyectoFormPanel` y la membresía viaja como default oculto |
 
 `usuarios_select` extendida con `OR tiene_permiso('tareas_lista') OR tiene_permiso('tareas_proyectos')` — picker de asignados/miembros necesita listar usuarios activos.
 

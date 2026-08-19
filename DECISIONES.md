@@ -304,3 +304,80 @@ Hasta ahora `syncVista()` derivaba el checkbox de la vista de sus funciones: mar
 Datos existentes verificados sin huérfanos antes del cambio (el modelo viejo los hacía imposibles), así que no hizo falta backfill.
 
 **Corrección a la sección "UI: panel lateral derecho reemplaza modal":** la excepción anotada ahí ("`PermisosModal.tsx` sigue modal") está desactualizada — ya usa `RightPanel`. Solo el nombre del archivo quedó viejo.
+
+---
+
+## Módulo tareas — isla compartida, panel de proyecto y edición de hilo
+
+Pedido de usuario, siete puntos (uno — qué pasa con las asignaciones al quitar un miembro — quedó salteado a pedido). Todo se resolvió en UI/TS: **cero SQL**. `tareas_hilos_update` y `tareas_proyectos_update` (`sql/005`) ya autorizan creador / responsable / `tareas_gestionar_ajenas`, que es exactamente quién puede modificar.
+
+**Las tres entidades del módulo comparten cara: `Isla.tsx`.** Hilo, tarea y proyecto se ven igual en cualquier listado (título clickeable + badges + fila de métricas) y el click abre su panel derecho. La isla no tiene acciones propias — todo lo que se hace sobre la entidad vive en su panel. Eso obligó a partir `TareaRow` en dos:
+
+- `TareaCard.tsx` — la isla. Conserva el estado optimista (`estadoLocal`/`tempLocal`) porque la isla los sigue mostrando con el panel cerrado, y porque el orden por temperatura de la vista se refresca mientras se arrastra el slider (`useOrdenTemperatura`). Bajan al panel por props: una sola fuente para el badge y el control.
+- `TareaDetailPanel.tsx` — acciones, detalle y notas. "Modificar tarea" pasó del click en el título (que ahora abre el panel) al menú del panel.
+
+`ProyectosView` dejó de ser una lista de filas con `OverflowMenu`: son islas (`ProyectoCard`) y las acciones — modificar, desactivar, agregar hilo/tarea — viven en `ProyectoDetailPanel`. Se conservan búsqueda y paginación.
+
+Piezas compartidas que salieron de ahí: `MetricasResumen.tsx` (antigüedad + próximo vencimiento, antes inline en `HiloCard`), `tareaLabels.ts` (labels/badges de estado, recurrencia, `temperaturaRango`, `iniciales`) y `proyectoTareas.ts` (`tareasDeProyecto`: las tareas de un hilo no guardan `proyecto_id`, lo heredan — isla y panel tienen que contar lo mismo).
+
+**`ProyectoFormPanel` es panel único de crear/modificar y absorbió `MiembrosPanel.tsx`** (borrado): los miembros son una característica más del proyecto, no una pantalla aparte. `gestionarMiembrosProyecto` → `editarProyecto` (mismo diff de quitados/agregados, ver `db_schema.md`). Esto y `MetricasResumen` se recuperaron del stash `9cc8e8e` que se había descartado el 2026-08-18 — el `sql/010` de ese stash **no** se tocó, sigue revertido.
+
+**Editar hilo = solo título y descripción** (ampliado después con visibilidad — ver la sección "Editar hilo incluye la visibilidad" al final). `HiloFormPanel` gana modo edición con el mismo patrón que `TareaFormPanel`: el schema del form sigue siendo `crearHiloSchema` (superset) y proyecto/visibilidad/responsable viajan como defaults ocultos; `editarHiloSchema` (título + descripción + id) es lo que valida el server. Mover un hilo de proyecto queda fuera a propósito: cambiaría quiénes pueden trabajar en sus tareas y esa validación existe sobre `tareas` (`validar_proyecto_tarea`, `sql/009`), no sobre `tareas_hilos`.
+
+**Dueño del hilo visible.** El "owner" es `responsable_id` (no `creado_por`): es quien responde por el hilo. Se muestra en la isla y en el panel; el nombre sale del array `usuarios` que ya llega por props, sin query nueva.
+
+**Visibilidad pública por defecto al elegir proyecto.** Es *default*, no regla: el select sigue ahí y el usuario puede volver a privada. Aplica al abrir el form desde un proyecto y también al elegir proyecto dentro del form, salvo que el usuario ya haya tocado visibilidad (`dirtyFields.visibilidad`) — un default no pisa una decisión explícita. Editar una tarea existente no cambia su visibilidad.
+
+**Filtro por usuario en Proyectos = membresía**, no "tiene tareas ahí": la membresía es quién trabaja en el proyecto (`visibilidad` es el otro eje, quién lo ve) y sale de `miembrosPorProyecto`, que ya llega por props — 0 queries nuevas. Arranca en el usuario actual, mismo default que la vista Lista.
+
+---
+
+## Módulo tareas — ser creador deja de dar visibilidad (`sql/013`)
+
+Pedido de usuario, verificado contra el código antes de tocar nada: la regla que quería ("sin `tareas_gestionar_ajenas` se ve lo asignado y lo público; si te sacan la asignación dejás de ver, aunque lo hayas creado") **no se cumplía**, y la brecha estaba entera en SQL — los paneles no re-filtran, muestran lo que RLS devolvió. `tareas_select`, `puede_ver_hilo` y `tareas_proyectos_select` autorizaban por `creado_por`.
+
+**Qué cambia.** `creado_por` sale de la visibilidad de tareas, hilos y proyectos. Sobreviven tres actores: `tareas_gestionar_ajenas`, la asignación activa, y `tareas_hilos.responsable_id` — el dueño del hilo, que es un rol, no una asignación. En tareas, `responsable_id` salió del SELECT: el schema ya exige `responsable ∈ asignados` (`crearTareaSchema`) y la base confirmó 0 filas donde no se cumpliera, así que la rama era redundante.
+
+**La tarea suelta, pública y sin proyecto ahora se ve.** `tareas_select` exigía `proyecto_id IS NOT NULL` para la rama pública; sin la rama del creador tapando el hueco, esa tarea no la vería nadie. Hay 1 en la base.
+
+**Los UPDATE se alinearon con los SELECT.** Dejar `creado_por` en el UPDATE habría creado la fila modificable pero invisible — y un UPDATE denegado por RLS no falla, afecta 0 filas: el bug sería silencioso. Consecuencia buscada: el creador de un proyecto que se sacó a sí mismo de los miembros ya no puede editarlo (hay 1 proyecto así).
+
+Dos huecos que aparecieron al sacar al creador y hubo que cerrar en la misma pasada, porque devolvían por API la visibilidad que la regla quita:
+
+- `es_responsable_o_creador_tarea()` → `es_responsable_tarea()` (la vieja se borró). Con la rama del creador, quien perdía la asignación se re-insertaba en `tareas_asignados`. No hace falta para crear: `tareas_insert` ya exige `responsable_id = auth.uid()` a quien no tiene `tareas_gestionar_ajenas`.
+- `tareas_asignados_update` acota `usuario_id = auth.uid()` a `NOT activo` en el `WITH CHECK`. Sacarme de una tarea sigue siendo mío; reactivar mi propia fila, no.
+
+**Contrapartida: el responsable del hilo puede tocar las tareas de su hilo** (rama nueva en `tareas_update`). Sin eso, "deshacer conversión" y el cierre de hilo — que actualizan tareas a las que el dueño no está asignado — pasaban a no hacer nada, en silencio.
+
+**`crearTarea`, `crearProyecto` y `agregarTareasDesdePlantilla` generan el id en el server** y dejan de pedir `RETURNING`. Sin la rama del creador, la fila recién insertada todavía no es visible para quien la insertó (sus asignados/miembros se insertan en el statement siguiente) y `.select()` rompía con RLS violation. Es el mismo patrón — y el mismo comentario — que ya tenía `crearHilo` por el motivo análogo.
+
+**La UI dejó de ofrecer lo que la RLS después descarta.** `TareaDetailPanel`, `HiloDetailPanel` y `ProyectoDetailPanel` derivaban `puedeGestionar` de `creado_por`; ahora usan responsable / asignado / miembro, espejo exacto del `USING` de cada policy. El filtro "involucrado" de la vista Lista sí conserva `creado_por`: ahí es un filtro sobre lo ya visible, no una barrera.
+
+Verificado con `sql/tests/rls_visibilidad_tareas.sql` (mismo mecanismo que el test de `sql/009`: dos usuarios reales, rol `authenticated`, `ROLLBACK` al final). Correr los dos tests después de tocar estas policies.
+
+## Miembros de proyecto = función propia del módulo (`tareas_proyectos_miembros`)
+
+Pedido de usuario en la misma tanda. Es un submódulo-función bajo la vista `tareas_proyectos` — no un permiso nuevo ni un rol: la regla del proyecto es que toda autorización nueva se implementa como submódulo. Las policies de `tareas_proyectos_miembros` pasan de `es_creador_proyecto()` a `tiene_permiso('tareas_proyectos_miembros')`.
+
+**La siembra inicial es la excepción, y está acotada.** Todo proyecto exige al menos un miembro (`sql/009`), así que sin una salida `tareas_proyectos_crear` no alcanzaría para crear nada. La rama `es_creador_proyecto(...) AND NOT proyecto_tiene_miembros(...)` la habilita solo mientras el proyecto no tenga miembros: una vez creado, cambiar quién trabaja en él exige la función. Sin esa cota, el creador se re-agregaba como miembro y recuperaba el acceso que `sql/013` le saca.
+
+**El bloque Miembros sigue dentro de `ProyectoFormPanel`** — no vuelve a ser panel aparte (eso se decidió y se mantiene). Lo que cambia es que se renderiza solo con el permiso; sin él la membresía viaja como default oculto del form, igual que proyecto/visibilidad en `HiloFormPanel`, y el diff de `editarProyecto` queda vacío. La barrera real es la RLS, no el condicional.
+
+**Backfill:** la función se le otorga a los creadores de proyectos activos, para no romper proyectos en curso. Para el resto, alta manual desde Usuarios.
+
+**El SELECT de `tareas_proyectos_miembros` no mira la función.** El primer intento la agregaba ahí y el test de `sql/009` lo cazó (caso 02: TESTER, que recibió la función por el backfill, veía los miembros de un proyecto del que no es parte). La rama sobraba además de filtrar: editar un proyecto ya exige ser creador-y-miembro o tener ajenas, así que quien usa la función entra igual por `es_miembro_proyecto`.
+
+**Límite conocido:** administrar miembros de un proyecto **privado** exige además verlo, y eso ahora es ser miembro o tener `tareas_gestionar_ajenas`. La función sola no abre proyectos privados ajenos — es deliberado: sería una segunda puerta de visibilidad, justo lo que `sql/013` cierra.
+
+Aplicado en Supabase vía MCP. Tests posteriores: `rls_visibilidad_tareas.sql` 17/17, `rls_miembros_asignables.sql` 15/15.
+
+**El filtro por usuario ofrece la lista del equipo solo con `tareas_gestionar_ajenas`** (`TareasListaView`, `ProyectosView`). Sin la función quedan dos opciones: "Todos los usuarios" — que ya es lo propio más lo público, o sea todo lo que RLS devuelve — y uno mismo. No es una barrera (recortar por otro usuario nunca mostró de más, la RLS filtra antes) sino no ofrecer un recorte que no es de quien mira. `AuditoriaView` conserva el picker completo: la vista entera está gateada por `tareas_auditoria` y ese filtro es su razón de ser.
+
+## Editar hilo incluye la visibilidad
+
+Corrige la sección "Módulo tareas — isla compartida…": ahí `visibilidad` quedó bloqueada **de arrastre**, en el mismo bloque que `proyecto_id`, pero el motivo registrado solo aplica al proyecto. Mover un hilo de proyecto cambia quiénes pueden trabajar en sus tareas y ningún trigger lo revalida sobre `tareas_hilos`; cambiar su visibilidad no toca la membresía, solo quién lo ve (`puede_ver_hilo` la lee directo). Con la regla más estricta de `sql/013`, un hilo creado privado no tenía forma de volverse compartible salvo recreándolo.
+
+- `editarHiloSchema` = título + descripción + visibilidad + id. **`visibilidad` va sin `.default()`** ahí, a diferencia de `crearHiloSchema`: en un update, omitirla dejaría el hilo en `privado` sin que nadie lo pida.
+- El select de visibilidad sale del bloque `{!hilo && …}` de `HiloFormPanel`. Proyecto y responsable siguen dentro (solo al crear).
+- Sin SQL: `tareas_hilos_update` ya autoriza a responsable o `tareas_gestionar_ajenas`, que es el mismo set que muestra el botón "Modificar hilo" en `HiloDetailPanel`.
+- Efecto en cascada, buscado: pasar un hilo a privado también esconde sus tareas de quien no esté asignado — `tareas_select` resuelve las tareas con hilo vía `puede_ver_hilo`.
