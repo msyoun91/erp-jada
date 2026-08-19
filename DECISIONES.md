@@ -409,4 +409,10 @@ En la UI:
 - **`sincronizarAsignados()` no toca nada si el conjunto no cambió.** Editar el título no debe reescribir asignaciones, y sin ese corte quien no tiene la función no podría guardar ningún cambio en una tarea compartida: los asignados viajan igual como defaults ocultos y reinsertarlos choca contra la policy.
 - `TareaDetailPanel` pasa `proyectoHeredadoId` a `TareaFormPanel` al editar. Sin eso, la tarea de un hilo abría el picker con todos los usuarios en vez de con los miembros del proyecto del hilo — invisible mientras el picker no existía en edición.
 
+Verificado end-to-end contra la base con `sql/tests/rls_miembros_asignables.sql` (19/19). El test creció a dos bloques: el primero corre con TESTER **sin** `tareas_asignar` ni `tareas_gestionar_ajenas`, el segundo le devuelve `tareas_asignar` y repite los mismos UPDATE — tienen que pasar de RECHAZO a OK. Sin ese espejo, un rechazo por membresía o por RLS de otra rama se leería como si la función nueva estuviera funcionando.
+
+- `11`/`16` reactivar la asignación de ADMIN en P: ADMIN **es** miembro, así que el único motivo posible de rechazo es la función — aísla la regla nueva de la de `sql/009`.
+- `12`/`18` traspasar el responsable: sin la función corta el trigger con `TA003`, no la policy con `42501`.
+- `17` (ex `12`) sigue probando que la membresía se evalúa sobre el asignado y no sobre quien actúa, ahora con la función puesta.
+
 Fuera de alcance: el responsable de un **hilo** (`HiloFormPanel`) sigue gateado por `tareas_gestionar_ajenas` en `tareas_hilos_insert`/`update`. El dueño del hilo no es una asignación (mismo criterio que `sql/009`).
