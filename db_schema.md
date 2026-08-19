@@ -72,7 +72,7 @@ SQL function, `SECURITY DEFINER`, usada en RLS de las 3 tablas y disponible como
 
 ---
 
-## Módulo tareas (`sql/005_tareas.sql` + `sql/006_tareas_hardening.sql` + `sql/007_tareas_reactivar_posponer.sql` + `sql/008_tareas_notas_visibilidad.sql` + `sql/009_tareas_miembros_asignables.sql` + `sql/013_tareas_visibilidad_y_miembros.sql` — corridos en Supabase vía MCP — + `sql/014_tareas_asignar.sql`, **sin correr**)
+## Módulo tareas (`sql/005_tareas.sql` + `sql/006_tareas_hardening.sql` + `sql/007_tareas_reactivar_posponer.sql` + `sql/008_tareas_notas_visibilidad.sql` + `sql/009_tareas_miembros_asignables.sql` + `sql/013_tareas_visibilidad_y_miembros.sql` + `sql/014_tareas_asignar.sql` — corridos en Supabase vía MCP)
 
 Reemplaza un intento anterior (rama `tareas-v1`, revertido en `sql/004_rollback_tareas.sql`) — requisitos de negocio cambiaron (proyectos + visibilidad en cascada, multi-asignado, `responsable_id`, `temperatura`). No comparte schema con esa rama.
 
