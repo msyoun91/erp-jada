@@ -18,6 +18,7 @@ export function ProyectosView({
   usuarioActualId,
   gestionarAjenas,
   gestionarMiembros,
+  puedeAsignar,
   puedeCrear,
 }: {
   proyectos: TareaProyecto[];
@@ -29,6 +30,7 @@ export function ProyectosView({
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   gestionarMiembros: boolean;
+  puedeAsignar: boolean;
   puedeCrear: boolean;
 }) {
   const [texto, setTexto] = useState("");
@@ -101,6 +103,7 @@ export function ProyectosView({
               usuarioActualId={usuarioActualId}
               gestionarAjenas={gestionarAjenas}
               gestionarMiembros={gestionarMiembros}
+              puedeAsignar={puedeAsignar}
             />
           ))}
         </div>

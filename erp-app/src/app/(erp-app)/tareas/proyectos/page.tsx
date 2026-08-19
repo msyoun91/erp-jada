@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import {
+  puedeAsignar,
   puedeCrearProyecto,
   puedeGestionarAjenas,
   puedeGestionarMiembros,
@@ -27,6 +28,7 @@ export default async function TareasProyectosPage() {
     puedeCrear,
     gestionarAjenas,
     gestionarMiembros,
+    asignar,
     usuarioActualId,
   ] = await Promise.all([
     getProyectos(),
@@ -37,6 +39,7 @@ export default async function TareasProyectosPage() {
     puedeCrearProyecto(),
     puedeGestionarAjenas(),
     puedeGestionarMiembros(),
+    puedeAsignar(),
     getUsuarioActualId(),
   ]);
 
@@ -51,6 +54,7 @@ export default async function TareasProyectosPage() {
       usuarioActualId={usuarioActualId}
       gestionarAjenas={gestionarAjenas}
       gestionarMiembros={gestionarMiembros}
+      puedeAsignar={asignar}
       puedeCrear={puedeCrear}
     />
   );

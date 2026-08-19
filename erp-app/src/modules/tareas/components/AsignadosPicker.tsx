@@ -6,14 +6,21 @@ import type { Usuario } from "../types";
 // `miembros` = ids habilitados para recibir la tarea (miembros del proyecto);
 // null = la tarea no tiene proyecto y cualquiera puede recibirla. El filtro es
 // UX: la barrera real está en la policy de tareas_asignados.
+//
+// `puedeAsignar` (función `tareas_asignar`, sql/014) decide si hay picker o
+// solo el resumen de a quién le queda la tarea: los valores viajan igual como
+// defaults ocultos del form. El bloque de solo-lectura vive acá y no en cada
+// panel para no repetirlo en TareaFormPanel y UsarPlantillaPanel.
 export function AsignadosPicker<T extends { asignados: string[]; responsable_id: string }>({
   control,
   usuarios,
   miembros,
+  puedeAsignar,
 }: {
   control: Control<T>;
   usuarios: Usuario[];
   miembros: string[] | null;
+  puedeAsignar: boolean;
 }) {
   const asignadosField = useController({ name: "asignados" as Path<T>, control });
   const responsableField = useController({ name: "responsable_id" as Path<T>, control });
@@ -30,6 +37,23 @@ export function AsignadosPicker<T extends { asignados: string[]; responsable_id:
     if (!next.includes(responsableId)) {
       responsableField.field.onChange(next[0] ?? "");
     }
+  }
+
+  if (!puedeAsignar) {
+    const nombres = usuarios.filter((u) => seleccionados.includes(u.id)).map((u) => u.nombre);
+    return (
+      <div>
+        <label className="t-label mb-1 block">Asignados</label>
+        <p className="t-caption">
+          {nombres.length > 0
+            ? nombres.join(", ")
+            : "Solo los miembros del proyecto pueden recibir tareas."}
+        </p>
+        {asignadosField.fieldState.error && (
+          <p className="input-error-text">{asignadosField.fieldState.error.message}</p>
+        )}
+      </div>
+    );
   }
 
   return (

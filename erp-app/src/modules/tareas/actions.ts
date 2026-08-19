@@ -54,6 +54,48 @@ async function usuarioActualId() {
   return user.id;
 }
 
+type Cliente = Awaited<ReturnType<typeof createClient>>;
+
+// Único escritor de tareas_asignados sobre una tarea que ya existe: lo usan
+// editarTarea y reasignarTarea. Devuelve el error de Supabase o null.
+//
+// Si el conjunto no cambió no toca nada: editar el título de una tarea no debe
+// reescribir sus asignaciones, y sin ese corte quien no tiene `tareas_asignar`
+// no podría guardar ningún cambio en una tarea compartida (los asignados
+// viajan igual como defaults ocultos, y reinsertarlos choca contra la policy).
+async function sincronizarAsignados(supabase: Cliente, tarea_id: string, asignados: string[]) {
+  const { data: actuales, error } = await supabase
+    .from("tareas_asignados")
+    .select("usuario_id")
+    .eq("tarea_id", tarea_id)
+    .eq("activo", true);
+
+  if (error) return error;
+
+  const previos = (actuales ?? []).map((a) => a.usuario_id);
+  if (previos.length === asignados.length && previos.every((id) => asignados.includes(id))) {
+    return null;
+  }
+
+  // Desactiva y reinserta en vez de upsert: el índice único de
+  // tareas_asignados es parcial (WHERE activo) — el upsert de Supabase no
+  // lo soporta (ver GUIDE_DB). Una fila vieja inactiva + una nueva activa
+  // para el mismo par no choca contra el índice.
+  const { error: errorDesactivar } = await supabase
+    .from("tareas_asignados")
+    .update({ activo: false })
+    .eq("tarea_id", tarea_id)
+    .eq("activo", true);
+
+  if (errorDesactivar) return errorDesactivar;
+
+  const { error: errorAsignar } = await supabase
+    .from("tareas_asignados")
+    .insert(asignados.map((usuario_id) => ({ tarea_id, usuario_id })));
+
+  return errorAsignar;
+}
+
 export async function crearTarea(input: CrearTareaForm) {
   const parsed = crearTareaSchema.safeParse(input);
   if (!parsed.success) {
@@ -89,10 +131,13 @@ export async function editarTarea(input: EditarTareaForm) {
   }
 
   const supabase = await createClient();
-  const { id, ...campos } = parsed.data;
+  const { id, asignados, ...campos } = parsed.data;
 
   const { error } = await supabase.from("tareas").update(campos).eq("id", id);
   if (error) return { success: false as const, error: mensajeError(error) };
+
+  const errorAsignados = await sincronizarAsignados(supabase, id, asignados);
+  if (errorAsignados) return { success: false as const, error: mensajeError(errorAsignados) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -528,22 +573,7 @@ export async function reasignarTarea(input: ReasignarTareaForm) {
 
   if (errorResponsable) return { success: false as const, error: mensajeError(errorResponsable) };
 
-  // Desactiva y reinserta en vez de upsert: el índice único de
-  // tareas_asignados es parcial (WHERE activo) — el upsert de Supabase no
-  // lo soporta (ver GUIDE_DB). Una fila vieja inactiva + una nueva activa
-  // para el mismo par no choca contra el índice.
-  const { error: errorDesactivar } = await supabase
-    .from("tareas_asignados")
-    .update({ activo: false })
-    .eq("tarea_id", tarea_id)
-    .eq("activo", true);
-
-  if (errorDesactivar) return { success: false as const, error: mensajeError(errorDesactivar) };
-
-  const { error: errorAsignar } = await supabase
-    .from("tareas_asignados")
-    .insert(asignados.map((usuario_id) => ({ tarea_id, usuario_id })));
-
+  const errorAsignar = await sincronizarAsignados(supabase, tarea_id, asignados);
   if (errorAsignar) return { success: false as const, error: mensajeError(errorAsignar) };
 
   revalidatePath("/tareas");

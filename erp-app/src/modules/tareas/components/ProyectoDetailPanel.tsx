@@ -32,6 +32,7 @@ export function ProyectoDetailPanel({
   usuarioActualId,
   gestionarAjenas,
   gestionarMiembros,
+  puedeAsignar,
   onClose,
 }: {
   proyecto: TareaProyecto;
@@ -44,6 +45,7 @@ export function ProyectoDetailPanel({
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   gestionarMiembros: boolean;
+  puedeAsignar: boolean;
   onClose: () => void;
 }) {
   const [creandoTarea, setCreandoTarea] = useState(false);
@@ -142,6 +144,7 @@ export function ProyectoDetailPanel({
                     miembrosPorProyecto={miembrosPorProyecto}
                     usuarioActualId={usuarioActualId}
                     gestionarAjenas={gestionarAjenas}
+                    puedeAsignar={puedeAsignar}
                     relacionCon={usuarioActualId}
                     autoAbrir={hiloConvertido === h.id}
                   />
@@ -162,6 +165,7 @@ export function ProyectoDetailPanel({
                     hilosDisponibles={hilos}
                     usuarioActualId={usuarioActualId}
                     gestionarAjenas={gestionarAjenas}
+                    puedeAsignar={puedeAsignar}
                     relacionCon={usuarioActualId}
                     onTemperaturaChange={onTemperaturaChange}
                     onConvertida={setHiloConvertido}
@@ -179,6 +183,7 @@ export function ProyectoDetailPanel({
           proyectos={proyectos}
           miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
+          puedeAsignar={puedeAsignar}
           proyectoId={proyecto.id}
           onClose={() => setCreandoTarea(false)}
         />

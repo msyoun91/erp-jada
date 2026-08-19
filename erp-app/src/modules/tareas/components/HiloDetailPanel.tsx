@@ -31,6 +31,7 @@ export function HiloDetailPanel({
   miembrosPorProyecto,
   usuarioActualId,
   gestionarAjenas,
+  puedeAsignar,
   relacionCon,
   onClose,
 }: {
@@ -43,6 +44,7 @@ export function HiloDetailPanel({
   miembrosPorProyecto: Record<string, string[]>;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
+  puedeAsignar: boolean;
   relacionCon?: string | null;
   onClose: () => void;
 }) {
@@ -158,6 +160,7 @@ export function HiloDetailPanel({
                 proyectoHeredadoId={proyecto?.id ?? null}
                 usuarioActualId={usuarioActualId}
                 gestionarAjenas={gestionarAjenas}
+                puedeAsignar={puedeAsignar}
                 relacionCon={relacionCon}
                 onTemperaturaChange={onTemperaturaChange}
               />
@@ -177,6 +180,7 @@ export function HiloDetailPanel({
           proyectos={proyectos}
           miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
+          puedeAsignar={puedeAsignar}
           hiloId={hilo.id}
           proyectoHeredadoId={proyecto?.id ?? null}
           onClose={() => setAgregandoTarea(false)}
@@ -201,6 +205,7 @@ export function HiloDetailPanel({
           usuarios={usuarios}
           miembros={miembros}
           usuarioActualId={usuarioActualId}
+          puedeAsignar={puedeAsignar}
           onClose={() => setUsandoPlantilla(false)}
         />
       )}

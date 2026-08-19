@@ -8,6 +8,10 @@ export function puedeGestionarAjenas() {
   return tienePermiso("tareas_gestionar_ajenas");
 }
 
+export function puedeAsignar() {
+  return tienePermiso("tareas_asignar");
+}
+
 export function puedeVerProyectos() {
   return tienePermiso("tareas_proyectos");
 }

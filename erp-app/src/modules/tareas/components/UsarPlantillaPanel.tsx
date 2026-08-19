@@ -16,6 +16,7 @@ export function UsarPlantillaPanel({
   usuarios,
   miembros,
   usuarioActualId,
+  puedeAsignar,
   onClose,
 }: {
   hiloId: string;
@@ -23,6 +24,7 @@ export function UsarPlantillaPanel({
   usuarios: Usuario[];
   miembros: string[] | null;
   usuarioActualId: string | null;
+  puedeAsignar: boolean;
   onClose: () => void;
 }) {
   const [enviando, setEnviando] = useState(false);
@@ -89,7 +91,12 @@ export function UsarPlantillaPanel({
           {errors.plantilla_id && <p className="input-error-text">{errors.plantilla_id.message}</p>}
         </div>
 
-        <AsignadosPicker control={control} usuarios={usuarios} miembros={miembros} />
+        <AsignadosPicker
+          control={control}
+          usuarios={usuarios}
+          miembros={miembros}
+          puedeAsignar={puedeAsignar}
+        />
       </form>
     </RightPanel>
   );

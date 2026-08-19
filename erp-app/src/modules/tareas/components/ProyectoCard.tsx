@@ -21,6 +21,7 @@ export function ProyectoCard({
   usuarioActualId,
   gestionarAjenas,
   gestionarMiembros,
+  puedeAsignar,
 }: {
   proyecto: TareaProyecto;
   hilos: TareaHilo[];
@@ -32,6 +33,7 @@ export function ProyectoCard({
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   gestionarMiembros: boolean;
+  puedeAsignar: boolean;
 }) {
   const [detalleAbierto, setDetalleAbierto] = useState(false);
 
@@ -78,6 +80,7 @@ export function ProyectoCard({
           usuarioActualId={usuarioActualId}
           gestionarAjenas={gestionarAjenas}
           gestionarMiembros={gestionarMiembros}
+          puedeAsignar={puedeAsignar}
           onClose={() => setDetalleAbierto(false)}
         />
       )}

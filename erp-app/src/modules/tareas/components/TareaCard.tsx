@@ -31,6 +31,7 @@ export function TareaCard({
   proyectoHeredadoId,
   usuarioActualId,
   gestionarAjenas,
+  puedeAsignar,
   relacionCon,
   onTemperaturaChange,
   onConvertida,
@@ -44,6 +45,7 @@ export function TareaCard({
   proyectoHeredadoId?: string | null;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
+  puedeAsignar: boolean;
   // Usuario cuya relación con la tarea se explica en el badge — el del filtro
   // de la vista, no necesariamente el actual.
   relacionCon?: string | null;
@@ -156,7 +158,7 @@ export function TareaCard({
                 {temperaturaRango(tempLocal).label} ({tempLocal})
               </span>
             )}
-            {tarea.visibilidad === "privado" && (
+            {tarea.visibilidad === "privado" && tarea.hilo_id === null && (
               <span className="flex items-center gap-1">
                 <Lock size={13} strokeWidth={1.75} />
                 Privada
@@ -210,6 +212,7 @@ export function TareaCard({
           proyectoHeredadoId={proyectoHeredadoId}
           usuarioActualId={usuarioActualId}
           gestionarAjenas={gestionarAjenas}
+          puedeAsignar={puedeAsignar}
           estado={estadoLocal}
           temperatura={tempLocal}
           onCambiarEstado={cambiarEstado}

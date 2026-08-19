@@ -27,6 +27,7 @@ export function HiloCard({
   miembrosPorProyecto,
   usuarioActualId,
   gestionarAjenas,
+  puedeAsignar,
   relacionCon,
   autoAbrir,
 }: {
@@ -38,6 +39,7 @@ export function HiloCard({
   miembrosPorProyecto: Record<string, string[]>;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
+  puedeAsignar: boolean;
   relacionCon?: string | null;
   autoAbrir?: boolean;
 }) {
@@ -125,6 +127,7 @@ export function HiloCard({
           miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
           gestionarAjenas={gestionarAjenas}
+          puedeAsignar={puedeAsignar}
           relacionCon={relacionCon}
           onClose={() => setDetalleAbierto(false)}
         />

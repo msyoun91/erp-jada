@@ -51,6 +51,7 @@ export function TareaDetailPanel({
   proyectoHeredadoId,
   usuarioActualId,
   gestionarAjenas,
+  puedeAsignar,
   estado,
   temperatura,
   onCambiarEstado,
@@ -67,6 +68,7 @@ export function TareaDetailPanel({
   proyectoHeredadoId?: string | null;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
+  puedeAsignar: boolean;
   estado: string;
   temperatura: number;
   onCambiarEstado: (nuevo: "pendiente" | "en_progreso" | "cancelada") => void;
@@ -177,7 +179,15 @@ export function TareaDetailPanel({
                 ...(puedeGestionar
                   ? [
                       { label: "Posponer", icon: <Clock size={14} strokeWidth={1.75} />, onClick: () => setPosponiendo(true) },
-                      { label: "Reasignar", icon: <UserCog size={14} strokeWidth={1.75} />, onClick: () => setReasignando(true) },
+                      ...(puedeAsignar
+                        ? [
+                            {
+                              label: "Reasignar",
+                              icon: <UserCog size={14} strokeWidth={1.75} />,
+                              onClick: () => setReasignando(true),
+                            },
+                          ]
+                        : []),
                       ...(tarea.hilo_id
                         ? [{ label: "Quitar del hilo", icon: <Unlink size={14} strokeWidth={1.75} />, onClick: quitarDeHilo }]
                         : [
@@ -232,7 +242,7 @@ export function TareaDetailPanel({
         <div className="flex flex-col gap-3 border-b border-border p-[13px] px-5">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`badge ${ESTADO_BADGE[estado]}`}>{ESTADO_LABEL[estado]}</span>
-            {tarea.visibilidad === "privado" && (
+            {tarea.visibilidad === "privado" && tarea.hilo_id === null && (
               <span className="t-caption flex items-center gap-1">
                 <Lock size={13} strokeWidth={1.75} />
                 Privada
@@ -334,6 +344,8 @@ export function TareaDetailPanel({
           proyectos={proyectos}
           miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
+          puedeAsignar={puedeAsignar}
+          proyectoHeredadoId={proyectoHeredadoId}
           tarea={tarea}
           onClose={() => setEditando(false)}
         />

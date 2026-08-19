@@ -43,6 +43,7 @@ const MENSAJES_ERROR: Record<string, string> = {
   "42501": "No tenés permiso para hacer esto",
   TA001: "Ese miembro tiene tareas activas en el proyecto — reasignalas antes de quitarlo",
   TA002: "Hay asignados que no son miembros del proyecto destino",
+  TA003: "No tenés permiso para poner a otro usuario como responsable",
   email_exists: "Ese email ya está registrado",
   weak_password: "La contraseña es demasiado débil",
 };

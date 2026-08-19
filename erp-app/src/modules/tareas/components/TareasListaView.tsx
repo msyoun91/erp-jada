@@ -10,12 +10,11 @@ import { TareaFormPanel } from "./TareaFormPanel";
 import { HiloFormPanel } from "./HiloFormPanel";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
 
-// "Involucrado", no solo asignado: el filtro de la toolbar arranca en el
-// usuario actual y esconderle lo que creó o de lo que es responsable —
-// porque no se auto-asignó — lo dejaría sin ver tareas propias.
-function estaInvolucrado(t: TareaConAsignados, usuarioId: string) {
+// Espejo del USING de `tareas_select`: la asignación decide, `creado_por` no.
+// Haber creado una tarea que se asignó a otro no la hace propia — el filtro
+// dice de quién es el trabajo, no quién lo tipeó.
+function esDeUsuario(t: TareaConAsignados, usuarioId: string) {
   return (
-    t.creado_por === usuarioId ||
     t.responsable_id === usuarioId ||
     t.tareas_asignados.some((a) => a.activo && a.usuario_id === usuarioId)
   );
@@ -29,6 +28,7 @@ export function TareasListaView({
   plantillas,
   miembrosPorProyecto,
   gestionarAjenas,
+  puedeAsignar,
   usuarioActualId,
 }: {
   hilos: TareaHilo[];
@@ -38,6 +38,7 @@ export function TareasListaView({
   plantillas: TareaPlantilla[];
   miembrosPorProyecto: Record<string, string[]>;
   gestionarAjenas: boolean;
+  puedeAsignar: boolean;
   usuarioActualId: string | null;
 }) {
   const [texto, setTexto] = useState("");
@@ -53,7 +54,7 @@ export function TareasListaView({
   function coincide(t: TareaConAsignados) {
     const q = texto.trim().toLowerCase();
     if (q && !t.titulo.toLowerCase().includes(q)) return false;
-    if (asignadoId && !estaInvolucrado(t, asignadoId)) return false;
+    if (asignadoId && !esDeUsuario(t, asignadoId)) return false;
     return true;
   }
 
@@ -70,7 +71,7 @@ export function TareasListaView({
         const q = texto.trim().toLowerCase();
         const hiloMatch =
           (!q || h.titulo.toLowerCase().includes(q)) &&
-          (!asignadoId || h.creado_por === asignadoId || h.responsable_id === asignadoId);
+          (!asignadoId || h.responsable_id === asignadoId);
         const tareasDelHilo = tareas.filter((t) => t.hilo_id === h.id);
         return hiloMatch || tareasDelHilo.some(coincide);
       });
@@ -137,6 +138,7 @@ export function TareasListaView({
                   miembrosPorProyecto={miembrosPorProyecto}
                   usuarioActualId={usuarioActualId}
                   gestionarAjenas={gestionarAjenas}
+                  puedeAsignar={puedeAsignar}
                   relacionCon={asignadoId || usuarioActualId}
                   autoAbrir={hiloConvertido === h.id}
                 />
@@ -157,6 +159,7 @@ export function TareasListaView({
                   hilosDisponibles={hilos}
                   usuarioActualId={usuarioActualId}
                   gestionarAjenas={gestionarAjenas}
+                  puedeAsignar={puedeAsignar}
                   relacionCon={asignadoId || usuarioActualId}
                   onTemperaturaChange={onTemperaturaChange}
                   onConvertida={setHiloConvertido}
@@ -173,6 +176,7 @@ export function TareasListaView({
           proyectos={proyectos}
           miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
+          puedeAsignar={puedeAsignar}
           onClose={() => setCreandoTarea(false)}
         />
       )}

@@ -14,14 +14,15 @@ import { hoyISO, sumarDiasISO } from "@/lib/utils";
 const VENCIMIENTO_PRESETS = [1, 3, 7];
 
 // Un solo panel para crear y editar: con `tarea` presente pasa a modo
-// edición. El schema sigue siendo crearTareaSchema (superset) — asignados y
-// responsable viajan como defaults ocultos porque en edición se cambian por
-// "Reasignar", que ya es la única autoridad sobre tareas_asignados.
+// edición. El schema sigue siendo crearTareaSchema (superset del de edición).
+// Los asignados se editan acá igual que al crear — sin la función
+// `tareas_asignar` el picker no aparece y viajan como defaults ocultos.
 export function TareaFormPanel({
   usuarios,
   proyectos,
   miembrosPorProyecto,
   usuarioActualId,
+  puedeAsignar,
   hiloId,
   proyectoId,
   proyectoHeredadoId,
@@ -32,6 +33,7 @@ export function TareaFormPanel({
   proyectos: TareaProyecto[];
   miembrosPorProyecto: Record<string, string[]>;
   usuarioActualId: string | null;
+  puedeAsignar: boolean;
   hiloId?: string;
   proyectoId?: string;
   // Proyecto del hilo al que se agrega la tarea: la tarea no lo guarda (lo
@@ -164,15 +166,26 @@ export function TareaFormPanel({
           </div>
         )}
 
-        <div>
-          <label className="t-label mb-1 block">Visibilidad</label>
-          <select className="input" {...register("visibilidad")}>
-            <option value="privado">Privada</option>
-            <option value="publico">Pública</option>
-          </select>
-        </div>
+        {/* Dentro de un hilo la visibilidad la decide el hilo: `tareas_select`
+            solo lee `tareas.visibilidad` con `hilo_id IS NULL` (sql/013). El
+            valor viaja como default oculto — vuelve a mandar si la tarea sale
+            del hilo. */}
+        {!hiloId && !tarea?.hilo_id && (
+          <div>
+            <label className="t-label mb-1 block">Visibilidad</label>
+            <select className="input" {...register("visibilidad")}>
+              <option value="privado">Privada</option>
+              <option value="publico">Pública</option>
+            </select>
+          </div>
+        )}
 
-        {!tarea && <AsignadosPicker control={control} usuarios={usuarios} miembros={miembros} />}
+        <AsignadosPicker
+          control={control}
+          usuarios={usuarios}
+          miembros={miembros}
+          puedeAsignar={puedeAsignar}
+        />
 
         <div>
           <label className="t-label mb-1 block">Vencimiento</label>

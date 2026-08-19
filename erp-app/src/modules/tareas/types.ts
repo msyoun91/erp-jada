@@ -69,9 +69,9 @@ const uuidOpcional = z
   .union([z.string().uuid(), z.literal(""), z.null(), z.undefined()])
   .transform((v) => v || null);
 
-// Campos que se editan después de crear (asignados/responsable van por
-// reasignarTarea, estado/temperatura tienen su propia action) — base común
-// de crearTareaSchema y editarTareaSchema, para no duplicar validadores.
+// Campos comunes a crear y editar (estado/temperatura tienen su propia
+// action) — base de crearTareaSchema y editarTareaSchema, para no duplicar
+// validadores.
 const tareaEditableSchema = z.object({
   titulo: z.string().min(1, "El título es obligatorio").max(200),
   descripcion: z.string().max(2000).optional(),
@@ -113,10 +113,24 @@ export const crearTareaSchema = tareaEditableSchema
 export type CrearTareaForm = z.input<typeof crearTareaSchema>;
 export type CrearTareaValues = z.output<typeof crearTareaSchema>;
 
-export const editarTareaSchema = tareaEditableSchema.extend({ id: z.string().uuid() }).refine(recurrenciaCompleta, {
-  message: "Cantidad y unidad de recurrencia van juntas",
-  path: ["recurrencia_unidad"],
-});
+// Editar cambia también los asignados: el panel de edición muestra el mismo
+// picker que el de creación cuando el usuario tiene la función `tareas_asignar`
+// (sql/014). "Reasignar" sigue existiendo como atajo — las dos entradas
+// escriben por sincronizarAsignados(), que es el único escritor de la tabla.
+export const editarTareaSchema = tareaEditableSchema
+  .extend({
+    id: z.string().uuid(),
+    responsable_id: z.string().uuid(),
+    asignados: z.array(z.string().uuid()).min(1, "Debe haber al menos un asignado"),
+  })
+  .refine(recurrenciaCompleta, {
+    message: "Cantidad y unidad de recurrencia van juntas",
+    path: ["recurrencia_unidad"],
+  })
+  .refine((d) => d.asignados.includes(d.responsable_id), {
+    message: "El responsable debe estar entre los asignados",
+    path: ["responsable_id"],
+  });
 
 export type EditarTareaForm = z.input<typeof editarTareaSchema>;
 

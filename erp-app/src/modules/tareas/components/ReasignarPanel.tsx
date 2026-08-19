@@ -68,7 +68,9 @@ export function ReasignarPanel({
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-4 overflow-y-auto px-5 py-4"
       >
-        <AsignadosPicker control={control} usuarios={usuarios} miembros={miembros} />
+        {/* El panel entero es la función `tareas_asignar`: quien no la tiene
+            no llega acá (TareaDetailPanel no ofrece "Reasignar"). */}
+        <AsignadosPicker control={control} usuarios={usuarios} miembros={miembros} puedeAsignar />
       </form>
     </RightPanel>
   );
