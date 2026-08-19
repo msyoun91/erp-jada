@@ -25,6 +25,7 @@ export function HiloCard({
   miembrosPorProyecto,
   usuarioActualId,
   gestionarAjenas,
+  relacionCon,
   autoAbrir,
 }: {
   hilo: TareaHilo;
@@ -35,6 +36,7 @@ export function HiloCard({
   miembrosPorProyecto: Record<string, string[]>;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
+  relacionCon?: string | null;
   autoAbrir?: boolean;
 }) {
   const [detalleAbierto, setDetalleAbierto] = useState(autoAbrir ?? false);
@@ -145,6 +147,7 @@ export function HiloCard({
           miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
           gestionarAjenas={gestionarAjenas}
+          relacionCon={relacionCon}
           onClose={() => setDetalleAbierto(false)}
         />
       )}

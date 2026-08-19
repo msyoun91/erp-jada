@@ -79,6 +79,7 @@ export function TareaRow({
   proyectoHeredadoId,
   usuarioActualId,
   gestionarAjenas,
+  relacionCon,
   onTemperaturaChange,
   onConvertida,
 }: {
@@ -91,6 +92,9 @@ export function TareaRow({
   proyectoHeredadoId?: string | null;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
+  // Usuario cuya relación con la tarea se explica en el badge — el del filtro
+  // de la vista, no necesariamente el actual.
+  relacionCon?: string | null;
   onTemperaturaChange?: (id: string, temperatura: number) => void;
   onConvertida?: (hiloId: string) => void;
 }) {
@@ -119,6 +123,20 @@ export function TareaRow({
   const miembros = proyectoEfectivo ? (miembrosPorProyecto[proyectoEfectivo] ?? []) : null;
 
   const asignadosActivos = tarea.tareas_asignados.filter((a) => a.activo);
+
+  // El badge existe para explicar por qué la fila aparece cuando el avatar no
+  // lo hace: el usuario está involucrado como responsable o creador, sin estar
+  // asignado. Si está asignado, el avatar ya lo dice y el badge sería ruido.
+  const relacion =
+    relacionCon && !asignadosActivos.some((a) => a.usuario_id === relacionCon)
+      ? tarea.responsable_id === relacionCon
+        ? "Responsable"
+        : tarea.creado_por === relacionCon
+          ? "Creador"
+          : null
+      : null;
+  const relacionNombre = usuarios.find((u) => u.id === relacionCon)?.nombre ?? "";
+
   const esAsignado =
     gestionarAjenas ||
     tarea.creado_por === usuarioActualId ||
@@ -190,7 +208,7 @@ export function TareaRow({
   }
 
   return (
-    <div className="p-[13px] px-5">
+    <div className={`p-[13px] px-5 ${activa ? "" : "opacity-60"}`}>
       <div className="flex flex-wrap items-center gap-2">
         {esAsignado ? (
           <button
@@ -204,6 +222,11 @@ export function TareaRow({
           <p className="t-body-m font-medium text-text-primary">{tarea.titulo}</p>
         )}
         <span className={`badge ${ESTADO_BADGE[estadoLocal]}`}>{ESTADO_LABEL[estadoLocal]}</span>
+        {relacion && (
+          <span className="badge badge-neutral" title={`${relacion}: ${relacionNombre}`}>
+            {relacion}
+          </span>
+        )}
       </div>
 
       {tarea.descripcion && <p className="t-caption mt-1">{tarea.descripcion}</p>}

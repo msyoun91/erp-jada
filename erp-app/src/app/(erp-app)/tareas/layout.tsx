@@ -20,7 +20,7 @@ export default async function TareasLayout({
   ]);
 
   const tabs = [
-    lista && { codigo: "tareas_lista", label: "Mis tareas", href: "/tareas" },
+    lista && { codigo: "tareas_lista", label: "Lista", href: "/tareas" },
     proyectos && { codigo: "tareas_proyectos", label: "Proyectos", href: "/tareas/proyectos" },
     plantillas && { codigo: "tareas_plantillas", label: "Plantillas", href: "/tareas/plantillas" },
     auditoria && { codigo: "tareas_auditoria", label: "Auditoría", href: "/tareas/auditoria" },

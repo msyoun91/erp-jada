@@ -9,8 +9,16 @@ import type { TareaConAsignados } from "./types";
 export function useOrdenTemperatura() {
   const [overrides, setOverrides] = useState<Record<string, number>>({});
 
+  // Completadas y canceladas al fondo, sin importar su temperatura: una tarea
+  // cerrada en 90 no debe competir por atención con una pendiente en 40.
+  function peso(t: TareaConAsignados) {
+    return t.estado === "completada" || t.estado === "cancelada" ? 1 : 0;
+  }
+
   function ordenar<T extends TareaConAsignados>(tareas: T[]): T[] {
-    return [...tareas].sort((a, b) => (overrides[b.id] ?? b.temperatura) - (overrides[a.id] ?? a.temperatura));
+    return [...tareas].sort(
+      (a, b) => peso(a) - peso(b) || (overrides[b.id] ?? b.temperatura) - (overrides[a.id] ?? a.temperatura),
+    );
   }
 
   function onTemperaturaChange(id: string, temperatura: number) {

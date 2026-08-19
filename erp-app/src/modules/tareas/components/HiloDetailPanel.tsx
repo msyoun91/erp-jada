@@ -29,6 +29,7 @@ export function HiloDetailPanel({
   miembrosPorProyecto,
   usuarioActualId,
   gestionarAjenas,
+  relacionCon,
   onClose,
 }: {
   hilo: TareaHilo;
@@ -40,6 +41,7 @@ export function HiloDetailPanel({
   miembrosPorProyecto: Record<string, string[]>;
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
+  relacionCon?: string | null;
   onClose: () => void;
 }) {
   const [agregandoTarea, setAgregandoTarea] = useState(false);
@@ -127,6 +129,7 @@ export function HiloDetailPanel({
                   proyectoHeredadoId={proyecto?.id ?? null}
                   usuarioActualId={usuarioActualId}
                   gestionarAjenas={gestionarAjenas}
+                  relacionCon={relacionCon}
                   onTemperaturaChange={onTemperaturaChange}
                 />
               </div>

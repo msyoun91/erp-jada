@@ -78,6 +78,7 @@ export function ProyectoDetailPanel({
                     miembrosPorProyecto={miembrosPorProyecto}
                     usuarioActualId={usuarioActualId}
                     gestionarAjenas={gestionarAjenas}
+                    relacionCon={usuarioActualId}
                     autoAbrir={hiloConvertido === h.id}
                   />
                 ))}
@@ -97,6 +98,7 @@ export function ProyectoDetailPanel({
                       hilosDisponibles={hilos}
                       usuarioActualId={usuarioActualId}
                       gestionarAjenas={gestionarAjenas}
+                      relacionCon={usuarioActualId}
                       onTemperaturaChange={onTemperaturaChange}
                       onConvertida={setHiloConvertido}
                     />
