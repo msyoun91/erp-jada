@@ -1,19 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
 import { CalendarClock, Clock, ExternalLink, Lock, Repeat, Thermometer } from "lucide-react";
-import { actualizarTemperatura, cambiarEstadoTarea } from "../actions";
 import type { TareaConAsignados, TareaHilo, TareaProyecto, Usuario } from "../types";
 import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
+import { relacionTarea } from "../relacion";
+import { useTareaOptimista } from "../useTareaOptimista";
 import { Isla } from "./Isla";
 import { TareaDetailPanel } from "./TareaDetailPanel";
-import { ESTADO_BADGE, ESTADO_LABEL, RECURRENCIA_LABEL, iniciales, temperaturaRango } from "./tareaLabels";
+import {
+  ESTADO_BADGE,
+  ESTADO_LABEL,
+  RECURRENCIA_LABEL,
+  estadoVencimiento,
+  iniciales,
+  temperaturaRango,
+} from "./tareaLabels";
 
 // Umbrales fijos — spec pide "configurable" pero no hay un segundo caso real
 // todavía que justifique una UI de settings para esto (simplicidad antes que
 // abstracción). Ajustar acá si en el futuro se necesita por tipo de tarea.
-const PROXIMA_DIAS = 3;
 const ANTIGUEDAD_AMBAR_DIAS = 14;
 const ANTIGUEDAD_ROJO_DIAS = 30;
 
@@ -53,41 +59,23 @@ export function TareaCard({
   onConvertida?: (hiloId: string) => void;
 }) {
   const [detalleAbierto, setDetalleAbierto] = useState(false);
-
-  const [estadoBase, setEstadoBase] = useState(tarea.estado);
-  const [estadoLocal, setEstadoLocal] = useState(tarea.estado);
-  if (tarea.estado !== estadoBase) {
-    setEstadoBase(tarea.estado);
-    setEstadoLocal(tarea.estado);
-  }
-
-  const [tempBase, setTempBase] = useState(tarea.temperatura);
-  const [tempLocal, setTempLocal] = useState(tarea.temperatura);
-  if (tarea.temperatura !== tempBase) {
-    setTempBase(tarea.temperatura);
-    setTempLocal(tarea.temperatura);
-  }
+  const { estado, temperatura, cambiarEstado, cambiarTemperatura, commitTemperatura } =
+    useTareaOptimista(tarea, onTemperaturaChange);
 
   const asignadosActivos = tarea.tareas_asignados.filter((a) => a.activo);
 
   // El badge existe para explicar por qué la fila aparece cuando el avatar no
-  // lo hace: el usuario está involucrado como responsable o creador, sin estar
-  // asignado. Si está asignado, el avatar ya lo dice y el badge sería ruido.
+  // lo hace: el usuario es responsable sin estar asignado. Si está asignado, el
+  // avatar ya lo dice y el badge sería ruido.
   const relacion =
     relacionCon && !asignadosActivos.some((a) => a.usuario_id === relacionCon)
-      ? tarea.responsable_id === relacionCon
+      ? relacionTarea(tarea, relacionCon) === "responsable"
         ? "Responsable"
-        : tarea.creado_por === relacionCon
-          ? "Creador"
-          : null
+        : null
       : null;
   const relacionNombre = usuarios.find((u) => u.id === relacionCon)?.nombre ?? "";
 
-  const activa = estadoLocal !== "completada" && estadoLocal !== "cancelada";
-  const diasVencimiento = tarea.fecha_vencimiento ? diasEntreISO(hoyISO(), tarea.fecha_vencimiento) : null;
-  const vencida = activa && diasVencimiento !== null && diasVencimiento < 0;
-  const proximaAVencer = activa && diasVencimiento !== null && diasVencimiento >= 0 && diasVencimiento <= PROXIMA_DIAS;
-  const fechaClase = vencida ? "text-error" : proximaAVencer ? "text-warning" : "";
+  const { activa, fechaClase } = estadoVencimiento(tarea.fecha_vencimiento, estado);
 
   const diasAntiguedad = !tarea.fecha_vencimiento ? diasEntreISO(tarea.created_at.slice(0, 10), hoyISO()) : null;
   const antiguedadClase =
@@ -99,30 +87,6 @@ export function TareaCard({
           ? "text-warning"
           : "";
 
-  async function cambiarEstado(nuevo: "pendiente" | "en_progreso" | "cancelada") {
-    const anterior = estadoLocal;
-    setEstadoLocal(nuevo);
-    const result = await cambiarEstadoTarea(tarea.id, nuevo);
-    if (!result.success) {
-      setEstadoLocal(anterior);
-      toast.error(result.error);
-    }
-  }
-
-  async function commitTemperatura() {
-    if (tempLocal === tarea.temperatura) return;
-    const result = await actualizarTemperatura(tarea.id, tempLocal);
-    if (!result.success) {
-      setTempLocal(tarea.temperatura);
-      toast.error(result.error);
-    }
-  }
-
-  function cambiarTemperatura(valor: number) {
-    setTempLocal(valor);
-    onTemperaturaChange?.(tarea.id, valor);
-  }
-
   return (
     <>
       <Isla
@@ -131,7 +95,7 @@ export function TareaCard({
         onAbrir={() => setDetalleAbierto(true)}
         badges={
           <>
-            <span className={`badge shrink-0 ${ESTADO_BADGE[estadoLocal]}`}>{ESTADO_LABEL[estadoLocal]}</span>
+            <span className={`badge shrink-0 ${ESTADO_BADGE[estado]}`}>{ESTADO_LABEL[estado]}</span>
             {relacion && (
               <span className="badge badge-neutral shrink-0" title={`${relacion}: ${relacionNombre}`}>
                 {relacion}
@@ -153,9 +117,9 @@ export function TareaCard({
               </span>
             )}
             {activa && (
-              <span className={`flex items-center gap-1 ${temperaturaRango(tempLocal).clase}`}>
+              <span className={`flex items-center gap-1 ${temperaturaRango(temperatura).clase}`}>
                 <Thermometer size={13} strokeWidth={1.75} />
-                {temperaturaRango(tempLocal).label} ({tempLocal})
+                {temperaturaRango(temperatura).label} ({temperatura})
               </span>
             )}
             {tarea.visibilidad === "privado" && tarea.hilo_id === null && (
@@ -213,8 +177,8 @@ export function TareaCard({
           usuarioActualId={usuarioActualId}
           gestionarAjenas={gestionarAjenas}
           puedeAsignar={puedeAsignar}
-          estado={estadoLocal}
-          temperatura={tempLocal}
+          estado={estado}
+          temperatura={temperatura}
           onCambiarEstado={cambiarEstado}
           onTemperaturaInput={cambiarTemperatura}
           onTemperaturaCommit={commitTemperatura}

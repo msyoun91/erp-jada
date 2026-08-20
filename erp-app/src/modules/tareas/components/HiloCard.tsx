@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, Lock, UserRound } from "lucide-react";
+import { ChevronDown, ChevronUp, Clock, Lock, UserRound } from "lucide-react";
 import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
 import { formatFecha } from "@/lib/utils";
+import { relacionTarea } from "../relacion";
 import { HiloDetailPanel } from "./HiloDetailPanel";
 import { CerrarHiloModal } from "./CerrarHiloModal";
 import { Isla } from "./Isla";
+import { PasoAjeno } from "./PasoAjeno";
+import { TareaCard } from "./TareaCard";
 import { MetricasResumen, contarCompletadas } from "./MetricasResumen";
 
 function calcSig(tareas: TareaConAsignados[]) {
@@ -16,8 +19,11 @@ function calcSig(tareas: TareaConAsignados[]) {
     .join(",");
 }
 
-// Isla resumen del hilo en la vista "Mis tareas": sin acciones ni tareas
-// inline — eso vive en HiloDetailPanel, que se abre al hacer click.
+// El hilo agrupa, no es una fila: la unidad accionable de la lista es la tarea.
+// Colapsado muestra solo los pasos del usuario; expandido, todos en orden de
+// secuencia (created_at, no temperatura) para contestar "¿ya está listo lo que
+// necesito?". Los ajenos van como línea fina, no como card — esa diferencia de
+// peso es lo que evita que un hilo de 20 pasos esconda los 2 propios.
 export function HiloCard({
   hilo,
   tareas,
@@ -30,6 +36,7 @@ export function HiloCard({
   puedeAsignar,
   relacionCon,
   autoAbrir,
+  onTemperaturaChange,
 }: {
   hilo: TareaHilo;
   tareas: TareaConAsignados[];
@@ -42,8 +49,11 @@ export function HiloCard({
   puedeAsignar: boolean;
   relacionCon?: string | null;
   autoAbrir?: boolean;
+  onTemperaturaChange?: (id: string, temperatura: number) => void;
 }) {
   const [detalleAbierto, setDetalleAbierto] = useState(autoAbrir ?? false);
+  // Local y efímero: se pierde al recargar. Persistirlo se agrega cuando moleste.
+  const [expandido, setExpandido] = useState(false);
 
   // Al convertir una tarea en hilo el padre pide abrir este panel. La card
   // puede montarse antes o después de ese pedido (depende de si el
@@ -75,6 +85,14 @@ export function HiloCard({
 
   const completadas = contarCompletadas(tareasDelHilo);
 
+  // created_at asc = orden de los pasos: no hay columna `orden` y
+  // agregarTareasDesdePlantilla inserta en el orden de la plantilla.
+  const enSecuencia = [...tareasDelHilo].sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const esPropia = (t: TareaConAsignados) => (relacionCon ? relacionTarea(t, relacionCon) !== null : true);
+  const propias = enSecuencia.filter(esPropia);
+  const visibles = expandido ? enSecuencia : propias;
+  const hayAjenos = tareasDelHilo.length > propias.length;
+
   return (
     <>
       <Isla
@@ -87,7 +105,9 @@ export function HiloCard({
               {hilo.estado === "cerrado" ? "Cerrado" : "Abierto"}
             </span>
             <span className="t-caption shrink-0 whitespace-nowrap">
-              {completadas}/{tareasDelHilo.length} completadas
+              {relacionCon &&
+                `${propias.length === 0 ? "Sin pasos asignados" : `${propias.length} ${propias.length === 1 ? "tuyo" : "tuyos"}`} · `}
+              {completadas}/{tareasDelHilo.length} completados
             </span>
           </>
         }
@@ -112,9 +132,61 @@ export function HiloCard({
               </span>
             )}
             <MetricasResumen createdAt={hilo.created_at} tareas={tareasDelHilo} />
+            {hayAjenos && (
+              <button
+                className="flex items-center gap-1 font-semibold text-brand-700"
+                onClick={() => setExpandido(!expandido)}
+              >
+                {expandido ? (
+                  <>
+                    Ocultar
+                    <ChevronUp size={13} strokeWidth={2} />
+                  </>
+                ) : (
+                  <>
+                    Ver los {tareasDelHilo.length} pasos
+                    <ChevronDown size={13} strokeWidth={2} />
+                  </>
+                )}
+              </button>
+            )}
           </>
         }
-      />
+      >
+        {visibles.length > 0 && (
+          <div className="flex flex-col gap-2 border-t border-border p-3">
+            {visibles.map((t) =>
+              esPropia(t) ? (
+                <TareaCard
+                  key={t.id}
+                  tarea={t}
+                  usuarios={usuarios}
+                  proyectos={proyectos}
+                  miembrosPorProyecto={miembrosPorProyecto}
+                  proyectoHeredadoId={hilo.proyecto_id}
+                  usuarioActualId={usuarioActualId}
+                  gestionarAjenas={gestionarAjenas}
+                  puedeAsignar={puedeAsignar}
+                  relacionCon={relacionCon}
+                  onTemperaturaChange={onTemperaturaChange}
+                />
+              ) : (
+                <PasoAjeno
+                  key={t.id}
+                  tarea={t}
+                  usuarios={usuarios}
+                  proyectos={proyectos}
+                  miembrosPorProyecto={miembrosPorProyecto}
+                  proyectoHeredadoId={hilo.proyecto_id}
+                  usuarioActualId={usuarioActualId}
+                  gestionarAjenas={gestionarAjenas}
+                  puedeAsignar={puedeAsignar}
+                />
+              ),
+            )}
+          </div>
+        )}
+      </Isla>
 
       {detalleAbierto && (
         <HiloDetailPanel

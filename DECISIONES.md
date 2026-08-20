@@ -416,3 +416,45 @@ Verificado end-to-end contra la base con `sql/tests/rls_miembros_asignables.sql`
 - `17` (ex `12`) sigue probando que la membresía se evalúa sobre el asignado y no sobre quien actúa, ahora con la función puesta.
 
 Fuera de alcance: el responsable de un **hilo** (`HiloFormPanel`) sigue gateado por `tareas_gestionar_ajenas` en `tareas_hilos_insert`/`update`. El dueño del hilo no es una asignación (mismo criterio que `sql/009`).
+
+---
+
+## Módulo tareas — la vista Lista es de tareas, el hilo agrupa (sin SQL)
+
+Pedido de usuario: *"si tengo una tarea en hilo ajeno asignado me aparece el hilo entero en mi menú y eso me trae confusión"*, más *"a veces necesito ver los otros trabajos para realizar el mío"*. Solo UI: cero SQL, cero queries nuevas, RLS intacta.
+
+**Revierte parcialmente** la sección *"Módulo tareas — isla compartida, panel de proyecto y edición de hilo"*, donde quedó escrito que la vista Lista no muestra tareas del hilo, solo el panel. No es el mismo diseño volviendo: aquella decisión mostraba **todos** los pasos y por eso molestaba; ahora la Lista muestra **solo los tuyos**, con los ajenos plegados detrás de un toggle.
+
+**Un rol por nivel, sin superposición:** el proyecto es etiqueta (badge), el hilo es agrupador (encabezado de grupo, nunca fila) y la tarea es la única fila accionable. De ahí sale todo lo demás:
+
+- **Se van las secciones `Hilos` / `Tareas sueltas`.** Un solo stream ordenado por temperatura, con filas sueltas y grupos intercalados. Conservarlas dejaba al usuario navegando por contenedor en vez de por urgencia, que era el bug.
+- **El grupo se ordena por la temperatura de su paso propio más caliente**, así lo urgente sube tenga hilo o no. Eso necesitó exponer `comparar` desde `useOrdenTemperatura` (`ordenar` no sirve: las dos cosas a comparar viven en listas distintas). Un grupo sin pasos propios no compite y cae al fondo.
+- **El contador dice `N tareas`**, no `3 hilos · 9 sueltas`. El hilo agrupa, no cuenta como ítem.
+- **Colapsado se ven solo tus pasos; expandido, todos en orden de secuencia** (`created_at` asc, **no** por temperatura) — la pregunta que contesta el expandido es "¿ya está listo lo que necesito para arrancar el mío?", y eso es cronología, no urgencia. No hay columna `orden` en `tareas` y `agregarTareasDesdePlantilla` inserta en orden de plantilla, así que `created_at` **es** la secuencia. No se agrega `depende_de` ni `orden`: la vista contesta la pregunta sin modelar dependencias.
+- **Los pasos ajenos van como línea fina de solo lectura (`PasoAjeno.tsx`), no como isla.** La diferencia de peso visual es lo que impide que vuelva el problema original: con el hilo expandido, los tuyos son los únicos que parecen tareas.
+- El estado de expansión es local y se pierde al recargar. Persistirlo se agrega cuando moleste.
+
+**Nada de esto necesitó backend.** Los pasos ajenos ya llegaban al cliente (`puede_ver_hilo`, `sql/013`: una asignación activa en cualquier paso te da el hilo entero) y sus notas también (`getListaTareas` las precarga embebidas). Leer la nota de un paso ajeno sí, escribirla no — lo resuelve `tareas_notas_insert` (`sql/013`) más el `puedeAgregar={esAsignado}` que ya estaba. Por eso el preload de `tareas_notas` en `queries.ts`, marcado como desperdicio en la auditoría previa, **se conserva**: es exactamente lo que evita un request por paso ajeno.
+
+### `relacion.ts` — fuente única de "de quién es este trabajo"
+
+`relacionTarea` / `relacionHilo` reemplazan `esDeUsuario()` de `TareasListaView` y el bloque de badge duplicado en `TareaCard`. `creado_por` **no** cuenta (espejo del `USING` de `tareas_select`), así que se borró la rama `Creador` del badge — contradecía `sql/013`, donde crear dejó de dar autoridad y visibilidad. El dueño del hilo es un rol, no una asignación: estar involucrado en el hilo es tener alguna de sus tareas.
+
+### Filtro: segmented control Míos / Involucrado / Todos
+
+Segundo eje, independiente del select de usuario: el select dice *de qué usuario*, el segmented dice *qué relación*. El modelo ya daba el corte gratis — `crearTareaSchema` obliga `responsable ∈ asignados`, así que "responsable" y "asignado" son disjuntos. Solo aparece con un usuario elegido; sin filtro de usuario no hay relación que recortar.
+
+**Arregla un bug de paso.** `hilosFiltrados` mezclaba los dos ejes (`textoMatch && h.responsable_id === asignadoId`): buscar el título de un hilo donde estás involucrado pero no sos dueño lo escondía, salvo que alguna de sus tareas matcheara el texto también. Separar `coincideTexto` de `coincideRelacion` lo elimina.
+
+**Sin filtro de usuario ("Todos los usuarios") la vista no tiene perspectiva**: las filas aparecen porque son visibles, no por tu relación con ellas. Entonces `relacionCon` pasa a `null` — no hay paso ajeno que plegar, no hay badge de relación que explicar y el encabezado del grupo muestra solo `M/N completados`. Antes caía a `usuarioActualId`, que contradecía "pediste ver todo".
+
+### Arrastre: umbrales deduplicados y estado optimista extraído
+
+- `PROXIMA_DIAS` y `estadoVencimiento()` suben a `tareaLabels.ts`. El umbral estaba en tres lugares (`TareaCard`, `TareaDetailPanel`, hardcodeado en `MetricasResumen`) y el bloque de vencimiento duplicado verbatim entre isla y panel.
+- **`useTareaOptimista` (nuevo)**: el estado/temperatura optimistas salieron de `TareaCard`. La misma tarea ahora se muestra de dos formas (isla y línea fina) y ambas abren el mismo panel; con una copia del optimismo por componente, un admin con `tareas_gestionar_ajenas` abriendo un paso ajeno habría visto la toolbar con handlers que no hacen nada. Una sola fuente para las dos caras.
+- `Isla` gana slot de `children` (hoy solo los pasos de un hilo) — el grupo es la isla del hilo con su contenido adentro, no un contenedor nuevo.
+- `relacion.test.ts` corre con `node --test` (Node despoja los tipos solo). Sin runner de tests en el repo y sin agregar uno: por eso `allowImportingTsExtensions` en `tsconfig.json`, que con `moduleResolution: bundler` no cambia nada del build.
+
+### Efecto colateral aceptado
+
+`ProyectoDetailPanel` usa el mismo `HiloCard`, así que sus hilos también muestran los pasos propios inline. No se tocó el archivo y el comportamiento es consistente con la Lista: el hilo agrupa en todos lados o en ninguno.

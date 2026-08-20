@@ -1,3 +1,5 @@
+import { diasEntreISO, hoyISO } from "@/lib/utils";
+
 // Etiquetas y clases de una tarea, compartidas por la isla (TareaCard) y su
 // panel (TareaDetailPanel): la misma tarea no puede leerse distinto según
 // dónde se la mire.
@@ -30,4 +32,27 @@ export function iniciales(nombre: string) {
   const parts = nombre.trim().split(" ");
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
   return nombre.slice(0, 2).toUpperCase();
+}
+
+// Umbral fijo — spec pide "configurable" pero no hay un segundo caso real
+// todavía que justifique una UI de settings para esto (simplicidad antes que
+// abstracción). Ajustar acá si en el futuro se necesita por tipo de tarea.
+export const PROXIMA_DIAS = 3;
+
+// El vencimiento de una tarea se lee igual en la isla, el panel y el resumen
+// del hilo: una tarea no puede estar "vencida" en un lado y no en el otro.
+// `estado` viene por separado porque isla y panel manejan estado optimista.
+export function estadoVencimiento(fechaVencimiento: string | null, estado: string) {
+  const activa = estado !== "completada" && estado !== "cancelada";
+  const diasVencimiento = fechaVencimiento ? diasEntreISO(hoyISO(), fechaVencimiento) : null;
+  const vencida = activa && diasVencimiento !== null && diasVencimiento < 0;
+  const proximaAVencer =
+    activa && diasVencimiento !== null && diasVencimiento >= 0 && diasVencimiento <= PROXIMA_DIAS;
+  return {
+    activa,
+    diasVencimiento,
+    vencida,
+    proximaAVencer,
+    fechaClase: vencida ? "text-error" : proximaAVencer ? "text-warning" : "",
+  };
 }

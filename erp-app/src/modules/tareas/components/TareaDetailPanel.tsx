@@ -32,12 +32,13 @@ import { PosponerPanel } from "./PosponerPanel";
 import { CompletarModal } from "./CompletarModal";
 import { TareaFormPanel } from "./TareaFormPanel";
 import { NotasSection } from "./NotasSection";
-import { ESTADO_BADGE, ESTADO_LABEL, RECURRENCIA_LABEL, temperaturaRango } from "./tareaLabels";
-
-// Umbrales fijos — spec pide "configurable" pero no hay un segundo caso real
-// todavía que justifique una UI de settings para esto (simplicidad antes que
-// abstracción). Ajustar acá si en el futuro se necesita por tipo de tarea.
-const PROXIMA_DIAS = 3;
+import {
+  ESTADO_BADGE,
+  ESTADO_LABEL,
+  RECURRENCIA_LABEL,
+  estadoVencimiento,
+  temperaturaRango,
+} from "./tareaLabels";
 
 // Todo lo que se hace y se lee de una tarea: la isla (TareaCard) solo resume.
 // El estado y la temperatura optimistas viven en la isla y bajan por props —
@@ -103,11 +104,7 @@ export function TareaDetailPanel({
     asignadosActivos.some((a) => a.usuario_id === usuarioActualId);
   const puedeGestionar = gestionarAjenas || tarea.responsable_id === usuarioActualId;
 
-  const activa = estado !== "completada" && estado !== "cancelada";
-  const diasVencimiento = tarea.fecha_vencimiento ? diasEntreISO(hoyISO(), tarea.fecha_vencimiento) : null;
-  const vencida = activa && diasVencimiento !== null && diasVencimiento < 0;
-  const proximaAVencer = activa && diasVencimiento !== null && diasVencimiento >= 0 && diasVencimiento <= PROXIMA_DIAS;
-  const fechaClase = vencida ? "text-error" : proximaAVencer ? "text-warning" : "";
+  const { activa, fechaClase } = estadoVencimiento(tarea.fecha_vencimiento, estado);
 
   async function moverAHilo(hiloId: string) {
     if (!hiloId) return;

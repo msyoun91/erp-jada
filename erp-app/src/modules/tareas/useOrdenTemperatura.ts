@@ -15,15 +15,20 @@ export function useOrdenTemperatura() {
     return t.estado === "completada" || t.estado === "cancelada" ? 1 : 0;
   }
 
+  // Expuesto además de `ordenar` porque la vista Lista mezcla tareas sueltas
+  // con grupos de hilo: el grupo se ordena por su paso propio más caliente, y
+  // eso necesita comparar dos tareas que están en listas distintas.
+  function comparar(a: TareaConAsignados, b: TareaConAsignados) {
+    return peso(a) - peso(b) || (overrides[b.id] ?? b.temperatura) - (overrides[a.id] ?? a.temperatura);
+  }
+
   function ordenar<T extends TareaConAsignados>(tareas: T[]): T[] {
-    return [...tareas].sort(
-      (a, b) => peso(a) - peso(b) || (overrides[b.id] ?? b.temperatura) - (overrides[a.id] ?? a.temperatura),
-    );
+    return [...tareas].sort(comparar);
   }
 
   function onTemperaturaChange(id: string, temperatura: number) {
     setOverrides((prev) => ({ ...prev, [id]: temperatura }));
   }
 
-  return { ordenar, onTemperaturaChange };
+  return { ordenar, comparar, onTemperaturaChange };
 }

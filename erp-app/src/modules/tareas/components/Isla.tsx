@@ -10,12 +10,15 @@ export function Isla({
   meta,
   atenuada,
   onAbrir,
+  children,
 }: {
   titulo: string;
   badges?: React.ReactNode;
   meta?: React.ReactNode;
   atenuada?: boolean;
   onAbrir: () => void;
+  // Contenido anidado dentro de la isla — hoy solo los pasos de un hilo.
+  children?: React.ReactNode;
 }) {
   return (
     <div className={`rounded-lg border border-border bg-bg-surface ${atenuada ? "opacity-60" : ""}`}>
@@ -28,6 +31,8 @@ export function Isla({
       </button>
 
       {meta && <div className="t-caption flex flex-wrap items-center gap-3 px-5 pb-3">{meta}</div>}
+
+      {children}
     </div>
   );
 }

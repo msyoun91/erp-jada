@@ -3,6 +3,7 @@
 import { CalendarClock, History } from "lucide-react";
 import { diasEntreISO, hoyISO } from "@/lib/utils";
 import type { TareaConAsignados } from "../types";
+import { PROXIMA_DIAS } from "./tareaLabels";
 
 export function contarCompletadas(tareas: TareaConAsignados[]): number {
   return tareas.filter((t) => t.estado === "completada").length;
@@ -45,7 +46,7 @@ export function MetricasResumen({
       ) : (
         <span
           className={`flex items-center gap-1 ${
-            diasProxima < 0 ? "text-error" : diasProxima <= 3 ? "text-warning" : ""
+            diasProxima < 0 ? "text-error" : diasProxima <= PROXIMA_DIAS ? "text-warning" : ""
           }`}
         >
           <CalendarClock size={13} strokeWidth={1.75} />
