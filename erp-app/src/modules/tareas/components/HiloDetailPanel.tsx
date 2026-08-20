@@ -190,7 +190,9 @@ export function HiloDetailPanel({
         <HiloFormPanel
           usuarios={usuarios}
           proyectos={proyectos}
+          miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
+          puedeAsignar={puedeAsignar}
           hilo={hilo}
           onClose={() => setEditando(false)}
         />

@@ -11,3 +11,18 @@ export function tareasDeProyecto(
   const idsHilos = new Set(hilos.filter((h) => h.proyecto_id === proyectoId).map((h) => h.id));
   return tareas.filter((t) => t.proyecto_id === proyectoId || (t.hilo_id !== null && idsHilos.has(t.hilo_id)));
 }
+
+// Crear trabajo en un proyecto exige al menos un asignado y solo sus miembros
+// pueden serlo (sql/009). Sin `tareas_asignar` el único asignado posible es
+// uno mismo, así que hay que ser miembro; con la función alcanza con que haya
+// algún miembro visible. `idsMiembros` ya viene recortado por RLS: de un
+// proyecto que no trabajás no ves a nadie, y ahí la lista llega vacía.
+export function puedeTrabajarEnProyecto(
+  idsMiembros: string[],
+  usuarioActualId: string | null,
+  puedeAsignar: boolean
+): boolean {
+  return puedeAsignar
+    ? idsMiembros.length > 0
+    : usuarioActualId !== null && idsMiembros.includes(usuarioActualId);
+}

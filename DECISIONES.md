@@ -458,3 +458,92 @@ Segundo eje, independiente del select de usuario: el select dice *de qué usuari
 ### Efecto colateral aceptado
 
 `ProyectoDetailPanel` usa el mismo `HiloCard`, así que sus hilos también muestran los pasos propios inline. No se tocó el archivo y el comportamiento es consistente con la Lista: el hilo agrupa en todos lados o en ninguno.
+
+## Módulo tareas — desactivar un hilo se lleva sus tareas (sin SQL)
+
+`desactivarHilo` desactivaba solo `tareas_hilos`. Las tareas quedaban con
+`activo = true` apuntando a un hilo que `getListaTareas` ya no trae, y la vista
+Lista las perdía: no son sueltas (`hilo_id !== null`) y su grupo no existe.
+RLS seguía devolviéndolas — el trabajo asignado desaparecía de la UI para
+todos, incluido quien tiene `tareas_gestionar_ajenas`.
+
+La cascada va en el action, no en un filtro defensivo de la vista: el estado
+"hilo inactivo con tareas activas" no debe existir. Las tareas se desactivan
+primero — si ese update falla, el hilo queda intacto y no hay huérfanas.
+
+No hace falta permiso extra: `tareas_update` ya tiene la rama del responsable
+del hilo, que es exactamente quien puede desactivarlo (`tareas_hilos_update`).
+
+## Módulo tareas — no se ofrece crear trabajo donde no podés trabajar
+
+`puedeTrabajarEnProyecto` (`components/proyectoTareas.ts`) decide si el panel
+del proyecto muestra "Agregar hilo/tarea" y si un proyecto aparece en el select
+de `TareaFormPanel` y `HiloFormPanel`.
+
+La regla sale de `sql/009` + `sql/014`: crear una tarea exige al menos un
+asignado y solo los miembros del proyecto pueden serlo. Sin `tareas_asignar` el
+único asignado posible es uno mismo, así que hay que ser miembro; con la
+función alcanza con que haya algún miembro visible. `idsMiembros` ya viene
+recortado por RLS — de un proyecto que no trabajás no ves a nadie.
+
+Antes el form abría igual y moría en la validación de Zod pidiendo un asignado
+que no se podía elegir. No es una barrera de seguridad (RLS ya lo bloquea):
+es no ofrecer un camino que siempre termina en error.
+
+## Nombrar responsable de un hilo = `tareas_asignar` (`sql/015`)
+
+`tareas_hilos_insert` seguía pidiendo `tareas_gestionar_ajenas` para poner a
+otro como responsable, mientras `sql/014` había movido esa misma decisión sobre
+`tareas` a la función `tareas_asignar`. Dos ejes para una sola regla: poner a
+OTRO a cargo exige `tareas_asignar`, y nada la saltea — tampoco
+`gestionar_ajenas`, que es autoridad sobre lo ajeno, no permiso para repartir
+trabajo.
+
+Tres piezas, mismo reparto que en `tareas`:
+
+- `tareas_hilos_insert` — `responsable_id = auth.uid() OR tiene_permiso('tareas_asignar')`.
+- Trigger `validar_responsable_hilo` — el traspaso necesita el valor viejo, que
+  un `WITH CHECK` no ve. Reusa `TA003`: el mensaje ya era genérico.
+- `tareas_hilos_update` — el `WITH CHECK` suma `OR tiene_permiso('tareas_asignar')`.
+
+La tercera pieza apareció al correr el test, no al escribir la policy: sin ella
+el traspaso quedaba imposible incluso con la función, porque la fila nueva tiene
+`responsable_id` ajeno y el `WITH CHECK` solo aceptaba `responsable_id = auth.uid()`.
+En `tareas` el caso no aparece porque ahí el `WITH CHECK` tiene además la rama
+del asignado activo (`sql/013`). El reparto que queda: el `USING` decide quién
+puede tocar el hilo, el trigger decide quién puede quedar a cargo.
+
+El caso `20b` de `sql/tests/rls_miembros_asignables.sql` existe para eso —
+verifica que ese `WITH CHECK` más laxo no habilitó editar hilos ajenos.
+
+## Ver miembros exige proyecto activo (`sql/016`)
+
+`tareas_proyectos_miembros_select` no miraba `tareas_proyectos.activo`: archivar un
+proyecto lo sacaba de la lista pero dejaba sus membresías visibles.
+
+El filtro va en la policy y no en `getMiembrosPorProyecto` porque es la misma
+pregunta que ya responde el SELECT de la tabla — "qué membresías te tocan" — y
+duplicarla en la query dejaba la base contestando de más.
+
+El `EXISTS` directo sobre `tareas_proyectos` fue lo primero que verifiqué: el
+ciclo `tareas_proyectos` ↔ `tareas_proyectos_miembros` que documenta
+`db_schema.md` causa `42P17` con `EXISTS` en ambas direcciones, pero acá el lado
+de vuelta pasa por `es_miembro_proyecto` (`SECURITY DEFINER`), que ya lo rompe.
+Probado en transacción antes de aplicar: sin recursión, 5 → 2 filas visibles.
+
+## Decidido, pendiente de implementar: desactivar proyecto en cascada
+
+`desactivarProyecto` desactiva solo la fila del proyecto. Sus hilos y sus tareas
+sueltas quedan activos: el trabajo no desaparece de la Lista (el hilo sigue
+siendo hilo, la tarea suelta sigue suelta), pero pierde la agrupación y queda
+con `proyecto_id` apuntando a un proyecto archivado.
+
+Decisión tomada: **cascada completa**, simétrica con `desactivarHilo` —
+desactivar el proyecto desactiva sus hilos, y la cascada de hilos ya se lleva
+las tareas de cada uno; faltan además las tareas sueltas del proyecto.
+Archivar es "se va todo junto", no "se sueltan las partes".
+
+Sin implementar todavía. Efecto secundario a resolver junto con esto: al editar
+una tarea de un proyecto archivado, el select de `TareaFormPanel` no lista ese
+proyecto (`puedeTrabajarEnProyecto` lo filtra) y el campo aparece vacío sobre un
+valor que sigue seteado.

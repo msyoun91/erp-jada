@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { crearHilo, editarHilo } from "../actions";
+import { puedeTrabajarEnProyecto } from "./proyectoTareas";
 import { crearHiloSchema, type CrearHiloForm } from "../types";
 import type { TareaHilo, TareaProyecto, Usuario } from "../types";
 
@@ -18,23 +19,33 @@ import type { TareaHilo, TareaProyecto, Usuario } from "../types";
 export function HiloFormPanel({
   usuarios,
   proyectos,
+  miembrosPorProyecto,
   usuarioActualId,
+  puedeAsignar,
   proyectoId,
   hilo,
   onClose,
 }: {
   usuarios: Usuario[];
   proyectos: TareaProyecto[];
+  miembrosPorProyecto: Record<string, string[]>;
   usuarioActualId: string | null;
+  puedeAsignar: boolean;
   proyectoId?: string;
   hilo?: TareaHilo;
   onClose: () => void;
 }) {
+  // El hilo no lleva asignados, pero sus pasos sí: fundarlo en un proyecto
+  // donde no podés trabajar deja un hilo al que no le podés agregar nada.
+  const proyectosDisponibles = proyectos.filter((p) =>
+    puedeTrabajarEnProyecto(miembrosPorProyecto[p.id] ?? [], usuarioActualId, puedeAsignar)
+  );
   const [enviando, setEnviando] = useState(false);
   const {
     register,
     handleSubmit,
     setValue,
+    control,
     formState: { errors, dirtyFields },
   } = useForm<CrearHiloForm>({
     resolver: zodResolver(crearHiloSchema),
@@ -54,6 +65,13 @@ export function HiloFormPanel({
           responsable_id: usuarioActualId ?? "",
         },
   });
+
+  // Un hilo sin proyecto no puede ser público: `puede_ver_hilo` solo mira
+  // `visibilidad` cuando `proyecto_id IS NOT NULL` (sql/013). Ofrecer el campo
+  // igual prometía una publicación que nunca ocurría. El valor viaja como
+  // default oculto — `sincronizarVisibilidad` lo deja en 'privado' sin proyecto
+  // y lo sube a 'publico' al elegir uno.
+  const proyectoElegido = useWatch({ control, name: "proyecto_id" });
 
   // Elegir proyecto después de abrir el panel mueve el default igual que si se
   // hubiera abierto desde el proyecto — salvo que el usuario ya lo haya tocado.
@@ -122,7 +140,7 @@ export function HiloFormPanel({
               {...register("proyecto_id", { onChange: (e) => sincronizarVisibilidad(e.target.value) })}
             >
               <option value="">Sin proyecto</option>
-              {proyectos.map((p) => (
+              {proyectosDisponibles.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre}
                 </option>
@@ -131,29 +149,40 @@ export function HiloFormPanel({
           </div>
         )}
 
-        <div>
-          <label className="t-label mb-1 block">Visibilidad</label>
-          <select className="input" {...register("visibilidad")}>
-            <option value="privado">Privada</option>
-            <option value="publico">Pública</option>
-          </select>
-        </div>
+        {(proyectoElegido ?? proyectoId ?? hilo?.proyecto_id) && (
+          <div>
+            <label className="t-label mb-1 block">Visibilidad</label>
+            <select className="input" {...register("visibilidad")}>
+              <option value="privado">Privada</option>
+              <option value="publico">Pública</option>
+            </select>
+          </div>
+        )}
 
         {!hilo && (
           <div>
             <label className="t-label mb-1 block">Responsable</label>
-            <select
-              className={`input ${errors.responsable_id ? "input-error" : ""}`}
-              {...register("responsable_id")}
-            >
-              <option value="">— seleccionar —</option>
-              {usuarios.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.nombre}
-                </option>
-              ))}
-            </select>
-            {errors.responsable_id && <p className="input-error-text">{errors.responsable_id.message}</p>}
+            {puedeAsignar ? (
+              <>
+                <select
+                  className={`input ${errors.responsable_id ? "input-error" : ""}`}
+                  {...register("responsable_id")}
+                >
+                  <option value="">— seleccionar —</option>
+                  {usuarios.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.nombre}
+                    </option>
+                  ))}
+                </select>
+                {errors.responsable_id && <p className="input-error-text">{errors.responsable_id.message}</p>}
+              </>
+            ) : (
+              // Sin `tareas_asignar` el hilo solo puede quedar a cargo de uno
+              // mismo (sql/015): el valor viaja como default oculto y ofrecer
+              // la lista era un rechazo garantizado del servidor.
+              <p className="t-caption">{usuarios.find((u) => u.id === usuarioActualId)?.nombre ?? "Vos"}</p>
+            )}
           </div>
         )}
       </form>

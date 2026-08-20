@@ -9,6 +9,7 @@ import { crearTarea, editarTarea } from "../actions";
 import { crearTareaSchema, type CrearTareaForm } from "../types";
 import type { TareaConAsignados, TareaProyecto, Usuario } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
+import { puedeTrabajarEnProyecto } from "./proyectoTareas";
 import { hoyISO, sumarDiasISO } from "@/lib/utils";
 
 const VENCIMIENTO_PRESETS = [1, 3, 7];
@@ -44,6 +45,9 @@ export function TareaFormPanel({
 }) {
   const [enviando, setEnviando] = useState(false);
   const [tieneRecurrencia, setTieneRecurrencia] = useState(tarea?.recurrencia_cantidad != null);
+  const proyectosDisponibles = proyectos.filter((p) =>
+    puedeTrabajarEnProyecto(miembrosPorProyecto[p.id] ?? [], usuarioActualId, puedeAsignar)
+  );
   const proyectoInicial = proyectoHeredadoId ?? proyectoId ?? tarea?.proyecto_id ?? null;
   const miembrosIniciales = proyectoInicial ? (miembrosPorProyecto[proyectoInicial] ?? []) : null;
   // Auto-asignarse solo si el usuario puede trabajar en ese proyecto.
@@ -157,7 +161,9 @@ export function TareaFormPanel({
               {...register("proyecto_id", { onChange: (e) => alCambiarProyecto(e.target.value) })}
             >
               <option value="">Sin proyecto</option>
-              {proyectos.map((p) => (
+              {/* Un proyecto donde no podés trabajar deja el form sin asignado
+                  posible: elegirlo era un callejón sin salida. */}
+              {proyectosDisponibles.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.nombre}
                 </option>

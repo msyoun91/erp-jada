@@ -14,7 +14,7 @@ import { TareaFormPanel } from "./TareaFormPanel";
 import { HiloFormPanel } from "./HiloFormPanel";
 import { ProyectoFormPanel } from "./ProyectoFormPanel";
 import { MetricasResumen, contarCompletadas } from "./MetricasResumen";
-import { tareasDeProyecto } from "./proyectoTareas";
+import { puedeTrabajarEnProyecto, tareasDeProyecto } from "./proyectoTareas";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
 
 // Panel del proyecto: agregar tarea/hilo directo al proyecto + listado de lo
@@ -67,6 +67,9 @@ export function ProyectoDetailPanel({
   const puedeGestionar =
     gestionarAjenas ||
     (proyecto.creado_por === usuarioActualId && usuarioActualId !== null && idsMiembros.includes(usuarioActualId));
+  // Ofrecer "Agregar hilo/tarea" sin poder trabajar acá abría un form que
+  // siempre muere en la validación de asignados.
+  const puedeTrabajar = puedeTrabajarEnProyecto(idsMiembros, usuarioActualId, puedeAsignar);
 
   async function onDesactivar() {
     const result = await desactivarProyecto(proyecto.id);
@@ -78,14 +81,18 @@ export function ProyectoDetailPanel({
     <RightPanel title={proyecto.nombre} onClose={onClose}>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <div className="flex flex-wrap items-center gap-2 border-b border-border p-[13px] px-5">
-          <button className="btn btn-ghost btn-sm" onClick={() => setCreandoHilo(true)}>
-            <Plus size={14} strokeWidth={1.75} />
-            Agregar hilo
-          </button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setCreandoTarea(true)}>
-            <Plus size={14} strokeWidth={1.75} />
-            Agregar tarea
-          </button>
+          {puedeTrabajar && (
+            <>
+              <button className="btn btn-ghost btn-sm" onClick={() => setCreandoHilo(true)}>
+                <Plus size={14} strokeWidth={1.75} />
+                Agregar hilo
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setCreandoTarea(true)}>
+                <Plus size={14} strokeWidth={1.75} />
+                Agregar tarea
+              </button>
+            </>
+          )}
           {puedeGestionar && (
             <>
               <button className="btn btn-ghost btn-sm" onClick={() => setEditando(true)}>
@@ -192,7 +199,9 @@ export function ProyectoDetailPanel({
         <HiloFormPanel
           usuarios={usuarios}
           proyectos={proyectos}
+          miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
+          puedeAsignar={puedeAsignar}
           proyectoId={proyecto.id}
           onClose={() => setCreandoHilo(false)}
         />

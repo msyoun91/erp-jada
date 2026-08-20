@@ -98,6 +98,8 @@ Lista explícita de membresía: **quién puede recibir tareas del proyecto** (`s
 
 Alta y baja de miembros exigen la función `tareas_proyectos_miembros` (o `tareas_gestionar_ajenas`). Única excepción: la siembra inicial, acotada por `proyecto_tiene_miembros()` — sin ella `tareas_proyectos_crear` no alcanzaría para crear nada, ya que el proyecto exige al menos un miembro. **El SELECT de la tabla no mira esa función**: leer la membresía sigue siendo de miembros y managers (agregarla filtraba los miembros de proyectos que el usuario ni ve — lo detectó el caso 02 de `sql/tests/rls_miembros_asignables.sql`).
 
+El SELECT sí exige que el proyecto siga **activo** (`sql/016`): archivar un proyecto le saca la fila de la lista, pero sus membresías seguían visibles y `getMiembrosPorProyecto` armaba entradas de mapa para proyectos que ya no existen para el usuario. El `EXISTS` directo sobre `tareas_proyectos` no recursa — el lado de vuelta llega a esta tabla por `es_miembro_proyecto` (`SECURITY DEFINER`), así que el ciclo ya está roto.
+
 | columna | tipo | notas |
 |---|---|---|
 | id | uuid PK | |
@@ -235,6 +237,14 @@ Tercer eje, independiente de `tareas_gestionar_ajenas` (autoridad sobre tareas a
 - Trigger `validar_responsable_tarea` — `BEFORE UPDATE OF responsable_id ON tareas WHEN (NEW.responsable_id IS DISTINCT FROM OLD.responsable_id)`: traspasar el responsable a otro sin la función falla con `ERRCODE = 'TA003'`. Va en trigger porque un `WITH CHECK` solo ve la fila nueva y no puede distinguir "cambió el responsable" de "el UPDATE tocó otra columna".
 
 `tareas_gestionar_ajenas` **no** saltea la regla; el backfill de `sql/014` le dio `tareas_asignar` a quien ya la tenía, para no romper equipos en curso.
+
+### El mismo eje sobre hilos (`sql/015`)
+
+`tareas_hilos` no tiene tabla de asignados — el responsable es una columna — así que el eje se aplica en las dos caras de esa columna:
+
+- `tareas_hilos_insert` — `creado_por = auth.uid() AND (responsable_id = auth.uid() OR tiene_permiso('tareas_asignar'))`. **Reemplaza** la rama `tareas_gestionar_ajenas`, igual que `sql/014` hizo con `tareas_insert`.
+- `tareas_hilos_update` — el `WITH CHECK` suma `OR tiene_permiso('tareas_asignar')`. Sin eso el traspaso era imposible incluso con la función: la fila nueva tiene `responsable_id` ajeno y el `WITH CHECK` solo aceptaba `responsable_id = auth.uid()`. En `tareas` el problema no aparece porque ahí el `WITH CHECK` tiene además la rama del asignado activo (`sql/013`). Quién puede **tocar** el hilo lo sigue decidiendo el `USING`; quién puede quedar **a cargo** es del trigger.
+- Trigger `validar_responsable_hilo` — `BEFORE UPDATE OF responsable_id ON tareas_hilos WHEN (NEW.responsable_id IS DISTINCT FROM OLD.responsable_id)`: mismo `ERRCODE = 'TA003'` y mismo motivo que `validar_responsable_tarea`.
 
 ### Función `reactivar_posponer_vencidos()`
 

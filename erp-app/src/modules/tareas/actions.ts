@@ -636,6 +636,13 @@ export async function cerrarHilo(input: CerrarHiloForm) {
 
 export async function desactivarHilo(id: string) {
   const supabase = await createClient();
+  // Las tareas caen con el hilo. Sin esto quedan activas apuntando a un hilo
+  // que las queries ya no traen: la lista las agrupa por hilo y no son
+  // sueltas, así que desaparecen de la UI aunque RLS siga devolviéndolas.
+  // Primero las tareas — si eso falla, el hilo queda intacto y no hay huérfanas.
+  const { error: errorTareas } = await supabase.from("tareas").update({ activo: false }).eq("hilo_id", id);
+  if (errorTareas) return { success: false as const, error: mensajeError(errorTareas) };
+
   const { error } = await supabase.from("tareas_hilos").update({ activo: false }).eq("id", id);
   if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/tareas");

@@ -1,8 +1,9 @@
--- Verificación de las policies de sql/009 y sql/014 con dos usuarios reales.
+-- Verificación de las policies de sql/009, sql/014 y sql/015 con dos usuarios reales.
 -- NO es una migración: todo corre dentro de una transacción que termina en
 -- ROLLBACK — no persiste ningún dato ni cambio de permisos. Volver a correrlo
 -- entero después de tocar tareas_asignados_insert/update, tareas_insert,
--- validar_responsable_tarea o tareas_proyectos_miembros_select. Desde sql/013
+-- tareas_hilos_insert/update, validar_responsable_tarea, validar_responsable_hilo
+-- o tareas_proyectos_miembros_select. Desde sql/013
 -- esas policies usan es_responsable_tarea (sin la rama del creador): acá TESTER
 -- es responsable de las tareas que creó, así que ningún caso cambia por eso.
 --
@@ -199,6 +200,46 @@ BEGIN
       SQLSTATE || ' ' || v_err, SQLSTATE = 'TA003');
   END;
 
+  -- sql/015: mismo eje que el caso 12, del lado del hilo. Lo corta la policy
+  -- tareas_hilos_insert, de ahí 42501.
+  BEGIN
+    INSERT INTO tareas_hilos (proyecto_id, titulo, visibilidad, responsable_id, creado_por)
+    VALUES ('aaaa0000-0000-4000-8000-000000000001', 'Hilo con responsable ajeno', 'publico',
+      '015fa985-fe21-4434-b3c5-7ac78732d765', '48b90421-a639-4637-b361-501fa7e1a1a0');
+    INSERT INTO r VALUES ('19 crear hilo con responsable ajeno sin tareas_asignar', 'RECHAZO', 'paso', false);
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_err = MESSAGE_TEXT;
+    INSERT INTO r VALUES ('19 crear hilo con responsable ajeno sin tareas_asignar', 'RECHAZO',
+      SQLSTATE || ' ' || v_err, SQLSTATE = '42501');
+  END;
+
+  -- sql/015: traspasar el hilo lo corta el trigger, no la policy — TA003.
+  BEGIN
+    UPDATE tareas_hilos SET responsable_id = '015fa985-fe21-4434-b3c5-7ac78732d765' WHERE id = 'bbbb0000-0000-4000-8000-000000000001';
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    INSERT INTO r VALUES ('20 traspasar hilo sin tareas_asignar', 'RECHAZO TA003',
+      v_n::text || ' fila(s) actualizadas', false);
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_err = MESSAGE_TEXT;
+    INSERT INTO r VALUES ('20 traspasar hilo sin tareas_asignar', 'RECHAZO TA003',
+      SQLSTATE || ' ' || v_err, SQLSTATE = 'TA003');
+  END;
+
+  -- Control de que el WITH CHECK nuevo de tareas_hilos_update (sql/015) no se
+  -- llevó puesta la edición normal: tocar el título del hilo propio sin la
+  -- función tiene que seguir pasando.
+  BEGIN
+    UPDATE tareas_hilos SET titulo = 'Hilo en Q (editado)'
+     WHERE id = 'bbbb0000-0000-4000-8000-000000000001';
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    INSERT INTO r VALUES ('20b editar titulo del hilo propio sin tareas_asignar', '1 fila',
+      v_n::text || ' fila(s)', v_n = 1);
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_err = MESSAGE_TEXT;
+    INSERT INTO r VALUES ('20b editar titulo del hilo propio sin tareas_asignar', '1 fila',
+      SQLSTATE || ' ' || v_err, false);
+  END;
+
   PERFORM set_config('request.jwt.claims',
     '{"sub":"015fa985-fe21-4434-b3c5-7ac78732d765","role":"authenticated"}', true);
 
@@ -282,6 +323,29 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     GET STACKED DIAGNOSTICS v_err = MESSAGE_TEXT;
     INSERT INTO r VALUES ('18 traspasar responsable con tareas_asignar', '1 fila',
+      SQLSTATE || ' ' || v_err, false);
+  END;
+
+  -- Espejos de 19 y 20: con la función puesta, ambos pasan.
+  BEGIN
+    INSERT INTO tareas_hilos (proyecto_id, titulo, visibilidad, responsable_id, creado_por)
+    VALUES ('aaaa0000-0000-4000-8000-000000000001', 'Hilo con responsable ajeno', 'publico',
+      '015fa985-fe21-4434-b3c5-7ac78732d765', '48b90421-a639-4637-b361-501fa7e1a1a0');
+    INSERT INTO r VALUES ('21 crear hilo con responsable ajeno con tareas_asignar', 'paso', 'paso', true);
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_err = MESSAGE_TEXT;
+    INSERT INTO r VALUES ('21 crear hilo con responsable ajeno con tareas_asignar', 'paso',
+      SQLSTATE || ' ' || v_err, false);
+  END;
+
+  BEGIN
+    UPDATE tareas_hilos SET responsable_id = '015fa985-fe21-4434-b3c5-7ac78732d765' WHERE id = 'bbbb0000-0000-4000-8000-000000000001';
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    INSERT INTO r VALUES ('22 traspasar hilo con tareas_asignar', '1 fila',
+      v_n::text || ' fila(s)', v_n = 1);
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_err = MESSAGE_TEXT;
+    INSERT INTO r VALUES ('22 traspasar hilo con tareas_asignar', '1 fila',
       SQLSTATE || ' ' || v_err, false);
   END;
 END $$;

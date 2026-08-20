@@ -163,8 +163,12 @@ export function TareasListaView({
 
       {filas.length === 0 ? (
         <div className="empty-state">
-          <p className="t-h3">Sin tareas todavía</p>
-          <p className="t-body-m mt-1">Creá la primera con &quot;Nueva tarea&quot; o &quot;Nuevo hilo&quot;.</p>
+          <p className="t-h3">{texto || asignadoId ? "Sin resultados" : "Sin tareas todavía"}</p>
+          <p className="t-body-m mt-1">
+            {texto || asignadoId
+              ? "Probá con otro término de búsqueda o con otro usuario."
+              : 'Creá la primera con "Nueva tarea" o "Nuevo hilo".'}
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -219,7 +223,9 @@ export function TareasListaView({
         <HiloFormPanel
           usuarios={usuarios}
           proyectos={proyectos}
+          miembrosPorProyecto={miembrosPorProyecto}
           usuarioActualId={usuarioActualId}
+          puedeAsignar={puedeAsignar}
           onClose={() => setCreandoHilo(false)}
         />
       )}
