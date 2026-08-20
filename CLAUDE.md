@@ -181,7 +181,6 @@ erp-app/src/
 | `.claude/guides/GUIDE_DASHBOARD.md` | widgets, dashboard, KPIs |
 | `.claude/guides/GUIDE_SYNC.md` | sincronización erp-app ↔ erp-cliente |
 | `DECISIONES.md` | modificar cualquier módulo existente — leer **solo la sección de ese módulo**, no el archivo entero |
-| `BACKLOG.md` | retomar pendientes o elegir la próxima tarea |
 
 ---
 
