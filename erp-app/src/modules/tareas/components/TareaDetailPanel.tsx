@@ -9,8 +9,10 @@ import {
   Clock,
   ExternalLink,
   GitBranch,
+  ListOrdered,
   Lock,
   Pencil,
+  Plus,
   Repeat,
   Thermometer,
   Unlink,
@@ -39,6 +41,7 @@ import {
   estadoVencimiento,
   temperaturaRango,
 } from "./tareaLabels";
+import type { PasoEnCadena } from "./cadenaPasos";
 
 // Todo lo que se hace y se lee de una tarea: la isla (TareaCard) solo resume.
 // El estado y la temperatura optimistas viven en la isla y bajan por props —
@@ -53,6 +56,7 @@ export function TareaDetailPanel({
   usuarioActualId,
   gestionarAjenas,
   puedeAsignar,
+  cadena,
   estado,
   temperatura,
   onCambiarEstado,
@@ -70,6 +74,8 @@ export function TareaDetailPanel({
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   puedeAsignar: boolean;
+  // Posición en la cadena de pasos, si la tarea es parte de una.
+  cadena?: PasoEnCadena;
   estado: string;
   temperatura: number;
   onCambiarEstado: (nuevo: "pendiente" | "en_progreso" | "cancelada") => void;
@@ -83,7 +89,17 @@ export function TareaDetailPanel({
   const [completando, setCompletando] = useState(false);
   const [editando, setEditando] = useState(false);
   const [mostrandoMoverHilo, setMostrandoMoverHilo] = useState(false);
+  const [agregandoPaso, setAgregandoPaso] = useState(false);
   const [desactivando, setDesactivando] = useState(false);
+
+  // El trigger `validar_paso_previo` (sql/017) rechaza pasar a en_progreso o
+  // completada mientras el paso previo no esté completado. Cancelar sí se
+  // puede: si no, una cadena con un paso trabado no se termina nunca.
+  const bloqueada = cadena?.bloqueada ?? false;
+  const pasoPrevio = cadena && cadena.posicion > 1 ? cadena.cadena[cadena.posicion - 2] : null;
+  // Solo la cola de la cadena acepta un siguiente — la unique parcial de
+  // `paso_anterior_id` no deja bifurcar.
+  const puedeAgregarPaso = tarea.hilo_id !== null && (!cadena || cadena.posicion === cadena.total);
 
   const proyectoEfectivo = tarea.proyecto_id ?? proyectoHeredadoId ?? null;
   const miembros = proyectoEfectivo ? (miembrosPorProyecto[proyectoEfectivo] ?? []) : null;
@@ -143,7 +159,7 @@ export function TareaDetailPanel({
           <div className="flex flex-wrap items-center gap-2 border-b border-border p-[13px] px-5">
             {esAsignado && (
               <>
-                {estado !== "completada" && (
+                {estado !== "completada" && !bloqueada && (
                   <button className="btn btn-primary btn-sm" onClick={() => setCompletando(true)}>
                     Completar
                   </button>
@@ -156,7 +172,7 @@ export function TareaDetailPanel({
                 >
                   {estado === "completada" && <option value="">Completada</option>}
                   <option value="pendiente">Pendiente</option>
-                  <option value="en_progreso">En progreso</option>
+                  {!bloqueada && <option value="en_progreso">En progreso</option>}
                   <option value="cancelada">Cancelada</option>
                 </select>
               </>
@@ -185,11 +201,22 @@ export function TareaDetailPanel({
                             },
                           ]
                         : []),
+                      ...(puedeAgregarPaso
+                        ? [
+                            {
+                              label: "Crear siguiente paso",
+                              icon: <Plus size={14} strokeWidth={1.75} />,
+                              onClick: () => setAgregandoPaso(true),
+                            },
+                          ]
+                        : []),
                       ...(tarea.hilo_id
                         ? [{ label: "Quitar del hilo", icon: <Unlink size={14} strokeWidth={1.75} />, onClick: quitarDeHilo }]
                         : [
                             {
-                              label: "Agregar paso",
+                              // Antes decía "Agregar paso", que ahora significa
+                              // otra cosa: esto convierte la tarea en hilo.
+                              label: "Convertir en hilo",
                               icon: <GitBranch size={14} strokeWidth={1.75} />,
                               onClick: convertirEnHilo,
                             },
@@ -305,6 +332,36 @@ export function TareaDetailPanel({
           </p>
         </div>
 
+        {cadena && (
+          <div className="flex flex-col gap-2 border-b border-border p-[13px] px-5">
+            <p className="t-label flex items-center gap-1.5">
+              <ListOrdered size={14} strokeWidth={1.75} />
+              Paso {cadena.posicion} de {cadena.total}
+            </p>
+            {bloqueada && pasoPrevio && (
+              <p className="t-caption text-warning">Bloqueada hasta completar «{pasoPrevio.titulo}»</p>
+            )}
+            <ol className="flex flex-col gap-1.5">
+              {cadena.cadena.map((p, i) => {
+                const actual = p.id === tarea.id;
+                // El paso actual muestra el estado optimista del panel: la
+                // misma tarea no puede leerse distinto según dónde se la mire.
+                const estadoPaso = actual ? estado : p.estado;
+                return (
+                  <li
+                    key={p.id}
+                    className={`t-caption flex items-center gap-2 ${actual ? "font-semibold text-text-primary" : ""}`}
+                  >
+                    <span className="w-4 shrink-0 tabular-nums">{i + 1}.</span>
+                    <span className="truncate">{p.titulo}</span>
+                    <span className={`badge shrink-0 ${ESTADO_BADGE[estadoPaso]}`}>{ESTADO_LABEL[estadoPaso]}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
+
         <div className="p-[13px] px-5">
           <p className="t-label mb-2">Notas</p>
           <NotasSection tipo="tarea" id={tarea.id} puedeAgregar={esAsignado} notasIniciales={tarea.tareas_notas} />
@@ -334,6 +391,19 @@ export function TareaDetailPanel({
       )}
       {completando && (
         <CompletarModal tareaId={tarea.id} titulo={tarea.titulo} onClose={() => setCompletando(false)} />
+      )}
+      {agregandoPaso && tarea.hilo_id && (
+        <TareaFormPanel
+          usuarios={usuarios}
+          proyectos={proyectos}
+          miembrosPorProyecto={miembrosPorProyecto}
+          usuarioActualId={usuarioActualId}
+          puedeAsignar={puedeAsignar}
+          hiloId={tarea.hilo_id}
+          pasoAnteriorId={tarea.id}
+          proyectoHeredadoId={proyectoHeredadoId}
+          onClose={() => setAgregandoPaso(false)}
+        />
       )}
       {editando && (
         <TareaFormPanel

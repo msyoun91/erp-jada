@@ -4,6 +4,7 @@ import { CalendarClock, History } from "lucide-react";
 import { diasEntreISO, hoyISO } from "@/lib/utils";
 import type { TareaConAsignados } from "../types";
 import { PROXIMA_DIAS } from "./tareaLabels";
+import { esActiva } from "./tareaFiltros";
 
 export function contarCompletadas(tareas: TareaConAsignados[]): number {
   return tareas.filter((t) => t.estado === "completada").length;
@@ -27,7 +28,7 @@ export function MetricasResumen({
   const diasTranscurridos = diasEntreISO(createdAt.slice(0, 10), hoyISO());
 
   const proximaFecha = tareas
-    .filter((t) => (t.estado === "pendiente" || t.estado === "en_progreso") && !t.posponer_hasta)
+    .filter(esActiva)
     .flatMap((t) => (t.fecha_vencimiento ? [t.fecha_vencimiento] : []))
     .sort()[0];
   const diasProxima = proximaFecha ? diasEntreISO(hoyISO(), proximaFecha) : null;

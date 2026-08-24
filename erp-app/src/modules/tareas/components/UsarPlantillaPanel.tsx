@@ -51,7 +51,7 @@ export function UsarPlantillaPanel({
       toast.error(result.error);
       return;
     }
-    toast.success("Tareas agregadas desde la plantilla");
+    toast.success("Pasos agregados desde la plantilla");
     onClose();
   }
 
@@ -65,7 +65,7 @@ export function UsarPlantillaPanel({
             Cancelar
           </button>
           <button type="submit" form="form-usar-plantilla" className="btn btn-primary btn-sm" disabled={enviando}>
-            {enviando ? "Agregando…" : "Agregar tareas"}
+            {enviando ? "Agregando…" : "Agregar pasos"}
           </button>
         </>
       }
@@ -89,6 +89,9 @@ export function UsarPlantillaPanel({
             ))}
           </select>
           {errors.plantilla_id && <p className="input-error-text">{errors.plantilla_id.message}</p>}
+          <p className="t-caption mt-2">
+            Los pasos se crean encadenados: cada uno se habilita al completar el anterior.
+          </p>
         </div>
 
         <AsignadosPicker

@@ -76,6 +76,7 @@ export type Database = {
           nota_siguiente: string | null
           origen_app: string | null
           origen_punto: string | null
+          paso_anterior_id: string | null
           posponer_desde: string | null
           posponer_hasta: string | null
           proyecto_id: string | null
@@ -103,6 +104,7 @@ export type Database = {
           nota_siguiente?: string | null
           origen_app?: string | null
           origen_punto?: string | null
+          paso_anterior_id?: string | null
           posponer_desde?: string | null
           posponer_hasta?: string | null
           proyecto_id?: string | null
@@ -130,6 +132,7 @@ export type Database = {
           nota_siguiente?: string | null
           origen_app?: string | null
           origen_punto?: string | null
+          paso_anterior_id?: string | null
           posponer_desde?: string | null
           posponer_hasta?: string | null
           proyecto_id?: string | null
@@ -156,6 +159,13 @@ export type Database = {
             columns: ["hilo_id"]
             isOneToOne: false
             referencedRelation: "tareas_hilos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_paso_anterior_id_fkey"
+            columns: ["paso_anterior_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
             referencedColumns: ["id"]
           },
           {

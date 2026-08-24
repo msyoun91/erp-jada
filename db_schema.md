@@ -72,7 +72,7 @@ SQL function, `SECURITY DEFINER`, usada en RLS de las 3 tablas y disponible como
 
 ---
 
-## Módulo tareas (`sql/005_tareas.sql` + `sql/006_tareas_hardening.sql` + `sql/007_tareas_reactivar_posponer.sql` + `sql/008_tareas_notas_visibilidad.sql` + `sql/009_tareas_miembros_asignables.sql` + `sql/013_tareas_visibilidad_y_miembros.sql` + `sql/014_tareas_asignar.sql` — corridos en Supabase vía MCP)
+## Módulo tareas (`sql/005_tareas.sql` + `sql/006_tareas_hardening.sql` + `sql/007_tareas_reactivar_posponer.sql` + `sql/008_tareas_notas_visibilidad.sql` + `sql/009_tareas_miembros_asignables.sql` + `sql/013_tareas_visibilidad_y_miembros.sql` + `sql/014_tareas_asignar.sql` + `sql/015_tareas_hilos_responsable.sql` + `sql/016_miembros_proyecto_activo.sql` + `sql/017_tareas_pasos_y_mision.sql` — corridos en Supabase vía MCP)
 
 Reemplaza un intento anterior (rama `tareas-v1`, revertido en `sql/004_rollback_tareas.sql`) — requisitos de negocio cambiaron (proyectos + visibilidad en cascada, multi-asignado, `responsable_id`, `temperatura`). No comparte schema con esa rama.
 
@@ -135,6 +135,7 @@ Unidad mínima de trabajo. `proyecto_id` solo se usa cuando la tarea está suelt
 | id | uuid PK | |
 | hilo_id | uuid FK → tareas_hilos, nullable | |
 | proyecto_id | uuid FK → tareas_proyectos, nullable | solo si hilo_id es null |
+| paso_anterior_id | uuid FK → tareas, nullable | `sql/017` — tarea que debe estar `completada` antes de empezar esta. Inmutable tras el INSERT. Unique parcial `(paso_anterior_id) WHERE activo` (la cadena no bifurca), CHECK `paso_anterior_id IS NULL OR hilo_id IS NOT NULL`, CHECK `paso_anterior_id IS NULL OR recurrencia_cantidad IS NULL` |
 | titulo / descripcion | text | |
 | visibilidad | enum `visibilidad` | default `privado` (`sql/008`, antes `publico`) — solo importa si hilo_id es null y proyecto_id no |
 | estado | enum `estado_tarea` (`pendiente`\|`en_progreso`\|`completada`\|`cancelada`) | default `pendiente` |
@@ -228,6 +229,22 @@ Las policies cubren "cambian los asignados"; estos dos triggers cubren las otras
 
 Ambos SQLSTATE están mapeados a mensaje en `MENSAJES_ERROR` (`lib/utils.ts`). Por eso `editarProyecto` guarda un diff (quitados/agregados) en vez de desactivar todo y reinsertar: lo segundo dispararía `TA001` sobre los miembros que se quedan.
 
+### Pasos de tarea — triggers (`sql/017`)
+
+`paso_anterior_id` es el eje ortogonal al hilo: el hilo **agrupa** tareas paralelas, la cadena de pasos las **ordena**. La cadena vive entera dentro de un hilo, y de ahí sale su visibilidad — `tareas_select` ya cascadea por `puede_ver_hilo`, así que ver los pasos previos no necesitó ninguna regla nueva.
+
+**"Bloqueada" no es un estado guardado**: se deriva de `paso_anterior.estado <> 'completada'`. No hay valor nuevo en `estado_tarea` — meterlo obligaría a sincronizarlo en cada completar/cancelar/reabrir.
+
+- `validar_paso_tarea` — `BEFORE INSERT OR UPDATE OF paso_anterior_id, hilo_id, recurrencia_cantidad ON tareas`. En INSERT valida que el previo exista, esté activo, tenga el mismo `hilo_id` y no sea recurrente. En UPDATE bloquea tres cosas con `TA005`/`TA006`: cambiar `paso_anterior_id` (inmutable), mover de hilo una tarea encadenada, y volver recurrente una tarea que tiene paso siguiente.
+- `validar_paso_previo` — `BEFORE INSERT OR UPDATE OF estado ON tareas`: pasar a `en_progreso`/`completada` con el previo sin completar falla con `TA004`. **`cancelada` queda fuera a propósito** — si un paso se cancela la cadena queda trabada, y cancelar los que siguen tiene que seguir siendo posible o el hilo no cierra nunca.
+- `validar_desactivar_paso` — `CONSTRAINT TRIGGER ... DEFERRABLE INITIALLY DEFERRED AFTER UPDATE ON tareas WHEN (OLD.activo AND NOT NEW.activo)`: desactivar un paso con siguiente activo falla con `TA007`. Diferido y no `BEFORE` porque `deshacerConversionHilo` desactiva la cadena entera en un solo `.in(...)` — un trigger por fila la vería a medio desactivar según el orden de las filas; al COMMIT ya están todas.
+
+**Ciclos: imposibles por construcción, sin validación.** `paso_anterior_id` solo se puede fijar en el INSERT, y una fila nueva nunca es ancestro de otra → el grafo es siempre un bosque.
+
+**Recurrencia y pasos no conviven** (CHECK del lado siguiente + trigger del lado previo). Por eso `generar_recurrencia` no necesitó cambios: nunca dispara sobre una tarea encadenada.
+
+**Escape hatch de una cadena**: desactivar desde la cola. El último paso nunca tiene siguiente activo, así que siempre se puede sacar.
+
 ### Poner a otro en una tarea = función `tareas_asignar` (`sql/014`)
 
 Tercer eje, independiente de `tareas_gestionar_ajenas` (autoridad sobre tareas ajenas) y de la membresía (quién puede trabajar): **quién puede repartir trabajo**. Sin la función, uno se asigna a sí mismo y nada más. Tres piezas, una por cara:
@@ -238,7 +255,7 @@ Tercer eje, independiente de `tareas_gestionar_ajenas` (autoridad sobre tareas a
 
 `tareas_gestionar_ajenas` **no** saltea la regla; el backfill de `sql/014` le dio `tareas_asignar` a quien ya la tenía, para no romper equipos en curso.
 
-### El mismo eje sobre hilos (`sql/015`)
+### El mismo eje sobre hilos (`sql/017`)
 
 `tareas_hilos` no tiene tabla de asignados — el responsable es una columna — así que el eje se aplica en las dos caras de esa columna:
 
@@ -260,6 +277,7 @@ Tercer eje, independiente de `tareas_gestionar_ajenas` (autoridad sobre tareas a
 | tareas_proyectos | vista | — | |
 | tareas_plantillas | vista | — | |
 | tareas_auditoria | vista | — | solo-lectura, se asigna directo a managers |
+| tareas_mision | vista | — | `sql/017` — tarea actual de a una, ordenada por temperatura. Sin función propia: "crear siguiente paso" es crear una tarea, ya gateado por `tareas_lista`. Backfill: la recibió todo el que tenía `tareas_lista` |
 | tareas_gestionar_ajenas | funcion | tareas_lista | completar/cerrar hilo/reasignar tarea **ajena** — acciones sobre lo propio no requieren función |
 | tareas_asignar | funcion | tareas_lista | "Asignar usuarios" (`sql/014`) — poner a otro como asignado o responsable. Sin ella el `AsignadosPicker` muestra solo el resumen y "Reasignar" no aparece en el menú |
 | tareas_proyectos_crear | funcion | tareas_proyectos | |

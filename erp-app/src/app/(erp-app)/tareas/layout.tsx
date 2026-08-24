@@ -3,6 +3,7 @@ import { ModuleTabs } from "@/components/layout/ModuleTabs";
 import {
   puedeVerAuditoria,
   puedeVerLista,
+  puedeVerMision,
   puedeVerPlantillas,
   puedeVerProyectos,
 } from "@/modules/tareas/permissions";
@@ -12,8 +13,9 @@ export default async function TareasLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [lista, proyectos, plantillas, auditoria] = await Promise.all([
+  const [lista, mision, proyectos, plantillas, auditoria] = await Promise.all([
     puedeVerLista(),
+    puedeVerMision(),
     puedeVerProyectos(),
     puedeVerPlantillas(),
     puedeVerAuditoria(),
@@ -21,6 +23,7 @@ export default async function TareasLayout({
 
   const tabs = [
     lista && { codigo: "tareas_lista", label: "Lista", href: "/tareas" },
+    mision && { codigo: "tareas_mision", label: "Misión", href: "/tareas/mision" },
     proyectos && { codigo: "tareas_proyectos", label: "Proyectos", href: "/tareas/proyectos" },
     plantillas && { codigo: "tareas_plantillas", label: "Plantillas", href: "/tareas/plantillas" },
     auditoria && { codigo: "tareas_auditoria", label: "Auditoría", href: "/tareas/auditoria" },

@@ -91,6 +91,11 @@ const recurrenciaCompleta = (d: {
 export const crearTareaSchema = tareaEditableSchema
   .extend({
     hilo_id: uuidOpcional,
+    // Presente = "crear siguiente paso": la tarea nace bloqueada hasta que la
+    // previa esté completada. No aparece en editarTareaSchema porque es
+    // inmutable después del INSERT (sql/017) — esa inmutabilidad es lo que
+    // vuelve imposible un ciclo sin recorrer la cadena.
+    paso_anterior_id: uuidOpcional,
     responsable_id: z.string().uuid(),
     asignados: z.array(z.string().uuid()).min(1, "Debe haber al menos un asignado"),
     modo_completado: z.enum(["manual", "automatico", "hibrido"]).default("manual"),
@@ -100,6 +105,14 @@ export const crearTareaSchema = tareaEditableSchema
   .refine((d) => !(d.hilo_id && d.proyecto_id), {
     message: "Una tarea con hilo no lleva proyecto propio — lo hereda del hilo",
     path: ["proyecto_id"],
+  })
+  .refine((d) => !d.paso_anterior_id || !!d.hilo_id, {
+    message: "Un paso vive dentro de un hilo — de ahí sale su visibilidad",
+    path: ["hilo_id"],
+  })
+  .refine((d) => !(d.paso_anterior_id && d.recurrencia_cantidad), {
+    message: "Un paso de una cadena no puede ser recurrente",
+    path: ["recurrencia_cantidad"],
   })
   .refine(recurrenciaCompleta, {
     message: "Cantidad y unidad de recurrencia van juntas",

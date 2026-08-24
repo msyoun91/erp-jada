@@ -44,6 +44,10 @@ const MENSAJES_ERROR: Record<string, string> = {
   TA001: "Ese miembro tiene tareas activas en el proyecto — reasignalas antes de quitarlo",
   TA002: "Hay asignados que no son miembros del proyecto destino",
   TA003: "No tenés permiso para poner a otro usuario como responsable",
+  TA004: "El paso previo todavía no está completado",
+  TA005: "Esa cadena de pasos no es válida — el paso previo no se puede cambiar ni mezclar con recurrencia",
+  TA006: "No se puede mover de hilo una tarea que es parte de una cadena de pasos",
+  TA007: "Ese paso tiene un paso siguiente activo — desactivá la cadena desde el final",
   email_exists: "Ese email ya está registrado",
   weak_password: "La contraseña es demasiado débil",
 };

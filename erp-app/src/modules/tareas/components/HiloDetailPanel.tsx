@@ -18,6 +18,7 @@ import { DeshacerConversionModal } from "./DeshacerConversionModal";
 import { NotasSection } from "./NotasSection";
 import { MetricasResumen, contarCompletadas } from "./MetricasResumen";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
+import { agruparCadenas, cadenasDePasos } from "./cadenaPasos";
 
 // Contenido que antes vivía inline en HiloCard (expandido) — spec pedida:
 // la vista Lista no muestra tareas/acciones del hilo, solo en este panel.
@@ -56,6 +57,7 @@ export function HiloDetailPanel({
   const [cerrandoManual, setCerrandoManual] = useState(false);
   const [desactivando, setDesactivando] = useState(false);
   const { ordenar, onTemperaturaChange } = useOrdenTemperatura();
+  const cadenas = cadenasDePasos(tareasDelHilo);
 
   // Sin creado_por: crear un hilo no da autoridad sobre él, la da ser su
   // responsable. Mostrar acciones que la RLS después descarta en silencio
@@ -150,7 +152,7 @@ export function HiloDetailPanel({
           <p className="t-caption px-5 py-3">Sin tareas todavía.</p>
         ) : (
           <div className="flex flex-col gap-3 p-[13px] px-5">
-            {ordenar(tareasDelHilo).map((t) => (
+            {agruparCadenas(ordenar(tareasDelHilo), cadenas).map((t) => (
               <TareaCard
                 key={t.id}
                 tarea={t}
@@ -161,6 +163,7 @@ export function HiloDetailPanel({
                 usuarioActualId={usuarioActualId}
                 gestionarAjenas={gestionarAjenas}
                 puedeAsignar={puedeAsignar}
+                cadena={cadenas.get(t.id)}
                 relacionCon={relacionCon}
                 onTemperaturaChange={onTemperaturaChange}
               />

@@ -547,3 +547,75 @@ Sin implementar todavía. Efecto secundario a resolver junto con esto: al editar
 una tarea de un proyecto archivado, el select de `TareaFormPanel` no lista ese
 proyecto (`puedeTrabajarEnProyecto` lo filtra) y el campo aparece vacío sobre un
 valor que sigue seteado.
+
+---
+
+## Módulo tareas — pasos de tarea y vista Misión (`sql/017`)
+
+Pedido: botón "crear siguiente paso" además de "crear tarea", ver los pasos previos al abrir una tarea, y una vista Misión que muestre la tarea actual de a una ordenada por temperatura.
+
+**Pasos ≠ hilo.** El hilo agrupa tareas que corren en paralelo; la cadena de pasos las ordena. Son ejes ortogonales, así que un hilo puede tener tareas sueltas y cadenas al mismo tiempo. Riesgo asumido: dos formas de relacionar tareas en el mismo módulo. Se mitiga en UI — dentro del hilo la cadena se renderiza como cadena (1→2→3), no como filas planas mezcladas con las paralelas.
+
+**Una columna, no una tabla.** `tareas.paso_anterior_id`. La regla es "se puede hacer si se cumple **el** previo" — un solo predecesor, cadena lineal. Una tabla `tareas_dependencias` sería un DAG genérico para un problema que no existe.
+
+**La cadena vive dentro de un hilo** (`CHECK paso_anterior_id IS NULL OR hilo_id IS NOT NULL` + trigger de mismo `hilo_id`). Esta es la decisión que más ahorró: `tareas_select` ya cascadea visibilidad por `puede_ver_hilo`, así que "ver los pasos previos" no necesitó **ninguna** regla de visibilidad nueva. Encadenar tareas sueltas hubiera obligado a una función `SECURITY DEFINER` que devolviera stubs de los pasos invisibles, o a una UI que miente ("Paso 3 de 5" con 2 pasos que no se ven). Costo aceptado: crear un siguiente paso desde una tarea suelta obliga a tener hilo.
+
+**"Bloqueada" es derivado, no un estado.** `paso_anterior.estado <> 'completada'`. Sumarlo a `estado_tarea` obligaba a sincronizarlo en cada completar/cancelar/reabrir — la duplicación de lógica que prohíbe la regla. La barrera de servidor es el trigger `validar_paso_previo` (`TA004`), no el enum.
+
+**`cancelada` no bloquea.** El trigger solo corta el paso a `en_progreso`/`completada`. Si un paso se cancela la cadena queda trabada, y cancelar los que siguen tiene que seguir siendo posible o el hilo no cierra nunca.
+
+**Ciclos: imposibles por construcción, sin validación.** `paso_anterior_id` es inmutable después del INSERT (`TA005`), y una fila nueva nunca puede ser ancestro de otra → el grafo es siempre un bosque. Recorrer la cadena buscando ciclos hubiera sido código para un caso que la inmutabilidad ya cierra.
+
+**Recurrencia + pasos: prohibido de los dos lados** (opción b, elegida por el usuario). CHECK del lado siguiente, trigger del lado previo. Una instancia recurrente nace al completar la anterior; un paso de una cadena no tiene "próxima instancia" que signifique algo. Consecuencia buscada: `generar_recurrencia` no necesitó tocarse, porque nunca dispara sobre una tarea encadenada.
+
+**Desactivar un paso del medio se bloquea, no se relinkea** (`TA007`, mismo criterio que `validar_quitar_miembro`). Va `AFTER` y no `BEFORE`: `deshacerConversionHilo` desactiva la cadena entera en un solo `.in(...)`, y un `BEFORE` por fila la vería a medio desactivar según el orden. Los `AFTER ROW` corren al final de la sentencia, con todas las filas ya actualizadas — verificado: desactivar la cadena completa pasa, desactivar solo el del medio falla. El `DEFERRABLE INITIALLY DEFERRED` **no** es lo que resuelve ese caso (el `AFTER` solo ya alcanza); suma desmantelar una cadena en varias sentencias dentro de una transacción, que hoy ningún caller hace. Escape hatch de una cadena: desactivar desde la cola.
+
+**Mover de hilo una tarea encadenada se bloquea** (`TA006`). Sin eso el invariante "misma cadena, mismo hilo" se rompe por la puerta de al lado. Efecto colateral aceptado: `deshacerConversionHilo` falla sobre un hilo cuya primera tarea es parte de una cadena — semánticamente correcto (un hilo multi-paso no se puede colapsar en una tarea suelta) y falla antes de tocar nada.
+
+**Los triggers son `SECURITY DEFINER` aunque no llamen a `tiene_permiso()`.** Un guard que la RLS puede dejar ciego no es un guard: si el `EXISTS` del paso siguiente se filtrara por RLS, un usuario que no lo ve rompería la cadena sin que el trigger se entere.
+
+**Misión es vista, sin función propia.** "Crear siguiente paso" es crear una tarea, y crear tareas ya lo gatea `tareas_lista` — una función nueva sería un permiso más fino sin necesidad demostrada. La vista no lee nada que la Lista no lea: reusa `getListaTareas()` (que ya corre `resolver_pospuestos`) y filtra en memoria a mis asignadas, `pendiente`/`en_progreso`, no bloqueadas; el orden sale de `useOrdenTemperatura`, sin query nueva. Backfill del submódulo a todo el que tenía `tareas_lista`, por el mismo motivo.
+
+## Módulo tareas — UI de pasos y vista Misión
+
+**"Agregar paso" pasó a llamarse "Convertir en hilo".** El menú de una tarea suelta ya usaba ese label para `convertirTareaEnHilo`, que no agrega ningún paso: convierte la tarea en hilo para poder sumarle tareas. Con pasos reales en el módulo el nombre viejo pasaba a mentir. Tercera colisión del mismo término — las plantillas también llaman "pasos" a sus items (`plantillaItemSchema`), que son títulos ordenados sin bloqueo; eso quedó sin tocar.
+
+**"Crear siguiente paso" aparece solo en la cola de la cadena** (`posicion === total`) y solo si la tarea tiene hilo. La unique parcial de `paso_anterior_id` no deja bifurcar, así que ofrecerlo en el medio sería ofrecer un `23505`.
+
+**Bloqueada esconde "Completar" y la opción "En progreso", no "Cancelada".** Espejo exacto de `validar_paso_previo`, que solo corta esas dos transiciones. Cancelar tiene que seguir disponible o una cadena con un paso trabado no se cierra nunca. El panel además dice cuál es el paso que la traba, en vez de dejar el botón gris sin explicación.
+
+**El panel muestra la cadena entera, no solo la previa.** El pedido era "ver tareas previas"; mostrar la lista completa con la posición marcada cuesta lo mismo y contesta también "cuánto falta". El estado del paso actual sale del estado optimista del panel y no de la fila del server — misma regla que `tareaLabels.ts`: la misma tarea no puede leerse distinto según dónde se la mire.
+
+**`agruparCadenas()` mantiene contigua cada cadena dentro del hilo.** El orden por temperatura se respeta para elegir dónde arranca la cadena, pero sus miembros salen juntos y en orden. Sin eso una cadena se lee como tareas sueltas y pierde lo único que la distingue de un hilo.
+
+**`esDeUsuario` y `esActiva` salieron a `tareaFiltros.ts`.** El primero vivía en `TareasListaView`, el segundo inline en `MetricasResumen`; Misión necesitaba los dos. Regla de "si existe en más de un lugar, se extrae" — no se duplicó para la vista nueva.
+
+**Misión renderiza `TareaCard`, no una tarjeta propia.** Toda la superficie de acciones (completar, estado, temperatura, panel de detalle) ya vive ahí; una tarjeta "de misión" sería una segunda cara de la misma tarea para mantener sincronizada. Lo propio de la vista es el recorte y la navegación de a uno.
+
+**El índice de Misión se recorta, no se resetea.** Al completar la tarea actual la cola se acorta y la misma posición pasa a mostrar la siguiente — que es lo que se espera de una vista "de a una". Un `useEffect` que resetee a 0 mandaría al usuario de vuelta al principio en cada completada.
+
+**Misión esconde las tareas de hilos pospuestos**, no solo las tareas pospuestas: si el hilo espera, su contenido no es "lo que toca ahora". El estado vacío dice cuántas tareas están esperando un paso previo — si no, una Misión vacía con trabajo bloqueado se lee como una vista rota.
+
+## Módulo tareas — las plantillas generan una cadena
+
+`agregarTareasDesdePlantilla` encadena los items en vez de crear N tareas sueltas: `paso_anterior_id` de cada uno apunta al anterior. `tareas_plantillas_items.orden` siempre significó "primero esto, después aquello" — hasta acá era una sugerencia visual sin consecuencia.
+
+**Sin flag ni checkbox: la plantilla siempre encadena.** Una columna `encadenada` en `tareas_plantillas`, o un check en "usar plantilla", sería una opción que nadie pidió todavía. Si aparece un caso real de plantilla-checklist (items sin orden entre sí), se agrega ahí.
+
+**Un solo INSERT multi-fila, no N inserts.** Depende de que el `BEFORE ROW` de `validar_paso_tarea` en la fila 2 vea la fila 1 de la **misma sentencia** — Postgres procesa las tuplas de a una y el trigger la encuentra. Verificado contra la base y fijado como caso 14 de `sql/tests/pasos_tarea.sql`, porque si esa semántica cambiara la plantilla tendría que insertar de a una fila (N round trips por PostgREST).
+
+**No se puede armar la cadena en dos pasos** (insert plano + update de los `paso_anterior_id`): `paso_anterior_id` es inmutable en UPDATE, y aflojarlo a "NULL → valor" reabriría los ciclos (A sin previo, B con previo A, después A con previo B).
+
+Copy: "Agregar tareas" pasó a "Agregar pasos", y tanto `UsarPlantillaPanel` como `PlantillaFormPanel` dicen que cada paso se habilita al completar el anterior — encadenar sin avisar convierte una plantilla conocida en algo que se comporta distinto.
+
+## Módulo tareas — verificación con RLS real (`sql/tests/pasos_tarea.sql`, bloque 2)
+
+Los 14 casos de triggers corrían como `postgres`, que bypasea RLS: probaban los triggers pero no que un usuario común pudiera usar la feature. El bloque 2 cambia a rol `authenticated` con TESTER (sin `tareas_gestionar_ajenas` ni `tareas_asignar`) y verifica lo que faltaba. 5/5.
+
+**La premisa del diseño quedó probada, no supuesta:** TESTER, asignado **solo** al paso 2, ve el paso 1 y la cadena entera — `puede_ver_hilo` cascadea. De eso dependía la decisión de no escribir ninguna regla de visibilidad nueva para los pasos. Si el caso 01 dejara de pasar, "ver las tareas previas" necesitaría una función `SECURITY DEFINER` que devuelva stubs y habría que replantear `sql/017`.
+
+**Los casos de rechazo miran `ROW_COUNT`, no solo la excepción.** Un UPDATE denegado por RLS afecta 0 filas y no tira error: sin ese chequeo, "RLS se lo comió en silencio" se leería como "el trigger funcionó". Mismo problema que ya había motivado alinear los UPDATE con los SELECT en `sql/013`.
+
+Un usuario común puede crear el siguiente paso y asignárselo sin ninguna función extra — confirma que `tareas_lista` alcanza y que no hacía falta un submódulo nuevo para "crear siguiente paso".
+
+**Pendiente — plantilla-checklist (items sin orden entre sí).** Desde `sql/017` toda plantilla genera una cadena: cada item espera al anterior (`agregarTareasDesdePlantilla`). Decidido no agregar flag ni checkbox hasta que exista una plantilla real cuyos items sean paralelos — ahí el camino barato es una columna `encadenada boolean` en `tareas_plantillas`, no una opción en "usar plantilla" (la plantilla sabe cómo es, quien la usa no debería tener que decidirlo cada vez).

@@ -16,6 +16,7 @@ import {
   iniciales,
   temperaturaRango,
 } from "./tareaLabels";
+import type { PasoEnCadena } from "./cadenaPasos";
 
 // Umbrales fijos — spec pide "configurable" pero no hay un segundo caso real
 // todavía que justifique una UI de settings para esto (simplicidad antes que
@@ -38,6 +39,7 @@ export function TareaCard({
   usuarioActualId,
   gestionarAjenas,
   puedeAsignar,
+  cadena,
   relacionCon,
   onTemperaturaChange,
   onConvertida,
@@ -52,6 +54,8 @@ export function TareaCard({
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   puedeAsignar: boolean;
+  // Posición en la cadena de pasos, si la tarea es parte de una.
+  cadena?: PasoEnCadena;
   // Usuario cuya relación con la tarea se explica en el badge — el del filtro
   // de la vista, no necesariamente el actual.
   relacionCon?: string | null;
@@ -96,6 +100,12 @@ export function TareaCard({
         badges={
           <>
             <span className={`badge shrink-0 ${ESTADO_BADGE[estado]}`}>{ESTADO_LABEL[estado]}</span>
+            {cadena && (
+              <span className="badge badge-neutral shrink-0" title={`Paso ${cadena.posicion} de ${cadena.total}`}>
+                Paso {cadena.posicion}/{cadena.total}
+              </span>
+            )}
+            {cadena?.bloqueada && activa && <span className="badge badge-warning shrink-0">Bloqueada</span>}
             {relacion && (
               <span className="badge badge-neutral shrink-0" title={`${relacion}: ${relacionNombre}`}>
                 {relacion}
@@ -179,6 +189,7 @@ export function TareaCard({
           puedeAsignar={puedeAsignar}
           estado={estado}
           temperatura={temperatura}
+          cadena={cadena}
           onCambiarEstado={cambiarEstado}
           onTemperaturaInput={cambiarTemperatura}
           onTemperaturaCommit={commitTemperatura}

@@ -503,13 +503,25 @@ export async function agregarTareasDesdePlantilla(input: AgregarDesdePlantillaFo
     return { success: false as const, error: "La plantilla no tiene pasos" };
   }
 
-  // ids generados en el server: mismo motivo que crearTarea.
-  const nuevas = items.map((item) => ({
-    id: crypto.randomUUID(),
+  // ids generados en el server: mismo motivo que crearTarea. Se generan antes
+  // del insert porque cada paso necesita el id del anterior.
+  const ids = items.map(() => crypto.randomUUID());
+
+  // Los items de la plantilla ya vienen ordenados por `orden`, y ese orden
+  // siempre significó "primero esto, después aquello" — hasta ahora era solo
+  // una sugerencia visual. La plantilla genera una cadena: cada paso se
+  // habilita al completar el anterior.
+  //
+  // Va en un solo INSERT multi-fila: el trigger `validar_paso_tarea` corre
+  // BEFORE por fila y ve las filas anteriores de la misma sentencia, así que
+  // no hace falta insertar de a uno (verificado contra la base).
+  const nuevas = items.map((item, i) => ({
+    id: ids[i],
     titulo: item.titulo,
     hilo_id,
     responsable_id,
     creado_por,
+    paso_anterior_id: i === 0 ? null : ids[i - 1],
   }));
 
   const { error: errorInsertar } = await supabase.from("tareas").insert(nuevas);

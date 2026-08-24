@@ -95,6 +95,9 @@ export function PlantillaFormPanel({
 
         <div>
           <label className="t-label mb-1 block">Pasos</label>
+          <p className="t-caption mb-2">
+            El orden manda: al usar la plantilla, cada paso se habilita al completar el anterior.
+          </p>
           <div className="flex flex-col gap-2">
             {fields.map((field, i) => (
               <div key={field.id} className="flex items-center gap-2">

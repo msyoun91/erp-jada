@@ -26,6 +26,7 @@ export function TareaFormPanel({
   puedeAsignar,
   hiloId,
   proyectoId,
+  pasoAnteriorId,
   proyectoHeredadoId,
   tarea,
   onClose,
@@ -37,6 +38,9 @@ export function TareaFormPanel({
   puedeAsignar: boolean;
   hiloId?: string;
   proyectoId?: string;
+  // Presente = "crear siguiente paso": la tarea nueva arranca bloqueada hasta
+  // que esta se complete. Exige `hiloId` — un paso vive dentro de un hilo.
+  pasoAnteriorId?: string;
   // Proyecto del hilo al que se agrega la tarea: la tarea no lo guarda (lo
   // hereda), pero limita igual quiénes pueden recibirla.
   proyectoHeredadoId?: string | null;
@@ -48,6 +52,10 @@ export function TareaFormPanel({
   const proyectosDisponibles = proyectos.filter((p) =>
     puedeTrabajarEnProyecto(miembrosPorProyecto[p.id] ?? [], usuarioActualId, puedeAsignar)
   );
+  // Un paso de una cadena no puede ser recurrente (sql/017): no tiene sentido
+  // una "próxima instancia" de algo que espera a otro paso. Se esconde el
+  // bloque en vez de mostrarlo y que la base lo rechace.
+  const esPaso = Boolean(pasoAnteriorId ?? tarea?.paso_anterior_id);
   const proyectoInicial = proyectoHeredadoId ?? proyectoId ?? tarea?.proyecto_id ?? null;
   const miembrosIniciales = proyectoInicial ? (miembrosPorProyecto[proyectoInicial] ?? []) : null;
   // Auto-asignarse solo si el usuario puede trabajar en ese proyecto.
@@ -70,6 +78,7 @@ export function TareaFormPanel({
           descripcion: tarea.descripcion ?? undefined,
           hilo_id: tarea.hilo_id,
           proyecto_id: tarea.proyecto_id,
+          paso_anterior_id: tarea.paso_anterior_id,
           visibilidad: tarea.visibilidad,
           responsable_id: tarea.responsable_id,
           asignados: tarea.tareas_asignados.filter((a) => a.activo).map((a) => a.usuario_id),
@@ -81,6 +90,7 @@ export function TareaFormPanel({
       : {
           hilo_id: hiloId ?? null,
           proyecto_id: proyectoId ?? null,
+          paso_anterior_id: pasoAnteriorId ?? null,
           // Lo que vive en un proyecto es del equipo del proyecto: con proyecto
           // el default es público. Sigue siendo un default, no una regla.
           visibilidad: proyectoInicial ? "publico" : "privado",
@@ -118,13 +128,13 @@ export function TareaFormPanel({
       toast.error(result.error);
       return;
     }
-    toast.success(tarea ? "Tarea actualizada" : "Tarea creada");
+    toast.success(tarea ? "Tarea actualizada" : pasoAnteriorId ? "Paso creado" : "Tarea creada");
     onClose();
   }
 
   return (
     <RightPanel
-      title={tarea ? "Editar tarea" : "Nueva tarea"}
+      title={tarea ? "Editar tarea" : pasoAnteriorId ? "Nuevo paso" : "Nueva tarea"}
       onClose={onClose}
       footer={
         <>
@@ -132,7 +142,7 @@ export function TareaFormPanel({
             Cancelar
           </button>
           <button type="submit" form="form-tarea" className="btn btn-primary btn-sm" disabled={enviando}>
-            {enviando ? "Guardando…" : tarea ? "Guardar" : "Crear tarea"}
+            {enviando ? "Guardando…" : tarea ? "Guardar" : pasoAnteriorId ? "Crear paso" : "Crear tarea"}
           </button>
         </>
       }
@@ -215,6 +225,7 @@ export function TareaFormPanel({
           <input type="range" min={1} max={100} className="w-full accent-brand-700" {...register("temperatura")} />
         </div>
 
+        {!esPaso && (
         <div>
           <label className="flex cursor-pointer items-center gap-2">
             <input
@@ -232,8 +243,9 @@ export function TareaFormPanel({
             <span className="t-body-m">Se repite</span>
           </label>
         </div>
+        )}
 
-        {tieneRecurrencia && (
+        {!esPaso && tieneRecurrencia && (
           <div className="flex gap-3">
             <div className="flex-1">
               <label className="t-label mb-1 block">Cada</label>
