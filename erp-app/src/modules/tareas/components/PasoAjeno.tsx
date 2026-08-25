@@ -32,8 +32,7 @@ export function PasoAjeno({
   puedeAsignar: boolean;
 }) {
   const [detalleAbierto, setDetalleAbierto] = useState(false);
-  const { estado, temperatura, cambiarEstado, cambiarTemperatura, commitTemperatura } =
-    useTareaOptimista(tarea);
+  const { estado, temperatura, cambiarEstado, cambiarTemperatura } = useTareaOptimista(tarea);
 
   const completada = estado === "completada";
   const responsable = usuarios.find((u) => u.id === tarea.responsable_id)?.nombre ?? null;
@@ -85,8 +84,7 @@ export function PasoAjeno({
           estado={estado}
           temperatura={temperatura}
           onCambiarEstado={cambiarEstado}
-          onTemperaturaInput={cambiarTemperatura}
-          onTemperaturaCommit={commitTemperatura}
+          onTemperaturaChange={cambiarTemperatura}
           onClose={() => setDetalleAbierto(false)}
         />
       )}

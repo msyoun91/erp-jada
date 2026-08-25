@@ -10,6 +10,7 @@ import { crearTareaSchema, type CrearTareaForm } from "../types";
 import type { TareaConAsignados, TareaProyecto, Usuario } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
 import { puedeTrabajarEnProyecto } from "./proyectoTareas";
+import { TEMPERATURA_NIVELES, temperaturaRango } from "./tareaLabels";
 import { hoyISO, sumarDiasISO } from "@/lib/utils";
 
 const VENCIMIENTO_PRESETS = [1, 3, 7];
@@ -101,6 +102,9 @@ export function TareaFormPanel({
   });
 
   const proyectoElegido = useWatch({ control, name: "proyecto_id" });
+  // `z.coerce.number()` deja el input del schema como `unknown` — el form
+  // guardaba el string del range. Se normaliza acá, no en el schema.
+  const temperatura = Number(useWatch({ control, name: "temperatura" })) || 50;
   const proyectoEfectivo = proyectoHeredadoId ?? proyectoElegido ?? null;
   const miembros = proyectoEfectivo ? (miembrosPorProyecto[proyectoEfectivo] ?? []) : null;
 
@@ -222,7 +226,22 @@ export function TareaFormPanel({
 
         <div>
           <label className="t-label mb-1 block">Temperatura</label>
-          <input type="range" min={1} max={100} className="w-full accent-brand-700" {...register("temperatura")} />
+          <div className="flex gap-1" role="group" aria-label="Temperatura">
+            {TEMPERATURA_NIVELES.map((nivel) => {
+              const activo = temperaturaRango(temperatura).label === nivel.label;
+              return (
+                <button
+                  key={nivel.label}
+                  type="button"
+                  aria-pressed={activo}
+                  className={`btn btn-sm ${activo ? "btn-primary" : "btn-secondary"}`}
+                  onClick={() => setValue("temperatura", nivel.valor, { shouldDirty: true })}
+                >
+                  {nivel.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {!esPaso && (

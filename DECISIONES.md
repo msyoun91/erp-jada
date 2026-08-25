@@ -628,7 +628,7 @@ Todo en `MisionView.tsx`. No se tocó `TareaCard` ni ninguna query: la vista sig
 
 **Columna centrada `max-w-2xl`.** Una isla sola estirada a los 1280px del `<main>` no se lee como foco, se lee como una lista de un elemento. Misión es la única vista del módulo con un solo item en pantalla, así que el ancho lo pone ella y no el layout.
 
-**Flechas ← → recorren la cola.** Se ignoran si hay un `dialog[open]` (el panel de detalle y los modales viven en el top layer, fuera de este árbol, y el slider de temperatura ya usa las flechas) o si el foco está en un `INPUT`/`SELECT`/`TEXTAREA`. El clamp del índice usa `total`, no el `posicion` del render: apretar de más al final dejaría el índice colgado lejos y habría que apretar N veces para volver.
+**Flechas ← → recorren la cola.** Se ignoran si hay un `dialog[open]` (el panel de detalle y los modales viven en el top layer, fuera de este árbol) o si el foco está en un `INPUT`/`SELECT`/`TEXTAREA`. El clamp del índice usa `total`, no el `posicion` del render: apretar de más al final dejaría el índice colgado lejos y habría que apretar N veces para volver.
 
 **Barra de progreso = posición en la cola, no trabajo hecho.** No hay dato de "cuánto del total completé" sin leer `tareas_eventos`; la barra dice dónde estoy parado en la cola de hoy, que es lo mismo que el contador de texto y evita que el contador sea el único ancla visual.
 
@@ -641,3 +641,25 @@ Todo en `MisionView.tsx`. No se tocó `TareaCard` ni ninguna query: la vista sig
 **Las bloqueadas pasan de contador a lista desplegable (`Bloqueadas`, local al archivo).** Antes el estado vacío decía "N tareas esperan un paso previo" sin decir cuáles ni a qué esperan — el dato está en `PasoEnCadena.cadena[posicion - 2]`, que ya se calcula. El mismo bloque aparece con cola llena y con cola vacía; es el único caso del módulo donde saber qué te frena importa más que la tarea que tenés adelante.
 
 **El estado vacío pasa a `.empty-state`.** Era el único del módulo con markup propio (texto centrado suelto). Ícono según el caso: `CircleCheck` verde si de verdad no queda nada, `Lock` ámbar si lo que queda está todo bloqueado — no son la misma noticia.
+
+---
+
+## Módulo tareas — la temperatura pasa de slider a tres niveles (sin SQL)
+
+Reemplaza el mecanismo descrito en "Orden por temperatura: solo UI, sin columna nueva" y en "Temperatura con rango". El criterio de orden no cambia; cambia cómo se elige el valor.
+
+**Se elige entre Alta / Media / Baja, no entre 100 valores.** El número nunca significó nada para el usuario — `temperaturaRango()` ya existía justo porque "🌡 61" no se lee, y la UI mostraba `Alta (61)`. Un control de 100 posiciones para elegir entre tres etiquetas era precisión inventada. Se va el `(61)` de la isla y del panel.
+
+**La columna sigue siendo `int` 1-100 con su CHECK; cada nivel escribe el centro de su tercio (85 / 50 / 20).** Sin migración, sin tocar `actualizarTemperatura`, y los valores arbitrarios que ya están en la base siguen cayendo en el nivel que les toca. Por eso el botón activo se deriva de `temperaturaRango(temperatura).label`, **no** de `temperatura === nivel.valor`: un 61 histórico tiene que iluminar "Media", no ninguno. Se descartó migrar a enum: obligaba a SQL, backfill y a tocar la action, a cambio de nada que el usuario vea.
+
+**`TEMPERATURA_NIVELES` vive en `tareaLabels.ts`, al lado de `temperaturaRango`.** Los tres niveles y sus umbrales son la misma regla mirada desde los dos lados (escribir / leer); separarlos deja abierta la puerta a que un botón escriba un valor que caiga en otro rango.
+
+**Desempate explícito en `useOrdenTemperatura.comparar`: vence antes → más vieja.** Con 100 valores el orden era total de hecho; con tres niveles hay empates grandes y el desempate caía en el orden del query (`created_at` desc, la más nueva arriba). Lo que vence antes manda dentro del nivel, y entre las que no vencen gana la más vieja. Es más honesto que "la puse en 91 en vez de 90".
+
+**`cambiarTemperatura` y `commitTemperatura` se funden en una sola función async.** Un clic *es* el cambio completo: no existe el "mientras se arrastra" que obligaba a separar input de commit y a colgar `onMouseUp`/`onTouchEnd`/`onKeyUp`/`onBlur` del `<input type="range">` (un range no tiene evento "listo"). El panel recibe `onTemperaturaChange` en vez de las dos props.
+
+**El rollback ahora también revierte el override de orden.** `useTareaOptimista` reseteaba `temperatura` cuando el server rechazaba, pero no avisaba a `useOrdenTemperatura`: la fila quedaba ordenada por un valor que no existía. Se arregló al fundir las funciones, no antes, porque con el slider el commit fallaba después de N onChange y no había un "valor anterior" único.
+
+**Costo aceptado: se pierde el ranking fino dentro de un nivel.** Nadie lo estaba usando como ranking; el desempate por vencimiento cubre el caso real ("de estas tres altas, ¿cuál primero?").
+
+**En Misión las flechas ← → dejan de competir con nada.** Los botones no consumen flechas y solo existen dentro del panel (un `dialog`), que ya estaba excluido.

@@ -61,8 +61,8 @@ export function MisionView({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-      // Con un panel o modal abierto las flechas son suyas (slider de
-      // temperatura, campos del form) — vive en el top layer, no en este árbol.
+      // Con un panel o modal abierto las flechas son suyas (campos del form) —
+      // vive en el top layer, no en este árbol.
       if (document.querySelector("dialog[open]")) return;
       const destino = e.target as HTMLElement | null;
       if (destino && ["INPUT", "SELECT", "TEXTAREA"].includes(destino.tagName)) return;

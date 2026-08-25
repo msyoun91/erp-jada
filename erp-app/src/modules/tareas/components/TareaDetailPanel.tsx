@@ -38,6 +38,7 @@ import {
   ESTADO_BADGE,
   ESTADO_LABEL,
   RECURRENCIA_LABEL,
+  TEMPERATURA_NIVELES,
   estadoVencimiento,
   temperaturaRango,
 } from "./tareaLabels";
@@ -60,8 +61,7 @@ export function TareaDetailPanel({
   estado,
   temperatura,
   onCambiarEstado,
-  onTemperaturaInput,
-  onTemperaturaCommit,
+  onTemperaturaChange,
   onConvertida,
   onClose,
 }: {
@@ -79,8 +79,7 @@ export function TareaDetailPanel({
   estado: string;
   temperatura: number;
   onCambiarEstado: (nuevo: "pendiente" | "en_progreso" | "cancelada") => void;
-  onTemperaturaInput: (valor: number) => void;
-  onTemperaturaCommit: () => void;
+  onTemperaturaChange: (valor: number) => void;
   onConvertida?: (hiloId: string) => void;
   onClose: () => void;
 }) {
@@ -304,24 +303,27 @@ export function TareaDetailPanel({
           </div>
 
           {activa && esAsignado && (
-            <div className="flex items-center gap-2">
-              <span className={`t-caption flex items-center gap-1 ${temperaturaRango(temperatura).clase}`}>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="t-caption flex items-center gap-1">
                 <Thermometer size={13} strokeWidth={1.75} />
-                {temperaturaRango(temperatura).label} ({temperatura})
+                Temperatura
               </span>
-              <input
-                type="range"
-                min={1}
-                max={100}
-                value={temperatura}
-                onChange={(e) => onTemperaturaInput(Number(e.target.value))}
-                onMouseUp={onTemperaturaCommit}
-                onTouchEnd={onTemperaturaCommit}
-                onKeyUp={onTemperaturaCommit}
-                onBlur={onTemperaturaCommit}
-                className="w-32 accent-brand-700"
-                aria-label="Temperatura"
-              />
+              <div className="flex gap-1" role="group" aria-label="Temperatura">
+                {TEMPERATURA_NIVELES.map((nivel) => {
+                  const activo = temperaturaRango(temperatura).label === nivel.label;
+                  return (
+                    <button
+                      key={nivel.label}
+                      type="button"
+                      aria-pressed={activo}
+                      className={`btn btn-sm ${activo ? "btn-primary" : "btn-secondary"}`}
+                      onClick={() => onTemperaturaChange(nivel.valor)}
+                    >
+                      {nivel.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 

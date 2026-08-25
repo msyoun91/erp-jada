@@ -39,19 +39,21 @@ export function useTareaOptimista(
     }
   }
 
-  function cambiarTemperatura(valor: number) {
+  // Un clic es el cambio completo — no hay "mientras se arrastra", así que no
+  // hay commit aparte. El rollback devuelve también el override de orden: sin
+  // eso la fila quedaría ordenada por un valor que el server rechazó.
+  async function cambiarTemperatura(valor: number) {
+    const anterior = temperatura;
+    if (valor === anterior) return;
     setTemperatura(valor);
     onTemperaturaChange?.(tarea.id, valor);
-  }
-
-  async function commitTemperatura() {
-    if (temperatura === tarea.temperatura) return;
-    const result = await actualizarTemperatura(tarea.id, temperatura);
+    const result = await actualizarTemperatura(tarea.id, valor);
     if (!result.success) {
-      setTemperatura(tarea.temperatura);
+      setTemperatura(anterior);
+      onTemperaturaChange?.(tarea.id, anterior);
       toast.error(result.error);
     }
   }
 
-  return { estado, temperatura, cambiarEstado, cambiarTemperatura, commitTemperatura };
+  return { estado, temperatura, cambiarEstado, cambiarTemperatura };
 }

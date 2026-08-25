@@ -28,7 +28,7 @@ const ANTIGUEDAD_ROJO_DIAS = 30;
 // panel derecho con todo el detalle y las acciones. El estado y la temperatura
 // optimistas viven acá y no en el panel porque la isla los sigue mostrando
 // cuando el panel está cerrado, y el orden por temperatura de la vista se
-// refresca mientras se arrastra el slider.
+// refresca apenas se elige el nivel, sin esperar al server.
 export function TareaCard({
   tarea,
   usuarios,
@@ -63,8 +63,10 @@ export function TareaCard({
   onConvertida?: (hiloId: string) => void;
 }) {
   const [detalleAbierto, setDetalleAbierto] = useState(false);
-  const { estado, temperatura, cambiarEstado, cambiarTemperatura, commitTemperatura } =
-    useTareaOptimista(tarea, onTemperaturaChange);
+  const { estado, temperatura, cambiarEstado, cambiarTemperatura } = useTareaOptimista(
+    tarea,
+    onTemperaturaChange,
+  );
 
   const asignadosActivos = tarea.tareas_asignados.filter((a) => a.activo);
 
@@ -129,7 +131,7 @@ export function TareaCard({
             {activa && (
               <span className={`flex items-center gap-1 ${temperaturaRango(temperatura).clase}`}>
                 <Thermometer size={13} strokeWidth={1.75} />
-                {temperaturaRango(temperatura).label} ({temperatura})
+                {temperaturaRango(temperatura).label}
               </span>
             )}
             {tarea.visibilidad === "privado" && tarea.hilo_id === null && (
@@ -191,8 +193,7 @@ export function TareaCard({
           temperatura={temperatura}
           cadena={cadena}
           onCambiarEstado={cambiarEstado}
-          onTemperaturaInput={cambiarTemperatura}
-          onTemperaturaCommit={commitTemperatura}
+          onTemperaturaChange={cambiarTemperatura}
           onConvertida={onConvertida}
           onClose={() => setDetalleAbierto(false)}
         />

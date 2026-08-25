@@ -139,7 +139,7 @@ Unidad mínima de trabajo. `proyecto_id` solo se usa cuando la tarea está suelt
 | titulo / descripcion | text | |
 | visibilidad | enum `visibilidad` | default `privado` (`sql/008`, antes `publico`) — solo importa si hilo_id es null y proyecto_id no |
 | estado | enum `estado_tarea` (`pendiente`\|`en_progreso`\|`completada`\|`cancelada`) | default `pendiente` |
-| temperatura | int | default 50, CHECK 1-100 — orden personal en UI, cualquier asignado la mueve |
+| temperatura | int | default 50, CHECK 1-100 — orden personal en UI, cualquier asignado la mueve. La UI escribe solo 85/50/20 (Alta/Media/Baja); el rango sigue siendo 1-100 para no migrar los valores viejos |
 | responsable_id | uuid FK → usuarios | dueño — default = creador. Gatea "forzar completado" (modo híbrido) y aparece en auditoría |
 | creado_por | uuid FK → usuarios | |
 | fecha_vencimiento | date | nullable |

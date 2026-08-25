@@ -20,13 +20,23 @@ export const ESTADO_BADGE: Record<string, string> = {
 
 export const RECURRENCIA_LABEL: Record<string, string> = { dia: "día(s)", mes: "mes(es)" };
 
-// "🌡 61" no significa nada para el usuario: el número queda como ajuste fino y
-// el rango es lo que se lee. Umbrales en tercios.
+// "🌡 61" no significa nada para el usuario: el rango es lo único que se lee.
+// Umbrales en tercios.
 export function temperaturaRango(t: number) {
   if (t >= 67) return { label: "Alta", clase: "text-error" };
   if (t >= 34) return { label: "Media", clase: "text-warning" };
   return { label: "Baja", clase: "" };
 }
+
+// Se elige entre tres niveles, no entre 100. La columna sigue siendo int 1-100
+// y cada nivel escribe el centro de su tercio: sin migración, y los valores
+// arbitrarios que ya existen siguen leyéndose en el nivel que les toca. El
+// nivel activo se deriva de `temperaturaRango`, no de igualdad con `valor`.
+export const TEMPERATURA_NIVELES = [
+  { valor: 85, label: "Alta" },
+  { valor: 50, label: "Media" },
+  { valor: 20, label: "Baja" },
+] as const;
 
 export function iniciales(nombre: string) {
   const parts = nombre.trim().split(" ");
