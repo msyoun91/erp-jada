@@ -619,3 +619,25 @@ Los 14 casos de triggers corrían como `postgres`, que bypasea RLS: probaban los
 Un usuario común puede crear el siguiente paso y asignárselo sin ninguna función extra — confirma que `tareas_lista` alcanza y que no hacía falta un submódulo nuevo para "crear siguiente paso".
 
 **Pendiente — plantilla-checklist (items sin orden entre sí).** Desde `sql/017` toda plantilla genera una cadena: cada item espera al anterior (`agregarTareasDesdePlantilla`). Decidido no agregar flag ni checkbox hasta que exista una plantilla real cuyos items sean paralelos — ahí el camino barato es una columna `encadenada boolean` en `tareas_plantillas`, no una opción en "usar plantilla" (la plantilla sabe cómo es, quien la usa no debería tener que decidirlo cada vez).
+
+---
+
+## Módulo tareas — retoques de UI de Misión
+
+Todo en `MisionView.tsx`. No se tocó `TareaCard` ni ninguna query: la vista sigue siendo recorte + navegación sobre lo que ya lee la Lista.
+
+**Columna centrada `max-w-2xl`.** Una isla sola estirada a los 1280px del `<main>` no se lee como foco, se lee como una lista de un elemento. Misión es la única vista del módulo con un solo item en pantalla, así que el ancho lo pone ella y no el layout.
+
+**Flechas ← → recorren la cola.** Se ignoran si hay un `dialog[open]` (el panel de detalle y los modales viven en el top layer, fuera de este árbol, y el slider de temperatura ya usa las flechas) o si el foco está en un `INPUT`/`SELECT`/`TEXTAREA`. El clamp del índice usa `total`, no el `posicion` del render: apretar de más al final dejaría el índice colgado lejos y habría que apretar N veces para volver.
+
+**Barra de progreso = posición en la cola, no trabajo hecho.** No hay dato de "cuánto del total completé" sin leer `tareas_eventos`; la barra dice dónde estoy parado en la cola de hoy, que es lo mismo que el contador de texto y evita que el contador sea el único ancla visual.
+
+**Línea de contexto (proyecto · hilo) arriba de la tarjeta.** Ni la isla ni su meta lo muestran — no es duplicación, es dato que en la Lista aporta el agrupamiento y acá no existe. El proyecto sale del hilo cuando la tarea tiene hilo (`CHECK (hilo_id IS NULL OR proyecto_id IS NULL)`: la tarea con hilo no guarda `proyecto_id`).
+
+**La descripción se muestra en la vista, no solo en el panel.** Es la única excepción a "Misión renderiza `TareaCard` y nada más" y es deliberada: texto plano de solo lectura, sin estado ni acciones, así que no hay una segunda cara que sincronizar (el motivo real de aquella decisión). Una vista de a una que obliga a abrir un panel para leer qué hay que hacer no es una vista de a una.
+
+**"Sigue: <título>" debajo de la tarjeta.** Una tarjeta sola no comunica que hay una cola detrás; el contador lo dice en número y esto en contenido.
+
+**Las bloqueadas pasan de contador a lista desplegable (`Bloqueadas`, local al archivo).** Antes el estado vacío decía "N tareas esperan un paso previo" sin decir cuáles ni a qué esperan — el dato está en `PasoEnCadena.cadena[posicion - 2]`, que ya se calcula. El mismo bloque aparece con cola llena y con cola vacía; es el único caso del módulo donde saber qué te frena importa más que la tarea que tenés adelante.
+
+**El estado vacío pasa a `.empty-state`.** Era el único del módulo con markup propio (texto centrado suelto). Ícono según el caso: `CircleCheck` verde si de verdad no queda nada, `Lock` ámbar si lo que queda está todo bloqueado — no son la misma noticia.
