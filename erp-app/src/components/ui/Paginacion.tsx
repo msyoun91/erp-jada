@@ -20,6 +20,12 @@ export function usePaginado<T>(items: T[]) {
   };
 }
 
+// Las etiquetas son sustantivo + adjetivo en plural ("tareas completadas"), así
+// que el singular se arma sacando la s final de cada palabra.
+function singular(etiqueta: string) {
+  return etiqueta.replace(/s\b/g, "");
+}
+
 export function Paginacion({
   pagina,
   setPagina,
@@ -36,7 +42,7 @@ export function Paginacion({
   return (
     <div className="mb-2 flex items-center justify-between gap-3">
       <p className="t-caption">
-        {total} {etiqueta}
+        {total} {total === 1 ? singular(etiqueta) : etiqueta}
       </p>
 
       {totalPaginas > 1 && (

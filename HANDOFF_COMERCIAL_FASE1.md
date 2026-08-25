@@ -140,10 +140,26 @@ El prospecto solo elige una obra ya cargada.
 
 ## 6. Pendiente conocido (no bloquea el cierre de Fase 1)
 
-- **Probar con datos reales.** Lo verificado es tipos, lint, build y las policies
-  tal como quedaron escritas. Nadie cargó todavía una obra con dos empresas, un
-  referente con comisión y un segundo usuario sin `comercial_comision` para ver
-  que el `%` no aparece. Ese es el primer paso de la próxima sesión.
+- **Probado con datos reales (25/8/2026).** Permisos asignados: Admin 10/10,
+  Tester 9/10 (sin `comercial_comision`). Cargado a mano: 2 empresas, 2 personas,
+  1 obra con las 2 empresas (una con dos roles), 2 personas relacionadas, una de
+  ellas referente con 3,5% y 1 prospecto. Verificado en la UI: array de roles,
+  `empresa_principal` derivada por prioridad (la obra pasó a mostrar la
+  desarrolladora al agregarla), aviso blando de duplicados, unique de CUIT
+  (23505 → mensaje mapeado) y referente único (la UI deshabilita la marca y
+  explica por qué). Verificado contra la base, simulando cada usuario con
+  `set local role authenticated` + `request.jwt.claims`: Tester no ve ninguna
+  fila de `comercial_comisiones` (Admin ve 1); Tester editando la relación vía
+  `guardar_obra_persona` sin comisión **no borra** la comisión ajena; Tester
+  intentando fijar un porcentaje recibe 42501; sin `comercial_gestionar_ajenos`
+  ve 0 prospectos ajenos; desactivar la obra cae en cascada sobre prospecto,
+  relaciones y comisión; CM002/CM003 bloquean desactivar empresa o persona con
+  obras activas. Todo lo destructivo corrió dentro de transacciones con
+  `rollback` — la base quedó como estaba.
+  **Falta**: mirar la ficha con la sesión de Tester abierta en el browser. Los
+  tres lugares donde se dibuja el `%` (`ObraRelaciones`, `ProspectosView`,
+  `RelacionPersonaPanel`) están guardados por `verComision && comision`, así que
+  no queda ningún `Comisión —` vacío; lo único pendiente es verlo a ojo.
 - **`SUPABASE_ACCESS_TOKEN` no está en el entorno.** `npx supabase gen types` falla
   y **escribe su error en el archivo de tipos** si se redirige la salida con `>`.
   Hasta que el token esté, regenerar tipos vía MCP o editar a mano.
