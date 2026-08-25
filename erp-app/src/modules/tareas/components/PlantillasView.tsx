@@ -26,6 +26,7 @@ export function PlantillasView({
   async function onDesactivar(plantilla: TareaPlantilla) {
     const result = await desactivarPlantilla(plantilla.id);
     if (!result.success) toast.error(result.error);
+    else toast.success("Plantilla desactivada");
   }
 
   const q = texto.trim().toLowerCase();
@@ -62,7 +63,7 @@ export function PlantillasView({
                 <div className="flex items-center gap-2">
                   <div className="min-w-0 flex-1">
                     <button
-                      className="t-body-m block max-w-full truncate text-left font-medium text-text-primary hover:underline"
+                      className="tap-target t-body-m block max-w-full truncate text-left font-medium text-text-primary hover:underline"
                       onClick={() => setEditando(p)}
                       title="Modificar plantilla"
                     >

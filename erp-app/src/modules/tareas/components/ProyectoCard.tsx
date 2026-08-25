@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Users } from "lucide-react";
 import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
 import { Isla } from "./Isla";
-import { MetricasResumen, contarCompletadas } from "./MetricasResumen";
+import { MetricasResumen, contarTerminadas } from "./MetricasResumen";
 import { ProyectoDetailPanel } from "./ProyectoDetailPanel";
 import { tareasDeProyecto } from "./proyectoTareas";
 
@@ -38,7 +38,7 @@ export function ProyectoCard({
   const [detalleAbierto, setDetalleAbierto] = useState(false);
 
   const tareasDelProyecto = tareasDeProyecto(proyecto.id, hilos, tareas);
-  const completadas = contarCompletadas(tareasDelProyecto);
+  const terminadas = contarTerminadas(tareasDelProyecto);
   const miembros = miembrosPorProyecto[proyecto.id]?.length ?? 0;
 
   return (
@@ -52,7 +52,7 @@ export function ProyectoCard({
               {proyecto.visibilidad === "privado" ? "Privado" : "Público"}
             </span>
             <span className="t-caption shrink-0 whitespace-nowrap">
-              {completadas}/{tareasDelProyecto.length} completadas
+              {terminadas}/{tareasDelProyecto.length} terminadas
             </span>
           </>
         }

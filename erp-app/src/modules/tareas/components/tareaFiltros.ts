@@ -16,3 +16,10 @@ export function esDeUsuario(t: TareaConAsignados, usuarioId: string) {
 export function esActiva(t: TareaConAsignados) {
   return (t.estado === "pendiente" || t.estado === "en_progreso") && !t.posponer_hasta;
 }
+
+// "Acá ya no hay nada que hacer": completada o cancelada. Una cancelada no
+// deja trabajo pendiente, así que cuenta como terminada para el cierre del
+// hilo y para el contador de la isla — antes cada uno usaba su definición.
+export function esTerminada(t: TareaConAsignados) {
+  return t.estado === "completada" || t.estado === "cancelada";
+}

@@ -3,11 +3,11 @@
 import { CalendarClock, History } from "lucide-react";
 import { diasEntreISO, hoyISO } from "@/lib/utils";
 import type { TareaConAsignados } from "../types";
-import { PROXIMA_DIAS } from "./tareaLabels";
-import { esActiva } from "./tareaFiltros";
+import { PROXIMA_DIAS, textoAntiguedad } from "./tareaLabels";
+import { esActiva, esTerminada } from "./tareaFiltros";
 
-export function contarCompletadas(tareas: TareaConAsignados[]): number {
-  return tareas.filter((t) => t.estado === "completada").length;
+export function contarTerminadas(tareas: TareaConAsignados[]): number {
+  return tareas.filter(esTerminada).length;
 }
 
 function plural(dias: number): string {
@@ -37,7 +37,7 @@ export function MetricasResumen({
     <>
       <span className="flex items-center gap-1">
         <History size={13} strokeWidth={1.75} />
-        Hace {diasTranscurridos} {plural(diasTranscurridos)}
+        Creado {textoAntiguedad(diasTranscurridos)}
       </span>
       {diasProxima === null ? (
         <span className="flex items-center gap-1">

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Plus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { crearPlantilla, editarPlantilla } from "../actions";
 import { crearPlantillaSchema, type CrearPlantillaForm } from "../types";
@@ -26,7 +26,7 @@ export function PlantillaFormPanel({
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CrearPlantillaForm>({
     resolver: zodResolver(crearPlantillaSchema),
     defaultValues: plantilla
@@ -37,7 +37,7 @@ export function PlantillaFormPanel({
         }
       : { items: [{ titulo: "", orden: 0 }] },
   });
-  const { fields, append, remove } = useFieldArray({ control, name: "items" });
+  const { fields, append, remove, move } = useFieldArray({ control, name: "items" });
 
   async function onSubmit(data: CrearPlantillaForm) {
     // El orden se toma de la posición en el form, no de un campo editable.
@@ -60,6 +60,7 @@ export function PlantillaFormPanel({
     <RightPanel
       title={plantilla ? "Editar plantilla" : "Nueva plantilla"}
       onClose={onClose}
+      hayCambios={isDirty}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -77,8 +78,12 @@ export function PlantillaFormPanel({
         className="flex flex-col gap-4 overflow-y-auto px-5 py-4"
       >
         <div>
-          <label className="t-label mb-1 block">Nombre</label>
-          <input className={`input ${errors.nombre ? "input-error" : ""}`} {...register("nombre")} />
+          <label className="t-label t-label-req mb-1 block">Nombre</label>
+          <input
+            aria-required
+            className={`input ${errors.nombre ? "input-error" : ""}`}
+            {...register("nombre")}
+          />
           {errors.nombre && <p className="input-error-text">{errors.nombre.message}</p>}
         </div>
 
@@ -94,7 +99,7 @@ export function PlantillaFormPanel({
         )}
 
         <div>
-          <label className="t-label mb-1 block">Pasos</label>
+          <label className="t-label t-label-req mb-1 block">Pasos</label>
           <p className="t-caption mb-2">
             El orden manda: al usar la plantilla, cada paso se habilita al completar el anterior.
           </p>
@@ -102,14 +107,37 @@ export function PlantillaFormPanel({
             {fields.map((field, i) => (
               <div key={field.id} className="flex items-center gap-2">
                 <input
+                  aria-required
                   className={`input ${errors.items?.[i]?.titulo ? "input-error" : ""}`}
                   {...register(`items.${i}.titulo` as const)}
                 />
+                {/* El orden encadena los pasos (cada uno espera al anterior):
+                    sin mover no quedaba forma de corregirlo salvo retipear
+                    todos los títulos de ahí para abajo. */}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm shrink-0"
+                  onClick={() => move(i, i - 1)}
+                  disabled={i === 0}
+                  aria-label="Subir paso"
+                >
+                  <ChevronUp size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm shrink-0"
+                  onClick={() => move(i, i + 1)}
+                  disabled={i === fields.length - 1}
+                  aria-label="Bajar paso"
+                >
+                  <ChevronDown size={14} />
+                </button>
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm shrink-0"
                   onClick={() => remove(i)}
                   disabled={fields.length === 1}
+                  aria-label="Quitar paso"
                 >
                   <X size={14} />
                 </button>

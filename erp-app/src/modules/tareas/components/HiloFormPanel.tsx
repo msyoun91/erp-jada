@@ -46,7 +46,7 @@ export function HiloFormPanel({
     handleSubmit,
     setValue,
     control,
-    formState: { errors, dirtyFields },
+    formState: { errors, dirtyFields, isDirty },
   } = useForm<CrearHiloForm>({
     resolver: zodResolver(crearHiloSchema),
     defaultValues: hilo
@@ -105,6 +105,7 @@ export function HiloFormPanel({
       title={hilo ? "Modificar hilo" : "Nuevo hilo"}
       subtitle={hilo?.titulo}
       onClose={onClose}
+      hayCambios={isDirty}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -122,8 +123,12 @@ export function HiloFormPanel({
         className="flex flex-col gap-4 overflow-y-auto px-5 py-4"
       >
         <div>
-          <label className="t-label mb-1 block">Título</label>
-          <input className={`input ${errors.titulo ? "input-error" : ""}`} {...register("titulo")} />
+          <label className="t-label t-label-req mb-1 block">Título</label>
+          <input
+            aria-required
+            className={`input ${errors.titulo ? "input-error" : ""}`}
+            {...register("titulo")}
+          />
           {errors.titulo && <p className="input-error-text">{errors.titulo.message}</p>}
         </div>
 
@@ -161,10 +166,11 @@ export function HiloFormPanel({
 
         {!hilo && (
           <div>
-            <label className="t-label mb-1 block">Responsable</label>
+            <label className="t-label t-label-req mb-1 block">Responsable</label>
             {puedeAsignar ? (
               <>
                 <select
+                  aria-required
                   className={`input ${errors.responsable_id ? "input-error" : ""}`}
                   {...register("responsable_id")}
                 >

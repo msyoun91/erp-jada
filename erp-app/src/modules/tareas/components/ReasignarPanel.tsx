@@ -26,7 +26,11 @@ export function ReasignarPanel({
   onClose: () => void;
 }) {
   const [enviando, setEnviando] = useState(false);
-  const { handleSubmit, control } = useForm<ReasignarTareaForm>({
+  const {
+    handleSubmit,
+    control,
+    formState: { isDirty },
+  } = useForm<ReasignarTareaForm>({
     resolver: zodResolver(reasignarTareaSchema),
     defaultValues: {
       tarea_id: tareaId,
@@ -52,6 +56,7 @@ export function ReasignarPanel({
     <RightPanel
       title="Reasignar tarea"
       onClose={onClose}
+      hayCambios={isDirty}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>

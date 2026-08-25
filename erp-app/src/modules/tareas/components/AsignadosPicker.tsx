@@ -58,7 +58,7 @@ export function AsignadosPicker<T extends { asignados: string[]; responsable_id:
 
   return (
     <div>
-      <label className="t-label mb-1 block">Asignados</label>
+      <label className="t-label t-label-req mb-1 block">Asignados</label>
       <div className="max-h-40 overflow-y-auto rounded-md border-[1.5px] border-border-strong">
         {elegibles.length === 0 && (
           <p className="t-caption px-3 py-2">Solo los miembros del proyecto pueden recibir tareas.</p>
@@ -66,7 +66,7 @@ export function AsignadosPicker<T extends { asignados: string[]; responsable_id:
         {elegibles.map((u) => (
           <label
             key={u.id}
-            className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-bg-subtle"
+            className="tap-target flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-bg-subtle"
           >
             <input
               type="checkbox"
@@ -82,8 +82,9 @@ export function AsignadosPicker<T extends { asignados: string[]; responsable_id:
         <p className="input-error-text">{asignadosField.fieldState.error.message}</p>
       )}
 
-      <label className="t-label mb-1 mt-3 block">Responsable</label>
+      <label className="t-label t-label-req mb-1 mt-3 block">Responsable</label>
       <select
+        aria-required
         className={`input ${responsableField.fieldState.error ? "input-error" : ""}`}
         value={responsableId}
         onChange={(e) => responsableField.field.onChange(e.target.value)}

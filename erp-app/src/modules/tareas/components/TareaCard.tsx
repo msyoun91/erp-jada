@@ -15,6 +15,7 @@ import {
   estadoVencimiento,
   iniciales,
   temperaturaRango,
+  textoAntiguedad,
 } from "./tareaLabels";
 import type { PasoEnCadena } from "./cadenaPasos";
 
@@ -125,7 +126,7 @@ export function TareaCard({
             ) : (
               <span className={`flex items-center gap-1 ${antiguedadClase}`}>
                 <CalendarClock size={13} strokeWidth={1.75} />
-                Creada hace {diasAntiguedad} {diasAntiguedad === 1 ? "día" : "días"}
+                Creada {textoAntiguedad(diasAntiguedad ?? 0)}
               </span>
             )}
             {activa && (

@@ -6,13 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { AlertTriangle } from "lucide-react";
 import { deshacerConversionHilo } from "../actions";
 import type { TareaConAsignados } from "../types";
-
-const ESTADO_LABEL: Record<string, string> = {
-  pendiente: "Pendiente",
-  en_progreso: "En progreso",
-  completada: "Completada",
-  cancelada: "Cancelada",
-};
+import { ESTADO_LABEL } from "./tareaLabels";
 
 export function DeshacerConversionModal({
   hiloId,

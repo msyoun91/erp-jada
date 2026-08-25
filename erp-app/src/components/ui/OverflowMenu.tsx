@@ -75,7 +75,7 @@ export function OverflowMenu({
             <button
               key={i}
               type="button"
-              className={`flex w-full items-center gap-2 px-3 py-2 text-left t-body-m hover:bg-bg-subtle ${
+              className={`tap-target flex w-full items-center gap-2 px-3 py-2 text-left t-body-m hover:bg-bg-subtle ${
                 item.destructive ? "text-error" : "text-text-primary"
               }`}
               onClick={() => {

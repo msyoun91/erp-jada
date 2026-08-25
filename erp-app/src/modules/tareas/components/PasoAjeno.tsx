@@ -7,6 +7,7 @@ import { diasEntreISO, hoyISO } from "@/lib/utils";
 import { useTareaOptimista } from "../useTareaOptimista";
 import { TareaDetailPanel } from "./TareaDetailPanel";
 import { ESTADO_LABEL } from "./tareaLabels";
+import type { PasoEnCadena } from "./cadenaPasos";
 
 // Un paso del hilo que no es del usuario: se ve para saber si lo que necesito
 // ya está hecho, no para trabajarlo. Deliberadamente NO usa Isla — la
@@ -21,6 +22,7 @@ export function PasoAjeno({
   usuarioActualId,
   gestionarAjenas,
   puedeAsignar,
+  cadena,
 }: {
   tarea: TareaConAsignados;
   usuarios: Usuario[];
@@ -30,6 +32,8 @@ export function PasoAjeno({
   usuarioActualId: string | null;
   gestionarAjenas: boolean;
   puedeAsignar: boolean;
+  // Posición en la cadena de pasos, si la tarea es parte de una.
+  cadena?: PasoEnCadena;
 }) {
   const [detalleAbierto, setDetalleAbierto] = useState(false);
   const { estado, temperatura, cambiarEstado, cambiarTemperatura } = useTareaOptimista(tarea);
@@ -46,7 +50,7 @@ export function PasoAjeno({
   return (
     <>
       <button
-        className="t-caption flex w-full items-center gap-2 px-5 py-2 text-left text-text-tertiary hover:bg-bg-subtle"
+        className="tap-target t-caption flex w-full items-center gap-2 px-5 py-2 text-left text-text-tertiary hover:bg-bg-subtle"
         onClick={() => setDetalleAbierto(true)}
       >
         {completada ? (
@@ -81,6 +85,7 @@ export function PasoAjeno({
           usuarioActualId={usuarioActualId}
           gestionarAjenas={gestionarAjenas}
           puedeAsignar={puedeAsignar}
+          cadena={cadena}
           estado={estado}
           temperatura={temperatura}
           onCambiarEstado={cambiarEstado}

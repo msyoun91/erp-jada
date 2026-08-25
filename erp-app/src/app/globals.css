@@ -133,6 +133,11 @@
   .t-label { @apply font-body text-label uppercase text-text-tertiary; }
   .t-caption { @apply font-body text-caption text-text-tertiary; }
 
+  /* Campo obligatorio marcado antes de intentar guardar (GUIDE_DESIGN), no
+     después del primer error. El asterisco es decorativo: la semántica la
+     lleva `aria-required` en el control. */
+  .t-label-req::after { content: " *"; @apply text-error; }
+
   .btn { @apply inline-flex items-center gap-[7px] whitespace-nowrap rounded-md border font-body text-sm font-medium px-5 py-[9px] transition-colors; }
   .btn-sm { @apply px-[15px] py-[7px] text-[13px] rounded-sm; }
   .btn-lg { @apply px-7 py-[13px]; }
@@ -161,12 +166,23 @@
 
   .empty-state { @apply bg-bg-surface border border-dashed border-border-strong rounded-lg p-[60px] text-center text-text-tertiary; }
 
+  /* Botón de solo ícono (cerrar panel/modal). El media query de 44px ya lo
+     nombraba, pero la clase no existía: los botones se quedaban en el tamaño
+     del ícono. */
+  .icon-btn { @apply inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md border border-transparent transition-colors; }
+  .icon-btn:hover { @apply bg-bg-subtle; }
+
   .nav-item { @apply flex items-center gap-[9px] rounded-sm px-[10px] py-2 text-[15px] font-medium text-text-tertiary cursor-pointer; }
   .nav-item:hover { @apply bg-bg-subtle text-text-secondary; }
   .nav-item-active { @apply bg-brand-50 text-brand-700; }
 
   @media (max-width: 767px) {
     .btn, .input, .nav-item, .icon-btn { min-height: 44px; }
+    .icon-btn { min-width: 44px; }
+    /* Lo tocable que no es un botón del sistema: filas clickeables, toggles
+       inline, items de menú. El look no cambia en desktop — solo crece el
+       área de toque abajo de 768px. */
+    .tap-target { min-height: 44px; }
     /* t-caption carga la info clave de cada fila (fecha, temperatura,
        asignados): 11px es ilegible en un celular. */
     .t-caption { font-size: 13px; }

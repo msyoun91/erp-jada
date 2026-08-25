@@ -32,7 +32,7 @@ export function UsarPlantillaPanel({
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<AgregarDesdePlantillaForm>({
     resolver: zodResolver(agregarDesdePlantillaSchema),
     defaultValues: {
@@ -59,6 +59,7 @@ export function UsarPlantillaPanel({
     <RightPanel
       title="Usar plantilla"
       onClose={onClose}
+      hayCambios={isDirty}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -76,8 +77,9 @@ export function UsarPlantillaPanel({
         className="flex flex-col gap-4 overflow-y-auto px-5 py-4"
       >
         <div>
-          <label className="t-label mb-1 block">Plantilla</label>
+          <label className="t-label t-label-req mb-1 block">Plantilla</label>
           <select
+            aria-required
             className={`input ${errors.plantilla_id ? "input-error" : ""}`}
             {...register("plantilla_id")}
           >

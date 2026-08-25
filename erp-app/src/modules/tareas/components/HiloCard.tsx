@@ -10,7 +10,9 @@ import { CerrarHiloModal } from "./CerrarHiloModal";
 import { Isla } from "./Isla";
 import { PasoAjeno } from "./PasoAjeno";
 import { TareaCard } from "./TareaCard";
-import { MetricasResumen, contarCompletadas } from "./MetricasResumen";
+import { MetricasResumen, contarTerminadas } from "./MetricasResumen";
+import { cadenasDePasos } from "./cadenaPasos";
+import { esTerminada } from "./tareaFiltros";
 
 function calcSig(tareas: TareaConAsignados[]) {
   return tareas
@@ -73,17 +75,24 @@ export function HiloCard({
   // se quiere cerrar — se dispara solo en la transición (no en cada render)
   // comparando contra la última "firma" de estados vista, mismo patrón que
   // TareaCard usa para reconciliar estado optimista sin useEffect(setState).
+  // Cerrar el hilo es del dueño: ofrecérselo a cualquiera que tenga la card
+  // montada era un modal cuya acción la RLS después rechaza.
+  const puedeGestionar = gestionarAjenas || hilo.responsable_id === usuarioActualId;
+
   const sigActual = calcSig(tareasDelHilo);
   const [sigBase, setSigBase] = useState(sigActual);
   const [mostrarCierreAuto, setMostrarCierreAuto] = useState(false);
   if (sigActual !== sigBase) {
     setSigBase(sigActual);
-    const todasCompletas =
-      tareasDelHilo.length > 0 && tareasDelHilo.every((t) => t.estado === "completada" || t.estado === "cancelada");
-    if (todasCompletas && hilo.estado === "abierto") setMostrarCierreAuto(true);
+    const todasTerminadas = tareasDelHilo.length > 0 && tareasDelHilo.every(esTerminada);
+    if (todasTerminadas && hilo.estado === "abierto" && puedeGestionar) setMostrarCierreAuto(true);
   }
 
-  const completadas = contarCompletadas(tareasDelHilo);
+  const terminadas = contarTerminadas(tareasDelHilo);
+  // Los pasos de la Lista se leen igual que en Misión y en el panel del hilo:
+  // sin esto, la misma tarea mostraba su posición en la cadena en un lado y no
+  // en el otro.
+  const cadenas = cadenasDePasos(tareasDelHilo);
 
   // created_at asc = orden de los pasos: no hay columna `orden` y
   // agregarTareasDesdePlantilla inserta en el orden de la plantilla.
@@ -107,7 +116,7 @@ export function HiloCard({
             <span className="t-caption shrink-0 whitespace-nowrap">
               {relacionCon &&
                 `${propias.length === 0 ? "Sin pasos asignados" : `${propias.length} ${propias.length === 1 ? "tuyo" : "tuyos"}`} · `}
-              {completadas}/{tareasDelHilo.length} completados
+              {terminadas}/{tareasDelHilo.length} terminados
             </span>
           </>
         }
@@ -134,7 +143,7 @@ export function HiloCard({
             <MetricasResumen createdAt={hilo.created_at} tareas={tareasDelHilo} />
             {hayAjenos && (
               <button
-                className="flex items-center gap-1 font-semibold text-brand-700"
+                className="tap-target flex items-center gap-1 font-semibold text-brand-700"
                 onClick={() => setExpandido(!expandido)}
               >
                 {expandido ? (
@@ -167,12 +176,14 @@ export function HiloCard({
                   usuarioActualId={usuarioActualId}
                   gestionarAjenas={gestionarAjenas}
                   puedeAsignar={puedeAsignar}
+                  cadena={cadenas.get(t.id)}
                   relacionCon={relacionCon}
                   onTemperaturaChange={onTemperaturaChange}
                 />
               ) : (
                 <PasoAjeno
                   key={t.id}
+                  cadena={cadenas.get(t.id)}
                   tarea={t}
                   usuarios={usuarios}
                   proyectos={proyectos}

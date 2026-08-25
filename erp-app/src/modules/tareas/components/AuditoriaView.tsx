@@ -5,11 +5,7 @@ import { ListTodo } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { formatFecha, formatFechaHora } from "@/lib/utils";
 import type { EventoAuditoria, TareaPendiente, Usuario } from "../types";
-
-const ESTADO_LABEL: Record<string, string> = {
-  pendiente: "Pendiente",
-  en_progreso: "En progreso",
-};
+import { ESTADO_LABEL } from "./tareaLabels";
 
 export function AuditoriaView({
   eventos,

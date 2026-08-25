@@ -38,6 +38,13 @@ export const TEMPERATURA_NIVELES = [
   { valor: 20, label: "Baja" },
 ] as const;
 
+// "Creada hace 0 días" es la fecha de hoy dicha mal, y "hace 1 días" no
+// concuerda. Un solo texto para la isla, el panel y el resumen del hilo.
+export function textoAntiguedad(dias: number) {
+  if (dias === 0) return "hoy";
+  return `hace ${dias} ${dias === 1 ? "día" : "días"}`;
+}
+
 export function iniciales(nombre: string) {
   const parts = nombre.trim().split(" ");
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();

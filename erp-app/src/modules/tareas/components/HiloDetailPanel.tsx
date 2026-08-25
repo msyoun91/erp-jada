@@ -16,7 +16,7 @@ import { UsarPlantillaPanel } from "./UsarPlantillaPanel";
 import { CerrarHiloModal } from "./CerrarHiloModal";
 import { DeshacerConversionModal } from "./DeshacerConversionModal";
 import { NotasSection } from "./NotasSection";
-import { MetricasResumen, contarCompletadas } from "./MetricasResumen";
+import { MetricasResumen, contarTerminadas } from "./MetricasResumen";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
 import { agruparCadenas, cadenasDePasos } from "./cadenaPasos";
 
@@ -68,12 +68,16 @@ export function HiloDetailPanel({
   // de los miembros de ese proyecto.
   const miembros = proyecto ? (miembrosPorProyecto[proyecto.id] ?? []) : null;
   const responsable = usuarios.find((u) => u.id === hilo.responsable_id)?.nombre ?? null;
-  const completadas = contarCompletadas(tareasDelHilo);
+  const terminadas = contarTerminadas(tareasDelHilo);
 
   async function onDesactivar() {
     const result = await desactivarHilo(hilo.id);
-    if (!result.success) toast.error(result.error);
-    else onClose();
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Hilo desactivado");
+    onClose();
   }
 
   return (
@@ -142,14 +146,16 @@ export function HiloDetailPanel({
               </span>
             )}
             <span>
-              {completadas}/{tareasDelHilo.length} completadas
+              {terminadas}/{tareasDelHilo.length} terminadas
             </span>
             <MetricasResumen createdAt={hilo.created_at} tareas={tareasDelHilo} />
           </div>
         </div>
 
         {tareasDelHilo.length === 0 ? (
-          <p className="t-caption px-5 py-3">Sin tareas todavía.</p>
+          <p className="t-caption px-5 py-3">
+            Sin tareas todavía — agregá la primera con «Agregar tarea».
+          </p>
         ) : (
           <div className="flex flex-col gap-3 p-[13px] px-5">
             {agruparCadenas(ordenar(tareasDelHilo), cadenas).map((t) => (

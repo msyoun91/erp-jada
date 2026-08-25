@@ -35,7 +35,7 @@ export function ProyectoFormPanel({
     register,
     handleSubmit,
     control,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<CrearProyectoForm>({
     resolver: zodResolver(crearProyectoSchema),
     defaultValues: proyecto
@@ -75,6 +75,7 @@ export function ProyectoFormPanel({
       title={proyecto ? "Modificar proyecto" : "Nuevo proyecto"}
       subtitle={proyecto?.nombre}
       onClose={onClose}
+      hayCambios={isDirty}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -92,8 +93,12 @@ export function ProyectoFormPanel({
         className="flex flex-col gap-4 overflow-y-auto px-5 py-4"
       >
         <div>
-          <label className="t-label mb-1 block">Nombre</label>
-          <input className={`input ${errors.nombre ? "input-error" : ""}`} {...register("nombre")} />
+          <label className="t-label t-label-req mb-1 block">Nombre</label>
+          <input
+            aria-required
+            className={`input ${errors.nombre ? "input-error" : ""}`}
+            {...register("nombre")}
+          />
           {errors.nombre && <p className="input-error-text">{errors.nombre.message}</p>}
         </div>
 
@@ -112,13 +117,13 @@ export function ProyectoFormPanel({
 
         {gestionarMiembros && (
           <div>
-            <label className="t-label mb-1 block">Miembros</label>
+            <label className="t-label t-label-req mb-1 block">Miembros</label>
             <p className="t-caption mb-1">Solo los miembros pueden recibir tareas del proyecto.</p>
             <div className="max-h-40 overflow-y-auto rounded-md border-[1.5px] border-border-strong">
               {usuarios.map((u) => (
                 <label
                   key={u.id}
-                  className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-bg-subtle"
+                  className="tap-target flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-bg-subtle"
                 >
                   <input
                     type="checkbox"

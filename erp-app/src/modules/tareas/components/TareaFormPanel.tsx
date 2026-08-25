@@ -70,7 +70,7 @@ export function TareaFormPanel({
     control,
     setValue,
     getValues,
-    formState: { errors, dirtyFields },
+    formState: { errors, dirtyFields, isDirty },
   } = useForm<CrearTareaForm>({
     resolver: zodResolver(crearTareaSchema),
     defaultValues: tarea
@@ -140,6 +140,7 @@ export function TareaFormPanel({
     <RightPanel
       title={tarea ? "Editar tarea" : pasoAnteriorId ? "Nuevo paso" : "Nueva tarea"}
       onClose={onClose}
+      hayCambios={isDirty}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -157,8 +158,12 @@ export function TareaFormPanel({
         className="flex flex-col gap-4 overflow-y-auto px-5 py-4"
       >
         <div>
-          <label className="t-label mb-1 block">Título</label>
-          <input className={`input ${errors.titulo ? "input-error" : ""}`} {...register("titulo")} />
+          <label className="t-label t-label-req mb-1 block">Título</label>
+          <input
+            aria-required
+            className={`input ${errors.titulo ? "input-error" : ""}`}
+            {...register("titulo")}
+          />
           {errors.titulo && <p className="input-error-text">{errors.titulo.message}</p>}
         </div>
 
@@ -246,7 +251,7 @@ export function TareaFormPanel({
 
         {!esPaso && (
         <div>
-          <label className="flex cursor-pointer items-center gap-2">
+          <label className="tap-target flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
               checked={tieneRecurrencia}
@@ -274,6 +279,9 @@ export function TareaFormPanel({
                 className={`input ${errors.recurrencia_cantidad ? "input-error" : ""}`}
                 {...register("recurrencia_cantidad")}
               />
+              {errors.recurrencia_cantidad && (
+                <p className="input-error-text">{errors.recurrencia_cantidad.message}</p>
+              )}
             </div>
             <div className="flex-1">
               <label className="t-label mb-1 block">Unidad</label>

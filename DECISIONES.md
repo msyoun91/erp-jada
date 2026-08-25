@@ -677,3 +677,59 @@ Esto **no** es preparación para un agente IA. No se construye API, ni identidad
 **Deuda conocida, no se migra ahora:** `modules/tareas/actions.ts` (760 líneas) tiene orquestación multi-tabla que hoy solo existe en TS — `convertirTareaEnHilo`, `deshacerConversionHilo`, `agregarTareasDesdePlantilla`, `sincronizarAsignados`. Funcionan y nadie más las necesita todavía. Migran a funciones Postgres cuando aparezca el segundo consumidor, no antes; la regla aplica de acá en adelante para que la deuda deje de crecer.
 
 **Cómo se ve en la práctica:** `queries.ts:44` ya llama `supabase.rpc("reactivar_posponer_vencidos")`. Ese es el patrón: la función vive en `sql/`, `actions.ts` la invoca. `SECURITY INVOKER` por defecto para que RLS siga aplicando al llamador; `SECURITY DEFINER` solo si hace falta bypasear RLS, y ahí vale la regla ya registrada de `SET search_path = public`.
+
+---
+
+## Módulo tareas — pasos previos legibles y auditoría de UI (sin SQL)
+
+**El panel de una tarea con pasos muestra los previos enteros y con sus notas.** `TareaDetailPanel` ya listaba la cadena completa (título + badge de estado); los pasos anteriores al actual dejan de truncar y cuelgan sus notas debajo. Los posteriores siguen siendo una línea: todavía no dicen nada. Las notas ya viajan precargadas por `getListaTareas` (`tareas_notas`), así que no hay query nueva — solo aplica a tareas encadenadas, no a tareas sueltas ni a pasos de hilo sin `paso_anterior_id`, que no tienen sección de cadena.
+
+**La cadena ahora también existe en la vista Lista.** `HiloCard` calcula `cadenasDePasos(tareasDelHilo)` y se la pasa tanto a `TareaCard` como a `PasoAjeno`. Antes solo Misión y `HiloDetailPanel` la pasaban: abrir el mismo paso desde la Lista no mostraba ni "Paso 2/3", ni "Bloqueada", ni los pasos previos. Rompía la regla del propio módulo (`tareaLabels.ts`): la misma tarea no puede leerse distinto según dónde se la mire.
+
+**El modal automático "¿Cerrar hilo?" respeta permisos.** `HiloCard` lo disparaba en cualquier card montada al completarse el último paso, incluso para un asignado sin autoridad sobre el hilo — `cerrarHilo` moría en la RLS. Ahora usa el mismo `puedeGestionar` que `HiloDetailPanel` para ofrecer la acción.
+
+**Una sola definición de "terminada": `esTerminada()` en `tareaFiltros.ts`.** El contador de la isla contaba solo `completada` y el cierre automático del hilo miraba `completada || cancelada` — la card decía "2/3 completados" y saltaba igual el modal de cierre. `contarCompletadas` pasa a `contarTerminadas` y el copy a "N/M terminadas" en hilo y proyecto. Una cancelada no deja trabajo pendiente; contarla como faltante era mentir sobre lo que queda por hacer.
+
+**El select de estado muestra "En progreso" aunque la tarea esté bloqueada, deshabilitado.** `reabrir_hilo_en_tarea` puede bloquear una tarea que ya estaba en progreso; sin su opción el `<select>` caía en "Pendiente" y mostraba un estado que la tarea no tenía. Se ve, no se puede elegir — espejo de `validar_paso_previo`, que corta la transición pero no borra el estado actual.
+
+**`ESTADO_LABEL` deja de estar duplicado.** `DeshacerConversionModal` y `AuditoriaView` tenían copias locales (una de ellas parcial: sin `completada`/`cancelada`) mientras `tareaLabels.ts` es la fuente. `recurrencia_cantidad` en `TareaFormPanel` pintaba `input-error` sin renderizar nunca el mensaje: caja roja sin motivo.
+
+## Módulo tareas — feedback y formularios (auditoría de UI, segunda tanda)
+
+**Toda acción que sale bien lo dice.** `quitarDeHilo`, `convertirEnHilo`, `moverAHilo` y las cuatro desactivaciones (tarea, hilo, proyecto, plantilla) solo toasteaban el error; el éxito era cerrar el panel — y `quitarDeHilo` ni eso, porque no cierra nada. Regla del guide: el usuario nunca se queda preguntando si funcionó.
+
+**Cancelar una tarea pide confirmación.** Era un cambio de `<select>` y la tarea salía de todas las colas; completar, que es menos destructivo, ya tenía modal. Solo `cancelada` pasa por `ConfirmModal` — pendiente y en progreso son reversibles y no la sacan de ningún lado. El select vuelve solo al estado real al abrirse el modal porque es controlado (`value={estado}`).
+
+**`ConfirmModal` acepta `cancelLabel`.** Con la acción confirmada llamándose "Cancelar la tarea", un botón de salida que dice "Cancelar" no se puede leer. Acá dice "Volver"; el default sigue siendo "Cancelar" para el resto.
+
+**`hayCambios` en `RightPanel` y `Modal`: cerrar por backdrop, Escape o X pregunta antes de descartar.** Un click al costado borraba un formulario a medio llenar sin aviso. Se conecta con `formState.isDirty` de RHF en los siete paneles con form, y con `nota.trim().length > 0` en `CompletarModal`. El submit exitoso llama `onClose` directo, así que no pasa por la guardia. `DescartarCambios` vive dentro de `Modal.tsx` — es `ConfirmModal` con copy fijo, y en archivo propio armaba un ciclo de imports con quien lo usa.
+
+**Campos obligatorios marcados antes de guardar, con `.t-label-req` en `globals.css`.** Asterisco por `::after` sobre la clase de label que ya existía, en vez de repetir un `<span>` en diez formularios. El asterisco es decorativo: la semántica la lleva `aria-required` en el control. No se usa el atributo `required` nativo — dispararía la validación del browser antes que Zod y competiría con los mensajes propios.
+
+**`.icon-btn` existía en el media query de 44px pero nunca se había definido.** Las X de `RightPanel` y `Modal` eran botones del tamaño del ícono (~20px) — el gesto principal de cierre en touch. Ahora la clase existe (34×34, r-md, spec §8) y crece a 44×44 en mobile.
+
+**`.tap-target` para lo tocable que no es un botón del sistema.** El media query de 44px solo nombraba `.btn`/`.input`/`.nav-item`/`.icon-btn`, y el módulo está lleno de elementos tocables que no usan ninguna: la fila entera de `PasoAjeno`, "Ver los N pasos" de `HiloCard`, el segmented de relación de la Lista, el nombre de plantilla (único acceso a editarla), los checkboxes de asignados y miembros, el "Se repite" de la tarea y los ítems de `OverflowMenu`. Nueve usos con una clase, en vez de `min-h-11` suelto en cada uno: así el alto extra existe solo abajo de 768px y no engorda las filas en desktop, que es lo que pide el guide.
+
+**`SearchInput` tenía placeholder como único nombre.** `aria-label={placeholder}` — el placeholder ya está escrito para el usuario ("Buscar tarea o hilo…") y desaparece al tipear, que es justo cuando el lector de pantalla lo necesita.
+
+## Módulo tareas — cierre de la auditoría de UI (Lista, plantillas, Misión)
+
+**La Lista arranca ocultando lo terminado.** Toggle "Ocultar terminadas", prendido por defecto: sin él, el histórico completo se acumulaba en la vista para siempre — atenuado y al fondo, pero sin salida. Esconde tareas sueltas terminadas y hilos cerrados o con todos sus pasos terminados; un hilo vacío sigue siendo trabajo por empezar y se muestra.
+
+**Adentro de un hilo no se filtra nada.** Los pasos hechos son el contexto que explica en qué anda la cadena — la pregunta que contesta el hilo expandido es "¿ya está listo lo que necesito?", y esconder lo completado la deja sin respuesta. El filtro es de filas de primer nivel, no de contenido.
+
+**El filtro cuenta como filtro para el estado vacío.** Con todo escondido, la vista decía "Sin tareas todavía / Creá la primera" sobre una cuenta llena de trabajo terminado. Ahora `hayFiltro` incluye las filas ocultas y el mensaje dice cuántas hay y cómo verlas.
+
+**`esTerminada` lee el estado del server, no el optimista.** Completar una tarea con el filtro prendido no la hace desaparecer abajo del dedo: se va con el `revalidatePath`, no con el click.
+
+**La búsqueda de la Lista mira también la descripción**, como ya hacían Proyectos y Plantillas. `coincideTexto` pasa a variádica (`...textos: (string | null)[]`) en vez de duplicar la comparación por campo.
+
+**Los pasos de una plantilla se reordenan con ↑↓** (`useFieldArray.move`). Desde que la plantilla encadena, el orden es la regla — y cambiarlo obligaba a retipear todos los títulos de ahí para abajo. Botones, no drag & drop: no hay librería de dnd en el proyecto y dos flechas resuelven el caso.
+
+**Las bloqueadas de Misión son islas, no filas de texto.** Se renderiza `TareaCard` con su `cadena` y debajo la línea "Espera a «X»": saber qué te frena sin poder abrir lo que te frena era medio camino, y una tarjeta propia hubiera sido una segunda cara de la tarea para mantener sincronizada — el mismo motivo por el que Misión ya usaba `TareaCard`.
+
+**`textoAntiguedad()` en `tareaLabels.ts`.** "Creada hace 0 días" es la fecha de hoy dicha mal y `TareaDetailPanel` además decía "hace 1 días". Un solo texto para la isla, el panel y `MetricasResumen` (que pasa de "Hace N días" a "Creado hoy / hace N días").
+
+**Los estados vacíos de los paneles dicen qué hacer.** "Sin tareas todavía" pasa a nombrar el botón que las crea; en el panel de proyecto solo cuando el usuario puede trabajar ahí (si no, el botón no existe y la instrucción sería mentira).
+
+**No se pone ventana temporal en `getListaTareas` — decidido, con motivo.** La query trae todas las tareas activas con todas sus notas en cada carga de Lista, Misión y Proyectos, y eso crece sin techo. Pero recortar por fecha rompe cosas que hoy funcionan: `cadenasDePasos` arma la cadena con las filas que recibe, así que dejar afuera un paso viejo ya completado corre las posiciones ("Paso 2 de 3" pasa a "Paso 1 de 2"), desalinea el bloqueo y falsea los contadores "N/M terminados". El filtro de terminadas resuelve el problema que se ve (la vista llena de historial) sin tocar los datos que la vista necesita para calcular. Cuando el volumen pese de verdad, el primer paso barato es acotar la **precarga de notas** (`tareas_notas` en `getListaTareas`), no las tareas: `NotasSection` ya sabe pedirlas sola cuando no llegan precargadas. Con el detalle de que los pasos previos del panel leen esas notas precargadas, así que ahí habría que pedirlas por paso al abrir.

@@ -96,7 +96,17 @@ export function MisionView({
               : "Cuando te asignen una tarea activa, va a aparecer acá."}
           </p>
         </div>
-        <Bloqueadas tareas={bloqueadas} cadenas={cadenas} />
+        <Bloqueadas
+          tareas={bloqueadas}
+          cadenas={cadenas}
+          hilos={hilos}
+          usuarios={usuarios}
+          proyectos={proyectos}
+          miembrosPorProyecto={miembrosPorProyecto}
+          usuarioActualId={usuarioActualId}
+          gestionarAjenas={gestionarAjenas}
+          puedeAsignar={puedeAsignar}
+        />
       </div>
     );
   }
@@ -178,7 +188,17 @@ export function MisionView({
         </p>
       )}
 
-      <Bloqueadas tareas={bloqueadas} cadenas={cadenas} />
+      <Bloqueadas
+        tareas={bloqueadas}
+        cadenas={cadenas}
+        hilos={hilos}
+        usuarios={usuarios}
+        proyectos={proyectos}
+        miembrosPorProyecto={miembrosPorProyecto}
+        usuarioActualId={usuarioActualId}
+        gestionarAjenas={gestionarAjenas}
+        puedeAsignar={puedeAsignar}
+      />
     </div>
   );
 }
@@ -188,9 +208,23 @@ export function MisionView({
 function Bloqueadas({
   tareas,
   cadenas,
+  hilos,
+  usuarios,
+  proyectos,
+  miembrosPorProyecto,
+  usuarioActualId,
+  gestionarAjenas,
+  puedeAsignar,
 }: {
   tareas: TareaConAsignados[];
   cadenas: Map<string, PasoEnCadena>;
+  hilos: TareaHilo[];
+  usuarios: Usuario[];
+  proyectos: TareaProyecto[];
+  miembrosPorProyecto: Record<string, string[]>;
+  usuarioActualId: string | null;
+  gestionarAjenas: boolean;
+  puedeAsignar: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
 
@@ -204,14 +238,29 @@ function Bloqueadas({
         {abierto ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
 
+      {/* La isla y no una fila de texto: saber qué te frena sin poder abrir lo
+          que te frena era medio camino, y una tarjeta propia sería una segunda
+          cara de la tarea para mantener sincronizada. */}
       {abierto && (
-        <ul className="flex flex-col gap-3 rounded-lg border border-border bg-bg-surface px-5 py-4">
+        <ul className="flex flex-col gap-3">
           {tareas.map((t) => {
             const info = cadenas.get(t.id);
             const previa = info ? info.cadena[info.posicion - 2] : undefined;
+            const hilo = t.hilo_id ? hilos.find((h) => h.id === t.hilo_id) : null;
             return (
-              <li key={t.id} className="flex flex-col">
-                <span className="t-body-m font-semibold text-text-primary">{t.titulo}</span>
+              <li key={t.id} className="flex flex-col gap-1">
+                <TareaCard
+                  tarea={t}
+                  usuarios={usuarios}
+                  proyectos={proyectos}
+                  miembrosPorProyecto={miembrosPorProyecto}
+                  proyectoHeredadoId={hilo?.proyecto_id ?? null}
+                  usuarioActualId={usuarioActualId}
+                  gestionarAjenas={gestionarAjenas}
+                  puedeAsignar={puedeAsignar}
+                  cadena={info}
+                  relacionCon={usuarioActualId}
+                />
                 <span className="t-caption">
                   {previa ? `Espera a «${previa.titulo}»` : "Espera un paso previo"}
                 </span>

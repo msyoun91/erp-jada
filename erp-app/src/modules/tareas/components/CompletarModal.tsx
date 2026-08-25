@@ -34,7 +34,7 @@ export function CompletarModal({
   }
 
   return (
-    <Modal title="Completar tarea" onClose={onClose} maxWidth={420}>
+    <Modal title="Completar tarea" onClose={onClose} maxWidth={420} hayCambios={nota.trim().length > 0}>
       <p className="t-body-m mb-4">{titulo}</p>
 
       <label className="t-label mb-1 block">Nota para la próxima (opcional)</label>

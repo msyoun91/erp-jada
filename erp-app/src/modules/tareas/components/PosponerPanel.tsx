@@ -23,7 +23,7 @@ export function PosponerPanel({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<PosponerForm>({
     resolver: zodResolver(posponerSchema),
     defaultValues: { id },
@@ -47,6 +47,7 @@ export function PosponerPanel({
       title="Posponer"
       subtitle={titulo}
       onClose={onClose}
+      hayCambios={isDirty}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -64,9 +65,10 @@ export function PosponerPanel({
         className="flex flex-col gap-4 overflow-y-auto px-5 py-4"
       >
         <div>
-          <label className="t-label mb-1 block">Posponer hasta</label>
+          <label className="t-label t-label-req mb-1 block">Posponer hasta</label>
           <input
             type="date"
+            aria-required
             className={`input ${errors.hasta ? "input-error" : ""}`}
             {...register("hasta")}
           />

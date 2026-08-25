@@ -13,7 +13,7 @@ import { TareaCard } from "./TareaCard";
 import { TareaFormPanel } from "./TareaFormPanel";
 import { HiloFormPanel } from "./HiloFormPanel";
 import { ProyectoFormPanel } from "./ProyectoFormPanel";
-import { MetricasResumen, contarCompletadas } from "./MetricasResumen";
+import { MetricasResumen, contarTerminadas } from "./MetricasResumen";
 import { puedeTrabajarEnProyecto, tareasDeProyecto } from "./proyectoTareas";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
 
@@ -59,7 +59,7 @@ export function ProyectoDetailPanel({
   const hilosDelProyecto = hilos.filter((h) => h.proyecto_id === proyecto.id);
   const tareasDelProyecto = tareasDeProyecto(proyecto.id, hilos, tareas);
   const tareasSueltas = ordenar(tareasDelProyecto.filter((t) => t.hilo_id === null));
-  const completadas = contarCompletadas(tareasDelProyecto);
+  const terminadas = contarTerminadas(tareasDelProyecto);
   const idsMiembros = miembrosPorProyecto[proyecto.id] ?? [];
   const miembros = idsMiembros.length;
   // Mismo USING que tareas_proyectos_update: manager, o creador que además
@@ -73,8 +73,12 @@ export function ProyectoDetailPanel({
 
   async function onDesactivar() {
     const result = await desactivarProyecto(proyecto.id);
-    if (!result.success) toast.error(result.error);
-    else onClose();
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Proyecto desactivado");
+    onClose();
   }
 
   return (
@@ -126,7 +130,7 @@ export function ProyectoDetailPanel({
             {tareasDelProyecto.length > 0 && (
               <span className="flex items-center gap-1">
                 <ListChecks size={13} strokeWidth={1.75} />
-                {completadas}/{tareasDelProyecto.length} completadas
+                {terminadas}/{tareasDelProyecto.length} terminadas
               </span>
             )}
             <MetricasResumen createdAt={proyecto.created_at} tareas={tareasDelProyecto} />
@@ -134,7 +138,10 @@ export function ProyectoDetailPanel({
         </div>
 
         {hilosDelProyecto.length === 0 && tareasSueltas.length === 0 ? (
-          <p className="t-caption px-5 py-3">Sin tareas ni hilos todavía.</p>
+          <p className="t-caption px-5 py-3">
+            Sin tareas ni hilos todavía
+            {puedeTrabajar ? " — agregá el primero con los botones de arriba." : "."}
+          </p>
         ) : (
           <div className="flex flex-col gap-4 p-[13px] px-5">
             {hilosDelProyecto.length > 0 && (
