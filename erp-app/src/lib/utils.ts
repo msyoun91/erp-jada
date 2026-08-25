@@ -48,6 +48,9 @@ const MENSAJES_ERROR: Record<string, string> = {
   TA005: "Esa cadena de pasos no es válida — el paso previo no se puede cambiar ni mezclar con recurrencia",
   TA006: "No se puede mover de hilo una tarea que es parte de una cadena de pasos",
   TA007: "Ese paso tiene un paso siguiente activo — desactivá la cadena desde el final",
+  CM001: "Esa relación ya no existe o fue desactivada",
+  CM002: "La empresa participa en obras activas — sacala de esas obras antes de desactivarla",
+  CM003: "La persona participa en obras activas — sacala de esas obras antes de desactivarla",
   email_exists: "Ese email ya está registrado",
   weak_password: "La contraseña es demasiado débil",
 };

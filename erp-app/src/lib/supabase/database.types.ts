@@ -14,6 +14,441 @@ export type Database = {
   }
   public: {
     Tables: {
+      comercial_comisiones: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          obra_persona_id: string
+          porcentaje: number
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          obra_persona_id: string
+          porcentaje: number
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          obra_persona_id?: string
+          porcentaje?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercial_comisiones_obra_persona_id_fkey"
+            columns: ["obra_persona_id"]
+            isOneToOne: false
+            referencedRelation: "obra_persona"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      comercial_fuentes: {
+        Row: {
+          activo: boolean
+          created_at: string
+          descripcion: string | null
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          descripcion?: string | null
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      comercial_prospectos: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          estado_prospecto: Database["public"]["Enums"]["estado_prospecto"]
+          fecha_estimada_compra: string | null
+          fuente_id: string | null
+          id: string
+          moneda_potencial: Database["public"]["Enums"]["moneda"] | null
+          obra_id: string
+          observaciones: string | null
+          potencial_estimado: number | null
+          responsable_id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          creado_por: string
+          created_at?: string
+          estado_prospecto?: Database["public"]["Enums"]["estado_prospecto"]
+          fecha_estimada_compra?: string | null
+          fuente_id?: string | null
+          id?: string
+          moneda_potencial?: Database["public"]["Enums"]["moneda"] | null
+          obra_id: string
+          observaciones?: string | null
+          potencial_estimado?: number | null
+          responsable_id: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          estado_prospecto?: Database["public"]["Enums"]["estado_prospecto"]
+          fecha_estimada_compra?: string | null
+          fuente_id?: string | null
+          id?: string
+          moneda_potencial?: Database["public"]["Enums"]["moneda"] | null
+          obra_id?: string
+          observaciones?: string | null
+          potencial_estimado?: number | null
+          responsable_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercial_prospectos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comercial_prospectos_fuente_id_fkey"
+            columns: ["fuente_id"]
+            isOneToOne: false
+            referencedRelation: "comercial_fuentes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comercial_prospectos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comercial_prospectos_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      empresas: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          cuit: string | null
+          direccion: string | null
+          email: string | null
+          id: string
+          localidad: string | null
+          nombre_comercial: string | null
+          observaciones: string | null
+          provincia: string | null
+          razon_social: string
+          telefono: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          activo?: boolean
+          creado_por: string
+          created_at?: string
+          cuit?: string | null
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          localidad?: string | null
+          nombre_comercial?: string | null
+          observaciones?: string | null
+          provincia?: string | null
+          razon_social: string
+          telefono?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          cuit?: string | null
+          direccion?: string | null
+          email?: string | null
+          id?: string
+          localidad?: string | null
+          nombre_comercial?: string | null
+          observaciones?: string | null
+          provincia?: string | null
+          razon_social?: string
+          telefono?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empresas_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obra_empresa: {
+        Row: {
+          activo: boolean
+          created_at: string
+          empresa_id: string
+          id: string
+          obra_id: string
+          observaciones: string | null
+          roles: Database["public"]["Enums"]["rol_empresa"][]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          empresa_id: string
+          id?: string
+          obra_id: string
+          observaciones?: string | null
+          roles: Database["public"]["Enums"]["rol_empresa"][]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          obra_id?: string
+          observaciones?: string | null
+          roles?: Database["public"]["Enums"]["rol_empresa"][]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obra_empresa_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_empresa_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obra_persona: {
+        Row: {
+          activo: boolean
+          created_at: string
+          empresa_id: string | null
+          es_referente: boolean
+          id: string
+          obra_id: string
+          observaciones: string | null
+          persona_id: string
+          roles: Database["public"]["Enums"]["rol_persona"][]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          empresa_id?: string | null
+          es_referente?: boolean
+          id?: string
+          obra_id: string
+          observaciones?: string | null
+          persona_id: string
+          roles: Database["public"]["Enums"]["rol_persona"][]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          empresa_id?: string | null
+          es_referente?: boolean
+          id?: string
+          obra_id?: string
+          observaciones?: string | null
+          persona_id?: string
+          roles?: Database["public"]["Enums"]["rol_persona"][]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obra_persona_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_persona_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obra_persona_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obras: {
+        Row: {
+          activo: boolean
+          cantidad_unidades: number | null
+          creado_por: string
+          created_at: string
+          direccion: string | null
+          estado_obra: Database["public"]["Enums"]["estado_obra"]
+          fecha_estimada_inicio: string | null
+          id: string
+          localidad: string | null
+          nombre: string
+          observaciones: string | null
+          provincia: string | null
+          superficie_estimada: number | null
+          tipo: Database["public"]["Enums"]["tipo_obra"]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          cantidad_unidades?: number | null
+          creado_por: string
+          created_at?: string
+          direccion?: string | null
+          estado_obra?: Database["public"]["Enums"]["estado_obra"]
+          fecha_estimada_inicio?: string | null
+          id?: string
+          localidad?: string | null
+          nombre: string
+          observaciones?: string | null
+          provincia?: string | null
+          superficie_estimada?: number | null
+          tipo?: Database["public"]["Enums"]["tipo_obra"]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          cantidad_unidades?: number | null
+          creado_por?: string
+          created_at?: string
+          direccion?: string | null
+          estado_obra?: Database["public"]["Enums"]["estado_obra"]
+          fecha_estimada_inicio?: string | null
+          id?: string
+          localidad?: string | null
+          nombre?: string
+          observaciones?: string | null
+          provincia?: string | null
+          superficie_estimada?: number | null
+          tipo?: Database["public"]["Enums"]["tipo_obra"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obras_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personas: {
+        Row: {
+          activo: boolean
+          apellido: string | null
+          cargo: string | null
+          creado_por: string
+          created_at: string
+          email: string | null
+          empresa_principal_id: string | null
+          id: string
+          nombre: string
+          observaciones: string | null
+          telefono: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          activo?: boolean
+          apellido?: string | null
+          cargo?: string | null
+          creado_por: string
+          created_at?: string
+          email?: string | null
+          empresa_principal_id?: string | null
+          id?: string
+          nombre: string
+          observaciones?: string | null
+          telefono?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          activo?: boolean
+          apellido?: string | null
+          cargo?: string | null
+          creado_por?: string
+          created_at?: string
+          email?: string | null
+          empresa_principal_id?: string | null
+          id?: string
+          nombre?: string
+          observaciones?: string | null
+          telefono?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personas_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personas_empresa_principal_id_fkey"
+            columns: ["empresa_principal_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submodulos: {
         Row: {
           activo: boolean
@@ -681,6 +1116,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acceso_comercial: { Args: never; Returns: boolean }
       es_asignado_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
       es_creador_proyecto: { Args: { p_proyecto_id: string }; Returns: boolean }
       es_miembro_proyecto: {
@@ -691,8 +1127,22 @@ export type Database = {
         Args: { p_tarea_id: string; p_usuario_id: string }
         Returns: boolean
       }
-      es_responsable_o_creador_tarea: {
-        Args: { p_tarea_id: string }
+      es_responsable_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
+      guardar_obra_persona: {
+        Args: {
+          p_empresa_id: string | null
+          p_es_referente: boolean
+          p_id: string | null
+          p_obra_id: string
+          p_observaciones: string | null
+          p_persona_id: string
+          p_porcentaje_comision: number | null
+          p_roles: Database["public"]["Enums"]["rol_persona"][]
+        }
+        Returns: string
+      }
+      proyecto_tiene_miembros: {
+        Args: { p_proyecto_id: string }
         Returns: boolean
       }
       puede_ver_hilo: { Args: { p_hilo_id: string }; Returns: boolean }
@@ -701,9 +1151,58 @@ export type Database = {
     }
     Enums: {
       estado_hilo: "abierto" | "cerrado"
+      estado_obra:
+        | "idea"
+        | "proyecto"
+        | "pozo"
+        | "inicio_obra"
+        | "construccion"
+        | "terminaciones"
+        | "finalizada"
+        | "desconocido"
+      estado_prospecto:
+        | "nuevo"
+        | "investigando"
+        | "contactado"
+        | "en_seguimiento"
+        | "interes_confirmado"
+        | "cotizacion_solicitada"
+        | "cotizado"
+        | "negociacion"
+        | "ganado"
+        | "perdido"
+        | "sin_oportunidad"
       estado_tarea: "pendiente" | "en_progreso" | "completada" | "cancelada"
       modo_completado: "manual" | "automatico" | "hibrido"
+      moneda: "ARS" | "USD"
       recurrencia_unidad: "dia" | "mes"
+      rol_empresa:
+        | "desarrolladora"
+        | "constructora"
+        | "inmobiliaria"
+        | "estudio_arquitectura"
+        | "inversor"
+        | "proveedor"
+        | "otro"
+      rol_persona:
+        | "arquitecto"
+        | "desarrollador"
+        | "inversor"
+        | "director"
+        | "compras"
+        | "oficina_tecnica"
+        | "decisor"
+        | "influenciador"
+        | "contacto_comercial"
+        | "otro"
+      tipo_obra:
+        | "edificio_residencial"
+        | "edificio_comercial"
+        | "vivienda"
+        | "oficinas"
+        | "local"
+        | "desarrollo_mixto"
+        | "otro"
       tipo_submodulo: "vista" | "funcion"
       visibilidad: "publico" | "privado"
     }
@@ -834,9 +1333,63 @@ export const Constants = {
   public: {
     Enums: {
       estado_hilo: ["abierto", "cerrado"],
+      estado_obra: [
+        "idea",
+        "proyecto",
+        "pozo",
+        "inicio_obra",
+        "construccion",
+        "terminaciones",
+        "finalizada",
+        "desconocido",
+      ],
+      estado_prospecto: [
+        "nuevo",
+        "investigando",
+        "contactado",
+        "en_seguimiento",
+        "interes_confirmado",
+        "cotizacion_solicitada",
+        "cotizado",
+        "negociacion",
+        "ganado",
+        "perdido",
+        "sin_oportunidad",
+      ],
       estado_tarea: ["pendiente", "en_progreso", "completada", "cancelada"],
       modo_completado: ["manual", "automatico", "hibrido"],
+      moneda: ["ARS", "USD"],
       recurrencia_unidad: ["dia", "mes"],
+      rol_empresa: [
+        "desarrolladora",
+        "constructora",
+        "inmobiliaria",
+        "estudio_arquitectura",
+        "inversor",
+        "proveedor",
+        "otro",
+      ],
+      rol_persona: [
+        "arquitecto",
+        "desarrollador",
+        "inversor",
+        "director",
+        "compras",
+        "oficina_tecnica",
+        "decisor",
+        "influenciador",
+        "contacto_comercial",
+        "otro",
+      ],
+      tipo_obra: [
+        "edificio_residencial",
+        "edificio_comercial",
+        "vivienda",
+        "oficinas",
+        "local",
+        "desarrollo_mixto",
+        "otro",
+      ],
       tipo_submodulo: ["vista", "funcion"],
       visibilidad: ["publico", "privado"],
     },

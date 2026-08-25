@@ -286,3 +286,171 @@ Tercer eje, independiente de `tareas_gestionar_ajenas` (autoridad sobre tareas a
 `usuarios_select` extendida con `OR tiene_permiso('tareas_lista') OR tiene_permiso('tareas_proyectos')` — picker de asignados/miembros necesita listar usuarios activos.
 
 ---
+
+---
+
+## Módulo comercial (`sql/018_comercial.sql` — corrido en Supabase vía MCP: migraciones `comercial_fase1` y `comercial_fase1_funciones`)
+
+Fase 1 = base de datos comercial: registrar obras, empresas, personas y sus relaciones, y la lectura comercial de una obra (prospecto). Sin tareas, actividades ni automatizaciones. Ver `HANDOFF_COMERCIAL_FASE1.md`.
+
+**Naming — excepción al prefijo por módulo.** `empresas`, `personas`, `obras`, `obra_empresa` y `obra_persona` van sin prefijo: la obra sobrevive al prospecto (Presupuestos, Instalación y Postventa van a colgar de ella) y empresas/personas las va a usar Clientes. Solo lo estrictamente comercial lleva prefijo: `comercial_prospectos`, `comercial_fuentes`, `comercial_comisiones`.
+
+### Enums
+
+| enum | valores |
+|---|---|
+| `tipo_obra` | `edificio_residencial` · `edificio_comercial` · `vivienda` · `oficinas` · `local` · `desarrollo_mixto` · `otro` |
+| `estado_obra` | `idea` · `proyecto` · `pozo` · `inicio_obra` · `construccion` · `terminaciones` · `finalizada` · `desconocido` |
+| `estado_prospecto` | `nuevo` · `investigando` · `contactado` · `en_seguimiento` · `interes_confirmado` · `cotizacion_solicitada` · `cotizado` · `negociacion` · `ganado` · `perdido` · `sin_oportunidad` |
+| `rol_empresa` | `desarrolladora` · `constructora` · `inmobiliaria` · `estudio_arquitectura` · `inversor` · `proveedor` · `otro` |
+| `rol_persona` | `arquitecto` · `desarrollador` · `inversor` · `director` · `compras` · `oficina_tecnica` · `decisor` · `influenciador` · `contacto_comercial` · `otro` |
+| `moneda` | `ARS` · `USD` |
+
+`rol_persona` **no** incluye `referente`: eso es la columna `obra_persona.es_referente`, que lleva el unique parcial por obra. Estados y tipos son enums (los agrega dev en migración); la única lista que es catálogo editable en runtime es `comercial_fuentes`.
+
+### empresas
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| razon_social | text | |
+| nombre_comercial | text | nullable |
+| cuit | text | nullable, CHECK de 11 dígitos — se guardan solo dígitos (es la clave de deduplicación). Unique parcial WHERE activo AND cuit IS NOT NULL |
+| website / telefono / email / direccion / localidad / provincia / observaciones | text | nullable |
+| creado_por | uuid FK → usuarios | |
+| activo / created_at / updated_at | | |
+
+El "tipo" de empresa **no** es atributo global: la misma empresa puede ser desarrolladora en una obra y constructora en otra. Vive en `obra_empresa.roles`.
+
+### personas
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| nombre | text | |
+| apellido | text | nullable — capturar rápido pesa más que exigir el apellido |
+| telefono / whatsapp / email / cargo / observaciones | text | nullable. `email` unique parcial sobre `lower(email)` WHERE activo AND email IS NOT NULL |
+| empresa_principal_id | uuid FK → empresas, nullable | dato de ficha; con qué empresa participa en una obra puntual es `obra_persona.empresa_id` |
+| creado_por | uuid FK → usuarios | |
+| activo / created_at / updated_at | | |
+
+### obras
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| nombre | text | **no** es unique — dos localidades pueden tener "Edificio Belgrano". El duplicado se avisa en el formulario, no se bloquea |
+| direccion / localidad / provincia / observaciones | text | nullable |
+| tipo | enum `tipo_obra` | default `otro` |
+| estado_obra | enum `estado_obra` | default `desconocido` |
+| cantidad_unidades | int | nullable, CHECK > 0 |
+| superficie_estimada | numeric(12,2) | nullable, CHECK > 0 |
+| fecha_estimada_inicio | date | nullable |
+| creado_por | uuid FK → usuarios | |
+| activo / created_at / updated_at | | |
+
+`fecha_estimada_compra` **no** vive acá: es comercial y vive en el prospecto (la spec original la repetía en las dos tablas).
+
+### obra_empresa / obra_persona
+
+Roles como **array de enum**, no tabla hija: una empresa puede ser desarrolladora y constructora de la misma obra, y una persona arquitecta y decisora. Una tabla hija solo haría falta si un rol tuviera atributos propios (fecha desde, observación por rol) — hoy no los tiene.
+
+| obra_empresa | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| obra_id | uuid FK → obras | unique parcial (obra_id, empresa_id) WHERE activo |
+| empresa_id | uuid FK → empresas | |
+| roles | `rol_empresa[]` | CHECK `array_length(roles,1) >= 1` |
+| observaciones | text | nullable |
+| activo / created_at / updated_at | | |
+
+| obra_persona | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| obra_id | uuid FK → obras | unique parcial (obra_id, persona_id) WHERE activo |
+| persona_id | uuid FK → personas | |
+| empresa_id | uuid FK → empresas, nullable | con qué empresa participa en **esta** obra |
+| roles | `rol_persona[]` | CHECK `array_length(roles,1) >= 1` |
+| es_referente | boolean | default false. **Unique parcial `(obra_id) WHERE es_referente AND activo`** — una obra tiene un referente |
+| observaciones | text | nullable |
+| activo / created_at / updated_at | | |
+
+### comercial_comisiones
+
+**La comisión es una fila, no una columna.** Gatear una columna necesitaría vista + GRANT por columna + trigger; gatearla como fila lo resuelve la RLS que ya existe. Quien no tiene `comercial_comision` no ve el porcentaje **ni sabe que existe una comisión**: la fila no entra en su SELECT. Además, "sin comisión ⇒ porcentaje null" pasa a ser imposible de violar en vez de una validación que alguien debe recordar; `0.00` sigue siendo "0% configurado", distinto de "sin fila".
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| obra_persona_id | uuid FK → obra_persona | unique parcial WHERE activo |
+| porcentaje | numeric(5,2) | CHECK BETWEEN 0 AND 100 |
+| activo / created_at / updated_at | | |
+
+### comercial_fuentes
+
+Catálogo (no enum) porque se pide poder agregar fuentes sin migración. `nombre` unique parcial sobre `lower(nombre)` WHERE activo. Seed: Arquitecto · Referido · Avistamiento en calle · Avistamiento web · Inmobiliaria · Constructora · Desarrolladora · Contacto propio · Otro. **Sin ABM en Fase 1** — agregar una hoy es un INSERT a mano.
+
+### comercial_prospectos
+
+La lectura comercial de una obra. Una obra existe sin prospecto; todo prospecto tiene obra.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| obra_id | uuid FK → obras | **unique parcial WHERE activo** — una obra no tiene dos prospectos vivos |
+| estado_prospecto | enum `estado_prospecto` | default `nuevo`. Clasificación pura: no dispara tareas ni notificaciones |
+| fuente_id | uuid FK → comercial_fuentes, nullable | |
+| responsable_id | uuid FK → usuarios | eje de visibilidad |
+| potencial_estimado | numeric(14,2) | nullable, CHECK >= 0 |
+| moneda_potencial | enum `moneda` | nullable. CHECK `potencial_con_moneda`: potencial y moneda son ambos null o ninguno — un monto sin moneda no se lee, una moneda sin monto es ruido |
+| fecha_estimada_compra | date | nullable |
+| observaciones | text | nullable |
+| creado_por | uuid FK → usuarios | |
+| activo / created_at / updated_at | | |
+
+### Función `acceso_comercial()`
+
+`SECURITY INVOKER`, `STABLE` — "tiene alguna vista del módulo". Los maestros se leen desde las cuatro vistas; repetir el OR de cuatro términos en diez policies es la duplicación que esta función evita. `EXECUTE` solo para `authenticated`.
+
+### Función `guardar_obra_persona(...)`
+
+`SECURITY INVOKER` — guarda la relación y su comisión en una sola llamada (`.rpc()` desde `actions.ts`, que queda como glue). Al ser INVOKER, quien no tiene `comercial_comision` no ve ni toca la fila de comisión: sus UPDATE afectan 0 filas y **la comisión que ya existía sobrevive intacta**. Devuelve el `id` de la relación. `ERRCODE = 'CM001'` si se edita una relación inexistente o desactivada.
+
+### Cascadas y bloqueos (triggers `SECURITY DEFINER`)
+
+- `cascada_comision` — `AFTER UPDATE ON obra_persona WHEN (OLD.activo AND NOT NEW.activo)`: la comisión se desactiva con la relación aunque quien desactiva no tenga permiso para verla. Es cascada, no autorización.
+- `cascada_desactivar_obra` — `AFTER UPDATE ON obras WHEN (OLD.activo AND NOT NEW.activo)`: desactiva el prospecto y las relaciones de esa obra. La obra es el contenedor; dejarle relaciones vivas deja filas que nadie puede alcanzar.
+- `validar_desactivar_empresa` / `validar_desactivar_persona` — `BEFORE UPDATE ... WHEN (OLD.activo AND NOT NEW.activo)`: **no cascadean**. Son maestros reutilizables, así que desactivarlos con obras activas falla con `CM002` / `CM003` y se pide sacar la relación primero.
+
+`CM001`/`CM002`/`CM003` están mapeados a mensaje en `MENSAJES_ERROR` (`lib/utils.ts`).
+
+### RLS
+
+| tabla | SELECT | INSERT / UPDATE |
+|---|---|---|
+| `empresas` | `acceso_comercial()` | `comercial_empresas_gestionar` |
+| `personas` | `acceso_comercial()` | `comercial_personas_gestionar` |
+| `obras` | `acceso_comercial()` | `comercial_obras_gestionar` |
+| `obra_empresa` / `obra_persona` | `acceso_comercial()` | `comercial_obras_gestionar` — las relaciones son parte de la ficha de la obra, no tienen función propia |
+| `comercial_fuentes` | `acceso_comercial()` | `comercial_prospectos_gestionar` |
+| `comercial_comisiones` | `comercial_comision` | `comercial_comision` |
+| `comercial_prospectos` | `comercial_prospectos` AND (responsable o `comercial_gestionar_ajenos`) | `comercial_prospectos_gestionar` AND la misma condición de responsable |
+
+El UPDATE de prospectos repite la condición en el `WITH CHECK`: así traspasar el prospecto a otro responsable exige `comercial_gestionar_ajenos`, igual que verlo.
+
+`usuarios_select` extendida con `OR tiene_permiso('comercial_prospectos')` — el picker de responsable necesita listar usuarios activos.
+
+### Permisos (submódulos `modulo = 'comercial'`)
+
+| codigo | tipo | vista_id | notas |
+|---|---|---|---|
+| comercial_prospectos | vista | — | listado + ficha del prospecto |
+| comercial_obras | vista | — | obras y sus relaciones con empresas/personas |
+| comercial_empresas | vista | — | |
+| comercial_personas | vista | — | |
+| comercial_prospectos_gestionar | funcion | comercial_prospectos | crear/editar/desactivar prospectos |
+| comercial_gestionar_ajenos | funcion | comercial_prospectos | eje admin: ver y editar prospectos de otros, y traspasar el responsable |
+| comercial_comision | funcion | comercial_prospectos | ver y configurar el % del referente. Sin ella la fila de comisión no entra en el SELECT |
+| comercial_obras_gestionar | funcion | comercial_obras | incluye alta/baja de empresas y personas en la obra |
+| comercial_empresas_gestionar | funcion | comercial_empresas | |
+| comercial_personas_gestionar | funcion | comercial_personas | |

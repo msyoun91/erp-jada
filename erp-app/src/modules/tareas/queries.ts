@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getUsuariosActivos } from "@/lib/usuarios";
 import { sumarDiasISO } from "@/lib/utils";
 import type {
   EventoAuditoria,
@@ -16,24 +17,10 @@ function inicioDiaAR(fechaISO: string) {
   return `${fechaISO}T03:00:00.000Z`;
 }
 
-export async function getUsuarioActualId(): Promise<string | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.id ?? null;
-}
+export { getUsuarioActualId } from "@/lib/usuarios";
 
-export async function getUsuariosParaAsignar(): Promise<Usuario[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("usuarios")
-    .select("id, nombre")
-    .eq("activo", true)
-    .order("nombre");
-
-  if (error) throw error;
-  return data;
+export function getUsuariosParaAsignar(): Promise<Usuario[]> {
+  return getUsuariosActivos();
 }
 
 // Lista unificada de la vista "Lista": hilos + tareas sueltas visibles para
