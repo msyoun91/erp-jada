@@ -663,3 +663,17 @@ Reemplaza el mecanismo descrito en "Orden por temperatura: solo UI, sin columna 
 **Costo aceptado: se pierde el ranking fino dentro de un nivel.** Nadie lo estaba usando como ranking; el desempate por vencimiento cubre el caso real ("de estas tres altas, ¿cuál primero?").
 
 **En Misión las flechas ← → dejan de competir con nada.** Los botones no consumen flechas y solo existen dentro del panel (un `dialog`), que ya estaba excluido.
+
+---
+
+## La regla de negocio vive en Postgres, no en `actions.ts`
+
+El módulo tareas ya funciona así de hecho: `validar_cierre_hilo`, `validar_responsable_tarea`, `validar_proyecto_tarea_miembros`, `validar_quitar_miembro_proyecto`, `reabrir_hilo_en_tarea`, `generar_recurrencia` y `log_evento_tarea` son triggers, y la visibilidad entera es RLS (`puede_ver_hilo`, `es_asignado_tarea`, `es_miembro_proyecto`, `tiene_permiso`). Se eleva a regla siempre activa en `CLAUDE.md`.
+
+**Por qué:** la única superficie del sistema hoy son Server Actions, que no son API — el action-id es un identificador interno de Next que cambia en cada build, sin schema ni versionado. El día que entre un segundo consumidor (un agente IA, el portal `erp-cliente`, un job, una integración), ese consumidor no puede llamar `actions.ts`; entra por PostgREST/Supabase con su propio JWT. Toda regla que solo exista en TypeScript queda del lado equivocado de esa frontera y se convierte en una segunda autoridad — exactamente lo que prohíbe *Fuente única de verdad*. Una regla en trigger o constraint la obedecen los dos por construcción, sin duplicar nada.
+
+Esto **no** es preparación para un agente IA. No se construye API, ni identidad de agente, ni tokens: sería arquitectura especulativa. Es solo dónde poner la lógica que igual hay que escribir.
+
+**Deuda conocida, no se migra ahora:** `modules/tareas/actions.ts` (760 líneas) tiene orquestación multi-tabla que hoy solo existe en TS — `convertirTareaEnHilo`, `deshacerConversionHilo`, `agregarTareasDesdePlantilla`, `sincronizarAsignados`. Funcionan y nadie más las necesita todavía. Migran a funciones Postgres cuando aparezca el segundo consumidor, no antes; la regla aplica de acá en adelante para que la deuda deje de crecer.
+
+**Cómo se ve en la práctica:** `queries.ts:44` ya llama `supabase.rpc("reactivar_posponer_vencidos")`. Ese es el patrón: la función vive en `sql/`, `actions.ts` la invoca. `SECURITY INVOKER` por defecto para que RLS siga aplicando al llamador; `SECURITY DEFINER` solo si hace falta bypasear RLS, y ahí vale la regla ya registrada de `SET search_path = public`.

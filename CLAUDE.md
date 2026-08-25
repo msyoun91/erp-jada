@@ -89,6 +89,7 @@ La regla más alta prevalece.
 - **`/clear` entre tareas.** Terminás un módulo o cambiás de tema → `/clear`. El costo dominante son tokens de contexto reenviados cada turno (cache_read); sesiones de 200+ turnos cuestan ~3× por turno que las cortas.
 - Antes de modificar un módulo, leer su sección en `DECISIONES.md` (no el archivo completo — crece por módulo).
 - No crear roles. No crear permisos por módulo. Toda autorización nueva se implementa mediante submódulos, incluso si el permiso parece más fino que un submódulo (ej: por fila o por campo) — si un caso real no puede resolverse así, se registra en `DECISIONES.md` como excepción explícita antes de romper la regla, no se decide ad-hoc
+- **Regla de negocio → Postgres, no `actions.ts`.** Toda invariante (validación cruzada, cascada, derivación, orquestación multi-tabla) vive en constraint, trigger o función `SECURITY INVOKER` llamada con `.rpc()`. `actions.ts` queda como glue: `safeParse` → llamar → `revalidatePath`. Si una regla no puede expresarse en SQL, registrarla en `DECISIONES.md` como excepción explícita antes de escribirla en TypeScript
 - No crear nuevas dependencias sin necesidad demostrada.
 
 ---
