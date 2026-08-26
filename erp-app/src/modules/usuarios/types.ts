@@ -8,6 +8,21 @@ export const crearUsuarioSchema = z.object({
 
 export type CrearUsuarioForm = z.infer<typeof crearUsuarioSchema>;
 
+export const editarUsuarioSchema = z.object({
+  id: z.string().uuid(),
+  nombre: z.string().min(1, "El nombre es obligatorio"),
+  email: z.string().min(1, "El email es obligatorio").email("Email inválido"),
+});
+
+export type EditarUsuarioForm = z.infer<typeof editarUsuarioSchema>;
+
+export const resetearPasswordSchema = z.object({
+  id: z.string().uuid(),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+});
+
+export type ResetearPasswordForm = z.infer<typeof resetearPasswordSchema>;
+
 export const asignarSubmodulosSchema = z.object({
   usuario_id: z.string().uuid(),
   submodulo_ids: z.array(z.string().uuid()),

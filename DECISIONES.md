@@ -947,3 +947,22 @@ Desde el celular, por `http://192.168.1.52:3000`, el login no logueaba, no mostr
 
 Verificado con `sql/tests/usuarios_activo.sql` (mismo mecanismo que los tests de RLS de tareas: rol `authenticated`, `request.jwt.claims` movido, `ROLLBACK` al final).
 
+
+---
+
+## Módulo usuarios — editar, resetear contraseña y filtro por estado (`sql/021_usuarios_editar.sql`)
+
+Sin submódulos nuevos: editar y resetear contraseña son el mismo nivel de autoridad que crear y desactivar, así que van bajo `usuarios_gestionar`. Un permiso más fino no tendría a quién servir — quien puede crear una cuenta puede cambiarle el email.
+
+**El email se sincroniza por trigger, no con dos writes.** `auth.users.email` es la credencial; `usuarios.email` es lo que muestra el ERP. `handle_user_email_updated` (AFTER UPDATE OF email ON auth.users) baja el valor a `usuarios`, igual que `handle_new_user` hace en el INSERT. Como el trigger corre dentro de la transacción del cambio, si `usuarios` rechaza el valor se revierte también el de auth: no queda un usuario entrando con un email que la pantalla no muestra. El `WHEN (NEW.email IS DISTINCT FROM OLD.email)` es lo que evita que un cambio de contraseña o el ban de `sql/020` reescriban la fila.
+
+**`nombre` no se replica a `user_metadata`.** `handle_new_user` lo lee al crear la cuenta y ahí termina su rol; la autoridad es `usuarios.nombre`. Escribir las dos copias en cada edición sería duplicar la verdad para un campo que auth no usa.
+
+**La action solo toca auth si el email cambió.** Lee el email actual primero: editar un nombre no tiene por qué pasar por el servicio de auth. El duplicado lo rechaza el propio `auth.users` (unique sobre todos los emails, más estricto que el índice parcial de `usuarios`) y devuelve `email_exists`, que ya estaba mapeado en `mensajeError`.
+
+**Resetear contraseña no cierra las sesiones abiertas del usuario.** `auth.admin.signOut()` pide el JWT de esa sesión, no el id — desde el panel de admin no lo tenemos. Si el motivo del reseteo es una cuenta comprometida, el camino es desactivar (que sí banea, `sql/020`) y después reactivar con la contraseña nueva. La contraseña se muestra en claro por default en el modal: quien la fija se la tiene que pasar al usuario, y no es su propia contraseña la que queda expuesta en pantalla.
+
+**Filtro de estado con default en "Activos".** Existe recién ahora: hasta que se pudo reactivar, un inactivo en la lista no tenía nada que ofrecer. El default oculta a los desactivados porque son historia, no el trabajo del día. El estado vacío distingue los dos casos por `usuarios.length`, no por el filtro: con la base vacía dice "Sin usuarios todavía" e invita a crear; con la base llena y el filtro sin resultados dice "Sin resultados" y menciona el filtro, que es lo que probablemente lo causó.
+
+Verificado con `sql/tests/usuarios_email_sync.sql` (2/2). El caso "un UPDATE que no toca el email no dispara el trigger" planta un centinela en `usuarios` antes del UPDATE: comparar contra el mismo valor de antes daría OK con el trigger corriendo igual.
+

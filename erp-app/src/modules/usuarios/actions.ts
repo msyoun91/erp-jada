@@ -9,8 +9,12 @@ import { puedeGestionarUsuarios } from "./permissions";
 import {
   asignarSubmodulosSchema,
   crearUsuarioSchema,
+  editarUsuarioSchema,
+  resetearPasswordSchema,
   type AsignarSubmodulosForm,
   type CrearUsuarioForm,
+  type EditarUsuarioForm,
+  type ResetearPasswordForm,
 } from "./types";
 
 function createAdminClient() {
@@ -43,6 +47,76 @@ export async function crearUsuario(input: CrearUsuarioForm) {
   }
 
   revalidatePath("/usuarios");
+  return { success: true as const };
+}
+
+export async function editarUsuario(input: EditarUsuarioForm) {
+  if (!(await puedeGestionarUsuarios())) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const parsed = editarUsuarioSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const admin = createAdminClient();
+  const { id, nombre, email } = parsed.data;
+
+  const { data: actual, error: leerError } = await admin
+    .from("usuarios")
+    .select("email")
+    .eq("id", id)
+    .single();
+
+  if (leerError) {
+    return { success: false as const, error: mensajeError(leerError) };
+  }
+
+  // El email es la credencial: se cambia en `auth.users` y el trigger de
+  // `sql/021` lo baja a `usuarios`. Escribirlo también acá sería una segunda
+  // copia de la misma verdad. Solo se toca auth si cambió — editar el nombre
+  // no tiene por qué pasar por el servicio de auth.
+  if (actual.email !== email) {
+    const { error: authError } = await admin.auth.admin.updateUserById(id, {
+      email,
+      email_confirm: true,
+    });
+
+    if (authError) {
+      return { success: false as const, error: mensajeError(authError) };
+    }
+  }
+
+  const { error } = await admin.from("usuarios").update({ nombre }).eq("id", id);
+
+  if (error) {
+    return { success: false as const, error: mensajeError(error) };
+  }
+
+  revalidatePath("/usuarios");
+  return { success: true as const };
+}
+
+export async function resetearPassword(input: ResetearPasswordForm) {
+  if (!(await puedeGestionarUsuarios())) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const parsed = resetearPasswordSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(parsed.data.id, {
+    password: parsed.data.password,
+  });
+
+  if (error) {
+    return { success: false as const, error: mensajeError(error) };
+  }
+
   return { success: true as const };
 }
 

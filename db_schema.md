@@ -6,13 +6,13 @@ Proyecto Supabase: `qbpudocgdvpeadcyyhfh`. Regenerar tipos tras cada migración:
 `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public > erp-app/src/lib/supabase/database.types.ts`
 (requiere `supabase login` o `SUPABASE_ACCESS_TOKEN`)
 
-Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql` corridos en Supabase. `database.types.ts` generado real (comando de arriba).
+Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql` corridos en Supabase. `database.types.ts` generado real (comando de arriba).
 
 ---
 
 ## usuarios
 
-Perfil 1:1 con `auth.users` (mismo `id`). Se crea automáticamente via trigger `on_auth_user_created` al insertar en `auth.users`.
+Perfil 1:1 con `auth.users` (mismo `id`). Se crea automáticamente via trigger `on_auth_user_created` al insertar en `auth.users`, y `email` se mantiene sincronizado con trigger `on_auth_user_email_updated` (`sql/021`) — la credencial es `auth.users.email` y esta tabla la espeja, nunca al revés. `nombre` no: vive solo acá (el `user_metadata.nombre` de auth lo lee `handle_new_user` al crear y después queda congelado).
 
 | columna | tipo | notas |
 |---|---|---|

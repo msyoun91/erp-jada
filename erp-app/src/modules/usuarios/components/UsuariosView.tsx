@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Archive, ArchiveRestore, UserPlus, ShieldCheck } from "lucide-react";
+import { Archive, ArchiveRestore, KeyRound, Pencil, UserPlus, ShieldCheck } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
@@ -10,7 +10,17 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { desactivarUsuario, reactivarUsuario } from "../actions";
 import type { Submodulo, Usuario } from "../types";
 import { CrearUsuarioModal } from "./CrearUsuarioModal";
+import { EditarUsuarioModal } from "./EditarUsuarioModal";
 import { PermisosModal } from "./PermisosModal";
+import { ResetearPasswordModal } from "./ResetearPasswordModal";
+
+const ESTADOS = [
+  { valor: "activos", label: "Activos" },
+  { valor: "inactivos", label: "Inactivos" },
+  { valor: "todos", label: "Todos" },
+] as const;
+
+type Estado = (typeof ESTADOS)[number]["valor"];
 
 export function UsuariosView({
   usuarios,
@@ -24,7 +34,11 @@ export function UsuariosView({
   puedeGestionar: boolean;
 }) {
   const [texto, setTexto] = useState("");
+  // Arranca en "activos": los desactivados son historia, no el trabajo del día.
+  const [estado, setEstado] = useState<Estado>("activos");
   const [modalCrear, setModalCrear] = useState(false);
+  const [editando, setEditando] = useState<Usuario | null>(null);
+  const [reseteando, setReseteando] = useState<Usuario | null>(null);
   const [usuarioPermisos, setUsuarioPermisos] = useState<Usuario | null>(null);
   const [desactivando, setDesactivando] = useState<Usuario | null>(null);
 
@@ -50,7 +64,9 @@ export function UsuariosView({
 
   const q = texto.trim().toLowerCase();
   const filtrados = usuarios.filter(
-    (u) => u.nombre.toLowerCase().includes(q) || u.email.toLowerCase().includes(q),
+    (u) =>
+      (estado === "todos" || (estado === "activos") === u.activo) &&
+      (u.nombre.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)),
   );
   const { visibles, ...paginado } = usePaginado(filtrados);
 
@@ -58,6 +74,20 @@ export function UsuariosView({
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar por nombre o email…" />
+
+        <select
+          className="input w-auto py-1.5"
+          value={estado}
+          onChange={(e) => setEstado(e.target.value as Estado)}
+          aria-label="Filtrar por estado"
+        >
+          {ESTADOS.map((e) => (
+            <option key={e.valor} value={e.valor}>
+              {e.label}
+            </option>
+          ))}
+        </select>
+
         {puedeGestionar && (
           <button className="btn btn-primary" onClick={() => setModalCrear(true)}>
             <UserPlus size={16} />
@@ -70,9 +100,14 @@ export function UsuariosView({
 
       {filtrados.length === 0 ? (
         <div className="empty-state">
-          <p className="t-h3">{texto ? "Sin resultados" : "Sin usuarios todavía"}</p>
+          {/* "Sin usuarios todavía" solo si la base está vacía: con el filtro
+              en "Activos" por default, una lista de puros inactivos no es una
+              base vacía. */}
+          <p className="t-h3">{usuarios.length === 0 ? "Sin usuarios todavía" : "Sin resultados"}</p>
           <p className="t-body-m mt-1">
-            {texto ? "Probá con otro término de búsqueda." : 'Creá el primero con "Nuevo usuario".'}
+            {usuarios.length === 0
+              ? 'Creá el primero con "Nuevo usuario".'
+              : "Probá con otro término de búsqueda o cambiá el filtro de estado."}
           </p>
         </div>
       ) : (
@@ -95,9 +130,19 @@ export function UsuariosView({
                 <OverflowMenu
                   items={[
                     {
+                      label: "Editar",
+                      icon: <Pencil size={14} strokeWidth={1.75} />,
+                      onClick: () => setEditando(usuario),
+                    },
+                    {
                       label: "Permisos",
                       icon: <ShieldCheck size={14} strokeWidth={1.75} />,
                       onClick: () => setUsuarioPermisos(usuario),
+                    },
+                    {
+                      label: "Resetear contraseña",
+                      icon: <KeyRound size={14} strokeWidth={1.75} />,
+                      onClick: () => setReseteando(usuario),
                     },
                     usuario.activo
                       ? {
@@ -129,6 +174,12 @@ export function UsuariosView({
       )}
 
       {modalCrear && <CrearUsuarioModal onClose={() => setModalCrear(false)} />}
+
+      {editando && <EditarUsuarioModal usuario={editando} onClose={() => setEditando(null)} />}
+
+      {reseteando && (
+        <ResetearPasswordModal usuario={reseteando} onClose={() => setReseteando(null)} />
+      )}
 
       {usuarioPermisos && (
         <PermisosModal
