@@ -1023,3 +1023,19 @@ Verificado con `sql/tests/perfil_propio.sql` (3/3): cambio mi nombre, no puedo t
 **Los presets de vencimiento son chips, no botones.** `btn btn-secondary btn-sm` los dejaba con el mismo peso que el "Cancelar" del footer del mismo panel. Son atajos de relleno del campo de arriba, no acciones del formulario.
 
 **La fila de Auditoría se apila abajo de `sm`.** A 390px la cadena `Creada → Asignada → Completada` tomaba tres líneas y truncaba el título a ~10 caracteres.
+
+---
+
+## Módulo tareas — un UPDATE rechazado deja de devolver `success` (sin SQL)
+
+Auditoría de arquitectura, primera tanda (`PLAN_ARQUITECTURA_TAREAS.md`, puntos 1 y 4).
+
+**Un UPDATE que RLS rechaza no tira error: afecta 0 filas y vuelve limpio.** Los 26 `.update()` del módulo miraban solo `error`, así que editar una tarea sin permiso mostraba el toast de éxito, cerraba el panel y dejaba la fila intacta — el peor modo de falla posible, porque el usuario no tiene motivo para dudar. Ahora los updates que apuntan a filas puntuales van con `{ count: "exact" }` y pasan por `errorDeUpdate()`, que devuelve mensaje si hubo error **o** si `count === 0`.
+
+**Dónde no se aplica, a propósito:** la cascada de `desactivarHilo` sobre `tareas` (`.eq("hilo_id", …)`) — un hilo sin tareas afecta 0 filas y es correcto. En `sincronizarAsignados` el desactivar pasó a estar guardado por `previos.length > 0`: con esa guarda 0 filas ya no es ambiguo, y de paso deja de emitirse un statement que no tenía nada que desactivar.
+
+**`sincronizarAsignados` devuelve mensaje, no `PostgrestError`.** Sus dos callers hacían `mensajeError(...)` sobre lo que devolvía; ahora el mapeo vive en un solo lado y la función puede reportar tanto un error de Supabase como el conteo en cero, que no es un `PostgrestError`.
+
+**Las 9 actions que no validaban ahora lo hacen** (`convertirTareaEnHilo`, `desactivarProyecto`, `desactivarPlantilla`, `cambiarEstadoTarea`, `desactivarHilo`, `desactivarTarea`, `asociarTareaHilo`, `desasociarTareaHilo`, `actualizarTemperatura`), más `listarNotasTarea` y `listarNotasHilo`, que son lecturas pero también son `"use server"` invocables por RPC. Schemas nuevos en `types.ts`: `uuidSchema`, `cambiarEstadoTareaSchema`, `asociarTareaHiloSchema`, `temperaturaSchema`. Las firmas no cambian — reciben ids sueltos y se parsean adentro; convertirlas a objetos habría tocado 12 componentes sin ganar nada. La validación manual de `actualizarTemperatura` pasa a un `.refine()` con el mismo mensaje, para que la regla viva donde viven las demás.
+
+**Pendiente de verificar en el navegador:** que PostgREST devuelva `Content-Range` en un PATCH con `Prefer: return=minimal,count=exact`. No se pudo probar desde acá — ni `anon` ni `service_role` tienen `GRANT` sobre `tareas` (decisión "RLS no alcanza sin GRANT"), así que hace falta una sesión autenticada real. Si no lo devolviera, `count` llega `null` y `errorDeUpdate` no dispara: el fix quedaría inerte, nunca en falso positivo.

@@ -287,3 +287,25 @@ export const marcarTutorialSchema = z.object({
 });
 
 export type MarcarTutorialForm = z.infer<typeof marcarTutorialSchema>;
+
+// Actions de un solo gesto sobre un registro (desactivar, asociar, cambiar
+// estado): no tienen formulario, pero la regla de validar en servidor no
+// distingue — un id mal formado corta acá y no llega a la base.
+export const uuidSchema = z.string().uuid("Identificador inválido");
+
+export const cambiarEstadoTareaSchema = z.object({
+  tarea_id: uuidSchema,
+  estado: z.enum(["pendiente", "en_progreso", "cancelada"]),
+});
+
+export const asociarTareaHiloSchema = z.object({
+  tarea_id: uuidSchema,
+  hilo_id: uuidSchema,
+});
+
+export const temperaturaSchema = z.object({
+  tarea_id: uuidSchema,
+  temperatura: z
+    .number()
+    .refine((v) => Number.isInteger(v) && v >= 1 && v <= 100, "Temperatura fuera de rango"),
+});
