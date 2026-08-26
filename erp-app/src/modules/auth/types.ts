@@ -18,3 +18,22 @@ export const loginSchema = z.object({
 });
 
 export type LoginForm = z.input<typeof loginSchema>;
+
+export const perfilSchema = z.object({
+  nombre: z.string().min(1, "El nombre es obligatorio"),
+});
+
+export type PerfilForm = z.infer<typeof perfilSchema>;
+
+export const cambiarPasswordSchema = z
+  .object({
+    passwordActual: z.string().min(1, "Ingresá tu contraseña actual"),
+    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+    passwordRepetida: z.string().min(1, "Repetí la contraseña nueva"),
+  })
+  .refine((d) => d.password === d.passwordRepetida, {
+    message: "Las contraseñas no coinciden",
+    path: ["passwordRepetida"],
+  });
+
+export type CambiarPasswordForm = z.infer<typeof cambiarPasswordSchema>;

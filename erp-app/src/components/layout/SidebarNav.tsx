@@ -63,12 +63,26 @@ export function SidebarNav({
       </nav>
 
       <div className="mt-2 flex items-center gap-2 border-t border-border pt-2">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-900 text-[13px] font-semibold text-white">
-          {initials(nombre)}
-        </div>
-        <span className="t-body-m flex-1 truncate text-[13px] font-semibold text-text-primary">
-          {nombre}
-        </span>
+        {/* El perfil no está en NAV_ITEMS: no es un módulo y no se autoriza
+            por submódulo (ver DECISIONES.md). Se entra por el propio nombre. */}
+        <Link
+          href="/perfil"
+          title="Mi perfil"
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-sm py-1 hover:bg-bg-subtle"
+        >
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-900 text-[13px] font-semibold text-white">
+            {initials(nombre)}
+          </div>
+          {/* El color activo va en el span y no en el Link: el span fija su
+              propio color y ganaría por especificidad de utilidad. */}
+          <span
+            className={`t-body-m flex-1 truncate text-[13px] font-semibold ${
+              pathname === "/perfil" ? "text-brand-500" : "text-text-primary"
+            }`}
+          >
+            {nombre}
+          </span>
+        </Link>
         <form action={signOutAction}>
           <button
             type="submit"

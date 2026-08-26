@@ -966,3 +966,28 @@ Sin submódulos nuevos: editar y resetear contraseña son el mismo nivel de auto
 
 Verificado con `sql/tests/usuarios_email_sync.sql` (2/2). El caso "un UPDATE que no toca el email no dispara el trigger" planta un centinela en `usuarios` antes del UPDATE: comparar contra el mismo valor de antes daría OK con el trigger corriendo igual.
 
+---
+
+## Excepción explícita: `/perfil` no pasa por submódulos
+
+**La regla:** toda autorización se implementa mediante submódulos, y una vista sin submódulo asignado no existe para el usuario.
+
+**Por qué no aplica acá:** el submódulo es la unidad de *autorización*, y editar la propia cuenta no es algo que se autorice — es la definición de tener cuenta. Un `perfil_ver` asignable crearía un estado sin sentido: un usuario que entra al sistema pero no puede cambiar su propia contraseña, y un administrador que tiene que acordarse de asignarle el permiso de existir a cada alta. La alternativa de colgarlo del módulo `usuarios` es peor: ahí el permiso se llama `usuarios_ver`, lo tiene un puñado de personas, y el resto se quedaría sin pantalla propia.
+
+**El alcance de la excepción:** `/perfil` es la única ruta de `(erp-app)` sin chequeo de permiso, y solo puede tocar la fila del usuario logueado. No aparece en `NAV_ITEMS` (el sidebar sigue mostrando únicamente módulos autorizados) — se entra desde el nombre en el footer del sidebar. Si alguna vez hace falta *restringir* quién edita su perfil, ahí sí corresponde un submódulo y esta excepción se revisa.
+
+**La barrera no se relaja, se mueve a RLS por columna** (`sql/022_perfil_propio.sql`): `usuarios_update_propio` autoriza `id = auth.uid()`, y `GRANT UPDATE (nombre)` limita qué columna puede tocar el rol `authenticated`. Sin el grant por columna, la misma policy dejaría que un usuario se pusiera `activo = true` solo — deshaciendo la desactivación de `sql/020` desde su propio perfil. La contraseña no pasa por esta tabla: es `auth.updateUser()` sobre la sesión propia.
+
+### `/perfil` — implementación
+
+**Vive en `modules/auth/`, no en un módulo propio.** Es la misma materia que login y logout — credenciales y sesión — y un `modules/perfil/` con dos actions y sin `permissions.ts` sería una carpeta para justificar la palabra "módulo". La página es `app/(erp-app)/perfil/page.tsx` y lee la fila propia con el cliente normal.
+
+**Cambiar la contraseña pide la actual.** Con la sesión abierta, `auth.updateUser({ password })` no la pide: quien se sienta frente a una máquina desbloqueada se queda con la cuenta. La verificación es un `signInWithPassword` contra un cliente aparte creado con la anon key y sin cookies — hacerlo sobre el cliente de servidor rotaría, de paso, la sesión que el usuario está usando. Ese login de verificación acuña un refresh token que no se guarda en ningún lado; no se lo cierra con `signOut()` porque el scope por default es global y voltearía las sesiones reales del usuario.
+
+**El email es de solo lectura acá.** Es la credencial de login y vive en `auth.users`; cambiarlo es una operación de administración (módulo Usuarios, `sql/021`), no de perfil. El campo se muestra igual, deshabilitado, porque "cuál es mi usuario" es justo lo que uno viene a mirar.
+
+**Entrada por el nombre del footer del sidebar**, no por un ítem de nav: `NAV_ITEMS` solo lista módulos autorizados y el perfil no es ninguno de los dos. `SidebarNav` lo sirve tanto al sidebar de desktop como al drawer mobile, así que es un solo cambio.
+
+**Guardar deshabilitado si no hay cambios** (`!isDirty`), y `reset(data)` después de guardar: sin eso el form queda sucio para siempre y el botón invita a reenviar lo mismo.
+
+Verificado con `sql/tests/perfil_propio.sql` (3/3): cambio mi nombre, no puedo tocar `activo` (42501), no puedo renombrar a otro.
