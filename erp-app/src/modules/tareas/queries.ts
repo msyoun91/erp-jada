@@ -201,3 +201,13 @@ export async function getPendientesUsuario(usuarioId: string): Promise<TareaPend
     hilo_titulo: t.tareas_hilos?.titulo ?? null,
   }));
 }
+
+// Pasos del tutorial que el usuario ya vio. La RLS acota a sus propias filas,
+// así que no hace falta filtrar por usuario acá.
+export async function getTutorialVisto(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("usuario_tutorial").select("paso");
+
+  if (error) throw error;
+  return (data ?? []).map((f) => f.paso);
+}

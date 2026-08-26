@@ -52,6 +52,19 @@ Asignación usuario ↔ submódulo.
 | submodulo_id | uuid FK → submodulos | |
 | activo | boolean | UNIQUE normal (usuario_id, submodulo_id) — no parcial, por upsert (excepción GUIDE_DB) |
 
+## usuario_tutorial
+
+Qué pasos del tutorial guiado ya vio cada usuario (`sql/019`). Infra cross-módulo como `usuario_widgets`: el namespace vive en el código del paso (`tareas_lista_isla`), no en el nombre de la tabla.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| usuario_id | uuid FK → usuarios | |
+| paso | text | coincide con `PasoTutorial.codigo` en `modules/tareas/components/tutorialPasos.ts` |
+| created_at / updated_at | timestamptz | |
+
+Sin `activo`: la fila significa "visto" y nunca se borra ni se desactiva — no tiene otro estado que existir. Volver a ver el tutorial es el botón de la vista, no un reset de datos. UNIQUE normal (usuario_id, paso), por upsert. RLS directo (`usuario_id = auth.uid()`) en SELECT/INSERT/UPDATE, mismo criterio que `usuario_widgets`.
+
 ## usuario_widgets
 
 Preferencia de visibilidad de widgets del dashboard, por usuario. Toggle "Configurar" en `/`.

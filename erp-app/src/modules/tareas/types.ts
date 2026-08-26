@@ -281,3 +281,9 @@ export const filtrosTareasSchema = z.object({
 });
 
 export type FiltrosTareas = z.infer<typeof filtrosTareasSchema>;
+
+export const marcarTutorialSchema = z.object({
+  pasos: z.array(z.string().min(1).max(80)).min(1),
+});
+
+export type MarcarTutorialForm = z.infer<typeof marcarTutorialSchema>;

@@ -20,6 +20,7 @@ import {
   deshacerConversionSchema,
   agregarNotaTareaSchema,
   agregarNotaHiloSchema,
+  marcarTutorialSchema,
   type CrearTareaForm,
   type EditarTareaForm,
   type CrearHiloForm,
@@ -757,4 +758,24 @@ export async function listarNotasHilo(hiloId: string) {
 
   if (error) return { success: false as const, error: mensajeError(error) };
   return { success: true as const, data: (data ?? []) as HiloNota[] };
+}
+
+// Sin `revalidatePath`: los pasos vistos solo se leen al montar el layout, y
+// el cliente ya sabe cuáles marcó. Revalidar acá volvería a renderizar la
+// vista entera para no cambiar un pixel.
+export async function marcarTutorialVisto(pasos: string[]) {
+  const parsed = marcarTutorialSchema.safeParse({ pasos });
+  if (!parsed.success) return { success: false as const, error: "Datos inválidos" };
+
+  const supabase = await createClient();
+  const usuario_id = await usuarioActualId();
+  const { error } = await supabase
+    .from("usuario_tutorial")
+    .upsert(
+      parsed.data.pasos.map((paso) => ({ usuario_id, paso })),
+      { onConflict: "usuario_id,paso" },
+    );
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+  return { success: true as const };
 }

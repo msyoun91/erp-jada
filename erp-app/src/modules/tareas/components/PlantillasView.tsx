@@ -39,7 +39,11 @@ export function PlantillasView({
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar plantilla…" />
-        <button className="btn btn-primary" onClick={() => setCreando(true)}>
+        <button
+          data-tour="tareas_plantillas_crear"
+          className="btn btn-primary"
+          onClick={() => setCreando(true)}
+        >
           <Plus size={16} />
           Nueva plantilla
         </button>
@@ -55,7 +59,10 @@ export function PlantillasView({
           </p>
         </div>
       ) : (
-        <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
+        <div
+          data-tour="tareas_plantillas_lista"
+          className="flex flex-col rounded-lg border border-border bg-bg-surface"
+        >
           {visibles.map((p) => {
             const items = itemsPorPlantilla[p.id] ?? [];
             return (

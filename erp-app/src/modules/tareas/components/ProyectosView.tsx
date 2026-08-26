@@ -57,6 +57,7 @@ export function ProyectosView({
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar proyecto…" />
         <select
+          data-tour="tareas_proyectos_miembro"
           className="input w-auto py-1.5"
           value={miembroId}
           onChange={(e) => setMiembroId(e.target.value)}
@@ -70,7 +71,11 @@ export function ProyectosView({
           ))}
         </select>
         {puedeCrear && (
-          <button className="btn btn-primary" onClick={() => setCreando(true)}>
+          <button
+            data-tour="tareas_proyectos_crear"
+            className="btn btn-primary"
+            onClick={() => setCreando(true)}
+          >
             <FolderPlus size={16} />
             Nuevo proyecto
           </button>
@@ -89,7 +94,7 @@ export function ProyectosView({
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div data-tour="tareas_proyectos_lista" className="flex flex-col gap-3">
           {visibles.map((p) => (
             <ProyectoCard
               key={p.id}

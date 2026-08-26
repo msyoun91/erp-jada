@@ -123,7 +123,7 @@ export function MisionView({
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-      <div className="flex flex-col gap-2">
+      <div data-tour="tareas_mision_cola" className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <p className="t-label">
             Tarea {posicion + 1} de {total}
@@ -232,7 +232,11 @@ function Bloqueadas({
 
   return (
     <div className="flex flex-col gap-2">
-      <button className="btn btn-ghost btn-sm self-start" onClick={() => setAbierto(!abierto)}>
+      <button
+        data-tour="tareas_mision_bloqueadas"
+        className="btn btn-ghost btn-sm self-start"
+        onClick={() => setAbierto(!abierto)}
+      >
         <Lock size={14} strokeWidth={1.75} />
         {tareas.length} {tareas.length === 1 ? "tarea espera" : "tareas esperan"} un paso previo
         {abierto ? <ChevronUp size={14} /> : <ChevronDown size={14} />}

@@ -7,18 +7,21 @@ import {
   puedeVerPlantillas,
   puedeVerProyectos,
 } from "@/modules/tareas/permissions";
+import { getTutorialVisto } from "@/modules/tareas/queries";
+import { Tutorial } from "@/modules/tareas/components/Tutorial";
 
 export default async function TareasLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [lista, mision, proyectos, plantillas, auditoria] = await Promise.all([
+  const [lista, mision, proyectos, plantillas, auditoria, tutorialVisto] = await Promise.all([
     puedeVerLista(),
     puedeVerMision(),
     puedeVerProyectos(),
     puedeVerPlantillas(),
     puedeVerAuditoria(),
+    getTutorialVisto(),
   ]);
 
   const tabs = [
@@ -31,10 +34,13 @@ export default async function TareasLayout({
 
   return (
     <div className="flex h-full flex-col">
-      <h1 className="t-h1 mb-4 flex items-center gap-2.5">
-        <ListTodo size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
-        Tareas
-      </h1>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h1 className="t-h1 flex items-center gap-2.5">
+          <ListTodo size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
+          Tareas
+        </h1>
+        <Tutorial vistos={tutorialVisto} />
+      </div>
       <ModuleTabs modulo="tareas" tabs={tabs} />
       {children}
     </div>

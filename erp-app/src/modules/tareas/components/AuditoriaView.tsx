@@ -38,7 +38,7 @@ export function AuditoriaView({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div data-tour="tareas_auditoria_filtros" className="mb-4 flex flex-wrap items-center gap-3">
         <div>
           <label className="t-label mb-1 block">Desde</label>
           <input
@@ -75,7 +75,10 @@ export function AuditoriaView({
       </div>
 
       {usuarioId && (
-        <div className="mb-5 rounded-lg border border-border bg-bg-surface">
+        <div
+          data-tour="tareas_auditoria_pendientes"
+          className="mb-5 rounded-lg border border-border bg-bg-surface"
+        >
           <div className="flex items-center gap-2 border-b border-border p-3 px-5">
             <ListTodo size={15} strokeWidth={1.75} className="text-text-tertiary" />
             <p className="t-label">Pendiente de {usuarioNombre ?? "este usuario"} ({pendientes.length})</p>

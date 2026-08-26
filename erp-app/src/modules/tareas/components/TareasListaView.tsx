@@ -135,6 +135,7 @@ export function TareasListaView({
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar tarea o hilo…" />
         <select
+          data-tour="tareas_lista_usuario"
           className="input w-auto py-1.5"
           value={asignadoId}
           onChange={(e) => setAsignadoId(e.target.value)}
@@ -148,7 +149,12 @@ export function TareasListaView({
           ))}
         </select>
         {asignadoId && (
-          <div className="flex rounded-lg border border-border p-0.5" role="group" aria-label="Filtrar por relación">
+          <div
+            data-tour="tareas_lista_relacion"
+            className="flex rounded-lg border border-border p-0.5"
+            role="group"
+            aria-label="Filtrar por relación"
+          >
             {ROLES.map((r) => (
               <button
                 key={r.valor}
@@ -165,6 +171,7 @@ export function TareasListaView({
         )}
         <button
           type="button"
+          data-tour="tareas_lista_terminadas"
           aria-pressed={ocultarTerminadas}
           className={`tap-target t-caption rounded-lg border px-3 py-1 ${
             ocultarTerminadas
@@ -175,11 +182,19 @@ export function TareasListaView({
         >
           Ocultar terminadas
         </button>
-        <button className="btn btn-secondary" onClick={() => setCreandoHilo(true)}>
+        <button
+          data-tour="tareas_lista_hilo"
+          className="btn btn-secondary"
+          onClick={() => setCreandoHilo(true)}
+        >
           <Plus size={16} />
           Nuevo hilo
         </button>
-        <button className="btn btn-primary" onClick={() => setCreandoTarea(true)}>
+        <button
+          data-tour="tareas_lista_tarea"
+          className="btn btn-primary"
+          onClick={() => setCreandoTarea(true)}
+        >
           <Plus size={16} />
           Nueva tarea
         </button>
@@ -203,7 +218,7 @@ export function TareasListaView({
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div data-tour="tareas_lista_isla" className="flex flex-col gap-3">
           {filas.map((f) =>
             f.tipo === "hilo" ? (
               <HiloCard
