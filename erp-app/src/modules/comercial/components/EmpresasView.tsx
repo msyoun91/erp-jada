@@ -75,7 +75,7 @@ export function EmpresasView({
           {visibles.map((empresa) => (
             <div
               key={empresa.id}
-              className="flex items-center gap-2 border-b border-border p-[13px] px-5 last:border-b-0"
+              className="flex items-center gap-2 border-b border-border row last:border-b-0"
             >
               <div className="min-w-0 flex-1">
                 <p className="t-body-m truncate font-medium text-text-primary">

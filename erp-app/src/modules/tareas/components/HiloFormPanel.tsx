@@ -137,32 +137,36 @@ export function HiloFormPanel({
           <textarea rows={3} className="input" {...register("descripcion")} />
         </div>
 
-        {!hilo && !proyectoId && (
-          <div>
-            <label className="t-label mb-1 block">Proyecto</label>
-            <select
-              className="input"
-              {...register("proyecto_id", { onChange: (e) => sincronizarVisibilidad(e.target.value) })}
-            >
-              <option value="">Sin proyecto</option>
-              {proyectosDisponibles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        {/* Dos selects cortos, una fila (design system §8). Abajo de `sm` se
+            apilan; con uno solo visible ocupa la primera columna. */}
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-x-[14px]">
+          {!hilo && !proyectoId && (
+            <div>
+              <label className="t-label mb-1 block">Proyecto</label>
+              <select
+                className="input"
+                {...register("proyecto_id", { onChange: (e) => sincronizarVisibilidad(e.target.value) })}
+              >
+                <option value="">Sin proyecto</option>
+                {proyectosDisponibles.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-        {(proyectoElegido ?? proyectoId ?? hilo?.proyecto_id) && (
-          <div>
-            <label className="t-label mb-1 block">Visibilidad</label>
-            <select className="input" {...register("visibilidad")}>
-              <option value="privado">Privada</option>
-              <option value="publico">Pública</option>
-            </select>
-          </div>
-        )}
+          {(proyectoElegido ?? proyectoId ?? hilo?.proyecto_id) && (
+            <div>
+              <label className="t-label mb-1 block">Visibilidad</label>
+              <select className="input" {...register("visibilidad")}>
+                <option value="privado">Privada</option>
+                <option value="publico">Pública</option>
+              </select>
+            </div>
+          )}
+        </div>
 
         {!hilo && (
           <div>

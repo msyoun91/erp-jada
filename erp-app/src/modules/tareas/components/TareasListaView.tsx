@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { Paginacion } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
 import { type Relacion, relacionHilo, relacionTarea } from "../relacion";
@@ -201,10 +202,9 @@ export function TareasListaView({
       </div>
 
       {/* ponytail: sin paginación — un solo stream de filas y grupos. Paginar si
-          alguien pasa de ~50 filas visibles. */}
-      <p className="t-caption mb-2">
-        {totalTareas} {totalTareas === 1 ? "tarea" : "tareas"}
-      </p>
+          alguien pasa de ~50 filas visibles. El contador igual sale de
+          `Paginacion`, como en Proyectos, Plantillas y Auditoría. */}
+      <Paginacion total={totalTareas} etiqueta="tareas" />
 
       {filas.length === 0 ? (
         <div className="empty-state">

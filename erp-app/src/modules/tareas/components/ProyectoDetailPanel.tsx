@@ -84,7 +84,7 @@ export function ProyectoDetailPanel({
   return (
     <RightPanel title={proyecto.nombre} onClose={onClose}>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        <div className="flex flex-wrap items-center gap-2 border-b border-border p-[13px] px-5">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border row">
           {puedeTrabajar && (
             <>
               <button className="btn btn-ghost btn-sm" onClick={() => setCreandoHilo(true)}>
@@ -117,7 +117,7 @@ export function ProyectoDetailPanel({
           )}
         </div>
 
-        <div className="flex flex-col gap-2 border-b border-border p-[13px] px-5">
+        <div className="flex flex-col gap-2 border-b border-border row">
           {proyecto.descripcion && <p className="t-body-m whitespace-pre-wrap">{proyecto.descripcion}</p>}
           <div className="t-caption flex flex-wrap items-center gap-3">
             <span className={`badge ${proyecto.visibilidad === "privado" ? "badge-warning" : "badge-neutral"}`}>
@@ -143,7 +143,7 @@ export function ProyectoDetailPanel({
             {puedeTrabajar ? " — agregá el primero con los botones de arriba." : "."}
           </p>
         ) : (
-          <div className="flex flex-col gap-4 p-[13px] px-5">
+          <div className="flex flex-col gap-4 row">
             {hilosDelProyecto.length > 0 && (
               <div className="flex flex-col gap-3">
                 <p className="t-label text-text-tertiary">Hilos</p>

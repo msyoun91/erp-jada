@@ -26,17 +26,21 @@ function singular(etiqueta: string) {
   return etiqueta.replace(/s\b/g, "");
 }
 
+// El contador de total va siempre; los botones, solo con más de una página.
+// Las props de paginado son opcionales para el listado que muestra el total sin
+// paginar (la Lista de tareas): el contador de las cuatro tabs del módulo sale
+// del mismo componente, a la misma altura y alineación.
 export function Paginacion({
-  pagina,
+  pagina = 0,
   setPagina,
   total,
-  totalPaginas,
+  totalPaginas = 1,
   etiqueta,
 }: {
-  pagina: number;
-  setPagina: (pagina: number) => void;
+  pagina?: number;
+  setPagina?: (pagina: number) => void;
   total: number;
-  totalPaginas: number;
+  totalPaginas?: number;
   etiqueta: string;
 }) {
   return (
@@ -45,7 +49,7 @@ export function Paginacion({
         {total} {total === 1 ? singular(etiqueta) : etiqueta}
       </p>
 
-      {totalPaginas > 1 && (
+      {totalPaginas > 1 && setPagina && (
         <div className="flex shrink-0 items-center gap-2">
           <button
             className="btn btn-secondary px-2"

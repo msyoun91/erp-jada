@@ -158,6 +158,10 @@ export function MisionView({
       <div className="flex flex-col gap-2">
         {contexto && <p className="t-caption truncate">{contexto}</p>}
 
+        {/* `grande`: con una sola tarjeta en pantalla sobra espacio, y una
+            vista de a una que se ve igual que una fila de la Lista no se lee
+            como "una cosa a la vez". Es una variante de la isla, no una
+            segunda cara de la tarea. */}
         <TareaCard
           key={actual.id}
           tarea={actual}
@@ -170,6 +174,7 @@ export function MisionView({
           puedeAsignar={puedeAsignar}
           cadena={cadenas.get(actual.id)}
           relacionCon={usuarioActualId}
+          grande
         />
 
         {/* Texto plano de solo lectura, no una segunda cara de la tarjeta: una

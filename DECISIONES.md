@@ -991,3 +991,35 @@ Verificado con `sql/tests/usuarios_email_sync.sql` (2/2). El caso "un UPDATE que
 **Guardar deshabilitado si no hay cambios** (`!isDirty`), y `reset(data)` después de guardar: sin eso el form queda sucio para siempre y el botón invita a reenviar lo mismo.
 
 Verificado con `sql/tests/perfil_propio.sql` (3/3): cambio mi nombre, no puedo tocar `activo` (42501), no puedo renombrar a otro.
+
+---
+
+## Módulo tareas — jerarquía visual de la isla (auditoría de diseño, sin SQL)
+
+**La temperatura ordena la lista y ahora se ve: barra izquierda de 3px en `Isla`.** `useOrdenTemperatura` es el eje primario de orden en Lista y Misión, pero la temperatura era un span gris más dentro de `meta` — y "Baja" no tenía color siquiera. Tarjetas idénticas apiladas sin decir por qué esa está arriba. La barra cuesta cero altura, se lee de un vistazo y reusa la escala semántica: `temperaturaRango()` pasa a devolver también `barra` (rampa neutro → ámbar → rojo, no verde: la temperatura es urgencia, no un estado que esté bien o mal). Solo la tarea la pasa — hilo y proyecto no tienen temperatura propia.
+
+**Con la barra, el span de temperatura sale de la meta.** No es un `title=` encubierto ni contradice "en touch no hay hover" (`P1 responsive y legibilidad`): la barra es permanente, no un estado de hover, y el nivel sigue existiendo como texto y como control en el panel, a un tap de distancia. Lo que se saca es la repetición, no la información.
+
+**Dos niveles en la meta de `TareaCard`.** Podía llevar 7 spans `t-caption` grises del mismo peso: nada distinguía "vence mañana" de "vino de la app X", y `flex-wrap` no es jerarquía — es la misma información en más líneas. Ahora arriba va lo que cambia la decisión de qué hacer ahora (vencimiento o antigüedad, pospuesta, avatares) a 13px `font-medium`; abajo el contexto (privada, recurrencia, origen) unido en una sola línea `t-caption` con `·`. Sigue siendo texto — un ícono pelado habría revertido de callado la decisión de P1.
+
+**Un conteo no es un estado.** `Paso N/M` deja de ser badge y pasa a texto `t-caption`, igual que "N/M terminados" en hilo y proyecto. Los badges quedan para estado y bloqueo, que sí son la situación de la tarea; cuatro pills del mismo tamaño en la misma fila no jerarquizaban nada.
+
+**Misión usa la misma isla con `grande`, no una tarjeta propia.** Título en `t-h2`, más aire, contexto desplegado en vez de comprimido en una línea. Es una variante de `Isla`, no un componente nuevo: la razón por la que Misión ya usaba `TareaCard` (no mantener una segunda cara de la tarea sincronizada) sigue valiendo.
+
+**La isla avisa que se abre: chevron permanente.** Era un `<button>` sin borde de hover, sin ícono, sin nada — y `GUIDE_DESIGN` prohíbe el hover como única señal. De paso el título deja de ser un `<p>` dentro de un `<button>`, que no es HTML válido.
+
+**Atenuar con color, no con `opacity`.** `opacity-60` bajaba junto el contraste de texto, borde y badges: una tarea terminada quedaba con texto a ~2.8:1, abajo de AA. Ahora la isla atenuada cambia a `bg-bg-subtle` y su título a `text-text-tertiary`.
+
+**`text-error` y `text-warning` son hex fijos sobre fondo tematizado: van a `text-error-text` / `text-warning-text`.** Los tokens `--error-text` y `--warning-text` ya existían tematizados (los usaban `badge-error` y `badge-warning`) y nadie más los tocaba. Medido sobre `--bg-surface` en los dos temas: `text-error` (#DC2626) daba 3.8:1 en oscuro y `text-warning` (#D97706) 3.2:1 en **claro** — los dos abajo de AA, y justo en el vencimiento vencido y en "Pospuesta hasta". Con los tokens: error 14.0:1 claro / 11.7:1 oscuro, warning 11.0:1 claro / 14.4:1 oscuro. Los `text-success` / `text-warning` que quedan son íconos, no texto: el umbral ahí es 3:1 y lo pasan. **Queda pendiente `.input-error-text` en `globals.css`** — mismo defecto, pero es app-wide y no entraba en una auditoría del módulo tareas.
+
+**El selector de nivel usa la escala semántica, no el navy de marca.** Elegir "Alta" lo pintaba `btn-primary` (#011F51) y al cerrar el panel la tarjeta lo mostraba rojo: dos lenguajes de color para el mismo valor. El estado activo sale de `temperaturaRango(nivel.valor).selector`, así que la escala tiene un solo dueño.
+
+**`.row` en `globals.css`.** `p-[13px] px-5` — el token de fila del design system (§8) — estaba escrito a mano en 19 lugares, entre tareas, comercial y usuarios. Se reemplazaron todos, no solo los del módulo: es el mismo valor mágico.
+
+**El contador de la Lista sale de `Paginacion`, como sus tres tabs hermanas.** Proyectos, Plantillas y Auditoría lo renderizan dentro del componente (fila `justify-between`); la Lista lo tenía como un `<p>` suelto, a otra altura y otra alineación. Las props de paginado pasan a ser opcionales: sin ellas el componente es solo el contador. **La Lista sigue sin paginar** — decidido en "P2 — búsqueda, paginación y contador", esto toca dónde se dibuja el contador, no si se pagina.
+
+**Formularios en dos columnas para los campos cortos** (design system §8: grid 2 columnas / 14px gap). `TareaFormPanel` apilaba ocho campos full-width en un panel de 448px. Proyecto + Visibilidad y Vencimiento + Temperatura entran de a dos y cortan el scroll a la mitad; en `HiloFormPanel`, Proyecto + Visibilidad. Abajo de `sm` vuelven a apilarse. Los otros paneles de form del módulo (proyecto, plantilla, usar plantilla, posponer) quedan en una columna: tienen uno o dos campos cortos y una lista alta, y apretar el campo principal a 197px no compra nada.
+
+**Los presets de vencimiento son chips, no botones.** `btn btn-secondary btn-sm` los dejaba con el mismo peso que el "Cancelar" del footer del mismo panel. Son atajos de relleno del campo de arriba, no acciones del formulario.
+
+**La fila de Auditoría se apila abajo de `sm`.** A 390px la cadena `Creada → Asignada → Completada` tomaba tres líneas y truncaba el título a ~10 caracteres.

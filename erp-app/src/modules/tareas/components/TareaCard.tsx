@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarClock, Clock, ExternalLink, Lock, Repeat, Thermometer } from "lucide-react";
+import { CalendarClock, Clock } from "lucide-react";
 import type { TareaConAsignados, TareaHilo, TareaProyecto, Usuario } from "../types";
 import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
 import { relacionTarea } from "../relacion";
@@ -42,6 +42,7 @@ export function TareaCard({
   puedeAsignar,
   cadena,
   relacionCon,
+  grande,
   onTemperaturaChange,
   onConvertida,
 }: {
@@ -60,6 +61,8 @@ export function TareaCard({
   // Usuario cuya relación con la tarea se explica en el badge — el del filtro
   // de la vista, no necesariamente el actual.
   relacionCon?: string | null;
+  // Misión muestra una sola tarea: la isla se despliega en vez de comprimirse.
+  grande?: boolean;
   onTemperaturaChange?: (id: string, temperatura: number) => void;
   onConvertida?: (hiloId: string) => void;
 }) {
@@ -89,22 +92,40 @@ export function TareaCard({
     diasAntiguedad === null
       ? ""
       : diasAntiguedad >= ANTIGUEDAD_ROJO_DIAS
-        ? "text-error"
+        ? "text-error-text"
         : diasAntiguedad >= ANTIGUEDAD_AMBAR_DIAS
-          ? "text-warning"
+          ? "text-warning-text"
           : "";
+
+  // Dos niveles en la meta. Arriba lo que cambia la decisión de qué hacer
+  // ahora (cuándo vence, si está pospuesta, quién la tiene); abajo el
+  // contexto, que antes eran tres spans del mismo peso que el vencimiento.
+  // Sigue siendo texto y no ícono pelado: en touch no hay hover del que colgar
+  // un `title`.
+  const contexto = [
+    tarea.visibilidad === "privado" && tarea.hilo_id === null ? "Privada" : null,
+    tarea.recurrencia_cantidad != null
+      ? `Cada ${tarea.recurrencia_cantidad} ${RECURRENCIA_LABEL[tarea.recurrencia_unidad ?? "dia"]}`
+      : null,
+    tarea.origen_app,
+  ].filter((c): c is string => Boolean(c));
 
   return (
     <>
       <Isla
         titulo={tarea.titulo}
         atenuada={!activa}
+        barra={activa ? temperaturaRango(temperatura).barra : undefined}
+        grande={grande}
         onAbrir={() => setDetalleAbierto(true)}
         badges={
           <>
             <span className={`badge shrink-0 ${ESTADO_BADGE[estado]}`}>{ESTADO_LABEL[estado]}</span>
+            {/* Un conteo no es un estado: va como texto, igual que "N/M
+                terminados" en el hilo y el proyecto. Los badges quedan para
+                estado y bloqueo, que sí son la situación de la tarea. */}
             {cadena && (
-              <span className="badge badge-neutral shrink-0" title={`Paso ${cadena.posicion} de ${cadena.total}`}>
+              <span className="t-caption shrink-0 whitespace-nowrap">
                 Paso {cadena.posicion}/{cadena.total}
               </span>
             )}
@@ -117,65 +138,54 @@ export function TareaCard({
           </>
         }
         meta={
-          <>
-            {tarea.fecha_vencimiento ? (
-              <span className={`flex items-center gap-1 ${fechaClase}`}>
-                <CalendarClock size={13} strokeWidth={1.75} />
-                {formatFecha(tarea.fecha_vencimiento)}
-              </span>
-            ) : (
-              <span className={`flex items-center gap-1 ${antiguedadClase}`}>
-                <CalendarClock size={13} strokeWidth={1.75} />
-                Creada {textoAntiguedad(diasAntiguedad ?? 0)}
-              </span>
-            )}
-            {activa && (
-              <span className={`flex items-center gap-1 ${temperaturaRango(temperatura).clase}`}>
-                <Thermometer size={13} strokeWidth={1.75} />
-                {temperaturaRango(temperatura).label}
-              </span>
-            )}
-            {tarea.visibilidad === "privado" && tarea.hilo_id === null && (
-              <span className="flex items-center gap-1">
-                <Lock size={13} strokeWidth={1.75} />
-                Privada
-              </span>
-            )}
-            {tarea.recurrencia_cantidad != null && (
-              <span className="flex items-center gap-1">
-                <Repeat size={13} strokeWidth={1.75} />
-                Cada {tarea.recurrencia_cantidad} {RECURRENCIA_LABEL[tarea.recurrencia_unidad ?? "dia"]}
-              </span>
-            )}
-            {tarea.origen_app && (
-              <span className="flex items-center gap-1">
-                <ExternalLink size={13} strokeWidth={1.75} />
-                {tarea.origen_app}
-              </span>
-            )}
-            {tarea.posponer_hasta && (
-              <span className="flex items-center gap-1 text-warning">
-                <Clock size={13} strokeWidth={1.75} />
-                Pospuesta hasta {formatFecha(tarea.posponer_hasta)}
-              </span>
-            )}
-            {asignadosActivos.length > 0 && (
-              <span className="flex items-center">
-                {asignadosActivos.map((a, i) => (
-                  <span
-                    key={a.usuario_id}
-                    title={a.usuarios?.nombre ?? ""}
-                    style={{ marginLeft: i === 0 ? 0 : -6, zIndex: asignadosActivos.length - i }}
-                    className={`flex h-5 w-5 items-center justify-center rounded-full bg-brand-50 text-[10px] font-semibold text-brand-700 ring-2 ring-bg-surface ${
-                      a.usuario_id === usuarioActualId ? "outline outline-2 outline-brand-700" : ""
-                    }`}
-                  >
-                    {a.usuarios ? iniciales(a.usuarios.nombre) : "?"}
-                  </span>
-                ))}
-              </span>
-            )}
-          </>
+          <div className="flex w-full flex-col gap-1.5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-medium text-text-secondary">
+              {tarea.fecha_vencimiento ? (
+                <span className={`flex items-center gap-1 ${fechaClase}`}>
+                  <CalendarClock size={14} strokeWidth={1.75} />
+                  {formatFecha(tarea.fecha_vencimiento)}
+                </span>
+              ) : (
+                <span className={`flex items-center gap-1 ${antiguedadClase}`}>
+                  <CalendarClock size={14} strokeWidth={1.75} />
+                  Creada {textoAntiguedad(diasAntiguedad ?? 0)}
+                </span>
+              )}
+              {tarea.posponer_hasta && (
+                <span className="flex items-center gap-1 text-warning-text">
+                  <Clock size={14} strokeWidth={1.75} />
+                  Pospuesta hasta {formatFecha(tarea.posponer_hasta)}
+                </span>
+              )}
+              {asignadosActivos.length > 0 && (
+                <span className="flex items-center">
+                  {asignadosActivos.map((a, i) => (
+                    <span
+                      key={a.usuario_id}
+                      title={a.usuarios?.nombre ?? ""}
+                      style={{ marginLeft: i === 0 ? 0 : -6, zIndex: asignadosActivos.length - i }}
+                      className={`flex h-5 w-5 items-center justify-center rounded-full bg-brand-50 text-[10px] font-semibold text-brand-700 ring-2 ring-bg-surface ${
+                        a.usuario_id === usuarioActualId ? "outline outline-2 outline-brand-700" : ""
+                      }`}
+                    >
+                      {a.usuarios ? iniciales(a.usuarios.nombre) : "?"}
+                    </span>
+                  ))}
+                </span>
+              )}
+            </div>
+
+            {contexto.length > 0 &&
+              (grande ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  {contexto.map((c) => (
+                    <span key={c}>{c}</span>
+                  ))}
+                </div>
+              ) : (
+                <span className="truncate">{contexto.join(" · ")}</span>
+              ))}
+          </div>
         }
       />
 

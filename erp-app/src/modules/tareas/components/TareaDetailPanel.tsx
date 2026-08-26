@@ -177,7 +177,7 @@ export function TareaDetailPanel({
     <RightPanel title={tarea.titulo} subtitle={proyectoNombre} onClose={onClose}>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {(esAsignado || puedeGestionar) && (
-          <div className="flex flex-wrap items-center gap-2 border-b border-border p-[13px] px-5">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border row">
             {esAsignado && (
               <>
                 {estado !== "completada" && !bloqueada && (
@@ -292,7 +292,7 @@ export function TareaDetailPanel({
           </select>
         )}
 
-        <div className="flex flex-col gap-3 border-b border-border p-[13px] px-5">
+        <div className="flex flex-col gap-3 border-b border-border row">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`badge ${ESTADO_BADGE[estado]}`}>{ESTADO_LABEL[estado]}</span>
             {tarea.visibilidad === "privado" && tarea.hilo_id === null && (
@@ -325,7 +325,7 @@ export function TareaDetailPanel({
               </span>
             )}
             {tarea.posponer_hasta && (
-              <span className="flex items-center gap-1 text-warning">
+              <span className="flex items-center gap-1 text-warning-text">
                 <Clock size={13} strokeWidth={1.75} />
                 Pospuesta hasta {formatFecha(tarea.posponer_hasta)}
               </span>
@@ -346,7 +346,7 @@ export function TareaDetailPanel({
                       key={nivel.label}
                       type="button"
                       aria-pressed={activo}
-                      className={`btn btn-sm ${activo ? "btn-primary" : "btn-secondary"}`}
+                      className={`btn btn-sm ${activo ? temperaturaRango(nivel.valor).selector : "btn-secondary"}`}
                       onClick={() => onTemperaturaChange(nivel.valor)}
                     >
                       {nivel.label}
@@ -365,13 +365,13 @@ export function TareaDetailPanel({
         </div>
 
         {cadena && (
-          <div className="flex flex-col gap-2 border-b border-border p-[13px] px-5">
+          <div className="flex flex-col gap-2 border-b border-border row">
             <p className="t-label flex items-center gap-1.5">
               <ListOrdered size={14} strokeWidth={1.75} />
               Paso {cadena.posicion} de {cadena.total}
             </p>
             {bloqueada && pasoPrevio && (
-              <p className="t-caption text-warning">Bloqueada hasta completar «{pasoPrevio.titulo}»</p>
+              <p className="t-caption text-warning-text">Bloqueada hasta completar «{pasoPrevio.titulo}»</p>
             )}
             <ol className="flex flex-col gap-1.5">
               {cadena.cadena.map((p, i) => {
@@ -412,7 +412,7 @@ export function TareaDetailPanel({
           </div>
         )}
 
-        <div className="p-[13px] px-5">
+        <div className="row">
           <p className="t-label mb-2">Notas</p>
           <NotasSection tipo="tarea" id={tarea.id} puedeAgregar={esAsignado} notasIniciales={tarea.tareas_notas} />
         </div>

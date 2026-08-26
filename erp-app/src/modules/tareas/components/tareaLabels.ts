@@ -21,11 +21,33 @@ export const ESTADO_BADGE: Record<string, string> = {
 export const RECURRENCIA_LABEL: Record<string, string> = { dia: "día(s)", mes: "mes(es)" };
 
 // "🌡 61" no significa nada para el usuario: el rango es lo único que se lee.
-// Umbrales en tercios.
+// Umbrales en tercios. `barra` es el color de la barra izquierda de la isla —
+// es la temperatura la que ordena la lista, y una fila que no dice por qué
+// está arriba no comunica el orden. Baja tiene color de borde y no gris de
+// texto: la rampa neutro → ámbar → rojo se lee como escala, no como estado.
+// `selector` es el estado activo del botón de nivel: el mismo valor no puede
+// pintarse navy de marca mientras se elige y rojo cuando se muestra.
 export function temperaturaRango(t: number) {
-  if (t >= 67) return { label: "Alta", clase: "text-error" };
-  if (t >= 34) return { label: "Media", clase: "text-warning" };
-  return { label: "Baja", clase: "" };
+  if (t >= 67)
+    return {
+      label: "Alta",
+      clase: "text-error-text",
+      barra: "bg-error",
+      selector: "bg-error-bg text-error-text border-error",
+    };
+  if (t >= 34)
+    return {
+      label: "Media",
+      clase: "text-warning-text",
+      barra: "bg-warning",
+      selector: "bg-warning-bg text-warning-text border-warning",
+    };
+  return {
+    label: "Baja",
+    clase: "",
+    barra: "bg-border-strong",
+    selector: "bg-bg-subtle text-text-secondary border-border-strong",
+  };
 }
 
 // Se elige entre tres niveles, no entre 100. La columna sigue siendo int 1-100
@@ -70,6 +92,6 @@ export function estadoVencimiento(fechaVencimiento: string | null, estado: strin
     diasVencimiento,
     vencida,
     proximaAVencer,
-    fechaClase: vencida ? "text-error" : proximaAVencer ? "text-warning" : "",
+    fechaClase: vencida ? "text-error-text" : proximaAVencer ? "text-warning-text" : "",
   };
 }

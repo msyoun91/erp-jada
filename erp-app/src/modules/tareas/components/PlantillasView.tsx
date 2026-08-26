@@ -66,7 +66,7 @@ export function PlantillasView({
           {visibles.map((p) => {
             const items = itemsPorPlantilla[p.id] ?? [];
             return (
-              <div key={p.id} className="border-b border-border p-[13px] px-5 last:border-b-0">
+              <div key={p.id} className="border-b border-border row last:border-b-0">
                 <div className="flex items-center gap-2">
                   <div className="min-w-0 flex-1">
                     <button

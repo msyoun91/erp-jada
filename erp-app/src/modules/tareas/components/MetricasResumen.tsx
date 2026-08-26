@@ -47,7 +47,7 @@ export function MetricasResumen({
       ) : (
         <span
           className={`flex items-center gap-1 ${
-            diasProxima < 0 ? "text-error" : diasProxima <= PROXIMA_DIAS ? "text-warning" : ""
+            diasProxima < 0 ? "text-error-text" : diasProxima <= PROXIMA_DIAS ? "text-warning-text" : ""
           }`}
         >
           <CalendarClock size={13} strokeWidth={1.75} />

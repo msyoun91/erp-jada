@@ -135,7 +135,7 @@ export function HiloCard({
               </span>
             )}
             {hilo.posponer_hasta && (
-              <span className="flex items-center gap-1 text-warning">
+              <span className="flex items-center gap-1 text-warning-text">
                 <Clock size={13} strokeWidth={1.75} />
                 Pospuesto hasta {formatFecha(hilo.posponer_hasta)}
               </span>

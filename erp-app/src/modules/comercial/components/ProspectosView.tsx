@@ -143,7 +143,7 @@ export function ProspectosView({
             return (
               <div
                 key={prospecto.id}
-                className="flex items-center gap-2 border-b border-border p-[13px] px-5 last:border-b-0"
+                className="flex items-center gap-2 border-b border-border row last:border-b-0"
               >
                 <button
                   className="min-w-0 flex-1 text-left"

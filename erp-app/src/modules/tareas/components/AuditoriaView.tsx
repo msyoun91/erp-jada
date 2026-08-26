@@ -111,13 +111,18 @@ export function AuditoriaView({
         </div>
       ) : (
         <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
+          {/* A 390px la cadena de fechas tomaba tres líneas y dejaba el título
+              en ~10 caracteres: abajo de `sm` van uno arriba del otro. */}
           {visibles.map((e) => (
-            <div key={e.id} className="flex items-center gap-2 border-b border-border p-[13px] px-5 last:border-b-0">
+            <div
+              key={e.id}
+              className="flex flex-col gap-1 border-b border-border row last:border-b-0 sm:flex-row sm:items-center sm:gap-2"
+            >
               <div className="min-w-0 flex-1">
                 <p className="t-body-m truncate font-medium text-text-primary">{e.tareas?.titulo}</p>
                 <p className="t-caption truncate">{e.usuarios?.nombre ?? "Sistema"}</p>
               </div>
-              <p className="t-caption text-right">
+              <p className="t-caption sm:shrink-0 sm:text-right">
                 {[
                   e.tareas?.created_at && `Creada ${formatFecha(e.tareas.created_at)}`,
                   e.fecha_asignacion && `Asignada ${formatFecha(e.fecha_asignacion)}`,

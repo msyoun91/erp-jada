@@ -175,6 +175,11 @@
 
   .empty-state { @apply bg-bg-surface border border-dashed border-border-strong rounded-lg p-[60px] text-center text-text-tertiary; }
 
+  /* Fila de listado o bloque de panel: 13px 20px es el token de row del design
+     system (§8), no un valor arbitrario. Estaba escrito a mano como
+     `p-[13px] px-5` en 19 lugares. */
+  .row { @apply px-5 py-[13px]; }
+
   /* Botón de solo ícono (cerrar panel/modal). El media query de 44px ya lo
      nombraba, pero la clase no existía: los botones se quedaban en el tamaño
      del ícono. */

@@ -172,36 +172,41 @@ export function TareaFormPanel({
           <textarea rows={3} className="input" {...register("descripcion")} />
         </div>
 
-        {!hiloId && !proyectoId && !tarea?.hilo_id && (
-          <div>
-            <label className="t-label mb-1 block">Proyecto</label>
-            <select
-              className="input"
-              {...register("proyecto_id", { onChange: (e) => alCambiarProyecto(e.target.value) })}
-            >
-              <option value="">Sin proyecto</option>
-              {/* Un proyecto donde no podés trabajar deja el form sin asignado
-                  posible: elegirlo era un callejón sin salida. */}
-              {proyectosDisponibles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Dentro de un hilo la visibilidad la decide el hilo: `tareas_select`
-            solo lee `tareas.visibilidad` con `hilo_id IS NULL` (sql/013). El
-            valor viaja como default oculto — vuelve a mandar si la tarea sale
-            del hilo. */}
+        {/* Grid de dos columnas para los campos cortos (design system §8): el
+            panel mide 448px y ocho campos full-width lo dejaban con el doble
+            de scroll del necesario. Abajo de 640px vuelven a apilarse. */}
         {!hiloId && !tarea?.hilo_id && (
-          <div>
-            <label className="t-label mb-1 block">Visibilidad</label>
-            <select className="input" {...register("visibilidad")}>
-              <option value="privado">Privada</option>
-              <option value="publico">Pública</option>
-            </select>
+          <div className="grid gap-4 sm:grid-cols-2 sm:gap-x-[14px]">
+            {!proyectoId && (
+              <div>
+                <label className="t-label mb-1 block">Proyecto</label>
+                <select
+                  className="input"
+                  {...register("proyecto_id", { onChange: (e) => alCambiarProyecto(e.target.value) })}
+                >
+                  <option value="">Sin proyecto</option>
+                  {/* Un proyecto donde no podés trabajar deja el form sin asignado
+                      posible: elegirlo era un callejón sin salida. */}
+                  {proyectosDisponibles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Dentro de un hilo la visibilidad la decide el hilo:
+                `tareas_select` solo lee `tareas.visibilidad` con
+                `hilo_id IS NULL` (sql/013). El valor viaja como default oculto
+                — vuelve a mandar si la tarea sale del hilo. */}
+            <div>
+              <label className="t-label mb-1 block">Visibilidad</label>
+              <select className="input" {...register("visibilidad")}>
+                <option value="privado">Privada</option>
+                <option value="publico">Pública</option>
+              </select>
+            </div>
           </div>
         )}
 
@@ -212,40 +217,45 @@ export function TareaFormPanel({
           puedeAsignar={puedeAsignar}
         />
 
-        <div>
-          <label className="t-label mb-1 block">Vencimiento</label>
-          <input type="date" className="input" {...register("fecha_vencimiento")} />
-          <div className="mt-2 flex flex-wrap gap-2">
-            {VENCIMIENTO_PRESETS.map((dias) => (
-              <button
-                key={dias}
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => setValue("fecha_vencimiento", sumarDiasISO(hoyISO(), dias))}
-              >
-                {dias} {dias === 1 ? "día" : "días"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="t-label mb-1 block">Temperatura</label>
-          <div className="flex gap-1" role="group" aria-label="Temperatura">
-            {TEMPERATURA_NIVELES.map((nivel) => {
-              const activo = temperaturaRango(temperatura).label === nivel.label;
-              return (
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-x-[14px]">
+          <div>
+            <label className="t-label mb-1 block">Vencimiento</label>
+            <input type="date" className="input" {...register("fecha_vencimiento")} />
+            {/* Chips y no `btn-secondary`: con peso de botón se leían igual que
+                el "Cancelar" del footer, y son atajos de relleno del campo de
+                arriba, no acciones del formulario. */}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {VENCIMIENTO_PRESETS.map((dias) => (
                 <button
-                  key={nivel.label}
+                  key={dias}
                   type="button"
-                  aria-pressed={activo}
-                  className={`btn btn-sm ${activo ? "btn-primary" : "btn-secondary"}`}
-                  onClick={() => setValue("temperatura", nivel.valor, { shouldDirty: true })}
+                  className="tap-target t-caption rounded-full border border-border px-3 py-1 text-text-secondary hover:bg-bg-subtle"
+                  onClick={() => setValue("fecha_vencimiento", sumarDiasISO(hoyISO(), dias))}
                 >
-                  {nivel.label}
+                  {dias} {dias === 1 ? "día" : "días"}
                 </button>
-              );
-            })}
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="t-label mb-1 block">Temperatura</label>
+            <div className="flex flex-wrap gap-1" role="group" aria-label="Temperatura">
+              {TEMPERATURA_NIVELES.map((nivel) => {
+                const activo = temperaturaRango(temperatura).label === nivel.label;
+                return (
+                  <button
+                    key={nivel.label}
+                    type="button"
+                    aria-pressed={activo}
+                    className={`btn btn-sm ${activo ? temperaturaRango(nivel.valor).selector : "btn-secondary"}`}
+                    onClick={() => setValue("temperatura", nivel.valor, { shouldDirty: true })}
+                  >
+                    {nivel.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -270,7 +280,7 @@ export function TareaFormPanel({
         )}
 
         {!esPaso && tieneRecurrencia && (
-          <div className="flex gap-3">
+          <div className="flex gap-[14px]">
             <div className="flex-1">
               <label className="t-label mb-1 block">Cada</label>
               <input

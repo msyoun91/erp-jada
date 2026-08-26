@@ -83,7 +83,7 @@ export function HiloDetailPanel({
   return (
     <RightPanel title={hilo.titulo} subtitle={proyecto?.nombre} onClose={onClose}>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        <div className="flex flex-wrap items-center gap-2 border-b border-border p-[13px] px-5">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border row">
           <button className="btn btn-ghost btn-sm" onClick={() => setAgregandoTarea(true)}>
             <Plus size={14} strokeWidth={1.75} />
             Agregar tarea
@@ -136,7 +136,7 @@ export function HiloDetailPanel({
           )}
         </div>
 
-        <div className="flex flex-col gap-2 border-b border-border p-[13px] px-5">
+        <div className="flex flex-col gap-2 border-b border-border row">
           {hilo.descripcion && <p className="t-body-m whitespace-pre-wrap">{hilo.descripcion}</p>}
           <div className="t-caption flex flex-wrap items-center gap-3">
             {responsable && (
@@ -157,7 +157,7 @@ export function HiloDetailPanel({
             Sin tareas todavía — agregá la primera con «Agregar tarea».
           </p>
         ) : (
-          <div className="flex flex-col gap-3 p-[13px] px-5">
+          <div className="flex flex-col gap-3 row">
             {agruparCadenas(ordenar(tareasDelHilo), cadenas).map((t) => (
               <TareaCard
                 key={t.id}
@@ -177,7 +177,7 @@ export function HiloDetailPanel({
           </div>
         )}
 
-        <div className="border-t border-border p-[13px] px-5">
+        <div className="border-t border-border row">
           <p className="t-label mb-2">Notas del hilo</p>
           <NotasSection tipo="hilo" id={hilo.id} puedeAgregar={puedeGestionar} />
         </div>
