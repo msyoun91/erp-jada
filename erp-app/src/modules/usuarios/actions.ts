@@ -3,6 +3,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/lib/supabase/database.types";
+import { createClient } from "@/lib/supabase/server";
 import { mensajeError } from "@/lib/utils";
 import { puedeGestionarUsuarios } from "./permissions";
 import {
@@ -45,9 +46,24 @@ export async function crearUsuario(input: CrearUsuarioForm) {
   return { success: true as const };
 }
 
+// Supabase no tiene ban permanente: 100 años es el equivalente práctico.
+// Reactivar lo levanta con `ban_duration: "none"`.
+const BAN_INDEFINIDO = "876000h";
+
 export async function desactivarUsuario(usuarioId: string) {
   if (!(await puedeGestionarUsuarios())) {
     return { success: false as const, error: "No autorizado" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Sin esta guarda el único gestor puede dejar el sistema sin nadie que
+  // pueda reactivar a nadie — incluido él.
+  if (user?.id === usuarioId) {
+    return { success: false as const, error: "No podés desactivar tu propia cuenta" };
   }
 
   const admin = createAdminClient();
@@ -58,6 +74,55 @@ export async function desactivarUsuario(usuarioId: string) {
 
   if (error) {
     return { success: false as const, error: mensajeError(error) };
+  }
+
+  // `activo = false` le saca los permisos (`tiene_permiso`, `sql/020`) y el
+  // proxy lo echa del ERP, pero su access token sigue siendo válido hasta que
+  // expire: sin el ban entra igual por la API con lo que RLS le concede por
+  // `auth.uid()`. El ban además rechaza el login nuevo.
+  const { error: banError } = await admin.auth.admin.updateUserById(usuarioId, {
+    ban_duration: BAN_INDEFINIDO,
+  });
+
+  if (banError) {
+    await admin.from("usuarios").update({ activo: true }).eq("id", usuarioId);
+    return { success: false as const, error: mensajeError(banError) };
+  }
+
+  revalidatePath("/usuarios");
+  return { success: true as const };
+}
+
+export async function reactivarUsuario(usuarioId: string) {
+  if (!(await puedeGestionarUsuarios())) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("usuarios")
+    .update({ activo: true })
+    .eq("id", usuarioId);
+
+  if (error) {
+    // `idx_usuarios_email_activo` es parcial (WHERE activo): mientras estuvo
+    // desactivado, ese email pudo darse de alta en otra cuenta.
+    if ((error as { code?: string }).code === "23505") {
+      return {
+        success: false as const,
+        error: "Ya hay un usuario activo con ese email",
+      };
+    }
+    return { success: false as const, error: mensajeError(error) };
+  }
+
+  const { error: banError } = await admin.auth.admin.updateUserById(usuarioId, {
+    ban_duration: "none",
+  });
+
+  if (banError) {
+    await admin.from("usuarios").update({ activo: false }).eq("id", usuarioId);
+    return { success: false as const, error: mensajeError(banError) };
   }
 
   revalidatePath("/usuarios");

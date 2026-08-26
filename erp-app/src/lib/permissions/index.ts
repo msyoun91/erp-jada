@@ -8,11 +8,17 @@ export const getUserSubmodulos = cache(async (): Promise<string[]> => {
   } = await supabase.auth.getUser();
   if (!user) return [];
 
+  // `usuarios!inner(activo)` espeja el chequeo que `tiene_permiso()` hace en
+  // SQL: un usuario desactivado no tiene permisos. Sin esto las actions que
+  // usan `service_role` (crear usuario, asignar permisos) quedarían sin
+  // barrera — el service_role no pasa por RLS, así que este chequeo es la
+  // única que tienen.
   const { data } = await supabase
     .from("usuario_submodulos")
-    .select("submodulos(codigo)")
+    .select("submodulos(codigo), usuarios!inner(activo)")
     .eq("usuario_id", user.id)
-    .eq("activo", true);
+    .eq("activo", true)
+    .eq("usuarios.activo", true);
 
   return (data ?? [])
     .map((row) => row.submodulos?.codigo)
@@ -33,9 +39,10 @@ export async function getVistasDeModulo(modulo: string) {
 
   const { data } = await supabase
     .from("usuario_submodulos")
-    .select("submodulos(codigo, modulo, tipo, nombre, orden)")
+    .select("submodulos(codigo, modulo, tipo, nombre, orden), usuarios!inner(activo)")
     .eq("usuario_id", user.id)
-    .eq("activo", true);
+    .eq("activo", true)
+    .eq("usuarios.activo", true);
 
   return (data ?? [])
     .map((row) => row.submodulos)

@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Archive, UserPlus, ShieldCheck } from "lucide-react";
+import { Archive, ArchiveRestore, UserPlus, ShieldCheck } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
-import { desactivarUsuario } from "../actions";
+import { desactivarUsuario, reactivarUsuario } from "../actions";
 import type { Submodulo, Usuario } from "../types";
 import { CrearUsuarioModal } from "./CrearUsuarioModal";
 import { PermisosModal } from "./PermisosModal";
@@ -35,6 +35,17 @@ export function UsuariosView({
       return;
     }
     toast.success("Usuario desactivado");
+  }
+
+  // Sin confirmación: reactivar no destruye nada y se deshace con "Desactivar",
+  // que sí la pide.
+  async function onReactivar(usuario: Usuario) {
+    const result = await reactivarUsuario(usuario.id);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Usuario reactivado");
   }
 
   const q = texto.trim().toLowerCase();
@@ -88,16 +99,18 @@ export function UsuariosView({
                       icon: <ShieldCheck size={14} strokeWidth={1.75} />,
                       onClick: () => setUsuarioPermisos(usuario),
                     },
-                    ...(usuario.activo
-                      ? [
-                          {
-                            label: "Desactivar",
-                            icon: <Archive size={14} strokeWidth={1.75} />,
-                            onClick: () => setDesactivando(usuario),
-                            destructive: true,
-                          },
-                        ]
-                      : []),
+                    usuario.activo
+                      ? {
+                          label: "Desactivar",
+                          icon: <Archive size={14} strokeWidth={1.75} />,
+                          onClick: () => setDesactivando(usuario),
+                          destructive: true,
+                        }
+                      : {
+                          label: "Reactivar",
+                          icon: <ArchiveRestore size={14} strokeWidth={1.75} />,
+                          onClick: () => onReactivar(usuario),
+                        },
                   ]}
                 />
               )}

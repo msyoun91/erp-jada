@@ -922,3 +922,28 @@ Desde el celular, por `http://192.168.1.52:3000`, el login no logueaba, no mostr
 **Las fuentes pasaban por el chequeo de sesión.** El `matcher` del proxy excluía `svg|png|jpg|jpeg|gif|webp` pero no las fuentes: sin sesión, `/fonts/PlusJakartaSans-400.woff2` devolvía `307 → /login?next=%2Ffonts%2F…`. La tipografía nunca cargaba en la pantalla de login y `?next=` se llenaba de destinos que no son vistas. Se agregan `ico|woff|woff2|ttf|otf` a la lista.
 
 **`method="post"` en el form.** El camino normal no lo usa — lo usa el submit nativo de antes de hidratar. El default de un `<form>` sin `method` es GET, y ahí el browser serializa la contraseña en la URL, donde queda en el historial del dispositivo y en los logs del servidor. Con `post` esa misma caída manda los campos en el body. Es defensa en profundidad: la hidratación puede fallar por razones que no controlamos (red lenta, browser viejo, o simplemente que el usuario toque el botón antes de que termine), y ninguna de esas debería costar una contraseña.
+
+---
+
+## Módulo usuarios — desactivar por fin desactiva, y se puede reactivar (`sql/020_usuarios_activo.sql`)
+
+**El bug:** `desactivarUsuario` ponía `usuarios.activo = false` y nadie leía esa columna. `tiene_permiso()` (`sql/001`) miraba `usuario_submodulos.activo` y `submodulos.activo`, nunca al usuario; el proxy solo chequeaba que hubiera sesión; `auth.users` quedaba intacto. El desactivado seguía entrando con todos sus permisos, mientras el modal prometía "Perderá el acceso al sistema".
+
+**La barrera queda en tres capas, y cada una tapa lo que la otra no.**
+
+1. **`tiene_permiso()` suma `JOIN usuarios u ... AND u.activo`.** Es la única que cubre un request que no pasa por Next — PostgREST directo con el access token todavía sin expirar. Se hace por JOIN y no desactivando las filas de `usuario_submodulos`: así reactivar devuelve los permisos exactamente como estaban, sin backup ni recálculo.
+2. **El proxy consulta `usuarios.activo` en cada request autenticado** (`lib/supabase/middleware.ts`), y si está inactivo hace `signOut()` + redirect a `/login?motivo=inactivo`. Cuesta un lookup por PK sobre la sesión abierta; el JWT no sabe nada de `activo`, así que el dato hay que ir a buscarlo. La rama `id = auth.uid()` de `usuarios_select` es la que hace posible esta consulta y por eso no se toca. Si el pathname ya es `/login` se devuelve la respuesta con la cookie limpia en vez de redirigir — redirigir sería un loop. El redirect copia las cookies de `supabaseResponse`: es una respuesta nueva y sin eso se pierde el borrado que acaba de escribir `signOut()`.
+3. **La cuenta se banea en `auth.users`** (`ban_duration: "876000h"`, cien años — Supabase no tiene ban permanente). Sin esto el access token vivo (≤1h) sigue sirviendo contra la API para todo lo que RLS concede por `auth.uid()` sin pasar por `tiene_permiso` — sus propias tareas, sus notas, sus widgets. El ban además rechaza el login nuevo, y `user_banned` ya estaba mapeado en `mensajeError`. Si el ban falla, la action revierte `activo` y devuelve error: mejor no desactivar que dejar la mitad puesta.
+
+**`getUserSubmodulos()` espeja el chequeo con `usuarios!inner(activo)`.** No es duplicación decorativa: las actions de `usuarios` usan `service_role`, que no pasa por RLS, así que ese chequeo en TS es la única barrera que tienen. Se verificó contra PostgREST que el embed resuelve (`usuario_submodulos` tiene una sola FK a `usuarios`) — si no resolviera, `data` sería null y el resultado "sin permisos" para todo el mundo.
+
+**No se puede desactivar la propia cuenta.** Sin la guarda, el único gestor puede dejar el sistema sin nadie capaz de reactivar a nadie — incluido él.
+
+**Reactivar no pide confirmación.** No destruye nada y se deshace con "Desactivar", que sí la pide. `ConfirmModal` es siempre `btn-danger`; usarlo acá hubiera pedido un tono nuevo para una acción que no lo necesita.
+
+**Reactivar puede chocar con el email.** `idx_usuarios_email_activo` es unique parcial `WHERE activo`: mientras la cuenta estuvo desactivada, ese email pudo darse de alta en otra. El `23505` se traduce a "Ya hay un usuario activo con ese email" en la action, no en `mensajeError` — ahí el genérico ("Ya existe un registro con esos datos") no diría cuál es el registro.
+
+**Queda afuera a propósito:** las tablas que autorizan por `auth.uid()` sin `tiene_permiso` no chequean `activo` en sus policies. Cerrar esa ventana pediría sumar la condición a cada policy de cada módulo; el ban ya la cierra para todo lo que no sea un token vivo de menos de una hora.
+
+Verificado con `sql/tests/usuarios_activo.sql` (mismo mecanismo que los tests de RLS de tareas: rol `authenticated`, `request.jwt.claims` movido, `ROLLBACK` al final).
+
