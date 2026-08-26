@@ -16,12 +16,16 @@
   --text-primary: #0D1220; --text-secondary: #2B3352; --text-tertiary: #566B92; --text-brand: #1A6DC8;
   --border-default: rgba(13,18,32,.12); --border-strong: rgba(13,18,32,.22);
   --brand-50: #EBF2FD; --brand-700: #064379; --neutral-100: #EBF0F8;
+  --success-bg: #DCFCE7; --success-text: #0A3B1F; --warning-bg: #FEF3C7; --warning-text: #5C3200;
+  --error-bg: #FEE2E2; --error-text: #5C0A0A; --info-bg: #DBEAFE; --info-text: #0C2461;
 }
 [data-theme="dark"] {
   --bg-page: #070B14; --bg-surface: #0E1525; --bg-subtle: #131C30; --bg-nav: #0B1322;
   --text-primary: #EDF2FF; --text-secondary: #9DB2D8; --text-tertiary: #6F86AE; --text-brand: #5FA3E0;
   --border-default: rgba(255,255,255,.09); --border-strong: rgba(255,255,255,.18);
   --brand-50: #0D2040; --brand-700: #5FA3E0; --neutral-100: #1A2B45;
+  --success-bg: #052E16; --success-text: #BBF7D0; --warning-bg: #451A03; --warning-text: #FDE68A;
+  --error-bg: #450A0A; --error-text: #FECACA; --info-bg: #172554; --info-text: #BFDBFE;
 }
 
 @theme inline {
@@ -40,17 +44,17 @@
   --color-neutral-900: #0D1220;
 
   --color-success: #16A34A;
-  --color-success-bg: #DCFCE7;
-  --color-success-text: #0A3B1F;
+  --color-success-bg: var(--success-bg);
+  --color-success-text: var(--success-text);
   --color-warning: #D97706;
-  --color-warning-bg: #FEF3C7;
-  --color-warning-text: #5C3200;
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-text: var(--warning-text);
   --color-error: #DC2626;
-  --color-error-bg: #FEE2E2;
-  --color-error-text: #5C0A0A;
+  --color-error-bg: var(--error-bg);
+  --color-error-text: var(--error-text);
   --color-info: #2563EB;
-  --color-info-bg: #DBEAFE;
-  --color-info-text: #0C2461;
+  --color-info-bg: var(--info-bg);
+  --color-info-text: var(--info-text);
 
   --color-bg-page: var(--bg-page);
   --color-bg-surface: var(--bg-surface);
@@ -108,6 +112,8 @@
   --shadow-sm: 0 1px 3px rgba(13,18,32,.08);
   --shadow-md: 0 4px 12px rgba(13,18,32,.10);
   --shadow-lg: 0 12px 32px rgba(13,18,32,.12);
+
+  --background-image-gradient-brand: linear-gradient(140deg, #011F51, #064379, #1A6DC8);
 }
 
 @layer base {
@@ -149,7 +155,10 @@
 
   .input { @apply w-full font-body text-sm rounded-md border-[1.5px] border-border-strong bg-bg-surface text-text-primary px-3 py-[9px] outline-none; }
   .input:focus { @apply border-brand-500 ring-[3px] ring-[rgba(26,109,200,.12)]; }
-  .input-error { @apply border-error ring-[3px] ring-[rgba(220,38,38,.12)]; }
+  /* `:focus` gana por especificidad (0,2,0 vs 0,1,0), no por orden: sin
+     repetir el selector con `:focus`, el campo que RHF enfoca al fallar
+     pierde el rojo y se pinta azul de marca. */
+  .input-error, .input-error:focus { @apply border-error ring-[3px] ring-[rgba(220,38,38,.12)]; }
   .input-error-text { @apply text-error text-xs mt-1; }
 
   .badge { @apply font-body font-semibold text-[11px] rounded-full px-[9px] py-[3px]; }

@@ -53,6 +53,10 @@ const MENSAJES_ERROR: Record<string, string> = {
   CM003: "La persona participa en obras activas — sacala de esas obras antes de desactivarla",
   email_exists: "Ese email ya está registrado",
   weak_password: "La contraseña es demasiado débil",
+  invalid_credentials: "Email o contraseña incorrectos",
+  email_not_confirmed: "Todavía no confirmaste tu email. Revisá tu casilla.",
+  user_banned: "Tu cuenta está suspendida. Contactá a un administrador.",
+  over_request_rate_limit: "Demasiados intentos. Esperá unos minutos e intentá de nuevo.",
 };
 
 export function mensajeError(error: unknown): string {

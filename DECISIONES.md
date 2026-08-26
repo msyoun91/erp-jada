@@ -64,7 +64,7 @@ Activar RLS y crear policies no basta. Postgres verifica primero el privilegio a
 
 Portado el patrón de `erp-old-2`. `Sidebar.tsx` es server component: trae `nombre` (tabla `usuarios`, sin `avatar_url` — ese campo no existe en el schema nuevo, avatar es solo iniciales) y `modulosVisibles` (reusa `getUserSubmodulos()` de `lib/permissions`, ya cacheado). `SidebarNav.tsx` es un solo componente que sirve tanto al `<aside>` desktop como al drawer mobile (`MobileNav.tsx`) — incluye footer con iniciales + nombre + logout. Sin `grupo` (agrupación de nav) — con 2 módulos no hace falta, agregar cuando haya 3+.
 
-`signOutAction` vive en `modules/auth/actions.ts` — módulo mínimo sin `permissions.ts`/`types.ts` porque cerrar sesión no tiene gate de permiso ni validación.
+`signOutAction` vive en `modules/auth/actions.ts` — sin `permissions.ts` porque ni entrar ni salir tienen gate de permiso. Sí hay `types.ts` desde que el login se valida en servidor (ver sección Auth).
 
 **Dark mode:** `--brand-50`, `--brand-700` y `--neutral-100` (usados por `.nav-item-active` y `.badge-brand`) pasaron a ser custom properties en `:root`/`[data-theme="dark"]` (mismo patrón que `--bg-*`/`--text-*`) en vez de hex fijo en `@theme inline` — sin esto, el ítem de nav activo quedaba con el celeste claro del light mode también en dark.
 
@@ -852,3 +852,73 @@ El elemento señalado se rodea con un `<div>` de `box-shadow: 0 0 0 9999px rgba(
 No hay paso para el buscador ni para la paginación: una lupa con placeholder no necesita tutorial. Los pasos son para lo que la interfaz no puede decir sola — que "Míos" e "Involucrado" son disjuntos, que ser miembro de un proyecto es quién puede recibir tareas y no quién lo ve, que el orden de los pasos de una plantilla es lo que encadena, que una tarea bloqueada no entra en la cola de Misión.
 
 Efecto secundario buscado: ningún componente de `components/ui/` recibe un `data-tour`. Todas las anclas están en elementos que el módulo ya renderizaba.
+
+---
+
+## Auth — login
+
+### El login es un server action, no una llamada al cliente
+
+`signInWithPassword` se ejecutaba desde `app/login/page.tsx` con el cliente de browser: el schema Zod solo corría en el cliente, contra la regla de validar en dos lugares. Ahora `signInAction` (`modules/auth/actions.ts`) hace `safeParse` y llama al cliente de servidor — las cookies de sesión vuelven en la respuesta del action. La lógica salió de `app/` a `modules/auth/components/LoginForm.tsx`; la page solo lee `searchParams` y renderiza.
+
+No usa `redirect()` en el action: los Server Components tienen que releer la sesión recién cookieada, y eso lo dispara `router.refresh()` desde el cliente. El action devuelve `{ success, destino }` y el form navega con `router.replace` (no `push`: volver atrás al login ya logueado no tiene sentido).
+
+`enviando` no vuelve a `false` en el camino feliz. Bajarlo antes de navegar rehabilitaba el botón durante la navegación y dejaba mandar un segundo login.
+
+### `?next=` con lista blanca de paths propios
+
+El proxy redirigía a `/login` sin guardar el destino, así que un deep link a `/tareas` terminaba en el dashboard. Ahora `updateSession` agrega `?next=<pathname>` y el schema lo sanea: solo se acepta un string que arranque con `/` y no con `//` ni `/\` — el browser resuelve esas dos formas como URLs absolutas, y sin el filtro `?next=` es un open redirect. Va dentro de `loginSchema` y no en un helper aparte para que lo cubra el mismo `safeParse` del servidor.
+
+Solo el `pathname`, sin el `search`: los prefetch RSC pasan por el proxy con un `?_rsc=` que no sirve como destino. Se pierden los filtros de una URL como `/tareas/auditoria?desde=…`, que es mucho menos que perder la vista entera.
+
+### Los errores de auth entran al mapa de `mensajeError`
+
+`invalid_credentials`, `email_not_confirmed`, `user_banned` y `over_request_rate_limit` se sumaron a `MENSAJES_ERROR` en `lib/utils.ts`, donde ya vivían `email_exists` y `weak_password`. Antes el login colapsaba *cualquier* fallo en "Email o contraseña incorrectos" — con la red caída o el rate limit puesto, el usuario reintentaba contra una pared. El caso sin red no llega a tener código: si el `await` del action tira, no llegó al servidor y el form muestra "Sin conexión".
+
+### `noValidate` en el form
+
+Con `type="email"` y sin `noValidate`, Chrome mostraba su propia burbuja en el idioma del browser y bloqueaba el submit antes de que corriera RHF: los mensajes en español del schema no se veían nunca. El email valida con `.min(1).pipe(z.email())` y no encadenando checks — zod corre ambos y el campo vacío devolvería "Email inválido" en vez de "es obligatorio".
+
+### `pb-20` en el contenedor por el `ThemeToggle`
+
+El toggle es `fixed bottom-4` de 56px y se renderiza en el root layout, o sea también en `/login`. En un viewport bajo le quedaba encima del botón "Ingresar". El padding inferior reserva ese rincón sin sacarle el toggle a la pantalla de login. El contenedor pasó de `min-h-full` a `min-h-dvh`: el `100%` no resolvía contra un `body` de altura automática.
+
+### Diseño: la pantalla usa la marca y la jerarquía que el design system ya define
+
+El login mostraba el texto `ERP JADA` en `t-h2`, era la única pantalla sin logotipo — `public/logo.svg` ya se usaba en `Sidebar.tsx` y `MobileNav.tsx`, y la clase `.logo` de `globals.css` ya lo invierte en dark. Se reusa el mismo asset y la misma clase, sin variante propia de login.
+
+El fallo de credenciales usaba `input-error-text` (12px), el mismo peso visual que un error de campo, siendo el mensaje más importante de la pantalla. Pasa a bloque con `bg-error-bg` + borde `error/20` + `text-error-text`, los mismos tokens semánticos de `.badge-error`.
+
+El botón en `enviando` solo cambiaba el texto. El design system (§8) define loading como spinner; se reusa el spinner de `app/(erp-app)/loading.tsx` (borde + `animate-spin`) en vez de sumar un ícono nuevo.
+
+El card usaba `shadow-lg`, que el spec (§5) reserva para modales — *"la elevación se comunica sobre todo con bordes, no shadow"*. Baja a `shadow-md`.
+
+**`--background-image-gradient-brand` es token nuevo en `globals.css`.** El spec define `gradient-brand` (140deg, #011F51 → #064379 → #1A6DC8) como *"solo heroes/cards destacadas, nunca fondo de texto"*, pero el token nunca se había volcado a `@theme`. El login es el único hero del ERP, y se usa como barra de 4px al tope del card, no como panel: un split-panel gradiente/formulario obligaría a un layout distinto en desktop y mobile, contra la regla mobile-first, para el mismo objetivo visual. El namespace `--background-image-*` de Tailwind v4 no está documentado; se verificó contra el CSS compilado que emite `.bg-gradient-brand{background-image:linear-gradient(…)}`.
+
+---
+
+### Auditoría de UI del login
+
+Cinco arreglos salidos de auditar la pantalla en browser. Tres son del login; dos son globales y se descubrieron acá.
+
+**`.input:focus` pisaba `.input-error` (global).** `.input:focus` tiene especificidad `(0,2,0)` y `.input-error` `(0,1,0)`: el orden en el archivo no alcanzaba. El campo que RHF enfoca al fallar la validación perdía el borde rojo y se pintaba azul de marca — con `aria-invalid="true"` puesto y el texto de error abajo. Pegaba en todos los forms, no solo en login. El selector pasa a `.input-error, .input-error:focus`, que empata especificidad con `.input:focus` y gana por orden.
+
+**El error del servidor sobrevivía a un fallo de validación de cliente.** `setError(null)` vivía dentro de `onSubmit`, y RHF no llama a `onSubmit` si el resolver rechaza: tras un "Email o contraseña incorrectos", vaciar el email y reenviar dejaba el bloque de credenciales en pantalla junto al error de campo nuevo — un veredicto del servidor sobre un request que nunca salió del browser. Se limpia desde el segundo argumento de `handleSubmit`, no con un `useEffect` sobre `isDirty`: el evento que corresponde es "el submit no pasó la validación", y RHF ya lo expone.
+
+**El usuario logueado en `/login` veía el formulario.** El proxy guardaba solo la dirección no autenticada. Ahora `updateSession` también redirige `user && pathname === "/login"` a `/`. Como `signOutAction` limpia la cookie antes de su `redirect("/login")`, esa vuelta no toca la guarda nueva.
+
+**La pantalla no tenía ningún heading.** `querySelectorAll('h1,h2,h3')` devolvía `[]`: el logotipo es un `<img alt="JADA">` y no anuncia nada como encabezado. Se agrega un `h1` `sr-only` en vez de un `t-h1` visible — el logotipo ya es el encabezado visual, y la regla de "Encabezado de módulo" aplica a módulos de `(erp-app)`, no a `/login`. La page suma `metadata` propia (`Ingresar · ERP JADA`); antes heredaba el título genérico del root layout.
+
+**`success-bg/text`, `warning-*`, `error-*` e `info-*` pasan a ser dark-aware (global).** Eran hex fijos en `@theme`, así que en dark el bloque de error del login era un parche rosa `#FEE2E2` sobre el card oscuro, y lo mismo todos los `.badge-*`. Se promueven a custom properties en `:root`/`[data-theme="dark"]` y `@theme inline` las referencia — mismo patrón y mismo motivo que `--brand-50`/`--brand-700` cuando el ítem de nav activo quedaba celeste claro en dark.
+
+Se migran las cuatro familias, no solo `error`: dejar `success`, `warning` e `info` en hex fijo partía el sistema en dos mitades con reglas distintas, que es peor que el cambio visual de los badges en dark. Los pares dark son bg-950 / text-200 de cada hue.
+
+### Acceso desde la LAN: el login no era interactivo
+
+Desde el celular, por `http://192.168.1.52:3000`, el login no logueaba, no mostraba errores y dejaba los campos en la query string (`/login?next=&email=&password=`). No era un bug del formulario: la página nunca hidrataba, así que el `onSubmit` de React no existía y el browser hacía el submit nativo del `<form>`.
+
+**`allowedDevOrigins`.** `next dev` solo confía en `localhost` (`blockCrossSiteDEV` arma su lista con `['**.localhost', 'localhost', hostname]`). Los chunks servidos a un `<script>` same-origin sí devuelven 200 — el bloqueo pega en los recursos dev que llevan `Origin`, y con eso el runtime de Turbopack queda a medio arrancar: `window.next` sin definir, la cola de chunks sin drenar, `ThemeToggle` sin renderizar. Se configura `allowedDevOrigins: ["192.168.1.*"]`. El match de `isCsrfOriginAllowed` es por hostname y por segmentos separados por punto, así que el comodín cubre el rango de DHCP; poner la IP exacta obligaría a editar el config cada vez que cambie el último octeto.
+
+**Las fuentes pasaban por el chequeo de sesión.** El `matcher` del proxy excluía `svg|png|jpg|jpeg|gif|webp` pero no las fuentes: sin sesión, `/fonts/PlusJakartaSans-400.woff2` devolvía `307 → /login?next=%2Ffonts%2F…`. La tipografía nunca cargaba en la pantalla de login y `?next=` se llenaba de destinos que no son vistas. Se agregan `ico|woff|woff2|ttf|otf` a la lista.
+
+**`method="post"` en el form.** El camino normal no lo usa — lo usa el submit nativo de antes de hidratar. El default de un `<form>` sin `method` es GET, y ahí el browser serializa la contraseña en la URL, donde queda en el historial del dispositivo y en los logs del servidor. Con `post` esa misma caída manda los campos en el body. Es defensa en profundidad: la hidratación puede fallar por razones que no controlamos (red lenta, browser viejo, o simplemente que el usuario toque el botón antes de que termine), y ninguna de esas debería costar una contraseña.
