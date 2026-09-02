@@ -123,22 +123,27 @@ export async function crearTarea(input: CrearTareaForm) {
   }
 
   const supabase = await createClient();
-  const creado_por = await usuarioActualId();
-  const { asignados, ...tarea } = parsed.data;
-  // id generado en el server: mismo motivo que crearHilo — tareas_select ya no
-  // mira creado_por, así que la fila recién insertada todavía no es visible
-  // (sus asignados se insertan después) y pedir RETURNING rompería con RLS.
-  const id = crypto.randomUUID();
+  const d = parsed.data;
 
-  const { error } = await supabase.from("tareas").insert({ id, ...tarea, creado_por });
+  const { data: id, error } = await supabase.rpc("crear_tarea", {
+    p_titulo: d.titulo,
+    p_descripcion: d.descripcion ?? null,
+    p_hilo_id: d.hilo_id,
+    p_proyecto_id: d.proyecto_id,
+    p_paso_anterior_id: d.paso_anterior_id,
+    p_visibilidad: d.visibilidad,
+    p_responsable_id: d.responsable_id,
+    p_asignados: d.asignados,
+    p_fecha_vencimiento: d.fecha_vencimiento,
+    p_temperatura: d.temperatura,
+    p_recurrencia_cantidad: d.recurrencia_cantidad ?? null,
+    p_recurrencia_unidad: d.recurrencia_unidad ?? null,
+    p_modo_completado: d.modo_completado,
+    p_origen_app: d.origen_app ?? null,
+    p_origen_punto: d.origen_punto ?? null,
+  });
 
   if (error) return { success: false as const, error: mensajeError(error) };
-
-  const { error: errorAsignados } = await supabase
-    .from("tareas_asignados")
-    .insert(asignados.map((usuario_id) => ({ tarea_id: id, usuario_id })));
-
-  if (errorAsignados) return { success: false as const, error: mensajeError(errorAsignados) };
 
   revalidatePath("/tareas");
   return { success: true as const, id };
@@ -219,40 +224,12 @@ export async function convertirTareaEnHilo(tareaId: string) {
   }
 
   const supabase = await createClient();
-  const usuarioId = await usuarioActualId();
 
-  const { data: original, error: errorOriginal } = await supabase
-    .from("tareas")
-    .select("titulo, descripcion, visibilidad, proyecto_id, responsable_id")
-    .eq("id", parsed.data)
-    .single();
-
-  if (errorOriginal) return { success: false as const, error: mensajeError(errorOriginal) };
-
-  // id generado en el server: mismo motivo que crearHilo — evita el
-  // RETURNING sobre tareas_hilos, cuya policy de SELECT relee la propia tabla.
-  const hiloId = crypto.randomUUID();
-
-  const { error: errorHilo } = await supabase.from("tareas_hilos").insert({
-    id: hiloId,
-    titulo: original.titulo,
-    descripcion: original.descripcion,
-    visibilidad: original.visibilidad,
-    proyecto_id: original.proyecto_id,
-    responsable_id: original.responsable_id,
-    creado_por: usuarioId,
+  const { data: hiloId, error } = await supabase.rpc("convertir_tarea_en_hilo", {
+    p_tarea_id: parsed.data,
   });
 
-  if (errorHilo) return { success: false as const, error: mensajeError(errorHilo) };
-
-  const falloMover = errorDeUpdate(
-    await supabase
-      .from("tareas")
-      .update({ hilo_id: hiloId, proyecto_id: null }, { count: "exact" })
-      .eq("id", parsed.data),
-  );
-
-  if (falloMover) return { success: false as const, error: falloMover };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const, hiloId };
@@ -270,60 +247,12 @@ export async function deshacerConversionHilo(input: DeshacerConversionForm) {
   }
 
   const supabase = await createClient();
-  const { hilo_id } = parsed.data;
 
-  const { data: hilo, error: errorHilo } = await supabase
-    .from("tareas_hilos")
-    .select("proyecto_id")
-    .eq("id", hilo_id)
-    .single();
+  const { error } = await supabase.rpc("deshacer_conversion_hilo", {
+    p_hilo_id: parsed.data.hilo_id,
+  });
 
-  if (errorHilo) return { success: false as const, error: mensajeError(errorHilo) };
-
-  const { data: tareasDelHilo, error: errorTareas } = await supabase
-    .from("tareas")
-    .select("id")
-    .eq("hilo_id", hilo_id)
-    .eq("activo", true)
-    .order("created_at", { ascending: true });
-
-  if (errorTareas) return { success: false as const, error: mensajeError(errorTareas) };
-
-  const [primera, ...resto] = tareasDelHilo ?? [];
-
-  if (primera) {
-    const falloRestaurar = errorDeUpdate(
-      await supabase
-        .from("tareas")
-        .update({ hilo_id: null, proyecto_id: hilo.proyecto_id }, { count: "exact" })
-        .eq("id", primera.id),
-    );
-
-    if (falloRestaurar) return { success: false as const, error: falloRestaurar };
-  }
-
-  if (resto.length > 0) {
-    const falloResto = errorDeUpdate(
-      await supabase
-        .from("tareas")
-        .update({ activo: false }, { count: "exact" })
-        .in(
-          "id",
-          resto.map((t) => t.id)
-        ),
-    );
-
-    if (falloResto) return { success: false as const, error: falloResto };
-  }
-
-  const falloHilo = errorDeUpdate(
-    await supabase
-      .from("tareas_hilos")
-      .update({ activo: false }, { count: "exact" })
-      .eq("id", hilo_id),
-  );
-
-  if (falloHilo) return { success: false as const, error: falloHilo };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -336,21 +265,16 @@ export async function crearProyecto(input: CrearProyectoForm) {
   }
 
   const supabase = await createClient();
-  const creado_por = await usuarioActualId();
-  const { miembros, ...proyecto } = parsed.data;
-  // id generado en el server: mismo motivo que crearTarea — un proyecto
-  // privado no es visible para su creador hasta que se inserten los miembros.
-  const id = crypto.randomUUID();
+  const d = parsed.data;
 
-  const { error } = await supabase.from("tareas_proyectos").insert({ id, ...proyecto, creado_por });
+  const { data: id, error } = await supabase.rpc("crear_proyecto", {
+    p_nombre: d.nombre,
+    p_descripcion: d.descripcion ?? null,
+    p_visibilidad: d.visibilidad,
+    p_miembros: d.miembros,
+  });
 
   if (error) return { success: false as const, error: mensajeError(error) };
-
-  const { error: errorMiembros } = await supabase
-    .from("tareas_proyectos_miembros")
-    .insert(miembros.map((usuario_id) => ({ proyecto_id: id, usuario_id })));
-
-  if (errorMiembros) return { success: false as const, error: mensajeError(errorMiembros) };
 
   revalidatePath("/tareas/proyectos");
   revalidatePath("/tareas");
@@ -553,51 +477,16 @@ export async function agregarTareasDesdePlantilla(input: AgregarDesdePlantillaFo
   }
 
   const supabase = await createClient();
-  const creado_por = await usuarioActualId();
   const { plantilla_id, hilo_id, responsable_id, asignados } = parsed.data;
 
-  const { data: items, error: errorItems } = await supabase
-    .from("tareas_plantillas_items")
-    .select("titulo, orden")
-    .eq("plantilla_id", plantilla_id)
-    .eq("activo", true)
-    .order("orden");
+  const { error } = await supabase.rpc("agregar_tareas_desde_plantilla", {
+    p_plantilla_id: plantilla_id,
+    p_hilo_id: hilo_id,
+    p_responsable_id: responsable_id,
+    p_asignados: asignados,
+  });
 
-  if (errorItems) return { success: false as const, error: mensajeError(errorItems) };
-  if (!items || items.length === 0) {
-    return { success: false as const, error: "La plantilla no tiene pasos" };
-  }
-
-  // ids generados en el server: mismo motivo que crearTarea. Se generan antes
-  // del insert porque cada paso necesita el id del anterior.
-  const ids = items.map(() => crypto.randomUUID());
-
-  // Los items de la plantilla ya vienen ordenados por `orden`, y ese orden
-  // siempre significó "primero esto, después aquello" — hasta ahora era solo
-  // una sugerencia visual. La plantilla genera una cadena: cada paso se
-  // habilita al completar el anterior.
-  //
-  // Va en un solo INSERT multi-fila: el trigger `validar_paso_tarea` corre
-  // BEFORE por fila y ve las filas anteriores de la misma sentencia, así que
-  // no hace falta insertar de a uno (verificado contra la base).
-  const nuevas = items.map((item, i) => ({
-    id: ids[i],
-    titulo: item.titulo,
-    hilo_id,
-    responsable_id,
-    creado_por,
-    paso_anterior_id: i === 0 ? null : ids[i - 1],
-  }));
-
-  const { error: errorInsertar } = await supabase.from("tareas").insert(nuevas);
-
-  if (errorInsertar) return { success: false as const, error: mensajeError(errorInsertar) };
-
-  const { error: errorAsignar } = await supabase
-    .from("tareas_asignados")
-    .insert(nuevas.flatMap((t) => asignados.map((usuario_id) => ({ tarea_id: t.id, usuario_id }))));
-
-  if (errorAsignar) return { success: false as const, error: mensajeError(errorAsignar) };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -744,21 +633,9 @@ export async function desactivarHilo(id: string) {
   // Las tareas caen con el hilo. Sin esto quedan activas apuntando a un hilo
   // que las queries ya no traen: la lista las agrupa por hilo y no son
   // sueltas, así que desaparecen de la UI aunque RLS siga devolviéndolas.
-  // Primero las tareas — si eso falla, el hilo queda intacto y no hay huérfanas.
-  // Sin conteo: un hilo sin tareas afecta 0 filas y es correcto.
-  const { error: errorTareas } = await supabase
-    .from("tareas")
-    .update({ activo: false })
-    .eq("hilo_id", parsed.data);
-  if (errorTareas) return { success: false as const, error: mensajeError(errorTareas) };
+  const { error } = await supabase.rpc("desactivar_hilo", { p_hilo_id: parsed.data });
 
-  const fallo = errorDeUpdate(
-    await supabase
-      .from("tareas_hilos")
-      .update({ activo: false }, { count: "exact" })
-      .eq("id", parsed.data),
-  );
-  if (fallo) return { success: false as const, error: fallo };
+  if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/tareas");
   return { success: true as const };
 }

@@ -91,7 +91,7 @@ Exige `usuarios.activo` además de `usuario_submodulos.activo` y `submodulos.act
 
 ---
 
-## Módulo tareas (`sql/005_tareas.sql` + `sql/006_tareas_hardening.sql` + `sql/007_tareas_reactivar_posponer.sql` + `sql/008_tareas_notas_visibilidad.sql` + `sql/009_tareas_miembros_asignables.sql` + `sql/013_tareas_visibilidad_y_miembros.sql` + `sql/014_tareas_asignar.sql` + `sql/015_tareas_hilos_responsable.sql` + `sql/016_miembros_proyecto_activo.sql` + `sql/017_tareas_pasos_y_mision.sql` — corridos en Supabase vía MCP)
+## Módulo tareas (`sql/005_tareas.sql` + `sql/006_tareas_hardening.sql` + `sql/007_tareas_reactivar_posponer.sql` + `sql/008_tareas_notas_visibilidad.sql` + `sql/009_tareas_miembros_asignables.sql` + `sql/013_tareas_visibilidad_y_miembros.sql` + `sql/014_tareas_asignar.sql` + `sql/015_tareas_hilos_responsable.sql` + `sql/016_miembros_proyecto_activo.sql` + `sql/017_tareas_pasos_y_mision.sql` + `sql/023_tareas_atomicidad.sql` — corridos en Supabase vía MCP)
 
 Reemplaza un intento anterior (rama `tareas-v1`, revertido en `sql/004_rollback_tareas.sql`) — requisitos de negocio cambiaron (proyectos + visibilidad en cascada, multi-asignado, `responsable_id`, `temperatura`). No comparte schema con esa rama.
 
@@ -281,6 +281,25 @@ Tercer eje, independiente de `tareas_gestionar_ajenas` (autoridad sobre tareas a
 - `tareas_hilos_insert` — `creado_por = auth.uid() AND (responsable_id = auth.uid() OR tiene_permiso('tareas_asignar'))`. **Reemplaza** la rama `tareas_gestionar_ajenas`, igual que `sql/014` hizo con `tareas_insert`.
 - `tareas_hilos_update` — el `WITH CHECK` suma `OR tiene_permiso('tareas_asignar')`. Sin eso el traspaso era imposible incluso con la función: la fila nueva tiene `responsable_id` ajeno y el `WITH CHECK` solo aceptaba `responsable_id = auth.uid()`. En `tareas` el problema no aparece porque ahí el `WITH CHECK` tiene además la rama del asignado activo (`sql/013`). Quién puede **tocar** el hilo lo sigue decidiendo el `USING`; quién puede quedar **a cargo** es del trigger.
 - Trigger `validar_responsable_hilo` — `BEFORE UPDATE OF responsable_id ON tareas_hilos WHEN (NEW.responsable_id IS DISTINCT FROM OLD.responsable_id)`: mismo `ERRCODE = 'TA003'` y mismo motivo que `validar_responsable_tarea`.
+
+### Escrituras multi-tabla — funciones `SECURITY INVOKER` (`sql/023`)
+
+Toda action que escribía dos o más tablas es ahora **una** función, invocada con `.rpc()`: el cuerpo corre en una sola transacción, así que un fallo tardío no deja cometido lo anterior. `SECURITY INVOKER` a propósito — RLS se sigue evaluando con la identidad de quien llama y la autoridad no se mueve de las policies.
+
+| función | reemplaza a | tablas |
+|---|---|---|
+| `crear_tarea(...)` → uuid | `crearTarea` | `tareas` + `tareas_asignados` |
+| `crear_proyecto(...)` → uuid | `crearProyecto` | `tareas_proyectos` + `tareas_proyectos_miembros` |
+| `convertir_tarea_en_hilo(uuid)` → uuid | `convertirTareaEnHilo` | `tareas_hilos` + `tareas` |
+| `deshacer_conversion_hilo(uuid)` | `deshacerConversionHilo` | `tareas` + `tareas_hilos` |
+| `desactivar_hilo(uuid)` | `desactivarHilo` | `tareas` + `tareas_hilos` |
+| `agregar_tareas_desde_plantilla(...)` | `agregarTareasDesdePlantilla` | `tareas` + `tareas_asignados` |
+
+Los ids se generan con `gen_random_uuid()` en una variable en vez de pedir `RETURNING`: en ese punto la fila todavía no pasa la policy de SELECT (la tarea no tiene asignados, el proyecto no tiene miembros, `puede_ver_hilo` relee su propia tabla).
+
+Dos SQLSTATE nuevos, mapeados en `MENSAJES_ERROR` (`lib/utils.ts`): **`TA008`** — un UPDATE afectó 0 filas, que es como RLS rechaza (reemplaza al `errorDeUpdate()` de TypeScript); **`TA009`** — la plantilla no tiene pasos. `EXECUTE` revocado de `PUBLIC` y otorgado a `authenticated`, mismo criterio que `sql/006`.
+
+Verificación: `sql/tests/atomicidad_tareas.sql` (15/15).
 
 ### Función `reactivar_posponer_vencidos()`
 

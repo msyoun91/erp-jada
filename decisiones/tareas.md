@@ -234,9 +234,11 @@ Lista las perdía: no son sueltas (`hilo_id !== null`) y su grupo no existe.
 RLS seguía devolviéndolas — el trabajo asignado desaparecía de la UI para
 todos, incluido quien tiene `tareas_gestionar_ajenas`.
 
-La cascada va en el action, no en un filtro defensivo de la vista: el estado
-"hilo inactivo con tareas activas" no debe existir. Las tareas se desactivan
-primero — si ese update falla, el hilo queda intacto y no hay huérfanas.
+~~La cascada va en el action, no en un filtro defensivo de la vista~~ — **superado
+por *Las escrituras multi-tabla bajan a Postgres***: la cascada vive en
+`desactivar_hilo()` (`sql/023`) y ya no depende del orden de dos requests. Sigue
+en pie lo demás: el estado "hilo inactivo con tareas activas" no debe existir, y
+no se resuelve con un filtro defensivo de la vista.
 
 No hace falta permiso extra: `tareas_update` ya tiene la rama del responsable
 del hilo, que es exactamente quien puede desactivarlo (`tareas_hilos_update`).
@@ -637,3 +639,21 @@ Los tres cambios de `components/ui/` de esta tanda (`RightPanel` y `Modal` a `<d
 **`TareaRow`: se fue el botón "Notas" y las notas se muestran siempre.** Con la lista de notas + "Agregar nota" ya visibles en cada fila, el toggle no agregaba nada. En el menú de acciones "Posponer" pasó al primer lugar (antes "Reasignar") — es la acción más frecuente.
 
 **Presets de vencimiento (1/3/7 días) en `TareaFormPanel`.** Botones que hacen `setValue("fecha_vencimiento", sumarDiasISO(hoyISO(), n))` sobre el mismo `<input type="date">` — sin campo ni estado nuevo. Los días viven en `VENCIMIENTO_PRESETS` en el componente; no se hizo configurable (mismo criterio que los umbrales de `TareaRow`).
+
+## Las escrituras multi-tabla bajan a Postgres
+
+Punto 2 de `PLAN_ARQUITECTURA_TAREAS.md`. Seis actions escribían dos o más tablas con statements separados. Cada `.from().insert()` de PostgREST es su propia transacción, así que un fallo en el segundo dejaba el primero cometido. El modo de falla peor es `crearTarea`: si el insert de `tareas_asignados` falla, la tarea queda `activo = true` e **invisible para todos** — `tareas_select` no mira `creado_por` (`sql/013`), así que ni quien la creó la ve, y sin verla no puede corregirla. Igual en `crearProyecto` (proyecto privado sin miembros), `convertirTareaEnHilo`, `deshacerConversionHilo`, `desactivarHilo` y `agregarTareasDesdePlantilla`.
+
+Las seis pasan a funciones `SECURITY INVOKER` en `sql/023`, llamadas con `.rpc()`: `crear_tarea`, `crear_proyecto`, `convertir_tarea_en_hilo`, `deshacer_conversion_hilo`, `desactivar_hilo`, `agregar_tareas_desde_plantilla`. El cuerpo corre en una sola transacción y **RLS se sigue evaluando con la identidad de quien llama** — la autoridad no se mueve de las policies, que es lo que descarta `SECURITY DEFINER` acá (sería mover autorización adentro de la función). `actions.ts` queda como glue: `safeParse` → `.rpc()` → `revalidatePath`, y bajó de 920 a 797 líneas.
+
+**Los ids se siguen generando antes del INSERT, ahora con `gen_random_uuid()` en una variable.** El motivo no cambió al mudarse a SQL: `RETURNING` exige pasar por la policy de SELECT, y en ese punto la fila todavía no es visible (la tarea no tiene asignados, el proyecto no tiene miembros, `puede_ver_hilo` relee su propia tabla).
+
+**`errorDeUpdate()` se vuelve `TA008` adentro de la función.** Un UPDATE que RLS rechaza afecta 0 filas y vuelve sin error; el chequeo que en TypeScript era `{ count: "exact" }` acá es `IF NOT FOUND THEN RAISE`. Mismo texto de mensaje, ahora en `MENSAJES_ERROR` (`TA008`). `TA009` es la plantilla sin pasos. `errorDeUpdate` sigue vivo para las actions de una sola tabla, que no se tocaron.
+
+**`agregar_tareas_desde_plantilla` pasa de un INSERT multi-fila a un loop.** El INSERT agrupado existía para ahorrar round-trips desde el server; adentro de la función no hay round-trips que ahorrar, y el loop expresa la cadena directamente (`v_anterior` es el `paso_anterior_id` del siguiente).
+
+**`deshacer_conversion_hilo` conserva el orden del TypeScript** — primero restaura la más antigua, después desactiva el resto. Invertirlo cambiaría comportamiento: si algo activo tiene a la más antigua como paso previo, `validar_paso_tarea` corta con `TA006`, y con el resto ya desactivado no cortaría. Ese rechazo es el que ya existía y no se toca en esta tanda.
+
+**Los params nullable se marcan a mano en `database.types.ts`.** El generador de Supabase emite `p_descripcion: string` para un parámetro que acepta NULL. Mismo arreglo manual que ya tenía `guardar_obra_persona` — si se regeneran los tipos, hay que volver a ponerlos.
+
+Verificado con `sql/tests/atomicidad_tareas.sql`, 15/15. El test alterna rol en los dos sentidos dentro del mismo `DO`: `authenticated` para llamar las funciones, y `role = none` para **contar**. Contar como `authenticated` haría pasar todos los casos de atomicidad en falso — las filas huérfanas son justamente las que RLS esconde. El caso 00b verifica que el regreso al usuario de sesión ocurre de verdad.

@@ -1149,6 +1149,52 @@ export type Database = {
     }
     Functions: {
       acceso_comercial: { Args: never; Returns: boolean }
+      agregar_tareas_desde_plantilla: {
+        Args: {
+          p_asignados: string[]
+          p_hilo_id: string
+          p_plantilla_id: string
+          p_responsable_id: string
+        }
+        Returns: undefined
+      }
+      convertir_tarea_en_hilo: { Args: { p_tarea_id: string }; Returns: string }
+      crear_proyecto: {
+        Args: {
+          p_descripcion: string | null
+          p_miembros: string[]
+          p_nombre: string
+          p_visibilidad: Database["public"]["Enums"]["visibilidad"]
+        }
+        Returns: string
+      }
+      crear_tarea: {
+        Args: {
+          p_asignados: string[]
+          p_descripcion: string | null
+          p_fecha_vencimiento: string | null
+          p_hilo_id: string | null
+          p_modo_completado: Database["public"]["Enums"]["modo_completado"]
+          p_origen_app: string | null
+          p_origen_punto: string | null
+          p_paso_anterior_id: string | null
+          p_proyecto_id: string | null
+          p_recurrencia_cantidad: number | null
+          p_recurrencia_unidad:
+            | Database["public"]["Enums"]["recurrencia_unidad"]
+            | null
+          p_responsable_id: string
+          p_temperatura: number
+          p_titulo: string
+          p_visibilidad: Database["public"]["Enums"]["visibilidad"]
+        }
+        Returns: string
+      }
+      desactivar_hilo: { Args: { p_hilo_id: string }; Returns: undefined }
+      deshacer_conversion_hilo: {
+        Args: { p_hilo_id: string }
+        Returns: undefined
+      }
       es_asignado_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
       es_creador_proyecto: { Args: { p_proyecto_id: string }; Returns: boolean }
       es_miembro_proyecto: {
