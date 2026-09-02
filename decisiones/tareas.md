@@ -291,6 +291,12 @@ Corrige la sección "Módulo tareas — isla compartida…": ahí `visibilidad` 
 
 **Un `update` por paso existente en vez de un upsert masivo** — son un puñado de pasos por plantilla; armar un upsert con todas las columnas para ahorrar round-trips no se paga.
 
+## Los items de todas las plantillas llegan en una query (sin SQL)
+
+`getPlantillaItems(plantillaId)` se reemplaza por `getItemsPorPlantilla()`, que trae todos los items activos y los agrupa por `plantilla_id` — mismo patrón que `getMiembrosPorProyecto`. La página llamaba una query por plantilla dentro de un `Promise.all`: N requests para una vista que siempre los quiere todos.
+
+**No cambia lo que ve cada usuario.** `tareas_plantillas_items_select` es plana (`tiene_permiso('tareas_plantillas')`, igual que la de `tareas_plantillas`): la query única devuelve exactamente la unión de las N. El mapa puede incluir items de plantillas desactivadas — `getPlantillas` solo trae las activas y la vista busca por id, así que nunca se leen.
+
 
 ---
 

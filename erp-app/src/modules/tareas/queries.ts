@@ -116,17 +116,24 @@ export async function getPlantillas(): Promise<TareaPlantilla[]> {
   return data ?? [];
 }
 
-export async function getPlantillaItems(plantillaId: string): Promise<TareaPlantillaItem[]> {
+// Mapa plantilla -> sus items activos, en una sola query para todas las
+// plantillas (mismo motivo que getMiembrosPorProyecto): la vista los necesita
+// todos a la vez y pedirlos por plantilla eran N requests.
+export async function getItemsPorPlantilla(): Promise<Record<string, TareaPlantillaItem[]>> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tareas_plantillas_items")
     .select("*")
-    .eq("plantilla_id", plantillaId)
     .eq("activo", true)
     .order("orden");
 
   if (error) throw error;
-  return data ?? [];
+
+  const mapa: Record<string, TareaPlantillaItem[]> = {};
+  for (const item of data ?? []) {
+    (mapa[item.plantilla_id] ??= []).push(item);
+  }
+  return mapa;
 }
 
 // Auditoría: solo cambios a 'completada' — "qué se realizó", no cada
