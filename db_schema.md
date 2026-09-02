@@ -301,6 +301,23 @@ Dos SQLSTATE nuevos, mapeados en `MENSAJES_ERROR` (`lib/utils.ts`): **`TA008`** 
 
 Verificación: `sql/tests/atomicidad_tareas.sql` (15/15).
 
+### Ediciones multi-tabla — `sql/024`
+
+Cola de la tanda anterior, con otro modo de falla: estas no dejaban una fila invisible sino **visible y a medio guardar** (el título cambiado con los asignados viejos).
+
+| función | reemplaza a | tablas |
+|---|---|---|
+| `editar_tarea(...)` | `editarTarea` | `tareas` + `tareas_asignados` |
+| `reasignar_tarea(uuid, uuid, uuid[])` | `reasignarTarea` | `tareas` + `tareas_asignados` |
+| `editar_proyecto(...)` | `editarProyecto` | `tareas_proyectos` + `tareas_proyectos_miembros` |
+| `sincronizar_asignados(uuid, uuid[])` | helper homónimo de `actions.ts` | `tareas_asignados` |
+
+`sincronizar_asignados` es el único escritor de `tareas_asignados` sobre una tarea que ya existe — la comparten `editar_tarea` y `reasignar_tarea`, y si el conjunto no cambió no toca nada. Lleva `GRANT` a `authenticated` porque una función `SECURITY INVOKER` llamada desde otra exige `EXECUTE` al rol que invoca; quedar expuesta por PostgREST no abre nada nuevo (la tabla ya acepta INSERT/UPDATE directo bajo las mismas policies).
+
+En `editar_tarea` el orden es fila-primero-asignados-después, como era en TypeScript: `validar_proyecto_tarea` valida el cambio de `proyecto_id` contra los asignados de ese momento. En `editar_proyecto` la membresía se resuelve por diff — barrer y reinsertar dispararía `validar_quitar_miembro` (TA001) sobre los miembros que se quedan.
+
+Verificación: `sql/tests/atomicidad_edicion_tareas.sql`.
+
 ### Función `reactivar_posponer_vencidos()`
 
 `SECURITY DEFINER` — sin cron: `queries.getListaTareas()` la invoca (`supabase.rpc(...)`) antes de leer la lista. Limpia `posponer_desde`/`posponer_hasta` de `tareas`/`tareas_hilos` cuyo `posponer_hasta` ya venció, y en `tareas` corre `fecha_vencimiento` el mismo intervalo que duró el pospuesto. `EXECUTE` solo para `authenticated` (`sql/007`).

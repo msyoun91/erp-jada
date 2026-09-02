@@ -41,16 +41,3 @@ Mismo defecto de contraste que ya se corrigió en `text-error` / `text-warning` 
 y clases de `globals.css`* en `decisiones/global.md`): hex fijo sobre fondo tematizado, abajo
 de AA en uno de los dos temas. Quedó afuera de aquella auditoría porque es app-wide y esa
 pasada era del módulo tareas.
-
-## Tareas — `editarTarea` y `editarProyecto` siguen siendo multi-statement
-
-Quedaron fuera del punto 2 (`sql/023`) porque su modo de falla es otro: no producen
-filas huérfanas invisibles, producen una fila **inconsistente pero visible**.
-`editarTarea` actualiza los campos y después llama `sincronizarAsignados()`; si lo
-segundo falla, el título ya cambió y los asignados no. `editarProyecto` igual, con el
-diff de miembros. Se ve, se puede corregir a mano, y por eso no entró en la misma tanda.
-
-El camino es el mismo que el de las otras seis: una función `SECURITY INVOKER` que haga
-el UPDATE y la sincronización de asignados/miembros en una sola transacción.
-`sincronizarAsignados` es hoy el único escritor de `tareas_asignados` sobre una tarea que
-ya existe, así que se muda entero — no queda un segundo escritor en TypeScript.

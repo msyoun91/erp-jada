@@ -59,8 +59,6 @@ async function usuarioActualId() {
   return user.id;
 }
 
-type Cliente = Awaited<ReturnType<typeof createClient>>;
-
 const SIN_FILAS = "No se pudo guardar: el registro ya no existe o no tenés permiso para modificarlo";
 
 // Un UPDATE que RLS rechaza no falla: afecta 0 filas y vuelve sin error, así que
@@ -70,50 +68,6 @@ const SIN_FILAS = "No se pudo guardar: el registro ya no existe o no tenés perm
 function errorDeUpdate({ error, count }: { error: unknown; count: number | null }) {
   if (error) return mensajeError(error);
   return count === 0 ? SIN_FILAS : null;
-}
-
-// Único escritor de tareas_asignados sobre una tarea que ya existe: lo usan
-// editarTarea y reasignarTarea. Devuelve el mensaje de error, o null si salió bien.
-//
-// Si el conjunto no cambió no toca nada: editar el título de una tarea no debe
-// reescribir sus asignaciones, y sin ese corte quien no tiene `tareas_asignar`
-// no podría guardar ningún cambio en una tarea compartida (los asignados
-// viajan igual como defaults ocultos, y reinsertarlos choca contra la policy).
-async function sincronizarAsignados(supabase: Cliente, tarea_id: string, asignados: string[]) {
-  const { data: actuales, error } = await supabase
-    .from("tareas_asignados")
-    .select("usuario_id")
-    .eq("tarea_id", tarea_id)
-    .eq("activo", true);
-
-  if (error) return mensajeError(error);
-
-  const previos = (actuales ?? []).map((a) => a.usuario_id);
-  if (previos.length === asignados.length && previos.every((id) => asignados.includes(id))) {
-    return null;
-  }
-
-  // Desactiva y reinserta en vez de upsert: el índice único de
-  // tareas_asignados es parcial (WHERE activo) — el upsert de Supabase no
-  // lo soporta (ver GUIDE_DB). Una fila vieja inactiva + una nueva activa
-  // para el mismo par no choca contra el índice.
-  if (previos.length > 0) {
-    const fallo = errorDeUpdate(
-      await supabase
-        .from("tareas_asignados")
-        .update({ activo: false }, { count: "exact" })
-        .eq("tarea_id", tarea_id)
-        .eq("activo", true),
-    );
-
-    if (fallo) return fallo;
-  }
-
-  const { error: errorAsignar } = await supabase
-    .from("tareas_asignados")
-    .insert(asignados.map((usuario_id) => ({ tarea_id, usuario_id })));
-
-  return errorAsignar ? mensajeError(errorAsignar) : null;
 }
 
 export async function crearTarea(input: CrearTareaForm) {
@@ -156,15 +110,23 @@ export async function editarTarea(input: EditarTareaForm) {
   }
 
   const supabase = await createClient();
-  const { id, asignados, ...campos } = parsed.data;
+  const d = parsed.data;
 
-  const fallo = errorDeUpdate(
-    await supabase.from("tareas").update(campos, { count: "exact" }).eq("id", id),
-  );
-  if (fallo) return { success: false as const, error: fallo };
+  const { error } = await supabase.rpc("editar_tarea", {
+    p_id: d.id,
+    p_titulo: d.titulo,
+    p_descripcion: d.descripcion ?? null,
+    p_proyecto_id: d.proyecto_id,
+    p_visibilidad: d.visibilidad,
+    p_responsable_id: d.responsable_id,
+    p_asignados: d.asignados,
+    p_fecha_vencimiento: d.fecha_vencimiento,
+    p_temperatura: d.temperatura,
+    p_recurrencia_cantidad: d.recurrencia_cantidad ?? null,
+    p_recurrencia_unidad: d.recurrencia_unidad ?? null,
+  });
 
-  const falloAsignados = await sincronizarAsignados(supabase, id, asignados);
-  if (falloAsignados) return { success: false as const, error: falloAsignados };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const };
@@ -282,9 +244,10 @@ export async function crearProyecto(input: CrearProyectoForm) {
 }
 
 // Miembros van en el mismo panel que el resto del proyecto: un solo lugar
-// donde se modifica todo. El diff (en vez de desactivar-todo-y-reinsertar)
-// evita que el trigger que bloquea quitar un miembro con tareas activas se
-// dispare también sobre los que quedan.
+// donde se modifica todo. El diff contra la membresía actual lo hace
+// `editar_proyecto` (sql/024) — desactivar todo y reinsertar dispararía el
+// trigger que bloquea quitar un miembro con tareas activas sobre los que
+// se quedan.
 export async function editarProyecto(input: EditarProyectoForm) {
   const parsed = editarProyectoSchema.safeParse(input);
   if (!parsed.success) {
@@ -292,49 +255,17 @@ export async function editarProyecto(input: EditarProyectoForm) {
   }
 
   const supabase = await createClient();
-  const { id: proyectoId, miembros: usuarioIds, ...proyecto } = parsed.data;
+  const d = parsed.data;
 
-  const falloProyecto = errorDeUpdate(
-    await supabase
-      .from("tareas_proyectos")
-      .update(proyecto, { count: "exact" })
-      .eq("id", proyectoId),
-  );
+  const { error } = await supabase.rpc("editar_proyecto", {
+    p_id: d.id,
+    p_nombre: d.nombre,
+    p_descripcion: d.descripcion ?? null,
+    p_visibilidad: d.visibilidad,
+    p_miembros: d.miembros,
+  });
 
-  if (falloProyecto) return { success: false as const, error: falloProyecto };
-
-  const { data: actuales, error: errorLeer } = await supabase
-    .from("tareas_proyectos_miembros")
-    .select("usuario_id")
-    .eq("proyecto_id", proyectoId)
-    .eq("activo", true);
-
-  if (errorLeer) return { success: false as const, error: mensajeError(errorLeer) };
-
-  const previos = new Set((actuales ?? []).map((m) => m.usuario_id));
-  const quitados = [...previos].filter((id) => !usuarioIds.includes(id));
-  const agregados = usuarioIds.filter((id) => !previos.has(id));
-
-  if (quitados.length > 0) {
-    const falloQuitar = errorDeUpdate(
-      await supabase
-        .from("tareas_proyectos_miembros")
-        .update({ activo: false }, { count: "exact" })
-        .eq("proyecto_id", proyectoId)
-        .eq("activo", true)
-        .in("usuario_id", quitados),
-    );
-
-    if (falloQuitar) return { success: false as const, error: falloQuitar };
-  }
-
-  if (agregados.length > 0) {
-    const { error: errorInsertar } = await supabase
-      .from("tareas_proyectos_miembros")
-      .insert(agregados.map((usuario_id) => ({ proyecto_id: proyectoId, usuario_id })));
-
-    if (errorInsertar) return { success: false as const, error: mensajeError(errorInsertar) };
-  }
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas/proyectos");
   revalidatePath("/tareas");
@@ -547,17 +478,13 @@ export async function reasignarTarea(input: ReasignarTareaForm) {
   const supabase = await createClient();
   const { tarea_id, asignados, responsable_id } = parsed.data;
 
-  const falloResponsable = errorDeUpdate(
-    await supabase
-      .from("tareas")
-      .update({ responsable_id }, { count: "exact" })
-      .eq("id", tarea_id),
-  );
+  const { error } = await supabase.rpc("reasignar_tarea", {
+    p_tarea_id: tarea_id,
+    p_responsable_id: responsable_id,
+    p_asignados: asignados,
+  });
 
-  if (falloResponsable) return { success: false as const, error: falloResponsable };
-
-  const falloAsignar = await sincronizarAsignados(supabase, tarea_id, asignados);
-  if (falloAsignar) return { success: false as const, error: falloAsignar };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
   return { success: true as const };

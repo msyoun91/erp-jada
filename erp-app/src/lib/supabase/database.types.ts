@@ -1195,6 +1195,34 @@ export type Database = {
         Args: { p_hilo_id: string }
         Returns: undefined
       }
+      editar_proyecto: {
+        Args: {
+          p_descripcion: string | null
+          p_id: string
+          p_miembros: string[]
+          p_nombre: string
+          p_visibilidad: Database["public"]["Enums"]["visibilidad"]
+        }
+        Returns: undefined
+      }
+      editar_tarea: {
+        Args: {
+          p_asignados: string[]
+          p_descripcion: string | null
+          p_fecha_vencimiento: string | null
+          p_id: string
+          p_proyecto_id: string | null
+          p_recurrencia_cantidad: number | null
+          p_recurrencia_unidad:
+            | Database["public"]["Enums"]["recurrencia_unidad"]
+            | null
+          p_responsable_id: string
+          p_temperatura: number
+          p_titulo: string
+          p_visibilidad: Database["public"]["Enums"]["visibilidad"]
+        }
+        Returns: undefined
+      }
       es_asignado_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
       es_creador_proyecto: { Args: { p_proyecto_id: string }; Returns: boolean }
       es_miembro_proyecto: {
@@ -1225,6 +1253,18 @@ export type Database = {
       }
       puede_ver_hilo: { Args: { p_hilo_id: string }; Returns: boolean }
       reactivar_posponer_vencidos: { Args: never; Returns: undefined }
+      reasignar_tarea: {
+        Args: {
+          p_asignados: string[]
+          p_responsable_id: string
+          p_tarea_id: string
+        }
+        Returns: undefined
+      }
+      sincronizar_asignados: {
+        Args: { p_asignados: string[]; p_tarea_id: string }
+        Returns: undefined
+      }
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
     }
     Enums: {
