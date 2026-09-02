@@ -4,35 +4,25 @@ import { useState } from "react";
 import { FolderPlus } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados, TareaHilo, TareaPlantilla } from "../types";
 import { ProyectoFormPanel } from "./ProyectoFormPanel";
 import { ProyectoCard } from "./ProyectoCard";
+import { useTareasContexto } from "./tareasContexto";
 
 export function ProyectosView({
-  proyectos,
   hilos,
   tareas,
-  usuarios,
   plantillas,
-  miembrosPorProyecto,
-  usuarioActualId,
-  gestionarAjenas,
   gestionarMiembros,
-  puedeAsignar,
   puedeCrear,
 }: {
-  proyectos: TareaProyecto[];
   hilos: TareaHilo[];
   tareas: TareaConAsignados[];
-  usuarios: Usuario[];
   plantillas: TareaPlantilla[];
-  miembrosPorProyecto: Record<string, string[]>;
-  usuarioActualId: string | null;
-  gestionarAjenas: boolean;
   gestionarMiembros: boolean;
-  puedeAsignar: boolean;
   puedeCrear: boolean;
 }) {
+  const { usuarios, proyectos, miembrosPorProyecto, usuarioActualId, gestionarAjenas } = useTareasContexto();
   const [texto, setTexto] = useState("");
   // Mismo default que la vista Lista: arranca en uno mismo — "mis proyectos" —
   // y el panorama del equipo queda a un click. Filtra por membresía, que es
@@ -101,14 +91,8 @@ export function ProyectosView({
               proyecto={p}
               hilos={hilos}
               tareas={tareas}
-              proyectos={proyectos}
-              usuarios={usuarios}
               plantillas={plantillas}
-              miembrosPorProyecto={miembrosPorProyecto}
-              usuarioActualId={usuarioActualId}
-              gestionarAjenas={gestionarAjenas}
               gestionarMiembros={gestionarMiembros}
-              puedeAsignar={puedeAsignar}
             />
           ))}
         </div>
@@ -116,8 +100,6 @@ export function ProyectosView({
 
       {creando && (
         <ProyectoFormPanel
-          usuarios={usuarios}
-          usuarioActualId={usuarioActualId}
           gestionarMiembros={gestionarMiembros}
           onClose={() => setCreando(false)}
         />

@@ -7,21 +7,18 @@ import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { reasignarTarea } from "../actions";
 import { reasignarTareaSchema, type ReasignarTareaForm } from "../types";
-import type { Usuario } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
 
 export function ReasignarPanel({
   tareaId,
   asignadosActuales,
   responsableActual,
-  usuarios,
   miembros,
   onClose,
 }: {
   tareaId: string;
   asignadosActuales: string[];
   responsableActual: string;
-  usuarios: Usuario[];
   miembros: string[] | null;
   onClose: () => void;
 }) {
@@ -75,7 +72,7 @@ export function ReasignarPanel({
       >
         {/* El panel entero es la función `tareas_asignar`: quien no la tiene
             no llega acá (TareaDetailPanel no ofrece "Reasignar"). */}
-        <AsignadosPicker control={control} usuarios={usuarios} miembros={miembros} puedeAsignar />
+        <AsignadosPicker control={control} miembros={miembros} />
       </form>
     </RightPanel>
   );

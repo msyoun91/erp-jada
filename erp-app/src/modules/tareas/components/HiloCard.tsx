@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Clock, Lock, UserRound } from "lucide-react";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados, TareaHilo, TareaPlantilla } from "../types";
 import { formatFecha } from "@/lib/utils";
 import { relacionTarea } from "../relacion";
 import { HiloDetailPanel } from "./HiloDetailPanel";
@@ -13,6 +13,7 @@ import { TareaCard } from "./TareaCard";
 import { MetricasResumen, contarTerminadas } from "./MetricasResumen";
 import { cadenasDePasos } from "./cadenaPasos";
 import { esTerminada } from "./tareaFiltros";
+import { useTareasContexto } from "./tareasContexto";
 
 function calcSig(tareas: TareaConAsignados[]) {
   return tareas
@@ -29,30 +30,19 @@ function calcSig(tareas: TareaConAsignados[]) {
 export function HiloCard({
   hilo,
   tareas,
-  proyectos,
-  usuarios,
   plantillas,
-  miembrosPorProyecto,
-  usuarioActualId,
-  gestionarAjenas,
-  puedeAsignar,
   relacionCon,
   autoAbrir,
   onTemperaturaChange,
 }: {
   hilo: TareaHilo;
   tareas: TareaConAsignados[];
-  proyectos: TareaProyecto[];
-  usuarios: Usuario[];
   plantillas: TareaPlantilla[];
-  miembrosPorProyecto: Record<string, string[]>;
-  usuarioActualId: string | null;
-  gestionarAjenas: boolean;
-  puedeAsignar: boolean;
   relacionCon?: string | null;
   autoAbrir?: boolean;
   onTemperaturaChange?: (id: string, temperatura: number) => void;
 }) {
+  const { usuarios, proyectos, usuarioActualId, gestionarAjenas } = useTareasContexto();
   const [detalleAbierto, setDetalleAbierto] = useState(autoAbrir ?? false);
   // Local y efímero: se pierde al recargar. Persistirlo se agrega cuando moleste.
   const [expandido, setExpandido] = useState(false);
@@ -169,13 +159,7 @@ export function HiloCard({
                 <TareaCard
                   key={t.id}
                   tarea={t}
-                  usuarios={usuarios}
-                  proyectos={proyectos}
-                  miembrosPorProyecto={miembrosPorProyecto}
                   proyectoHeredadoId={hilo.proyecto_id}
-                  usuarioActualId={usuarioActualId}
-                  gestionarAjenas={gestionarAjenas}
-                  puedeAsignar={puedeAsignar}
                   cadena={cadenas.get(t.id)}
                   relacionCon={relacionCon}
                   onTemperaturaChange={onTemperaturaChange}
@@ -185,13 +169,7 @@ export function HiloCard({
                   key={t.id}
                   cadena={cadenas.get(t.id)}
                   tarea={t}
-                  usuarios={usuarios}
-                  proyectos={proyectos}
-                  miembrosPorProyecto={miembrosPorProyecto}
                   proyectoHeredadoId={hilo.proyecto_id}
-                  usuarioActualId={usuarioActualId}
-                  gestionarAjenas={gestionarAjenas}
-                  puedeAsignar={puedeAsignar}
                 />
               ),
             )}
@@ -204,13 +182,7 @@ export function HiloCard({
           hilo={hilo}
           tareasDelHilo={tareasDelHilo}
           proyecto={proyecto}
-          proyectos={proyectos}
-          usuarios={usuarios}
           plantillas={plantillas}
-          miembrosPorProyecto={miembrosPorProyecto}
-          usuarioActualId={usuarioActualId}
-          gestionarAjenas={gestionarAjenas}
-          puedeAsignar={puedeAsignar}
           relacionCon={relacionCon}
           onClose={() => setDetalleAbierto(false)}
         />

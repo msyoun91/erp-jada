@@ -7,7 +7,7 @@ import { RightPanel } from "@/components/ui/RightPanel";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { desactivarHilo } from "../actions";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto } from "../types";
 import { TareaCard } from "./TareaCard";
 import { TareaFormPanel } from "./TareaFormPanel";
 import { HiloFormPanel } from "./HiloFormPanel";
@@ -19,6 +19,7 @@ import { NotasSection } from "./NotasSection";
 import { MetricasResumen, contarTerminadas } from "./MetricasResumen";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
 import { agruparCadenas, cadenasDePasos } from "./cadenaPasos";
+import { useTareasContexto } from "./tareasContexto";
 
 // Contenido que antes vivía inline en HiloCard (expandido) — spec pedida:
 // la vista Lista no muestra tareas/acciones del hilo, solo en este panel.
@@ -26,29 +27,18 @@ export function HiloDetailPanel({
   hilo,
   tareasDelHilo,
   proyecto,
-  proyectos,
-  usuarios,
   plantillas,
-  miembrosPorProyecto,
-  usuarioActualId,
-  gestionarAjenas,
-  puedeAsignar,
   relacionCon,
   onClose,
 }: {
   hilo: TareaHilo;
   tareasDelHilo: TareaConAsignados[];
   proyecto: TareaProyecto | null;
-  proyectos: TareaProyecto[];
-  usuarios: Usuario[];
   plantillas: TareaPlantilla[];
-  miembrosPorProyecto: Record<string, string[]>;
-  usuarioActualId: string | null;
-  gestionarAjenas: boolean;
-  puedeAsignar: boolean;
   relacionCon?: string | null;
   onClose: () => void;
 }) {
+  const { usuarios, miembrosPorProyecto, usuarioActualId, gestionarAjenas } = useTareasContexto();
   const [agregandoTarea, setAgregandoTarea] = useState(false);
   const [editando, setEditando] = useState(false);
   const [posponiendo, setPosponiendo] = useState(false);
@@ -162,13 +152,7 @@ export function HiloDetailPanel({
               <TareaCard
                 key={t.id}
                 tarea={t}
-                usuarios={usuarios}
-                proyectos={proyectos}
-                miembrosPorProyecto={miembrosPorProyecto}
                 proyectoHeredadoId={proyecto?.id ?? null}
-                usuarioActualId={usuarioActualId}
-                gestionarAjenas={gestionarAjenas}
-                puedeAsignar={puedeAsignar}
                 cadena={cadenas.get(t.id)}
                 relacionCon={relacionCon}
                 onTemperaturaChange={onTemperaturaChange}
@@ -185,11 +169,6 @@ export function HiloDetailPanel({
 
       {agregandoTarea && (
         <TareaFormPanel
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
-          usuarioActualId={usuarioActualId}
-          puedeAsignar={puedeAsignar}
           hiloId={hilo.id}
           proyectoHeredadoId={proyecto?.id ?? null}
           onClose={() => setAgregandoTarea(false)}
@@ -197,11 +176,6 @@ export function HiloDetailPanel({
       )}
       {editando && (
         <HiloFormPanel
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
-          usuarioActualId={usuarioActualId}
-          puedeAsignar={puedeAsignar}
           hilo={hilo}
           onClose={() => setEditando(false)}
         />
@@ -213,10 +187,7 @@ export function HiloDetailPanel({
         <UsarPlantillaPanel
           hiloId={hilo.id}
           plantillas={plantillas}
-          usuarios={usuarios}
           miembros={miembros}
-          usuarioActualId={usuarioActualId}
-          puedeAsignar={puedeAsignar}
           onClose={() => setUsandoPlantilla(false)}
         />
       )}

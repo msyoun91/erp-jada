@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { crearProyecto, editarProyecto } from "../actions";
 import { crearProyectoSchema, type CrearProyectoForm } from "../types";
-import type { TareaProyecto, Usuario } from "../types";
+import type { TareaProyecto } from "../types";
+import { useTareasContexto } from "./tareasContexto";
 
 // Crear y modificar en el mismo panel (prop `proyecto`), mismo patrón que
 // TareaFormPanel/PlantillaFormPanel. Los miembros se editan acá: son una
@@ -18,19 +19,16 @@ import type { TareaProyecto, Usuario } from "../types";
 export function ProyectoFormPanel({
   proyecto,
   miembrosActuales,
-  usuarios,
-  usuarioActualId,
   gestionarMiembros,
   onClose,
 }: {
   proyecto?: TareaProyecto;
   miembrosActuales?: string[];
-  usuarios: Usuario[];
-  usuarioActualId: string | null;
   gestionarMiembros: boolean;
   onClose: () => void;
 }) {
   const [enviando, setEnviando] = useState(false);
+  const { usuarios, usuarioActualId } = useTareasContexto();
   const {
     register,
     handleSubmit,

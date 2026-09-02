@@ -8,7 +8,8 @@ import { RightPanel } from "@/components/ui/RightPanel";
 import { crearHilo, editarHilo } from "../actions";
 import { puedeTrabajarEnProyecto } from "./proyectoTareas";
 import { crearHiloSchema, type CrearHiloForm } from "../types";
-import type { TareaHilo, TareaProyecto, Usuario } from "../types";
+import type { TareaHilo } from "../types";
+import { useTareasContexto } from "./tareasContexto";
 
 // Un solo panel para crear y editar (prop `hilo`), mismo patrón que
 // TareaFormPanel: el schema sigue siendo crearHiloSchema (superset) y en
@@ -17,24 +18,15 @@ import type { TareaHilo, TareaProyecto, Usuario } from "../types";
 // quiénes pueden trabajar en sus tareas, y esa validación existe sobre
 // `tareas` (sql/009), no sobre el hilo; la visibilidad no toca la membresía.
 export function HiloFormPanel({
-  usuarios,
-  proyectos,
-  miembrosPorProyecto,
-  usuarioActualId,
-  puedeAsignar,
   proyectoId,
   hilo,
   onClose,
 }: {
-  usuarios: Usuario[];
-  proyectos: TareaProyecto[];
-  miembrosPorProyecto: Record<string, string[]>;
-  usuarioActualId: string | null;
-  puedeAsignar: boolean;
   proyectoId?: string;
   hilo?: TareaHilo;
   onClose: () => void;
 }) {
+  const { usuarios, proyectos, miembrosPorProyecto, usuarioActualId, puedeAsignar } = useTareasContexto();
   // El hilo no lleva asignados, pero sus pasos sí: fundarlo en un proyecto
   // donde no podés trabajar deja un hilo al que no le podés agregar nada.
   const proyectosDisponibles = proyectos.filter((p) =>

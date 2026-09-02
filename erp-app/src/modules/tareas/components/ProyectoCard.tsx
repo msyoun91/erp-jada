@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { Users } from "lucide-react";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto } from "../types";
 import { Isla } from "./Isla";
 import { MetricasResumen, contarTerminadas } from "./MetricasResumen";
 import { ProyectoDetailPanel } from "./ProyectoDetailPanel";
 import { tareasDeProyecto } from "./proyectoTareas";
+import { useTareasContexto } from "./tareasContexto";
 
 // Isla resumen del proyecto: misma cara que HiloCard y TareaCard. Las
 // acciones (modificar, desactivar, agregar) viven en ProyectoDetailPanel.
@@ -14,27 +15,16 @@ export function ProyectoCard({
   proyecto,
   hilos,
   tareas,
-  proyectos,
-  usuarios,
   plantillas,
-  miembrosPorProyecto,
-  usuarioActualId,
-  gestionarAjenas,
   gestionarMiembros,
-  puedeAsignar,
 }: {
   proyecto: TareaProyecto;
   hilos: TareaHilo[];
   tareas: TareaConAsignados[];
-  proyectos: TareaProyecto[];
-  usuarios: Usuario[];
   plantillas: TareaPlantilla[];
-  miembrosPorProyecto: Record<string, string[]>;
-  usuarioActualId: string | null;
-  gestionarAjenas: boolean;
   gestionarMiembros: boolean;
-  puedeAsignar: boolean;
 }) {
+  const { miembrosPorProyecto } = useTareasContexto();
   const [detalleAbierto, setDetalleAbierto] = useState(false);
 
   const tareasDelProyecto = tareasDeProyecto(proyecto.id, hilos, tareas);
@@ -73,14 +63,8 @@ export function ProyectoCard({
           proyecto={proyecto}
           hilos={hilos}
           tareas={tareas}
-          proyectos={proyectos}
-          usuarios={usuarios}
           plantillas={plantillas}
-          miembrosPorProyecto={miembrosPorProyecto}
-          usuarioActualId={usuarioActualId}
-          gestionarAjenas={gestionarAjenas}
           gestionarMiembros={gestionarMiembros}
-          puedeAsignar={puedeAsignar}
           onClose={() => setDetalleAbierto(false)}
         />
       )}

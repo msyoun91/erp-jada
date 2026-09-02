@@ -14,6 +14,7 @@ import {
   getUsuarioActualId,
   getUsuariosParaAsignar,
 } from "@/modules/tareas/queries";
+import { TareasContextoProvider } from "@/modules/tareas/components/tareasContexto";
 import { ProyectosView } from "@/modules/tareas/components/ProyectosView";
 
 export default async function TareasProyectosPage() {
@@ -44,18 +45,23 @@ export default async function TareasProyectosPage() {
   ]);
 
   return (
-    <ProyectosView
-      proyectos={proyectos}
-      hilos={hilos}
-      tareas={tareas}
-      usuarios={usuarios}
-      plantillas={plantillas}
-      miembrosPorProyecto={miembrosPorProyecto}
-      usuarioActualId={usuarioActualId}
-      gestionarAjenas={gestionarAjenas}
-      gestionarMiembros={gestionarMiembros}
-      puedeAsignar={asignar}
-      puedeCrear={puedeCrear}
-    />
+    <TareasContextoProvider
+      valor={{
+        usuarios,
+        proyectos,
+        miembrosPorProyecto,
+        usuarioActualId,
+        gestionarAjenas,
+        puedeAsignar: asignar,
+      }}
+    >
+      <ProyectosView
+        hilos={hilos}
+        tareas={tareas}
+        plantillas={plantillas}
+        gestionarMiembros={gestionarMiembros}
+        puedeCrear={puedeCrear}
+      />
+    </TareasContextoProvider>
   );
 }

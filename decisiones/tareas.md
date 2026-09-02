@@ -554,6 +554,26 @@ Auditoría de arquitectura, primera tanda (`PLAN_ARQUITECTURA_TAREAS.md`, puntos
 
 ---
 
+# Contexto de la UI del módulo
+
+## Las seis props compartidas pasan a un Context (sin SQL)
+
+Auditoría de arquitectura, punto 6 de `PLAN_ARQUITECTURA_TAREAS.md`.
+
+`usuarios`, `proyectos`, `miembrosPorProyecto`, `usuarioActualId`, `gestionarAjenas` y `puedeAsignar` viajaban idénticas por 16 componentes: ~149 atributos JSX de puro reenvío, y `Bloqueadas` en `MisionView` recibía nueve props para usar tres. Ninguna se transformaba en el camino — se verificó que los 149 reenvíos fueran `x={x}` literal antes de tocar nada.
+
+Ahora las arma la page (server) y las entrega `TareasContextoProvider`; cada componente pide con `useTareasContexto()` solo lo que usa, y eso queda visible en la primera línea de su cuerpo. Neto: −367 líneas, +91.
+
+**Por qué Context y no un solo prop objeto.** Agrupar las seis en `ctx` bajaba los 149 reenvíos a ~30 pero dejaba el drilling intacto: las hojas que usan dos de las seis seguían recibiendo el paquete entero, y agregar un séptimo dato seguía tocando la cadena. El Context es la primera capa nueva del módulo, y se paga sola: son datos de solo lectura que la page arma una vez por request y que **toda** la UI necesita.
+
+**No es estado.** El provider recibe el valor ya calculado en el server y no lo muta: se renueva con el `revalidatePath`, igual que antes. Por eso no hay `useState` ni memo adentro — un objeto nuevo por render del server es exactamente lo que se quiere.
+
+**`ReasignarPanel` pierde su `puedeAsignar` forzado.** Pasaba `puedeAsignar` literal a `AsignadosPicker`; ahora el picker lo lee del contexto. Da lo mismo: el panel entero **es** la función `tareas_asignar` — `TareaDetailPanel` no ofrece "Reasignar" sin ella, así que el valor del contexto ya es `true` cuando el panel existe.
+
+**Límite:** los componentes del módulo solo renderizan dentro del provider. Hoy los únicos que los montan son las tres pages (`/tareas`, `/tareas/mision`, `/tareas/proyectos`); el hook tira error explícito si alguien los usa afuera, en vez de dibujar una lista de usuarios vacía.
+
+---
+
 # Construcción inicial
 
 > **Único bloque cronológico del archivo.** Es donde viven las trampas de RLS y de forms

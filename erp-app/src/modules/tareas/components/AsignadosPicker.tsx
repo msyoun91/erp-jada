@@ -1,7 +1,7 @@
 "use client";
 
 import { useController, type Control, type Path } from "react-hook-form";
-import type { Usuario } from "../types";
+import { useTareasContexto } from "./tareasContexto";
 
 // `miembros` = ids habilitados para recibir la tarea (miembros del proyecto);
 // null = la tarea no tiene proyecto y cualquiera puede recibirla. El filtro es
@@ -13,15 +13,12 @@ import type { Usuario } from "../types";
 // panel para no repetirlo en TareaFormPanel y UsarPlantillaPanel.
 export function AsignadosPicker<T extends { asignados: string[]; responsable_id: string }>({
   control,
-  usuarios,
   miembros,
-  puedeAsignar,
 }: {
   control: Control<T>;
-  usuarios: Usuario[];
   miembros: string[] | null;
-  puedeAsignar: boolean;
 }) {
+  const { usuarios, puedeAsignar } = useTareasContexto();
   const asignadosField = useController({ name: "asignados" as Path<T>, control });
   const responsableField = useController({ name: "responsable_id" as Path<T>, control });
 

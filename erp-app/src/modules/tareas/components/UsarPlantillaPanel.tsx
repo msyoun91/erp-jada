@@ -7,26 +7,22 @@ import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { agregarTareasDesdePlantilla } from "../actions";
 import { agregarDesdePlantillaSchema, type AgregarDesdePlantillaForm } from "../types";
-import type { TareaPlantilla, Usuario } from "../types";
+import type { TareaPlantilla } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
+import { useTareasContexto } from "./tareasContexto";
 
 export function UsarPlantillaPanel({
   hiloId,
   plantillas,
-  usuarios,
   miembros,
-  usuarioActualId,
-  puedeAsignar,
   onClose,
 }: {
   hiloId: string;
   plantillas: TareaPlantilla[];
-  usuarios: Usuario[];
   miembros: string[] | null;
-  usuarioActualId: string | null;
-  puedeAsignar: boolean;
   onClose: () => void;
 }) {
+  const { usuarioActualId } = useTareasContexto();
   const [enviando, setEnviando] = useState(false);
   const {
     register,
@@ -98,9 +94,7 @@ export function UsarPlantillaPanel({
 
         <AsignadosPicker
           control={control}
-          usuarios={usuarios}
           miembros={miembros}
-          puedeAsignar={puedeAsignar}
         />
       </form>
     </RightPanel>

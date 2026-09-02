@@ -7,6 +7,7 @@ import {
   getUsuarioActualId,
   getUsuariosParaAsignar,
 } from "@/modules/tareas/queries";
+import { TareasContextoProvider } from "@/modules/tareas/components/tareasContexto";
 import { MisionView } from "@/modules/tareas/components/MisionView";
 
 export default async function MisionPage() {
@@ -24,15 +25,17 @@ export default async function MisionPage() {
     ]);
 
   return (
-    <MisionView
-      hilos={hilos}
-      tareas={tareas}
-      usuarios={usuarios}
-      proyectos={proyectos}
-      miembrosPorProyecto={miembrosPorProyecto}
-      gestionarAjenas={gestionarAjenas}
-      puedeAsignar={asignar}
-      usuarioActualId={usuarioActualId}
-    />
+    <TareasContextoProvider
+      valor={{
+        usuarios,
+        proyectos,
+        miembrosPorProyecto,
+        usuarioActualId,
+        gestionarAjenas,
+        puedeAsignar: asignar,
+      }}
+    >
+      <MisionView hilos={hilos} tareas={tareas} />
+    </TareasContextoProvider>
   );
 }

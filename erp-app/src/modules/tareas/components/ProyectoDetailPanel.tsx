@@ -7,7 +7,7 @@ import { RightPanel } from "@/components/ui/RightPanel";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { desactivarProyecto } from "../actions";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto } from "../types";
 import { HiloCard } from "./HiloCard";
 import { TareaCard } from "./TareaCard";
 import { TareaFormPanel } from "./TareaFormPanel";
@@ -16,6 +16,7 @@ import { ProyectoFormPanel } from "./ProyectoFormPanel";
 import { MetricasResumen, contarTerminadas } from "./MetricasResumen";
 import { puedeTrabajarEnProyecto, tareasDeProyecto } from "./proyectoTareas";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
+import { useTareasContexto } from "./tareasContexto";
 
 // Panel del proyecto: agregar tarea/hilo directo al proyecto + listado de lo
 // que ya tiene (mismas islas — HiloCard/TareaCard — que "Mis tareas", acá sin
@@ -25,29 +26,18 @@ export function ProyectoDetailPanel({
   proyecto,
   hilos,
   tareas,
-  proyectos,
-  usuarios,
   plantillas,
-  miembrosPorProyecto,
-  usuarioActualId,
-  gestionarAjenas,
   gestionarMiembros,
-  puedeAsignar,
   onClose,
 }: {
   proyecto: TareaProyecto;
   hilos: TareaHilo[];
   tareas: TareaConAsignados[];
-  proyectos: TareaProyecto[];
-  usuarios: Usuario[];
   plantillas: TareaPlantilla[];
-  miembrosPorProyecto: Record<string, string[]>;
-  usuarioActualId: string | null;
-  gestionarAjenas: boolean;
   gestionarMiembros: boolean;
-  puedeAsignar: boolean;
   onClose: () => void;
 }) {
+  const { miembrosPorProyecto, usuarioActualId, gestionarAjenas, puedeAsignar } = useTareasContexto();
   const [creandoTarea, setCreandoTarea] = useState(false);
   const [creandoHilo, setCreandoHilo] = useState(false);
   const [editando, setEditando] = useState(false);
@@ -152,13 +142,7 @@ export function ProyectoDetailPanel({
                     key={h.id}
                     hilo={h}
                     tareas={tareas}
-                    proyectos={proyectos}
-                    usuarios={usuarios}
                     plantillas={plantillas}
-                    miembrosPorProyecto={miembrosPorProyecto}
-                    usuarioActualId={usuarioActualId}
-                    gestionarAjenas={gestionarAjenas}
-                    puedeAsignar={puedeAsignar}
                     relacionCon={usuarioActualId}
                     autoAbrir={hiloConvertido === h.id}
                   />
@@ -173,13 +157,7 @@ export function ProyectoDetailPanel({
                   <TareaCard
                     key={t.id}
                     tarea={t}
-                    usuarios={usuarios}
-                    proyectos={proyectos}
-                    miembrosPorProyecto={miembrosPorProyecto}
                     hilosDisponibles={hilos}
-                    usuarioActualId={usuarioActualId}
-                    gestionarAjenas={gestionarAjenas}
-                    puedeAsignar={puedeAsignar}
                     relacionCon={usuarioActualId}
                     onTemperaturaChange={onTemperaturaChange}
                     onConvertida={setHiloConvertido}
@@ -193,22 +171,12 @@ export function ProyectoDetailPanel({
 
       {creandoTarea && (
         <TareaFormPanel
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
-          usuarioActualId={usuarioActualId}
-          puedeAsignar={puedeAsignar}
           proyectoId={proyecto.id}
           onClose={() => setCreandoTarea(false)}
         />
       )}
       {creandoHilo && (
         <HiloFormPanel
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
-          usuarioActualId={usuarioActualId}
-          puedeAsignar={puedeAsignar}
           proyectoId={proyecto.id}
           onClose={() => setCreandoHilo(false)}
         />
@@ -217,8 +185,6 @@ export function ProyectoDetailPanel({
         <ProyectoFormPanel
           proyecto={proyecto}
           miembrosActuales={idsMiembros}
-          usuarios={usuarios}
-          usuarioActualId={usuarioActualId}
           gestionarMiembros={gestionarMiembros}
           onClose={() => setEditando(false)}
         />

@@ -7,11 +7,12 @@ import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { crearTarea, editarTarea } from "../actions";
 import { crearTareaSchema, type CrearTareaForm } from "../types";
-import type { TareaConAsignados, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
 import { puedeTrabajarEnProyecto } from "./proyectoTareas";
 import { TEMPERATURA_NIVELES, temperaturaRango } from "./tareaLabels";
 import { hoyISO, sumarDiasISO } from "@/lib/utils";
+import { useTareasContexto } from "./tareasContexto";
 
 const VENCIMIENTO_PRESETS = [1, 3, 7];
 
@@ -20,11 +21,6 @@ const VENCIMIENTO_PRESETS = [1, 3, 7];
 // Los asignados se editan acá igual que al crear — sin la función
 // `tareas_asignar` el picker no aparece y viajan como defaults ocultos.
 export function TareaFormPanel({
-  usuarios,
-  proyectos,
-  miembrosPorProyecto,
-  usuarioActualId,
-  puedeAsignar,
   hiloId,
   proyectoId,
   pasoAnteriorId,
@@ -32,11 +28,6 @@ export function TareaFormPanel({
   tarea,
   onClose,
 }: {
-  usuarios: Usuario[];
-  proyectos: TareaProyecto[];
-  miembrosPorProyecto: Record<string, string[]>;
-  usuarioActualId: string | null;
-  puedeAsignar: boolean;
   hiloId?: string;
   proyectoId?: string;
   // Presente = "crear siguiente paso": la tarea nueva arranca bloqueada hasta
@@ -48,6 +39,7 @@ export function TareaFormPanel({
   tarea?: TareaConAsignados;
   onClose: () => void;
 }) {
+  const { proyectos, miembrosPorProyecto, usuarioActualId, puedeAsignar } = useTareasContexto();
   const [enviando, setEnviando] = useState(false);
   const [tieneRecurrencia, setTieneRecurrencia] = useState(tarea?.recurrencia_cantidad != null);
   const proyectosDisponibles = proyectos.filter((p) =>
@@ -212,9 +204,7 @@ export function TareaFormPanel({
 
         <AsignadosPicker
           control={control}
-          usuarios={usuarios}
           miembros={miembros}
-          puedeAsignar={puedeAsignar}
         />
 
         <div className="grid gap-4 sm:grid-cols-2 sm:gap-x-[14px]">

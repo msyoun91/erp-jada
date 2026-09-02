@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { Check, Circle, MessageSquare } from "lucide-react";
-import type { TareaConAsignados, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados } from "../types";
 import { diasEntreISO, hoyISO } from "@/lib/utils";
 import { useTareaOptimista } from "../useTareaOptimista";
 import { TareaDetailPanel } from "./TareaDetailPanel";
 import { ESTADO_LABEL } from "./tareaLabels";
 import type { PasoEnCadena } from "./cadenaPasos";
+import { useTareasContexto } from "./tareasContexto";
 
 // Un paso del hilo que no es del usuario: se ve para saber si lo que necesito
 // ya está hecho, no para trabajarlo. Deliberadamente NO usa Isla — la
@@ -15,26 +16,15 @@ import type { PasoEnCadena } from "./cadenaPasos";
 // hilo expandido vuelva a esconder el trabajo de uno.
 export function PasoAjeno({
   tarea,
-  usuarios,
-  proyectos,
-  miembrosPorProyecto,
   proyectoHeredadoId,
-  usuarioActualId,
-  gestionarAjenas,
-  puedeAsignar,
   cadena,
 }: {
   tarea: TareaConAsignados;
-  usuarios: Usuario[];
-  proyectos: TareaProyecto[];
-  miembrosPorProyecto: Record<string, string[]>;
   proyectoHeredadoId?: string | null;
-  usuarioActualId: string | null;
-  gestionarAjenas: boolean;
-  puedeAsignar: boolean;
   // Posición en la cadena de pasos, si la tarea es parte de una.
   cadena?: PasoEnCadena;
 }) {
+  const { usuarios } = useTareasContexto();
   const [detalleAbierto, setDetalleAbierto] = useState(false);
   const { estado, temperatura, cambiarEstado, cambiarTemperatura } = useTareaOptimista(tarea);
 
@@ -78,13 +68,7 @@ export function PasoAjeno({
       {detalleAbierto && (
         <TareaDetailPanel
           tarea={tarea}
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
           proyectoHeredadoId={proyectoHeredadoId}
-          usuarioActualId={usuarioActualId}
-          gestionarAjenas={gestionarAjenas}
-          puedeAsignar={puedeAsignar}
           cadena={cadena}
           estado={estado}
           temperatura={temperatura}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Paginacion } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados, TareaHilo, TareaPlantilla } from "../types";
 import { type Relacion, relacionHilo, relacionTarea } from "../relacion";
 import { HiloCard } from "./HiloCard";
 import { TareaCard } from "./TareaCard";
@@ -12,6 +12,7 @@ import { TareaFormPanel } from "./TareaFormPanel";
 import { HiloFormPanel } from "./HiloFormPanel";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
 import { esTerminada } from "./tareaFiltros";
+import { useTareasContexto } from "./tareasContexto";
 
 const ROLES: { valor: "" | "responsable" | "asignado"; label: string }[] = [
   { valor: "", label: "Todos" },
@@ -22,24 +23,13 @@ const ROLES: { valor: "" | "responsable" | "asignado"; label: string }[] = [
 export function TareasListaView({
   hilos,
   tareas,
-  usuarios,
-  proyectos,
   plantillas,
-  miembrosPorProyecto,
-  gestionarAjenas,
-  puedeAsignar,
-  usuarioActualId,
 }: {
   hilos: TareaHilo[];
   tareas: TareaConAsignados[];
-  usuarios: Usuario[];
-  proyectos: TareaProyecto[];
   plantillas: TareaPlantilla[];
-  miembrosPorProyecto: Record<string, string[]>;
-  gestionarAjenas: boolean;
-  puedeAsignar: boolean;
-  usuarioActualId: string | null;
 }) {
+  const { usuarios, usuarioActualId, gestionarAjenas } = useTareasContexto();
   const [texto, setTexto] = useState("");
   // Arranca filtrado en uno mismo: la vista es "lo mío" por defecto, pero el
   // panorama del equipo queda a un click (no es una restricción, es un default).
@@ -225,13 +215,7 @@ export function TareasListaView({
                 key={f.id}
                 hilo={f.hilo}
                 tareas={tareas}
-                proyectos={proyectos}
-                usuarios={usuarios}
                 plantillas={plantillas}
-                miembrosPorProyecto={miembrosPorProyecto}
-                usuarioActualId={usuarioActualId}
-                gestionarAjenas={gestionarAjenas}
-                puedeAsignar={puedeAsignar}
                 relacionCon={relacionCon}
                 autoAbrir={hiloConvertido === f.hilo.id}
                 onTemperaturaChange={onTemperaturaChange}
@@ -240,13 +224,7 @@ export function TareasListaView({
               <TareaCard
                 key={f.id}
                 tarea={f.tarea}
-                usuarios={usuarios}
-                proyectos={proyectos}
-                miembrosPorProyecto={miembrosPorProyecto}
                 hilosDisponibles={hilos}
-                usuarioActualId={usuarioActualId}
-                gestionarAjenas={gestionarAjenas}
-                puedeAsignar={puedeAsignar}
                 relacionCon={relacionCon}
                 onTemperaturaChange={onTemperaturaChange}
                 onConvertida={setHiloConvertido}
@@ -258,21 +236,11 @@ export function TareasListaView({
 
       {creandoTarea && (
         <TareaFormPanel
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
-          usuarioActualId={usuarioActualId}
-          puedeAsignar={puedeAsignar}
           onClose={() => setCreandoTarea(false)}
         />
       )}
       {creandoHilo && (
         <HiloFormPanel
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
-          usuarioActualId={usuarioActualId}
-          puedeAsignar={puedeAsignar}
           onClose={() => setCreandoHilo(false)}
         />
       )}

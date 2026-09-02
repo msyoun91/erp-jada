@@ -27,7 +27,7 @@ import {
   desactivarTarea,
   desasociarTareaHilo,
 } from "../actions";
-import type { TareaConAsignados, TareaHilo, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados, TareaHilo } from "../types";
 import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
 import { ReasignarPanel } from "./ReasignarPanel";
 import { PosponerPanel } from "./PosponerPanel";
@@ -44,20 +44,15 @@ import {
   textoAntiguedad,
 } from "./tareaLabels";
 import type { PasoEnCadena } from "./cadenaPasos";
+import { useTareasContexto } from "./tareasContexto";
 
 // Todo lo que se hace y se lee de una tarea: la isla (TareaCard) solo resume.
 // El estado y la temperatura optimistas viven en la isla y bajan por props —
 // así el badge de la isla y el control del panel muestran siempre lo mismo.
 export function TareaDetailPanel({
   tarea,
-  usuarios,
-  proyectos,
-  miembrosPorProyecto,
   hilosDisponibles,
   proyectoHeredadoId,
-  usuarioActualId,
-  gestionarAjenas,
-  puedeAsignar,
   cadena,
   estado,
   temperatura,
@@ -67,14 +62,8 @@ export function TareaDetailPanel({
   onClose,
 }: {
   tarea: TareaConAsignados;
-  usuarios: Usuario[];
-  proyectos: TareaProyecto[];
-  miembrosPorProyecto: Record<string, string[]>;
   hilosDisponibles?: TareaHilo[];
   proyectoHeredadoId?: string | null;
-  usuarioActualId: string | null;
-  gestionarAjenas: boolean;
-  puedeAsignar: boolean;
   // Posición en la cadena de pasos, si la tarea es parte de una.
   cadena?: PasoEnCadena;
   estado: string;
@@ -84,6 +73,7 @@ export function TareaDetailPanel({
   onConvertida?: (hiloId: string) => void;
   onClose: () => void;
 }) {
+  const { usuarios, proyectos, miembrosPorProyecto, usuarioActualId, gestionarAjenas, puedeAsignar } = useTareasContexto();
   const [reasignando, setReasignando] = useState(false);
   const [posponiendo, setPosponiendo] = useState(false);
   const [completando, setCompletando] = useState(false);
@@ -441,7 +431,6 @@ export function TareaDetailPanel({
           tareaId={tarea.id}
           asignadosActuales={asignadosActivos.map((a) => a.usuario_id)}
           responsableActual={tarea.responsable_id}
-          usuarios={usuarios}
           miembros={miembros}
           onClose={() => setReasignando(false)}
         />
@@ -454,11 +443,6 @@ export function TareaDetailPanel({
       )}
       {agregandoPaso && tarea.hilo_id && (
         <TareaFormPanel
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
-          usuarioActualId={usuarioActualId}
-          puedeAsignar={puedeAsignar}
           hiloId={tarea.hilo_id}
           pasoAnteriorId={tarea.id}
           proyectoHeredadoId={proyectoHeredadoId}
@@ -467,11 +451,6 @@ export function TareaDetailPanel({
       )}
       {editando && (
         <TareaFormPanel
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
-          usuarioActualId={usuarioActualId}
-          puedeAsignar={puedeAsignar}
           proyectoHeredadoId={proyectoHeredadoId}
           tarea={tarea}
           onClose={() => setEditando(false)}

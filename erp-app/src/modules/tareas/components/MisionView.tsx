@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, CircleCheck, Lock } from "lucide-react";
-import type { TareaConAsignados, TareaHilo, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados, TareaHilo } from "../types";
 import { TareaCard } from "./TareaCard";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
 import { cadenasDePasos, type PasoEnCadena } from "./cadenaPasos";
 import { esActiva, esDeUsuario } from "./tareaFiltros";
+import { useTareasContexto } from "./tareasContexto";
 
 // Misión no lee nada que la Lista no lea: mismas queries, otro recorte. Lo
 // único propio es el criterio de "qué toca ahora" — lo mío, activo, no
@@ -14,22 +15,11 @@ import { esActiva, esDeUsuario } from "./tareaFiltros";
 export function MisionView({
   hilos,
   tareas,
-  usuarios,
-  proyectos,
-  miembrosPorProyecto,
-  gestionarAjenas,
-  puedeAsignar,
-  usuarioActualId,
 }: {
   hilos: TareaHilo[];
   tareas: TareaConAsignados[];
-  usuarios: Usuario[];
-  proyectos: TareaProyecto[];
-  miembrosPorProyecto: Record<string, string[]>;
-  gestionarAjenas: boolean;
-  puedeAsignar: boolean;
-  usuarioActualId: string | null;
 }) {
+  const { proyectos, usuarioActualId } = useTareasContexto();
   const [indice, setIndice] = useState(0);
   // Sin `onTemperaturaChange`: en la Lista reordenar en vivo mientras se
   // arrastra el slider es lo que se quiere, pero acá se ve una tarjeta sola y
@@ -100,12 +90,6 @@ export function MisionView({
           tareas={bloqueadas}
           cadenas={cadenas}
           hilos={hilos}
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
-          usuarioActualId={usuarioActualId}
-          gestionarAjenas={gestionarAjenas}
-          puedeAsignar={puedeAsignar}
         />
       </div>
     );
@@ -165,13 +149,7 @@ export function MisionView({
         <TareaCard
           key={actual.id}
           tarea={actual}
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
           proyectoHeredadoId={hilo?.proyecto_id ?? null}
-          usuarioActualId={usuarioActualId}
-          gestionarAjenas={gestionarAjenas}
-          puedeAsignar={puedeAsignar}
           cadena={cadenas.get(actual.id)}
           relacionCon={usuarioActualId}
           grande
@@ -197,12 +175,6 @@ export function MisionView({
         tareas={bloqueadas}
         cadenas={cadenas}
         hilos={hilos}
-        usuarios={usuarios}
-        proyectos={proyectos}
-        miembrosPorProyecto={miembrosPorProyecto}
-        usuarioActualId={usuarioActualId}
-        gestionarAjenas={gestionarAjenas}
-        puedeAsignar={puedeAsignar}
       />
     </div>
   );
@@ -214,23 +186,12 @@ function Bloqueadas({
   tareas,
   cadenas,
   hilos,
-  usuarios,
-  proyectos,
-  miembrosPorProyecto,
-  usuarioActualId,
-  gestionarAjenas,
-  puedeAsignar,
 }: {
   tareas: TareaConAsignados[];
   cadenas: Map<string, PasoEnCadena>;
   hilos: TareaHilo[];
-  usuarios: Usuario[];
-  proyectos: TareaProyecto[];
-  miembrosPorProyecto: Record<string, string[]>;
-  usuarioActualId: string | null;
-  gestionarAjenas: boolean;
-  puedeAsignar: boolean;
 }) {
+  const { usuarioActualId } = useTareasContexto();
   const [abierto, setAbierto] = useState(false);
 
   if (tareas.length === 0) return null;
@@ -260,13 +221,7 @@ function Bloqueadas({
               <li key={t.id} className="flex flex-col gap-1">
                 <TareaCard
                   tarea={t}
-                  usuarios={usuarios}
-                  proyectos={proyectos}
-                  miembrosPorProyecto={miembrosPorProyecto}
                   proyectoHeredadoId={hilo?.proyecto_id ?? null}
-                  usuarioActualId={usuarioActualId}
-                  gestionarAjenas={gestionarAjenas}
-                  puedeAsignar={puedeAsignar}
                   cadena={info}
                   relacionCon={usuarioActualId}
                 />

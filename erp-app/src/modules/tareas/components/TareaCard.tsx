@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CalendarClock, Clock } from "lucide-react";
-import type { TareaConAsignados, TareaHilo, TareaProyecto, Usuario } from "../types";
+import type { TareaConAsignados, TareaHilo } from "../types";
 import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
 import { relacionTarea } from "../relacion";
 import { useTareaOptimista } from "../useTareaOptimista";
@@ -18,6 +18,7 @@ import {
   textoAntiguedad,
 } from "./tareaLabels";
 import type { PasoEnCadena } from "./cadenaPasos";
+import { useTareasContexto } from "./tareasContexto";
 
 // Umbrales fijos — spec pide "configurable" pero no hay un segundo caso real
 // todavía que justifique una UI de settings para esto (simplicidad antes que
@@ -32,14 +33,8 @@ const ANTIGUEDAD_ROJO_DIAS = 30;
 // refresca apenas se elige el nivel, sin esperar al server.
 export function TareaCard({
   tarea,
-  usuarios,
-  proyectos,
-  miembrosPorProyecto,
   hilosDisponibles,
   proyectoHeredadoId,
-  usuarioActualId,
-  gestionarAjenas,
-  puedeAsignar,
   cadena,
   relacionCon,
   grande,
@@ -47,15 +42,9 @@ export function TareaCard({
   onConvertida,
 }: {
   tarea: TareaConAsignados;
-  usuarios: Usuario[];
-  proyectos: TareaProyecto[];
-  miembrosPorProyecto: Record<string, string[]>;
   hilosDisponibles?: TareaHilo[];
   // Proyecto del hilo que contiene la tarea (la tarea no lo guarda).
   proyectoHeredadoId?: string | null;
-  usuarioActualId: string | null;
-  gestionarAjenas: boolean;
-  puedeAsignar: boolean;
   // Posición en la cadena de pasos, si la tarea es parte de una.
   cadena?: PasoEnCadena;
   // Usuario cuya relación con la tarea se explica en el badge — el del filtro
@@ -66,6 +55,7 @@ export function TareaCard({
   onTemperaturaChange?: (id: string, temperatura: number) => void;
   onConvertida?: (hiloId: string) => void;
 }) {
+  const { usuarios, usuarioActualId } = useTareasContexto();
   const [detalleAbierto, setDetalleAbierto] = useState(false);
   const { estado, temperatura, cambiarEstado, cambiarTemperatura } = useTareaOptimista(
     tarea,
@@ -192,14 +182,8 @@ export function TareaCard({
       {detalleAbierto && (
         <TareaDetailPanel
           tarea={tarea}
-          usuarios={usuarios}
-          proyectos={proyectos}
-          miembrosPorProyecto={miembrosPorProyecto}
           hilosDisponibles={hilosDisponibles}
           proyectoHeredadoId={proyectoHeredadoId}
-          usuarioActualId={usuarioActualId}
-          gestionarAjenas={gestionarAjenas}
-          puedeAsignar={puedeAsignar}
           estado={estado}
           temperatura={temperatura}
           cadena={cadena}
