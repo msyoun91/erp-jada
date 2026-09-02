@@ -1,24 +1,25 @@
 import { diasEntreISO, hoyISO } from "@/lib/utils";
+import type { EstadoTarea, RecurrenciaUnidad } from "../types";
 
 // Etiquetas y clases de una tarea, compartidas por la isla (TareaCard) y su
 // panel (TareaDetailPanel): la misma tarea no puede leerse distinto según
 // dónde se la mire.
 
-export const ESTADO_LABEL: Record<string, string> = {
+export const ESTADO_LABEL: Record<EstadoTarea, string> = {
   pendiente: "Pendiente",
   en_progreso: "En progreso",
   completada: "Completada",
   cancelada: "Cancelada",
 };
 
-export const ESTADO_BADGE: Record<string, string> = {
+export const ESTADO_BADGE: Record<EstadoTarea, string> = {
   pendiente: "badge-neutral",
   en_progreso: "badge-info",
   completada: "badge-success",
   cancelada: "badge-error",
 };
 
-export const RECURRENCIA_LABEL: Record<string, string> = { dia: "día(s)", mes: "mes(es)" };
+export const RECURRENCIA_LABEL: Record<RecurrenciaUnidad, string> = { dia: "día(s)", mes: "mes(es)" };
 
 // "🌡 61" no significa nada para el usuario: el rango es lo único que se lee.
 // Umbrales en tercios. `barra` es el color de la barra izquierda de la isla —
@@ -81,7 +82,7 @@ export const PROXIMA_DIAS = 3;
 // El vencimiento de una tarea se lee igual en la isla, el panel y el resumen
 // del hilo: una tarea no puede estar "vencida" en un lado y no en el otro.
 // `estado` viene por separado porque isla y panel manejan estado optimista.
-export function estadoVencimiento(fechaVencimiento: string | null, estado: string) {
+export function estadoVencimiento(fechaVencimiento: string | null, estado: EstadoTarea) {
   const activa = estado !== "completada" && estado !== "cancelada";
   const diasVencimiento = fechaVencimiento ? diasEntreISO(hoyISO(), fechaVencimiento) : null;
   const vencida = activa && diasVencimiento !== null && diasVencimiento < 0;

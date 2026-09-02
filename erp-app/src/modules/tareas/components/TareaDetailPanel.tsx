@@ -27,7 +27,7 @@ import {
   desactivarTarea,
   desasociarTareaHilo,
 } from "../actions";
-import type { TareaConAsignados, TareaHilo } from "../types";
+import type { EstadoTarea, TareaConAsignados, TareaHilo } from "../types";
 import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
 import { ReasignarPanel } from "./ReasignarPanel";
 import { PosponerPanel } from "./PosponerPanel";
@@ -66,7 +66,7 @@ export function TareaDetailPanel({
   proyectoHeredadoId?: string | null;
   // Posición en la cadena de pasos, si la tarea es parte de una.
   cadena?: PasoEnCadena;
-  estado: string;
+  estado: EstadoTarea;
   temperatura: number;
   onCambiarEstado: (nuevo: "pendiente" | "en_progreso" | "cancelada") => void;
   onTemperaturaChange: (valor: number) => void;

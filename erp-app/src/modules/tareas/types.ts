@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Tables } from "@/lib/supabase/database.types";
+import type { Enums, Tables } from "@/lib/supabase/database.types";
 
 export type Tarea = Tables<"tareas">;
 export type TareaHilo = Tables<"tareas_hilos">;
@@ -9,6 +9,9 @@ export type TareaProyectoMiembro = Tables<"tareas_proyectos_miembros">;
 export type TareaPlantilla = Tables<"tareas_plantillas">;
 export type TareaPlantillaItem = Tables<"tareas_plantillas_items">;
 export type TareaEvento = Tables<"tareas_eventos">;
+
+export type EstadoTarea = Enums<"estado_tarea">;
+export type RecurrenciaUnidad = Enums<"recurrencia_unidad">;
 
 export type Usuario = { id: string; nombre: string };
 type UsuarioNombre = { nombre: string };
@@ -33,7 +36,7 @@ export type EventoAuditoria = {
 export type TareaPendiente = {
   id: string;
   titulo: string;
-  estado: string;
+  estado: EstadoTarea;
   fecha_vencimiento: string | null;
   hilo_titulo: string | null;
 };

@@ -93,7 +93,7 @@ export function AuditoriaView({
                   {p.hilo_titulo && <span className="t-caption ml-2">· {p.hilo_titulo}</span>}
                 </div>
                 <div className="flex shrink-0 items-center gap-2 t-caption">
-                  <span className="badge badge-neutral">{ESTADO_LABEL[p.estado] ?? p.estado}</span>
+                  <span className="badge badge-neutral">{ESTADO_LABEL[p.estado]}</span>
                   {p.fecha_vencimiento && <span>{formatFecha(p.fecha_vencimiento)}</span>}
                 </div>
               </div>

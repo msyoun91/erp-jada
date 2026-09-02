@@ -574,6 +574,24 @@ Ahora las arma la page (server) y las entrega `TareasContextoProvider`; cada com
 
 ---
 
+# Tipos y tests de la lógica pura
+
+## Las etiquetas de estado se atan al enum (sin SQL)
+
+Auditoría de arquitectura, punto 7 de `PLAN_ARQUITECTURA_TAREAS.md`.
+
+`ESTADO_LABEL` y `ESTADO_BADGE` eran `Record<string, string>`: cualquier string indexaba y el resultado era `string`, no `string | undefined`. Un typo o un valor nuevo del enum se renderizaba vacío sin que TS dijera nada. Ahora son `Record<EstadoTarea, string>`, con `EstadoTarea = Enums<"estado_tarea">` en `types.ts` — mismo patrón que ya usa `comercial/types.ts`. Agregar un valor a `estado_tarea` en Postgres rompe la compilación hasta que los dos mapas tengan su fila, que es el punto.
+
+**Arrastre.** `TareaPendiente.estado` y la prop `estado` de `TareaDetailPanel` estaban tipadas `string` a mano sobre datos que ya venían del enum; bajaron a `EstadoTarea`, y el `?? p.estado` de `AuditoriaView` —un fallback que nunca podía dispararse— se fue con ellas. `RECURRENCIA_LABEL` y el parámetro `estado` de `estadoVencimiento` entraron por el mismo defecto, en el mismo archivo.
+
+## `cadenaPasos.ts` tiene test
+
+Punto 8. Once casos con `node --test`, mismo criterio que `relacion.test.ts` (sin runner ni dependencias nuevas).
+
+Cubre lo que decide: `bloqueada` mira el paso previo inmediato y no el arranque de la cadena, `cancelada` no desbloquea al siguiente, una raíz cuyo `paso_anterior_id` no está en la lista visible arranca bloqueada, el orden de entrada no cambia la cadena, los pasos comparten el array `cadena` por referencia, y `agruparCadenas` deja cada cadena contigua sin repetir ni inventar filas.
+
+**El ciclo no llega a recorrerse.** El test de datos cíclicos afirma que el mapa vuelve vacío, no que el `Set` de vistos frene el recorrido: como `siguiente` tiene una sola entrada por `paso_anterior_id`, un ciclo nunca es alcanzable desde una raíz — ninguno de sus miembros es raíz y la cadena entera queda afuera. La guarda del `for` sigue siendo barata y se queda, pero no es lo que evita el cuelgue.
+
 # Construcción inicial
 
 > **Único bloque cronológico del archivo.** Es donde viven las trampas de RLS y de forms
