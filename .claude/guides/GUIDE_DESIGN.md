@@ -36,6 +36,14 @@ En acciones clave (cambio de estado, registro de pago, desactivar elemento):
 3. Mostrar mensaje de error claro en español
 4. Nunca bloquear la UI esperando una respuesta que puede no llegar
 
+## Crear y editar: panel lateral, no modal
+
+`RightPanel.tsx` (`components/ui/`) es el patrón para formularios de creación/edición. Crear/editar es una tarea de mayor foco y duración, y el panel lateral no bloquea el contexto de la lista de atrás.
+
+Las confirmaciones sí son modal (`Modal.tsx` / `ConfirmModal`): son una interrupción corta y ahí el modal es más directo.
+
+Los dos viven en el top layer del browser (`<dialog>` + `showModal()`), así que se apilan por orden de apertura sin manejar z-index.
+
 ## Confirmación explícita
 
 Requerir confirmación antes de cualquier acción que cambie estado importante:

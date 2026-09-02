@@ -64,7 +64,7 @@ export function SidebarNav({
 
       <div className="mt-2 flex items-center gap-2 border-t border-border pt-2">
         {/* El perfil no está en NAV_ITEMS: no es un módulo y no se autoriza
-            por submódulo (ver DECISIONES.md). Se entra por el propio nombre. */}
+            por submódulo (ver decisiones/auth.md). Se entra por el propio nombre. */}
         <Link
           href="/perfil"
           title="Mi perfil"

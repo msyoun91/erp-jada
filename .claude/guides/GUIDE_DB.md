@@ -76,6 +76,26 @@ CREATE POLICY "usuarios ven sus propios registros"
   USING (usuario_id = auth.uid());
 ```
 
+### `GRANT` — RLS no alcanza sin él
+
+Activar RLS y crear policies no basta. Postgres verifica primero el privilegio a nivel de tabla del rol (`anon`/`authenticated`); sin `GRANT`, la query falla con `permission denied for table x` (código `42501`) — **el error no menciona RLS ni políticas**, así que se puede perder tiempo revisando la policy cuando el problema es el GRANT faltante. Este proyecto Supabase no auto-otorga privilegios en tablas nuevas del schema `public`.
+
+Toda tabla nueva con RLS necesita, además de las policies:
+
+```sql
+GRANT SELECT, INSERT, UPDATE ON public.nombre_tabla TO authenticated;
+```
+
+Solo las operaciones que el cliente normal (no `service_role`) ejecuta directo. Si toda escritura pasa por `service_role`, alcanza con `GRANT SELECT`.
+
+### Funciones `SECURITY DEFINER` — siempre `SET search_path = public`
+
+`supabase_auth_admin` (el rol que ejecuta el trigger `on_auth_user_created`) no tiene `public` en su `search_path` por defecto. Una función `SECURITY DEFINER` que referencia tablas sin schema falla con `relation "usuarios" does not exist` aunque la tabla exista — **el error no menciona permisos ni search_path**, así que es fácil perder tiempo pensando que la tabla no se creó.
+
+Toda función `SECURITY DEFINER` nueva declara `SET search_path = public` y usa tablas schema-calificadas (`public.tabla`). Además de evitar ese bug, es la mitigación estándar contra search_path injection.
+
+Una policy que necesita mirar otra tabla RLS-protegida que puede mirar hacia atrás usa una función `SECURITY DEFINER STABLE`, no un `EXISTS` directo: dos policies que se consultan mutuamente dan `42P17 infinite recursion detected in policy`.
+
 ### Auditoría
 
 Toda modificación de estado importante se registra con: quién, qué, cuándo y valor anterior.

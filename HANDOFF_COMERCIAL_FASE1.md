@@ -1,8 +1,8 @@
 # TRASPASO — Módulo Comercial, Fase 1
 
 Documento de continuidad. Se escribe durante la Fase 1 para que, al cerrarla,
-`/clear` no pierda contexto: quien retome lee esto y `DECISIONES.md` (sección
-Comercial) y no necesita la conversación original.
+`/clear` no pierda contexto: quien retome lee esto y `decisiones/comercial.md`
+y no necesita la conversación original.
 
 Spec de origen: "Módulo de Prospectos y Red Comercial — Fase 1" (pegada por el
 usuario, no versionada). Lo que sigue es la spec **corregida** contra el código
@@ -104,7 +104,7 @@ grants por columna + trigger; gatear una fila lo resuelve la RLS que ya existe.
 - [x] `types.ts` · `permissions.ts` · `queries.ts` · `actions.ts`
 - [x] UI — Prospectos (listado + ficha), Obras (listado + ficha + relaciones), Empresas, Personas
 - [x] Sidebar + layout del módulo (`/comercial`, `/comercial/obras`, `/comercial/empresas`, `/comercial/personas`)
-- [x] `DECISIONES.md` actualizado
+- [x] `decisiones/comercial.md` actualizado
 - [x] `npx tsc --noEmit` limpio · `npx eslint src` sin errores nuevos · `next build` OK
 
 ### Archivos del módulo
