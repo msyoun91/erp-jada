@@ -713,3 +713,19 @@ Cola de la tanda anterior. `editarTarea`, `reasignarTarea` y `editarProyecto` qu
 **El orden de los statements se conserva, y es carga semántica, no forma.** En `editar_tarea` primero la fila y después los asignados, porque `validar_proyecto_tarea` valida el cambio de `proyecto_id` contra los asignados de ese momento; invertirlo cambiaría contra qué conjunto se valida. En `editar_proyecto` la membresía sigue siendo un diff calculado adentro de la función — desactivar todo y reinsertar dispararía `validar_quitar_miembro` (`TA001`) sobre los miembros que se quedan.
 
 Con esto `errorDeUpdate()` queda solo para las actions de una sola tabla; las multi-tabla del módulo ya no pasan por él. Verificación: `sql/tests/atomicidad_edicion_tareas.sql`, mismo andamiaje de doble rol que el test de `023`, con los casos de rechazo comparando el estado posterior contra el previo.
+
+## Archivar un proyecto se lleva lo que hay adentro (`sql/025`)
+
+Venía del `BACKLOG.md`: `desactivarProyecto` desactivaba solo la fila del proyecto. Sus hilos y sus tareas sueltas quedaban activos — el trabajo no desaparecía de la Lista, pero perdía la agrupación y quedaba apuntando a un proyecto archivado que ya no se lista. Archivar es "se va todo junto", no "se sueltan las partes", y así queda simétrico con `desactivar_hilo`, que se lleva sus tareas desde `sql/023`.
+
+**Trigger, no una función `.rpc()` más.** Las seis de `sql/023` bajaron a funciones porque eran actos del usuario que tocaban dos tablas. Esta cascada no es un acto aparte: es la consecuencia de archivar. Como trigger `AFTER UPDATE ... WHEN (OLD.activo AND NOT NEW.activo)` la regla vale para cualquier escritor de `activo = false` sobre `tareas_proyectos`, y `desactivarProyecto` se queda como el UPDATE de una sola tabla que ya era — no cambió ni una línea de su cuerpo.
+
+**`SECURITY DEFINER`, y la autorización no se movió a la función.** Es la excepción al criterio del punto 3 del plan de arquitectura, y por un motivo concreto: quien archiva un proyecto es su creador-miembro o un manager (`tareas_proyectos_update`), y eso **no** le da UPDATE sobre los hilos de adentro, que exigen ser responsable del hilo o `tareas_gestionar_ajenas`. Con `SECURITY INVOKER` la cascada se frenaba contra RLS en silencio —0 filas no es error— y dejaba el proyecto archivado con media estructura viva, que es peor que no cascadear. El permiso del acto sigue viviendo en la policy del UPDATE que dispara el trigger: si esa no pasa, el trigger no llega a correr. El caso 08/09 del test es exactamente eso: TESTER no puede tocar de frente un hilo cuyo responsable es otro, y archivando el proyecto se lo lleva igual.
+
+**Lo que no cae.** Los miembros del proyecto: no son trabajo, y su SELECT ya exige el proyecto activo (`sql/016`). Y reactivar el proyecto no revive nada — archivar es de ida, igual que con los hilos.
+
+**Efecto lateral que se cierra solo.** El select de proyecto en `TareaFormPanel` aparecía vacío al editar una tarea de un proyecto archivado (`puedeTrabajarEnProyecto` lo filtra) sobre un `proyecto_id` todavía seteado. Ya no puede pasar: no queda ninguna tarea activa apuntando a un proyecto archivado.
+
+**El modal dice cuánto se lleva.** No hay reactivar de proyecto en la UI, así que la confirmación pasó a nombrar los hilos y las tareas que se van. Cuenta lo visible en el panel, que es de lo que el usuario puede hacerse una idea — la cascada, por debajo, se lleva también lo que su RLS no le muestra.
+
+Verificación: `sql/tests/cascada_proyecto.sql` (10/10).

@@ -286,7 +286,10 @@ export async function desactivarProyecto(id: string) {
       .eq("id", parsed.data),
   );
   if (fallo) return { success: false as const, error: fallo };
+  // El trigger de sql/025 se lleva los hilos y las tareas del proyecto: la
+  // Lista también quedó vieja, no solo el listado de proyectos.
   revalidatePath("/tareas/proyectos");
+  revalidatePath("/tareas");
   return { success: true as const };
 }
 

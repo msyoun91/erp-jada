@@ -318,6 +318,18 @@ En `editar_tarea` el orden es fila-primero-asignados-después, como era en TypeS
 
 Verificación: `sql/tests/atomicidad_edicion_tareas.sql`.
 
+### Archivar un proyecto cascadea — trigger `cascada_desactivar_proyecto` (`sql/025`)
+
+`AFTER UPDATE ON tareas_proyectos ... WHEN (OLD.activo AND NOT NEW.activo)`: desactiva las tareas de los hilos del proyecto y sus tareas sueltas (`proyecto_id` solo se usa sin `hilo_id`), y después los hilos. Simétrico con `desactivar_hilo`, que ya se lleva sus tareas. Antes quedaba todo activo apuntando a un proyecto archivado: el trabajo perdía la agrupación y el select de proyecto del form aparecía vacío sobre un valor todavía seteado.
+
+**Trigger y no función `.rpc()`** porque la cascada no es un acto aparte del usuario sino la consecuencia de archivar; así vale para cualquier escritor de `activo = false` y `desactivarProyecto` sigue siendo el UPDATE de una sola tabla que era.
+
+**`SECURITY DEFINER`, sin mover la autorización.** Quien archiva es el creador-miembro o un manager (`tareas_proyectos_update`), y eso no da UPDATE sobre los hilos de adentro (`tareas_hilos_update` exige ser responsable del hilo o `tareas_gestionar_ajenas`). Con `SECURITY INVOKER` la cascada se frenaría contra RLS en silencio —0 filas no es error— dejando el proyecto archivado y la mitad de adentro viva. El permiso del acto sigue en la policy del UPDATE que dispara el trigger: si esa no pasa, el trigger no corre.
+
+Una cadena de pasos vive entera dentro de un hilo, así que cae completa en una sola sentencia y `trg_validar_desactivar_paso` no encuentra siguientes activos. Los miembros del proyecto no se tocan — no son trabajo, y su SELECT ya exige el proyecto activo (`sql/016`). Reactivar el proyecto no revive nada: archivar es de ida.
+
+Verificación: `sql/tests/cascada_proyecto.sql` (10/10).
+
 ### Función `reactivar_posponer_vencidos()`
 
 `SECURITY DEFINER` — sin cron: `queries.getListaTareas()` la invoca (`supabase.rpc(...)`) antes de leer la lista. Limpia `posponer_desde`/`posponer_hasta` de `tareas`/`tareas_hilos` cuyo `posponer_hasta` ya venció, y en `tareas` corre `fecha_vencimiento` el mismo intervalo que duró el pospuesto. `EXECUTE` solo para `authenticated` (`sql/007`).

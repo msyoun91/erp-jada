@@ -61,6 +61,17 @@ export function ProyectoDetailPanel({
   // siempre muere en la validación de asignados.
   const puedeTrabajar = puedeTrabajarEnProyecto(idsMiembros, usuarioActualId, puedeAsignar);
 
+  // Archivar el proyecto se lleva sus hilos y sus tareas (trigger de sql/025) y
+  // no hay reactivar en la UI: el modal dice cuánto se va antes de preguntar.
+  // Cuenta lo visible, que es de lo que el usuario puede hacerse una idea.
+  const arrastre = [
+    hilosDelProyecto.length && `${hilosDelProyecto.length} ${hilosDelProyecto.length === 1 ? "hilo" : "hilos"}`,
+    tareasDelProyecto.length &&
+      `${tareasDelProyecto.length} ${tareasDelProyecto.length === 1 ? "tarea" : "tareas"}`,
+  ]
+    .filter(Boolean)
+    .join(" y ");
+
   async function onDesactivar() {
     const result = await desactivarProyecto(proyecto.id);
     if (!result.success) {
@@ -192,7 +203,7 @@ export function ProyectoDetailPanel({
       {desactivando && (
         <ConfirmModal
           title="Desactivar proyecto"
-          mensaje={`¿Desactivar el proyecto "${proyecto.nombre}"?`}
+          mensaje={`¿Desactivar el proyecto "${proyecto.nombre}"?${arrastre ? ` Se archivan con él ${arrastre}.` : ""}`}
           onConfirm={onDesactivar}
           onClose={() => setDesactivando(false)}
         />
