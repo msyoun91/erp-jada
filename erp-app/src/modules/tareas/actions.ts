@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { argsRpc } from "@/lib/supabase/rpc";
 import { hoyISO, mensajeError } from "@/lib/utils";
 import {
   crearTareaSchema,
@@ -79,7 +80,7 @@ export async function crearTarea(input: CrearTareaForm) {
   const supabase = await createClient();
   const d = parsed.data;
 
-  const { data: id, error } = await supabase.rpc("crear_tarea", {
+  const { data: id, error } = await supabase.rpc("crear_tarea", argsRpc<"crear_tarea">({
     p_titulo: d.titulo,
     p_descripcion: d.descripcion ?? null,
     p_hilo_id: d.hilo_id,
@@ -95,7 +96,7 @@ export async function crearTarea(input: CrearTareaForm) {
     p_modo_completado: d.modo_completado,
     p_origen_app: d.origen_app ?? null,
     p_origen_punto: d.origen_punto ?? null,
-  });
+  }));
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
@@ -112,7 +113,7 @@ export async function editarTarea(input: EditarTareaForm) {
   const supabase = await createClient();
   const d = parsed.data;
 
-  const { error } = await supabase.rpc("editar_tarea", {
+  const { error } = await supabase.rpc("editar_tarea", argsRpc<"editar_tarea">({
     p_id: d.id,
     p_titulo: d.titulo,
     p_descripcion: d.descripcion ?? null,
@@ -124,7 +125,7 @@ export async function editarTarea(input: EditarTareaForm) {
     p_temperatura: d.temperatura,
     p_recurrencia_cantidad: d.recurrencia_cantidad ?? null,
     p_recurrencia_unidad: d.recurrencia_unidad ?? null,
-  });
+  }));
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
@@ -229,12 +230,12 @@ export async function crearProyecto(input: CrearProyectoForm) {
   const supabase = await createClient();
   const d = parsed.data;
 
-  const { data: id, error } = await supabase.rpc("crear_proyecto", {
+  const { data: id, error } = await supabase.rpc("crear_proyecto", argsRpc<"crear_proyecto">({
     p_nombre: d.nombre,
     p_descripcion: d.descripcion ?? null,
     p_visibilidad: d.visibilidad,
     p_miembros: d.miembros,
-  });
+  }));
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
@@ -257,13 +258,13 @@ export async function editarProyecto(input: EditarProyectoForm) {
   const supabase = await createClient();
   const d = parsed.data;
 
-  const { error } = await supabase.rpc("editar_proyecto", {
+  const { error } = await supabase.rpc("editar_proyecto", argsRpc<"editar_proyecto">({
     p_id: d.id,
     p_nombre: d.nombre,
     p_descripcion: d.descripcion ?? null,
     p_visibilidad: d.visibilidad,
     p_miembros: d.miembros,
-  });
+  }));
 
   if (error) return { success: false as const, error: mensajeError(error) };
 

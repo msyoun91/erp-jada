@@ -6,7 +6,7 @@ Proyecto Supabase: `qbpudocgdvpeadcyyhfh`. Regenerar tipos tras cada migración:
 `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public > erp-app/src/lib/supabase/database.types.ts`
 (requiere `supabase login` o `SUPABASE_ACCESS_TOKEN`)
 
-Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. `database.types.ts` generado real (comando de arriba).
+Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. Agenda de Obras (`sql/027` + `sql/028` + `sql/029`) corrida vía MCP. `database.types.ts` regenerado tras 027/028/029 con el comando de arriba.
 
 ---
 
@@ -351,3 +351,189 @@ Verificación: `sql/tests/cascada_proyecto.sql` (10/10).
 | tareas_proyectos_miembros | funcion | tareas_proyectos | "Asignar miembros" (`sql/013`) — alta/baja de miembros. Sin ella el bloque Miembros no se muestra en `ProyectoFormPanel` y la membresía viaja como default oculto |
 
 `usuarios_select` extendida con `OR tiene_permiso('tareas_lista') OR tiene_permiso('tareas_proyectos')` — picker de asignados/miembros necesita listar usuarios activos.
+
+---
+
+## Módulo obras — Agenda de Obras (`sql/027_obras.sql` + `sql/028_obras_funciones.sql` + `sql/029_obras_hardening.sql` — corridos en Supabase vía MCP)
+
+Nombre visible: **Agenda de Obras**. `modulo = 'obras'`, ruta `/obras`. Fase 1 es registro y relación de datos: obras, empresas, personas, sus vínculos con roles múltiples, y referentes con comisión por obra. Sin prospectos, oportunidades, presupuestos ni actividades — ver `decisiones/obras.md`.
+
+Extensiones nuevas: `unaccent` y `pg_trgm`, ambas en el schema `extensions` (donde ya viven `pgcrypto` y `uuid-ossp`).
+
+### El modelo de visibilidad, que es lo que gobierna todo lo demás
+
+Tres alcances distintos, y conviene tenerlos claros antes de leer las tablas:
+
+| entidad | quién la ve |
+|---|---|
+| obra | solo su `responsable_id`. Más quien tenga `obras_transferir`, que las ve todas porque no puede reasignar lo que no ve |
+| empresa | todos los que tengan acceso al módulo. Razón social y web son datos casi públicos, y compartirlas evita que cada vendedor cargue su copia de la misma constructora |
+| persona | solo quien la creó o la tiene vinculada a una obra propia. `obras_personas_todas` levanta el límite |
+
+La persona es el activo sensible (celular directo del que decide la compra), y por eso es la única entidad con alcance por fila **y** con registro de acceso.
+
+### obras
+
+Entidad central. Puede existir sin empresas, sin personas y sin dirección.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| nombre | text NOT NULL | libre, no tiene que ser el nombre oficial ("Edificio próximo a Cabildo" es válido) |
+| tipo | enum `tipo_obra` | `edificio`\|`casa`\|`refaccion`\|`complejo_viviendas`\|`local`\|`oficina`\|`hotel`\|`otro` |
+| estado | enum `estado_obra` | `idea`\|`en_construccion`\|`perdida`\|`terminada`, default `idea` |
+| direccion / localidad | text | opcionales |
+| provincia | enum `provincia` | 24 valores (23 provincias + `caba`). Enum y no texto: con texto libre el filtro por ubicación muere el primer día |
+| cantidad_unidades | int | CHECK > 0 |
+| superficie_estimada | numeric(10,2) | m², CHECK > 0. No se usa para ningún cálculo comercial |
+| fecha_estimada_inicio / fecha_estimada_compra | date | |
+| origen | enum `origen_obra` | informativo. No crea relación con empresa ni persona |
+| motivo_perdida | enum `motivo_perdida` | |
+| detalle_perdida | text | |
+| responsable_id | uuid FK → usuarios NOT NULL | **define quién ve la obra** |
+| nombre_norm / direccion_norm / localidad_norm | text | derivadas por trigger, para detección difusa |
+| activo | boolean | |
+
+`obras_perdida_con_motivo`: `estado <> 'perdida' OR motivo_perdida IS NOT NULL`. El CHECK va en una sola dirección a propósito — pasar a perdida exige motivo, pero salir de perdida **no** lo borra: es información histórica.
+
+`obras_motivo_otro_con_detalle`: `otro` exige `detalle_perdida` no vacío. Los otros motivos se explican solos.
+
+RLS SELECT: `(responsable_id = auth.uid() AND tiene_permiso('obras_ver')) OR tiene_permiso('obras_transferir')`. UPDATE: solo el responsable con `obras_editar` — quien transfiere ve y reasigna, no edita.
+
+**`responsable_id` y `activo` no tienen `GRANT UPDATE`.** Editar, transferir y desactivar son tres permisos distintos; las dos últimas pasan por función que verifica el suyo. Sin esto, cualquiera con `obras_editar` podría transferirse una obra con un UPDATE directo por PostgREST.
+
+### obras_empresas
+
+Sin campo `cuit` (decisión del usuario). La detección de duplicados va por razón social y nombre comercial difusos.
+
+| columna | tipo | notas |
+|---|---|---|
+| razon_social | text NOT NULL | |
+| nombre_comercial / website / telefono / email / direccion / localidad | text | |
+| provincia | enum `provincia` | |
+| creado_por | uuid FK → usuarios | |
+| razon_social_norm / nombre_comercial_norm | text | por trigger |
+
+Una empresa **no tiene rol global**: el rol vive en su relación con cada obra. La misma empresa puede ser constructora en una obra y desarrolladora en otra.
+
+### obras_personas
+
+Sin `empresa_id` y sin columna de rol: lo primero vive en `obras_persona_empresa`, lo segundo en `obras_obra_persona`.
+
+| columna | tipo | notas |
+|---|---|---|
+| nombre | text NOT NULL | |
+| apellido / telefono / whatsapp / email | text | |
+| creado_por | uuid FK → usuarios | |
+| nombre_norm | text | `nombre + apellido` normalizado |
+| email_norm | text | lower+trim |
+| telefono_norm / whatsapp_norm | text | solo dígitos — "11 4567-8900" y "+54 11 4567 8900" son el mismo teléfono |
+
+RLS SELECT: `(tiene_permiso('obras_ver') OR tiene_permiso('obras_personas')) AND (creado_por = auth.uid() OR obras_puede_ver_persona(id))`.
+
+`creado_por` se prueba **como columna y no dentro de la función**. La versión anterior resolvía todo por `obras_puede_ver_persona(id)`, que relee la fila: en un `INSERT ... RETURNING` — lo que hace `.insert().select()` de Supabase — la fila nueva todavía no está en el snapshot de una función `STABLE`, así que el creador no podía leer lo que acababa de escribir (42501). Crear una persona habría fallado siempre en la app. Lo cazó `sql/tests/rls_obras.sql`.
+
+### obras_persona_empresa
+
+`persona_id`, `empresa_id`, `cargo` (texto libre — "Jefe de compras zona sur" no entra en ningún enum), `es_principal`, `observaciones`.
+
+Unique parcial `(persona_id, empresa_id) WHERE activo` y `(persona_id) WHERE activo AND es_principal` — como máximo una empresa principal por persona.
+
+El cargo **no** determina el rol en obra. No se infiere uno del otro.
+
+### obras_obra_empresa / obras_obra_persona
+
+Las dos tablas puente con la obra. `roles` es un **array de enum**, no filas separadas: una empresa que es constructora y desarrolladora de la misma obra es una relación con dos roles, no dos relaciones.
+
+| tabla | roles | extra |
+|---|---|---|
+| obras_obra_empresa | `rol_empresa[]` — `constructora`\|`desarrolladora`\|`inmobiliaria`\|`estudio_arquitectura`\|`direccion_obra`\|`otro` | |
+| obras_obra_persona | `rol_persona[]` — `arquitecto`\|`desarrollador`\|`inversor`\|`director_obra`\|`compras`\|`oficina_tecnica`\|`decisor`\|`influenciador`\|`contacto_comercial`\|`otro` | `empresa_id` nullable: a quién representa esa persona en esta obra. FK simple, sin validación cruzada — es contexto, no invariante |
+
+CHECK en ambas: `cardinality(roles) > 0` y `obras_array_sin_duplicados(roles)`. Unique parcial por par `WHERE activo`.
+
+**`rol_persona` no tiene `referente`** — eso es la existencia de una fila en `obras_obra_referente`. Una sola fuente de verdad.
+
+Una persona figura **una sola vez por obra**, así que representa a una sola empresa en esa obra.
+
+### obras_obra_referente
+
+`obra_id`, `persona_id`, `porcentaje_comision numeric(5,2)` CHECK entre 0 y 100.
+
+La comisión pertenece a la relación obra↔referente, no a la persona ni a la empresa: el mismo referente puede tener 3.50% en una obra y 2.00% en otra.
+
+RLS SELECT exige `obras_referentes` además de ver la obra. La fila **contiene** la comisión, así que verla es verla — no hace falta (ni se permite) un permiso por campo.
+
+### obras_transferencias
+
+Log de cambios de responsable: `obra_id`, `de_usuario_id`, `a_usuario_id`, `ejecutada_por`, `created_at`. CHECK `de <> a`.
+
+Sin `activo`: es un log, la fila significa "esto pasó". Ahora que el responsable decide quién ve la obra, "¿por qué no la veo más?" necesita respuesta.
+
+### obras_accesos_persona
+
+`usuario_id`, `persona_id`, `created_at`. Escrita por `obras_ficha_persona()`, que es el **único** camino por el que la app lee teléfono, whatsapp y email.
+
+Que sea el único es lo que hace que el log sirva. Contra un insider autorizado no hay prevención — quien ve un teléfono lo puede fotografiar — pero esto convierte "se llevó la agenda" en una consulta que muestra 340 fichas abiertas en dos días. RLS SELECT: solo `obras_personas_todas`.
+
+### Helpers de visibilidad
+
+`obras_puede_ver_obra(uuid)` · `obras_es_mi_obra(uuid)` · `obras_puede_ver_persona(uuid)` — `SECURITY DEFINER STABLE`, usadas por las policies. No `EXISTS` directo: dos policies que se miran entre sí dan `42P17 infinite recursion`.
+
+`obras_es_mi_obra` existe aparte de `obras_puede_ver_obra` porque ver no es editar: quien transfiere pasa el primero y no el segundo.
+
+### Normalización y duplicados
+
+`obras_normalizar(text)` — sin acentos, minúsculas, todo lo no alfanumérico a espacio. `obras_normalizar_telefono(text)` — solo dígitos. Ambas `IMMUTABLE`, aplicadas por trigger a las columnas `_norm` (columnas `GENERATED` no sirven: `unaccent()` no es `IMMUTABLE`).
+
+Índices GIN trigram sobre las `_norm`. Umbral de similitud **0.45**, verificado contra datos reales: `XYZ S.A.` ↔ `xyz sa` da 0.50 (detecta), `Edificio Libertador` ↔ `Casa Los Alamos` da 0.03 (no molesta).
+
+Tres funciones de búsqueda, con tres niveles de exposición distintos:
+
+| función | seguridad | qué devuelve |
+|---|---|---|
+| `obras_buscar_duplicados_empresa` | INVOKER | todo — las empresas son compartidas, no hay nada que ocultar |
+| `obras_buscar_duplicados_persona` | DEFINER | identidad mínima: nombre, apellido, empresa principal. **Nunca** teléfono ni email |
+| `obras_buscar_duplicados_obra` | DEFINER | de una obra ajena, solo el nombre del responsable. `obra_id`, `nombre`, `direccion` y `localidad` vienen NULL |
+
+El aviso ciego de obras es la salida a un conflicto real: dos vendedores no pueden cargar el mismo edificio, pero tampoco pueden ver las obras del otro. Avisa sin mostrar, y alcanza para que el vendedor vaya a preguntar.
+
+Vincular una persona a una obra propia **no** requiere verla antes — es lo que hace usable la búsqueda de identidad mínima. Es acceso deliberado y queda registrado.
+
+### Desactivación
+
+Nunca DELETE. `obras_set_activo(uuid, boolean)` exige `obras_desactivar` **y** ser el responsable. Sin cascada sobre los vínculos: la obra se puede reactivar tal como estaba.
+
+Empresas y personas son compartidas, así que desactivarlas puede romper obras ajenas — y quien lo hace ni siquiera puede ver el daño. Triggers `obras_guard_desactivar_empresa` / `_persona` bloquean la desactivación si la entidad participa en alguna obra **activa**, con mensaje que dice cuántas y nunca cuáles (mismo criterio que el aviso ciego). `obras_cascada_desactivar` da de baja las relaciones `obras_persona_empresa` cuando la desactivación sí procede, para no dejar un cargo colgado.
+
+### Hardening (`sql/029`)
+
+`GRANT EXECUTE ... TO authenticated` no quita nada: Postgres otorga EXECUTE a `PUBLIC` por defecto, así que las `SECURITY DEFINER` del módulo quedaban invocables por `anon` — sin login — vía `/rest/v1/rpc/`. No era explotable (todas cortan con `tiene_permiso`), pero la defensa no puede depender de que nadie toque el guard después. `REVOKE ... FROM PUBLIC` en las 18 funciones del módulo, `GRANT` explícito solo a `authenticated`, y ninguno para las de solo-trigger. Más `search_path` fijo en los tres helpers inmutables.
+
+Verificado: `has_function_privilege('anon', ...)` da `false` en las 18.
+
+### Permisos (submódulos `modulo = 'obras'`)
+
+| codigo | tipo | vista_id | notas |
+|---|---|---|---|
+| obras_ver | vista | — | listado y ficha de obra |
+| obras_empresas | vista | — | |
+| obras_personas | vista | — | |
+| obras_crear | funcion | obras_ver | |
+| obras_editar | funcion | obras_ver | solo sobre obras propias |
+| obras_vincular | funcion | obras_ver | obra↔empresa y obra↔persona, con sus roles |
+| obras_referentes | funcion | obras_ver | ver y editar referente + comisión. Es lo que oculta la comisión a quien no la debe ver |
+| obras_transferir | funcion | obras_ver | **implica ver todas las obras**. Darlo con criterio |
+| obras_desactivar | funcion | obras_ver | separado de editar: cargar datos no es lo mismo que hacer desaparecer una obra |
+| obras_empresas_crear | funcion | obras_empresas | |
+| obras_empresas_editar | funcion | obras_empresas | |
+| obras_personas_crear | funcion | obras_personas | |
+| obras_personas_editar | funcion | obras_personas | |
+| obras_personas_empresas | funcion | obras_personas | relacionar persona↔empresa. El botón de la ficha de empresa usa este mismo permiso — una función pertenece a una sola vista |
+| obras_personas_todas | funcion | obras_personas | ve la agenda completa y el log de accesos |
+
+Combinación a tener presente: crear una empresa o persona desde adentro de una obra necesita `obras_empresas_crear` / `obras_personas_crear` además de `obras_vincular`. Con solo `obras_vincular` se pueden enlazar las que ya existen.
+
+`usuarios_select` extendida con `OR tiene_permiso('obras_transferir')` — el picker de destino necesita listar usuarios.
+
+Verificación: `sql/tests/rls_obras.sql`, 29/29.

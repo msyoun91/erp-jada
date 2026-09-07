@@ -202,3 +202,27 @@ Se fue el módulo completo: `modules/comercial/` (16 archivos), `app/(erp-app)/c
 **No aplica "nunca DELETE".** Esa regla protege registros de negocio de un módulo vivo — permite desactivar sin perder historia y sin romper FKs. Acá desaparece el módulo, así que no hay historia que consultar ni pantalla que pueda mostrarla: dejar 8 tablas y 10 submódulos con `activo = false` sería dejar el esquema y la grilla de permisos hablando de algo que ya no existe. Las 20 filas que había quedaron volcadas a JSON fuera del repo antes del DROP.
 
 **El único enganche real era `usuarios_select`.** `sql/018` le había sumado `OR tiene_permiso('comercial_prospectos')` para que el picker de responsable listara usuarios. `sql/026` reescribe la policy sin esa cláusula y con las otras tres intactas — no la dropea, porque las de perfil propio, `usuarios_ver` y las dos de tareas son de otras migraciones. Verificado antes de correr: ninguna otra tabla, enum ni función dependía de comercial (cero FKs entrantes, cero columnas usando sus enums).
+
+---
+
+## `argsRpc()` — los tipos de argumentos de RPC dejaron de ser nulables
+
+`erp-app/src/lib/supabase/rpc.ts`.
+
+Al regenerar `database.types.ts` para el módulo obras, las llamadas `.rpc()` de tareas empezaron a fallar el typecheck: 16 errores por pasar `null` a argumentos declarados no-nulos (`crear_tarea`, `editar_tarea`, `crear_proyecto`, `editar_proyecto`).
+
+**No es culpa del MCP ni del CLI.** `gen types --project-id` genera del lado del servidor: el CLI recién autenticado y el MCP producen byte por byte lo mismo, y el archivo commiteado antes traía `| null`. Supabase cambió el generador.
+
+Los tipos son los que mienten: los parámetros SQL aceptan NULL, y PostgREST los exige **presentes** cuando no tienen `DEFAULT` — mandar `null` es lo correcto y omitirlos daría "missing parameter".
+
+`argsRpc<"nombre_funcion">({...})` acota la corrección a un solo lugar y sigue chequeando nombre y tipo de cada campo (los admite como `T | null`). La alternativa era castear en cada llamada, que pierde el chequeo, o agregar `DEFAULT NULL` en SQL — que obliga a darle default a todos los parámetros posteriores de cada función.
+
+Si el generador vuelve a emitir `| null`, se borra el helper y las llamadas quedan igual.
+
+## `erp-app/AGENTS.md` dice ser algo que no es
+
+El archivo afirma estar escrito por `next dev` y manda leer `node_modules/next/dist/docs/` antes de escribir código.
+
+Verificado: está commiteado desde el scaffold (`fbee462`), y **ninguna de las dos rutas existe** en esta instalación — ni el directorio de docs ni el `generate-agent-files.js` que dice generarlo. Next acá es 16.3.0.
+
+Mientras siga así, las convenciones de Next se verifican contra el código del repo, no contra ese archivo. Lo que sí es cierto y hay que respetar: `params` y `searchParams` son `Promise` y se esperan con `await` (ver `app/(erp-app)/tareas/auditoria/page.tsx` y las rutas `[id]` de obras).
