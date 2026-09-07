@@ -181,7 +181,7 @@ erp-app/src/
 | `.claude/guides/GUIDE_DESIGN.md` | UI, UX, mobile, diseño visual, feedback |
 | `.claude/guides/GUIDE_DASHBOARD.md` | widgets, dashboard, KPIs |
 | `.claude/guides/GUIDE_SYNC.md` | sincronización erp-app ↔ erp-cliente |
-| `decisiones/<modulo>.md` | modificar un módulo existente — leer **solo el del módulo**: `tareas`, `comercial`, `usuarios`, `auth` |
+| `decisiones/<modulo>.md` | modificar un módulo existente — leer **solo el del módulo**: `tareas`, `usuarios`, `auth` |
 | `decisiones/global.md` | tocar `components/ui/`, `globals.css`, permisos o infraestructura |
 
 ---

@@ -580,7 +580,7 @@ Ahora las arma la page (server) y las entrega `TareasContextoProvider`; cada com
 
 Auditoría de arquitectura, punto 7 de `PLAN_ARQUITECTURA_TAREAS.md`.
 
-`ESTADO_LABEL` y `ESTADO_BADGE` eran `Record<string, string>`: cualquier string indexaba y el resultado era `string`, no `string | undefined`. Un typo o un valor nuevo del enum se renderizaba vacío sin que TS dijera nada. Ahora son `Record<EstadoTarea, string>`, con `EstadoTarea = Enums<"estado_tarea">` en `types.ts` — mismo patrón que ya usa `comercial/types.ts`. Agregar un valor a `estado_tarea` en Postgres rompe la compilación hasta que los dos mapas tengan su fila, que es el punto.
+`ESTADO_LABEL` y `ESTADO_BADGE` eran `Record<string, string>`: cualquier string indexaba y el resultado era `string`, no `string | undefined`. Un typo o un valor nuevo del enum se renderizaba vacío sin que TS dijera nada. Ahora son `Record<EstadoTarea, string>`, con `EstadoTarea = Enums<"estado_tarea">` en `types.ts`. Agregar un valor a `estado_tarea` en Postgres rompe la compilación hasta que los dos mapas tengan su fila, que es el punto.
 
 **Arrastre.** `TareaPendiente.estado` y la prop `estado` de `TareaDetailPanel` estaban tipadas `string` a mano sobre datos que ya venían del enum; bajaron a `EstadoTarea`, y el `?? p.estado` de `AuditoriaView` —un fallback que nunca podía dispararse— se fue con ellas. `RECURRENCIA_LABEL` y el parámetro `estado` de `estadoVencimiento` entraron por el mismo defecto, en el mismo archivo.
 
@@ -698,7 +698,7 @@ Las seis pasan a funciones `SECURITY INVOKER` en `sql/023`, llamadas con `.rpc()
 
 **`deshacer_conversion_hilo` conserva el orden del TypeScript** — primero restaura la más antigua, después desactiva el resto. Invertirlo cambiaría comportamiento: si algo activo tiene a la más antigua como paso previo, `validar_paso_tarea` corta con `TA006`, y con el resto ya desactivado no cortaría. Ese rechazo es el que ya existía y no se toca en esta tanda.
 
-**Los params nullable se marcan a mano en `database.types.ts`.** El generador de Supabase emite `p_descripcion: string` para un parámetro que acepta NULL. Mismo arreglo manual que ya tenía `guardar_obra_persona` — si se regeneran los tipos, hay que volver a ponerlos.
+**Los params nullable se marcan a mano en `database.types.ts`.** El generador de Supabase emite `p_descripcion: string` para un parámetro que acepta NULL. El `| null` se agrega a mano: si se regeneran los tipos, hay que volver a ponerlos.
 
 Verificado con `sql/tests/atomicidad_tareas.sql`, 15/15. El test alterna rol en los dos sentidos dentro del mismo `DO`: `authenticated` para llamar las funciones, y `role = none` para **contar**. Contar como `authenticated` haría pasar todos los casos de atomicidad en falso — las filas huérfanas son justamente las que RLS esconde. El caso 00b verifica que el regreso al usuario de sesión ocurre de verdad.
 

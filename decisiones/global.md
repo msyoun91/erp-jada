@@ -192,3 +192,13 @@ Esto **no** es preparación para un agente IA. No se construye API, ni identidad
 **Deuda conocida, no se migra ahora:** `modules/tareas/actions.ts` (760 líneas) tiene orquestación multi-tabla que hoy solo existe en TS — `convertirTareaEnHilo`, `deshacerConversionHilo`, `agregarTareasDesdePlantilla`, `sincronizarAsignados`. Funcionan y nadie más las necesita todavía. Migran a funciones Postgres cuando aparezca el segundo consumidor, no antes; la regla aplica de acá en adelante para que la deuda deje de crecer.
 
 **Cómo se ve en la práctica:** `queries.ts:44` ya llama `supabase.rpc("reactivar_posponer_vencidos")`. Ese es el patrón: la función vive en `sql/`, `actions.ts` la invoca. `SECURITY INVOKER` por defecto para que RLS siga aplicando al llamador; `SECURITY DEFINER` solo si hace falta bypasear RLS, y ahí vale la regla ya registrada de `SET search_path = public`.
+
+---
+
+## El módulo comercial se elimina entero (`sql/026`)
+
+Se fue el módulo completo: `modules/comercial/` (16 archivos), `app/(erp-app)/comercial/` (5), su entrada en `SidebarNav`, los mensajes `CM001`–`CM003` de `lib/utils.ts`, `sql/018_comercial.sql`, `decisiones/comercial.md` y `HANDOFF_COMERCIAL_FASE1.md`. En Supabase: 8 tablas, 6 enums, 6 funciones y los 10 submódulos con sus 17 asignaciones.
+
+**No aplica "nunca DELETE".** Esa regla protege registros de negocio de un módulo vivo — permite desactivar sin perder historia y sin romper FKs. Acá desaparece el módulo, así que no hay historia que consultar ni pantalla que pueda mostrarla: dejar 8 tablas y 10 submódulos con `activo = false` sería dejar el esquema y la grilla de permisos hablando de algo que ya no existe. Las 20 filas que había quedaron volcadas a JSON fuera del repo antes del DROP.
+
+**El único enganche real era `usuarios_select`.** `sql/018` le había sumado `OR tiene_permiso('comercial_prospectos')` para que el picker de responsable listara usuarios. `sql/026` reescribe la policy sin esa cláusula y con las otras tres intactas — no la dropea, porque las de perfil propio, `usuarios_ver` y las dos de tareas son de otras migraciones. Verificado antes de correr: ninguna otra tabla, enum ni función dependía de comercial (cero FKs entrantes, cero columnas usando sus enums).

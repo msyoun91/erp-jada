@@ -1,8 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 // Quién soy y quiénes están activos no es de ningún módulo: tareas lo usa para
-// asignar, comercial para elegir responsable de un prospecto. La RLS de
-// `usuarios` decide qué devuelve el SELECT, no esta función.
+// asignar. La RLS de `usuarios` decide qué devuelve el SELECT, no esta función.
 export type UsuarioBasico = { id: string; nombre: string };
 
 export async function getUsuarioActualId(): Promise<string | null> {
