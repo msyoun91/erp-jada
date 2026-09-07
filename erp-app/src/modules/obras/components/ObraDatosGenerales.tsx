@@ -8,7 +8,7 @@ import type {
   Usuario,
 } from "../types";
 
-function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | number | null }) {
+function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
   if (valor === null || valor === "") return null;
   return (
     <div>
@@ -45,13 +45,6 @@ export function DatosGenerales({
           etiqueta="Provincia"
           valor={obra.provincia ? labels.provincia[obra.provincia] : null}
         />
-        <Dato etiqueta="Unidades" valor={obra.cantidad_unidades} />
-        <Dato
-          etiqueta="Superficie"
-          valor={obra.superficie_estimada ? `${obra.superficie_estimada} m²` : null}
-        />
-        <Dato etiqueta="Inicio estimado" valor={obra.fecha_estimada_inicio} />
-        <Dato etiqueta="Compra estimada" valor={obra.fecha_estimada_compra} />
         <Dato etiqueta="Origen" valor={obra.origen ? labels.origen[obra.origen] : null} />
       </dl>
 

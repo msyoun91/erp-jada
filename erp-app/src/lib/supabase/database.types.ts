@@ -17,14 +17,11 @@ export type Database = {
       obras: {
         Row: {
           activo: boolean
-          cantidad_unidades: number | null
           created_at: string
           detalle_perdida: string | null
           direccion: string | null
           direccion_norm: string | null
           estado: Database["public"]["Enums"]["estado_obra"]
-          fecha_estimada_compra: string | null
-          fecha_estimada_inicio: string | null
           id: string
           localidad: string | null
           localidad_norm: string | null
@@ -35,20 +32,16 @@ export type Database = {
           origen: Database["public"]["Enums"]["origen_obra"] | null
           provincia: Database["public"]["Enums"]["provincia"] | null
           responsable_id: string
-          superficie_estimada: number | null
           tipo: Database["public"]["Enums"]["tipo_obra"]
           updated_at: string
         }
         Insert: {
           activo?: boolean
-          cantidad_unidades?: number | null
           created_at?: string
           detalle_perdida?: string | null
           direccion?: string | null
           direccion_norm?: string | null
           estado?: Database["public"]["Enums"]["estado_obra"]
-          fecha_estimada_compra?: string | null
-          fecha_estimada_inicio?: string | null
           id?: string
           localidad?: string | null
           localidad_norm?: string | null
@@ -59,20 +52,16 @@ export type Database = {
           origen?: Database["public"]["Enums"]["origen_obra"] | null
           provincia?: Database["public"]["Enums"]["provincia"] | null
           responsable_id: string
-          superficie_estimada?: number | null
           tipo: Database["public"]["Enums"]["tipo_obra"]
           updated_at?: string
         }
         Update: {
           activo?: boolean
-          cantidad_unidades?: number | null
           created_at?: string
           detalle_perdida?: string | null
           direccion?: string | null
           direccion_norm?: string | null
           estado?: Database["public"]["Enums"]["estado_obra"]
-          fecha_estimada_compra?: string | null
-          fecha_estimada_inicio?: string | null
           id?: string
           localidad?: string | null
           localidad_norm?: string | null
@@ -83,7 +72,6 @@ export type Database = {
           origen?: Database["public"]["Enums"]["origen_obra"] | null
           provincia?: Database["public"]["Enums"]["provincia"] | null
           responsable_id?: string
-          superficie_estimada?: number | null
           tipo?: Database["public"]["Enums"]["tipo_obra"]
           updated_at?: string
         }

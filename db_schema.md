@@ -6,7 +6,7 @@ Proyecto Supabase: `qbpudocgdvpeadcyyhfh`. Regenerar tipos tras cada migración:
 `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public > erp-app/src/lib/supabase/database.types.ts`
 (requiere `supabase login` o `SUPABASE_ACCESS_TOKEN`)
 
-Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. Agenda de Obras (`sql/027` + `sql/028` + `sql/029`) corrida vía MCP. `database.types.ts` regenerado tras 027/028/029 con el comando de arriba.
+Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. Agenda de Obras (`sql/027` + `sql/028` + `sql/029` + `sql/030`) corrida vía MCP. `database.types.ts` sincronizado tras 027/028/029/030.
 
 ---
 
@@ -354,7 +354,7 @@ Verificación: `sql/tests/cascada_proyecto.sql` (10/10).
 
 ---
 
-## Módulo obras — Agenda de Obras (`sql/027_obras.sql` + `sql/028_obras_funciones.sql` + `sql/029_obras_hardening.sql` — corridos en Supabase vía MCP)
+## Módulo obras — Agenda de Obras (`sql/027_obras.sql` + `sql/028_obras_funciones.sql` + `sql/029_obras_hardening.sql` + `sql/030_obras_quitar_campos.sql` — corridos en Supabase vía MCP)
 
 Nombre visible: **Agenda de Obras**. `modulo = 'obras'`, ruta `/obras`. Fase 1 es registro y relación de datos: obras, empresas, personas, sus vínculos con roles múltiples, y referentes con comisión por obra. Sin prospectos, oportunidades, presupuestos ni actividades — ver `decisiones/obras.md`.
 
@@ -384,9 +384,6 @@ Entidad central. Puede existir sin empresas, sin personas y sin dirección.
 | estado | enum `estado_obra` | `idea`\|`en_construccion`\|`perdida`\|`terminada`, default `idea` |
 | direccion / localidad | text | opcionales |
 | provincia | enum `provincia` | 24 valores (23 provincias + `caba`). Enum y no texto: con texto libre el filtro por ubicación muere el primer día |
-| cantidad_unidades | int | CHECK > 0 |
-| superficie_estimada | numeric(10,2) | m², CHECK > 0. No se usa para ningún cálculo comercial |
-| fecha_estimada_inicio / fecha_estimada_compra | date | |
 | origen | enum `origen_obra` | informativo. No crea relación con empresa ni persona |
 | motivo_perdida | enum `motivo_perdida` | |
 | detalle_perdida | text | |

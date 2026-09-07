@@ -200,27 +200,12 @@ const opcionalDeSelect = <T extends z.ZodTypeAny>(schema: T) =>
     .union([schema, z.literal(""), z.null(), z.undefined()])
     .transform((v) => (v === "" || v === undefined ? null : v));
 
-// Un <input type="date"> vacío manda "" y Postgres rechaza "" para date.
-const fechaOpcional = z
-  .string()
-  .nullish()
-  .transform((v) => v || null);
-
 const textoOpcional = (max: number) =>
   z
     .string()
     .max(max)
     .nullish()
     .transform((v) => v?.trim() || null);
-
-// Un <input type="number"> vacío manda "" — coerce lo volvería NaN.
-const enteroPositivoOpcional = z
-  .union([z.coerce.number().int().positive(), z.literal(""), z.null(), z.undefined()])
-  .transform((v) => (typeof v === "number" ? v : null));
-
-const decimalPositivoOpcional = z
-  .union([z.coerce.number().positive(), z.literal(""), z.null(), z.undefined()])
-  .transform((v) => (typeof v === "number" ? v : null));
 
 const obraEditableSchema = z.object({
   nombre: z.string().trim().min(1, "El nombre es obligatorio").max(200),
@@ -229,10 +214,6 @@ const obraEditableSchema = z.object({
   direccion: textoOpcional(200),
   localidad: textoOpcional(120),
   provincia: opcionalDeSelect(z.enum(PROVINCIAS as [Provincia, ...Provincia[]])),
-  cantidad_unidades: enteroPositivoOpcional,
-  superficie_estimada: decimalPositivoOpcional,
-  fecha_estimada_inicio: fechaOpcional,
-  fecha_estimada_compra: fechaOpcional,
   origen: opcionalDeSelect(z.enum(ORIGENES_OBRA as [OrigenObra, ...OrigenObra[]])),
   observaciones: textoOpcional(2000),
   motivo_perdida: opcionalDeSelect(

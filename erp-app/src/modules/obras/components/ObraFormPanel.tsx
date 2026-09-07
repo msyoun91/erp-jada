@@ -44,10 +44,6 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
           direccion: obra.direccion,
           localidad: obra.localidad,
           provincia: obra.provincia,
-          cantidad_unidades: obra.cantidad_unidades,
-          superficie_estimada: obra.superficie_estimada,
-          fecha_estimada_inicio: obra.fecha_estimada_inicio,
-          fecha_estimada_compra: obra.fecha_estimada_compra,
           origen: obra.origen,
           observaciones: obra.observaciones,
           motivo_perdida: obra.motivo_perdida,
@@ -195,34 +191,6 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
                 </option>
               ))}
             </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="t-label mb-1 block">Unidades</label>
-            <input type="number" min={1} className="input" {...register("cantidad_unidades")} />
-            {errors.cantidad_unidades && (
-              <p className="input-error-text">{errors.cantidad_unidades.message}</p>
-            )}
-          </div>
-          <div>
-            <label className="t-label mb-1 block">Superficie (m²)</label>
-            <input type="number" step="0.01" min={0} className="input" {...register("superficie_estimada")} />
-            {errors.superficie_estimada && (
-              <p className="input-error-text">{errors.superficie_estimada.message}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="t-label mb-1 block">Inicio estimado</label>
-            <input type="date" className="input" {...register("fecha_estimada_inicio")} />
-          </div>
-          <div>
-            <label className="t-label mb-1 block">Compra estimada</label>
-            <input type="date" className="input" {...register("fecha_estimada_compra")} />
           </div>
         </div>
 

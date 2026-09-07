@@ -78,6 +78,16 @@ La spec lo pedía como identificador fuerte anti-duplicados. El usuario decidió
 
 ---
 
+## Cuatro campos se fueron de la ficha
+
+`cantidad_unidades`, `superficie_estimada`, `fecha_estimada_inicio` y `fecha_estimada_compra` salieron por pedido del usuario (`sql/030`).
+
+Se dropearon las columnas en vez de esconderlas en la UI: un campo que ningún formulario escribe y ninguna vista muestra no es dato, es esquema muerto que igual aparece en `database.types.ts` y en cada `select *`. "Nunca DELETE" protege filas de negocio, no columnas — y la tabla tenía 0 filas, así que no había historia que perder. Si vuelven, vuelven como migración.
+
+Con las columnas se fueron sus dos CHECK (> 0) y su lugar en el `GRANT UPDATE` por columna de `sql/027`: Postgres actualiza el privilegio solo.
+
+---
+
 ## Enums, no tablas de catálogo
 
 `tipo_obra`, `origen_obra`, `motivo_perdida`, `rol_empresa`, `rol_persona`, `provincia` son enums de Postgres.
