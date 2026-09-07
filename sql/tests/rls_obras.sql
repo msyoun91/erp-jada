@@ -1,4 +1,4 @@
--- Verificación del modelo de seguridad de Agenda de Obras (sql/027 + sql/028).
+-- Verificación del modelo de seguridad de Agenda de Obras (sql/027 a sql/030).
 -- NO es una migración: todo corre dentro de un DO que termina en RAISE
 -- EXCEPTION, así que la transacción entera se revierte — no persiste ningún
 -- dato ni permiso. Los resultados salen en el mensaje del error.
@@ -13,7 +13,7 @@
 -- no pueda editar, y que el teléfono de un contacto no salga por ningún
 -- camino que no deje rastro.
 --
--- Volver a correrlo entero después de tocar 027, 028 o 029.
+-- Volver a correrlo entero después de tocar 027, 028, 029 o 030.
 --
 -- Último resultado: 29/29.
 --
@@ -39,6 +39,16 @@ BEGIN
 
   -- ---------- Setup de permisos (como usuario de sesión) ----------
   -- Admin: vendedor completo. Tester: vendedor pelado.
+  --
+  -- Se apaga primero todo `obras` de los dos: el test afirma cosas sobre lo
+  -- que NO se puede hacer (el caso 16 necesita a Admin sin `obras_transferir`)
+  -- y no puede depender de lo que el usuario real tenga asignado hoy. Sin
+  -- esto, el 16 transfiere de verdad y el 17 muere con "la obra ya es de ese
+  -- usuario". Vuelve todo atrás con el rollback del final.
+  UPDATE usuario_submodulos SET activo = false
+  WHERE usuario_id IN (v_admin, v_tester)
+    AND submodulo_id IN (SELECT id FROM submodulos WHERE modulo = 'obras');
+
   INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
   SELECT v_admin, id FROM submodulos
   WHERE codigo IN ('obras_ver','obras_crear','obras_editar','obras_vincular',

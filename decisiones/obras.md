@@ -88,6 +88,14 @@ Con las columnas se fueron sus dos CHECK (> 0) y su lugar en el `GRANT UPDATE` p
 
 ---
 
+## El test de RLS no puede depender de los permisos reales
+
+`sql/tests/rls_obras.sql` afirma cosas sobre lo que **no** se puede hacer, y el caso 16 necesita a Admin sin `obras_transferir`. Corrido después de que el usuario se asignara los 15 submódulos del módulo en la app, el 16 transfirió de verdad y el 17 murió con "la obra ya es de ese usuario": el test no fallaba por una regresión, fallaba porque leía el estado de permisos de producción.
+
+El setup ahora apaga todo `obras` de los dos usuarios antes de prender la lista que el test quiere. Sigue revirtiéndose entero con el `RAISE EXCEPTION` final.
+
+---
+
 ## Enums, no tablas de catálogo
 
 `tipo_obra`, `origen_obra`, `motivo_perdida`, `rol_empresa`, `rol_persona`, `provincia` son enums de Postgres.
