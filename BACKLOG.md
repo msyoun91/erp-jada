@@ -25,19 +25,21 @@ y clases de `globals.css`* en `decisiones/global.md`): hex fijo sobre fondo tema
 de AA en uno de los dos temas. Quedó afuera de aquella auditoría porque es app-wide y esa
 pasada era del módulo tareas.
 
-## Obras — auditoría visual de la UI
+## ~~Obras — auditoría visual de la UI~~ — cerrada
 
-29 hallazgos relevados el 2026-09-08: `AUDITORIA_OBRAS_UI.md`. Van 8 implementados, quedan 21.
+29 hallazgos relevados el 2026-09-08: `AUDITORIA_OBRAS_UI.md`. 28 implementados y **B3 cerrado
+sin tocar código: no reproduce.**
 
-Cerrado todo lo crítico y lo alto: los dos de fila (C1 + C2), la ficha como bloque
-(A1 + A4 + A3), el chip de rol y la tab activa (A2 + A5), y la confirmación al desvincular (A6).
-Ver `decisiones/obras.md`.
+La segunda pasada de navegador midió el footer del sidebar con el usuario real (`nombre` =
+`Admin`): el nombre ocupa 40.6px en una caja de 81.2px en escritorio y de 71.2px en el drawer
+mobile, y el avatar 18.7px en 28px. Ni truncado ni solape en ninguno de los dos anchos. Lo que
+se había leído como `A…dmin` era el puntero del mouse que dibuja la herramienta de captura,
+apoyado sobre el avatar; en la segunda pasada el mismo círculo cayó sobre el logo y lo dejó en
+`S⬤DA`. No hay nada que decidir, así que no va a `decisiones/global.md`.
 
-Queda la pasada de estilo: A7 + M3 + M5 juntos son mecánicos, después el resto de M y B.
-
-Cinco de los 29 son app-wide (ThemeToggle flotante tapando contenido, avatar del sidebar pisando
-el nombre, `.card:hover` en lo no clickeable, alturas de toolbar, el modal que no atenúa el
-panel): esos se deciden en `decisiones/global.md`, no en el módulo.
+Los cuatro app-wide reales están cerrados ahí (ThemeToggle flotante, `.card:hover` en lo no
+clickeable, alturas de toolbar, el modal que no atenuaba el panel). El resto, en
+`decisiones/obras.md`.
 
 ## Obras — el referente sobrevive a la desvinculación de la persona
 

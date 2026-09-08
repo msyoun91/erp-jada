@@ -517,3 +517,65 @@ da `ConfirmModal`: botón deshabilitado mientras espera, después toast de éxit
 
 Si algún día se agrega optimistic, se agrega app-wide y no acá: es una decisión de
 `decisiones/global.md`, no de este módulo.
+
+---
+
+## El vacío de una sección no se dibuja como el vacío de una página
+
+`.empty-state` es una caja punteada de `p-[60px]`. A nivel de vista está bien: es lo único en
+pantalla. En una ficha hay tres o cuatro secciones vacías a la vez —Empresas, Personas, Obras—
+y cuatro cajas de 180px son media pantalla de nada.
+
+**Decidido:** misma clase, padding pisado (`empty-state p-8`) en los seis vacíos de sección de
+las tres fichas. No una clase nueva: lo que el hallazgo M3 pedía era que el estado vacío se
+dibujara igual en todo el módulo —había cuatro tratamientos distintos—, y con el padding pisado
+se dibuja igual. Una `.empty-state-sm` sería el quinto.
+
+---
+
+## El estado va en el encabezado, "Pendiente" no
+
+`BADGE_ESTADO` vivía en `ObrasView` y la ficha mostraba el estado como `dt/dd` gris. Ahora el
+mapa está en `types.ts` al lado de `LABEL_ESTADO` y lo leen los dos.
+
+En la ficha, el `dt/dd` "Estado" salió de la grilla al entrar el badge: el mismo dato dos veces
+en la misma pantalla es la duplicación que la regla de fuente única prohíbe, y el badge es la
+forma que ya tiene en el listado.
+
+**El badge "Pendiente" no se agregó, aunque la auditoría lo pedía.** `EstadoPendiente` ya
+renderiza un bloque entero dos renglones abajo, con el motivo y qué se puede hacer. En el
+listado el chip existe porque no hay lugar para el bloque; en la ficha sí lo hay, y repetir la
+palabra arriba no agrega nada.
+
+---
+
+## El filtro vive donde llega su efecto
+
+Auditoría y Pendientes son tabs hermanas y tenían el filtro de días en lugares distintos. La
+tentación era unificar la posición.
+
+**Decidido: no.** En Auditoría el `?dias=` acota las dos secciones (accesos y transferencias),
+así que es de la página y va arriba. En Pendientes acota solo "Ya resueltas" —la cola muestra
+todo lo que espera, sin ventana— así que vive adentro de esa card. Subirlo diría que también
+filtra la cola.
+
+Por el mismo criterio bajó el filtro de usuario de Auditoría, que estaba en la toolbar de la
+página filtrando una sola de las dos secciones.
+
+Lo que sí se unificó es el control: `components/ui/FiltroDias.tsx`, que además exporta
+`DIAS_OPCIONES` — el array `[7, 30, 90]` estaba escrito seis veces, dos de ellas en las páginas,
+donde decide si un `?dias=45` escrito a mano se acepta o cae al default.
+
+---
+
+## `Dato` y `Observaciones` son del módulo, no de `components/ui/`
+
+El par `dt/dd` de las fichas estaba escrito nueve veces con la misma forma. Salió a
+`modules/obras/components/Dato.tsx` y no a `components/ui/`: la regla es que algo sube cuando lo
+usan 2+ módulos, y esto lo usan tres fichas del mismo.
+
+`Dato` recibe `React.ReactNode` y no `string | null` porque dos valores no son texto: teléfono y
+email de la ficha de persona son `<a>` de `tel:` y `mailto:`, y la localidad de la empresa
+concatena la provincia. El guard es `if (!valor) return null`, que cubre el `""` que devuelve un
+campo vacío igual que el `null` de la columna.
+

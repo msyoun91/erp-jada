@@ -15,6 +15,7 @@ import {
   setActivoObra,
 } from "../actions";
 import {
+  BADGE_ESTADO,
   LABEL_ESTADO,
   LABEL_MOTIVO_PERDIDA,
   LABEL_ORIGEN,
@@ -116,6 +117,12 @@ export function ObraDetalle({
             ← Obras
           </Link>
           <h2 className="t-h2 min-w-0 flex-1 truncate">{obra.nombre}</h2>
+          {/* El listado codifica el estado por color y la ficha lo bajaba a un
+              `dt/dd` gris. Pendiente no se repite acá: `EstadoPendiente` ya
+              pone el bloque completo dos renglones abajo. */}
+          <span className={`badge shrink-0 ${BADGE_ESTADO[obra.estado]}`}>
+            {LABEL_ESTADO[obra.estado]}
+          </span>
         </div>
         {/* Editar es la acción de la ficha y queda a la vista; el resto va al
             menú. Desactivar en rojo sólido acá era el elemento más brillante
@@ -177,7 +184,6 @@ export function ObraDetalle({
         obra={obra}
         responsable={responsable}
         labels={{
-          estado: LABEL_ESTADO,
           tipo: LABEL_TIPO,
           origen: LABEL_ORIGEN,
           provincia: LABEL_PROVINCIA,
@@ -196,7 +202,9 @@ export function ObraDetalle({
           )}
         </div>
         {empresas.length === 0 ? (
-          <p className="t-caption">Ninguna empresa vinculada todavía.</p>
+          <div className="empty-state p-8">
+            <p className="t-body-m">Ninguna empresa vinculada todavía.</p>
+          </div>
         ) : (
           <ul className="flex flex-col gap-2">
             {empresas.map((e) => (
@@ -264,7 +272,9 @@ export function ObraDetalle({
           )}
         </div>
         {personas.length === 0 ? (
-          <p className="t-caption">Ninguna persona vinculada todavía.</p>
+          <div className="empty-state p-8">
+            <p className="t-body-m">Ninguna persona vinculada todavía.</p>
+          </div>
         ) : (
           <ul className="flex flex-col gap-2">
             {personas.map((p) => {
@@ -344,13 +354,16 @@ export function ObraDetalle({
       </section>
 
       {transferencias.length > 0 && (
-        <section className="card p-4">
-          <h3 className="t-h3 mb-3">Historial de responsables</h3>
+        <section>
+          <h3 className="t-h3 mb-2">Historial de responsables</h3>
           {/* La obra la ve su responsable actual, así que sin esto "¿por qué
               no la veo más?" no tiene respuesta dentro de la app. */}
-          <ul className="flex flex-col gap-1">
+          <ul className="card flex flex-col p-4">
             {transferencias.map((t) => (
-              <li key={t.id} className="t-body-m">
+              <li
+                key={t.id}
+                className="t-body-m border-b border-border py-2 first:pt-0 last:border-b-0 last:pb-0"
+              >
                 <span className="t-caption">{formatFechaHora(t.created_at)}</span> — de{" "}
                 <span className="font-semibold">{t.de}</span> a{" "}
                 <span className="font-semibold">{t.a}</span>

@@ -46,12 +46,13 @@ export function EmpresasView({
       <Paginacion {...paginado} etiqueta="empresas" />
 
       {filtradas.length === 0 ? (
-        <div className="card flex flex-col items-center gap-2 p-8 text-center">
-          <Briefcase size={32} strokeWidth={1.5} className="text-text-tertiary" />
-          <p className="t-body-m">
+        <div className="empty-state">
+          <Briefcase size={30} strokeWidth={1.5} className="mx-auto mb-3" />
+          <p className="t-h3">{empresas.length === 0 ? "Sin empresas todavía" : "Sin resultados"}</p>
+          <p className="t-body-m mt-1">
             {empresas.length === 0
-              ? "Todavía no hay empresas cargadas."
-              : "Ninguna empresa coincide con la búsqueda."}
+              ? 'Creá la primera con "Nueva empresa".'
+              : "Probá con otro término de búsqueda."}
           </p>
         </div>
       ) : (
@@ -60,7 +61,7 @@ export function EmpresasView({
             <li key={e.id}>
               <Link
                 href={`/obras/empresas/${e.id}`}
-                className={`card tap-target flex flex-col gap-y-1 p-3 hover:bg-bg-subtle md:grid md:items-center md:gap-x-3 ${COLUMNAS}`}
+                className={`card card-link tap-target flex flex-col gap-y-1 p-3 hover:bg-bg-subtle md:grid md:items-center md:gap-x-3 ${COLUMNAS}`}
               >
                 <span className="flex min-w-0 items-center gap-2">
                   <span className="t-body-m truncate font-semibold text-text-primary">

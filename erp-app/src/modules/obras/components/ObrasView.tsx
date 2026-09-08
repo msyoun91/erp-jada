@@ -6,6 +6,7 @@ import { Building2, Plus } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import {
+  BADGE_ESTADO,
   ESTADOS_OBRA,
   LABEL_ESTADO,
   LABEL_TIPO,
@@ -15,13 +16,6 @@ import {
   type TipoObra,
 } from "../types";
 import { ObraFormPanel } from "./ObraFormPanel";
-
-const BADGE_ESTADO: Record<EstadoObra, string> = {
-  idea: "badge-neutral",
-  en_construccion: "badge-info",
-  perdida: "badge-error",
-  terminada: "badge-success",
-};
 
 // Abajo de `md` la fila son dos líneas: nombre arriba, metadata abajo. Arriba,
 // grilla de anchos fijos — con la metadata como items `flex-wrap` el único que
@@ -60,7 +54,7 @@ export function ObrasView({
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar obra o localidad…" />
         <select
-          className="input w-auto py-1.5"
+          className="input w-auto"
           value={estado}
           onChange={(e) => setEstado(e.target.value as EstadoObra | "")}
           aria-label="Filtrar por estado"
@@ -73,7 +67,7 @@ export function ObrasView({
           ))}
         </select>
         <select
-          className="input w-auto py-1.5"
+          className="input w-auto"
           value={tipo}
           onChange={(e) => setTipo(e.target.value as TipoObra | "")}
           aria-label="Filtrar por tipo"
@@ -100,18 +94,16 @@ export function ObrasView({
       )}
 
       {filtradas.length === 0 ? (
-        <div className="card flex flex-col items-center gap-2 p-8 text-center">
-          <Building2 size={32} strokeWidth={1.5} className="text-text-tertiary" />
-          <p className="t-body-m">
+        <div className="empty-state">
+          <Building2 size={30} strokeWidth={1.5} className="mx-auto mb-3" />
+          <p className="t-h3">{obras.length === 0 ? "Sin obras todavía" : "Sin resultados"}</p>
+          <p className="t-body-m mt-1">
             {obras.length === 0
-              ? "Todavía no hay obras cargadas."
-              : "Ninguna obra coincide con el filtro."}
+              ? puedeCrear
+                ? "Alcanza con el nombre y el tipo — el resto se completa después."
+                : 'Creá la primera con "Nueva obra".'
+              : "Probá con otro término o con otro filtro."}
           </p>
-          {obras.length === 0 && puedeCrear && (
-            <p className="t-caption">
-              Alcanza con el nombre y el tipo — el resto se completa después.
-            </p>
-          )}
         </div>
       ) : (
         <ul className="flex flex-col gap-2">
@@ -119,7 +111,7 @@ export function ObrasView({
             <li key={o.id}>
               <Link
                 href={`/obras/${o.id}`}
-                className={`card tap-target flex flex-col gap-y-1 p-3 hover:bg-bg-subtle md:grid md:items-center md:gap-x-3 ${
+                className={`card card-link tap-target flex flex-col gap-y-1 p-3 hover:bg-bg-subtle md:grid md:items-center md:gap-x-3 ${
                   puedeTransferir ? COLUMNAS_CON_RESPONSABLE : COLUMNAS
                 }`}
               >

@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
+import { DIAS_OPCIONES } from "@/components/ui/FiltroDias";
 import { puedeAprobar, puedeVerPendientes } from "@/modules/obras/permissions";
 import { getHistorialAprobaciones, getPendientes } from "@/modules/obras/queries";
 import { PendientesView } from "@/modules/obras/components/PendientesView";
-
-const DIAS_VALIDOS = [7, 30, 90];
 
 export default async function ObrasPendientesPage({
   searchParams,
@@ -14,7 +13,7 @@ export default async function ObrasPendientesPage({
 
   const { dias: diasParam } = await searchParams;
   const pedido = Number(diasParam);
-  const dias = DIAS_VALIDOS.includes(pedido) ? pedido : 30;
+  const dias = DIAS_OPCIONES.includes(pedido) ? pedido : 30;
 
   const [pendientes, historial, aprobar] = await Promise.all([
     getPendientes(),

@@ -1,5 +1,4 @@
 import type {
-  EstadoObra,
   MotivoPerdida,
   Obra,
   OrigenObra,
@@ -7,16 +6,7 @@ import type {
   TipoObra,
   Usuario,
 } from "../types";
-
-function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
-  if (valor === null || valor === "") return null;
-  return (
-    <div>
-      <dt className="t-caption">{etiqueta}</dt>
-      <dd className="t-body-m">{valor}</dd>
-    </div>
-  );
-}
+import { Dato, Observaciones } from "./Dato";
 
 export function DatosGenerales({
   obra,
@@ -26,7 +16,6 @@ export function DatosGenerales({
   obra: Obra;
   responsable: Usuario | null;
   labels: {
-    estado: Record<EstadoObra, string>;
     tipo: Record<TipoObra, string>;
     origen: Record<OrigenObra, string>;
     provincia: Record<Provincia, string>;
@@ -35,8 +24,8 @@ export function DatosGenerales({
 }) {
   return (
     <section className="card p-4">
-      <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
-        <Dato etiqueta="Estado" valor={labels.estado[obra.estado]} />
+      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+        {/* El estado no está acá: es el badge del encabezado. */}
         <Dato etiqueta="Tipo" valor={labels.tipo[obra.tipo]} />
         <Dato etiqueta="Responsable" valor={responsable?.nombre ?? null} />
         <Dato etiqueta="Dirección" valor={obra.direccion} />
@@ -48,9 +37,7 @@ export function DatosGenerales({
         <Dato etiqueta="Origen" valor={obra.origen ? labels.origen[obra.origen] : null} />
       </dl>
 
-      {obra.observaciones && (
-        <p className="t-body-m mt-4 whitespace-pre-wrap">{obra.observaciones}</p>
-      )}
+      <Observaciones texto={obra.observaciones} />
 
       {/* El motivo se conserva aunque la obra salga de "perdida": es histórico. */}
       {obra.motivo_perdida && (
@@ -60,7 +47,7 @@ export function DatosGenerales({
           </p>
           <p className="t-body-m font-semibold">{labels.motivo[obra.motivo_perdida]}</p>
           {obra.detalle_perdida && (
-            <p className="t-body-m mt-1 whitespace-pre-wrap">{obra.detalle_perdida}</p>
+            <p className="t-body-m mt-1 whitespace-pre-wrap break-words">{obra.detalle_perdida}</p>
           )}
         </div>
       )}

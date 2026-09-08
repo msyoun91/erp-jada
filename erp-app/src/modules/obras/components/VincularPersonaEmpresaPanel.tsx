@@ -150,9 +150,10 @@ export function VincularPersonaEmpresaPanel({
           />
         </div>
 
-        <label className="flex min-h-[44px] items-center gap-2">
+        <label className="tap-target flex cursor-pointer items-center gap-2">
           <input
             type="checkbox"
+            className="h-4 w-4 shrink-0 accent-brand-700"
             checked={esPrincipal}
             onChange={(e) => setEsPrincipal(e.target.checked)}
           />

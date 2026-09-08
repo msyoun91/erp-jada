@@ -135,7 +135,7 @@ export function EmpresaFormPanel({
           <input className="input" {...register("nombre_comercial", { onBlur: chequearDuplicados })} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="t-label mb-1 block">Teléfono</label>
             <input className="input" {...register("telefono")} />
@@ -157,7 +157,7 @@ export function EmpresaFormPanel({
           <input className="input" {...register("direccion")} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="t-label mb-1 block">Localidad</label>
             <input className="input" {...register("localidad")} />

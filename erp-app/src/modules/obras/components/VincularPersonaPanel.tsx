@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { buscarDuplicadosPersona, editarVinculoPersona, vincularPersona } from "../actions";
@@ -140,9 +141,10 @@ export function VincularPersonaPanel({
                   {puedeCrearPersona && (
                     <button
                       type="button"
-                      className="btn btn-ghost btn-sm mt-1"
+                      className="btn btn-secondary btn-sm mt-2"
                       onClick={() => setCreandoPersona(true)}
                     >
+                      <Plus size={14} />
                       No aparece — crearla
                     </button>
                   )}

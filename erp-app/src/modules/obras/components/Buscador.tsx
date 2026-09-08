@@ -40,7 +40,11 @@ export function Buscador({
     // del repo corta el setState síncrono acá, y con razón — encadena renders.
     let vigente = true;
     buscar("").then((r) => {
-      if (vigente) setResultados(r);
+      if (!vigente) return;
+      setResultados(r);
+      // También marca `buscado`: si la primera carga vuelve vacía, el panel
+      // tiene que decirlo en vez de quedarse mudo esperando que alguien tipee.
+      setBuscado(true);
     });
 
     return () => {
@@ -65,7 +69,7 @@ export function Buscador({
             className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary"
           />
           <input
-            className={`input py-1.5 pl-8 ${error ? "input-error" : ""}`}
+            className={`input pl-8 ${error ? "input-error" : ""}`}
             placeholder={placeholder}
             aria-label={placeholder}
             value={texto}
@@ -73,20 +77,30 @@ export function Buscador({
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), correr())}
           />
         </div>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={correr}>
-          {buscando ? "…" : "Buscar"}
+        {/* El label no cambia: mutarlo a "…" hacía saltar el ancho del botón
+            justo cuando el usuario todavía lo tiene abajo del dedo. */}
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          disabled={buscando}
+          onClick={correr}
+        >
+          {buscando && (
+            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-border border-t-brand-500" />
+          )}
+          Buscar
         </button>
       </div>
 
       {error && <p className="input-error-text">{error}</p>}
 
       {resultados.length > 0 && (
-        <ul className="mt-2 flex max-h-64 flex-col gap-1 overflow-y-auto">
+        <ul className="mt-2 flex flex-col gap-1">
           {resultados.map((o) => (
             <li key={o.id}>
               <button
                 type="button"
-                className="card tap-target flex w-full flex-col justify-center gap-0.5 p-2 text-left hover:bg-bg-subtle"
+                className="card card-link tap-target flex w-full flex-col justify-center gap-0.5 p-2 text-left hover:bg-bg-subtle"
                 onClick={() => onElegir(o)}
               >
                 <span className="t-body-m w-full truncate font-semibold text-text-primary">

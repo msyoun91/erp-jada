@@ -48,12 +48,15 @@ export function PersonasView({
       )}
 
       {filtradas.length === 0 ? (
-        <div className="card flex flex-col items-center gap-2 p-8 text-center">
-          <UserRound size={32} strokeWidth={1.5} className="text-text-tertiary" />
-          <p className="t-body-m">
+        <div className="empty-state">
+          <UserRound size={30} strokeWidth={1.5} className="mx-auto mb-3" />
+          <p className="t-h3">
+            {personas.length === 0 ? "Sin personas a tu alcance" : "Sin resultados"}
+          </p>
+          <p className="t-body-m mt-1">
             {personas.length === 0
-              ? "Todavía no hay personas a tu alcance."
-              : "Ninguna persona coincide con la búsqueda."}
+              ? "Vas a ver las que cargues vos y las de tus obras."
+              : "Probá con otro término de búsqueda."}
           </p>
         </div>
       ) : (
@@ -64,7 +67,7 @@ export function PersonasView({
                   ficha, que registra el acceso. */}
               <Link
                 href={`/obras/personas/${p.id}`}
-                className="card tap-target flex flex-wrap items-center gap-x-3 gap-y-1 p-3 hover:bg-bg-subtle"
+                className="card card-link tap-target flex flex-wrap items-center gap-x-3 gap-y-1 p-3 hover:bg-bg-subtle"
               >
                 <span className="t-body-m min-w-0 flex-1 truncate font-semibold">
                   {p.nombre} {p.apellido ?? ""}

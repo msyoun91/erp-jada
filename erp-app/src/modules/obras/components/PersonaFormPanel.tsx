@@ -129,7 +129,7 @@ export function PersonaFormPanel({
           />
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="t-label t-label-req mb-1 block">Nombre</label>
             <input
@@ -144,7 +144,7 @@ export function PersonaFormPanel({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="t-label mb-1 block">Teléfono</label>
             <input className="input" {...register("telefono", { onBlur: chequearDuplicados })} />

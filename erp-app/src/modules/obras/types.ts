@@ -113,6 +113,15 @@ export const LABEL_ESTADO: Record<EstadoObra, string> = {
   terminada: "Terminada",
 };
 
+// El estado es dato codificado por color: vive al lado de su label para que el
+// listado y la ficha no elijan cada uno el suyo.
+export const BADGE_ESTADO: Record<EstadoObra, string> = {
+  idea: "badge-neutral",
+  en_construccion: "badge-info",
+  perdida: "badge-error",
+  terminada: "badge-success",
+};
+
 export const LABEL_TIPO: Record<TipoObra, string> = {
   edificio: "Edificio",
   casa: "Casa",

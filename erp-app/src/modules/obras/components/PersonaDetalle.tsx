@@ -9,6 +9,7 @@ import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { desactivarPersona, desvincularPersonaEmpresa } from "../actions";
 import { copiarEnlace } from "../copiarEnlace";
 import { LABEL_ESTADO, LABEL_ROL_PERSONA, type EstadoObra, type RolPersona } from "../types";
+import { Dato, Observaciones } from "./Dato";
 import { EstadoPendiente } from "./EstadoPendiente";
 import { PersonaFormPanel, type PersonaEditable } from "./PersonaFormPanel";
 import { VincularObraPanel } from "./VincularObraPanel";
@@ -118,37 +119,30 @@ export function PersonaDetalle({
       />
 
       <section className="card p-4">
-        <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          {persona.telefono && (
-            <div>
-              <dt className="t-caption">Teléfono</dt>
-              <dd className="t-body-m">
+        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+          <Dato
+            etiqueta="Teléfono"
+            valor={
+              persona.telefono && (
                 <a href={`tel:${persona.telefono}`} className="hover:underline">
                   {persona.telefono}
                 </a>
-              </dd>
-            </div>
-          )}
-          {persona.whatsapp && (
-            <div>
-              <dt className="t-caption">WhatsApp</dt>
-              <dd className="t-body-m">{persona.whatsapp}</dd>
-            </div>
-          )}
-          {persona.email && (
-            <div>
-              <dt className="t-caption">Email</dt>
-              <dd className="t-body-m">
+              )
+            }
+          />
+          <Dato etiqueta="WhatsApp" valor={persona.whatsapp} />
+          <Dato
+            etiqueta="Email"
+            valor={
+              persona.email && (
                 <a href={`mailto:${persona.email}`} className="hover:underline">
                   {persona.email}
                 </a>
-              </dd>
-            </div>
-          )}
+              )
+            }
+          />
         </dl>
-        {persona.observaciones && (
-          <p className="t-body-m mt-4 whitespace-pre-wrap">{persona.observaciones}</p>
-        )}
+        <Observaciones texto={persona.observaciones} />
       </section>
 
       <section>
@@ -162,7 +156,9 @@ export function PersonaDetalle({
           )}
         </div>
         {empresas.length === 0 ? (
-          <p className="t-caption">Sin empresa conocida.</p>
+          <div className="empty-state p-8">
+            <p className="t-body-m">Sin empresa conocida.</p>
+          </div>
         ) : (
           <ul className="flex flex-col gap-2">
             {empresas.map((e) => (
@@ -217,7 +213,9 @@ export function PersonaDetalle({
           )}
         </div>
         {obras.length === 0 ? (
-          <p className="t-caption">No participa en ninguna de tus obras.</p>
+          <div className="empty-state p-8">
+            <p className="t-body-m">No participa en ninguna de tus obras.</p>
+          </div>
         ) : (
           <ul className="flex flex-col gap-2">
             {obras.map((o) => (

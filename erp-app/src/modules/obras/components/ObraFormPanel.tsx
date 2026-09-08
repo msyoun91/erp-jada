@@ -130,7 +130,7 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
           <p className="t-caption mt-1">No hace falta que sea el nombre oficial del proyecto.</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="t-label t-label-req mb-1 block">Tipo</label>
             <select className="input" {...register("tipo")}>
@@ -190,7 +190,7 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
           <input className="input" {...register("direccion", { onBlur: chequearDuplicados })} />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="t-label mb-1 block">Localidad</label>
             <input className="input" {...register("localidad", { onBlur: chequearDuplicados })} />

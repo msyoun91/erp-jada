@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import {
@@ -191,9 +192,10 @@ export function VincularEmpresaPanel({
                   {puedeCrearEmpresa && (
                     <button
                       type="button"
-                      className="btn btn-ghost btn-sm mt-1"
+                      className="btn btn-secondary btn-sm mt-2"
                       onClick={() => setCreandoEmpresa(true)}
                     >
+                      <Plus size={14} />
                       No aparece — crearla
                     </button>
                   )}
@@ -220,7 +222,7 @@ export function VincularEmpresaPanel({
               <div className="mb-1 flex flex-wrap items-center gap-2">
                 <label className="t-label flex-1">Gente de esta empresa</label>
                 <select
-                  className="input w-auto py-1.5"
+                  className="input w-auto"
                   defaultValue=""
                   aria-label="Rol para todas las tildadas"
                   onChange={(e) => rolParaTodas(e.target.value as RolPersona | "")}
@@ -245,9 +247,10 @@ export function VincularEmpresaPanel({
                       key={p.persona_id}
                       className="card flex flex-wrap items-center gap-x-3 gap-y-2 p-3"
                     >
-                      <label className="flex min-h-[44px] min-w-0 flex-1 items-center gap-2">
+                      <label className="tap-target flex min-w-0 flex-1 cursor-pointer items-center gap-2">
                         <input
                           type="checkbox"
+                          className="h-4 w-4 shrink-0 accent-brand-700"
                           checked={fila?.marcada ?? false}
                           disabled={p.ya_en_obra}
                           onChange={(e) => cambiar(p.persona_id, { marcada: e.target.checked })}
@@ -263,7 +266,7 @@ export function VincularEmpresaPanel({
                       )}
                       {!p.ya_en_obra && (
                         <select
-                          className="input w-auto py-1.5"
+                          className="input w-auto"
                           value={fila?.rol ?? ""}
                           aria-label={`Rol de ${p.nombre} en esta obra`}
                           onChange={(e) =>

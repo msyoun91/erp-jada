@@ -16,6 +16,7 @@ import {
   type EstadoObra,
   type RolEmpresa,
 } from "../types";
+import { Dato, Observaciones } from "./Dato";
 import { EmpresaFormPanel } from "./EmpresaFormPanel";
 import { EstadoPendiente } from "./EstadoPendiente";
 import { VincularObraPanel } from "./VincularObraPanel";
@@ -98,50 +99,21 @@ export function EmpresaDetalle({
       />
 
       <section className="card p-4">
-        <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
-          {empresa.nombre_comercial && (
-            <div>
-              <dt className="t-caption">Nombre comercial</dt>
-              <dd className="t-body-m">{empresa.nombre_comercial}</dd>
-            </div>
-          )}
-          {empresa.telefono && (
-            <div>
-              <dt className="t-caption">Teléfono</dt>
-              <dd className="t-body-m">{empresa.telefono}</dd>
-            </div>
-          )}
-          {empresa.email && (
-            <div>
-              <dt className="t-caption">Email</dt>
-              <dd className="t-body-m">{empresa.email}</dd>
-            </div>
-          )}
-          {empresa.website && (
-            <div>
-              <dt className="t-caption">Website</dt>
-              <dd className="t-body-m">{empresa.website}</dd>
-            </div>
-          )}
-          {empresa.direccion && (
-            <div>
-              <dt className="t-caption">Dirección</dt>
-              <dd className="t-body-m">{empresa.direccion}</dd>
-            </div>
-          )}
-          {empresa.localidad && (
-            <div>
-              <dt className="t-caption">Localidad</dt>
-              <dd className="t-body-m">
-                {empresa.localidad}
-                {empresa.provincia && `, ${LABEL_PROVINCIA[empresa.provincia]}`}
-              </dd>
-            </div>
-          )}
+        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+          <Dato etiqueta="Nombre comercial" valor={empresa.nombre_comercial} />
+          <Dato etiqueta="Teléfono" valor={empresa.telefono} />
+          <Dato etiqueta="Email" valor={empresa.email} />
+          <Dato etiqueta="Website" valor={empresa.website} />
+          <Dato etiqueta="Dirección" valor={empresa.direccion} />
+          <Dato
+            etiqueta="Localidad"
+            valor={
+              empresa.localidad &&
+              `${empresa.localidad}${empresa.provincia ? `, ${LABEL_PROVINCIA[empresa.provincia]}` : ""}`
+            }
+          />
         </dl>
-        {empresa.observaciones && (
-          <p className="t-body-m mt-4 whitespace-pre-wrap">{empresa.observaciones}</p>
-        )}
+        <Observaciones texto={empresa.observaciones} />
       </section>
 
       <section>
@@ -157,7 +129,9 @@ export function EmpresaDetalle({
           )}
         </div>
         {personas.length === 0 ? (
-          <p className="t-caption">Ninguna persona vinculada a tu alcance.</p>
+          <div className="empty-state p-8">
+            <p className="t-body-m">Ninguna persona vinculada a tu alcance.</p>
+          </div>
         ) : (
           <ul className="flex flex-col gap-2">
             {personas.map((p) => (
@@ -190,7 +164,9 @@ export function EmpresaDetalle({
         </div>
         {obras.length === 0 ? (
           // Las obras ajenas no se ven: la empresa es compartida, las obras no.
-          <p className="t-caption">Ninguna de tus obras tiene vinculada esta empresa.</p>
+          <div className="empty-state p-8">
+            <p className="t-body-m">Ninguna de tus obras tiene vinculada esta empresa.</p>
+          </div>
         ) : (
           <ul className="flex flex-col gap-2">
             {obras.map((o) => (
