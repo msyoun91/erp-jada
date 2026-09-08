@@ -50,23 +50,30 @@ export function EmpresaDetalle({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-2">
-        <Link href="/obras/empresas" className="btn btn-ghost btn-sm">
-          ← Empresas
-        </Link>
-        <h2 className="t-h2 min-w-0 flex-1 truncate">{empresa.razon_social}</h2>
-        <CopiarEnlace ruta={`/obras/empresas/${empresa.id}`} />
-        {permisos.editar && (
-          <>
-            <button className="btn btn-secondary btn-sm" onClick={() => setEditando(true)}>
-              <Pencil size={14} />
-              Editar
-            </button>
-            <button className="btn btn-danger btn-sm" onClick={() => setDesactivando(true)}>
-              Desactivar
-            </button>
-          </>
-        )}
+      {/* Abajo de `sm` el título va en su propia línea: compartiendo la fila
+          con las acciones se comía hasta quedar en una letra, y "Desactivar"
+          quedaba arriba del nombre de lo que se está mirando. */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:flex-1">
+          <Link href="/obras/empresas" className="btn btn-ghost btn-sm shrink-0">
+            ← Empresas
+          </Link>
+          <h2 className="t-h2 min-w-0 flex-1 truncate">{empresa.razon_social}</h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <CopiarEnlace ruta={`/obras/empresas/${empresa.id}`} />
+          {permisos.editar && (
+            <>
+              <button className="btn btn-secondary btn-sm" onClick={() => setEditando(true)}>
+                <Pencil size={14} />
+                Editar
+              </button>
+              <button className="btn btn-danger btn-sm" onClick={() => setDesactivando(true)}>
+                Desactivar
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <EstadoPendiente
@@ -143,7 +150,7 @@ export function EmpresaDetalle({
               <li key={p.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 p-3">
                 <Link
                   href={`/obras/personas/${p.persona_id}`}
-                  className="t-body-m min-w-0 flex-1 truncate font-semibold hover:underline"
+                  className="t-body-m min-w-0 basis-full truncate font-semibold hover:underline sm:basis-0 sm:grow"
                 >
                   {p.nombre}
                 </Link>
@@ -174,7 +181,7 @@ export function EmpresaDetalle({
               <li key={o.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 p-3">
                 <Link
                   href={`/obras/${o.obra_id}`}
-                  className="t-body-m min-w-0 flex-1 truncate font-semibold hover:underline"
+                  className="t-body-m min-w-0 basis-full truncate font-semibold hover:underline sm:basis-0 sm:grow"
                 >
                   {o.nombre}
                 </Link>

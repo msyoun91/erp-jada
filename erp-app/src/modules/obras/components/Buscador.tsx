@@ -86,11 +86,13 @@ export function Buscador({
             <li key={o.id}>
               <button
                 type="button"
-                className="card flex min-h-[44px] w-full items-center gap-2 p-2 text-left hover:bg-bg-subtle"
+                className="card tap-target flex w-full flex-col justify-center gap-0.5 p-2 text-left hover:bg-bg-subtle"
                 onClick={() => onElegir(o)}
               >
-                <span className="t-body-m min-w-0 flex-1 truncate font-semibold">{o.etiqueta}</span>
-                {o.detalle && <span className="t-caption shrink-0">{o.detalle}</span>}
+                <span className="t-body-m w-full truncate font-semibold text-text-primary">
+                  {o.etiqueta}
+                </span>
+                {o.detalle && <span className="t-caption w-full truncate">{o.detalle}</span>}
               </button>
             </li>
           ))}

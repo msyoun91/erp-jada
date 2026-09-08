@@ -355,3 +355,34 @@ La pantalla acompaña: `ObraDetalle` solo ofrece "Referente" sobre personas con 
 Rechazar desactiva la fila, así que sale de los listados: quien la cargó se entera solo si entra a la ficha por URL directa. El motivo está guardado y la ficha lo muestra, pero nadie le avisa.
 
 No se resolvió acá porque el módulo no tiene ningún canal de aviso y armarlo para esto sería construir media notificación. Queda en `BACKLOG.md` con el camino barato anotado.
+
+---
+
+## La fila de listado se escribe una vez y cambia de display
+
+Los listados eran una fila `flex-wrap` con el nombre en `min-w-0 flex-1 truncate` y la metadata
+como items que no se encogen. Es la peor repartición posible del ancho: el único que cede es el
+dato que identifica la fila, así que a 390px "Complejo Costa Norte" quedaba en `Co…` y la ficha
+titulaba `C.`. En escritorio el mismo `flex-1` empujaba los chips contra el borde derecho, a
+distinta altura horizontal en cada fila — la lista no se podía escanear en vertical.
+
+**Decidido:** abajo de `md` la fila es `flex-col` —nombre arriba, metadata abajo— y arriba es
+`md:grid` con anchos de columna fijos.
+
+El marcado se escribe **una sola vez**: el envoltorio de la metadata lleva `md:contents`, así
+que en mobile es la línea que envuelve y en escritorio se disuelve y sus hijos pasan a ser
+celdas de la grilla. La alternativa era duplicar el bloque con `hidden`/`md:hidden`, que es el
+mismo dato escrito dos veces y dos lugares donde olvidarse de un campo.
+
+Consecuencia que hay que respetar: **las celdas opcionales se renderizan siempre**. Un
+`{o.localidad && …}` corre las columnas de las filas sin localidad. Van con
+`className={valor ? "truncate" : "hidden md:block"}` — presente en la grilla, ausente en la
+línea de mobile, donde una celda vacía dejaría un hueco de `gap`.
+
+`PersonasView` no entró: su fila es nombre + badge, no hay metadata que le coma el ancho ni
+columnas que alinear. Una grilla de una columna es la fila que ya tenía.
+
+Lo mismo pero con `basis-full sm:basis-0 sm:grow` en las filas de las fichas y de Pendientes,
+que llevan botones intercalados y todavía esperan el `OverflowMenu`. No `sm:basis-auto`:
+`flex-1` y `basis-auto` son familias distintas de utilidades de Tailwind y quién gana lo decide
+el orden en que se generan, no el orden en el `className`. La base se fija explícita.

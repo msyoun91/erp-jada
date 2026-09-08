@@ -8,6 +8,10 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import type { Empresa } from "../types";
 import { EmpresaFormPanel } from "./EmpresaFormPanel";
 
+// Misma fila de dos líneas en mobile y grilla de anchos fijos en escritorio que
+// el listado de obras: la metadata no le come el ancho a la razón social.
+const COLUMNAS = "md:grid-cols-[minmax(0,1fr)_10rem_9rem_9rem]";
+
 export function EmpresasView({
   empresas,
   puedeCrear,
@@ -56,15 +60,23 @@ export function EmpresasView({
             <li key={e.id}>
               <Link
                 href={`/obras/empresas/${e.id}`}
-                className="card flex min-h-[44px] flex-wrap items-center gap-x-3 gap-y-1 p-3 hover:bg-bg-subtle"
+                className={`card tap-target flex flex-col gap-y-1 p-3 hover:bg-bg-subtle md:grid md:items-center md:gap-x-3 ${COLUMNAS}`}
               >
-                <span className="t-body-m min-w-0 flex-1 truncate font-semibold">
-                  {e.razon_social}
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="t-body-m truncate font-semibold text-text-primary">
+                    {e.razon_social}
+                  </span>
+                  {e.pendiente && <span className="badge badge-warning shrink-0">Pendiente</span>}
                 </span>
-                {e.pendiente && <span className="badge badge-warning">Pendiente</span>}
-                {e.nombre_comercial && <span className="t-caption">{e.nombre_comercial}</span>}
-                {e.localidad && <span className="t-caption">{e.localidad}</span>}
-                {e.telefono && <span className="t-caption">{e.telefono}</span>}
+                <span className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1 md:contents">
+                  <span className={e.nombre_comercial ? "truncate" : "hidden md:block"}>
+                    {e.nombre_comercial}
+                  </span>
+                  <span className={e.localidad ? "truncate" : "hidden md:block"}>
+                    {e.localidad}
+                  </span>
+                  <span className={e.telefono ? "truncate" : "hidden md:block"}>{e.telefono}</span>
+                </span>
               </Link>
             </li>
           ))}

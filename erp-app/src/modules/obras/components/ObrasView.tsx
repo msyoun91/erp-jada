@@ -23,6 +23,14 @@ const BADGE_ESTADO: Record<EstadoObra, string> = {
   terminada: "badge-success",
 };
 
+// Abajo de `md` la fila son dos líneas: nombre arriba, metadata abajo. Arriba,
+// grilla de anchos fijos — con la metadata como items `flex-wrap` el único que
+// cedía ancho era el nombre, que es el dato que identifica la fila, y en
+// escritorio los chips quedaban a distinta altura horizontal en cada fila.
+const COLUMNAS = "md:grid-cols-[minmax(0,1fr)_7.5rem_9rem_9rem_11rem]";
+const COLUMNAS_CON_RESPONSABLE =
+  "md:grid-cols-[minmax(0,1fr)_7.5rem_9rem_9rem_11rem_8rem]";
+
 export function ObrasView({
   obras,
   puedeCrear,
@@ -111,22 +119,40 @@ export function ObrasView({
             <li key={o.id}>
               <Link
                 href={`/obras/${o.id}`}
-                className="card flex min-h-[44px] flex-wrap items-center gap-x-3 gap-y-1 p-3 hover:bg-bg-subtle"
+                className={`card tap-target flex flex-col gap-y-1 p-3 hover:bg-bg-subtle md:grid md:items-center md:gap-x-3 ${
+                  puedeTransferir ? COLUMNAS_CON_RESPONSABLE : COLUMNAS
+                }`}
               >
-                <span className="t-body-m min-w-0 flex-1 truncate font-semibold">{o.nombre}</span>
-                {/* Congelada: existe y la ve su responsable, pero todavía no
-                    se le puede vincular nada. */}
-                {o.pendiente && <span className="badge badge-warning">Pendiente</span>}
-                <span className={`badge ${BADGE_ESTADO[o.estado]}`}>{LABEL_ESTADO[o.estado]}</span>
-                <span className="t-caption">{LABEL_TIPO[o.tipo]}</span>
-                {o.localidad && <span className="t-caption">{o.localidad}</span>}
-                <span className="t-caption">
-                  {o.empresas} {o.empresas === 1 ? "empresa" : "empresas"} · {o.personas}{" "}
-                  {o.personas === 1 ? "persona" : "personas"}
+                <span className="flex min-w-0 items-center gap-2">
+                  <span className="t-body-m truncate font-semibold text-text-primary">
+                    {o.nombre}
+                  </span>
+                  {/* Congelada: existe y la ve su responsable, pero todavía no
+                      se le puede vincular nada. */}
+                  {o.pendiente && <span className="badge badge-warning shrink-0">Pendiente</span>}
                 </span>
-                {puedeTransferir && o.responsable && (
-                  <span className="t-caption">{o.responsable.nombre}</span>
-                )}
+                {/* `md:contents` disuelve este envoltorio en la grilla: una sola
+                    escritura del marcado sirve para la línea que envuelve en
+                    mobile y para las celdas de escritorio. Las celdas vacías se
+                    ocultan abajo de `md` para no dejar un hueco de `gap`. */}
+                <span className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1 md:contents">
+                  <span className={`badge shrink-0 md:justify-self-start ${BADGE_ESTADO[o.estado]}`}>
+                    {LABEL_ESTADO[o.estado]}
+                  </span>
+                  <span className="truncate">{LABEL_TIPO[o.tipo]}</span>
+                  <span className={o.localidad ? "truncate" : "hidden md:block"}>
+                    {o.localidad}
+                  </span>
+                  <span className="truncate">
+                    {o.empresas} {o.empresas === 1 ? "empresa" : "empresas"} · {o.personas}{" "}
+                    {o.personas === 1 ? "persona" : "personas"}
+                  </span>
+                  {puedeTransferir && (
+                    <span className={o.responsable ? "truncate" : "hidden md:block"}>
+                      {o.responsable?.nombre}
+                    </span>
+                  )}
+                </span>
               </Link>
             </li>
           ))}

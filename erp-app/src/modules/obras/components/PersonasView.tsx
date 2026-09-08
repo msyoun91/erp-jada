@@ -64,7 +64,7 @@ export function PersonasView({
                   ficha, que registra el acceso. */}
               <Link
                 href={`/obras/personas/${p.id}`}
-                className="card flex min-h-[44px] flex-wrap items-center gap-x-3 gap-y-1 p-3 hover:bg-bg-subtle"
+                className="card tap-target flex flex-wrap items-center gap-x-3 gap-y-1 p-3 hover:bg-bg-subtle"
               >
                 <span className="t-body-m min-w-0 flex-1 truncate font-semibold">
                   {p.nombre} {p.apellido ?? ""}

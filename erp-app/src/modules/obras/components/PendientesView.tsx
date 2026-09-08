@@ -81,9 +81,13 @@ export function PendientesView({
               return (
                 <li key={p.registro_id} className="card flex flex-col gap-2 p-3">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="badge badge-warning">{LABEL_TIPO_PENDIENTE[p.tipo]}</span>
-                    <span className="t-body-m min-w-0 flex-1 truncate font-semibold">
-                      {p.etiqueta}
+                    <span className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:flex-1">
+                      <span className="badge badge-warning shrink-0">
+                        {LABEL_TIPO_PENDIENTE[p.tipo]}
+                      </span>
+                      <span className="t-body-m truncate font-semibold text-text-primary">
+                        {p.etiqueta}
+                      </span>
                     </span>
                     <span className="t-caption">{p.solicitante}</span>
                     <span className="t-caption">{formatFechaHora(p.created_at)}</span>
@@ -205,7 +209,9 @@ export function PendientesView({
                 <span className={`badge ${h.aprobada ? "badge-success" : "badge-error"}`}>
                   {h.aprobada ? "Aprobada" : "Rechazada"}
                 </span>
-                <span className="t-body-m min-w-0 flex-1 truncate font-semibold">{h.etiqueta}</span>
+                <span className="t-body-m min-w-0 basis-full truncate font-semibold text-text-primary sm:basis-0 sm:grow">
+                  {h.etiqueta}
+                </span>
                 <span className="t-caption">{LABEL_TIPO_PENDIENTE[h.tipo]}</span>
                 <span className="t-caption">{h.decidido_por}</span>
                 {h.motivo && <span className="t-caption">— {h.motivo}</span>}
