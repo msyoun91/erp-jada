@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Pencil, Plus } from "lucide-react";
+import { Archive, Link2, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { desactivarEmpresa } from "../actions";
+import { copiarEnlace } from "../copiarEnlace";
 import {
   LABEL_ESTADO,
   LABEL_PROVINCIA,
@@ -14,7 +16,6 @@ import {
   type EstadoObra,
   type RolEmpresa,
 } from "../types";
-import { CopiarEnlace } from "./CopiarEnlace";
 import { EmpresaFormPanel } from "./EmpresaFormPanel";
 import { EstadoPendiente } from "./EstadoPendiente";
 import { VincularObraPanel } from "./VincularObraPanel";
@@ -60,19 +61,32 @@ export function EmpresaDetalle({
           </Link>
           <h2 className="t-h2 min-w-0 flex-1 truncate">{empresa.razon_social}</h2>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <CopiarEnlace ruta={`/obras/empresas/${empresa.id}`} />
+        <div className="flex items-center gap-2">
           {permisos.editar && (
-            <>
-              <button className="btn btn-secondary btn-sm" onClick={() => setEditando(true)}>
-                <Pencil size={14} />
-                Editar
-              </button>
-              <button className="btn btn-danger btn-sm" onClick={() => setDesactivando(true)}>
-                Desactivar
-              </button>
-            </>
+            <button className="btn btn-secondary btn-sm" onClick={() => setEditando(true)}>
+              <Pencil size={14} />
+              Editar
+            </button>
           )}
+          <OverflowMenu
+            items={[
+              {
+                label: "Copiar enlace",
+                icon: <Link2 size={14} strokeWidth={1.75} />,
+                onClick: () => copiarEnlace(`/obras/empresas/${empresa.id}`),
+              },
+              ...(permisos.editar
+                ? [
+                    {
+                      label: "Desactivar empresa",
+                      icon: <Archive size={14} strokeWidth={1.75} />,
+                      onClick: () => setDesactivando(true),
+                      destructive: true,
+                    },
+                  ]
+                : []),
+            ]}
+          />
         </div>
       </div>
 
@@ -147,15 +161,17 @@ export function EmpresaDetalle({
         ) : (
           <ul className="flex flex-col gap-2">
             {personas.map((p) => (
-              <li key={p.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 p-3">
+              <li key={p.id} className="card p-3">
                 <Link
                   href={`/obras/personas/${p.persona_id}`}
-                  className="t-body-m min-w-0 basis-full truncate font-semibold hover:underline sm:basis-0 sm:grow"
+                  className="t-body-m block truncate font-semibold hover:underline"
                 >
                   {p.nombre}
                 </Link>
-                {p.cargo && <span className="t-caption">{p.cargo}</span>}
-                {p.es_principal && <span className="badge badge-neutral">Principal</span>}
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {p.cargo && <span className="t-caption">{p.cargo}</span>}
+                  {p.es_principal && <span className="badge badge-neutral">Principal</span>}
+                </div>
               </li>
             ))}
           </ul>
@@ -178,19 +194,21 @@ export function EmpresaDetalle({
         ) : (
           <ul className="flex flex-col gap-2">
             {obras.map((o) => (
-              <li key={o.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 p-3">
+              <li key={o.id} className="card p-3">
                 <Link
                   href={`/obras/${o.obra_id}`}
-                  className="t-body-m min-w-0 basis-full truncate font-semibold hover:underline sm:basis-0 sm:grow"
+                  className="t-body-m block truncate font-semibold hover:underline"
                 >
                   {o.nombre}
                 </Link>
-                <span className="t-caption">{LABEL_ESTADO[o.estado]}</span>
-                {o.localidad && <span className="t-caption">{o.localidad}</span>}
-                <span className="t-caption">
-                  {o.roles.map((r) => LABEL_ROL_EMPRESA[r]).join(" · ")}
-                </span>
-                {o.pendiente && <span className="badge badge-warning">Pendiente</span>}
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="t-caption">{LABEL_ESTADO[o.estado]}</span>
+                  {o.localidad && <span className="t-caption">{o.localidad}</span>}
+                  <span className="t-caption">
+                    {o.roles.map((r) => LABEL_ROL_EMPRESA[r]).join(" · ")}
+                  </span>
+                  {o.pendiente && <span className="badge badge-warning">Pendiente</span>}
+                </div>
               </li>
             ))}
           </ul>

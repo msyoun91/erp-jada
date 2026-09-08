@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Pencil, Plus } from "lucide-react";
+import { Archive, Link2, Pencil, Plus, Unlink } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { desactivarPersona, desvincularPersonaEmpresa } from "../actions";
+import { copiarEnlace } from "../copiarEnlace";
 import { LABEL_ESTADO, LABEL_ROL_PERSONA, type EstadoObra, type RolPersona } from "../types";
-import { CopiarEnlace } from "./CopiarEnlace";
 import { EstadoPendiente } from "./EstadoPendiente";
 import { PersonaFormPanel, type PersonaEditable } from "./PersonaFormPanel";
 import { VincularObraPanel } from "./VincularObraPanel";
@@ -56,19 +57,32 @@ export function PersonaDetalle({
           </Link>
           <h2 className="t-h2 min-w-0 flex-1 truncate">{nombre}</h2>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <CopiarEnlace ruta={`/obras/personas/${persona.id}`} />
+        <div className="flex items-center gap-2">
           {permisos.editar && (
-            <>
-              <button className="btn btn-secondary btn-sm" onClick={() => setEditando(true)}>
-                <Pencil size={14} />
-                Editar
-              </button>
-              <button className="btn btn-danger btn-sm" onClick={() => setDesactivando(true)}>
-                Desactivar
-              </button>
-            </>
+            <button className="btn btn-secondary btn-sm" onClick={() => setEditando(true)}>
+              <Pencil size={14} />
+              Editar
+            </button>
           )}
+          <OverflowMenu
+            items={[
+              {
+                label: "Copiar enlace",
+                icon: <Link2 size={14} strokeWidth={1.75} />,
+                onClick: () => copiarEnlace(`/obras/personas/${persona.id}`),
+              },
+              ...(permisos.editar
+                ? [
+                    {
+                      label: "Desactivar persona",
+                      icon: <Archive size={14} strokeWidth={1.75} />,
+                      onClick: () => setDesactivando(true),
+                      destructive: true,
+                    },
+                  ]
+                : []),
+            ]}
+          />
         </div>
       </div>
 
@@ -128,26 +142,34 @@ export function PersonaDetalle({
         ) : (
           <ul className="flex flex-col gap-2">
             {empresas.map((e) => (
-              <li key={e.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 p-3">
-                <Link
-                  href={`/obras/empresas/${e.empresa_id}`}
-                  className="t-body-m min-w-0 basis-full truncate font-semibold hover:underline sm:basis-0 sm:grow"
-                >
-                  {e.razon_social}
-                </Link>
-                {e.cargo && <span className="t-caption">{e.cargo}</span>}
-                {e.es_principal && <span className="badge badge-neutral">Principal</span>}
-                {permisos.vincularEmpresa && (
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={async () => {
-                      const result = await desvincularPersonaEmpresa(e.id, persona.id);
-                      if (result.success) toast.success("Vínculo quitado");
-                      else toast.error(result.error);
-                    }}
+              <li key={e.id} className="card flex items-center gap-3 p-3">
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/obras/empresas/${e.empresa_id}`}
+                    className="t-body-m block truncate font-semibold hover:underline"
                   >
-                    Quitar
-                  </button>
+                    {e.razon_social}
+                  </Link>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    {e.cargo && <span className="t-caption">{e.cargo}</span>}
+                    {e.es_principal && <span className="badge badge-neutral">Principal</span>}
+                  </div>
+                </div>
+                {permisos.vincularEmpresa && (
+                  <OverflowMenu
+                    items={[
+                      {
+                        label: "Quitar de la empresa",
+                        icon: <Unlink size={14} strokeWidth={1.75} />,
+                        onClick: async () => {
+                          const result = await desvincularPersonaEmpresa(e.id, persona.id);
+                          if (result.success) toast.success("Vínculo quitado");
+                          else toast.error(result.error);
+                        },
+                        destructive: true,
+                      },
+                    ]}
+                  />
                 )}
               </li>
             ))}
@@ -172,22 +194,24 @@ export function PersonaDetalle({
         ) : (
           <ul className="flex flex-col gap-2">
             {obras.map((o) => (
-              <li key={o.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 p-3">
+              <li key={o.id} className="card p-3">
                 <Link
                   href={`/obras/${o.obra_id}`}
-                  className="t-body-m min-w-0 basis-full truncate font-semibold hover:underline sm:basis-0 sm:grow"
+                  className="t-body-m block truncate font-semibold hover:underline"
                 >
                   {o.nombre}
                 </Link>
-                <span className="t-caption">{LABEL_ESTADO[o.estado]}</span>
-                {o.empresa && <span className="t-caption">{o.empresa}</span>}
-                <span className="t-caption">
-                  {o.roles.map((r) => LABEL_ROL_PERSONA[r]).join(" · ")}
-                </span>
-                {o.comision !== null && (
-                  <span className="badge badge-brand">Referente {o.comision.toFixed(2)}%</span>
-                )}
-                {o.pendiente && <span className="badge badge-warning">Pendiente</span>}
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span className="t-caption">{LABEL_ESTADO[o.estado]}</span>
+                  {o.empresa && <span className="t-caption">{o.empresa}</span>}
+                  <span className="t-caption">
+                    {o.roles.map((r) => LABEL_ROL_PERSONA[r]).join(" · ")}
+                  </span>
+                  {o.comision !== null && (
+                    <span className="badge badge-brand">Referente {o.comision.toFixed(2)}%</span>
+                  )}
+                  {o.pendiente && <span className="badge badge-warning">Pendiente</span>}
+                </div>
               </li>
             ))}
           </ul>

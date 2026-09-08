@@ -382,7 +382,48 @@ línea de mobile, donde una celda vacía dejaría un hueco de `gap`.
 `PersonasView` no entró: su fila es nombre + badge, no hay metadata que le coma el ancho ni
 columnas que alinear. Una grilla de una columna es la fila que ya tenía.
 
-Lo mismo pero con `basis-full sm:basis-0 sm:grow` en las filas de las fichas y de Pendientes,
-que llevan botones intercalados y todavía esperan el `OverflowMenu`. No `sm:basis-auto`:
-`flex-1` y `basis-auto` son familias distintas de utilidades de Tailwind y quién gana lo decide
-el orden en que se generan, no el orden en el `className`. La base se fija explícita.
+Lo mismo pero con `basis-full sm:basis-0 sm:grow` en las filas de Pendientes, que llevan botones
+intercalados. No `sm:basis-auto`: `flex-1` y `basis-auto` son familias distintas de utilidades
+de Tailwind y quién gana lo decide el orden en que se generan, no el orden en el `className`.
+La base se fija explícita.
+
+~~Las filas de las fichas usan el mismo `basis-full`~~ — **superado**: con el `OverflowMenu`
+puesto ya no hay botones intercalados que las obliguen a envolver. Ver *Las acciones de la
+ficha viven en el `OverflowMenu`*.
+
+
+---
+
+## Las acciones de la ficha viven en el `OverflowMenu`
+
+En las tres fichas se leía `Constructora  Editar  Quitar` dentro de la misma línea: el primero
+es un dato (`t-caption`) y los otros dos botones (`btn-ghost`, `text-tertiary`). Mismo gris,
+mismo tamaño, misma línea — en mobile envolvían, así que una fila de persona eran cuatro
+renglones de gris indistinguible. Y arriba, "Desactivar" en rojo sólido era el elemento más
+brillante de la pantalla, por encima del nombre de la obra que se estaba mirando.
+
+**Decidido:** el patrón que ya usan tareas y usuarios, sin inventar nada. La fila es un bloque
+de texto `min-w-0 flex-1` —nombre en su renglón, metadata y badges abajo— y un `OverflowMenu`
+`shrink-0` a la derecha. En el encabezado queda "Editar" a la vista, que es la acción de la
+ficha, y el resto —copiar enlace, transferir, desactivar— entra al menú. Desactivar va con
+`destructive` e ícono `Archive`, igual que en Proyectos y Plantillas.
+
+**Un solo ítem rojo por menú.** "Quitar referente" saca la comisión y podría pintarse igual,
+pero con dos rojos en la misma lista el que importa deja de destacar.
+
+**El menú del encabezado no se esconde por permisos.** "Copiar enlace" no tiene gate, así que
+siempre hay al menos un ítem y nunca aparece un `⋯` que abre una lista vacía — la misma regla
+que Proyectos resolvió con "Ver tareas". En las filas es al revés: si el usuario no tiene
+`obras_vincular` ni `obras_referentes` no hay acciones, y ahí el botón directamente no se
+renderiza.
+
+**`CopiarEnlace` dejó de ser componente.** Como ítem de menú lo que hace falta es la función,
+no el botón, así que pasó a `modules/obras/copiarEnlace.ts`. El feedback ya era un toast, así
+que no pierde nada al ejecutarse desde un menú que se cierra al click.
+
+Las filas sin acciones —personas y obras en las fichas de empresa y persona— toman la misma
+forma de dos renglones aunque no lleven menú: si no, dentro del mismo módulo conviven dos
+maneras de escribir la misma fila.
+
+**Queda pendiente A6:** "Quitar" sigue desvinculando sin `ConfirmModal` y sin bloquear el doble
+click. Es corrección de comportamiento, no de estilo, y va en su propia pasada.

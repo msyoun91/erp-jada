@@ -4,6 +4,7 @@ import { Home, UsersRound, ListTodo, Building2, LogOut, type LucideIcon } from "
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/modules/auth/actions";
+import { ThemeToggle } from "./ThemeToggle";
 
 export const ICON_MAP: Record<string, LucideIcon> = {
   dashboard: Home,
@@ -83,6 +84,7 @@ export function SidebarNav({
             {nombre}
           </span>
         </Link>
+        <ThemeToggle />
         <form action={signOutAction}>
           <button
             type="submit"

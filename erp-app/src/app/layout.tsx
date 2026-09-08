@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { Toaster } from "sonner";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,7 +28,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
         />
         {children}
-        <ThemeToggle />
         {/* En mobile el toaster ocupa el ancho completo y el topbar mide 56px: sin offset lo tapa. */}
         <Toaster position="top-right" richColors mobileOffset={{ top: "72px" }} />
       </body>

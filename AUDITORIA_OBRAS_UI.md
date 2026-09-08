@@ -1,6 +1,6 @@
 # Auditoría visual — Agenda de Obras
 
-Fecha: 2026-09-08. Estado: **C1 y C2 implementados; el resto relevado, sin implementar.**
+Fecha: 2026-09-08. Estado: **C1, C2, A1, A3 y A4 implementados; el resto relevado, sin implementar.**
 Los hallazgos resueltos quedan escritos, tachado el título y con la nota de qué se hizo — el
 relevamiento sirve de registro de por qué la fila quedó como quedó.
 
@@ -39,13 +39,14 @@ Fix: nombre en línea propia abajo de `sm`, metadata en la segunda. En el header
 `flex-col` con las acciones abajo.
 
 **Hecho.** Los tres listados pasaron a `flex-col` abajo de `md` (ver C2, sale del mismo cambio).
-Las filas de las tres fichas y las dos de Pendientes usan `basis-full sm:basis-0 sm:grow` en el
-nombre — `sm:basis-auto` no servía: `flex-1` y `basis-auto` son familias distintas de utilidades
+Las filas de las tres fichas y las dos de Pendientes usaron `basis-full sm:basis-0 sm:grow` en
+el nombre — `sm:basis-auto` no servía: `flex-1` y `basis-auto` son familias distintas de utilidades
 y el orden de generación de Tailwind decide cuál gana, así que se fija la base explícita.
 Los headers de `ObraDetalle`, `EmpresaDetalle` y `PersonaDetalle` quedaron en dos bloques —
 identidad y acciones— apilados abajo de `sm`. En `Buscador` etiqueta y detalle van siempre en
 dos líneas: el panel es `max-w-md` en cualquier pantalla, así que ahí no hay un ancho grande
-donde la línea única funcione.
+donde la línea única funcione. Las filas de las fichas dejaron el `basis-full` al entrar el
+`OverflowMenu` (ver A3); en Pendientes sigue.
 
 ### ~~C2 · En desktop la metadata queda ragged, sin grilla~~ — **Hecho**
 
@@ -65,11 +66,19 @@ fila es una sola escritura de marcado y no dos ramas.
 
 ## Alto
 
-### A1 · El ThemeToggle flotante come contenido — Confirmado · Global
+### ~~A1 · El ThemeToggle flotante come contenido~~ — **Hecho** · Global
 
 Tapa `Quitar` en la ficha de obra, `abrió la ficha de Gustavo Peralt.` en Auditoría, y la
 última fila del listado. Obras es el módulo que más pega contenido al borde derecho, así que
 acá se nota. Fix: padding inferior/derecho en el contenedor de página, o mover el toggle.
+
+**Hecho.** Se movió. El padding solo lo arregla con el scroll al final: el botón flotaba sobre
+el medio del contenido en cualquier otra posición. Ahora vive en el footer de `SidebarNav`, al
+lado de "Cerrar sesión", y sirve al aside de escritorio y al drawer de mobile con un solo
+render. El login lo repite en su rincón —ahí no hay sidebar— y con eso se fue el `pb-20` que
+`LoginForm` reservaba para esquivarlo. De paso el componente pasó a `useSyncExternalStore`:
+leer `data-theme` con `useEffect` + `setState` era el error de `react-hooks/set-state-in-effect`
+que tenía `npm run lint` en rojo. Ver `decisiones/global.md`.
 
 ### A2 · Rol seleccionado ≈ rol no seleccionado — Confirmado
 
@@ -86,7 +95,7 @@ Es el control central de los cuatro paneles de vinculación.
 Fix: `border-brand-500 + font-semibold` como el toggle de `TareasListaView.tsx:151`, y
 `.tap-target` en vez de `min-h-[44px]`.
 
-### A3 · Las acciones no se distinguen de los datos — Confirmado
+### ~~A3 · Las acciones no se distinguen de los datos~~ — **Hecho**
 
 `ObraDetalle.tsx:170-185` · `ObraDetalle.tsx:240-265` · `PersonaDetalle.tsx:120-145` · `EmpresaDetalle.tsx:150-170`
 
@@ -97,13 +106,27 @@ renglones de gris.
 
 Fix: `OverflowMenu` —ya lo usan tareas (4 archivos) y usuarios— para Editar/Quitar/Referente.
 
-### A4 · "Desactivar" domina la ficha — Confirmado
+**Hecho** en las tres fichas. La fila pasó a la forma de usuarios: bloque de texto
+`min-w-0 flex-1` con el nombre en su renglón y la metadata abajo, `OverflowMenu` `shrink-0` a
+la derecha. Las filas sin acciones —personas y obras en las fichas de empresa y persona— toman
+la misma forma aunque no lleven menú. Con eso se fue el `basis-full sm:basis-0 sm:grow` que C1
+había dejado en las fichas esperando justamente esto; sobrevive solo en `PendientesView`.
+`CopiarEnlace` dejó de ser componente y es `modules/obras/copiarEnlace.ts`, porque como ítem de
+menú lo que hace falta es la función. **A6 sigue abierto:** "Quitar de la obra" ahora está en el
+menú, pero sigue sin `ConfirmModal` y sin flag `enviando`.
+
+### ~~A4 · "Desactivar" domina la ficha~~ — **Hecho**
 
 `ObraDetalle.tsx:117` · `EmpresaDetalle.tsx:71` · `PersonaDetalle.tsx:66`
 
 Rojo sólido, tamaño de botón normal, en el header. Es el elemento más brillante de la pantalla,
 por encima de "Editar". En mobile cae en su propia línea y es lo primero que se ve al abrir una
 obra, antes que el nombre. Jerarquía invertida. Fix: al `OverflowMenu`, variante destructiva.
+
+**Hecho.** En el encabezado queda "Editar" a la vista —es la acción de la ficha— y el resto
+entra al menú: copiar enlace, transferir (solo obra) y desactivar, este último `destructive`
+con ícono `Archive`, igual que Proyectos y Plantillas. El menú del encabezado nunca queda
+vacío: "Copiar enlace" no tiene gate de permiso.
 
 ### A5 · En las fichas ninguna tab queda activa — Confirmado
 
@@ -265,7 +288,7 @@ borde, se lee como texto de ayuda.
 1. ~~**C1 solo.**~~ Hecho. Hoy el módulo no se puede usar desde un celular: no muestra el
    nombre de lo que estás mirando. Es una agenda de obra que se usa en obra.
 2. ~~**C2**~~ — hecho, salió del mismo refactor de fila.
-3. **A1 + A4 + A3** — la ficha, como bloque.
+3. ~~**A1 + A4 + A3**~~ — hecho, la ficha como bloque.
 4. **A2 + A5.**
 5. **A6** — es corrección de comportamiento, no de estilo; puede ir en paralelo.
 6. El resto es pasada de estilo: A7 + M3 + M5 juntos son mecánicos.

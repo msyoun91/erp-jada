@@ -42,6 +42,29 @@ Spec completa extraída y volcada en `.claude/guides/design-system/JADA-design-s
 
 **`OverflowMenu` posiciona el dropdown con `fixed` + `getBoundingClientRect`, no `absolute`.** Dentro de un panel con `overflow-y-auto` un menú `absolute` lo recorta el contenedor (se veía cortado en `HiloDetailPanel`). `fixed` no lo recorta ningún ancestro con overflow; la posición se calcula al abrir y se decide arriba/abajo según el espacio libre (alto estimado por cantidad de ítems — ver comentario `ponytail:`). Contrapartida: al scrollear el contenedor el menú se despegaría del botón, así que un listener de `scroll` en captura lo cierra.
 
+### `ThemeToggle`
+
+**El toggle de tema deja de flotar y se muda al footer del sidebar.** Era un botón `fixed
+bottom-4 right-4` de 56px sobre todo el contenido: tapaba la última fila de cada listado y las
+acciones pegadas al borde derecho de las fichas de obras. El padding en el contenedor de página
+—la otra opción— solo lo resuelve con el scroll al final; el botón flota sobre el medio del
+contenido en cualquier otra posición.
+
+Vive en `SidebarNav`, así que sirve al `<aside>` de escritorio y al drawer de mobile con un solo
+render, al lado de "Cerrar sesión": las dos son preferencias de la sesión, no del módulo. En
+mobile queda a un tap del hamburger, que es aceptable para algo que se cambia al salir a la
+obra y no cada minuto. El login lo repite en su propio rincón —ahí todavía no hay sidebar y el
+fondo alrededor del card está vacío—, y con eso se fue el `pb-20` que `LoginForm` reservaba
+para esquivarlo.
+
+**El tema se lee con `useSyncExternalStore`, no con `useEffect` + `setState`.** El valor lo
+escribe el script inline de `app/layout.tsx` antes de hidratar y vive en el atributo
+`data-theme` del `<html>`: es estado de un sistema externo. Leerlo con un efecto es lo que
+cortaba `react-hooks/set-state-in-effect` —el lint del repo venía fallando por este archivo—.
+La suscripción es un `MutationObserver` sobre ese atributo, así que el propio `setAttribute`
+del click es lo que dispara el re-render y no hace falta `setState`. El snapshot de servidor es
+`null` y el botón no se renderiza hasta hidratar, igual que antes.
+
 ### `SearchInput`
 
 **`SearchInput` tenía placeholder como único nombre.** `aria-label={placeholder}` — el placeholder ya está escrito para el usuario ("Buscar tarea o hilo…") y desaparece al tipear, que es justo cuando el lector de pantalla lo necesita.

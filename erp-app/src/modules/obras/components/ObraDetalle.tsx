@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Pencil, Plus, UserRoundCog } from "lucide-react";
+import { Archive, BadgePercent, Link2, Pencil, Plus, Unlink, UserRoundCog } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { formatFechaHora } from "@/lib/utils";
+import { copiarEnlace } from "../copiarEnlace";
 import {
   desvincularEmpresa,
   desvincularPersona,
@@ -23,7 +25,6 @@ import {
   type Obra,
   type Usuario,
 } from "../types";
-import { CopiarEnlace } from "./CopiarEnlace";
 import { EstadoPendiente } from "./EstadoPendiente";
 import { ObraFormPanel } from "./ObraFormPanel";
 import { ReferentePanel } from "./ReferentePanel";
@@ -105,25 +106,44 @@ export function ObraDetalle({
           </Link>
           <h2 className="t-h2 min-w-0 flex-1 truncate">{obra.nombre}</h2>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <CopiarEnlace ruta={`/obras/${obra.id}`} />
+        {/* Editar es la acción de la ficha y queda a la vista; el resto va al
+            menú. Desactivar en rojo sólido acá era el elemento más brillante
+            de la pantalla, por encima del nombre de la obra. */}
+        <div className="flex items-center gap-2">
           {permisos.editar && (
             <button className="btn btn-secondary btn-sm" onClick={() => setEditando(true)}>
               <Pencil size={14} />
               Editar
             </button>
           )}
-          {permisos.transferir && (
-            <button className="btn btn-secondary btn-sm" onClick={() => setTransfiriendo(true)}>
-              <UserRoundCog size={14} />
-              Transferir
-            </button>
-          )}
-          {permisos.desactivar && (
-            <button className="btn btn-danger btn-sm" onClick={() => setDesactivando(true)}>
-              Desactivar
-            </button>
-          )}
+          <OverflowMenu
+            items={[
+              {
+                label: "Copiar enlace",
+                icon: <Link2 size={14} strokeWidth={1.75} />,
+                onClick: () => copiarEnlace(`/obras/${obra.id}`),
+              },
+              ...(permisos.transferir
+                ? [
+                    {
+                      label: "Transferir",
+                      icon: <UserRoundCog size={14} strokeWidth={1.75} />,
+                      onClick: () => setTransfiriendo(true),
+                    },
+                  ]
+                : []),
+              ...(permisos.desactivar
+                ? [
+                    {
+                      label: "Desactivar obra",
+                      icon: <Archive size={14} strokeWidth={1.75} />,
+                      onClick: () => setDesactivando(true),
+                      destructive: true,
+                    },
+                  ]
+                : []),
+            ]}
+          />
         </div>
       </div>
 
@@ -161,31 +181,38 @@ export function ObraDetalle({
         ) : (
           <ul className="flex flex-col gap-2">
             {empresas.map((e) => (
-              <li key={e.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 p-3">
-                <Link
-                  href={`/obras/empresas/${e.empresa_id}`}
-                  className="t-body-m min-w-0 basis-full truncate font-semibold hover:underline sm:basis-0 sm:grow"
-                >
-                  {e.razon_social}
-                </Link>
-                <span className="t-caption">
-                  {e.roles.map((r) => LABEL_ROL_EMPRESA[r]).join(" · ")}
-                </span>
-                {e.pendiente && <span className="badge badge-warning">Pendiente</span>}
+              <li key={e.id} className="card flex items-center gap-3 p-3">
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/obras/empresas/${e.empresa_id}`}
+                    className="t-body-m block truncate font-semibold hover:underline"
+                  >
+                    {e.razon_social}
+                  </Link>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span className="t-caption">
+                      {e.roles.map((r) => LABEL_ROL_EMPRESA[r]).join(" · ")}
+                    </span>
+                    {e.pendiente && <span className="badge badge-warning">Pendiente</span>}
+                  </div>
+                </div>
                 {permisos.vincular && (
-                  <>
-                    <button className="btn btn-ghost btn-sm" onClick={() => setVinculandoEmpresa(e)}>
-                      Editar
-                    </button>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() =>
-                        correr(() => desvincularEmpresa(e.id, obra.id), "Empresa desvinculada")
-                      }
-                    >
-                      Quitar
-                    </button>
-                  </>
+                  <OverflowMenu
+                    items={[
+                      {
+                        label: "Editar vínculo",
+                        icon: <Pencil size={14} strokeWidth={1.75} />,
+                        onClick: () => setVinculandoEmpresa(e),
+                      },
+                      {
+                        label: "Quitar de la obra",
+                        icon: <Unlink size={14} strokeWidth={1.75} />,
+                        onClick: () =>
+                          correr(() => desvincularEmpresa(e.id, obra.id), "Empresa desvinculada"),
+                        destructive: true,
+                      },
+                    ]}
+                  />
                 )}
               </li>
             ))}
@@ -217,53 +244,61 @@ export function ObraDetalle({
           <ul className="flex flex-col gap-2">
             {personas.map((p) => {
               const ref = comisionPorPersona.get(p.persona_id);
+              const acciones = [
+                ...(permisos.referentes && !p.pendiente
+                  ? [
+                      {
+                        label: ref ? "Quitar referente" : "Marcar referente",
+                        icon: <BadgePercent size={14} strokeWidth={1.75} />,
+                        onClick: () =>
+                          ref
+                            ? correr(() => quitarReferente(ref.id, obra.id), "Referente quitado")
+                            : setEditandoReferente(true),
+                      },
+                    ]
+                  : []),
+                ...(permisos.vincular
+                  ? [
+                      {
+                        label: "Editar vínculo",
+                        icon: <Pencil size={14} strokeWidth={1.75} />,
+                        onClick: () => setVinculandoPersona(p),
+                      },
+                      {
+                        label: "Quitar de la obra",
+                        icon: <Unlink size={14} strokeWidth={1.75} />,
+                        onClick: () =>
+                          correr(() => desvincularPersona(p.id, obra.id), "Persona desvinculada"),
+                        destructive: true,
+                      },
+                    ]
+                  : []),
+              ];
               return (
-                <li key={p.id} className="card flex flex-wrap items-center gap-x-3 gap-y-1 p-3">
-                  <Link
-                    href={`/obras/personas/${p.persona_id}`}
-                    className="t-body-m min-w-0 basis-full truncate font-semibold hover:underline sm:basis-0 sm:grow"
-                  >
-                    {p.nombre}
-                  </Link>
-                  {p.empresa && <span className="t-caption">{p.empresa}</span>}
-                  <span className="t-caption">
-                    {p.roles.map((r) => LABEL_ROL_PERSONA[r]).join(" · ")}
-                  </span>
-                  {/* El vínculo pendiente no abre la ficha de contacto: hasta
-                      que lo autoricen, la persona ajena sigue siendo ajena. */}
-                  {p.pendiente && <span className="badge badge-warning">Pendiente</span>}
-                  {ref && (
-                    <span className="badge badge-brand">
-                      Referente {ref.porcentaje_comision.toFixed(2)}%
-                    </span>
-                  )}
-                  {permisos.referentes && !p.pendiente && (
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      onClick={() =>
-                        ref
-                          ? correr(() => quitarReferente(ref.id, obra.id), "Referente quitado")
-                          : setEditandoReferente(true)
-                      }
+                <li key={p.id} className="card flex items-center gap-3 p-3">
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/obras/personas/${p.persona_id}`}
+                      className="t-body-m block truncate font-semibold hover:underline"
                     >
-                      {ref ? "Quitar referente" : "Referente"}
-                    </button>
-                  )}
-                  {permisos.vincular && (
-                    <>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setVinculandoPersona(p)}>
-                        Editar
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() =>
-                          correr(() => desvincularPersona(p.id, obra.id), "Persona desvinculada")
-                        }
-                      >
-                        Quitar
-                      </button>
-                    </>
-                  )}
+                      {p.nombre}
+                    </Link>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      {p.empresa && <span className="t-caption">{p.empresa}</span>}
+                      <span className="t-caption">
+                        {p.roles.map((r) => LABEL_ROL_PERSONA[r]).join(" · ")}
+                      </span>
+                      {/* El vínculo pendiente no abre la ficha de contacto: hasta
+                          que lo autoricen, la persona ajena sigue siendo ajena. */}
+                      {p.pendiente && <span className="badge badge-warning">Pendiente</span>}
+                      {ref && (
+                        <span className="badge badge-brand">
+                          Referente {ref.porcentaje_comision.toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {acciones.length > 0 && <OverflowMenu items={acciones} />}
                 </li>
               );
             })}

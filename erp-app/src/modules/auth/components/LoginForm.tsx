@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { signInAction } from "../actions";
 import { loginSchema, type LoginForm as LoginFormValues } from "../types";
 
@@ -60,9 +61,12 @@ export function LoginForm({ next, motivo }: { next?: string; motivo?: string }) 
   }
 
   return (
-    // pb-20 reserva el rincón del ThemeToggle (fixed bottom-4, 56px): en un
-    // viewport bajo el card centrado le quedaba encima del botón Ingresar.
-    <div className="flex min-h-dvh items-center justify-center bg-bg-page p-4 pb-20">
+    // El toggle de tema vive en el footer del sidebar, que acá todavía no
+    // existe: el login lo repite en el rincón, sobre fondo vacío.
+    <div className="relative flex min-h-dvh items-center justify-center bg-bg-page p-4">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm overflow-hidden rounded-xl border border-border bg-bg-surface shadow-md">
         <div className="h-1 bg-gradient-brand" />
 
