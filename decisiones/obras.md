@@ -472,3 +472,48 @@ en el `pathname`. Se resuelve donde se lee.
 
 Se agregó `aria-current="page"` en la activa, que es lo que faltaba para que el estado exista
 también fuera de lo visual.
+
+---
+
+## Desvincular pregunta antes, y con eso deja de dispararse dos veces
+
+"Quitar de la obra" borraba el vínculo —con sus roles y sus observaciones— de un click, sin
+preguntar. `GUIDE_DESIGN` pide confirmación antes de todo cambio de estado importante, y
+desactivar ya la tenía; desvincular no. Además `correr()` no levantaba ningún flag, así que dos
+clicks disparaban dos veces la misma acción.
+
+**Decidido:** las cuatro acciones destructivas de fila —quitar empresa, quitar persona, quitar
+referente, y quitar de la empresa en la ficha de persona— pasan por `ConfirmModal`, con copy que
+nombra lo que se pierde y `confirmLabel="Quitar"`.
+
+El doble click se arregla solo con eso: `ConfirmModal` ya tiene su propio `enviando` y deshabilita
+los dos botones mientras espera el `onConfirm`. No hace falta un flag por fila — hace falta que la
+llamada viva adentro del modal.
+
+Como las filas se renderizan en un `.map()`, no puede haber un booleano por fila. La ficha tiene
+un solo estado `confirmando` con el objeto de lo que se está por confirmar (título, mensaje,
+label, acción, texto del toast), y el `desactivando` que ya existía se absorbió ahí: una sola
+confirmación por ficha, un solo `<ConfirmModal>` al final.
+
+`EmpresaDetalle` quedó con su `desactivando` booleano. No es una segunda manera de hacer lo
+mismo: es el caso simple, sin ninguna acción destructiva de fila, y ahí el objeto de estado no
+compra nada.
+
+---
+
+## Sin optimistic update: la auditoría pedía algo que el proyecto no hace en ningún lado
+
+El hallazgo A6 pedía "`ConfirmModal` + optimistic update (la guía lo pide para desvincular)".
+La primera mitad se hizo. La segunda no, y la premisa estaba mal verificada.
+
+No hay un solo `useOptimistic` en la app. Desactivar obra, persona, empresa y usuario —todas
+"acciones clave" según la misma sección de la guía— esperan la server action y se refrescan por
+`revalidatePath`. Hacerlo acá lo convertiría en el primer y único optimistic del proyecto, en una
+acción de fila de un módulo, y obligaría a bajar a estado de cliente tres listas que hoy llegan
+como props del servidor.
+
+Lo que la guía pide de fondo —que el usuario nunca se quede preguntando si algo funcionó— ya lo
+da `ConfirmModal`: botón deshabilitado mientras espera, después toast de éxito o de error.
+
+Si algún día se agrega optimistic, se agrega app-wide y no acá: es una decisión de
+`decisiones/global.md`, no de este módulo.

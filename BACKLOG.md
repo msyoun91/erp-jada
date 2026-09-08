@@ -27,18 +27,31 @@ pasada era del módulo tareas.
 
 ## Obras — auditoría visual de la UI
 
-29 hallazgos relevados el 2026-09-08: `AUDITORIA_OBRAS_UI.md`. Van 2 implementados, quedan 27.
+29 hallazgos relevados el 2026-09-08: `AUDITORIA_OBRAS_UI.md`. Van 8 implementados, quedan 21.
 
-Los dos críticos —el nombre de la fila colapsando en mobile y la metadata ragged en desktop—
-salieron juntos el 2026-09-08: eran el mismo refactor de fila. Ver `decisiones/obras.md`.
+Cerrado todo lo crítico y lo alto: los dos de fila (C1 + C2), la ficha como bloque
+(A1 + A4 + A3), el chip de rol y la tab activa (A2 + A5), y la confirmación al desvincular (A6).
+Ver `decisiones/obras.md`.
 
-Lo que sigue, en orden: la ficha como bloque (A1 + A4 + A3, que es el `OverflowMenu` para
-Editar/Quitar/Referente y saca "Desactivar" del header), después A2 + A5, y A6 —desvincular sin
-confirmación ni bloqueo de doble click— que es corrección de comportamiento y puede ir aparte.
+Queda la pasada de estilo: A7 + M3 + M5 juntos son mecánicos, después el resto de M y B.
 
 Cinco de los 29 son app-wide (ThemeToggle flotante tapando contenido, avatar del sidebar pisando
 el nombre, `.card:hover` en lo no clickeable, alturas de toolbar, el modal que no atenúa el
 panel): esos se deciden en `decisiones/global.md`, no en el módulo.
+
+## Obras — el referente sobrevive a la desvinculación de la persona
+
+`desvincularPersona` desactiva la fila de `obras_obra_persona` y nada más. La de
+`obras_obra_referente` queda `activo = true`, y `getReferentes` la lee sin pasar por el vínculo.
+
+Hoy no se ve —la fila de la persona desaparece de la ficha y el badge se va con ella— pero el
+dato queda: si mañana se vuelve a vincular a la misma persona, reaparece la comisión vieja sin
+que nadie la haya vuelto a cargar. Y mientras tanto es un referente que la UI no puede quitar,
+porque `ReferentePanel` solo lista personas vinculadas.
+
+Encontrado al implementar A6, el 2026-09-08. No se arregló ahí porque es una invariante de
+datos, no de UI: va en la base —trigger sobre `obras_obra_persona` que baja el referente cuando
+cae el vínculo— y no en `actions.ts`.
 
 ## Obras — buscador global obra/empresa/persona
 

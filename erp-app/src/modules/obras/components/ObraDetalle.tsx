@@ -50,6 +50,17 @@ export type TransferenciaVista = {
   a: string;
 };
 
+// Una sola confirmación por ficha: las acciones destructivas de las filas
+// viven dentro de un `.map()`, así que lo que se confirma viaja en el estado
+// en vez de tener un booleano por fila.
+type Confirmacion = {
+  title: string;
+  mensaje: string;
+  confirmLabel: string;
+  accion: () => Promise<{ success: boolean; error?: string }>;
+  ok: string;
+};
+
 export type ReferenteVista = {
   id: string;
   persona_id: string;
@@ -84,7 +95,7 @@ export function ObraDetalle({
   const [vinculandoPersona, setVinculandoPersona] = useState<VinculoPersona | true | null>(null);
   const [editandoReferente, setEditandoReferente] = useState<ReferenteVista | true | null>(null);
   const [transfiriendo, setTransfiriendo] = useState(false);
-  const [desactivando, setDesactivando] = useState(false);
+  const [confirmando, setConfirmando] = useState<Confirmacion | null>(null);
 
   const comisionPorPersona = new Map(referentes.map((r) => [r.persona_id, r]));
 
@@ -137,7 +148,15 @@ export function ObraDetalle({
                     {
                       label: "Desactivar obra",
                       icon: <Archive size={14} strokeWidth={1.75} />,
-                      onClick: () => setDesactivando(true),
+                      onClick: () =>
+                        setConfirmando({
+                          title: "Desactivar obra",
+                          mensaje:
+                            "La obra deja de aparecer en el listado. Sus vínculos quedan intactos y se puede reactivar.",
+                          confirmLabel: "Desactivar",
+                          accion: () => setActivoObra(obra.id, false),
+                          ok: "Obra desactivada",
+                        }),
                       destructive: true,
                     },
                   ]
@@ -208,7 +227,13 @@ export function ObraDetalle({
                         label: "Quitar de la obra",
                         icon: <Unlink size={14} strokeWidth={1.75} />,
                         onClick: () =>
-                          correr(() => desvincularEmpresa(e.id, obra.id), "Empresa desvinculada"),
+                          setConfirmando({
+                            title: "Quitar empresa de la obra",
+                            mensaje: `«${e.razon_social}» deja de figurar en esta obra. Se pierden los roles y las observaciones del vínculo. La empresa sigue existiendo.`,
+                            confirmLabel: "Quitar",
+                            accion: () => desvincularEmpresa(e.id, obra.id),
+                            ok: "Empresa desvinculada",
+                          }),
                         destructive: true,
                       },
                     ]}
@@ -252,7 +277,13 @@ export function ObraDetalle({
                         icon: <BadgePercent size={14} strokeWidth={1.75} />,
                         onClick: () =>
                           ref
-                            ? correr(() => quitarReferente(ref.id, obra.id), "Referente quitado")
+                            ? setConfirmando({
+                                title: "Quitar referente",
+                                mensaje: `Se borra la comisión de ${ref.porcentaje_comision.toFixed(2)}% y sus observaciones. «${p.nombre}» sigue vinculada a la obra.`,
+                                confirmLabel: "Quitar",
+                                accion: () => quitarReferente(ref.id, obra.id),
+                                ok: "Referente quitado",
+                              })
                             : setEditandoReferente(true),
                       },
                     ]
@@ -268,7 +299,13 @@ export function ObraDetalle({
                         label: "Quitar de la obra",
                         icon: <Unlink size={14} strokeWidth={1.75} />,
                         onClick: () =>
-                          correr(() => desvincularPersona(p.id, obra.id), "Persona desvinculada"),
+                          setConfirmando({
+                            title: "Quitar persona de la obra",
+                            mensaje: `«${p.nombre}» deja de figurar en esta obra. Se pierden los roles y las observaciones del vínculo. La persona sigue existiendo.`,
+                            confirmLabel: "Quitar",
+                            accion: () => desvincularPersona(p.id, obra.id),
+                            ok: "Persona desvinculada",
+                          }),
                         destructive: true,
                       },
                     ]
@@ -365,12 +402,13 @@ export function ObraDetalle({
         />
       )}
 
-      {desactivando && (
+      {confirmando && (
         <ConfirmModal
-          title="Desactivar obra"
-          mensaje="La obra deja de aparecer en el listado. Sus vínculos quedan intactos y se puede reactivar."
-          onConfirm={() => correr(() => setActivoObra(obra.id, false), "Obra desactivada")}
-          onClose={() => setDesactivando(false)}
+          title={confirmando.title}
+          mensaje={confirmando.mensaje}
+          confirmLabel={confirmando.confirmLabel}
+          onConfirm={() => correr(confirmando.accion, confirmando.ok)}
+          onClose={() => setConfirmando(null)}
         />
       )}
     </div>

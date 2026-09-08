@@ -1,7 +1,7 @@
 # Auditoría visual — Agenda de Obras
 
-Fecha: 2026-09-08. Estado: **C1, C2, A1, A2, A3, A4 y A5 implementados; el resto relevado, sin
-implementar.**
+Fecha: 2026-09-08. Estado: **Todo lo crítico y lo alto implementado (C1, C2, A1–A6); M y B
+relevados, sin implementar.**
 Los hallazgos resueltos quedan escritos, tachado el título y con la nota de qué se hizo — el
 relevamiento sirve de registro de por qué la fila quedó como quedó.
 
@@ -155,7 +155,7 @@ pathname.startsWith(href + "/")`— para que `/obras` no matchee una futura `/ob
 eligió la variante de pasar el tab activo desde el layout: son tres layouts repitiendo lo mismo
 y ninguno conoce el `[id]`, que ya está en el `pathname`. Se agregó `aria-current="page"`.
 
-### A6 · "Quitar" desvincula sin confirmar y sin bloquear el doble click — Código
+### ~~A6 · "Quitar" desvincula sin confirmar y sin bloquear el doble click~~ — **Hecho**
 
 `ObraDetalle.tsx:176` · `ObraDetalle.tsx:253` · `PersonaDetalle.tsx:137`
 
@@ -164,6 +164,25 @@ observaciones del vínculo de un click. `correr()` no levanta ningún flag `envi
 dos clicks disparan dos veces. Desactivar sí tiene `ConfirmModal`; desvincular no.
 
 Fix: `ConfirmModal` + optimistic update (la guía lo pide para desvincular).
+
+**Hecho, menos el optimistic update.** Las cuatro acciones destructivas de fila —quitar empresa,
+quitar persona, quitar referente y quitar de la empresa en la ficha de persona— pasan por
+`ConfirmModal`, con copy que dice qué se pierde y `confirmLabel="Quitar"`. El doble click salió
+del mismo cambio sin escribir nada: `ConfirmModal` ya levanta su propio `enviando` y deshabilita
+los dos botones mientras espera el `onConfirm`, así que la ventana de doble disparo se cerró al
+mover la llamada adentro.
+
+Como las filas viven en un `.map()`, no hay un booleano por fila: la ficha tiene un solo estado
+`confirmando` con lo que se está por confirmar, y el `desactivando` que ya existía se absorbió
+ahí. `EmpresaDetalle` no entró: no tiene ninguna acción destructiva de fila, así que su
+`desactivando` booleano sigue siendo la forma más simple.
+
+**El optimistic update no se hizo, y la premisa estaba mal.** No existe un solo `useOptimistic`
+en toda la app: desactivar obra, persona, empresa y usuario, y todo `tareas`, esperan la server
+action y se refrescan por `revalidatePath`. Meterlo acá sería el primer optimistic del proyecto,
+en una acción de fila de un módulo, con el estado del servidor bajado a estado de cliente en tres
+listas. `ConfirmModal` ya cubre lo que la guía pide de feedback —botón deshabilitado con espera,
+después toast—. Registrado en `decisiones/obras.md`.
 
 ### A7 · `min-h-[44px]` forzado también en desktop — Confirmado · **Parcial**
 
@@ -307,7 +326,7 @@ borde, se lee como texto de ayuda.
 2. ~~**C2**~~ — hecho, salió del mismo refactor de fila.
 3. ~~**A1 + A4 + A3**~~ — hecho, la ficha como bloque.
 4. ~~**A2 + A5.**~~ — hecho.
-5. **A6** — es corrección de comportamiento, no de estilo; puede ir en paralelo.
+5. ~~**A6**~~ — hecho, sin el optimistic update; ver la nota del hallazgo.
 6. El resto es pasada de estilo: A7 + M3 + M5 juntos son mecánicos.
 
 Lo marcado **Global** (A1, B2, B3, M5, M10) no se decide en `decisiones/obras.md`.

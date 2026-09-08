@@ -14,6 +14,16 @@ import { PersonaFormPanel, type PersonaEditable } from "./PersonaFormPanel";
 import { VincularObraPanel } from "./VincularObraPanel";
 import { VincularPersonaEmpresaPanel } from "./VincularPersonaEmpresaPanel";
 
+// Misma forma que ObraDetalle: la acción destructiva de la fila vive dentro de
+// un `.map()`, así que lo que se confirma viaja en el estado.
+type Confirmacion = {
+  title: string;
+  mensaje: string;
+  confirmLabel: string;
+  accion: () => Promise<{ success: boolean; error?: string }>;
+  ok: string;
+};
+
 export function PersonaDetalle({
   persona,
   estado,
@@ -41,9 +51,15 @@ export function PersonaDetalle({
   const [editando, setEditando] = useState(false);
   const [vinculando, setVinculando] = useState(false);
   const [vinculandoObra, setVinculandoObra] = useState(false);
-  const [desactivando, setDesactivando] = useState(false);
+  const [confirmando, setConfirmando] = useState<Confirmacion | null>(null);
 
   const nombre = `${persona.nombre} ${persona.apellido ?? ""}`.trim();
+
+  async function correr(accion: () => Promise<{ success: boolean; error?: string }>, ok: string) {
+    const result = await accion();
+    if (result.success) toast.success(ok);
+    else toast.error(result.error);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -76,7 +92,15 @@ export function PersonaDetalle({
                     {
                       label: "Desactivar persona",
                       icon: <Archive size={14} strokeWidth={1.75} />,
-                      onClick: () => setDesactivando(true),
+                      onClick: () =>
+                        setConfirmando({
+                          title: "Desactivar persona",
+                          mensaje:
+                            "Si participa en alguna obra activa —incluidas obras que no ves— la base lo va a impedir. Desvinculala primero.",
+                          confirmLabel: "Desactivar",
+                          accion: () => desactivarPersona(persona.id),
+                          ok: "Persona desactivada",
+                        }),
                       destructive: true,
                     },
                   ]
@@ -161,11 +185,14 @@ export function PersonaDetalle({
                       {
                         label: "Quitar de la empresa",
                         icon: <Unlink size={14} strokeWidth={1.75} />,
-                        onClick: async () => {
-                          const result = await desvincularPersonaEmpresa(e.id, persona.id);
-                          if (result.success) toast.success("Vínculo quitado");
-                          else toast.error(result.error);
-                        },
+                        onClick: () =>
+                          setConfirmando({
+                            title: "Quitar de la empresa",
+                            mensaje: `«${nombre}» deja de figurar en «${e.razon_social}». Se pierde el cargo. Las dos fichas siguen existiendo.`,
+                            confirmLabel: "Quitar",
+                            accion: () => desvincularPersonaEmpresa(e.id, persona.id),
+                            ok: "Vínculo quitado",
+                          }),
                         destructive: true,
                       },
                     ]}
@@ -234,16 +261,13 @@ export function PersonaDetalle({
         />
       )}
 
-      {desactivando && (
+      {confirmando && (
         <ConfirmModal
-          title="Desactivar persona"
-          mensaje="Si participa en alguna obra activa —incluidas obras que no ves— la base lo va a impedir. Desvinculala primero."
-          onConfirm={async () => {
-            const result = await desactivarPersona(persona.id);
-            if (result.success) toast.success("Persona desactivada");
-            else toast.error(result.error);
-          }}
-          onClose={() => setDesactivando(false)}
+          title={confirmando.title}
+          mensaje={confirmando.mensaje}
+          confirmLabel={confirmando.confirmLabel}
+          onConfirm={() => correr(confirmando.accion, confirmando.ok)}
+          onClose={() => setConfirmando(null)}
         />
       )}
     </div>
