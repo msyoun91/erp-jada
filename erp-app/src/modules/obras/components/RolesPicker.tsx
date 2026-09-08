@@ -25,7 +25,7 @@ export function RolesPicker<T extends string>({
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Roles">
         {opciones.map((rol) => {
           const activo = seleccionados.includes(rol);
           return (
@@ -34,7 +34,11 @@ export function RolesPicker<T extends string>({
               type="button"
               onClick={() => toggle(rol)}
               aria-pressed={activo}
-              className={`badge min-h-[44px] px-3 ${activo ? "badge-brand" : "badge-neutral"}`}
+              className={`tap-target t-caption rounded-lg border px-3 py-1 ${
+                activo
+                  ? "border-brand-500 bg-brand-50 font-semibold text-brand-700"
+                  : "border-border text-text-tertiary"
+              }`}
             >
               {labels[rol]}
             </button>

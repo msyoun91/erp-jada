@@ -427,3 +427,48 @@ maneras de escribir la misma fila.
 
 **Queda pendiente A6:** "Quitar" sigue desvinculando sin `ConfirmModal` y sin bloquear el doble
 click. Es corrección de comportamiento, no de estilo, y va en su propia pasada.
+
+---
+
+## El rol elegido se marca con borde, no con relleno
+
+`RolesPicker` pintaba el rol seleccionado con `badge-brand` y el no seleccionado con
+`badge-neutral`. En light son `#EBF2FD` y `#EBF0F8`: dos grises-azules que no se distinguen, así
+que la única señal de "elegido" quedaba en el color del texto. En dark el texto azul salvaba la
+lectura, pero seguía sin borde. Es el control central de los cuatro paneles de vinculación y se
+usa con el celular al sol.
+
+**Decidido:** la forma del toggle de `TareasListaView` — `border-brand-500 bg-brand-50
+font-semibold text-brand-700` contra `border-border text-text-tertiary`. El borde es la señal
+que sobrevive al contraste bajo; el relleno acompaña.
+
+Dejó de ser `.badge`: la clase fija el texto en 11px y el `min-h-[44px]` que tenía encima
+producía pills de 44px de alto con letra de pie de foto. Ahora es `tap-target t-caption`, que da
+los 44px **solo** en mobile —`.tap-target` es `min-height` dentro del media query de
+`globals.css`— y en escritorio deja el chip del tamaño de su contenido.
+
+No lleva check ni ícono: con borde y peso la diferencia ya se lee, y un ícono adentro de un chip
+de multi-selección compite con el label por el ancho del panel `max-w-md`.
+
+---
+
+## La tab activa se resuelve por prefijo más largo
+
+`ModuleTabs` comparaba `pathname === tab.href`. En `/obras/{id}`, `/obras/empresas/{id}` y
+`/obras/personas/{id}` ninguna tab quedaba encendida: las cinco apagadas, sin decir dónde estás.
+El componente es compartido, pero obras es el único módulo con páginas de detalle propias
+—tareas resuelve el detalle con paneles—, así que el bug solo se manifestaba acá.
+
+**Decidido:** activa es la tab cuyo `href` es el prefijo más largo del `pathname`. Hace falta el
+"más largo" porque `/obras` es prefijo de todas las demás: sin desempate, `/obras/empresas/{id}`
+encendería Obras y Empresas a la vez.
+
+La comparación es `pathname === href || pathname.startsWith(href + "/")`, con la barra: un
+`startsWith` pelado haría que `/obras` matcheara una futura `/obrasocial`.
+
+La alternativa era que cada `layout.tsx` pasara el código de la tab activa. Son tres layouts
+—cuatro con el que venga— repitiendo lo mismo, y el layout no conoce el `[id]`: el dato ya está
+en el `pathname`. Se resuelve donde se lee.
+
+Se agregó `aria-current="page"` en la activa, que es lo que faltaba para que el estado exista
+también fuera de lo visual.

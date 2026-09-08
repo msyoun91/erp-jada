@@ -1,6 +1,7 @@
 # Auditoría visual — Agenda de Obras
 
-Fecha: 2026-09-08. Estado: **C1, C2, A1, A3 y A4 implementados; el resto relevado, sin implementar.**
+Fecha: 2026-09-08. Estado: **C1, C2, A1, A2, A3, A4 y A5 implementados; el resto relevado, sin
+implementar.**
 Los hallazgos resueltos quedan escritos, tachado el título y con la nota de qué se hizo — el
 relevamiento sirve de registro de por qué la fila quedó como quedó.
 
@@ -80,7 +81,7 @@ render. El login lo repite en su rincón —ahí no hay sidebar— y con eso se 
 leer `data-theme` con `useEffect` + `setState` era el error de `react-hooks/set-state-in-effect`
 que tenía `npm run lint` en rojo. Ver `decisiones/global.md`.
 
-### A2 · Rol seleccionado ≈ rol no seleccionado — Confirmado
+### ~~A2 · Rol seleccionado ≈ rol no seleccionado~~ — **Hecho**
 
 `RolesPicker.tsx:37`
 
@@ -94,6 +95,15 @@ Es el control central de los cuatro paneles de vinculación.
 
 Fix: `border-brand-500 + font-semibold` como el toggle de `TareasListaView.tsx:151`, y
 `.tap-target` en vez de `min-h-[44px]`.
+
+**Hecho.** El chip dejó de ser `.badge` y tomó la forma del toggle de `TareasListaView`:
+`tap-target t-caption rounded-lg border px-3 py-1`, activo `border-brand-500 bg-brand-50
+font-semibold text-brand-700`, inactivo `border-border text-text-tertiary`. El borde es la señal
+que sobrevive al contraste bajo. Salir de `.badge` arregló de paso el inflado: la clase fijaba
+11px y el `min-h-[44px]` de al lado estiraba a 44 en escritorio también; `.tap-target` da los
+44px solo en mobile. Con eso se cierra uno de los tres `min-h-[44px]` que quedaban de A7. Sin
+check ni ícono: adentro de un panel `max-w-md` compite con el label por el ancho. El contenedor
+tomó `role="group"`, que es lo que le faltaba al conjunto de `aria-pressed`.
 
 ### ~~A3 · Las acciones no se distinguen de los datos~~ — **Hecho**
 
@@ -128,7 +138,7 @@ entra al menú: copiar enlace, transferir (solo obra) y desactivar, este último
 con ícono `Archive`, igual que Proyectos y Plantillas. El menú del encabezado nunca queda
 vacío: "Copiar enlace" no tiene gate de permiso.
 
-### A5 · En las fichas ninguna tab queda activa — Confirmado
+### ~~A5 · En las fichas ninguna tab queda activa~~ — **Hecho**
 
 `ModuleTabs.tsx:11` — `pathname === tab.href`.
 
@@ -137,6 +147,13 @@ apagadas. Obras es el único módulo con páginas de detalle (tareas usa paneles
 solo se manifiesta acá aunque el componente sea compartido.
 
 Fix: `startsWith` con desempate por href más largo, o que el layout pase el tab activo.
+
+**Hecho.** Activa es la tab cuyo `href` es el prefijo más largo del `pathname`. El desempate por
+largo es obligatorio: `/obras` es prefijo de las otras cuatro, así que sin él
+`/obras/empresas/{id}` encendía dos tabs. La comparación lleva la barra —`pathname === href ||
+pathname.startsWith(href + "/")`— para que `/obras` no matchee una futura `/obrasocial`. No se
+eligió la variante de pasar el tab activo desde el layout: son tres layouts repitiendo lo mismo
+y ninguno conoce el `[id]`, que ya está en el `pathname`. Se agregó `aria-current="page"`.
 
 ### A6 · "Quitar" desvincula sin confirmar y sin bloquear el doble click — Código
 
@@ -157,8 +174,8 @@ Fix: `ConfirmModal` + optimistic update (la guía lo pide para desvincular).
 hardcodea el valor en 7 lugares, así que filas y chips quedan inflados también en escritorio.
 
 **Parcial:** los 4 de los listados y el buscador salieron con C1 — era la misma clase que se
-estaba reescribiendo, y dejarlos era tocar la línea dos veces. Quedan `RolesPicker.tsx:37`,
-`VincularEmpresaPanel.tsx:248` y `VincularPersonaEmpresaPanel.tsx:153`, que son A2 y B4.
+estaba reescribiendo, y dejarlos era tocar la línea dos veces. `RolesPicker.tsx:37` salió con A2.
+Quedan `VincularEmpresaPanel.tsx:248` y `VincularPersonaEmpresaPanel.tsx:153`, que son B4.
 
 ---
 
@@ -289,7 +306,7 @@ borde, se lee como texto de ayuda.
    nombre de lo que estás mirando. Es una agenda de obra que se usa en obra.
 2. ~~**C2**~~ — hecho, salió del mismo refactor de fila.
 3. ~~**A1 + A4 + A3**~~ — hecho, la ficha como bloque.
-4. **A2 + A5.**
+4. ~~**A2 + A5.**~~ — hecho.
 5. **A6** — es corrección de comportamiento, no de estilo; puede ir en paralelo.
 6. El resto es pasada de estilo: A7 + M3 + M5 juntos son mecánicos.
 
