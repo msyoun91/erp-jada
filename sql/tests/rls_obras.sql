@@ -1,4 +1,4 @@
--- Verificación del modelo de seguridad de Agenda de Obras (sql/027 a sql/030).
+-- Verificación del modelo de seguridad de Agenda de Obras (sql/027 a sql/032).
 -- NO es una migración: todo corre dentro de un DO que termina en RAISE
 -- EXCEPTION, así que la transacción entera se revierte — no persiste ningún
 -- dato ni permiso. Los resultados salen en el mensaje del error.
@@ -13,7 +13,11 @@
 -- no pueda editar, y que el teléfono de un contacto no salga por ningún
 -- camino que no deje rastro.
 --
--- Volver a correrlo entero después de tocar 027, 028, 029 o 030.
+-- Volver a correrlo entero después de tocar cualquiera de 027 a 032.
+--
+-- Los códigos `OB0xx` de sql/032 no lo afectan: los casos que esperan un corte
+-- capturan `WHEN others` e imprimen SQLERRM. Lo que afirma cada código es
+-- obras_032.sql.
 --
 -- Último resultado: 29/29.
 --
@@ -122,7 +126,12 @@ BEGIN
        CASE WHEN v_n = 0 THEN ' OK' ELSE ' *** FALLA — fuga de agenda' END;
 
   -- ...pero la busca y la encuentra, sin datos de contacto.
-  SELECT count(*) INTO v_n FROM obras_buscar_duplicados_persona('Juan', 'Perez');
+  -- Filtra por la persona que creó el setup en vez de contar el total: el
+  -- seed de `obras_dummy.sql` trae su propio Juan Pérez, así que un `= 1`
+  -- sobre el conteo crudo cuenta las filas de otro y falla por dato, no por
+  -- regresión. Lo que el caso afirma es que Tester encuentra ESTA persona.
+  SELECT count(*) INTO v_n FROM obras_buscar_duplicados_persona('Juan', 'Perez')
+  WHERE persona_id = v_persona;
   r := r || E'\n08 Tester encuentra identidad minima: ' || v_n ||
        CASE WHEN v_n = 1 THEN ' OK' ELSE ' *** FALLA — no puede evitar el duplicado' END;
 

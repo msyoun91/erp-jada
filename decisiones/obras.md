@@ -78,6 +78,20 @@ La spec lo pedía como identificador fuerte anti-duplicados. El usuario decidió
 
 ---
 
+## Los mensajes de la base los deja pasar una lista blanca de códigos
+
+Este archivo decía "el mensaje viene de la base" y `sql/027` §13 decía "el mensaje dice cuántas obras, nunca cuáles". Ninguna de las dos era cierta: las diez `RAISE EXCEPTION` del módulo salían sin `ERRCODE`, Postgres las emitía como `P0001`, y `mensajeError()` resuelve por `error.code` contra un mapa donde `P0001` no está. Todas terminaban en "No se pudo completar la operación. Intentá de nuevo." — incluida la que existe para decir un número.
+
+**Decidido:** clase `OB001`–`OB010` (`sql/032`), y `mensajeError()` devuelve el texto de la base cuando el código matchea `/^OB\d{3}$/`.
+
+No se copió el patrón de `tareas`, que mapea código → texto en TypeScript, porque dos de estos mensajes llevan el conteo de obras. Un texto fijo en el mapa perdería justo el dato por el que el mensaje existe, y escribirlo en los dos lados sería la duplicación que CLAUDE.md prohíbe.
+
+Entonces la clase `OB` no es un índice de textos: es la marca de "esto está escrito para que lo lea un usuario". La lista blanca es por código y no por confiar en el mensaje — un `P0001` nuevo, o cualquier error interno de Postgres, sigue cayendo en el genérico.
+
+**Regla que queda:** un `RAISE EXCEPTION` de este módulo sin `USING ERRCODE` es un mensaje que nadie va a leer.
+
+---
+
 ## Los logs se miran por función, no por policy
 
 `obras_accesos_persona` y `obras_transferencias` se escribían desde el día uno y no se leían desde ningún lado: el registro de accesos es lo que justifica que `obras_ficha_persona()` sea el único camino al contacto, y sin pantalla el módulo pagaba el costo del log sin cobrar el beneficio. `getTransferencias` ya existía en `queries.ts` y ningún componente la llamaba.

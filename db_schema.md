@@ -354,7 +354,7 @@ Verificación: `sql/tests/cascada_proyecto.sql` (10/10).
 
 ---
 
-## Módulo obras — Agenda de Obras (`sql/027_obras.sql` a `sql/031_obras_auditoria.sql` — corridos en Supabase vía MCP)
+## Módulo obras — Agenda de Obras (`sql/027_obras.sql` a `sql/032_obras_errcode.sql` — corridos en Supabase vía MCP)
 
 Nombre visible: **Agenda de Obras**. `modulo = 'obras'`, ruta `/obras`. Fase 1 es registro y relación de datos: obras, empresas, personas, sus vínculos con roles múltiples, y referentes con comisión por obra. Sin prospectos, oportunidades, presupuestos ni actividades — ver `decisiones/obras.md`.
 
@@ -513,6 +513,25 @@ Los dos logs se leen por función, no por `select` directo:
 Las dos son `SECURITY DEFINER` con guard propio (`tiene_permiso('obras_auditoria')`) y tope de 500 filas. Por función y no por policy porque quien audita necesita ver los accesos de todos y el nombre de la persona para que la fila signifique algo, pero no tiene por qué tener permiso sobre la agenda ni sobre las obras ajenas: con un `select` + embed, un auditor sin `obras_personas` recibiría el log entero con la persona en NULL.
 
 La policy de `obras_accesos_persona` no cambia — sigue siendo `obras_personas_todas` para el acceso directo a la tabla.
+
+### Códigos de error `OB` (`sql/032`)
+
+Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían como `P0001`, que no está en el mapa de `mensajeError()`, y todas se veían como "No se pudo completar la operación. Intentá de nuevo."
+
+| código | dónde | mensaje |
+|---|---|---|
+| `OB001` | `obras_guard_desactivar_empresa` | participa en **N** obra(s) — el conteo, nunca los nombres |
+| `OB002` | `obras_guard_desactivar_persona` | ídem |
+| `OB003` | `obras_transferir` | sin permiso para transferir |
+| `OB004` | `obras_transferir` | obra inexistente o desactivada |
+| `OB005` | `obras_transferir` | la obra ya es de ese usuario |
+| `OB006` | `obras_transferir` | el destino no tiene acceso a Obras |
+| `OB007` | `obras_set_activo` | sin permiso para desactivar |
+| `OB008` | `obras_set_activo` | la obra no existe o no sos su responsable |
+| `OB009` | `obras_ficha_persona` | sin acceso a esta persona — no distingue "no existe" de "no la ves" |
+| `OB010` | `obras_auditoria_*` | sin permiso para ver la auditoría |
+
+`mensajeError()` devuelve el texto de la base cuando el código matchea `/^OB\d{3}$/`, y cae en el mapa o en el genérico para todo lo demás. No se copió el mapa código → texto de `tareas` porque `OB001` y `OB002` llevan un conteo que un texto fijo perdería. La lista blanca es por código, no por confiar en el mensaje: un `P0001` nuevo sigue cayendo en el genérico. Ver `decisiones/obras.md`.
 
 `obras_guardar_referente(obra, persona, porcentaje, observaciones)` — `SECURITY INVOKER`, `INSERT ... ON CONFLICT (obra_id, persona_id) WHERE activo DO UPDATE`. Reemplaza el SELECT + UPDATE/INSERT que hacía `actions.ts` en dos requests. La autoridad no se mueve: las policies de `obras_obra_referente` siguen exigiendo `obras_referentes` y que la obra sea propia. Un referente dado de baja no revive por acá: el índice parcial no ve su fila, así que se inserta una nueva.
 
