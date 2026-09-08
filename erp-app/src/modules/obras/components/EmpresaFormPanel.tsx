@@ -24,8 +24,9 @@ export function EmpresaFormPanel({
   empresa?: Empresa;
   onClose: () => void;
   // Alta desde una obra o desde una persona: el que abrió el panel se queda
-  // con el id para armar el vínculo sin buscarla de nuevo.
-  onCreada?: (id: string) => void;
+  // con el id para armar el vínculo sin buscarla de nuevo. `pendiente` viaja
+  // porque una empresa congelada todavía no se puede vincular.
+  onCreada?: (id: string, pendiente: boolean, nombre: string) => void;
 }) {
   const [enviando, setEnviando] = useState(false);
   const [duplicados, setDuplicados] = useState<DuplicadoEmpresa[]>([]);
@@ -78,8 +79,14 @@ export function EmpresaFormPanel({
         toast.error(result.error);
         return;
       }
-      toast.success("Empresa creada");
-      onCreada?.(result.id);
+      if (result.pendiente) {
+        toast.warning(
+          "Empresa creada, pendiente de autorización: se parece a una que ya existe. No se puede vincular hasta que la aprueben.",
+        );
+      } else {
+        toast.success("Empresa creada");
+      }
+      onCreada?.(result.id, result.pendiente, data.razon_social);
     }
 
     onClose();
@@ -110,7 +117,7 @@ export function EmpresaFormPanel({
         {duplicados.length > 0 && (
           <AvisoDuplicadosEmpresa
             duplicados={duplicados}
-            onUsar={onCreada ? (id) => { onCreada(id); onClose(); } : undefined}
+            onUsar={onCreada ? (id, nombre) => { onCreada(id, false, nombre); onClose(); } : undefined}
           />
         )}
 

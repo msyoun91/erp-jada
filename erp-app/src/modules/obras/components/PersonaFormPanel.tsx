@@ -29,7 +29,9 @@ export function PersonaFormPanel({
 }: {
   persona?: PersonaEditable;
   onClose: () => void;
-  onCreada?: (id: string) => void;
+  // `pendiente` viaja porque una persona congelada todavía no se puede
+  // vincular a ninguna obra.
+  onCreada?: (id: string, pendiente: boolean, nombre: string) => void;
 }) {
   const [enviando, setEnviando] = useState(false);
   const [duplicados, setDuplicados] = useState<DuplicadoPersona[]>([]);
@@ -85,8 +87,14 @@ export function PersonaFormPanel({
         toast.error(result.error);
         return;
       }
-      toast.success("Persona creada");
-      onCreada?.(result.id);
+      if (result.pendiente) {
+        toast.warning(
+          "Persona creada, pendiente de autorización: se parece a una que ya existe. No se puede vincular hasta que la aprueben.",
+        );
+      } else {
+        toast.success("Persona creada");
+      }
+      onCreada?.(result.id, result.pendiente, [data.nombre, data.apellido].filter(Boolean).join(" "));
     }
 
     onClose();
@@ -117,7 +125,7 @@ export function PersonaFormPanel({
         {duplicados.length > 0 && (
           <AvisoDuplicadosPersona
             duplicados={duplicados}
-            onUsar={onCreada ? (id) => { onCreada(id); onClose(); } : undefined}
+            onUsar={onCreada ? (id, nombre) => { onCreada(id, false, nombre); onClose(); } : undefined}
           />
         )}
 

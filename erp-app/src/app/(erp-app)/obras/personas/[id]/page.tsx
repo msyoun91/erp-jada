@@ -1,15 +1,18 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   puedeEditarPersona,
   puedeVerPersonas,
+  puedeVincular,
   puedeVincularPersonaEmpresa,
 } from "@/modules/obras/permissions";
 import {
-  getEmpresas,
+  getEstadoPersona,
   getFichaPersona,
   getReferenciasDePersona,
   getVinculosPersona,
 } from "@/modules/obras/queries";
+import { EstadoPendiente } from "@/modules/obras/components/EstadoPendiente";
 import { PersonaDetalle } from "@/modules/obras/components/PersonaDetalle";
 import type { EstadoObra, RolPersona } from "@/modules/obras/types";
 
@@ -20,25 +23,55 @@ export default async function PersonaPage({ params }: { params: Promise<{ id: st
 
   // getFichaPersona registra el acceso: es la única puerta a los datos de
   // contacto, y tira si la persona está fuera del alcance del usuario.
-  const persona = await getFichaPersona(id).catch(() => null);
-  if (!persona) notFound();
-
-  const [{ empresas, obras }, referencias, editar, vincularEmpresa] = await Promise.all([
-    getVinculosPersona(id),
-    getReferenciasDePersona(id),
-    puedeEditarPersona(),
-    puedeVincularPersonaEmpresa(),
+  const [persona, estado] = await Promise.all([
+    getFichaPersona(id).catch(() => null),
+    getEstadoPersona(id),
   ]);
 
-  const empresasDisponibles = vincularEmpresa
-    ? (await getEmpresas()).map((e) => ({ id: e.id, razon_social: e.razon_social }))
-    : [];
+  // Rechazada: la fila sigue existiendo pero desactivada, así que la ficha ya
+  // no la sirve. Sin esta pantalla, el alta rechazada es un registro que
+  // desaparece sin explicación.
+  if (!persona) {
+    if (!estado || estado.activo || !estado.motivo_rechazo) notFound();
+
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/obras/personas" className="btn btn-ghost btn-sm">
+            ← Personas
+          </Link>
+          <h2 className="t-h2 min-w-0 flex-1 truncate">
+            {`${estado.nombre} ${estado.apellido ?? ""}`.trim()}
+          </h2>
+        </div>
+        <EstadoPendiente
+          pendiente={false}
+          motivoRechazo={estado.motivo_rechazo}
+          queEs="Esta persona"
+          detalle=""
+        />
+      </div>
+    );
+  }
+
+  const [{ empresas, obras }, referencias, editar, vincularEmpresa, vincularObra] =
+    await Promise.all([
+      getVinculosPersona(id),
+      getReferenciasDePersona(id),
+      puedeEditarPersona(),
+      puedeVincularPersonaEmpresa(),
+      puedeVincular(),
+    ]);
 
   const comisionPorObra = new Map(referencias.map((r) => [r.obra_id, r.porcentaje_comision]));
 
   return (
     <PersonaDetalle
       persona={persona}
+      estado={{
+        pendiente: estado?.pendiente ?? false,
+        motivo_rechazo: estado?.motivo_rechazo ?? null,
+      }}
       empresas={empresas
         .filter((v) => v.obras_empresas)
         .map((v) => ({
@@ -58,9 +91,9 @@ export default async function PersonaPage({ params }: { params: Promise<{ id: st
           empresa: v.obras_empresas?.razon_social ?? null,
           roles: v.roles as RolPersona[],
           comision: comisionPorObra.get(v.obras!.id) ?? null,
+          pendiente: v.pendiente,
         }))}
-      empresasDisponibles={empresasDisponibles}
-      permisos={{ editar, vincularEmpresa }}
+      permisos={{ editar, vincularEmpresa, vincularObra }}
     />
   );
 }

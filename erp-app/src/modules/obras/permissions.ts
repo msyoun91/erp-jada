@@ -71,3 +71,13 @@ export function puedeVerTodasLasPersonas() {
 export function puedeVerAuditoria() {
   return tienePermiso("obras_auditoria");
 }
+
+export function puedeVerPendientes() {
+  return tienePermiso("obras_pendientes");
+}
+
+// Es el "administrador" de los pedidos del usuario: el sistema no tiene roles,
+// así que autorizar altas y vínculos es un submódulo más.
+export function puedeAprobar() {
+  return tienePermiso("obras_aprobar");
+}

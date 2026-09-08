@@ -114,6 +114,9 @@ export function ObrasView({
                 className="card flex min-h-[44px] flex-wrap items-center gap-x-3 gap-y-1 p-3 hover:bg-bg-subtle"
               >
                 <span className="t-body-m min-w-0 flex-1 truncate font-semibold">{o.nombre}</span>
+                {/* Congelada: existe y la ve su responsable, pero todavía no
+                    se le puede vincular nada. */}
+                {o.pendiente && <span className="badge badge-warning">Pendiente</span>}
                 <span className={`badge ${BADGE_ESTADO[o.estado]}`}>{LABEL_ESTADO[o.estado]}</span>
                 <span className="t-caption">{LABEL_TIPO[o.tipo]}</span>
                 {o.localidad && <span className="t-caption">{o.localidad}</span>}

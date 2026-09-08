@@ -44,7 +44,7 @@ export function AvisoDuplicadosEmpresa({
   onUsar,
 }: {
   duplicados: DuplicadoEmpresa[];
-  onUsar?: (id: string) => void;
+  onUsar?: (id: string, etiqueta: string) => void;
 }) {
   if (duplicados.length === 0) return null;
 
@@ -57,7 +57,7 @@ export function AvisoDuplicadosEmpresa({
             <span className="font-semibold">{d.razon_social}</span>
             {d.localidad && <span>· {d.localidad}</span>}
             {onUsar && (
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onUsar(d.empresa_id)}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onUsar(d.empresa_id, d.razon_social)}>
                 Usar esta
               </button>
             )}
@@ -75,7 +75,7 @@ export function AvisoDuplicadosPersona({
   onUsar,
 }: {
   duplicados: DuplicadoPersona[];
-  onUsar?: (id: string) => void;
+  onUsar?: (id: string, etiqueta: string) => void;
 }) {
   if (duplicados.length === 0) return null;
 
@@ -91,7 +91,7 @@ export function AvisoDuplicadosPersona({
             {d.empresa && <span>· {d.empresa}</span>}
             {d.coincide !== "nombre" && <span>· coincide el {d.coincide}</span>}
             {onUsar && (
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onUsar(d.persona_id)}>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onUsar(d.persona_id, `${d.nombre} ${d.apellido ?? ""}`.trim())}>
                 Usar esta
               </button>
             )}

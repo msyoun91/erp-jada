@@ -7,17 +7,23 @@ import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { desactivarPersona, desvincularPersonaEmpresa } from "../actions";
 import { LABEL_ESTADO, LABEL_ROL_PERSONA, type EstadoObra, type RolPersona } from "../types";
+import { CopiarEnlace } from "./CopiarEnlace";
+import { EstadoPendiente } from "./EstadoPendiente";
 import { PersonaFormPanel, type PersonaEditable } from "./PersonaFormPanel";
+import { VincularObraPanel } from "./VincularObraPanel";
 import { VincularPersonaEmpresaPanel } from "./VincularPersonaEmpresaPanel";
 
 export function PersonaDetalle({
   persona,
+  estado,
   empresas,
   obras,
-  empresasDisponibles,
   permisos,
 }: {
   persona: PersonaEditable;
+  // `obras_ficha_persona` sirve los datos de contacto y nada más: el estado de
+  // autorización viaja aparte para no tener que cambiarle la firma.
+  estado: { pendiente: boolean; motivo_rechazo: string | null };
   empresas: { id: string; empresa_id: string; razon_social: string; cargo: string | null; es_principal: boolean }[];
   obras: {
     id: string;
@@ -27,12 +33,13 @@ export function PersonaDetalle({
     empresa: string | null;
     roles: RolPersona[];
     comision: number | null;
+    pendiente: boolean;
   }[];
-  empresasDisponibles: { id: string; razon_social: string }[];
-  permisos: { editar: boolean; vincularEmpresa: boolean };
+  permisos: { editar: boolean; vincularEmpresa: boolean; vincularObra: boolean };
 }) {
   const [editando, setEditando] = useState(false);
   const [vinculando, setVinculando] = useState(false);
+  const [vinculandoObra, setVinculandoObra] = useState(false);
   const [desactivando, setDesactivando] = useState(false);
 
   const nombre = `${persona.nombre} ${persona.apellido ?? ""}`.trim();
@@ -44,6 +51,7 @@ export function PersonaDetalle({
           ← Personas
         </Link>
         <h2 className="t-h2 min-w-0 flex-1 truncate">{nombre}</h2>
+        <CopiarEnlace ruta={`/obras/personas/${persona.id}`} />
         {permisos.editar && (
           <>
             <button className="btn btn-secondary btn-sm" onClick={() => setEditando(true)}>
@@ -56,6 +64,13 @@ export function PersonaDetalle({
           </>
         )}
       </div>
+
+      <EstadoPendiente
+        pendiente={estado.pendiente}
+        motivoRechazo={estado.motivo_rechazo}
+        queEs="Esta persona"
+        detalle="Se parece a una que ya existe. Solo la ves vos y no se puede vincular a obras ni a empresas hasta que la autoricen."
+      />
 
       <section className="card p-4">
         <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -94,7 +109,7 @@ export function PersonaDetalle({
       <section>
         <div className="mb-2 flex items-center gap-2">
           <h3 className="t-h3 flex-1">Empresas</h3>
-          {permisos.vincularEmpresa && (
+          {permisos.vincularEmpresa && !estado.pendiente && (
             <button className="btn btn-secondary btn-sm" onClick={() => setVinculando(true)}>
               <Plus size={14} />
               Vincular
@@ -134,7 +149,17 @@ export function PersonaDetalle({
       </section>
 
       <section>
-        <h3 className="t-h3 mb-2">Obras</h3>
+        <div className="mb-2 flex items-center gap-2">
+          <h3 className="t-h3 flex-1">Obras</h3>
+          {/* El vínculo obra↔persona también se arma desde acá: parado en la
+              agenda, la obra es lo que se busca. */}
+          {permisos.vincularObra && !estado.pendiente && (
+            <button className="btn btn-secondary btn-sm" onClick={() => setVinculandoObra(true)}>
+              <Plus size={14} />
+              Vincular obra
+            </button>
+          )}
+        </div>
         {obras.length === 0 ? (
           <p className="t-caption">No participa en ninguna de tus obras.</p>
         ) : (
@@ -155,6 +180,7 @@ export function PersonaDetalle({
                 {o.comision !== null && (
                   <span className="badge badge-brand">Referente {o.comision.toFixed(2)}%</span>
                 )}
+                {o.pendiente && <span className="badge badge-warning">Pendiente</span>}
               </li>
             ))}
           </ul>
@@ -165,9 +191,15 @@ export function PersonaDetalle({
 
       {vinculando && (
         <VincularPersonaEmpresaPanel
-          personaId={persona.id}
-          empresas={empresasDisponibles}
+          persona={{ id: persona.id, nombre }}
           onClose={() => setVinculando(false)}
+        />
+      )}
+
+      {vinculandoObra && (
+        <VincularObraPanel
+          persona={{ id: persona.id, nombre }}
+          onClose={() => setVinculandoObra(false)}
         />
       )}
 

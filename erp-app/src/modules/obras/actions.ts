@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { argsRpc } from "@/lib/supabase/rpc";
 import { mensajeError } from "@/lib/utils";
+import { getEmpresas } from "./queries";
 import {
   crearObraSchema,
   editarObraSchema,
@@ -16,6 +17,7 @@ import {
   vincularPersonaEmpresaSchema,
   referenteSchema,
   transferirObraSchema,
+  resolverPendienteSchema,
   type CrearObraForm,
   type EditarObraForm,
   type CrearEmpresaForm,
@@ -27,6 +29,10 @@ import {
   type VincularPersonaEmpresaForm,
   type ReferenteForm,
   type TransferirObraForm,
+  type ResolverPendienteForm,
+  type PersonaDeEmpresa,
+  type SimilarPendiente,
+  type TipoPendiente,
   type DuplicadoEmpresa,
   type DuplicadoObra,
   type DuplicadoPersona,
@@ -66,16 +72,20 @@ export async function crearObra(input: CrearObraForm) {
 
   const supabase = await createClient();
 
+  // `pendiente` lo decide el trigger de sql/033 con el mismo criterio de
+  // parecido que muestra el aviso: si vuelve en true la obra existe pero está
+  // congelada hasta que la autoricen, y la pantalla tiene que decirlo.
   const { data, error } = await supabase
     .from("obras")
     .insert({ ...parsed.data, responsable_id: await usuarioActualId() })
-    .select("id")
+    .select("id, pendiente")
     .single();
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidarObras();
-  return { success: true as const, id: data.id };
+  revalidatePath("/obras/pendientes");
+  return { success: true as const, id: data.id, pendiente: data.pendiente };
 }
 
 export async function editarObra(input: EditarObraForm) {
@@ -148,13 +158,14 @@ export async function crearEmpresa(input: CrearEmpresaForm) {
   const { data, error } = await supabase
     .from("obras_empresas")
     .insert({ ...parsed.data, creado_por: await usuarioActualId() })
-    .select("id")
+    .select("id, pendiente")
     .single();
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/obras/empresas");
-  return { success: true as const, id: data.id };
+  revalidatePath("/obras/pendientes");
+  return { success: true as const, id: data.id, pendiente: data.pendiente };
 }
 
 export async function editarEmpresa(input: EditarEmpresaForm) {
@@ -207,13 +218,14 @@ export async function crearPersona(input: CrearPersonaForm) {
   const { data, error } = await supabase
     .from("obras_personas")
     .insert({ ...parsed.data, creado_por: await usuarioActualId() })
-    .select("id")
+    .select("id, pendiente")
     .single();
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/obras/personas");
-  return { success: true as const, id: data.id };
+  revalidatePath("/obras/pendientes");
+  return { success: true as const, id: data.id, pendiente: data.pendiente };
 }
 
 export async function editarPersona(input: EditarPersonaForm) {
@@ -253,6 +265,10 @@ export async function desactivarPersona(id: string) {
   return { success: true as const };
 }
 
+// El vínculo de la empresa y los de su gente se escriben juntos o no se
+// escriben: media empresa vinculada no es un estado que valga la pena poder
+// alcanzar. La función devuelve además cuántas personas quedaron esperando
+// autorización — sin ese dato, "3 personas vinculadas" mentiría.
 export async function vincularEmpresa(input: VincularEmpresaForm) {
   const parsed = vincularEmpresaSchema.safeParse(input);
   if (!parsed.success) {
@@ -260,12 +276,31 @@ export async function vincularEmpresa(input: VincularEmpresaForm) {
   }
 
   const supabase = await createClient();
+  const d = parsed.data;
 
-  const { error } = await supabase.from("obras_obra_empresa").insert(parsed.data);
+  const { data, error } = await supabase.rpc(
+    "obras_vincular_empresa",
+    argsRpc<"obras_vincular_empresa">({
+      p_obra_id: d.obra_id,
+      p_empresa_id: d.empresa_id,
+      p_roles: d.roles,
+      p_observaciones: d.observaciones ?? null,
+      p_personas: d.personas,
+    }),
+  );
+
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidarObras(parsed.data.obra_id);
-  return { success: true as const };
+  revalidarObras(d.obra_id);
+  revalidatePath("/obras/pendientes");
+
+  const fila = data?.[0];
+  return {
+    success: true as const,
+    pendiente: fila?.vinculo_pendiente ?? false,
+    personas: fila?.personas_agregadas ?? 0,
+    personasPendientes: fila?.personas_pendientes ?? 0,
+  };
 }
 
 export async function editarVinculoEmpresa(id: string, input: VincularEmpresaForm) {
@@ -311,11 +346,17 @@ export async function vincularPersona(input: VincularPersonaForm) {
 
   const supabase = await createClient();
 
-  const { error } = await supabase.from("obras_obra_persona").insert(parsed.data);
+  const { data, error } = await supabase
+    .from("obras_obra_persona")
+    .insert(parsed.data)
+    .select("pendiente")
+    .single();
+
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidarObras(parsed.data.obra_id);
-  return { success: true as const };
+  revalidatePath("/obras/pendientes");
+  return { success: true as const, pendiente: data.pendiente };
 }
 
 export async function editarVinculoPersona(id: string, input: VincularPersonaForm) {
@@ -500,4 +541,112 @@ export async function buscarDuplicadosPersona(
 
   if (error) return [];
   return (data ?? []) as DuplicadoPersona[];
+}
+
+// ── Autorizaciones ───────────────────────────────────────────
+
+export async function resolverPendiente(input: ResolverPendienteForm) {
+  const parsed = resolverPendienteSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const d = parsed.data;
+
+  const { error } = await supabase.rpc(
+    "obras_resolver_pendiente",
+    argsRpc<"obras_resolver_pendiente">({
+      p_tipo: d.tipo,
+      p_id: d.registro_id,
+      p_aprobar: d.aprobar,
+      p_motivo: d.motivo ?? null,
+    }),
+  );
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  // Resolver cambia lo que ven las cuatro pantallas, no solo la cola: la fila
+  // estaba congelada justamente para todas ellas.
+  revalidatePath("/obras/pendientes");
+  revalidarObras();
+  revalidatePath("/obras/empresas");
+  revalidatePath("/obras/personas");
+  return { success: true as const };
+}
+
+// Contra qué se parece la fila que está esperando. La base solo se lo contesta
+// a quien tiene `obras_aprobar`: es la única pantalla del módulo que muestra
+// el nombre de una obra ajena.
+export async function similaresDelPendiente(
+  tipo: TipoPendiente,
+  registroId: string,
+): Promise<SimilarPendiente[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_pendiente_similares", {
+    p_tipo: tipo,
+    p_id: registroId,
+  });
+
+  if (error) return [];
+  return (data ?? []) as SimilarPendiente[];
+}
+
+// ── Buscadores de los paneles de vinculación ─────────────────
+//
+// Los tres devuelven la misma forma para que los coma el mismo <Buscador />, y
+// son actions porque los llama un componente cliente.
+
+export async function buscarEmpresasParaVincular(texto: string) {
+  const empresas = await getEmpresas(texto.trim() || undefined);
+
+  // La empresa congelada no se ofrece: vincularla termina en OB012.
+  return empresas
+    .filter((e) => !e.pendiente)
+    .slice(0, 20)
+    .map((e) => ({
+      id: e.id,
+      etiqueta: e.razon_social,
+      detalle: [e.nombre_comercial, e.localidad].filter(Boolean).join(" · ") || null,
+    }));
+}
+
+// Solo obras propias y no congeladas: son las únicas a las que la RLS deja
+// colgarle un vínculo.
+export async function buscarObrasParaVincular(texto: string) {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("obras")
+    .select("id, nombre, localidad")
+    .eq("activo", true)
+    .eq("pendiente", false)
+    .eq("responsable_id", await usuarioActualId())
+    .order("updated_at", { ascending: false })
+    .limit(20);
+
+  if (texto.trim()) query = query.ilike("nombre", `%${texto.trim()}%`);
+
+  const { data, error } = await query;
+  if (error) return [];
+
+  return (data ?? []).map((o) => ({ id: o.id, etiqueta: o.nombre, detalle: o.localidad }));
+}
+
+// La gente de una empresa, para tildar al vincularla a una obra. Identidad
+// mínima otra vez: nombre, apellido y cargo, nunca contacto.
+export async function personasDeEmpresa(
+  empresaId: string,
+  obraId: string,
+): Promise<PersonaDeEmpresa[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_personas_de_empresa", {
+    p_empresa_id: empresaId,
+    p_obra_id: obraId,
+  });
+
+  if (error) return [];
+  return (data ?? []) as PersonaDeEmpresa[];
 }

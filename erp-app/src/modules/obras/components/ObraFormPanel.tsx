@@ -84,7 +84,14 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
       toast.error(result.error);
       return;
     }
-    toast.success(obra ? "Obra actualizada" : "Obra creada");
+    // El aviso de duplicados advierte; el trigger de la base decide. Si la
+    // obra quedó congelada hay que decirlo acá, porque hasta que la aprueben
+    // no se le puede vincular nada.
+    if (!obra && "pendiente" in result && result.pendiente) {
+      toast.warning("Obra creada, pendiente de autorización: se parece a una que ya existe");
+    } else {
+      toast.success(obra ? "Obra actualizada" : "Obra creada");
+    }
     onClose();
   }
 

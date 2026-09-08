@@ -4,8 +4,10 @@ import type {
   AccesoAuditoria,
   Empresa,
   FiltrosObras,
+  HistorialAprobacion,
   Obra,
   ObraListado,
+  Pendiente,
   Persona,
   TransferenciaAuditoria,
   Usuario,
@@ -34,8 +36,12 @@ export async function getObras(filtros: FiltrosObras = {}): Promise<ObraListado[
       "*, responsable:usuarios(id, nombre), obras_obra_empresa(id), obras_obra_persona(id)",
     )
     .eq("activo", true)
+    // El vínculo pendiente no cuenta como vínculo: todavía no participa de la
+    // obra y puede terminar rechazado.
     .eq("obras_obra_empresa.activo", true)
+    .eq("obras_obra_empresa.pendiente", false)
     .eq("obras_obra_persona.activo", true)
+    .eq("obras_obra_persona.pendiente", false)
     .order("updated_at", { ascending: false });
 
   if (filtros.nombre) query = query.ilike("nombre", `%${filtros.nombre}%`);
@@ -105,8 +111,8 @@ export async function getObra(id: string) {
     .select(
       `*,
        responsable:usuarios(id, nombre),
-       obras_obra_empresa(id, roles, observaciones, obras_empresas(id, razon_social, nombre_comercial)),
-       obras_obra_persona(id, roles, observaciones, empresa_id,
+       obras_obra_empresa(id, roles, observaciones, pendiente, obras_empresas(id, razon_social, nombre_comercial)),
+       obras_obra_persona(id, roles, observaciones, empresa_id, pendiente,
          obras_personas(id, nombre, apellido),
          obras_empresas(id, razon_social))`,
     )
@@ -172,7 +178,7 @@ export async function getEmpresa(id: string) {
     .select(
       `*,
        obras_persona_empresa(id, cargo, es_principal, obras_personas(id, nombre, apellido)),
-       obras_obra_empresa(id, roles, obras(id, nombre, estado, localidad))`,
+       obras_obra_empresa(id, roles, pendiente, obras(id, nombre, estado, localidad))`,
     )
     .eq("id", id)
     .eq("obras_persona_empresa.activo", true)
@@ -212,6 +218,24 @@ export async function getFichaPersona(id: string) {
   return data?.[0] ?? null;
 }
 
+// `obras_ficha_persona` devuelve contacto y nada más — el estado de
+// autorización no entra en su firma. Este select lo trae aparte, y sirve
+// además para la persona rechazada: su fila queda desactivada, así que la
+// función ya no la devuelve y sin esto quien la cargó vería un 404 en vez del
+// motivo.
+export async function getEstadoPersona(id: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("obras_personas")
+    .select("id, nombre, apellido, activo, pendiente, motivo_rechazo")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function getVinculosPersona(id: string) {
   const supabase = await createClient();
 
@@ -224,7 +248,7 @@ export async function getVinculosPersona(id: string) {
         .eq("activo", true),
       supabase
         .from("obras_obra_persona")
-        .select("id, roles, obras(id, nombre, estado), obras_empresas(id, razon_social)")
+        .select("id, roles, pendiente, obras(id, nombre, estado), obras_empresas(id, razon_social)")
         .eq("persona_id", id)
         .eq("activo", true),
     ]);
@@ -269,4 +293,23 @@ export async function getAuditoriaTransferencias(dias: number) {
   const { data, error } = await supabase.rpc("obras_auditoria_transferencias", { p_dias: dias });
   if (error) throw error;
   return (data ?? []) as TransferenciaAuditoria[];
+}
+
+// La cola de autorizaciones y su historial. Van por función por lo mismo que
+// la auditoría: quien aprueba necesita ver las cinco tablas enteras y no tiene
+// por qué tener permiso sobre la agenda ni sobre las obras ajenas.
+export async function getPendientes(): Promise<Pendiente[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_pendientes");
+  if (error) throw error;
+  return (data ?? []) as Pendiente[];
+}
+
+export async function getHistorialAprobaciones(dias: number): Promise<HistorialAprobacion[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_historial_aprobaciones", { p_dias: dias });
+  if (error) throw error;
+  return (data ?? []) as HistorialAprobacion[];
 }

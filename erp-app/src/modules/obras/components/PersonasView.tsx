@@ -69,6 +69,7 @@ export function PersonasView({
                 <span className="t-body-m min-w-0 flex-1 truncate font-semibold">
                   {p.nombre} {p.apellido ?? ""}
                 </span>
+                {p.pendiente && <span className="badge badge-warning">Pendiente</span>}
               </Link>
             </li>
           ))}

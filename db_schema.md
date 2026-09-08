@@ -6,7 +6,7 @@ Proyecto Supabase: `qbpudocgdvpeadcyyhfh`. Regenerar tipos tras cada migración:
 `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public > erp-app/src/lib/supabase/database.types.ts`
 (requiere `supabase login` o `SUPABASE_ACCESS_TOKEN`)
 
-Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. Agenda de Obras (`sql/027` a `sql/031`) corrida vía MCP. `database.types.ts` sincronizado tras 027-031.
+Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. Agenda de Obras (`sql/027` a `sql/034`) corrida vía MCP. `database.types.ts` sincronizado tras 027-034.
 
 ---
 
@@ -354,7 +354,7 @@ Verificación: `sql/tests/cascada_proyecto.sql` (10/10).
 
 ---
 
-## Módulo obras — Agenda de Obras (`sql/027_obras.sql` a `sql/032_obras_errcode.sql` — corridos en Supabase vía MCP)
+## Módulo obras — Agenda de Obras (`sql/027_obras.sql` a `sql/034_obras_vincular_empresa.sql` — corridos en Supabase vía MCP)
 
 Nombre visible: **Agenda de Obras**. `modulo = 'obras'`, ruta `/obras`. Fase 1 es registro y relación de datos: obras, empresas, personas, sus vínculos con roles múltiples, y referentes con comisión por obra. Sin prospectos, oportunidades, presupuestos ni actividades — ver `decisiones/obras.md`.
 
@@ -372,6 +372,8 @@ Tres alcances distintos, y conviene tenerlos claros antes de leer las tablas:
 
 La persona es el activo sensible (celular directo del que decide la compra), y por eso es la única entidad con alcance por fila **y** con registro de acceso.
 
+Desde `sql/033` hay un cuarto alcance que se superpone a los tres: la fila **congelada** (`pendiente = true`) la ve únicamente quien la cargó —sea obra, empresa o persona— hasta que alguien con `obras_aprobar` la resuelva.
+
 ### obras
 
 Entidad central. Puede existir sin empresas, sin personas y sin dirección.
@@ -388,6 +390,8 @@ Entidad central. Puede existir sin empresas, sin personas y sin dirección.
 | motivo_perdida | enum `motivo_perdida` | |
 | detalle_perdida | text | |
 | responsable_id | uuid FK → usuarios NOT NULL | **define quién ve la obra** |
+| pendiente | boolean NOT NULL default false | `sql/033` — esperando autorización: congelada, no se le pueden colgar vínculos |
+| motivo_rechazo | text | por qué la rechazaron. Con `activo = false` es el estado "rechazada" |
 | nombre_norm / direccion_norm / localidad_norm | text | derivadas por trigger, para detección difusa |
 | activo | boolean | |
 
@@ -410,6 +414,7 @@ Sin campo `cuit` (decisión del usuario). La detección de duplicados va por raz
 | provincia | enum `provincia` | |
 | creado_por | uuid FK → usuarios | |
 | razon_social_norm / nombre_comercial_norm | text | por trigger |
+| pendiente / motivo_rechazo | boolean, text | `sql/033` — congelada la ve solo quien la cargó |
 
 Una empresa **no tiene rol global**: el rol vive en su relación con cada obra. La misma empresa puede ser constructora en una obra y desarrolladora en otra.
 
@@ -425,6 +430,7 @@ Sin `empresa_id` y sin columna de rol: lo primero vive en `obras_persona_empresa
 | nombre_norm | text | `nombre + apellido` normalizado |
 | email_norm | text | lower+trim |
 | telefono_norm / whatsapp_norm | text | solo dígitos — "11 4567-8900" y "+54 11 4567 8900" son el mismo teléfono |
+| pendiente / motivo_rechazo | boolean, text | `sql/033` — congelada la ve solo quien la cargó |
 
 RLS SELECT: `(tiene_permiso('obras_ver') OR tiene_permiso('obras_personas')) AND (creado_por = auth.uid() OR obras_puede_ver_persona(id))`.
 
@@ -446,6 +452,8 @@ Las dos tablas puente con la obra. `roles` es un **array de enum**, no filas sep
 |---|---|---|
 | obras_obra_empresa | `rol_empresa[]` — `constructora`\|`desarrolladora`\|`inmobiliaria`\|`estudio_arquitectura`\|`direccion_obra`\|`otro` | |
 | obras_obra_persona | `rol_persona[]` — `arquitecto`\|`desarrollador`\|`inversor`\|`director_obra`\|`compras`\|`oficina_tecnica`\|`decisor`\|`influenciador`\|`contacto_comercial`\|`otro` | `empresa_id` nullable: a quién representa esa persona en esta obra. FK simple, sin validación cruzada — es contexto, no invariante |
+
+Las dos llevan además `pendiente` y `motivo_rechazo` (`sql/033`): vincular una entidad que cargó otro usuario espera autorización, y **el vínculo pendiente no cuenta** — ni para los conteos del listado ni, sobre todo, para `obras_puede_ver_persona`.
 
 CHECK en ambas: `cardinality(roles) > 0` y `obras_array_sin_duplicados(roles)`. Unique parcial por par `WHERE activo`.
 
@@ -530,10 +538,77 @@ Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían c
 | `OB008` | `obras_set_activo` | la obra no existe o no sos su responsable |
 | `OB009` | `obras_ficha_persona` | sin acceso a esta persona — no distingue "no existe" de "no la ves" |
 | `OB010` | `obras_auditoria_*` | sin permiso para ver la auditoría |
+| `OB011` | `obras_guard_congelado` | la obra está pendiente: no acepta vínculos |
+| `OB012` | `obras_guard_congelado` | la empresa o la persona está pendiente: no se puede vincular |
+| `OB013` | `obras_pendientes` · `obras_historial_aprobaciones` | sin permiso para ver la cola |
+| `OB014` | `obras_pendiente_similares` · `obras_resolver_pendiente` | sin permiso para resolver |
+| `OB015` | `obras_resolver_pendiente` | tipo de solicitud desconocido |
+| `OB016` | `obras_resolver_pendiente` | rechazo sin motivo |
+| `OB017` | `obras_resolver_pendiente` | ya resuelta o inexistente |
+| `OB018` | `obras_personas_de_empresa` | sin permiso para vincular |
+| `OB019` | `obras_guard_congelado` | marcar referente a alguien que no se ve: el vínculo tiene que existir y estar autorizado |
 
 `mensajeError()` devuelve el texto de la base cuando el código matchea `/^OB\d{3}$/`, y cae en el mapa o en el genérico para todo lo demás. No se copió el mapa código → texto de `tareas` porque `OB001` y `OB002` llevan un conteo que un texto fijo perdería. La lista blanca es por código, no por confiar en el mensaje: un `P0001` nuevo sigue cayendo en el genérico. Ver `decisiones/obras.md`.
 
 `obras_guardar_referente(obra, persona, porcentaje, observaciones)` — `SECURITY INVOKER`, `INSERT ... ON CONFLICT (obra_id, persona_id) WHERE activo DO UPDATE`. Reemplaza el SELECT + UPDATE/INSERT que hacía `actions.ts` en dos requests. La autoridad no se mueve: las policies de `obras_obra_referente` siguen exigiendo `obras_referentes` y que la obra sea propia. Un referente dado de baja no revive por acá: el índice parcial no ve su fila, así que se inserta una nueva.
+
+### Autorizaciones pendientes (`sql/033`)
+
+Dos pedidos del usuario con una sola mecánica: un alta que se parece a algo ya cargado, y un vínculo con una persona o empresa que cargó otro, no entran a la agenda — entran **congelados**, y alguien con `obras_aprobar` decide.
+
+`pendiente` y `motivo_rechazo` viven en las cinco tablas que pueden esperar: `obras`, `obras_empresas`, `obras_personas`, `obras_obra_empresa`, `obras_obra_persona`. No hay estado nuevo:
+
+| situación | columnas |
+|---|---|
+| en la cola | `pendiente = true` |
+| aprobada | `pendiente = false`, `activo = true` |
+| rechazada | `pendiente = false`, `activo = false`, `motivo_rechazo` con el texto |
+
+**Congelada quiere decir congelada.** La fila la ve solo quien la cargó (policy de `obras_empresas`, `obras_puede_ver_persona` para las personas) y `obras_guard_congelado` corta cualquier vínculo hacia o desde ella (`OB011` / `OB012`). Un `pendiente` que solo pintara un badge dejaría al duplicado propagándose mientras la cola espera.
+
+**El vínculo pendiente no abre la ficha de contacto.** `obras_puede_ver_persona` exige `NOT op.pendiente`. Es el punto entero del pedido: vincular era lo que daba acceso al teléfono, así que sin esto la autorización no protegería nada.
+
+**`obras_aprobar` no entra en `obras_puede_ver_persona`.** Quien aprueba mira la cola por función; darle la fila por policy le habría dado la agenda entera con contacto. Ver `decisiones/obras.md`.
+
+#### Triggers
+
+| trigger | tablas | qué hace |
+|---|---|---|
+| `marcar_pendiente` (`obras_marcar_pendiente`) | las 5 | BEFORE INSERT. En las tres entidades marca por parecido (`obras_similares_*`); en los dos vínculos, si `creado_por` de lo vinculado no es `auth.uid()`. Pisa `pendiente` y `motivo_rechazo`: el `GRANT INSERT` es por tabla, así que sin esto el cliente mandaría la fila ya aprobada |
+| `guard_congelado` (`obras_guard_congelado`) | `obras_obra_empresa`, `obras_obra_persona`, `obras_persona_empresa`, `obras_obra_referente` | BEFORE INSERT. Corta si la obra, la empresa o la persona está pendiente, y exige que la persona ya sea visible para marcarla referente (`OB019`) — esa fila también da acceso al contacto y no tiene `pendiente`. Los `IF` van **anidados** bajo `TG_TABLE_NAME`, no encadenados con `AND`: plpgsql planea la expresión entera y `NEW.obra_id` explota con 42703 en la tabla que no tiene esa columna |
+
+`obras_obra_persona.empresa_id` queda fuera del guard a propósito: es contexto informativo, no un vínculo con la empresa.
+
+#### Funciones
+
+| función | seguridad | qué hace |
+|---|---|---|
+| `obras_similares_obra` / `_empresa` / `_persona` | DEFINER | el match difuso crudo: ids y score, sin enmascarar ni verificar permiso. Es la mitad de abajo de las tres `obras_buscar_duplicados_*`, extraída para que el trigger use el mismo criterio que la pantalla |
+| `obras_buscar_duplicados_*` | DEFINER / INVOKER | mismas firmas de siempre, ahora como capa de enmascarado sobre las anteriores |
+| `obras_etiqueta(tipo, id)` | DEFINER | una fila de cualquiera de las cinco tablas → texto. Interna: sin `GRANT` |
+| `obras_pendientes()` | DEFINER + guard `obras_pendientes` | la cola: tipo, id, etiqueta, motivo, solicitante, fecha. Tope 500 |
+| `obras_pendiente_similares(tipo, id)` | DEFINER + guard `obras_aprobar` | contra qué se parece. **Única pantalla del módulo que muestra el nombre de una obra ajena** — sin eso, aprobar es a ciegas |
+| `obras_resolver_pendiente(tipo, id, aprobar, motivo)` | DEFINER + guard `obras_aprobar` | UPDATE dinámico sobre lista blanca de tablas + fila en el log. Rechazo sin motivo: `OB016` |
+| `obras_historial_aprobaciones(dias)` | DEFINER + guard `obras_pendientes` | las decisiones ya tomadas |
+
+De las tres `obras_similares_*`, solo `_empresa` tiene `GRANT` a `authenticated`: el envoltorio de empresas es `SECURITY INVOKER` —para que la policy siga decidiendo qué ve cada uno— y por lo tanto la ejecuta como quien llama.
+
+#### obras_aprobaciones
+
+Log de decisiones: `tipo`, `registro_id`, `etiqueta` (snapshot), `aprobada`, `motivo`, `decidido_por`, `created_at`. Sin `activo` y sin FK a la fila decidida — es un log de cinco tablas y el `tipo` dice cuál. RLS SELECT: `tiene_permiso('obras_pendientes')`.
+
+#### GRANT UPDATE por columna
+
+`obras_empresas`, `obras_personas`, `obras_obra_empresa` y `obras_obra_persona` tenían `UPDATE` entero: con eso un PATCH por PostgREST se auto-aprueba poniendo `pendiente = false`. Ahora la lista es explícita (y deja afuera `creado_por` y las `_norm`), igual que `obras` desde `sql/027`.
+
+### Vincular una empresa con su gente (`sql/034`)
+
+| función | seguridad | qué hace |
+|---|---|---|
+| `obras_personas_de_empresa(empresa, obra)` | DEFINER + guard `obras_vincular` | la gente de una empresa con identidad mínima —nombre, apellido, cargo, nunca contacto— más `es_mia` y `ya_en_obra`. Con un select directo, quien vincula vería solo las personas a su alcance y la lista perdería sentido |
+| `obras_vincular_empresa(obra, empresa, roles, obs, personas jsonb)` | INVOKER | el vínculo de la empresa y los de las personas en una transacción. Devuelve `vinculo_pendiente`, `personas_agregadas` y `personas_pendientes` para que el toast no mienta |
+
+`p_personas` es `[{"persona_id": uuid, "roles": [...]}]` — un rol por persona, no uno para el lote. `ON CONFLICT (obra_id, persona_id) WHERE activo DO NOTHING`: quien ya estaba en la obra queda como estaba, con sus roles intactos.
 
 ### Desactivación
 
@@ -555,6 +630,7 @@ Verificado: `has_function_privilege('anon', ...)` da `false` en las 18.
 | obras_empresas | vista | — | |
 | obras_personas | vista | — | |
 | obras_auditoria | vista | — | los dos logs. Aparte de `obras_personas_todas`: ese permiso es ver la agenda completa, este es ver quién la estuvo mirando |
+| obras_pendientes | vista | — | la cola de autorizaciones y su historial (`sql/033`) |
 | obras_crear | funcion | obras_ver | |
 | obras_editar | funcion | obras_ver | solo sobre obras propias |
 | obras_vincular | funcion | obras_ver | obra↔empresa y obra↔persona, con sus roles |
@@ -567,9 +643,10 @@ Verificado: `has_function_privilege('anon', ...)` da `false` en las 18.
 | obras_personas_editar | funcion | obras_personas | |
 | obras_personas_empresas | funcion | obras_personas | relacionar persona↔empresa. El botón de la ficha de empresa usa este mismo permiso — una función pertenece a una sola vista |
 | obras_personas_todas | funcion | obras_personas | ve la agenda completa y el log de accesos |
+| obras_aprobar | funcion | obras_pendientes | aprobar o rechazar. Es el "administrador" de los pedidos del usuario — **no** da acceso a la agenda: `obras_puede_ver_persona` no lo mira |
 
 Combinación a tener presente: crear una empresa o persona desde adentro de una obra necesita `obras_empresas_crear` / `obras_personas_crear` además de `obras_vincular`. Con solo `obras_vincular` se pueden enlazar las que ya existen.
 
 `usuarios_select` extendida con `OR tiene_permiso('obras_transferir')` — el picker de destino necesita listar usuarios.
 
-Verificación: `sql/tests/rls_obras.sql`, 29/29.
+Verificación: `sql/tests/rls_obras.sql`, 29/29 · `sql/tests/obras_033.sql`, 33/33.

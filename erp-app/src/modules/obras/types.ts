@@ -9,6 +9,7 @@ export type ObraEmpresa = Tables<"obras_obra_empresa">;
 export type ObraPersona = Tables<"obras_obra_persona">;
 export type ObraReferente = Tables<"obras_obra_referente">;
 export type ObraTransferencia = Tables<"obras_transferencias">;
+export type Aprobacion = Tables<"obras_aprobaciones">;
 
 export type EstadoObra = Enums<"estado_obra">;
 export type TipoObra = Enums<"tipo_obra">;
@@ -304,11 +305,21 @@ const rolesPersonaSchema = z
   .min(1, "Elegí al menos un rol")
   .refine((r) => new Set(r).size === r.length, "Hay roles repetidos");
 
+// La gente de la empresa entra con la empresa, y cada una con su propio rol:
+// compras y arquitecto no son lo mismo aunque trabajen en la misma
+// constructora. Vacío es válido — vincular la empresa sola sigue siendo lo
+// más común.
+export const personaDelLoteSchema = z.object({
+  persona_id: z.string().uuid(),
+  roles: rolesPersonaSchema,
+});
+
 export const vincularEmpresaSchema = z.object({
   obra_id: z.string().uuid(),
   empresa_id: z.string().uuid(),
   roles: rolesEmpresaSchema,
   observaciones: textoOpcional(500),
+  personas: z.array(personaDelLoteSchema).default([]),
 });
 
 export type VincularEmpresaForm = z.input<typeof vincularEmpresaSchema>;
@@ -429,3 +440,82 @@ export type ObraListado = Obra & {
   empresas: number;
   personas: number;
 };
+
+// ── Autorizaciones pendientes (sql/033) ──────────────────────
+//
+// Cinco tablas pueden quedar esperando, y el `tipo` es lo que la función de
+// resolución usa para saber cuál tocar. No es un enum de Postgres: es una
+// lista blanca de nombres de tabla, y un enum obligaría a migrar para agregar
+// una sexta.
+
+export const TIPOS_PENDIENTE = [
+  "obra",
+  "empresa",
+  "persona",
+  "obra_empresa",
+  "obra_persona",
+] as const;
+
+export type TipoPendiente = (typeof TIPOS_PENDIENTE)[number];
+
+export const LABEL_TIPO_PENDIENTE: Record<TipoPendiente, string> = {
+  obra: "Obra nueva",
+  empresa: "Empresa nueva",
+  persona: "Persona nueva",
+  obra_empresa: "Empresa en una obra",
+  obra_persona: "Persona en una obra",
+};
+
+export type Pendiente = {
+  tipo: TipoPendiente;
+  registro_id: string;
+  etiqueta: string;
+  motivo: string;
+  solicitante: string;
+  created_at: string;
+};
+
+// Contra qué se parece. Solo para quien tiene `obras_aprobar`: es la única
+// pantalla del módulo que muestra el nombre de una obra ajena.
+export type SimilarPendiente = {
+  etiqueta: string;
+  detalle: string | null;
+};
+
+export type HistorialAprobacion = {
+  aprobacion_id: string;
+  created_at: string;
+  tipo: TipoPendiente;
+  etiqueta: string;
+  aprobada: boolean;
+  motivo: string | null;
+  decidido_por: string;
+};
+
+// Identidad mínima otra vez: la lista que se tilda al vincular una empresa no
+// puede ser una puerta al contacto de su gente.
+export type PersonaDeEmpresa = {
+  persona_id: string;
+  nombre: string;
+  apellido: string | null;
+  cargo: string | null;
+  es_principal: boolean;
+  es_mia: boolean;
+  ya_en_obra: boolean;
+};
+
+export const resolverPendienteSchema = z
+  .object({
+    tipo: z.enum(TIPOS_PENDIENTE),
+    registro_id: z.string().uuid(),
+    aprobar: z.boolean(),
+    motivo: textoOpcional(500),
+  })
+  // Espeja el OB016 de la base: el motivo es lo único que va a leer quien la
+  // cargó, así que un rechazo sin motivo no es una decisión, es un silencio.
+  .refine((d) => d.aprobar || !!d.motivo, {
+    message: "El rechazo necesita un motivo",
+    path: ["motivo"],
+  });
+
+export type ResolverPendienteForm = z.input<typeof resolverPendienteSchema>;

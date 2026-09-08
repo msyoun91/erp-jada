@@ -26,10 +26,12 @@ export type Database = {
           localidad: string | null
           localidad_norm: string | null
           motivo_perdida: Database["public"]["Enums"]["motivo_perdida"] | null
+          motivo_rechazo: string | null
           nombre: string
           nombre_norm: string | null
           observaciones: string | null
           origen: Database["public"]["Enums"]["origen_obra"] | null
+          pendiente: boolean
           provincia: Database["public"]["Enums"]["provincia"] | null
           responsable_id: string
           tipo: Database["public"]["Enums"]["tipo_obra"]
@@ -46,10 +48,12 @@ export type Database = {
           localidad?: string | null
           localidad_norm?: string | null
           motivo_perdida?: Database["public"]["Enums"]["motivo_perdida"] | null
+          motivo_rechazo?: string | null
           nombre: string
           nombre_norm?: string | null
           observaciones?: string | null
           origen?: Database["public"]["Enums"]["origen_obra"] | null
+          pendiente?: boolean
           provincia?: Database["public"]["Enums"]["provincia"] | null
           responsable_id: string
           tipo: Database["public"]["Enums"]["tipo_obra"]
@@ -66,10 +70,12 @@ export type Database = {
           localidad?: string | null
           localidad_norm?: string | null
           motivo_perdida?: Database["public"]["Enums"]["motivo_perdida"] | null
+          motivo_rechazo?: string | null
           nombre?: string
           nombre_norm?: string | null
           observaciones?: string | null
           origen?: Database["public"]["Enums"]["origen_obra"] | null
+          pendiente?: boolean
           provincia?: Database["public"]["Enums"]["provincia"] | null
           responsable_id?: string
           tipo?: Database["public"]["Enums"]["tipo_obra"]
@@ -121,6 +127,47 @@ export type Database = {
           },
         ]
       }
+      obras_aprobaciones: {
+        Row: {
+          aprobada: boolean
+          created_at: string
+          decidido_por: string
+          etiqueta: string
+          id: string
+          motivo: string | null
+          registro_id: string
+          tipo: string
+        }
+        Insert: {
+          aprobada: boolean
+          created_at?: string
+          decidido_por: string
+          etiqueta: string
+          id?: string
+          motivo?: string | null
+          registro_id: string
+          tipo: string
+        }
+        Update: {
+          aprobada?: boolean
+          created_at?: string
+          decidido_por?: string
+          etiqueta?: string
+          id?: string
+          motivo?: string | null
+          registro_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obras_aprobaciones_decidido_por_fkey"
+            columns: ["decidido_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obras_empresas: {
         Row: {
           activo: boolean
@@ -130,9 +177,11 @@ export type Database = {
           email: string | null
           id: string
           localidad: string | null
+          motivo_rechazo: string | null
           nombre_comercial: string | null
           nombre_comercial_norm: string | null
           observaciones: string | null
+          pendiente: boolean
           provincia: Database["public"]["Enums"]["provincia"] | null
           razon_social: string
           razon_social_norm: string | null
@@ -148,9 +197,11 @@ export type Database = {
           email?: string | null
           id?: string
           localidad?: string | null
+          motivo_rechazo?: string | null
           nombre_comercial?: string | null
           nombre_comercial_norm?: string | null
           observaciones?: string | null
+          pendiente?: boolean
           provincia?: Database["public"]["Enums"]["provincia"] | null
           razon_social: string
           razon_social_norm?: string | null
@@ -166,9 +217,11 @@ export type Database = {
           email?: string | null
           id?: string
           localidad?: string | null
+          motivo_rechazo?: string | null
           nombre_comercial?: string | null
           nombre_comercial_norm?: string | null
           observaciones?: string | null
+          pendiente?: boolean
           provincia?: Database["public"]["Enums"]["provincia"] | null
           razon_social?: string
           razon_social_norm?: string | null
@@ -192,8 +245,10 @@ export type Database = {
           created_at: string
           empresa_id: string
           id: string
+          motivo_rechazo: string | null
           obra_id: string
           observaciones: string | null
+          pendiente: boolean
           roles: Database["public"]["Enums"]["rol_empresa"][]
           updated_at: string
         }
@@ -202,8 +257,10 @@ export type Database = {
           created_at?: string
           empresa_id: string
           id?: string
+          motivo_rechazo?: string | null
           obra_id: string
           observaciones?: string | null
+          pendiente?: boolean
           roles: Database["public"]["Enums"]["rol_empresa"][]
           updated_at?: string
         }
@@ -212,8 +269,10 @@ export type Database = {
           created_at?: string
           empresa_id?: string
           id?: string
+          motivo_rechazo?: string | null
           obra_id?: string
           observaciones?: string | null
+          pendiente?: boolean
           roles?: Database["public"]["Enums"]["rol_empresa"][]
           updated_at?: string
         }
@@ -240,8 +299,10 @@ export type Database = {
           created_at: string
           empresa_id: string | null
           id: string
+          motivo_rechazo: string | null
           obra_id: string
           observaciones: string | null
+          pendiente: boolean
           persona_id: string
           roles: Database["public"]["Enums"]["rol_persona"][]
           updated_at: string
@@ -251,8 +312,10 @@ export type Database = {
           created_at?: string
           empresa_id?: string | null
           id?: string
+          motivo_rechazo?: string | null
           obra_id: string
           observaciones?: string | null
+          pendiente?: boolean
           persona_id: string
           roles: Database["public"]["Enums"]["rol_persona"][]
           updated_at?: string
@@ -262,8 +325,10 @@ export type Database = {
           created_at?: string
           empresa_id?: string | null
           id?: string
+          motivo_rechazo?: string | null
           obra_id?: string
           observaciones?: string | null
+          pendiente?: boolean
           persona_id?: string
           roles?: Database["public"]["Enums"]["rol_persona"][]
           updated_at?: string
@@ -400,9 +465,11 @@ export type Database = {
           email: string | null
           email_norm: string | null
           id: string
+          motivo_rechazo: string | null
           nombre: string
           nombre_norm: string | null
           observaciones: string | null
+          pendiente: boolean
           telefono: string | null
           telefono_norm: string | null
           updated_at: string
@@ -417,9 +484,11 @@ export type Database = {
           email?: string | null
           email_norm?: string | null
           id?: string
+          motivo_rechazo?: string | null
           nombre: string
           nombre_norm?: string | null
           observaciones?: string | null
+          pendiente?: boolean
           telefono?: string | null
           telefono_norm?: string | null
           updated_at?: string
@@ -434,9 +503,11 @@ export type Database = {
           email?: string | null
           email_norm?: string | null
           id?: string
+          motivo_rechazo?: string | null
           nombre?: string
           nombre_norm?: string | null
           observaciones?: string | null
+          pendiente?: boolean
           telefono?: string | null
           telefono_norm?: string | null
           updated_at?: string
@@ -1359,6 +1430,10 @@ export type Database = {
         }[]
       }
       obras_es_mi_obra: { Args: { p_obra_id: string }; Returns: boolean }
+      obras_etiqueta: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: string
+      }
       obras_ficha_persona: {
         Args: { p_persona_id: string }
         Returns: {
@@ -1376,27 +1451,130 @@ export type Database = {
       }
       obras_guardar_referente: {
         Args: {
-          p_observaciones?: string
           p_obra_id: string
+          p_observaciones?: string
           p_persona_id: string
           p_porcentaje_comision: number
         }
         Returns: string
       }
+      obras_historial_aprobaciones: {
+        Args: { p_dias?: number }
+        Returns: {
+          aprobacion_id: string
+          aprobada: boolean
+          created_at: string
+          decidido_por: string
+          etiqueta: string
+          motivo: string
+          tipo: string
+        }[]
+      }
       obras_normalizar: { Args: { t: string }; Returns: string }
       obras_normalizar_telefono: { Args: { t: string }; Returns: string }
+      obras_pendiente_similares: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: {
+          detalle: string
+          etiqueta: string
+        }[]
+      }
+      obras_pendientes: {
+        Args: never
+        Returns: {
+          created_at: string
+          etiqueta: string
+          motivo: string
+          registro_id: string
+          solicitante: string
+          tipo: string
+        }[]
+      }
+      obras_personas_de_empresa: {
+        Args: { p_empresa_id: string; p_obra_id?: string }
+        Returns: {
+          apellido: string
+          cargo: string
+          es_mia: boolean
+          es_principal: boolean
+          nombre: string
+          persona_id: string
+          ya_en_obra: boolean
+        }[]
+      }
       obras_puede_ver_obra: { Args: { p_obra_id: string }; Returns: boolean }
       obras_puede_ver_persona: {
         Args: { p_persona_id: string }
         Returns: boolean
       }
+      obras_resolver_pendiente: {
+        Args: {
+          p_aprobar: boolean
+          p_id: string
+          p_motivo?: string
+          p_tipo: string
+        }
+        Returns: undefined
+      }
       obras_set_activo: {
         Args: { p_activo: boolean; p_obra_id: string }
         Returns: undefined
       }
+      obras_similares_empresa: {
+        Args: {
+          p_excluir_id?: string
+          p_nombre_comercial?: string
+          p_razon_social: string
+        }
+        Returns: {
+          empresa_id: string
+          score: number
+        }[]
+      }
+      obras_similares_obra: {
+        Args: {
+          p_direccion?: string
+          p_excluir_id?: string
+          p_localidad?: string
+          p_nombre: string
+        }
+        Returns: {
+          misma_localidad: boolean
+          obra_id: string
+          score: number
+        }[]
+      }
+      obras_similares_persona: {
+        Args: {
+          p_apellido?: string
+          p_email?: string
+          p_excluir_id?: string
+          p_nombre: string
+          p_telefono?: string
+        }
+        Returns: {
+          coincide: string
+          persona_id: string
+        }[]
+      }
       obras_transferir: {
         Args: { p_a_usuario_id: string; p_obra_id: string }
         Returns: undefined
+      }
+      obras_vincular_empresa: {
+        Args: {
+          p_empresa_id: string
+          p_obra_id: string
+          p_observaciones?: string
+          p_personas?: Json
+          p_roles: Database["public"]["Enums"]["rol_empresa"][]
+        }
+        Returns: {
+          personas_agregadas: number
+          personas_pendientes: number
+          vinculo_id: string
+          vinculo_pendiente: boolean
+        }[]
       }
       proyecto_tiene_miembros: {
         Args: { p_proyecto_id: string }

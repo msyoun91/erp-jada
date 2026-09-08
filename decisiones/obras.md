@@ -231,3 +231,127 @@ Ver `BACKLOG.md` para el buscador global obra/empresa/persona, decidido pero fue
 **`useWatch` y no `watch()`.** `watch()` devuelve una función no memoizable y el React Compiler saltea la optimización del componente entero — lo marca el lint del repo. El resto del código usa `useController` por la misma razón.
 
 **Sin filtro "responsable inactivo" en SQL.** La policy de `usuarios` no expone `activo` al embed, así que el filtro se resuelve en JS contra la lista de activos que ya se pide para el picker de transferencia.
+
+---
+
+## Congelada, no marcada
+
+Pedido del usuario: un alta que se parece a algo ya cargado, y un vínculo con una persona o empresa de otro, esperan autorización. La pregunta que decidía el diseño era qué puede hacer el que cargó mientras espera. **Decidido: nada.** La fila existe, la ve solo quien la creó, y no acepta ni participa de ningún vínculo hasta que se resuelva (`sql/033`).
+
+La alternativa —badge y a otra cosa— dejaba al duplicado propagándose por las obras mientras la cola espera, que es justo lo que la cola viene a evitar.
+
+Sin estado nuevo: `pendiente = true` es la cola, `pendiente = false` con `activo` es el resultado, y rechazada es `activo = false` con `motivo_rechazo`. Los dos booleanos que ya existían alcanzan.
+
+**El rechazo desactiva, no fusiona.** Mudar los vínculos de la fila nueva a la original es una función de migración bastante más grande, y hoy la fila nueva casi nunca tiene vínculos: está congelada justamente. Si aparece el caso, se revisa.
+
+---
+
+## El vínculo pendiente no abre la ficha
+
+Es el punto entero del pedido 2, y lo que lo hace algo más que un trámite: `obras_puede_ver_persona` dejó de contar los vínculos pendientes. Si los contara, el vendedor vincularía, leería el teléfono por `obras_ficha_persona()` y esperaría el rechazo sentado — con el dato ya copiado.
+
+Dicho de otro modo: hasta `sql/033`, encontrar a alguien en el buscador de identidad mínima y vincularlo a una obra propia era todo lo que hacía falta para llegar al celular. Ahora eso pasa por un tercero.
+
+---
+
+## `obras_aprobar` no es una llave a la agenda
+
+La primera versión de `sql/033` metía `OR tiene_permiso('obras_aprobar')` adentro de `obras_puede_ver_persona`, para que quien aprueba pudiera ver la persona congelada que está juzgando. Eso convertía el permiso de aprobar en **la agenda entera con contacto incluido** — más de lo que da `obras_personas_todas`, y sin que el nombre lo insinúe.
+
+Lo cazaron los casos 06 y 07 de `sql/tests/obras_033.sql`, que son los que afirman lo del párrafo anterior: con esa cláusula, el vínculo pendiente seguía abriendo la ficha para cualquiera que aprobara.
+
+**Decidido:** quien aprueba mira por `obras_pendientes()` y `obras_pendiente_similares()`, que son `SECURITY DEFINER` y devuelven identidad mínima. Mismo criterio que la vista de Auditoría: la pantalla que vigila el acceso al contacto no puede ser otra puerta al contacto.
+
+La excepción va del otro lado: `obras_pendiente_similares` **sí** muestra el nombre de la obra ajena contra la que se parece. Sin eso la decisión de aprobar es a ciegas, que es lo contrario de lo que la cola existe para hacer. Queda acotada a `obras_aprobar` y no devuelve contacto de nadie.
+
+---
+
+## La detección corre en la base, y por eso hubo que partir las tres búsquedas
+
+El aviso de duplicados era una advertencia que el usuario podía ignorar. Ahora además decide si la fila entra congelada, así que no puede depender de que el cliente confiese que lo vio: el trigger es la barrera.
+
+Pero los triggers necesitaban el criterio de parecido **sin** el enmascarado ni el guard de permiso que esas funciones aplican al resultado. Con `obras_buscar_duplicados_*` tal como estaban, la detección habría dependido de qué permisos tiene quien crea.
+
+**Decidido:** cada una se parte en dos. `obras_similares_*` hace el match crudo (ids y score, sin mirar quién pregunta) y `obras_buscar_duplicados_*` queda como capa de enmascarado con firma idéntica —los `GRANT` sobreviven al `REPLACE` y `actions.ts` no se entera—. Un solo umbral, un solo criterio, tres consumidores: la pantalla, el trigger y la cola.
+
+`obras_similares_empresa` es la única de las tres con `GRANT` a `authenticated`, porque el envoltorio de empresas sigue siendo `SECURITY INVOKER` —así la policy de `obras_empresas` sigue decidiendo qué ve cada uno— y por lo tanto la ejecuta como quien llama.
+
+---
+
+## GRANT UPDATE por columna en las cuatro tablas que faltaban
+
+`obras` ya lo tenía desde `sql/027`. Las otras cuatro tenían `UPDATE` entero: con eso, un PATCH por PostgREST se auto-aprueba poniendo `pendiente = false`, y toda la cola es decorativa. Ocultar el botón no autoriza.
+
+De paso salieron `creado_por` y las columnas `_norm`, que nunca tuvieron por qué ser escribibles desde el cliente.
+
+Es fácil dejar la lista corta y romper editar o desactivar sin que nada avise, así que los casos 13 a 15 de `obras_033.sql` afirman que los `UPDATE` que la app sí hace siguen andando.
+
+---
+
+## Bug que vale recordar: `AND` no corta la referencia a `NEW`
+
+`obras_guard_congelado` es un solo trigger para cuatro tablas, y arrancó escrito como `IF TG_TABLE_NAME IN (...) AND EXISTS (... NEW.obra_id ...)`.
+
+plpgsql planea cada expresión entera la primera vez que la ejecuta, y no hay short-circuit a nivel de plan: sobre `obras_persona_empresa` —que no tiene `obra_id`— reventaba con `42703 record "new" has no field "obra_id"`. Vincular una persona a una empresa fallaba siempre, desde cualquier pantalla.
+
+**Regla que queda:** en un trigger compartido entre tablas, la referencia a `NEW.<columna>` va adentro de un `IF` anidado bajo el chequeo de `TG_TABLE_NAME`, nunca del mismo lado de un `AND`. Lo cazó `obras_033.sql` en la primera corrida.
+
+---
+
+## Vincular se hace desde los dos lados
+
+Pedido del usuario, y es un cambio de UI, no de modelo: la fila obra↔empresa, obra↔persona y persona↔empresa siempre fue una sola, y los permisos ya existían (`obras_vincular`, `obras_personas_empresas`). Lo que faltaba era la puerta desde la ficha de la empresa y desde la de la persona.
+
+`VincularPersonaEmpresaPanel` toma `persona` **o** `empresa` fija y busca la otra punta — un solo panel, porque es la misma fila y el mismo permiso. `VincularObraPanel` es el sentido nuevo: parado en la agenda, lo que se busca es la obra. Solo ofrece obras propias y no congeladas, que son las únicas a las que la RLS deja colgarle un vínculo.
+
+---
+
+## Los `<select>` de vinculación se fueron a buscador
+
+Un desplegable con la lista entera deja de servir apenas la agenda crece, y en el caso de las personas además exponía el padrón completo a quien solo tenía que vincular una — el mismo motivo por el que `VincularPersonaPanel` ya buscaba en vez de listar.
+
+`Buscador` es uno solo para los cuatro paneles. Carga la primera tanda al abrir **salvo** cuando busca personas: ahí la lista vacía es deliberada, la agenda se busca y no se lista.
+
+La función que se le pasa tiene que ser estable entre renders (definida a nivel de módulo, no inline): el efecto de la primera carga la toma como dependencia. Y el `setState` va en el callback de la promesa, nunca en el cuerpo del efecto — el lint del repo lo corta.
+
+---
+
+## La empresa entra a la obra con su gente
+
+`obras_vincular_empresa` (`sql/034`) escribe el vínculo de la empresa y los de las personas en una transacción. `SECURITY INVOKER`: la autoridad sigue en las policies, igual que `obras_guardar_referente`.
+
+**Un rol por persona, no uno para el lote.** Compras y arquitecto no tienen el mismo rol en la obra aunque trabajen en la misma constructora. Hay un "rol para todas" arriba que llena la columna de una, porque tildar nueve selects iguales tampoco es trabajo.
+
+**La lista la sirve `obras_personas_de_empresa`, no un select.** Con RLS directa, quien vincula vería dos de las nueve personas de la constructora —las suyas— y el pedido pierde sentido. La función es `SECURITY DEFINER` y devuelve identidad mínima: nombre, apellido y cargo, nunca contacto. Las que no son suyas entran igual y quedan pendientes, que es exactamente el pedido 2 funcionando.
+
+Las que ya están en la obra vienen destildadas y marcadas: el `ON CONFLICT DO NOTHING` las saltearía igual, pero sin decirlo la UI estaría prometiendo algo que no pasa.
+
+---
+
+## Enlaces externos: copiar, no inventar
+
+El pedido de "accesos directos a la ficha" no necesitaba nada del servidor. Las URLs ya eran estables y el middleware ya devuelve al destino después del login (`next`), así que lo único que faltaba era poder sacar la URL de la app sin copiarla de la barra: un botón en las tres fichas.
+
+Nada de tokens ni de links públicos — la ficha sigue exigiendo sesión y permiso, que es lo que hace que el enlace se pueda mandar por WhatsApp sin pensarlo dos veces.
+
+---
+
+## Marcar referente era el atajo que dejaba pasar todo
+
+Con el vínculo obra↔persona ya cerrado, quedaba una puerta más: `obras_puede_ver_persona` cuenta las filas de `obras_obra_referente` como acceso —una comisión asignada a alguien que no podés ver no significa nada— y esa tabla **no** tiene `pendiente`.
+
+El camino era: encontrar a alguien ajeno en el buscador de identidad mínima, marcarlo referente de una obra propia, y leerle el teléfono. Sin pasar por nadie, y con `obras_referentes` que es un permiso que un vendedor normal tiene.
+
+**Decidido:** `obras_guard_congelado` exige, para `obras_obra_referente`, que la persona ya sea visible **antes** de esa fila (`OB019`). No se le agregó `pendiente` a la tabla: la comisión no es un vínculo que valga la pena poner en la cola, y el orden correcto es vincular primero y marcar referente después — que es exactamente lo que la UI ya ofrecía.
+
+La pantalla acompaña: `ObraDetalle` solo ofrece "Referente" sobre personas con el vínculo aprobado.
+
+**Regla que queda:** cada tabla nueva cuya fila entre en `obras_puede_ver_persona` es una puerta al contacto, y hay que preguntarse quién la puede escribir. Hoy son dos: `obras_obra_persona` (con `pendiente`) y `obras_obra_referente` (con este guard).
+
+---
+
+## Lo que el rechazo todavía no resuelve
+
+Rechazar desactiva la fila, así que sale de los listados: quien la cargó se entera solo si entra a la ficha por URL directa. El motivo está guardado y la ficha lo muestra, pero nadie le avisa.
+
+No se resolvió acá porque el módulo no tiene ningún canal de aviso y armarlo para esto sería construir media notificación. Queda en `BACKLOG.md` con el camino barato anotado.

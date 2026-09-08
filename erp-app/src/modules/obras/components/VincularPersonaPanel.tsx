@@ -4,14 +4,21 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { buscarDuplicadosPersona, editarVinculoPersona, vincularPersona } from "../actions";
-import {
-  LABEL_ROL_PERSONA,
-  ROLES_PERSONA,
-  type DuplicadoPersona,
-  type RolPersona,
-} from "../types";
+import { LABEL_ROL_PERSONA, ROLES_PERSONA, type RolPersona } from "../types";
+import { Buscador } from "./Buscador";
 import { RolesPicker } from "./RolesPicker";
 import { PersonaFormPanel } from "./PersonaFormPanel";
+
+// Identidad mínima: nombre, apellido y empresa principal. Estable entre
+// renders porque el <Buscador /> la toma como dependencia.
+const buscarPersonas = async (texto: string) => {
+  const encontradas = await buscarDuplicadosPersona(texto);
+  return encontradas.map((d) => ({
+    id: d.persona_id,
+    etiqueta: `${d.nombre} ${d.apellido ?? ""}`.trim(),
+    detalle: d.empresa,
+  }));
+};
 
 export type VinculoPersona = {
   id: string;
@@ -38,9 +45,6 @@ export function VincularPersonaPanel({
   puedeCrearPersona: boolean;
   onClose: () => void;
 }) {
-  const [busqueda, setBusqueda] = useState("");
-  const [resultados, setResultados] = useState<DuplicadoPersona[]>([]);
-  const [buscando, setBuscando] = useState(false);
   const [personaId, setPersonaId] = useState(vinculo?.persona_id ?? "");
   const [personaNombre, setPersonaNombre] = useState(vinculo?.nombre ?? "");
   const [empresaId, setEmpresaId] = useState(vinculo?.empresa_id ?? "");
@@ -49,19 +53,6 @@ export function VincularPersonaPanel({
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string>();
   const [creandoPersona, setCreandoPersona] = useState(false);
-
-  async function buscar() {
-    if (!busqueda.trim()) return;
-    setBuscando(true);
-    setResultados(await buscarDuplicadosPersona(busqueda));
-    setBuscando(false);
-  }
-
-  function elegir(d: DuplicadoPersona) {
-    setPersonaId(d.persona_id);
-    setPersonaNombre(`${d.nombre} ${d.apellido ?? ""}`.trim());
-    setResultados([]);
-  }
 
   async function guardar() {
     if (!personaId) return setError("Elegí una persona");
@@ -85,7 +76,14 @@ export function VincularPersonaPanel({
       toast.error(result.error);
       return;
     }
-    toast.success(vinculo ? "Vínculo actualizado" : "Persona vinculada");
+
+    // Vincular una persona que cargó otro queda esperando autorización, y
+    // hasta entonces el vínculo no abre su ficha de contacto.
+    if (!vinculo && "pendiente" in result && result.pendiente) {
+      toast.warning("Persona vinculada, pendiente de autorización: la cargó otro usuario");
+    } else {
+      toast.success(vinculo ? "Vínculo actualizado" : "Persona vinculada");
+    }
     onClose();
   }
 
@@ -127,37 +125,17 @@ export function VincularPersonaPanel({
                 </div>
               ) : (
                 <>
-                  <div className="flex gap-2">
-                    <input
-                      className="input"
-                      placeholder="Nombre o apellido…"
-                      value={busqueda}
-                      onChange={(e) => setBusqueda(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), buscar())}
-                    />
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={buscar}>
-                      {buscando ? "…" : "Buscar"}
-                    </button>
-                  </div>
-
-                  {resultados.length > 0 && (
-                    <ul className="mt-2 flex flex-col gap-1">
-                      {resultados.map((d) => (
-                        <li key={d.persona_id}>
-                          <button
-                            type="button"
-                            className="card flex w-full min-h-[44px] items-center gap-2 p-2 text-left hover:bg-bg-subtle"
-                            onClick={() => elegir(d)}
-                          >
-                            <span className="t-body-m flex-1 font-semibold">
-                              {d.nombre} {d.apellido ?? ""}
-                            </span>
-                            {d.empresa && <span className="t-caption">{d.empresa}</span>}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  {/* Sin carga inicial: la agenda no se lista sola, se busca.
+                      Es lo que evita que vincular sea una puerta al padrón. */}
+                  <Buscador
+                    placeholder="Nombre o apellido…"
+                    buscar={buscarPersonas}
+                    cargarAlAbrir={false}
+                    onElegir={(o) => {
+                      setPersonaId(o.id);
+                      setPersonaNombre(o.etiqueta);
+                    }}
+                  />
 
                   {puedeCrearPersona && (
                     <button
@@ -212,9 +190,11 @@ export function VincularPersonaPanel({
       {creandoPersona && (
         <PersonaFormPanel
           onClose={() => setCreandoPersona(false)}
-          onCreada={(id) => {
+          onCreada={(id, pendiente, nombre) => {
+            // Congelada no se puede vincular: el trigger corta con OB012.
+            if (pendiente) return;
             setPersonaId(id);
-            setPersonaNombre(busqueda);
+            setPersonaNombre(nombre);
           }}
         />
       )}

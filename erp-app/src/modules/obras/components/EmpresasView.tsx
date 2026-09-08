@@ -61,6 +61,7 @@ export function EmpresasView({
                 <span className="t-body-m min-w-0 flex-1 truncate font-semibold">
                   {e.razon_social}
                 </span>
+                {e.pendiente && <span className="badge badge-warning">Pendiente</span>}
                 {e.nombre_comercial && <span className="t-caption">{e.nombre_comercial}</span>}
                 {e.localidad && <span className="t-caption">{e.localidad}</span>}
                 {e.telefono && <span className="t-caption">{e.telefono}</span>}

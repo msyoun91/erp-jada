@@ -10,7 +10,6 @@ import {
   puedeVincular,
 } from "@/modules/obras/permissions";
 import {
-  getEmpresas,
   getObra,
   getReferentes,
   getTransferencias,
@@ -37,10 +36,10 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
       puedeCrearPersona(),
     ]);
 
-  // Solo se piden si hacen falta: la lista de empresas alimenta el panel de
-  // vinculación y la de usuarios el de transferencia.
-  const [empresasDisponibles, usuarios, referentes, transferencias] = await Promise.all([
-    vincular ? getEmpresas() : Promise.resolve([]),
+  // Solo se piden si hacen falta: la de usuarios alimenta el panel de
+  // transferencia. Las empresas ya no se traen enteras — el panel de
+  // vinculación las busca.
+  const [usuarios, referentes, transferencias] = await Promise.all([
     transferir ? getUsuariosParaTransferir() : Promise.resolve([]),
     referentesPerm ? getReferentes(id) : Promise.resolve([]),
     getTransferencias(id),
@@ -53,6 +52,7 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
     empresa_id: v.obras_empresas?.id ?? "",
     roles: v.roles as RolEmpresa[],
     observaciones: v.observaciones,
+    pendiente: v.pendiente,
     razon_social: v.obras_empresas?.razon_social ?? "—",
   }));
 
@@ -62,6 +62,7 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
     empresa_id: v.empresa_id,
     roles: v.roles as RolPersona[],
     observaciones: v.observaciones,
+    pendiente: v.pendiente,
     nombre: `${v.obras_personas?.nombre ?? ""} ${v.obras_personas?.apellido ?? ""}`.trim() || "—",
     empresa: v.obras_empresas?.razon_social ?? null,
   }));
@@ -86,7 +87,6 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
         de: t.de?.nombre ?? "—",
         a: t.a?.nombre ?? "—",
       }))}
-      empresasDisponibles={empresasDisponibles}
       usuarios={usuarios}
       permisos={{
         editar,

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Pencil } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { desactivarEmpresa } from "../actions";
@@ -14,21 +14,39 @@ import {
   type EstadoObra,
   type RolEmpresa,
 } from "../types";
+import { CopiarEnlace } from "./CopiarEnlace";
 import { EmpresaFormPanel } from "./EmpresaFormPanel";
+import { EstadoPendiente } from "./EstadoPendiente";
+import { VincularObraPanel } from "./VincularObraPanel";
+import { VincularPersonaEmpresaPanel } from "./VincularPersonaEmpresaPanel";
 
 export function EmpresaDetalle({
   empresa,
   personas,
   obras,
-  puedeEditar,
+  permisos,
 }: {
   empresa: Empresa;
   personas: { id: string; persona_id: string; nombre: string; cargo: string | null; es_principal: boolean }[];
-  obras: { id: string; obra_id: string; nombre: string; estado: EstadoObra; localidad: string | null; roles: RolEmpresa[] }[];
-  puedeEditar: boolean;
+  obras: {
+    id: string;
+    obra_id: string;
+    nombre: string;
+    estado: EstadoObra;
+    localidad: string | null;
+    roles: RolEmpresa[];
+    pendiente: boolean;
+  }[];
+  // Vincular personas y vincular obras son dos permisos distintos porque son
+  // dos tablas distintas: `obras_personas_empresas` y `obras_vincular`.
+  permisos: { editar: boolean; vincularPersona: boolean; vincularObra: boolean };
 }) {
   const [editando, setEditando] = useState(false);
   const [desactivando, setDesactivando] = useState(false);
+  const [vinculandoPersona, setVinculandoPersona] = useState(false);
+  const [vinculandoObra, setVinculandoObra] = useState(false);
+
+  const congelada = empresa.pendiente;
 
   return (
     <div className="flex flex-col gap-6">
@@ -37,7 +55,8 @@ export function EmpresaDetalle({
           ← Empresas
         </Link>
         <h2 className="t-h2 min-w-0 flex-1 truncate">{empresa.razon_social}</h2>
-        {puedeEditar && (
+        <CopiarEnlace ruta={`/obras/empresas/${empresa.id}`} />
+        {permisos.editar && (
           <>
             <button className="btn btn-secondary btn-sm" onClick={() => setEditando(true)}>
               <Pencil size={14} />
@@ -49,6 +68,13 @@ export function EmpresaDetalle({
           </>
         )}
       </div>
+
+      <EstadoPendiente
+        pendiente={empresa.pendiente}
+        motivoRechazo={empresa.motivo_rechazo}
+        queEs="Esta empresa"
+        detalle="Se parece a una que ya existe. Solo la ves vos y no se puede vincular a obras ni a personas hasta que la autoricen."
+      />
 
       <section className="card p-4">
         <dl className="grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -98,7 +124,17 @@ export function EmpresaDetalle({
       </section>
 
       <section>
-        <h3 className="t-h3 mb-2">Personas</h3>
+        <div className="mb-2 flex items-center gap-2">
+          <h3 className="t-h3 flex-1">Personas</h3>
+          {/* El vínculo persona↔empresa se arma desde los dos lados: es la
+              misma fila y el mismo permiso. */}
+          {permisos.vincularPersona && !congelada && (
+            <button className="btn btn-secondary btn-sm" onClick={() => setVinculandoPersona(true)}>
+              <Plus size={14} />
+              Vincular persona
+            </button>
+          )}
+        </div>
         {personas.length === 0 ? (
           <p className="t-caption">Ninguna persona vinculada a tu alcance.</p>
         ) : (
@@ -120,7 +156,15 @@ export function EmpresaDetalle({
       </section>
 
       <section>
-        <h3 className="t-h3 mb-2">Obras</h3>
+        <div className="mb-2 flex items-center gap-2">
+          <h3 className="t-h3 flex-1">Obras</h3>
+          {permisos.vincularObra && !congelada && (
+            <button className="btn btn-secondary btn-sm" onClick={() => setVinculandoObra(true)}>
+              <Plus size={14} />
+              Vincular obra
+            </button>
+          )}
+        </div>
         {obras.length === 0 ? (
           // Las obras ajenas no se ven: la empresa es compartida, las obras no.
           <p className="t-caption">Ninguna de tus obras tiene vinculada esta empresa.</p>
@@ -139,6 +183,7 @@ export function EmpresaDetalle({
                 <span className="t-caption">
                   {o.roles.map((r) => LABEL_ROL_EMPRESA[r]).join(" · ")}
                 </span>
+                {o.pendiente && <span className="badge badge-warning">Pendiente</span>}
               </li>
             ))}
           </ul>
@@ -146,6 +191,20 @@ export function EmpresaDetalle({
       </section>
 
       {editando && <EmpresaFormPanel empresa={empresa} onClose={() => setEditando(false)} />}
+
+      {vinculandoPersona && (
+        <VincularPersonaEmpresaPanel
+          empresa={{ id: empresa.id, razon_social: empresa.razon_social }}
+          onClose={() => setVinculandoPersona(false)}
+        />
+      )}
+
+      {vinculandoObra && (
+        <VincularObraPanel
+          empresa={{ id: empresa.id, razon_social: empresa.razon_social }}
+          onClose={() => setVinculandoObra(false)}
+        />
+      )}
 
       {desactivando && (
         <ConfirmModal
