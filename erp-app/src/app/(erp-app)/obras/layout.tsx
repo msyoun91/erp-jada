@@ -1,18 +1,25 @@
 import { Building2 } from "lucide-react";
 import { ModuleTabs } from "@/components/layout/ModuleTabs";
-import { puedeVerEmpresas, puedeVerObras, puedeVerPersonas } from "@/modules/obras/permissions";
+import {
+  puedeVerAuditoria,
+  puedeVerEmpresas,
+  puedeVerObras,
+  puedeVerPersonas,
+} from "@/modules/obras/permissions";
 
 export default async function ObrasLayout({ children }: { children: React.ReactNode }) {
-  const [obras, empresas, personas] = await Promise.all([
+  const [obras, empresas, personas, auditoria] = await Promise.all([
     puedeVerObras(),
     puedeVerEmpresas(),
     puedeVerPersonas(),
+    puedeVerAuditoria(),
   ]);
 
   const tabs = [
     obras && { codigo: "obras_ver", label: "Obras", href: "/obras" },
     empresas && { codigo: "obras_empresas", label: "Empresas", href: "/obras/empresas" },
     personas && { codigo: "obras_personas", label: "Personas", href: "/obras/personas" },
+    auditoria && { codigo: "obras_auditoria", label: "Auditoría", href: "/obras/auditoria" },
   ].filter((t): t is { codigo: string; label: string; href: string } => Boolean(t));
 
   return (

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Pencil, Plus, UserRoundCog } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { formatFechaHora } from "@/lib/utils";
 import {
   desvincularEmpresa,
   desvincularPersona,
@@ -40,6 +41,13 @@ export type Permisos = {
   crearPersona: boolean;
 };
 
+export type TransferenciaVista = {
+  id: string;
+  created_at: string;
+  de: string;
+  a: string;
+};
+
 export type ReferenteVista = {
   id: string;
   persona_id: string;
@@ -54,6 +62,7 @@ export function ObraDetalle({
   empresas,
   personas,
   referentes,
+  transferencias,
   empresasDisponibles,
   usuarios,
   permisos,
@@ -63,6 +72,7 @@ export function ObraDetalle({
   empresas: (VinculoEmpresa & { razon_social: string })[];
   personas: (VinculoPersona & { empresa: string | null })[];
   referentes: ReferenteVista[];
+  transferencias: TransferenciaVista[];
   empresasDisponibles: Empresa[];
   usuarios: Usuario[];
   permisos: Permisos;
@@ -237,6 +247,23 @@ export function ObraDetalle({
           </ul>
         )}
       </section>
+
+      {transferencias.length > 0 && (
+        <section className="card p-4">
+          <h3 className="t-h3 mb-3">Historial de responsables</h3>
+          {/* La obra la ve su responsable actual, así que sin esto "¿por qué
+              no la veo más?" no tiene respuesta dentro de la app. */}
+          <ul className="flex flex-col gap-1">
+            {transferencias.map((t) => (
+              <li key={t.id} className="t-body-m">
+                <span className="t-caption">{formatFechaHora(t.created_at)}</span> — de{" "}
+                <span className="font-semibold">{t.de}</span> a{" "}
+                <span className="font-semibold">{t.a}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {editando && <ObraFormPanel obra={obra} onClose={() => setEditando(false)} />}
 

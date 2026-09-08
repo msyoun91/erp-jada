@@ -1290,8 +1290,35 @@ export type Database = {
       }
       es_responsable_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
       obras_array_sin_duplicados: { Args: { a: unknown }; Returns: boolean }
+      obras_auditoria_accesos: {
+        Args: { p_dias?: number }
+        Returns: {
+          acceso_id: string
+          created_at: string
+          persona: string
+          persona_id: string
+          usuario: string
+          usuario_id: string
+        }[]
+      }
+      obras_auditoria_transferencias: {
+        Args: { p_dias?: number }
+        Returns: {
+          a_usuario: string
+          created_at: string
+          de_usuario: string
+          ejecutada_por: string
+          obra: string
+          obra_id: string
+          transferencia_id: string
+        }[]
+      }
       obras_buscar_duplicados_empresa: {
-        Args: { p_nombre_comercial?: string; p_razon_social: string }
+        Args: {
+          p_excluir_id?: string
+          p_nombre_comercial?: string
+          p_razon_social: string
+        }
         Returns: {
           empresa_id: string
           localidad: string
@@ -1300,7 +1327,12 @@ export type Database = {
         }[]
       }
       obras_buscar_duplicados_obra: {
-        Args: { p_direccion?: string; p_localidad?: string; p_nombre: string }
+        Args: {
+          p_direccion?: string
+          p_excluir_id?: string
+          p_localidad?: string
+          p_nombre: string
+        }
         Returns: {
           direccion: string
           es_mia: boolean
@@ -1314,6 +1346,7 @@ export type Database = {
         Args: {
           p_apellido?: string
           p_email?: string
+          p_excluir_id?: string
           p_nombre: string
           p_telefono?: string
         }
@@ -1340,6 +1373,15 @@ export type Database = {
           updated_at: string
           whatsapp: string
         }[]
+      }
+      obras_guardar_referente: {
+        Args: {
+          p_observaciones?: string
+          p_obra_id: string
+          p_persona_id: string
+          p_porcentaje_comision: number
+        }
+        Returns: string
       }
       obras_normalizar: { Args: { t: string }; Returns: string }
       obras_normalizar_telefono: { Args: { t: string }; Returns: string }

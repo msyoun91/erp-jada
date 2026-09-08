@@ -13,6 +13,7 @@ import {
   getEmpresas,
   getObra,
   getReferentes,
+  getTransferencias,
   getUsuariosParaTransferir,
 } from "@/modules/obras/queries";
 import { ObraDetalle } from "@/modules/obras/components/ObraDetalle";
@@ -38,10 +39,11 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
 
   // Solo se piden si hacen falta: la lista de empresas alimenta el panel de
   // vinculación y la de usuarios el de transferencia.
-  const [empresasDisponibles, usuarios, referentes] = await Promise.all([
+  const [empresasDisponibles, usuarios, referentes, transferencias] = await Promise.all([
     vincular ? getEmpresas() : Promise.resolve([]),
     transferir ? getUsuariosParaTransferir() : Promise.resolve([]),
     referentesPerm ? getReferentes(id) : Promise.resolve([]),
+    getTransferencias(id),
   ]);
 
   const { obras_obra_empresa, obras_obra_persona, responsable, ...datos } = obra;
@@ -77,6 +79,12 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
         observaciones: r.observaciones,
         nombre:
           `${r.obras_personas?.nombre ?? ""} ${r.obras_personas?.apellido ?? ""}`.trim() || "—",
+      }))}
+      transferencias={transferencias.map((t) => ({
+        id: t.id,
+        created_at: t.created_at,
+        de: t.de?.nombre ?? "—",
+        a: t.a?.nombre ?? "—",
       }))}
       empresasDisponibles={empresasDisponibles}
       usuarios={usuarios}

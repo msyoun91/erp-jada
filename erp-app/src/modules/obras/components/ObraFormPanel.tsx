@@ -59,12 +59,19 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
 
   // Al salir del nombre, no mientras escribe: una consulta por tecla no aporta
   // nada y el aviso solo tiene sentido con el nombre completo.
+  // Corre también al editar: renombrar una obra hacia una que ya existe es
+  // tan duplicado como cargarla dos veces. `obra?.id` la excluye del
+  // resultado, que si no se encontraría a sí misma con similitud 1.
   async function chequearDuplicados() {
-    if (obra) return;
     const { nombre, direccion, localidad } = getValues();
     if (!nombre?.trim()) return;
     setDuplicados(
-      await buscarDuplicadosObra(nombre, direccion ?? undefined, localidad ?? undefined),
+      await buscarDuplicadosObra(
+        nombre,
+        direccion ?? undefined,
+        localidad ?? undefined,
+        obra?.id,
+      ),
     );
   }
 

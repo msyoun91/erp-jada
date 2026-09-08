@@ -54,7 +54,6 @@ export function PersonaFormPanel({
   });
 
   async function chequearDuplicados() {
-    if (persona) return;
     const { nombre, apellido, email, telefono } = getValues();
     if (!nombre?.trim()) return;
     setDuplicados(
@@ -63,6 +62,7 @@ export function PersonaFormPanel({
         apellido ?? undefined,
         email ?? undefined,
         telefono ?? undefined,
+        persona?.id,
       ),
     );
   }

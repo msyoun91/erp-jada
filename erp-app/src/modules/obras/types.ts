@@ -401,6 +401,29 @@ export type DuplicadoPersona = {
   coincide: "email" | "telefono" | "nombre";
 };
 
+// Los dos logs, servidos por función: quien audita ve los accesos y las
+// transferencias de todos sin tener permiso sobre la agenda ni sobre las obras
+// ajenas. Nunca viaja contacto — la pantalla que vigila el acceso al teléfono
+// no puede ser otra puerta al teléfono.
+export type AccesoAuditoria = {
+  acceso_id: string;
+  created_at: string;
+  usuario_id: string;
+  usuario: string;
+  persona_id: string;
+  persona: string;
+};
+
+export type TransferenciaAuditoria = {
+  transferencia_id: string;
+  created_at: string;
+  obra_id: string;
+  obra: string;
+  de_usuario: string;
+  a_usuario: string;
+  ejecutada_por: string;
+};
+
 export type ObraListado = Obra & {
   responsable: Usuario | null;
   empresas: number;

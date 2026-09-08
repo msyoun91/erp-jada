@@ -1,11 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { getUsuariosActivos } from "@/lib/usuarios";
 import type {
+  AccesoAuditoria,
   Empresa,
   FiltrosObras,
   Obra,
   ObraListado,
   Persona,
+  TransferenciaAuditoria,
   Usuario,
 } from "./types";
 
@@ -246,4 +248,25 @@ export async function getReferenciasDePersona(personaId: string) {
 
   if (error) throw error;
   return data ?? [];
+}
+
+// Los dos logs de la vista de Auditoría. Van por función y no por select
+// directo: `obras_accesos_persona` solo la ve quien tiene
+// `obras_personas_todas`, y las transferencias solo quien ve la obra — con un
+// embed, un auditor sin esos permisos recibiría filas con todo en NULL. La
+// función verifica `obras_auditoria` y sirve nombres, nunca contacto.
+export async function getAuditoriaAccesos(dias: number) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_auditoria_accesos", { p_dias: dias });
+  if (error) throw error;
+  return (data ?? []) as AccesoAuditoria[];
+}
+
+export async function getAuditoriaTransferencias(dias: number) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_auditoria_transferencias", { p_dias: dias });
+  if (error) throw error;
+  return (data ?? []) as TransferenciaAuditoria[];
 }

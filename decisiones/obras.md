@@ -78,6 +78,46 @@ La spec lo pedía como identificador fuerte anti-duplicados. El usuario decidió
 
 ---
 
+## Los logs se miran por función, no por policy
+
+`obras_accesos_persona` y `obras_transferencias` se escribían desde el día uno y no se leían desde ningún lado: el registro de accesos es lo que justifica que `obras_ficha_persona()` sea el único camino al contacto, y sin pantalla el módulo pagaba el costo del log sin cobrar el beneficio. `getTransferencias` ya existía en `queries.ts` y ningún componente la llamaba.
+
+**Decidido:** vista nueva `obras_auditoria` (tab, como las otras tres), servida por `obras_auditoria_accesos()` y `obras_auditoria_transferencias()` — `SECURITY DEFINER` con guard propio, tope de 500 filas.
+
+Por función y no abriendo las policies porque quien audita necesita ver los accesos de **todos** y el nombre de la persona para que la fila signifique algo, pero no tiene por qué tener permiso sobre la agenda ni sobre las obras ajenas. Con un `select` + embed, un auditor sin `obras_personas` habría recibido el log entero con la persona en NULL: el log completo sin poder leerlo.
+
+**El submódulo es propio y no `obras_personas_todas`.** Ese permiso es "ver la agenda completa"; este es "ver quién la estuvo mirando". Son dos cosas distintas y conviene poder darlas por separado — de hecho, lo esperable es que quien audite no tenga la agenda.
+
+La función de accesos devuelve nombre y apellido y nada más. La pantalla que vigila el acceso al contacto no puede ser otra puerta al contacto.
+
+La ficha de obra, además, muestra su propio historial de responsables: la obra la ve su responsable actual, así que "¿por qué no la veo más?" necesita respuesta en el lugar donde se hace la pregunta.
+
+---
+
+## La localidad ordena el aviso de duplicados, no lo filtra
+
+Hasta `sql/031`, `obras_buscar_duplicados_obra` exigía `localidad_norm = obras_normalizar(p_localidad)`. Igualdad exacta sobre un campo de texto libre que cada uno escribe como quiere: los datos de prueba lo mostraron enseguida — "Devoto" contra "Villa Devoto" y el aviso ciego no salta. El nombre ya se compara por trigram; la localidad, no.
+
+**Decidido:** sale del `WHERE` y entra al `ORDER BY`. Escrita igual sube la fila al tope, que es todo lo que aportaba; escrita distinta ya no puede esconder una obra que el nombre o la dirección marcaron como parecida.
+
+## El chequeo de duplicados también corre al editar
+
+`chequearDuplicados` arrancaba con `if (obra) return` en los tres paneles. Renombrar una obra hacia una que ya existe es tan duplicado como cargarla dos veces, y no avisaba.
+
+Lo que faltaba para poder correrlo al editar era `p_excluir_id`: sin él la fila se encuentra a sí misma con similitud 1 y avisa de un duplicado que es ella.
+
+---
+
+## Guardar un referente es un solo statement
+
+`guardarReferente` hacía SELECT y después UPDATE o INSERT desde `actions.ts`. El unique parcial `(obra_id, persona_id) WHERE activo` evitaba la fila duplicada, así que la carrera terminaba en un 23505 crudo en pantalla, no en datos rotos — pero la decisión de si era alta o cambio vivía en TypeScript y en otra transacción, que es justo lo que tareas bajó a SQL en `sql/023`/`024`.
+
+`obras_guardar_referente()` es `SECURITY INVOKER` con `ON CONFLICT ... DO UPDATE`: la autoridad no se mueve de las policies, que siguen exigiendo `obras_referentes` y obra propia.
+
+**Un referente dado de baja no revive por acá.** Su fila tiene `activo = false` y el índice parcial no la ve, así que se inserta una nueva. Es lo correcto: volver a poner un referente es un acto nuevo, no deshacer el anterior.
+
+---
+
 ## Cuatro campos se fueron de la ficha
 
 `cantidad_unidades`, `superficie_estimada`, `fecha_estimada_inicio` y `fecha_estimada_compra` salieron por pedido del usuario (`sql/030`).

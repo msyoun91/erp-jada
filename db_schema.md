@@ -6,7 +6,7 @@ Proyecto Supabase: `qbpudocgdvpeadcyyhfh`. Regenerar tipos tras cada migración:
 `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public > erp-app/src/lib/supabase/database.types.ts`
 (requiere `supabase login` o `SUPABASE_ACCESS_TOKEN`)
 
-Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. Agenda de Obras (`sql/027` + `sql/028` + `sql/029` + `sql/030`) corrida vía MCP. `database.types.ts` sincronizado tras 027/028/029/030.
+Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. Agenda de Obras (`sql/027` a `sql/031`) corrida vía MCP. `database.types.ts` sincronizado tras 027-031.
 
 ---
 
@@ -354,7 +354,7 @@ Verificación: `sql/tests/cascada_proyecto.sql` (10/10).
 
 ---
 
-## Módulo obras — Agenda de Obras (`sql/027_obras.sql` + `sql/028_obras_funciones.sql` + `sql/029_obras_hardening.sql` + `sql/030_obras_quitar_campos.sql` — corridos en Supabase vía MCP)
+## Módulo obras — Agenda de Obras (`sql/027_obras.sql` a `sql/031_obras_auditoria.sql` — corridos en Supabase vía MCP)
 
 Nombre visible: **Agenda de Obras**. `modulo = 'obras'`, ruta `/obras`. Fase 1 es registro y relación de datos: obras, empresas, personas, sus vínculos con roles múltiples, y referentes con comisión por obra. Sin prospectos, oportunidades, presupuestos ni actividades — ver `decisiones/obras.md`.
 
@@ -495,7 +495,26 @@ Tres funciones de búsqueda, con tres niveles de exposición distintos:
 
 El aviso ciego de obras es la salida a un conflicto real: dos vendedores no pueden cargar el mismo edificio, pero tampoco pueden ver las obras del otro. Avisa sin mostrar, y alcanza para que el vendedor vaya a preguntar.
 
+Las tres toman `p_excluir_id` (`sql/031`), que es lo que permite chequear también al editar: sin él, la fila que se está editando se encuentra a sí misma con similitud 1 y avisa de un duplicado que es ella.
+
+En `obras_buscar_duplicados_obra` la localidad **no filtra**, ordena. Filtraba por igualdad exacta del normalizado hasta `sql/031`, y "Devoto" contra "Villa Devoto" alcanzaba para que el aviso no saltara — justo el caso para el que existe. Escrita igual, sube la fila al tope; escrita distinta, ya no esconde nada.
+
 Vincular una persona a una obra propia **no** requiere verla antes — es lo que hace usable la búsqueda de identidad mínima. Es acceso deliberado y queda registrado.
+
+### Auditoría (`sql/031`)
+
+Los dos logs se leen por función, no por `select` directo:
+
+| función | devuelve |
+|---|---|
+| `obras_auditoria_accesos(p_dias)` | cada apertura de ficha: fecha, usuario y **nombre** de la persona. Nunca teléfono, whatsapp ni email |
+| `obras_auditoria_transferencias(p_dias)` | fecha, obra, de quién, a quién y quién la movió |
+
+Las dos son `SECURITY DEFINER` con guard propio (`tiene_permiso('obras_auditoria')`) y tope de 500 filas. Por función y no por policy porque quien audita necesita ver los accesos de todos y el nombre de la persona para que la fila signifique algo, pero no tiene por qué tener permiso sobre la agenda ni sobre las obras ajenas: con un `select` + embed, un auditor sin `obras_personas` recibiría el log entero con la persona en NULL.
+
+La policy de `obras_accesos_persona` no cambia — sigue siendo `obras_personas_todas` para el acceso directo a la tabla.
+
+`obras_guardar_referente(obra, persona, porcentaje, observaciones)` — `SECURITY INVOKER`, `INSERT ... ON CONFLICT (obra_id, persona_id) WHERE activo DO UPDATE`. Reemplaza el SELECT + UPDATE/INSERT que hacía `actions.ts` en dos requests. La autoridad no se mueve: las policies de `obras_obra_referente` siguen exigiendo `obras_referentes` y que la obra sea propia. Un referente dado de baja no revive por acá: el índice parcial no ve su fila, así que se inserta una nueva.
 
 ### Desactivación
 
@@ -516,6 +535,7 @@ Verificado: `has_function_privilege('anon', ...)` da `false` en las 18.
 | obras_ver | vista | — | listado y ficha de obra |
 | obras_empresas | vista | — | |
 | obras_personas | vista | — | |
+| obras_auditoria | vista | — | los dos logs. Aparte de `obras_personas_todas`: ese permiso es ver la agenda completa, este es ver quién la estuvo mirando |
 | obras_crear | funcion | obras_ver | |
 | obras_editar | funcion | obras_ver | solo sobre obras propias |
 | obras_vincular | funcion | obras_ver | obra↔empresa y obra↔persona, con sus roles |

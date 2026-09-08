@@ -65,3 +65,9 @@ export function puedeVincularPersonaEmpresa() {
 export function puedeVerTodasLasPersonas() {
   return tienePermiso("obras_personas_todas");
 }
+
+// Ver los dos logs. Aparte de `obras_personas_todas` a propósito: ese permiso
+// es "ver la agenda completa", este es "ver quién la estuvo mirando".
+export function puedeVerAuditoria() {
+  return tienePermiso("obras_auditoria");
+}

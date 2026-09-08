@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { argsRpc } from "@/lib/supabase/rpc";
 import { mensajeError } from "@/lib/utils";
 import {
   crearObraSchema,
@@ -399,35 +400,24 @@ export async function guardarReferente(input: ReferenteForm) {
   }
 
   const supabase = await createClient();
-  const { obra_id, persona_id, ...campos } = parsed.data;
+  const d = parsed.data;
 
-  const { data: existente, error: errorBusqueda } = await supabase
-    .from("obras_obra_referente")
-    .select("id")
-    .eq("obra_id", obra_id)
-    .eq("persona_id", persona_id)
-    .eq("activo", true)
-    .maybeSingle();
+  // Un solo statement: el ON CONFLICT de la función decide entre alta y
+  // cambio de comisión contra el unique parcial, sin el SELECT previo que
+  // dejaba la decisión en TypeScript y en otra transacción.
+  const { error } = await supabase.rpc(
+    "obras_guardar_referente",
+    argsRpc<"obras_guardar_referente">({
+      p_obra_id: d.obra_id,
+      p_persona_id: d.persona_id,
+      p_porcentaje_comision: d.porcentaje_comision,
+      p_observaciones: d.observaciones ?? null,
+    }),
+  );
 
-  if (errorBusqueda) return { success: false as const, error: mensajeError(errorBusqueda) };
+  if (error) return { success: false as const, error: mensajeError(error) };
 
-  if (existente) {
-    const { error, count } = await supabase
-      .from("obras_obra_referente")
-      .update(campos, { count: "exact" })
-      .eq("id", existente.id);
-
-    const fallo = errorDeUpdate({ error, count });
-    if (fallo) return { success: false as const, error: fallo };
-  } else {
-    const { error } = await supabase
-      .from("obras_obra_referente")
-      .insert({ obra_id, persona_id, ...campos });
-
-    if (error) return { success: false as const, error: mensajeError(error) };
-  }
-
-  revalidarObras(obra_id);
+  revalidarObras(d.obra_id);
   return { success: true as const };
 }
 
@@ -453,6 +443,7 @@ export async function buscarDuplicadosObra(
   nombre: string,
   direccion?: string,
   localidad?: string,
+  excluirId?: string,
 ): Promise<DuplicadoObra[]> {
   if (!nombre.trim()) return [];
 
@@ -462,6 +453,7 @@ export async function buscarDuplicadosObra(
     p_nombre: nombre,
     ...(direccion ? { p_direccion: direccion } : {}),
     ...(localidad ? { p_localidad: localidad } : {}),
+    ...(excluirId ? { p_excluir_id: excluirId } : {}),
   });
 
   if (error) return [];
@@ -471,6 +463,7 @@ export async function buscarDuplicadosObra(
 export async function buscarDuplicadosEmpresa(
   razonSocial: string,
   nombreComercial?: string,
+  excluirId?: string,
 ): Promise<DuplicadoEmpresa[]> {
   if (!razonSocial.trim()) return [];
 
@@ -479,6 +472,7 @@ export async function buscarDuplicadosEmpresa(
   const { data, error } = await supabase.rpc("obras_buscar_duplicados_empresa", {
     p_razon_social: razonSocial,
     ...(nombreComercial ? { p_nombre_comercial: nombreComercial } : {}),
+    ...(excluirId ? { p_excluir_id: excluirId } : {}),
   });
 
   if (error) return [];
@@ -490,6 +484,7 @@ export async function buscarDuplicadosPersona(
   apellido?: string,
   email?: string,
   telefono?: string,
+  excluirId?: string,
 ): Promise<DuplicadoPersona[]> {
   if (!nombre.trim()) return [];
 
@@ -500,6 +495,7 @@ export async function buscarDuplicadosPersona(
     ...(apellido ? { p_apellido: apellido } : {}),
     ...(email ? { p_email: email } : {}),
     ...(telefono ? { p_telefono: telefono } : {}),
+    ...(excluirId ? { p_excluir_id: excluirId } : {}),
   });
 
   if (error) return [];

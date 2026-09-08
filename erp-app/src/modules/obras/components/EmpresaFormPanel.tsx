@@ -53,10 +53,11 @@ export function EmpresaFormPanel({
   });
 
   async function chequearDuplicados() {
-    if (empresa) return;
     const { razon_social, nombre_comercial } = getValues();
     if (!razon_social?.trim()) return;
-    setDuplicados(await buscarDuplicadosEmpresa(razon_social, nombre_comercial ?? undefined));
+    setDuplicados(
+      await buscarDuplicadosEmpresa(razon_social, nombre_comercial ?? undefined, empresa?.id),
+    );
   }
 
   async function onSubmit(data: CrearEmpresaForm) {
