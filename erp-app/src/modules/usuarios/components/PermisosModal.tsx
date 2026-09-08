@@ -128,7 +128,7 @@ export function PermisosModal({
             <select
               value={copiarDe}
               onChange={(e) => setCopiarDe(e.target.value)}
-              className="input flex-1 py-1.5"
+              className="input flex-1"
             >
               <option value="">— seleccionar —</option>
               {otros.map((u) => (
@@ -160,7 +160,7 @@ export function PermisosModal({
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar permiso…"
-              className="input py-1.5 pl-8"
+              className="input pl-8"
             />
           </div>
         </div>

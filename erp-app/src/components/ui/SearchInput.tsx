@@ -24,7 +24,7 @@ export function SearchInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="input py-1.5 pl-8"
+        className="input pl-8"
       />
     </div>
   );

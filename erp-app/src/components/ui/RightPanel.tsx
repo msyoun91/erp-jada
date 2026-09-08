@@ -40,40 +40,44 @@ export function RightPanel({
   }, []);
 
   return (
-    <dialog
-      ref={ref}
-      onCancel={(e) => {
-        e.preventDefault();
-        intentarCerrar();
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) intentarCerrar();
-      }}
-      className="fixed inset-0 m-0 h-full max-h-none w-full max-w-none justify-end overflow-hidden border-0 bg-transparent p-0 backdrop:bg-[rgba(7,11,20,.55)] open:flex"
-    >
-      <div className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-bg-surface shadow-lg">
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
-          <div>
-            <h2 className="t-h3">{title}</h2>
-            {subtitle && <p className="t-caption">{subtitle}</p>}
+    <>
+      <dialog
+        ref={ref}
+        onCancel={(e) => {
+          e.preventDefault();
+          intentarCerrar();
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) intentarCerrar();
+        }}
+        className="fixed inset-0 m-0 h-full max-h-none w-full max-w-none justify-end overflow-hidden border-0 bg-transparent p-0 backdrop:bg-[rgba(7,11,20,.55)] open:flex"
+      >
+        <div className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-bg-surface shadow-lg">
+          <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
+            <div>
+              <h2 className="t-h3">{title}</h2>
+              {subtitle && <p className="t-caption">{subtitle}</p>}
+            </div>
+            <button onClick={intentarCerrar} className="icon-btn text-text-tertiary" aria-label="Cerrar">
+              <X size={18} strokeWidth={1.75} />
+            </button>
           </div>
-          <button onClick={intentarCerrar} className="icon-btn text-text-tertiary" aria-label="Cerrar">
-            <X size={18} strokeWidth={1.75} />
-          </button>
+
+          <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+
+          {footer && (
+            <div className="flex shrink-0 items-center gap-3 border-t border-border px-5 py-4">
+              {footer}
+            </div>
+          )}
         </div>
+      </dialog>
 
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-
-        {footer && (
-          <div className="flex shrink-0 items-center gap-3 border-t border-border px-5 py-4">
-            {footer}
-          </div>
-        )}
-      </div>
-
+      {/* Hermano y no hijo del <dialog>: ver la nota en Modal.tsx — anidado, el
+          backdrop de "Descartar cambios" dejaba el panel a brillo pleno. */}
       {confirmandoCierre && (
         <DescartarCambios onDescartar={onClose} onSeguir={() => setConfirmandoCierre(false)} />
       )}
-    </dialog>
+    </>
   );
 }

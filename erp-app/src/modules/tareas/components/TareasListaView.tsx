@@ -127,7 +127,7 @@ export function TareasListaView({
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar tarea o hilo…" />
         <select
           data-tour="tareas_lista_usuario"
-          className="input w-auto py-1.5"
+          className="input w-auto"
           value={asignadoId}
           onChange={(e) => setAsignadoId(e.target.value)}
           aria-label="Filtrar por usuario"

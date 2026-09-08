@@ -76,7 +76,7 @@ export function UsuariosView({
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar por nombre o email…" />
 
         <select
-          className="input w-auto py-1.5"
+          className="input w-auto"
           value={estado}
           onChange={(e) => setEstado(e.target.value as Estado)}
           aria-label="Filtrar por estado"

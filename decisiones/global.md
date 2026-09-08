@@ -32,6 +32,14 @@ Spec completa extraída y volcada en `.claude/guides/design-system/JADA-design-s
 
 **Los modales de confirmación también pasan a `<dialog>`: `components/ui/Modal.tsx` nuevo.** Verificado en browser: un modal lanzado desde `TareaRow` dentro de `HiloDetailPanel` (ej. "Completar tarea") era un `div fixed z-50` **dentro** del subtree del panel, que ya estaba en el top layer — el overlay del modal no oscurecía el panel y el modal quedaba centrado en el viewport, tapado por el panel según el ancho de ventana. `Modal` extrae el shell que `CompletarModal`/`CerrarHiloModal`/`DeshacerConversionModal`/`CrearUsuarioModal` duplicaban (overlay + card + header con X) y lo abre con `showModal()`, así el modal se promueve al top layer después del panel y queda arriba. `PermisosModal` sigue como estaba (excepción ya documentada).
 
+**`DescartarCambios` es hermano del `<dialog>`, no hijo.** Segunda mitad del mismo problema de
+arriba: `Modal` y `RightPanel` renderizaban el modal de "Descartar cambios" **adentro** del
+`<dialog>` que ese modal tenía que oscurecer. Anidado así, la página de atrás se atenuaba pero el
+panel quedaba a brillo pleno — el `::backdrop` de un `<dialog>` no tapa a su propio ancestro del
+top layer. Ahora los dos componentes devuelven un fragmento con el `<dialog>` y el modal como
+hermanos, y el orden del top layer alcanza: el último que llamó `showModal()` queda arriba y su
+backdrop tapa al anterior. Sin z-index ni clase nueva.
+
 **`hayCambios` en `RightPanel` y `Modal`: cerrar por backdrop, Escape o X pregunta antes de descartar.** Un click al costado borraba un formulario a medio llenar sin aviso. Se conecta con `formState.isDirty` de RHF en los siete paneles con form, y con `nota.trim().length > 0` en `CompletarModal`. El submit exitoso llama `onClose` directo, así que no pasa por la guardia. `DescartarCambios` vive dentro de `Modal.tsx` — es `ConfirmModal` con copy fijo, y en archivo propio armaba un ciclo de imports con quien lo usa.
 
 ### `ConfirmModal`
@@ -71,6 +79,22 @@ del click es lo que dispara el re-render y no hace falta `setState`. El snapshot
 
 ---
 
+### `FiltroDias`
+
+**El período de un log es un componente, no un array copiado.** `[7, 30, 90]` estaba escrito seis
+veces entre las dos vistas de logs de obras y sus dos `page.tsx` — y las copias de las páginas no
+son cosméticas: son las que validan el `?dias=` de la URL, así que decidían si un `?dias=45`
+escrito a mano se aceptaba o caía al default. `components/ui/FiltroDias.tsx` exporta el control y
+`DIAS_OPCIONES`.
+
+Está en `components/ui/` con dos usos, los dos de obras, porque cualquier log con ventana
+temporal lo va a querer y el componente no sabe nada del módulo: recibe `href`, `dias` y una
+`etiqueta` para el `aria-label`. El activo es `bg-brand-50 font-semibold text-brand-700` sobre
+`border-border`, la forma del segmented de relación de la Lista de tareas — antes era
+`btn-primary`, que en el sistema es un botón de acción, no un filtro elegido.
+
+---
+
 ## Tokens y clases de `globals.css`
 
 **`.row` en `globals.css`.** `p-[13px] px-5` — el token de fila del design system (§8) — estaba escrito a mano en 19 lugares, entre tareas, comercial y usuarios. Se reemplazaron todos, no solo los del módulo: es el mismo valor mágico.
@@ -88,6 +112,23 @@ del click es lo que dispara el re-render y no hace falta `setState`. El snapshot
 Se migran las cuatro familias, no solo `error`: dejar `success`, `warning` e `info` en hex fijo partía el sistema en dos mitades con reglas distintas, que es peor que el cambio visual de los badges en dark. Los pares dark son bg-950 / text-200 de cada hue.
 
 **`text-error` y `text-warning` son hex fijos sobre fondo tematizado: van a `text-error-text` / `text-warning-text`.** Los tokens `--error-text` y `--warning-text` ya existían tematizados (los usaban `badge-error` y `badge-warning`) y nadie más los tocaba. Medido sobre `--bg-surface` en los dos temas: `text-error` (#DC2626) daba 3.8:1 en oscuro y `text-warning` (#D97706) 3.2:1 en **claro** — los dos abajo de AA, y justo en el vencimiento vencido y en "Pospuesta hasta". Con los tokens: error 14.0:1 claro / 11.7:1 oscuro, warning 11.0:1 claro / 14.4:1 oscuro. Los `text-success` / `text-warning` que quedan son íconos, no texto: el umbral ahí es 3:1 y lo pasan. **Queda pendiente `.input-error-text` en `globals.css`** — mismo defecto, pero es app-wide y no entraba en una auditoría del módulo tareas.
+
+**`.card:hover { shadow-md }` pasa a `.card-link:hover`.** La sombra al pasar el mouse es una
+promesa de click, y la clase la levantaban las 24 `.card` de la app — incluidas las `<section>` y
+las `<li>` estáticas de cada ficha, que no hacen nada al clickearlas. Cinco lugares la piden y la
+declaran: las filas-link de los tres listados de obras, el resultado del `Buscador` y
+`WidgetCard`, que la toma solo cuando recibe `href`. El `Buscador` es un `<button>` y no un
+`<Link>`: lo que define la clase es que el elemento sea clickeable, no su etiqueta.
+
+**El `py-1.5` de las toolbars se va: `.input` ya mide lo que mide `.btn`.** Un `.input py-1.5`
+mide ~35px al lado de un `.btn` de 40px, y estaba en 14 lugares. Sin pisar, `.input` mide 41px
+—9px de padding contra 9px, más 1.5px de borde contra 1px— así que el desfasaje era el override,
+no las clases. Salió de los 12 que son toolbar, entre obras, tareas y usuarios, incluido
+`SearchInput`, que es el buscador de cuatro vistas.
+
+Sobreviven dos, en `TareaDetailPanel.tsx:179` y `:267`: ahí no es una toolbar sino un select
+inline con su propio `text-[13px]`, y no está al lado de ningún `.btn` con el que desalinearse.
+Con dos usos no se justifica una `.input-sm`; si aparece un tercero, sí.
 
 ---
 
@@ -193,6 +234,13 @@ Next 16 deprecó la convención `middleware.ts` en la raíz (`src/`) — se reno
 A diferencia de `usuarios`/`usuario_submodulos` (server actions con `service_role` porque la autorización pasa por `tiene_permiso`), el toggle de widgets es una preferencia estrictamente propia del usuario. RLS con `usuario_id = auth.uid()` alcanza para SELECT/INSERT/UPDATE — el server action de `modules/dashboard/actions.ts` usa el cliente normal (`lib/supabase/server.ts`), no cliente admin.
 
 **Por qué:** usar `service_role` acá sería una elevación de privilegio innecesaria para un dato sin lógica de negocio — regla "simplicidad antes que abstracción". Precedente para futuros módulos: `service_role` solo cuando RLS no puede expresar la regla de autorización (ej: chequeos vía `tiene_permiso`), no por default en todo server action de escritura.
+
+### `MobileNav` cierra el drawer durante el render, no en un efecto
+
+El `useEffect(() => setOpen(false), [pathname])` que cerraba el drawer al navegar era el último
+error de `react-hooks/set-state-in-effect` del repo: dejaba `npm run lint` en rojo. Pasó al patrón
+que ya usan `TareaRow`, `HiloCard` y `CerrarHiloModal` — se guarda el `pathname` visto y se
+reacciona al cambio durante el render.
 
 ### Sidebar: `Sidebar.tsx` (server) + `SidebarNav.tsx` (client) + `MobileNav.tsx` (client)
 

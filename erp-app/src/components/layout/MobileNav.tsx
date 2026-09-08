@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -16,9 +16,14 @@ export function MobileNav({
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  useEffect(() => {
+  // El drawer se cierra al navegar. Se reacciona al cambio de pathname durante
+  // el render y no en un efecto: `react-hooks/set-state-in-effect` corta el
+  // setState síncrono en efectos, mismo patrón que TareaRow y HiloCard.
+  const [pathnameBase, setPathnameBase] = useState(pathname);
+  if (pathname !== pathnameBase) {
+    setPathnameBase(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   return (
     <>

@@ -16,8 +16,11 @@ type Props = {
 export function WidgetCard({ titulo, icono, href, columnas, children }: Props) {
   const Icon = ICON_MAP[icono];
 
+  // `card-link` solo cuando hay href: la sombra al hover es promesa de click.
   const content = (
-    <div className={`card ${columnas === 2 ? "sm:col-span-2" : ""}`}>
+    <div
+      className={`card ${href ? "card-link" : ""} ${columnas === 2 ? "sm:col-span-2" : ""}`}
+    >
       <div className="mb-3 flex items-center gap-2">
         <Icon size={16} strokeWidth={1.75} className="text-brand-500 shrink-0" />
         <p className="t-label">{titulo}</p>

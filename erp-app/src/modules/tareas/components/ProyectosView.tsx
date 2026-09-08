@@ -48,7 +48,7 @@ export function ProyectosView({
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar proyecto…" />
         <select
           data-tour="tareas_proyectos_miembro"
-          className="input w-auto py-1.5"
+          className="input w-auto"
           value={miembroId}
           onChange={(e) => setMiembroId(e.target.value)}
           aria-label="Filtrar por miembro"

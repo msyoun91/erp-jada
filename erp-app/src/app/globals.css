@@ -170,7 +170,10 @@
   .badge-neutral { @apply bg-bg-subtle text-text-tertiary; }
 
   .card { @apply relative bg-bg-surface border border-border rounded-lg p-[22px] transition-shadow; }
-  .card:hover { @apply shadow-md; }
+  /* La sombra al hover es promesa de click: solo la card que ES un link o un
+     botón la levanta. Sobre las cards estáticas de una ficha prometía algo que
+     no pasaba. */
+  .card-link:hover { @apply shadow-md; }
   .card-featured { @apply border-brand-300; }
 
   .empty-state { @apply bg-bg-surface border border-dashed border-border-strong rounded-lg p-[60px] text-center text-text-tertiary; }

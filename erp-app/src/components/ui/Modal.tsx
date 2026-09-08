@@ -35,35 +35,41 @@ export function Modal({
   }, []);
 
   return (
-    <dialog
-      ref={ref}
-      onCancel={(e) => {
-        e.preventDefault();
-        intentarCerrar();
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) intentarCerrar();
-      }}
-      className="fixed inset-0 m-0 h-full max-h-none w-full max-w-none items-center justify-center overflow-hidden border-0 bg-transparent p-4 backdrop:bg-[rgba(7,11,20,.55)] open:flex"
-    >
-      <div
-        style={{ maxWidth }}
-        className="max-h-full w-full overflow-y-auto rounded-xl bg-bg-surface p-[30px] shadow-lg"
+    <>
+      <dialog
+        ref={ref}
+        onCancel={(e) => {
+          e.preventDefault();
+          intentarCerrar();
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) intentarCerrar();
+        }}
+        className="fixed inset-0 m-0 h-full max-h-none w-full max-w-none items-center justify-center overflow-hidden border-0 bg-transparent p-4 backdrop:bg-[rgba(7,11,20,.55)] open:flex"
       >
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="t-h3">{title}</h2>
-          <button onClick={intentarCerrar} className="icon-btn text-text-tertiary" aria-label="Cerrar">
-            <X size={20} />
-          </button>
+        <div
+          style={{ maxWidth }}
+          className="max-h-full w-full overflow-y-auto rounded-xl bg-bg-surface p-[30px] shadow-lg"
+        >
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="t-h3">{title}</h2>
+            <button onClick={intentarCerrar} className="icon-btn text-text-tertiary" aria-label="Cerrar">
+              <X size={20} />
+            </button>
+          </div>
+
+          {children}
         </div>
+      </dialog>
 
-        {children}
-      </div>
-
+      {/* Hermano y no hijo del <dialog>: anidado en el DOM, el backdrop del
+          modal de confirmación no oscurecía a su propio ancestro y la
+          interrupción se leía a medias. Como hermano, el orden del top layer
+          es lo único que decide y el de arriba tapa al de abajo. */}
       {confirmandoCierre && (
         <DescartarCambios onDescartar={onClose} onSeguir={() => setConfirmandoCierre(false)} />
       )}
-    </dialog>
+    </>
   );
 }
 
