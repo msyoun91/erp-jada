@@ -13,7 +13,11 @@
 -- no pueda editar, y que el teléfono de un contacto no salga por ningún
 -- camino que no deje rastro.
 --
--- Volver a correrlo entero después de tocar cualquiera de 027 a 032.
+-- Volver a correrlo entero después de tocar cualquiera de 027 a 034.
+--
+-- Desde sql/033 el setup destraba `pendiente` antes de armar los vínculos: la
+-- empresa y la persona de prueba se parecen a las del seed y nacen congeladas.
+-- La cola de autorizaciones la verifica `obras_033.sql`.
 --
 -- Los códigos `OB0xx` de sql/032 no lo afectan: los casos que esperan un corte
 -- capturan `WHEN others` e imprimen SQLERRM. Lo que afirma cada código es
@@ -80,6 +84,18 @@ BEGIN
   INSERT INTO obras_personas (nombre, apellido, telefono, email, creado_por)
   VALUES ('Juan', 'Perez', '11 4567-8900', 'JUAN@abc.com', v_admin)
   RETURNING id INTO v_persona;
+
+  -- sql/033 marca pendiente lo que se parece a algo ya cargado, y con los
+  -- datos de `obras_dummy.sql` en la base la empresa y la persona de este
+  -- setup nacen congeladas. Una fila congelada no acepta vínculos (OB012), así
+  -- que sin esto el setup ni siquiera llega a armarlos. Se destraban sin RLS
+  -- de por medio: lo que este archivo verifica es la visibilidad, no la cola
+  -- de autorizaciones — de eso se ocupa `obras_033.sql`.
+  PERFORM set_config('role', 'none', true);
+  UPDATE obras          SET pendiente = false WHERE id = v_obra;
+  UPDATE obras_empresas SET pendiente = false WHERE id = v_empresa;
+  UPDATE obras_personas SET pendiente = false WHERE id = v_persona;
+  PERFORM set_config('role', 'authenticated', true);
 
   INSERT INTO obras_obra_empresa (obra_id, empresa_id, roles)
   VALUES (v_obra, v_empresa, ARRAY['constructora','desarrolladora']::rol_empresa[]);
