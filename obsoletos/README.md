@@ -12,6 +12,7 @@ escrita en el archivo que apunta, no acá.
 | `PLAN_ARQUITECTURA_TAREAS.md` | Auditoría de arquitectura del módulo tareas | Cerrada: 7 puntos hechos, 1 descartado. Lo único vivo está en `BACKLOG.md` | `git mv obsoletos/PLAN_ARQUITECTURA_TAREAS.md .` |
 | `erp-app-README.md`, `erp-cliente-README.md` | Boilerplate de `create-next-app`, idénticos entre sí | Cero contenido del proyecto | `git mv obsoletos/erp-app-README.md erp-app/README.md` |
 | `sync-contracts/` | Workspace `@erp/sync-contracts`, schemas compartidos | `src/index.ts` era `export {}`. Cero imports en ambas apps | Mover a `packages/sync-contracts`, reponer la entrada en `workspaces` de `package.json` raíz, `npm install` |
+| `fonts-barlow-jakarta/` | Los 8 `.woff2` de Barlow Semi Condensed + Plus Jakarta Sans | La empresa cambió la tipografía del sitio: el sistema pasó a DM Sans — ver `decisiones/global.md` | `git mv obsoletos/fonts-barlow-jakarta/*.woff2 erp-app/public/fonts/` y revertir el `@font-face` de `globals.css` |
 | `prototipo-obras-tareas.html` | Prototipo estático de obras/tareas | Lo aprovechable ya se portó a componentes — ver `decisiones/obras.md` | `git mv obsoletos/prototipo-obras-tareas.html decisiones/prototipos/` |
 
 Cuando `sync-contracts` haga falta de verdad — sincronización real entre `erp-app` y `erp-cliente`,

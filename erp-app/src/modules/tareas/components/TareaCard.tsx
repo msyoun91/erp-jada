@@ -118,7 +118,7 @@ export function TareaCard({
           // tarea ya completada no cambia ninguna decisión.
           activa && diasVencimiento !== null ? (
             <span
-              className={`shrink-0 font-display text-[13px] font-semibold tabular-nums ${
+              className={`shrink-0 text-[13px] font-semibold tabular-nums ${
                 fechaClase || "text-text-tertiary"
               }`}
             >

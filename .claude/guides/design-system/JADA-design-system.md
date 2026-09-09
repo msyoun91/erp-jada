@@ -1,9 +1,10 @@
 # JADA Design System — spec extraída
 
 Fuente: proyecto JADA (colors_and_type.css, ui_kits/*, preview/*), extraído 2026-08-13.
+**§2 Tipografía** se reescribió el 2026-09-08 desde somosjada.com, que cambió de tipografía — ese sitio es la fuente de la tipografía, no el spec original.
 Ítems marcados **[EXTRAPOLADO]** no existen en el sistema fuente (que es dashboard desktop) — son decisión propia siguiendo la misma lógica visual, no del design system original. Todo lo demás es literal del spec.
 
-Pendiente hasta que se scaffoldee Next.js en `erp-app`: estos tokens están listos para volcarse a `tailwind.config.ts` + `globals.css`, pero **la sintaxis depende de la versión de Tailwind que se instale** (v3 usa `tailwind.config.ts` con `theme.extend`; v4 usa `@theme` en CSS y en general no necesita config.ts). Confirmar versión al scaffoldear antes de trasladar esto a archivos reales.
+**La implementación viva son los dos `globals.css`** (`erp-app/src/app/globals.css` y `erp-cliente/src/app/globals.css`): Tailwind v4, tokens en `@theme inline`, sin `tailwind.config.ts`. El snippet de config más abajo es la forma v3 del mismo spec, referencia nada más — ningún archivo del repo lo usa.
 
 ---
 
@@ -37,21 +38,41 @@ border-default rgba(13,18,32,.12) · border-strong rgba(13,18,32,.22)
 
 ## 2. Tipografía
 
-Barlow Semi Condensed (600/700, display) + Plus Jakarta Sans (400/500/600/700, body/UI). Self-hosted (SIL OFL) — pedir los `.woff2` al usuario al scaffoldear.
+**DM Sans**, variable (100–1000), una sola familia. Self-hosted (SIL OFL) en `public/fonts/`: dos
+`.woff2` partidos por `unicode-range` (latin + latin-ext) — los mismos archivos que sirve
+somosjada.com — más un `@font-face` de fallback con métricas ajustadas a Arial para que el `swap` no
+mueva el layout.
 
-| clase | tamaño/line-height | peso | tracking | familia |
+Reemplaza a Barlow Semi Condensed + Plus Jakarta Sans, que salieron cuando el sitio de la empresa
+cambió de tipografía (ver `decisiones/global.md`). **Ya no hay familia display separada:**
+`--font-sans` es la única, todo hereda de `body`, y las utilidades `font-display` / `font-body` no
+existen más.
+
+Pesos en uso: **400** cuerpo · **500** labels, botones, nav · **600** títulos. Ni el sitio ni el ERP
+usan 700.
+
+| clase | tamaño/line-height | peso | tracking | de dónde sale |
 |---|---|---|---|---|
-| t-display-xl | 72px/1.02 | 700 | .02em | display |
-| t-display-l | 48px/1.05 | 600 | .015em | display |
-| t-h1 | 36px/1.1 | 600 | .01em | display |
-| t-h2 | 28px/1.15 | 600 | .01em | display |
-| t-h3 | 20px/1.3 | 600 | 0 | body |
-| t-body-l | 17px/1.7 | 400 | 0 | body |
-| t-body-m | 15px/1.6 | 400 | 0 | body |
-| t-label | 12px/1.2 | 600 | .07em, UPPERCASE | body |
-| t-caption | 11px/1.5 | 400 | 0 | body |
+| t-display-xl | 56px/1.05 | 600 | −.022em | **[EXTRAPOLADO]** el sitio topea en 48px |
+| t-display-l | 40px/1.08 | 600 | −.022em | **[EXTRAPOLADO]** ídem |
+| t-h1 | 32px/1.15 | 600 | −.02em | h1 del sitio (36px, `leading-tight tracking-tight`), un escalón abajo por densidad de app |
+| t-h2 | 24px/1.25 | 600 | −.015em | h2 del sitio, literal |
+| t-h3 | 18px/1.35 | 600 | −.01em | h3 del sitio (16px/500), subido para que no se confunda con el cuerpo |
+| t-body-l | 16px/1.6 | 400 | 0 | `text-base` del sitio |
+| t-body-m | 14px/1.55 | 400 | 0 | `text-sm` del sitio, su texto secundario |
+| t-label | 12px/1.2 | 500 | .12em, UPPERCASE | eyebrow del sitio (12px/500/`tracking-[0.16em]`), cerrado a .12em porque acá es label de formulario, no decoración |
+| t-caption | 12px/1.45 | 400 | 0 | `text-xs` del sitio |
 
-No hay escala mobile separada en el spec (fijo por diseño). **[EXTRAPOLADO]** bajar un escalón display-xl/h1 en `<768px` — pendiente de decidir al implementar.
+**El tracking de títulos es negativo, no positivo.** Barlow Semi Condensed era condensada y necesitaba
++.01/.02em para respirar; DM Sans es de ancho normal y a tamaño de título se abre sola. Arrastrar el
+tracking viejo a la familia nueva dejaba los títulos desarmados. Por el mismo motivo bajan los
+tamaños: al mismo px DM Sans ocupa bastante más ancho que una semi-condensada, y los títulos
+empujaban el layout.
+
+`.btn` (14px/500) y `.input` (14px) ya coincidían con los del sitio (`0.875rem`, weight 500) — no se
+tocaron.
+
+No hay escala mobile separada.
 
 ## 3. Espaciado
 
@@ -92,12 +113,12 @@ tabla / badge inline   14px
 
 - **Button** — primary (navy #011F51/blanco), secondary (transparente, border-strong), ghost (transparente, text-tertiary), danger (#DC2626/blanco). Sizes: sm 6px 14px/13px/r-sm, md 9px 20px/14px/r-md, lg 13px 28px. Hover: primary→#02307a, secondary→bg-subtle. **[EXTRAPOLADO]** disabled/loading: no hay spec explícito — disabled opacity:.5 cursor:not-allowed; loading = spinner reemplaza ícono izquierdo.
 - **Input/Textarea** — 1.5px solid border-strong, r-md, 9px 12px, bg-surface. Focus: border brand-500 + ring 0 0 0 3px rgba(26,109,200,.12). Error: border #DC2626 + ring rgba(220,38,38,.12), texto de error debajo. **[EXTRAPOLADO]** Select: igual a Input + chevron-down a la derecha.
-- **Badge** — 3px 9px, r-full, Plus Jakarta 11px/600. Variantes: brand/success/warning/error/info/neutral.
-- **Modal/Dialog** — scrim rgba(7,11,20,.55), panel r-xl(24px), padding 30px, max-width 460px, shadow-lg. Título display 26px/600. Form grid 2 columnas, 14px gap. Acciones a la derecha (secondary + primary).
+- **Badge** — 3px 9px, r-full, 11px/600. Variantes: brand/success/warning/error/info/neutral.
+- **Modal/Dialog** — scrim rgba(7,11,20,.55), panel r-xl(24px), padding 30px, max-width 460px, shadow-lg. Título 24px/600 (t-h2). Form grid 2 columnas, 14px gap. Acciones a la derecha (secondary + primary).
 - **Toast (Sonner)** — **[EXTRAPOLADO]** no hay skin custom en el spec — deriva de Alert: bg semántica clara + texto oscuro + r-md, borde 1px color semántico al 20% opacity, icon-dot 7px.
 - **Tabs (ModuleTabs)** — **[EXTRAPOLADO]** no existe en el sistema. Replicar patrón jx-nav-link/jd-side-item: inactivo text-tertiary, activo text-brand-500 font-500 + underline 2px brand-500 (horizontal) o bg brand-50/text brand-700 (pill).
 - **Card / list-item mobile** — Card: bg-surface, border-default, r-lg, padding 22px, hover shadow-md + translateY(-2px) (solo desktop, omitir transform en mobile). **[EXTRAPOLADO]** reemplazo de tabla en mobile: stacked list-item con tokens de jd-table row — padding 13px 20px, border-bottom 1px border-default, label t-caption/text-tertiary arriba, valor t-body-m/text-primary medium debajo, badge de estado a la derecha.
-- **Empty state** — existe (jd-empty): border 1px dashed border-strong, r-lg, padding 60px, centrado, ícono 30px, título display 20px/600 text-secondary, subtítulo t-body-m.
+- **Empty state** — existe (jd-empty): border 1px dashed border-strong, r-lg, padding 60px, centrado, ícono 30px, título 18px/600 text-secondary (t-h3), subtítulo t-body-m.
 - **Paginación** — **[EXTRAPOLADO]** no existe. Botones jx-icon-btn (34×34, r-md, border-default) para prev/next + números t-body-m, activo bg brand-50/text brand-700.
 - **Sidebar nav** — ancho 168px, item 8px 10px, r-sm, 11.5px/500. Inactivo text-tertiary, hover bg-subtle+text-secondary, activo bg-brand-50+text-brand-700. Avatar circular 28px con gradient-brand-2.
 
@@ -135,19 +156,18 @@ const config: Config = {
         "gradient-brand-2": "linear-gradient(140deg, #011F51, #064379)",
       },
       fontFamily: {
-        display: ["Barlow Semi Condensed", "Arial Narrow", "sans-serif"],
-        body: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
+        sans: ["DM Sans", "DM Sans Fallback", "system-ui", "sans-serif"],
       },
       fontSize: {
-        "display-xl": ["72px", { lineHeight: "1.02", letterSpacing: ".02em", fontWeight: "700" }],
-        "display-l":  ["48px", { lineHeight: "1.05", letterSpacing: ".015em", fontWeight: "600" }],
-        h1: ["36px", { lineHeight: "1.1", letterSpacing: ".01em", fontWeight: "600" }],
-        h2: ["28px", { lineHeight: "1.15", letterSpacing: ".01em", fontWeight: "600" }],
-        h3: ["20px", { lineHeight: "1.3", fontWeight: "600" }],
-        "body-l": ["17px", { lineHeight: "1.7", fontWeight: "400" }],
-        "body-m": ["15px", { lineHeight: "1.6", fontWeight: "400" }],
-        label: ["12px", { lineHeight: "1.2", letterSpacing: ".07em", fontWeight: "600" }],
-        caption: ["11px", { lineHeight: "1.5", fontWeight: "400" }],
+        "display-xl": ["56px", { lineHeight: "1.05", letterSpacing: "-.022em", fontWeight: "600" }],
+        "display-l":  ["40px", { lineHeight: "1.08", letterSpacing: "-.022em", fontWeight: "600" }],
+        h1: ["32px", { lineHeight: "1.15", letterSpacing: "-.02em", fontWeight: "600" }],
+        h2: ["24px", { lineHeight: "1.25", letterSpacing: "-.015em", fontWeight: "600" }],
+        h3: ["18px", { lineHeight: "1.35", letterSpacing: "-.01em", fontWeight: "600" }],
+        "body-l": ["16px", { lineHeight: "1.6", fontWeight: "400" }],
+        "body-m": ["14px", { lineHeight: "1.55", fontWeight: "400" }],
+        label: ["12px", { lineHeight: "1.2", letterSpacing: ".12em", fontWeight: "500" }],
+        caption: ["12px", { lineHeight: "1.45", fontWeight: "400" }],
       },
       borderRadius: { xs: "4px", sm: "6px", md: "10px", lg: "16px", xl: "24px" },
       boxShadow: {
@@ -171,14 +191,9 @@ export default config;
 @tailwind components;
 @tailwind utilities;
 
-@font-face { font-family: "Barlow Semi Condensed"; font-weight: 400; font-style: normal; font-display: swap; src: url("/fonts/BarlowSemiCondensed-400.woff2") format("woff2"); }
-@font-face { font-family: "Barlow Semi Condensed"; font-weight: 500; font-style: normal; font-display: swap; src: url("/fonts/BarlowSemiCondensed-500.woff2") format("woff2"); }
-@font-face { font-family: "Barlow Semi Condensed"; font-weight: 600; font-style: normal; font-display: swap; src: url("/fonts/BarlowSemiCondensed-600.woff2") format("woff2"); }
-@font-face { font-family: "Barlow Semi Condensed"; font-weight: 700; font-style: normal; font-display: swap; src: url("/fonts/BarlowSemiCondensed-700.woff2") format("woff2"); }
-@font-face { font-family: "Plus Jakarta Sans"; font-weight: 400; font-style: normal; font-display: swap; src: url("/fonts/PlusJakartaSans-400.woff2") format("woff2"); }
-@font-face { font-family: "Plus Jakarta Sans"; font-weight: 500; font-style: normal; font-display: swap; src: url("/fonts/PlusJakartaSans-500.woff2") format("woff2"); }
-@font-face { font-family: "Plus Jakarta Sans"; font-weight: 600; font-style: normal; font-display: swap; src: url("/fonts/PlusJakartaSans-600.woff2") format("woff2"); }
-@font-face { font-family: "Plus Jakarta Sans"; font-weight: 700; font-style: normal; font-display: swap; src: url("/fonts/PlusJakartaSans-700.woff2") format("woff2"); }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 100 1000; font-display: swap; src: url("/fonts/DMSans-latin.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "DM Sans"; font-style: normal; font-weight: 100 1000; font-display: swap; src: url("/fonts/DMSans-latin-ext.woff2") format("woff2"); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "DM Sans Fallback"; src: local("Arial"); ascent-override: 94.90%; descent-override: 29.66%; line-gap-override: 0.00%; size-adjust: 104.53%; }
 
 :root {
   --bg-page: #F5F7FB; --bg-surface: #FFFFFF; --bg-subtle: #EBF0F8; --bg-nav: #FFFFFF;
@@ -192,23 +207,23 @@ export default config;
 }
 
 @layer base {
-  body { @apply bg-bg-page text-text-primary font-body; -webkit-font-smoothing: antialiased; }
+  body { @apply bg-bg-page text-text-primary font-sans; -webkit-font-smoothing: antialiased; }
   a { @apply text-text-brand; }
   a:hover { @apply text-brand-500; }
 }
 
 @layer components {
-  .t-display-xl { @apply font-display text-display-xl text-text-primary; }
-  .t-display-l  { @apply font-display text-display-l text-text-primary; }
-  .t-h1 { @apply font-display text-h1 text-text-primary; }
-  .t-h2 { @apply font-display text-h2 text-text-primary; }
-  .t-h3 { @apply font-body text-h3 text-text-primary; }
-  .t-body-l { @apply font-body text-body-l text-text-secondary; }
-  .t-body-m { @apply font-body text-body-m text-text-secondary; }
-  .t-label { @apply font-body text-label uppercase text-text-tertiary; }
-  .t-caption { @apply font-body text-caption text-text-tertiary; }
+  .t-display-xl { @apply text-display-xl text-text-primary; }
+  .t-display-l  { @apply text-display-l text-text-primary; }
+  .t-h1 { @apply text-h1 text-text-primary; }
+  .t-h2 { @apply text-h2 text-text-primary; }
+  .t-h3 { @apply text-h3 text-text-primary; }
+  .t-body-l { @apply text-body-l text-text-secondary; }
+  .t-body-m { @apply text-body-m text-text-secondary; }
+  .t-label { @apply text-label uppercase text-text-tertiary; }
+  .t-caption { @apply text-caption text-text-tertiary; }
 
-  .btn { @apply inline-flex items-center gap-[7px] whitespace-nowrap rounded-md border font-body text-sm font-medium px-5 py-[9px] transition-colors; }
+  .btn { @apply inline-flex items-center gap-[7px] whitespace-nowrap rounded-md border text-sm font-medium px-5 py-[9px] transition-colors; }
   .btn-sm { @apply px-[15px] py-[7px] text-[13px] rounded-sm; }
   .btn-lg { @apply px-7 py-[13px]; }
   .btn-primary { @apply bg-brand-900 text-white border-brand-900 hover:bg-[#02307a]; }
@@ -217,12 +232,12 @@ export default config;
   .btn-danger { @apply bg-error text-white border-error hover:opacity-90; }
   .btn:disabled { @apply opacity-50 cursor-not-allowed; }
 
-  .input { @apply w-full font-body text-sm rounded-md border-[1.5px] border-border-strong bg-bg-surface text-text-primary px-3 py-[9px] outline-none; }
+  .input { @apply w-full text-sm rounded-md border-[1.5px] border-border-strong bg-bg-surface text-text-primary px-3 py-[9px] outline-none; }
   .input:focus { @apply border-brand-500 ring-[3px] ring-focus; }
   .input-error { @apply border-error ring-[3px] ring-focus-error; }
   .input-error-text { @apply text-error text-xs mt-1; }
 
-  .badge { @apply font-body font-semibold text-[11px] rounded-full px-[9px] py-[3px]; }
+  .badge { @apply font-semibold text-[11px] rounded-full px-[9px] py-[3px]; }
   .badge-brand { @apply bg-brand-50 text-brand-900; }
   .badge-success { @apply bg-success-bg text-success-text; }
   .badge-warning { @apply bg-warning-bg text-warning-text; }
@@ -248,5 +263,4 @@ export default config;
 
 ## Pendiente
 
-- Copiar `fonts/*.woff2` y `assets/logo*.svg` del proyecto JADA a `public/` de `erp-app` (y `erp-cliente` si aplica).
-- Confirmar versión de Tailwind al scaffoldear Next.js — si es v4, migrar tokens de `theme.extend` a `@theme` en CSS.
+- El snippet de `tailwind.config.ts` (forma v3) quedó como referencia muerta: ambas apps son Tailwind v4 con `@theme`. Borrarlo cuando alguien confirme que nadie lo consulta.

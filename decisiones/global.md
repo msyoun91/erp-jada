@@ -315,3 +315,41 @@ Barrido completo del proyecto: typecheck, lint y build de las dos apps (limpios)
 **Lo que quedó sin tocar, a propósito:** los 23 índices que el advisor marca sin uso — la base es joven y ninguno tuvo todavía la oportunidad de servir. Y *leaked password protection*, que no es SQL sino un toggle del dashboard de Auth (queda en `BACKLOG.md`).
 
 **Verificación:** `sql/tests/rls_obras.sql` 29/29, `rls_visibilidad_tareas.sql` 17/17, `perfil_propio.sql` + `usuarios_activo.sql` 6/6. Los tres se corrieron reescritos como un único `DO` que termina en `RAISE EXCEPTION` en vez de depender del `ROLLBACK` final: un statement es atómico, así que revierte aunque falle a la mitad. Confirmado después: cero filas de prueba y cero usuarios desactivados.
+
+---
+
+## DM Sans reemplaza a Barlow Semi Condensed + Plus Jakarta Sans
+
+La empresa cambió la tipografía de somosjada.com. El ERP arrastraba las dos familias del spec
+original de 2026-08, así que el sistema y el sitio ya no se parecían.
+
+**Una sola familia.** El sitio usa DM Sans variable (100–1000) para todo — no hay display separada.
+`--font-display` y `--font-body` desaparecen y queda `--font-sans`; todo hereda de `body`. Las tres
+usadas de `font-display` en componentes (`not-found.tsx`, `WidgetUsuarios.tsx`, `TareaCard.tsx`)
+pasaron a la clase `t-*` que corresponde. Dos tokens apuntando a la misma familia era duplicación sin
+motivo.
+
+**El tracking de títulos se invirtió: de +.01/.02em a −.02em.** Es el cambio con peso real y no es
+cosmético. Barlow Semi Condensed es semi-condensada y sin tracking positivo los títulos se apelmazan;
+DM Sans es de ancho normal y con ese mismo tracking se desarma. Copiar la escala vieja tal cual sobre
+la familia nueva era el error fácil. Por lo mismo bajan los tamaños de título (h1 36→32, h2 28→24,
+h3 20→18): al mismo px DM Sans ocupa bastante más ancho, y los títulos empujaban el layout.
+
+**El cuerpo se alinea al sitio:** body-l 17→16, body-m 15→14, caption 11→12 — `text-base`,
+`text-sm` y `text-xs` del sitio, literales. `t-label` toma el eyebrow del sitio (12px, peso 500,
+uppercase) pero cerrado a .12em en vez de .16em: acá es label de formulario, no decoración de hero.
+
+~~El override mobile `.t-caption { font-size: 13px }` de `globals.css`~~ se borró. Existía porque
+caption medía 11px y era ilegible en celular; con 12px la premisa se cayó. Si vuelve a molestar, el
+arreglo es el token, no un parche por breakpoint.
+
+**Los archivos.** Dos `.woff2` partidos por `unicode-range` (latin + latin-ext), variable 100–1000,
+55 KB contra los 145 KB de los ocho estáticos anteriores. Son los que sirve somosjada.com — bajados
+de ahí, no de Google Fonts, para que el render sea el mismo. Van con un `@font-face` de fallback con
+métricas de Arial (`size-adjust: 104.53%` y compañía, generado por next/font en el sitio) que evita
+el salto de layout durante el `swap`. Los ocho viejos quedaron en `obsoletos/fonts-barlow-jakarta/`.
+
+Pesos: 400 cuerpo, 500 labels/botones/nav, 600 títulos. **No se usa 700** — el sitio no lo usa en
+ningún lado. `WidgetUsuarios` tenía `font-bold` y perdió el bold.
+
+`.btn` (14px/500) y `.input` (14px) ya coincidían con los del sitio y no se tocaron.
