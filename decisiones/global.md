@@ -297,3 +297,21 @@ El archivo afirma estar escrito por `next dev` y manda leer `node_modules/next/d
 Verificado: está commiteado desde el scaffold (`fbee462`), y **ninguna de las dos rutas existe** en esta instalación — ni el directorio de docs ni el `generate-agent-files.js` que dice generarlo. Next acá es 16.3.0.
 
 Mientras siga así, las convenciones de Next se verifican contra el código del repo, no contra ese archivo. Lo que sí es cierto y hay que respetar: `params` y `searchParams` son `Promise` y se esperan con `await` (ver `app/(erp-app)/tareas/auditoria/page.tsx` y las rutas `[id]` de obras).
+
+---
+
+## `sql/035` — los advisors de Supabase, resueltos o descartados uno por uno
+
+Barrido completo del proyecto: typecheck, lint y build de las dos apps (limpios), migraciones (nada pendiente) y los advisors de seguridad y performance. `sql/035_advisors_hardening.sql`, corrida vía MCP.
+
+**`auth.uid()` va envuelto en `(select ...)` — siempre.** Era el hallazgo con peso real: 35 policies lo llamaban suelto. Postgres lo trata como VOLATILE y lo re-evalúa **una vez por fila**; dentro de un subselect lo resuelve una sola vez como InitPlan. Con las tablas de hoy no se mide, pero el costo crece lineal con las filas y toca todas las tablas del sistema. Es forma, no lógica: los cuerpos se generaron desde `pg_policies` con un `regexp_replace`, y se aplicaron con `ALTER POLICY`, no `DROP` + `CREATE` — nunca hubo un instante con una tabla sin política.
+
+**Las 34 funciones `SECURITY DEFINER` expuestas por RPC no eran el problema que el advisor cree.** `obras_set_activo`, `obras_transferir` y `obras_resolver_pendiente` chequean `tiene_permiso()` en la primera línea del cuerpo; el resto son helpers que las policies necesitan poder llamar. Se revocaron solo las cuatro que son trigger functions puras (`handle_new_user`, `handle_user_email_updated`, `obras_guard_congelado`, `obras_marcar_pendiente`) — mismo criterio que `sql/006` aplicó a las de tareas.
+
+**Revocar `EXECUTE` no apaga el trigger**, y no es una suposición: se verificó en la base con una tabla temporal, una función sin `EXECUTE` para `authenticated` y un `SET ROLE`. El trigger se disparó igual. Postgres chequea el privilegio al crear el trigger, no al dispararlo — si no fuera así, cada alta de obra habría empezado a fallar con este cambio.
+
+**`tiene_permiso` sale de `anon` pero se le regrantea a `authenticated` explícito.** Las policies la invocan como ese rol: revocársela a los dos las rompe todas. Riesgo asumido y anotado en el archivo — si alguna vez una policy tiene que evaluarse sin sesión, va a fallar con `42501 permission denied for function tiene_permiso`, un error que no nombra la policy. Hoy no hay lectura anónima: el middleware manda a `/login` antes de tocar la base.
+
+**Lo que quedó sin tocar, a propósito:** los 23 índices que el advisor marca sin uso — la base es joven y ninguno tuvo todavía la oportunidad de servir. Y *leaked password protection*, que no es SQL sino un toggle del dashboard de Auth (queda en `BACKLOG.md`).
+
+**Verificación:** `sql/tests/rls_obras.sql` 29/29, `rls_visibilidad_tareas.sql` 17/17, `perfil_propio.sql` + `usuarios_activo.sql` 6/6. Los tres se corrieron reescritos como un único `DO` que termina en `RAISE EXCEPTION` en vez de depender del `ROLLBACK` final: un statement es atómico, así que revierte aunque falle a la mitad. Confirmado después: cero filas de prueba y cero usuarios desactivados.

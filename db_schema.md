@@ -6,7 +6,9 @@ Proyecto Supabase: `qbpudocgdvpeadcyyhfh`. Regenerar tipos tras cada migración:
 `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public > erp-app/src/lib/supabase/database.types.ts`
 (requiere `supabase login` o `SUPABASE_ACCESS_TOKEN`)
 
-Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. Agenda de Obras (`sql/027` a `sql/034`) corrida vía MCP. `database.types.ts` sincronizado tras 027-034.
+Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. Agenda de Obras (`sql/027` a `sql/034`) corrida vía MCP. `database.types.ts` sincronizado tras 027-034. `sql/035_advisors_hardening.sql` corrida vía MCP — no toca tablas, columnas ni enums.
+
+**Las policies escriben `(select auth.uid())`, este documento escribe `auth.uid()`.** Desde `sql/035` las 35 policies que lo usaban envuelven la llamada en un subselect: sin eso Postgres la trata como VOLATILE y la re-evalúa una vez por fila. Es una diferencia de plan, no de lógica, así que abajo se sigue citando la forma corta — más legible y equivalente. Al escribir una policy nueva, usar la envuelta.
 
 ---
 

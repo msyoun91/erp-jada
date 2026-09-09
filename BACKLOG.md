@@ -68,3 +68,10 @@ Con `sql/033`, rechazar es desactivar con motivo: la fila sale de los listados y
 No se resolvió ahora porque el módulo no tiene ningún canal de aviso y armarlo para esto sería construir media notificación. Cuando exista uno (o cuando el ERP tenga notificaciones), el rechazo es el primer caso: `obras_aprobaciones` ya guarda quién, cuándo, qué y por qué.
 
 Alternativa barata si urge antes: mostrar en el listado propio las filas rechazadas de los últimos N días con badge y motivo, en vez de esconderlas junto con las desactivadas a mano.
+
+## Auth — activar leaked password protection
+
+Supabase puede rechazar contraseñas que figuran en HaveIBeenPwned. Está apagado.
+
+No es SQL: es un toggle en el dashboard de Auth (Authentication → Policies), así que no entra en una migración ni queda versionado en `sql/`. Sale como WARN en `get_advisors('security')` y es lo único que quedó pendiente de ese barrido — el resto se resolvió o se descartó en `sql/035` (ver `decisiones/global.md`).
+
