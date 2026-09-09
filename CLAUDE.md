@@ -90,6 +90,7 @@ La regla más alta prevalece.
 - Antes de modificar un módulo, leer `decisiones/<modulo>.md` — **solo ese archivo**. `decisiones/global.md` únicamente si tocás `components/ui/`, `globals.css`, permisos o infraestructura.
 - No crear roles. No crear permisos por módulo. Toda autorización nueva se implementa mediante submódulos, incluso si el permiso parece más fino que un submódulo (ej: por fila o por campo) — si un caso real no puede resolverse así, se registra en `decisiones/global.md` como excepción explícita antes de romper la regla, no se decide ad-hoc
 - **Regla de negocio → Postgres, no `actions.ts`.** Toda invariante (validación cruzada, cascada, derivación, orquestación multi-tabla) vive en constraint, trigger o función `SECURITY INVOKER` llamada con `.rpc()`. `actions.ts` queda como glue: `safeParse` → llamar → `revalidatePath`. Si una regla no puede expresarse en SQL, registrarla en `decisiones/<modulo>.md` como excepción explícita antes de escribirla en TypeScript
+- **`obsoletos/` no se lee.** Es el cementerio: docs cerradas, boilerplate y código retirado. Entrar solo para restaurar algo, nunca como contexto de una tarea. Un puntero a `obsoletos/` desde `decisiones/` o `BACKLOG.md` es histórico — la decisión está escrita en el archivo que apunta
 - No crear nuevas dependencias sin necesidad demostrada.
 
 ---
@@ -100,9 +101,11 @@ La regla más alta prevalece.
 repo/
 ├── erp-app/         # Sistema principal. Fuente de verdad del negocio.
 ├── erp-cliente/     # Portal para clientes. Solo consulta/solicitud. Nunca autoridad.
-└── packages/
-    └── sync-contracts/   # Schemas y tipos compartidos. Apps nunca se importan entre sí.
+└── obsoletos/       # Retirados. No leer salvo restaurar — ver obsoletos/README.md
 ```
+
+Las apps nunca se importan entre sí. Cuando haga falta compartir schemas y tipos, el workspace
+`sync-contracts` se restaura desde `obsoletos/` (ver `GUIDE_SYNC.md`), no se crea de cero.
 
 ## Estructura interna erp-app
 

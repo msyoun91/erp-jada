@@ -542,7 +542,7 @@ Efecto secundario buscado: ningún componente de `components/ui/` recibe un `dat
 
 ## Un UPDATE rechazado deja de devolver `success` (sin SQL)
 
-Auditoría de arquitectura, primera tanda (`PLAN_ARQUITECTURA_TAREAS.md`, puntos 1 y 4).
+Auditoría de arquitectura, primera tanda (`obsoletos/PLAN_ARQUITECTURA_TAREAS.md`, puntos 1 y 4).
 
 **Un UPDATE que RLS rechaza no tira error: afecta 0 filas y vuelve limpio.** Los 26 `.update()` del módulo miraban solo `error`, así que editar una tarea sin permiso mostraba el toast de éxito, cerraba el panel y dejaba la fila intacta — el peor modo de falla posible, porque el usuario no tiene motivo para dudar. Ahora los updates que apuntan a filas puntuales van con `{ count: "exact" }` y pasan por `errorDeUpdate()`, que devuelve mensaje si hubo error **o** si `count === 0`.
 
@@ -558,7 +558,7 @@ Auditoría de arquitectura, primera tanda (`PLAN_ARQUITECTURA_TAREAS.md`, puntos
 
 ## Las seis props compartidas pasan a un Context (sin SQL)
 
-Auditoría de arquitectura, punto 6 de `PLAN_ARQUITECTURA_TAREAS.md`.
+Auditoría de arquitectura, punto 6 de `obsoletos/PLAN_ARQUITECTURA_TAREAS.md`.
 
 `usuarios`, `proyectos`, `miembrosPorProyecto`, `usuarioActualId`, `gestionarAjenas` y `puedeAsignar` viajaban idénticas por 16 componentes: ~149 atributos JSX de puro reenvío, y `Bloqueadas` en `MisionView` recibía nueve props para usar tres. Ninguna se transformaba en el camino — se verificó que los 149 reenvíos fueran `x={x}` literal antes de tocar nada.
 
@@ -578,7 +578,7 @@ Ahora las arma la page (server) y las entrega `TareasContextoProvider`; cada com
 
 ## Las etiquetas de estado se atan al enum (sin SQL)
 
-Auditoría de arquitectura, punto 7 de `PLAN_ARQUITECTURA_TAREAS.md`.
+Auditoría de arquitectura, punto 7 de `obsoletos/PLAN_ARQUITECTURA_TAREAS.md`.
 
 `ESTADO_LABEL` y `ESTADO_BADGE` eran `Record<string, string>`: cualquier string indexaba y el resultado era `string`, no `string | undefined`. Un typo o un valor nuevo del enum se renderizaba vacío sin que TS dijera nada. Ahora son `Record<EstadoTarea, string>`, con `EstadoTarea = Enums<"estado_tarea">` en `types.ts`. Agregar un valor a `estado_tarea` en Postgres rompe la compilación hasta que los dos mapas tengan su fila, que es el punto.
 
@@ -686,7 +686,7 @@ Los tres cambios de `components/ui/` de esta tanda (`RightPanel` y `Modal` a `<d
 
 ## Las escrituras multi-tabla bajan a Postgres
 
-Punto 2 de `PLAN_ARQUITECTURA_TAREAS.md`. Seis actions escribían dos o más tablas con statements separados. Cada `.from().insert()` de PostgREST es su propia transacción, así que un fallo en el segundo dejaba el primero cometido. El modo de falla peor es `crearTarea`: si el insert de `tareas_asignados` falla, la tarea queda `activo = true` e **invisible para todos** — `tareas_select` no mira `creado_por` (`sql/013`), así que ni quien la creó la ve, y sin verla no puede corregirla. Igual en `crearProyecto` (proyecto privado sin miembros), `convertirTareaEnHilo`, `deshacerConversionHilo`, `desactivarHilo` y `agregarTareasDesdePlantilla`.
+Punto 2 de `obsoletos/PLAN_ARQUITECTURA_TAREAS.md`. Seis actions escribían dos o más tablas con statements separados. Cada `.from().insert()` de PostgREST es su propia transacción, así que un fallo en el segundo dejaba el primero cometido. El modo de falla peor es `crearTarea`: si el insert de `tareas_asignados` falla, la tarea queda `activo = true` e **invisible para todos** — `tareas_select` no mira `creado_por` (`sql/013`), así que ni quien la creó la ve, y sin verla no puede corregirla. Igual en `crearProyecto` (proyecto privado sin miembros), `convertirTareaEnHilo`, `deshacerConversionHilo`, `desactivarHilo` y `agregarTareasDesdePlantilla`.
 
 Las seis pasan a funciones `SECURITY INVOKER` en `sql/023`, llamadas con `.rpc()`: `crear_tarea`, `crear_proyecto`, `convertir_tarea_en_hilo`, `deshacer_conversion_hilo`, `desactivar_hilo`, `agregar_tareas_desde_plantilla`. El cuerpo corre en una sola transacción y **RLS se sigue evaluando con la identidad de quien llama** — la autoridad no se mueve de las policies, que es lo que descarta `SECURITY DEFINER` acá (sería mover autorización adentro de la función). `actions.ts` queda como glue: `safeParse` → `.rpc()` → `revalidatePath`, y bajó de 920 a 797 líneas.
 

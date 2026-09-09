@@ -3,7 +3,6 @@
   "private": true,
   "workspaces": [
     "erp-app",
-    "erp-cliente",
-    "packages/sync-contracts"
+    "erp-cliente"
   ]
 }

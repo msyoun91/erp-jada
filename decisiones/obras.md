@@ -190,7 +190,7 @@ Desactivar una empresa o persona **sí** está bloqueada si participa en alguna 
 
 ## Sin widget de dashboard, sin portal de clientes
 
-Ambas descartadas explícitamente por el usuario para fase 1. Nada de este módulo va a `erp-cliente` ni a `sync-contracts`.
+Ambas descartadas explícitamente por el usuario para fase 1. Nada de este módulo va a `erp-cliente` ni a `sync-contracts` (retirado a `obsoletos/`).
 
 ---
 

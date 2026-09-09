@@ -1,0 +1,852 @@
+<title>Obras × Tareas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg-page:#F5F7FB; --bg-surface:#FFFFFF; --bg-subtle:#EBF0F8; --bg-nav:#FFFFFF;
+    --text-primary:#0D1220; --text-secondary:#2B3352; --text-tertiary:#566B92; --text-brand:#1A6DC8;
+    --border:rgba(13,18,32,.12); --border-strong:rgba(13,18,32,.22);
+    --brand-50:#EBF2FD; --brand-100:#C8DEFA; --brand-300:#5FA3E0; --brand-500:#1A6DC8; --brand-700:#064379; --brand-900:#011F51;
+    --success-bg:#DCFCE7; --success-text:#0A3B1F; --success:#16A34A;
+    --warning-bg:#FEF3C7; --warning-text:#5C3200;
+    --error-bg:#FEE2E2; --error-text:#5C0A0A; --error:#DC2626;
+    --info-bg:#DBEAFE; --info-text:#0C2461;
+    --shadow-sm:0 1px 2px rgba(13,18,32,.06);
+    --shadow-md:0 2px 6px rgba(13,18,32,.07), 0 12px 28px rgba(13,18,32,.07);
+    --font-display:"Barlow Semi Condensed","Arial Narrow",sans-serif;
+    --font-body:"Plus Jakarta Sans",system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg-page:#070B14; --bg-surface:#0E1525; --bg-subtle:#131C30; --bg-nav:#0B1322;
+      --text-primary:#EDF2FF; --text-secondary:#9DB2D8; --text-tertiary:#6F86AE; --text-brand:#5FA3E0;
+      --border:rgba(255,255,255,.09); --border-strong:rgba(255,255,255,.18);
+      --brand-50:#0D2040; --brand-100:#143059; --brand-300:#5FA3E0; --brand-500:#3E8AD8; --brand-700:#5FA3E0; --brand-900:#1257A5;
+      --success-bg:#052E16; --success-text:#BBF7D0; --success:#22C55E;
+      --warning-bg:#451A03; --warning-text:#FDE68A;
+      --error-bg:#450A0A; --error-text:#FECACA; --error:#F87171;
+      --info-bg:#172554; --info-text:#BFDBFE;
+      --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+      --shadow-md:0 2px 6px rgba(0,0,0,.45), 0 12px 28px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg-page:#070B14; --bg-surface:#0E1525; --bg-subtle:#131C30; --bg-nav:#0B1322;
+    --text-primary:#EDF2FF; --text-secondary:#9DB2D8; --text-tertiary:#6F86AE; --text-brand:#5FA3E0;
+    --border:rgba(255,255,255,.09); --border-strong:rgba(255,255,255,.18);
+    --brand-50:#0D2040; --brand-100:#143059; --brand-300:#5FA3E0; --brand-500:#3E8AD8; --brand-700:#5FA3E0; --brand-900:#1257A5;
+    --success-bg:#052E16; --success-text:#BBF7D0; --success:#22C55E;
+    --warning-bg:#451A03; --warning-text:#FDE68A;
+    --error-bg:#450A0A; --error-text:#FECACA; --error:#F87171;
+    --info-bg:#172554; --info-text:#BFDBFE;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 2px 6px rgba(0,0,0,.45), 0 12px 28px rgba(0,0,0,.4);
+  }
+
+  body { background:var(--bg-page); color:var(--text-primary); font-family:var(--font-body); -webkit-font-smoothing:antialiased; }
+  * { box-sizing:border-box; }
+  h1,h2,h3,h4 { font-family:var(--font-display); font-weight:600; margin:0; text-wrap:balance; }
+  p { margin:0; }
+  button { font:inherit; cursor:pointer; }
+  :focus-visible { outline:2px solid var(--brand-500); outline-offset:2px; border-radius:4px; }
+
+  /* ---------- marco del prototipo ---------- */
+  .proto { max-width:1240px; margin:0 auto; padding:22px 20px 56px; display:flex; flex-direction:column; gap:20px; }
+
+  .proto-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:14px 22px; }
+  .proto-title { font-family:var(--font-display); font-size:30px; letter-spacing:-.01em; }
+  .proto-sub { font-size:13.5px; color:var(--text-tertiary); max-width:62ch; line-height:1.55; margin-top:5px; }
+  .proto-flag { display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--warning-text); background:var(--warning-bg); padding:5px 11px; border-radius:999px; }
+
+  .steps { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:thin; }
+  .step { flex:0 0 auto; display:flex; align-items:center; gap:9px; background:var(--bg-surface); border:1px solid var(--border); border-radius:8px; padding:9px 14px 9px 10px; color:var(--text-tertiary); font-size:13px; font-weight:500; transition:border-color .15s, color .15s, box-shadow .15s; }
+  .step:hover { border-color:var(--border-strong); color:var(--text-secondary); }
+  .step .n { display:grid; place-items:center; width:21px; height:21px; border-radius:5px; background:var(--bg-subtle); color:var(--text-tertiary); font-family:var(--font-display); font-size:13px; font-weight:700; }
+  .step[aria-current="true"] { border-color:var(--brand-300); color:var(--text-brand); box-shadow:var(--shadow-sm); }
+  .step[aria-current="true"] .n { background:var(--brand-500); color:#fff; }
+
+  /* ---------- shell de la app ---------- */
+  .shell { display:grid; grid-template-columns:216px 1fr; background:var(--bg-surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-md); min-height:660px; }
+  .side { background:var(--bg-nav); border-right:1px solid var(--border); padding:16px 12px; display:flex; flex-direction:column; gap:3px; }
+  .brandmark { display:flex; align-items:center; gap:9px; padding:2px 8px 16px; }
+  .brandmark .sq { width:26px; height:26px; border-radius:7px; background:var(--brand-900); color:#fff; display:grid; place-items:center; font-family:var(--font-display); font-weight:700; font-size:14px; }
+  .brandmark b { font-family:var(--font-display); font-size:17px; letter-spacing:.01em; }
+  .nav-group { font-size:10.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--text-tertiary); padding:14px 10px 6px; }
+  .nav-item { display:flex; align-items:center; gap:9px; border-radius:6px; padding:8px 10px; font-size:14.5px; font-weight:500; color:var(--text-tertiary); background:none; border:0; width:100%; text-align:left; }
+  .nav-item:hover { background:var(--bg-subtle); color:var(--text-secondary); }
+  .nav-item[aria-current="true"] { background:var(--brand-50); color:var(--brand-700); }
+  .nav-item svg { flex:none; }
+
+  .main { padding:22px 26px 30px; display:flex; flex-direction:column; gap:18px; min-width:0; background:var(--bg-page); }
+  .crumb { font-size:12.5px; color:var(--text-tertiary); display:flex; align-items:center; gap:7px; }
+  .crumb b { color:var(--text-secondary); font-weight:500; }
+  .h1 { font-size:27px; display:flex; align-items:center; gap:10px; }
+  .h1 svg { color:var(--brand-500); flex:none; }
+  .tabs { display:flex; gap:2px; border-bottom:1px solid var(--border); margin-top:-4px; overflow-x:auto; }
+  .tab { border:0; background:none; padding:9px 13px; font-size:13.5px; font-weight:500; color:var(--text-tertiary); border-bottom:2px solid transparent; margin-bottom:-1px; white-space:nowrap; }
+  .tab[aria-current="true"] { color:var(--text-brand); border-bottom-color:var(--brand-500); }
+  .tab:hover { color:var(--text-secondary); }
+
+  /* ---------- primitivas del design system ---------- */
+  .card { background:var(--bg-surface); border:1px solid var(--border); border-radius:10px; padding:20px; }
+  .card-flush { padding:0; overflow:hidden; }
+  .btn { display:inline-flex; align-items:center; gap:7px; white-space:nowrap; border-radius:6px; border:1px solid; font-size:13.5px; font-weight:500; padding:9px 18px; transition:background-color .15s, border-color .15s, color .15s; }
+  .btn-sm { padding:7px 13px; font-size:12.5px; border-radius:5px; }
+  .btn-primary { background:var(--brand-900); color:#fff; border-color:var(--brand-900); }
+  .btn-primary:hover { filter:brightness(1.18); }
+  .btn-secondary { background:transparent; color:var(--text-primary); border-color:var(--border-strong); }
+  .btn-secondary:hover { background:var(--bg-subtle); }
+  .btn-ghost { background:transparent; color:var(--text-tertiary); border-color:transparent; }
+  .btn-ghost:hover { background:var(--bg-subtle); }
+  .badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; border-radius:999px; padding:3px 9px; }
+  .badge-brand { background:var(--brand-50); color:var(--text-brand); }
+  .badge-success { background:var(--success-bg); color:var(--success-text); }
+  .badge-warning { background:var(--warning-bg); color:var(--warning-text); }
+  .badge-error { background:var(--error-bg); color:var(--error-text); }
+  .badge-neutral { background:var(--bg-subtle); color:var(--text-tertiary); }
+  .cap { font-size:11.5px; color:var(--text-tertiary); line-height:1.5; }
+  .lbl { font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-tertiary); }
+  .input, .select, .area { width:100%; font-family:var(--font-body); font-size:13.5px; border-radius:6px; border:1.5px solid var(--border-strong); background:var(--bg-surface); color:var(--text-primary); padding:9px 11px; outline:none; }
+  .area { resize:vertical; min-height:88px; line-height:1.55; }
+  .input:focus, .select:focus, .area:focus { border-color:var(--brand-500); box-shadow:0 0 0 3px rgba(26,109,200,.12); }
+  .input:disabled { background:var(--bg-subtle); color:var(--text-secondary); border-style:dashed; cursor:default; }
+  .field { display:flex; flex-direction:column; gap:6px; }
+
+  /* ---------- ficha de persona ---------- */
+  .ficha-head { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .ficha-id { display:flex; flex-direction:column; gap:7px; min-width:0; }
+  .ficha-id h2 { font-size:24px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .cols { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:18px; align-items:start; }
+  @media (max-width:1000px) { .cols { grid-template-columns:1fr; } .shell { grid-template-columns:1fr; } .side { display:none; } }
+
+  .sug { display:flex; gap:12px; align-items:flex-start; border:1px solid var(--brand-300); background:var(--brand-50); border-radius:10px; padding:14px 16px; }
+  .sug .ic { color:var(--brand-500); flex:none; margin-top:1px; }
+  .sug h4 { font-size:15px; color:var(--brand-700); }
+  .sug p { font-size:13px; color:var(--text-secondary); line-height:1.55; margin-top:3px; }
+  .sug .acts { display:flex; gap:7px; margin-top:10px; }
+
+  .atajos { display:flex; flex-wrap:wrap; gap:8px; }
+  .atajo { display:inline-flex; align-items:center; gap:8px; background:var(--bg-surface); border:1px solid var(--border-strong); border-radius:7px; padding:9px 14px; font-size:13.5px; font-weight:500; color:var(--text-primary); transition:border-color .15s, background-color .15s; }
+  .atajo:hover { border-color:var(--brand-500); background:var(--brand-50); color:var(--brand-700); }
+  .atajo svg { color:var(--text-tertiary); flex:none; }
+  .atajo:hover svg { color:var(--brand-500); }
+
+  .sect-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:0 0 9px; }
+  .sect-head h3 { font-size:16px; }
+  .rows { display:flex; flex-direction:column; }
+  .row { display:flex; gap:12px; align-items:flex-start; padding:13px 18px; border-top:1px solid var(--border); }
+  .rows .row:first-child { border-top:0; }
+  .row-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+  .row-t { font-size:14px; font-weight:600; color:var(--text-primary); }
+  .row-n { font-size:12.5px; color:var(--text-secondary); line-height:1.55; }
+  .row-meta { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .tick { flex:none; width:19px; height:19px; border-radius:999px; display:grid; place-items:center; margin-top:1px; }
+  .tick-done { background:var(--success-bg); color:var(--success); }
+  .tick-open { border:1.5px solid var(--border-strong); }
+  .dias { font-family:var(--font-display); font-size:13px; font-weight:600; color:var(--text-tertiary); font-variant-numeric:tabular-nums; }
+
+  .kv { display:grid; grid-template-columns:88px 1fr; gap:8px 12px; font-size:13.5px; align-items:baseline; }
+  .kv dt { color:var(--text-tertiary); font-size:12.5px; }
+  .kv dd { margin:0; color:var(--text-primary); font-variant-numeric:tabular-nums; }
+  .lnk { color:var(--text-brand); text-decoration:none; border-bottom:1px solid transparent; }
+  .lnk:hover { border-bottom-color:currentColor; }
+
+  .logline { display:flex; gap:8px; align-items:flex-start; margin-top:12px; padding-top:12px; border-top:1px dashed var(--border-strong); color:var(--text-tertiary); }
+  .logline svg { flex:none; margin-top:1px; }
+
+  /* ---------- drawer ---------- */
+  .scrim { position:fixed; inset:0; background:rgba(13,18,32,.42); backdrop-filter:blur(2px); z-index:40; }
+  .drawer { position:fixed; top:0; right:0; bottom:0; width:min(430px,100%); background:var(--bg-surface); border-left:1px solid var(--border); z-index:41; display:flex; flex-direction:column; box-shadow:var(--shadow-md); }
+  .drawer-head { padding:18px 20px 14px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .drawer-head h3 { font-size:19px; }
+  .drawer-body { padding:18px 20px; display:flex; flex-direction:column; gap:16px; overflow-y:auto; flex:1; }
+  .drawer-foot { padding:14px 20px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--bg-page); }
+  .icon-btn { display:grid; place-items:center; width:32px; height:32px; border-radius:6px; border:1px solid transparent; background:none; color:var(--text-tertiary); flex:none; }
+  .icon-btn:hover { background:var(--bg-subtle); }
+  .auto { display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-tertiary); }
+
+  .toast { position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:60; display:flex; align-items:center; gap:9px; background:var(--text-primary); color:var(--bg-surface); padding:11px 17px; border-radius:8px; font-size:13.5px; font-weight:500; box-shadow:var(--shadow-md); }
+
+  /* ---------- tareas ---------- */
+  .tcard { display:flex; gap:12px; align-items:flex-start; background:var(--bg-surface); border:1px solid var(--border); border-radius:9px; padding:14px 16px; width:100%; text-align:left; transition:border-color .15s, box-shadow .15s; }
+  .tcard:hover { border-color:var(--brand-300); box-shadow:var(--shadow-sm); }
+  .tcard.is-target { border-color:var(--brand-300); }
+  .vinc { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:500; color:var(--text-brand); background:var(--brand-50); border:1px solid var(--brand-100); border-radius:6px; padding:4px 9px; text-decoration:none; }
+  .vinc:hover { border-color:var(--brand-300); }
+  .vinc.is-dead { color:var(--text-tertiary); background:var(--bg-subtle); border-color:var(--border); cursor:not-allowed; }
+  .temp { width:6px; align-self:stretch; border-radius:999px; flex:none; }
+
+  .viewas { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:12.5px; color:var(--text-tertiary); }
+  .seg { display:inline-flex; background:var(--bg-subtle); border-radius:7px; padding:3px; gap:3px; }
+  .seg button { border:0; background:none; border-radius:5px; padding:5px 11px; font-size:12.5px; font-weight:500; color:var(--text-tertiary); }
+  .seg button[aria-pressed="true"] { background:var(--bg-surface); color:var(--text-primary); box-shadow:var(--shadow-sm); }
+
+  .deny { display:flex; gap:10px; align-items:flex-start; background:var(--error-bg); color:var(--error-text); border-radius:8px; padding:13px 15px; font-size:13px; line-height:1.55; }
+  .deny svg { flex:none; margin-top:2px; }
+  .deny code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; background:rgba(0,0,0,.08); padding:1px 5px; border-radius:4px; }
+
+  /* ---------- notas de diseño ---------- */
+  .notes { display:grid; grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); gap:14px; }
+  .note { background:var(--bg-surface); border:1px solid var(--border); border-radius:10px; padding:17px 18px; display:flex; flex-direction:column; gap:7px; }
+  .note h4 { font-size:15.5px; }
+  .note p { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+  .note code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; background:var(--bg-subtle); padding:1px 5px; border-radius:4px; color:var(--text-secondary); }
+  .note .tagrow { display:flex; gap:6px; flex-wrap:wrap; margin-top:2px; }
+  .note-alert { border-color:var(--warning-text); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
+</style>
+
+<div class="proto">
+
+  <header class="proto-head">
+    <div>
+      <div class="proto-title">Obras&nbsp;×&nbsp;Tareas</div>
+      <p class="proto-sub">Prototipo del enlace entre los dos módulos: registrar una llamada que ya pasó, programar la próxima, y ver la ficha de la persona sin salir de la tarea. Datos de ejemplo — nada de esto está construido todavía.</p>
+    </div>
+    <span class="proto-flag">Prototipo · no implementado</span>
+  </header>
+
+  <nav class="steps" id="steps" aria-label="Recorrido del flujo">
+    <button class="step" data-step="0"><span class="n">1</span>Ficha de Juan Pérez</button>
+    <button class="step" data-step="1"><span class="n">2</span>Registrar una llamada</button>
+    <button class="step" data-step="2"><span class="n">3</span>Programar la próxima</button>
+    <button class="step" data-step="3"><span class="n">4</span>La tarea en Tareas</button>
+    <button class="step" data-step="4"><span class="n">5</span>La ficha adentro de la tarea</button>
+  </nav>
+
+  <div class="shell">
+    <aside class="side">
+      <div class="brandmark"><span class="sq">J</span><b>ERP JADA</b></div>
+      <button class="nav-item" data-nav="dash">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-nav="tareas">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Tareas
+      </button>
+      <button class="nav-item" data-nav="obras">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-5h6v5"/><path d="M9 11h.01M15 11h.01"/></svg>
+        Agenda de Obras
+      </button>
+      <button class="nav-item" data-nav="usuarios">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/></svg>
+        Usuarios
+      </button>
+    </aside>
+
+    <main class="main">
+
+      <!-- ============ VISTA: FICHA DE PERSONA ============ -->
+      <section id="v-persona">
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div class="crumb">Agenda de Obras <span>/</span> <b>Personas</b> <span>/</span> <b>Juan Pérez</b></div>
+
+          <div class="h1">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-5h6v5"/></svg>
+            Agenda de Obras
+          </div>
+
+          <div class="tabs">
+            <button class="tab">Obras</button>
+            <button class="tab">Empresas</button>
+            <button class="tab" aria-current="true">Personas</button>
+            <button class="tab">Pendientes</button>
+            <button class="tab">Auditoría</button>
+          </div>
+
+          <div class="ficha-head">
+            <div class="ficha-id">
+              <h2>Juan Pérez</h2>
+              <div class="chips">
+                <span class="badge badge-brand">Compras</span>
+                <span class="badge badge-brand">Decisor</span>
+                <span class="badge badge-neutral">Constructora Del Sur S.A.</span>
+              </div>
+            </div>
+            <div class="chips">
+              <button class="btn btn-secondary btn-sm">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 00-7.5-.5l-3 3a5 5 0 007 7L12 19"/></svg>
+                Copiar enlace
+              </button>
+              <button class="btn btn-secondary btn-sm">Editar</button>
+            </div>
+          </div>
+
+          <div id="sug" class="sug">
+            <svg class="ic" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 00-4 12.7V17h8v-2.3A7 7 0 0012 2z"/></svg>
+            <div style="flex:1;min-width:0">
+              <h4>Hace 18 días que no registrás nada con Juan</h4>
+              <p><b>Edificio Cabildo 2280</b> sigue en <i>idea</i> y no tiene ninguna tarea abierta. La última llamada fue el 21/08 y quedó en volver a llamarlo con el listado de precios.</p>
+              <div class="acts">
+                <button class="btn btn-primary btn-sm" data-open="programar">Programar llamada</button>
+                <button class="btn btn-ghost btn-sm" id="sug-off">Descartar</button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="sect-head"><h3>Acciones rápidas</h3><span class="cap">Cada una crea una tarea ya enlazada a Juan Pérez</span></div>
+            <div class="atajos">
+              <button class="atajo" data-open="llamada">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3.1 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.4c.9.3 1.8.6 2.8.7a2 2 0 011.7 2z"/></svg>
+                Registrar llamada
+              </button>
+              <button class="atajo" data-open="programar">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                Programar llamada
+              </button>
+              <button class="atajo" data-open="visita">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1116 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Registrar visita
+              </button>
+              <button class="atajo" data-open="libre">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg>
+                Tarea libre
+              </button>
+            </div>
+          </div>
+
+          <div class="cols">
+            <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+
+              <div class="card card-flush">
+                <div class="sect-head" style="padding:16px 18px 12px">
+                  <h3>Pendiente con Juan</h3>
+                  <span class="badge badge-warning" id="cuenta-pend">1 abierta</span>
+                </div>
+                <div class="rows" id="pendientes">
+                  <div class="row" data-new="programada" hidden>
+                    <span class="tick tick-open"></span>
+                    <div class="row-main">
+                      <span class="row-t">Llamar a Juan Pérez</span>
+                      <span class="row-n" data-slot="nota-prog">Confirmar si ya tiene el listado de precios de membrana.</span>
+                      <div class="row-meta">
+                        <span class="badge badge-warning">Vence 15/09</span>
+                        <span class="badge badge-neutral">Edificio Cabildo 2280</span>
+                      </div>
+                    </div>
+                    <span class="dias">en 7 d</span>
+                  </div>
+                  <div class="row">
+                    <span class="tick tick-open"></span>
+                    <div class="row-main">
+                      <span class="row-t">Pasar precios de membrana asfáltica</span>
+                      <span class="row-n">Losa del 4°. Pidió por m² con y sin colocación.</span>
+                      <div class="row-meta">
+                        <span class="badge badge-warning">Vence 11/09</span>
+                        <span class="badge badge-neutral">Edificio Cabildo 2280</span>
+                      </div>
+                    </div>
+                    <span class="dias">en 3 d</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card card-flush">
+                <div class="sect-head" style="padding:16px 18px 12px">
+                  <h3>Lo que ya pasó</h3>
+                  <span class="cap">Cada llamada registrada es una tarea completada</span>
+                </div>
+                <div class="rows" id="historial">
+                  <div class="row" data-new="llamada" hidden>
+                    <span class="tick tick-done"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6L9 17l-5-5"/></svg></span>
+                    <div class="row-main">
+                      <span class="row-t">Llamada a Juan Pérez</span>
+                      <span class="row-n" data-slot="nota-llamada">Atendió. Ya tiene el permiso de obra, arrancan en octubre. Quiere presupuesto cerrado antes del 30/09.</span>
+                      <div class="row-meta">
+                        <span class="badge badge-neutral">Edificio Cabildo 2280</span>
+                      </div>
+                    </div>
+                    <span class="dias">hoy</span>
+                  </div>
+                  <div class="row">
+                    <span class="tick tick-done"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6L9 17l-5-5"/></svg></span>
+                    <div class="row-main">
+                      <span class="row-t">Llamada a Juan Pérez</span>
+                      <span class="row-n">Pidió precios de membrana asfáltica para la losa del 4°. Vuelve a llamar cuando tenga el listado.</span>
+                      <div class="row-meta"><span class="badge badge-neutral">Edificio Cabildo 2280</span></div>
+                    </div>
+                    <span class="dias">21/08</span>
+                  </div>
+                  <div class="row">
+                    <span class="tick tick-done"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6L9 17l-5-5"/></svg></span>
+                    <div class="row-main">
+                      <span class="row-t">Visita a obra — Edificio Cabildo 2280</span>
+                      <span class="row-n">Fuimos con Martín. Están en fundaciones. Juan no estaba, atendió el capataz.</span>
+                      <div class="row-meta"><span class="badge badge-neutral">Edificio Cabildo 2280</span></div>
+                    </div>
+                    <span class="dias">02/08</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+              <div class="card">
+                <div class="sect-head" style="padding-bottom:12px"><h3>Contacto</h3></div>
+                <dl class="kv">
+                  <dt>Teléfono</dt><dd>11 4567-8900</dd>
+                  <dt>WhatsApp</dt><dd>+54 9 11 4567-8900</dd>
+                  <dt>Email</dt><dd style="font-variant-numeric:normal">jperez@delsur.com.ar</dd>
+                </dl>
+                <div class="logline">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                  <span class="cap">Abrir esta ficha quedó registrado. <code style="font-size:11px">obras_ficha_persona()</code> es el único camino al contacto — sin cambios.</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="sect-head" style="padding-bottom:12px"><h3>Vínculos</h3></div>
+                <div style="display:flex;flex-direction:column;gap:13px">
+                  <div>
+                    <div class="lbl" style="margin-bottom:6px">Empresa</div>
+                    <a class="lnk" href="#" style="font-size:14px;font-weight:600">Constructora Del Sur S.A.</a>
+                    <p class="cap" style="margin-top:3px">Jefe de compras zona sur · principal</p>
+                  </div>
+                  <div>
+                    <div class="lbl" style="margin-bottom:6px">Obras</div>
+                    <a class="lnk" href="#" style="font-size:14px;font-weight:600">Edificio Cabildo 2280</a>
+                    <p class="cap" style="margin-top:3px">CABA · idea · compras, decisor</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VISTA: LISTA DE TAREAS ============ -->
+      <section id="v-lista" hidden>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div class="crumb">Tareas <span>/</span> <b>Lista</b></div>
+          <div class="h1">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Tareas
+          </div>
+          <div class="tabs">
+            <button class="tab" aria-current="true">Lista</button>
+            <button class="tab">Misión</button>
+            <button class="tab">Proyectos</button>
+            <button class="tab">Plantillas</button>
+            <button class="tab">Auditoría</button>
+          </div>
+
+          <p class="cap" style="font-size:12.5px">La tarea enlazada vive en la lista de siempre. Lo único nuevo es el chip que dice de quién y de qué obra es.</p>
+
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="tcard is-target" id="ir-detalle">
+              <span class="temp" style="background:var(--warning-text)"></span>
+              <span class="tick tick-open" style="margin-top:3px"></span>
+              <span class="row-main">
+                <span class="row-t">Llamar a Juan Pérez</span>
+                <span class="row-n">Confirmar si ya tiene el listado de precios de membrana.</span>
+                <span class="row-meta" style="margin-top:5px">
+                  <span class="vinc">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>
+                    Juan Pérez
+                  </span>
+                  <span class="vinc">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/></svg>
+                    Edificio Cabildo 2280
+                  </span>
+                  <span class="badge badge-warning">Vence 15/09</span>
+                </span>
+              </span>
+              <span class="dias">en 7 d</span>
+            </button>
+
+            <div class="tcard">
+              <span class="temp" style="background:var(--error)"></span>
+              <span class="tick tick-open" style="margin-top:3px"></span>
+              <span class="row-main">
+                <span class="row-t">Pasar precios de membrana asfáltica</span>
+                <span class="row-n">Losa del 4°. Por m² con y sin colocación.</span>
+                <span class="row-meta" style="margin-top:5px">
+                  <span class="vinc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>Juan Pérez</span>
+                  <span class="badge badge-warning">Vence 11/09</span>
+                </span>
+              </span>
+              <span class="dias">en 3 d</span>
+            </div>
+
+            <div class="tcard">
+              <span class="temp" style="background:var(--border-strong)"></span>
+              <span class="tick tick-open" style="margin-top:3px"></span>
+              <span class="row-main">
+                <span class="row-t">Armar planilla de obras nuevas de septiembre</span>
+                <span class="row-n">Sin enlace — una tarea común, como siempre.</span>
+                <span class="row-meta" style="margin-top:5px"><span class="badge badge-neutral">Proyecto: Interna</span></span>
+              </span>
+              <span class="dias">en 12 d</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VISTA: DETALLE DE TAREA ============ -->
+      <section id="v-detalle" hidden>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div class="crumb"><button class="btn btn-ghost btn-sm" id="volver-lista" style="padding-left:0">← Tareas</button> <span>/</span> <b>Llamar a Juan Pérez</b></div>
+
+          <div class="cols">
+            <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+              <div class="card">
+                <div class="ficha-head" style="margin-bottom:14px">
+                  <div class="ficha-id">
+                    <h2 style="font-size:22px">Llamar a Juan Pérez</h2>
+                    <div class="chips">
+                      <span class="badge badge-neutral">Pendiente</span>
+                      <span class="badge badge-warning">Vence 15/09/2026</span>
+                      <span class="badge badge-brand">Temperatura media</span>
+                    </div>
+                  </div>
+                  <button class="btn btn-primary btn-sm">Completar</button>
+                </div>
+                <p class="row-n" style="font-size:13.5px">Confirmar si ya tiene el listado de precios de membrana. Si no lo tiene, ofrecer pasar el jueves por la obra.</p>
+                <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+                  <div class="lbl" style="margin-bottom:8px">Vinculada a</div>
+                  <div class="chips">
+                    <a class="vinc" href="#" id="chip-persona">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg>
+                      Juan Pérez
+                    </a>
+                    <a class="vinc" href="#" id="chip-obra">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/></svg>
+                      Edificio Cabildo 2280
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="sect-head" style="padding-bottom:12px">
+                  <h3>Ficha de Juan Pérez</h3>
+                  <span class="cap">Sin salir de la tarea</span>
+                </div>
+
+                <div id="ficha-cerrada">
+                  <p class="row-n" style="font-size:13px;margin-bottom:12px">El contacto no viaja con la tarea. Se pide acá, por la misma función de siempre, y queda registrado.</p>
+                  <button class="btn btn-secondary btn-sm" id="ver-contacto">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Ver contacto
+                  </button>
+                </div>
+
+                <div id="ficha-abierta" hidden>
+                  <dl class="kv">
+                    <dt>Teléfono</dt><dd>11 4567-8900</dd>
+                    <dt>WhatsApp</dt><dd>+54 9 11 4567-8900</dd>
+                    <dt>Email</dt><dd style="font-variant-numeric:normal">jperez@delsur.com.ar</dd>
+                    <dt>Cargo</dt><dd style="font-variant-numeric:normal">Jefe de compras zona sur</dd>
+                    <dt>Empresa</dt><dd style="font-variant-numeric:normal">Constructora Del Sur S.A.</dd>
+                  </dl>
+                  <div class="logline">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 2l8 4v6c0 5-3.4 9.2-8 10-4.6-.8-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+                    <span class="cap">Acceso registrado — hoy 14:32. Aparece en <b>Obras › Auditoría</b> igual que si hubieras abierto la ficha desde la agenda.</span>
+                  </div>
+                </div>
+
+                <div id="ficha-denegada" hidden>
+                  <div class="deny">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M4.9 4.9l14.2 14.2"/></svg>
+                    <div>
+                      <b>No tenés acceso a esta persona.</b><br>
+                      Pedísela a quien la cargó o al responsable de la obra. <code>OB009</code>
+                    </div>
+                  </div>
+                  <p class="cap" style="margin-top:11px">Estar asignado a la tarea no abre la ficha. Es la regla que sostiene todo el módulo: el vínculo no da visibilidad.</p>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+              <div class="card" style="background:var(--bg-subtle);border-style:dashed">
+                <div class="lbl" style="margin-bottom:9px">Control del prototipo</div>
+                <div class="viewas">
+                  <span>Ver como</span>
+                  <div class="seg" id="viewas">
+                    <button data-as="yo" aria-pressed="true">Vos</button>
+                    <button data-as="otro" aria-pressed="false">Un compañero</button>
+                  </div>
+                </div>
+                <p class="cap" style="margin-top:10px" id="viewas-nota">Sos el responsable de la obra y creaste a Juan: ves todo.</p>
+              </div>
+
+              <div class="card">
+                <div class="sect-head" style="padding-bottom:12px"><h3>Asignados</h3></div>
+                <div class="chips"><span class="badge badge-brand">Vos</span></div>
+                <div class="sect-head" style="padding:16px 0 8px"><h3 style="font-size:14px">Notas</h3></div>
+                <p class="row-n" style="font-size:12.5px">Sin notas. La nota de la llamada va en la descripción; las notas del hilo siguen siendo las de siempre.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <section>
+    <div class="sect-head" style="padding-bottom:12px">
+      <h3 style="font-size:19px">Lo que este prototipo decide</h3>
+      <span class="cap">Cinco puntos que hay que aprobar antes de escribir SQL</span>
+    </div>
+    <div class="notes">
+      <div class="note">
+        <h4>Tres columnas, no una tabla puente</h4>
+        <p><code>obra_id</code>, <code>obra_persona_id</code> y <code>obra_empresa_id</code> en <code>tareas</code>, nullable. FK real, y la vuelta —“qué tengo que hacer con Juan”— es un index scan. Una tarea puede llevar persona <b>y</b> obra a la vez.</p>
+      </div>
+      <div class="note">
+        <h4>El enlace no da visibilidad</h4>
+        <p>La tarea muestra el nombre y nada más. El contacto sigue saliendo solo por <code>obras_ficha_persona()</code>, con su fila en el log. Nadie llega a un celular asignándose una tarea — el paso 5 lo muestra con el toggle.</p>
+      </div>
+      <div class="note">
+        <h4>El título es una foto</h4>
+        <p>“Llamada a Juan Pérez” se guarda como texto y el enlace va por la FK. Si mañana se corrige el apellido, la tarea vieja conserva el nombre que tenía el día de la llamada — que es lo correcto para un registro.</p>
+      </div>
+      <div class="note note-alert">
+        <h4>Agujero encontrado en tareas</h4>
+        <p><code>trg_log_evento_tarea</code> es <code>AFTER UPDATE</code>. Una tarea que <b>nace</b> completada —toda llamada registrada— no deja rastro en <code>tareas_eventos</code>. Hace falta un trigger <code>AFTER INSERT</code>. De paso: hoy la creación de cualquier tarea tampoco se loguea.</p>
+      </div>
+      <div class="note">
+        <h4>Cero permisos nuevos</h4>
+        <p>Ningún submódulo nuevo. La puerta es <code>tareas_lista</code>: si no ves tareas, registrar una es escribir en un pozo. Y <code>obras/actions.ts</code> llama <code>.rpc()</code> — no importa nada del módulo tareas. La superficie compartida es la base.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ============ DRAWERS ============ -->
+<div id="scrim" class="scrim" hidden></div>
+
+<aside id="drawer" class="drawer" hidden aria-label="Panel">
+  <div class="drawer-head">
+    <div>
+      <h3 id="dw-title">Registrar llamada</h3>
+      <p class="cap" id="dw-sub" style="margin-top:3px">Ya pasó. La tarea nace completada.</p>
+    </div>
+    <button class="icon-btn" id="dw-close" aria-label="Cerrar">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+
+  <div class="drawer-body">
+    <div class="field">
+      <span class="lbl">Título</span>
+      <input class="input" id="dw-titulo" value="Llamada a Juan Pérez" disabled>
+      <span class="auto">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>
+        Automático. Se guarda con enlace a <b>Juan Pérez</b>.
+      </span>
+    </div>
+
+    <div class="field" id="dw-fecha-wrap" hidden>
+      <span class="lbl">Fecha</span>
+      <input class="input" id="dw-fecha" type="date" value="2026-09-15">
+    </div>
+
+    <div class="field">
+      <span class="lbl" id="dw-nota-lbl">Nota de la llamada</span>
+      <textarea class="area" id="dw-nota">Atendió. Ya tiene el permiso de obra, arrancan en octubre. Quiere presupuesto cerrado antes del 30/09.</textarea>
+    </div>
+
+    <div class="field">
+      <span class="lbl">Vincular también a la obra</span>
+      <select class="select">
+        <option>Edificio Cabildo 2280 — CABA</option>
+        <option>Complejo Los Nogales — Pilar</option>
+        <option>— ninguna —</option>
+      </select>
+      <span class="cap">Opcional. La tarea queda colgada de la persona y de la obra.</span>
+    </div>
+  </div>
+
+  <div class="drawer-foot">
+    <span class="cap" id="dw-foot" style="max-width:52%">Se guarda como tarea completada, con vos como responsable.</span>
+    <div class="chips">
+      <button class="btn btn-secondary btn-sm" id="dw-cancel">Cancelar</button>
+      <button class="btn btn-primary btn-sm" id="dw-save">Guardar</button>
+    </div>
+  </div>
+</aside>
+
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var state = { vista: 'persona', panel: null, verComo: 'yo' };
+
+  var VISTAS = { persona: 'v-persona', lista: 'v-lista', detalle: 'v-detalle' };
+  var NAV = { persona: 'obras', lista: 'tareas', detalle: 'tareas' };
+
+  var PANELES = {
+    llamada:   { titulo: 'Registrar llamada',  sub: 'Ya pasó. La tarea nace completada.',        tarea: 'Llamada a Juan Pérez', notaLbl: 'Nota de la llamada', fecha: false, save: 'Guardar llamada',  foot: 'Se guarda como tarea completada, con vos como responsable.', toast: 'Llamada registrada' },
+    programar: { titulo: 'Programar llamada',  sub: 'Todavía no pasó. Nace pendiente, con fecha.', tarea: 'Llamar a Juan Pérez',  notaLbl: 'Qué hay que hablar',  fecha: true,  save: 'Crear tarea',      foot: 'Aparece en tu lista de Tareas y en la ficha de Juan.',       toast: 'Tarea creada para el 15/09' },
+    visita:    { titulo: 'Registrar visita',   sub: 'Ya pasó. La tarea nace completada.',        tarea: 'Visita a Juan Pérez',  notaLbl: 'Qué pasó en la visita', fecha: false, save: 'Guardar visita',   foot: 'Se guarda como tarea completada, con vos como responsable.', toast: 'Visita registrada' },
+    libre:     { titulo: 'Nueva tarea',        sub: 'El formulario de siempre, ya enlazado.',    tarea: '',                     notaLbl: 'Descripción',        fecha: true,  save: 'Crear tarea',      foot: 'Aparece en tu lista de Tareas y en la ficha de Juan.',       toast: 'Tarea creada' }
+  };
+
+  var NOTAS = {
+    llamada:   'Atendió. Ya tiene el permiso de obra, arrancan en octubre. Quiere presupuesto cerrado antes del 30/09.',
+    programar: 'Confirmar si ya tiene el listado de precios de membrana.',
+    visita:    'Pasamos por la obra. Está el encofrado del 2° listo.',
+    libre:     ''
+  };
+
+  var PASOS = [
+    { vista: 'persona', panel: null },
+    { vista: 'persona', panel: 'llamada' },
+    { vista: 'persona', panel: 'programar' },
+    { vista: 'lista',   panel: null },
+    { vista: 'detalle', panel: null }
+  ];
+
+  function pasoActual() {
+    for (var i = 0; i < PASOS.length; i++) {
+      if (PASOS[i].vista === state.vista && PASOS[i].panel === state.panel) return i;
+    }
+    return -1;
+  }
+
+  function render() {
+    Object.keys(VISTAS).forEach(function (k) {
+      $(VISTAS[k]).hidden = (k !== state.vista);
+    });
+
+    var navActivo = NAV[state.vista];
+    Array.prototype.forEach.call(document.querySelectorAll('.nav-item'), function (b) {
+      b.setAttribute('aria-current', b.dataset.nav === navActivo ? 'true' : 'false');
+    });
+
+    var abierto = !!state.panel;
+    $('scrim').hidden = !abierto;
+    $('drawer').hidden = !abierto;
+    if (abierto) {
+      var p = PANELES[state.panel];
+      $('dw-title').textContent = p.titulo;
+      $('dw-sub').textContent = p.sub;
+      $('dw-titulo').value = p.tarea;
+      $('dw-titulo').placeholder = p.tarea ? '' : 'Escribí el título';
+      $('dw-titulo').disabled = !!p.tarea;
+      $('dw-nota-lbl').textContent = p.notaLbl;
+      $('dw-nota').value = NOTAS[state.panel];
+      $('dw-fecha-wrap').hidden = !p.fecha;
+      $('dw-save').textContent = p.save;
+      $('dw-foot').textContent = p.foot;
+    }
+
+    var actual = pasoActual();
+    Array.prototype.forEach.call(document.querySelectorAll('.step'), function (b) {
+      b.setAttribute('aria-current', Number(b.dataset.step) === actual ? 'true' : 'false');
+    });
+
+    var otro = state.verComo === 'otro';
+    Array.prototype.forEach.call(document.querySelectorAll('#viewas button'), function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.as === state.verComo));
+    });
+    $('viewas-nota').textContent = otro
+      ? 'Te asignaron la tarea, pero Juan lo cargó otro vendedor y la obra no es tuya.'
+      : 'Sos el responsable de la obra y creaste a Juan: ves todo.';
+    $('chip-persona').classList.toggle('is-dead', otro);
+    $('chip-obra').classList.toggle('is-dead', otro);
+  }
+
+  function toast(txt) {
+    var t = $('toast');
+    t.textContent = txt;
+    t.hidden = false;
+    clearTimeout(t._t);
+    t._t = setTimeout(function () { t.hidden = true; }, 2600);
+  }
+
+  function cerrarFicha() {
+    $('ficha-cerrada').hidden = false;
+    $('ficha-abierta').hidden = true;
+    $('ficha-denegada').hidden = true;
+  }
+
+  function ir(vista, panel) {
+    state.vista = vista;
+    state.panel = panel || null;
+    render();
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-open]'), function (b) {
+    b.addEventListener('click', function () { ir('persona', b.dataset.open); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.step'), function (b) {
+    b.addEventListener('click', function () {
+      var p = PASOS[Number(b.dataset.step)];
+      cerrarFicha();
+      ir(p.vista, p.panel);
+    });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.nav-item'), function (b) {
+    b.addEventListener('click', function () {
+      cerrarFicha();
+      ir(b.dataset.nav === 'tareas' ? 'lista' : 'persona', null);
+    });
+  });
+
+  $('dw-close').addEventListener('click', function () { ir(state.vista, null); });
+  $('dw-cancel').addEventListener('click', function () { ir(state.vista, null); });
+  $('scrim').addEventListener('click', function () { ir(state.vista, null); });
+
+  $('dw-save').addEventListener('click', function () {
+    var tipo = state.panel;
+    var p = PANELES[tipo];
+    var nota = $('dw-nota').value.trim();
+
+    if (tipo === 'llamada' || tipo === 'visita') {
+      var fila = document.querySelector('[data-new="llamada"]');
+      fila.hidden = false;
+      fila.querySelector('.row-t').textContent = p.tarea;
+      if (nota) fila.querySelector('[data-slot="nota-llamada"]').textContent = nota;
+    } else {
+      var pend = document.querySelector('[data-new="programada"]');
+      pend.hidden = false;
+      if (p.tarea) pend.querySelector('.row-t').textContent = p.tarea;
+      if (nota) pend.querySelector('[data-slot="nota-prog"]').textContent = nota;
+      $('cuenta-pend').textContent = '2 abiertas';
+      $('sug').hidden = true;
+    }
+    ir('persona', null);
+    toast(p.toast);
+  });
+
+  $('sug-off').addEventListener('click', function () { $('sug').hidden = true; });
+  $('ir-detalle').addEventListener('click', function () { cerrarFicha(); ir('detalle', null); });
+  $('volver-lista').addEventListener('click', function () { cerrarFicha(); ir('lista', null); });
+
+  $('ver-contacto').addEventListener('click', function () {
+    $('ficha-cerrada').hidden = true;
+    if (state.verComo === 'otro') {
+      $('ficha-denegada').hidden = false;
+      toast('OB009 — sin acceso. No se registró nada.');
+    } else {
+      $('ficha-abierta').hidden = false;
+      toast('Acceso registrado en Auditoría');
+    }
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('#viewas button'), function (b) {
+    b.addEventListener('click', function () {
+      state.verComo = b.dataset.as;
+      cerrarFicha();
+      render();
+    });
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && state.panel) ir(state.vista, null);
+  });
+
+  render();
+})();
+</script>

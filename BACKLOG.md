@@ -27,7 +27,7 @@ pasada era del módulo tareas.
 
 ## ~~Obras — auditoría visual de la UI~~ — cerrada
 
-29 hallazgos relevados el 2026-09-08: `AUDITORIA_OBRAS_UI.md`. 28 implementados y **B3 cerrado
+29 hallazgos relevados el 2026-09-08: `obsoletos/AUDITORIA_OBRAS_UI.md`. 28 implementados y **B3 cerrado
 sin tocar código: no reproduce.**
 
 La segunda pasada de navegador midió el footer del sidebar con el usuario real (`nombre` =
