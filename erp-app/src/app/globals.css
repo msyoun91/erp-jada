@@ -156,7 +156,7 @@
      repetir el selector con `:focus`, el campo que RHF enfoca al fallar
      pierde el rojo y se pinta azul de marca. */
   .input-error, .input-error:focus { @apply border-error ring-[3px] ring-[rgba(220,38,38,.12)]; }
-  .input-error-text { @apply text-error text-xs mt-1; }
+  .input-error-text { @apply text-error-text text-xs mt-1; }
 
   .badge { @apply font-semibold text-[11px] rounded-full px-[9px] py-[3px]; }
   .badge-brand { @apply bg-brand-50 text-text-brand; }
