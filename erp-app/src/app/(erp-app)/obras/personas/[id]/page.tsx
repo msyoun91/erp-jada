@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   puedeEditarPersona,
@@ -12,6 +11,7 @@ import {
   getReferenciasDePersona,
   getVinculosPersona,
 } from "@/modules/obras/queries";
+import { Breadcrumb } from "@/modules/obras/components/Breadcrumb";
 import { EstadoPendiente } from "@/modules/obras/components/EstadoPendiente";
 import { PersonaDetalle } from "@/modules/obras/components/PersonaDetalle";
 import type { EstadoObra, RolPersona } from "@/modules/obras/types";
@@ -37,12 +37,11 @@ export default async function PersonaPage({ params }: { params: Promise<{ id: st
     return (
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-2">
-          <Link href="/obras/personas" className="btn btn-ghost btn-sm">
-            ← Personas
-          </Link>
-          <h2 className="t-h2 min-w-0 flex-1 truncate">
-            {`${estado.nombre} ${estado.apellido ?? ""}`.trim()}
-          </h2>
+          <Breadcrumb
+            padre="Personas"
+            href="/obras/personas"
+            actual={`${estado.nombre} ${estado.apellido ?? ""}`.trim()}
+          />
         </div>
         <EstadoPendiente
           pendiente={false}

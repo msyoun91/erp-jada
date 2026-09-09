@@ -68,6 +68,14 @@ export function textoAntiguedad(dias: number) {
   return `hace ${dias} ${dias === 1 ? "día" : "días"}`;
 }
 
+// "en 7 d" / "hace 2 d" / "hoy". Se lee en la columna derecha de la isla, que
+// es lo único que alinea en vertical a lo largo del listado: la fecha exacta
+// sigue en la meta, esto contesta cuánto falta sin hacer la cuenta.
+export function textoPlazo(dias: number) {
+  if (dias === 0) return "hoy";
+  return dias > 0 ? `en ${dias} d` : `hace ${-dias} d`;
+}
+
 export function iniciales(nombre: string) {
   const parts = nombre.trim().split(" ");
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();

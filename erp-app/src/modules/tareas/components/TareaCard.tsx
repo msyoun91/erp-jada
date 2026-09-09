@@ -16,6 +16,7 @@ import {
   iniciales,
   temperaturaRango,
   textoAntiguedad,
+  textoPlazo,
 } from "./tareaLabels";
 import type { PasoEnCadena } from "./cadenaPasos";
 import { useTareasContexto } from "./tareasContexto";
@@ -75,7 +76,10 @@ export function TareaCard({
       : null;
   const relacionNombre = usuarios.find((u) => u.id === relacionCon)?.nombre ?? "";
 
-  const { activa, fechaClase } = estadoVencimiento(tarea.fecha_vencimiento, estado);
+  const { activa, diasVencimiento, fechaClase } = estadoVencimiento(
+    tarea.fecha_vencimiento,
+    estado,
+  );
 
   const diasAntiguedad = !tarea.fecha_vencimiento ? diasEntreISO(tarea.created_at.slice(0, 10), hoyISO()) : null;
   const antiguedadClase =
@@ -104,10 +108,24 @@ export function TareaCard({
     <>
       <Isla
         titulo={tarea.titulo}
+        descripcion={tarea.descripcion}
         atenuada={!activa}
         barra={activa ? temperaturaRango(temperatura).barra : undefined}
         grande={grande}
         onAbrir={() => setDetalleAbierto(true)}
+        plazo={
+          // Solo mientras la tarea siga viva: cuánto faltaba para vencer una
+          // tarea ya completada no cambia ninguna decisión.
+          activa && diasVencimiento !== null ? (
+            <span
+              className={`shrink-0 font-display text-[13px] font-semibold tabular-nums ${
+                fechaClase || "text-text-tertiary"
+              }`}
+            >
+              {textoPlazo(diasVencimiento)}
+            </span>
+          ) : undefined
+        }
         badges={
           <>
             <span className={`badge shrink-0 ${ESTADO_BADGE[estado]}`}>{ESTADO_LABEL[estado]}</span>

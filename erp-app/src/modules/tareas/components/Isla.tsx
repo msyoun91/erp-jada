@@ -8,7 +8,9 @@ import { ChevronRight } from "lucide-react";
 // hace sobre la entidad vive en su panel derecho, que abre este click.
 export function Isla({
   titulo,
+  descripcion,
   badges,
+  plazo,
   meta,
   atenuada,
   barra,
@@ -17,7 +19,14 @@ export function Isla({
   children,
 }: {
   titulo: string;
+  // Dos líneas como máximo: en un listado la descripción ubica la tarea, no la
+  // explica — para eso está el panel.
+  descripcion?: string | null;
   badges?: React.ReactNode;
+  // Columna fija al final de la cabecera. Es lo único que alinea en vertical a
+  // lo largo del listado, así que va lo que se escanea de arriba abajo (en la
+  // tarea, cuánto falta para el vencimiento).
+  plazo?: React.ReactNode;
   meta?: React.ReactNode;
   atenuada?: boolean;
   // Clase de fondo de la barra izquierda de 3px. Solo la tarea la pasa: es su
@@ -52,10 +61,21 @@ export function Isla({
           {titulo}
         </span>
         {badges}
+        {plazo}
         {/* Indicio permanente de que la isla abre algo: en touch no hay hover
             del que colgar la única señal de affordance. */}
         <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
       </button>
+
+      {descripcion && (
+        <p
+          className={`line-clamp-2 text-[13px] ${grande ? "px-6 pb-3" : "px-5 pb-2"} ${
+            atenuada ? "text-text-tertiary" : "text-text-secondary"
+          }`}
+        >
+          {descripcion}
+        </p>
+      )}
 
       {meta && (
         <div

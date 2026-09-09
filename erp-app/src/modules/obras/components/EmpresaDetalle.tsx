@@ -16,6 +16,7 @@ import {
   type EstadoObra,
   type RolEmpresa,
 } from "../types";
+import { Breadcrumb } from "./Breadcrumb";
 import { Dato, Observaciones } from "./Dato";
 import { EmpresaFormPanel } from "./EmpresaFormPanel";
 import { EstadoPendiente } from "./EstadoPendiente";
@@ -57,10 +58,7 @@ export function EmpresaDetalle({
           quedaba arriba del nombre de lo que se está mirando. */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="flex min-w-0 items-center gap-2 sm:flex-1">
-          <Link href="/obras/empresas" className="btn btn-ghost btn-sm shrink-0">
-            ← Empresas
-          </Link>
-          <h2 className="t-h2 min-w-0 flex-1 truncate">{empresa.razon_social}</h2>
+          <Breadcrumb padre="Empresas" href="/obras/empresas" actual={empresa.razon_social} />
         </div>
         <div className="flex items-center gap-2">
           {permisos.editar && (

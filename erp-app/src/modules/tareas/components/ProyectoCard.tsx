@@ -35,6 +35,7 @@ export function ProyectoCard({
     <>
       <Isla
         titulo={proyecto.nombre}
+        descripcion={proyecto.descripcion}
         onAbrir={() => setDetalleAbierto(true)}
         badges={
           <>

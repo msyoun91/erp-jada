@@ -579,3 +579,29 @@ email de la ficha de persona son `<a>` de `tel:` y `mailto:`, y la localidad de 
 concatena la provincia. El guard es `if (!valor) return null`, que cubre el `""` que devuelve un
 campo vacío igual que el `null` de la columna.
 
+
+---
+
+## El breadcrumb reemplaza al botón "← Personas"
+
+Del prototipo `obsoletos/prototipo-obras-tareas.html` — lo aprovechable sin SQL.
+
+El encabezado de las tres fichas era `[← Personas] Nombre`: la vuelta al listado es navegación,
+pero estaba escrita como `btn btn-ghost btn-sm`, o sea con el mismo peso visual que "Editar", a
+dos centímetros de él. `Breadcrumb.tsx` la baja a texto: `Personas / Juan Pérez`, padre en
+`t-caption` y nombre en `t-h2`, en una sola línea.
+
+**No se copió el breadcrumb del prototipo tal cual.** Ahí la ruta es
+`Agenda de Obras / Personas / Juan Pérez` con el `<h1>` del módulo y el nombre repetidos abajo.
+Dos problemas: el nombre queda dos veces en la misma pantalla —la duplicación que ya se prohibió
+con el badge de estado— y el primer segmento no es un padre: `/obras` es la tab Obras, hermana de
+Personas, no la raíz del módulo. La ruta real de una ficha tiene dos niveles y eso es lo que se
+dibuja.
+
+Vive en `modules/obras/components/`, no en `components/`: lo usan tres fichas del mismo módulo,
+mismo criterio que `Dato` y `Observaciones`. El link lleva `tap-target` porque dejó de ser un
+`.btn` y con él perdió el mínimo de 44px en mobile.
+
+Lo que el prototipo propone y **no** se implementó: el enlace obras↔tareas (chips de persona y
+obra en la tarea, "Acciones rápidas" de la ficha, el historial de llamadas como tareas
+completadas). Necesita columnas nuevas en `tareas` y es una decisión de modelo, no de UI.

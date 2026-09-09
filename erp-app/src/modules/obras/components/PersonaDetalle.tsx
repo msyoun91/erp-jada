@@ -9,6 +9,7 @@ import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { desactivarPersona, desvincularPersonaEmpresa } from "../actions";
 import { copiarEnlace } from "../copiarEnlace";
 import { LABEL_ESTADO, LABEL_ROL_PERSONA, type EstadoObra, type RolPersona } from "../types";
+import { Breadcrumb } from "./Breadcrumb";
 import { Dato, Observaciones } from "./Dato";
 import { EstadoPendiente } from "./EstadoPendiente";
 import { PersonaFormPanel, type PersonaEditable } from "./PersonaFormPanel";
@@ -69,10 +70,7 @@ export function PersonaDetalle({
           quedaba arriba del nombre de lo que se está mirando. */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="flex min-w-0 items-center gap-2 sm:flex-1">
-          <Link href="/obras/personas" className="btn btn-ghost btn-sm shrink-0">
-            ← Personas
-          </Link>
-          <h2 className="t-h2 min-w-0 flex-1 truncate">{nombre}</h2>
+          <Breadcrumb padre="Personas" href="/obras/personas" actual={nombre} />
         </div>
         <div className="flex items-center gap-2">
           {permisos.editar && (

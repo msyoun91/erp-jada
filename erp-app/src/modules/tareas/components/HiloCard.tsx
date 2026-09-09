@@ -96,6 +96,7 @@ export function HiloCard({
     <>
       <Isla
         titulo={hilo.titulo}
+        descripcion={hilo.descripcion}
         onAbrir={() => setDetalleAbierto(true)}
         badges={
           <>

@@ -26,6 +26,7 @@ import {
   type Obra,
   type Usuario,
 } from "../types";
+import { Breadcrumb } from "./Breadcrumb";
 import { EstadoPendiente } from "./EstadoPendiente";
 import { ObraFormPanel } from "./ObraFormPanel";
 import { ReferentePanel } from "./ReferentePanel";
@@ -113,10 +114,7 @@ export function ObraDetalle({
           quedaba arriba del nombre de lo que se está mirando. */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
         <div className="flex min-w-0 items-center gap-2 sm:flex-1">
-          <Link href="/obras" className="btn btn-ghost btn-sm shrink-0">
-            ← Obras
-          </Link>
-          <h2 className="t-h2 min-w-0 flex-1 truncate">{obra.nombre}</h2>
+          <Breadcrumb padre="Obras" href="/obras" actual={obra.nombre} />
           {/* El listado codifica el estado por color y la ficha lo bajaba a un
               `dt/dd` gris. Pendiente no se repite acá: `EstadoPendiente` ya
               pone el bloque completo dos renglones abajo. */}

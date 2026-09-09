@@ -729,3 +729,27 @@ Venía del `BACKLOG.md`: `desactivarProyecto` desactivaba solo la fila del proye
 **El modal dice cuánto se lleva.** No hay reactivar de proyecto en la UI, así que la confirmación pasó a nombrar los hilos y las tareas que se van. Cuenta lo visible en el panel, que es de lo que el usuario puede hacerse una idea — la cascada, por debajo, se lleva también lo que su RLS no le muestra.
 
 Verificación: `sql/tests/cascada_proyecto.sql` (10/10).
+
+---
+
+## Descripción y plazo en la isla (del prototipo `obras-tareas.html`, sin SQL)
+
+**La descripción se ve en el listado.** `tareas.descripcion` existía, viajaba en el `select("*")`
+y solo se leía abriendo el panel: dos tareas que se llaman parecido eran indistinguibles hasta
+hacer click. Va abajo del título, 13px `text-secondary`, `line-clamp-2` — en un listado la
+descripción ubica la tarea, no la explica. La pasan las tres islas (tarea, hilo, proyecto): la
+cara compartida no se parte por un campo que las tres tienen.
+
+**El plazo es una columna, no un dato más de la meta.** `plazo` se dibuja al final de la
+cabecera, así que es lo único que alinea en vertical a lo largo del listado — que es lo que
+permite escanear "qué se me viene" sin leer fila por fila. La fecha exacta sigue en la meta: no
+es el mismo dato dos veces sino la misma cuenta (`estadoVencimiento().diasVencimiento`, fuente
+única) contestando dos preguntas distintas —cuándo vence y cuánto falta—, y solo una de las dos
+se puede escanear. Reusa `fechaClase`, así que no hay un segundo criterio de "vencida".
+
+Solo mientras la tarea está activa: cuánto faltaba para vencer una tarea ya completada no cambia
+ninguna decisión.
+
+**Lo que no se trajo del prototipo:** el tick de completada a la izquierda del título —el badge
+de estado ya lo dice, y un círculo no distingue `en_progreso` de `cancelada`— y los chips de
+persona/obra vinculada, que necesitan columnas nuevas en `tareas`.
