@@ -605,3 +605,35 @@ mismo criterio que `Dato` y `Observaciones`. El link lleva `tap-target` porque d
 Lo que el prototipo propone y **no** se implementó: el enlace obras↔tareas (chips de persona y
 obra en la tarea, "Acciones rápidas" de la ficha, el historial de llamadas como tareas
 completadas). Necesita columnas nuevas en `tareas` y es una decisión de modelo, no de UI.
+
+
+---
+
+## El referente se cae con el vínculo (`sql/036`)
+
+`desvincularPersona` desactivaba la fila de `obras_obra_persona` y nada más. La de
+`obras_obra_referente` quedaba activa y `getReferentes` la lee sin pasar por el vínculo: al volver
+a vincular a la misma persona reaparecía la comisión vieja sin que nadie la hubiera cargado, y
+mientras tanto era un referente que la UI no podía quitar —`ReferentePanel` solo lista personas
+vinculadas—.
+
+Va en la base y no en `actions.ts`: es una invariante de datos, no una regla de pantalla. Si
+viviera en la action, cualquier otro camino que desactive el vínculo (hoy `obras_resolver_pendiente`
+al rechazarlo, mañana lo que sea) la dejaría pasar.
+
+**Como tercera rama de `obras_cascada_desactivar`, no como función nueva.** Esa función ya es el
+único lugar del módulo donde vive "qué se cae cuando algo se cae", y el trigger es el mismo de
+siempre: `AFTER UPDATE ... WHEN (OLD.activo AND NOT NEW.activo)`. El `ELSE` implícito pasó a rama
+explícita por tabla —con tres tablas colgando del mismo trigger, "todo lo que no es empresas es
+personas" deja de ser verdad—.
+
+**Sigue `SECURITY DEFINER`, y ahora eso importa.** La policy de UPDATE de `obras_obra_referente`
+exige `obras_referentes`, que quien desvincula puede no tener. Como INVOKER la cascada no vería la
+fila —RLS filtra, no falla— y la invariante quedaría a merced del permiso de quien pasó por la
+pantalla. El caso 06 del test lo afirma desvinculando con el permiso apagado.
+
+Sin backfill: al correrla no había ninguna huérfana (4 referentes activos, 0 sin vínculo).
+
+`sql/tests/obras_036.sql`, 8/8. Los casos 07 y 08 no son de esta migración: cubren la cascada que
+ya existía —entidad desactivada → sus `obras_persona_empresa` caen—, que no tenía test y quedaba
+expuesta al reordenamiento de las ramas.

@@ -618,6 +618,8 @@ Nunca DELETE. `obras_set_activo(uuid, boolean)` exige `obras_desactivar` **y** s
 
 Empresas y personas son compartidas, así que desactivarlas puede romper obras ajenas — y quien lo hace ni siquiera puede ver el daño. Triggers `obras_guard_desactivar_empresa` / `_persona` bloquean la desactivación si la entidad participa en alguna obra **activa**, con mensaje que dice cuántas y nunca cuáles (mismo criterio que el aviso ciego). `obras_cascada_desactivar` da de baja las relaciones `obras_persona_empresa` cuando la desactivación sí procede, para no dejar un cargo colgado.
 
+Esa misma función cuelga además de `obras_obra_persona` (`sql/036`): desvincular a una persona de una obra baja su fila de `obras_obra_referente`. Sin eso el referente sobrevivía al vínculo —`getReferentes` lo lee sin pasar por él— y la comisión vieja reaparecía al volver a vincular a la misma persona. Las tres ramas van explícitas por `TG_TABLE_NAME`, y sigue `SECURITY DEFINER` porque la policy de UPDATE de `obras_obra_referente` exige `obras_referentes`, que quien desvincula puede no tener. Verificación: `sql/tests/obras_036.sql`, 8/8.
+
 ### Hardening (`sql/029`)
 
 `GRANT EXECUTE ... TO authenticated` no quita nada: Postgres otorga EXECUTE a `PUBLIC` por defecto, así que las `SECURITY DEFINER` del módulo quedaban invocables por `anon` — sin login — vía `/rest/v1/rpc/`. No era explotable (todas cortan con `tiene_permiso`), pero la defensa no puede depender de que nadie toque el guard después. `REVOKE ... FROM PUBLIC` en las 18 funciones del módulo, `GRANT` explícito solo a `authenticated`, y ninguno para las de solo-trigger. Más `search_path` fijo en los tres helpers inmutables.
