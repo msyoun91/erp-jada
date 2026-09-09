@@ -36,6 +36,7 @@ import {
   type DuplicadoEmpresa,
   type DuplicadoObra,
   type DuplicadoPersona,
+  type ResultadoBusqueda,
 } from "./types";
 
 // Sin chequeo de permisos acá: estas actions usan el cliente normal, así que
@@ -591,6 +592,21 @@ export async function similaresDelPendiente(
 
   if (error) return [];
   return (data ?? []) as SimilarPendiente[];
+}
+
+// ── Buscador global ──────────────────────────────────────────
+//
+// Una llamada para las tres entidades. El alcance no se decide acá: obras y
+// empresas pasan por RLS —`obras_buscar` es INVOKER— y las personas fuera de
+// alcance vuelven con identidad mínima y `visible = false`. Buscar no abre
+// ninguna ficha, así que no escribe en `obras_accesos_persona`.
+export async function buscarGlobal(texto: string): Promise<ResultadoBusqueda[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_buscar", { p_texto: texto });
+
+  if (error) return [];
+  return (data ?? []) as ResultadoBusqueda[];
 }
 
 // ── Buscadores de los paneles de vinculación ─────────────────

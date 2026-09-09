@@ -210,7 +210,7 @@ No implementar sin pedido explícito: prospectos, oportunidades, pipeline, activ
 
 La comisión de fase 1 **solo se registra**. No se liquida, no se paga, no se calcula sobre nada.
 
-Ver `BACKLOG.md` para el buscador global obra/empresa/persona, decidido pero fuera de fase 1.
+~~Ver `BACKLOG.md` para el buscador global obra/empresa/persona, decidido pero fuera de fase 1.~~ — **implementado** en `sql/037`, ver *El buscador global no inventa visibilidad*.
 
 ---
 
@@ -637,3 +637,88 @@ Sin backfill: al correrla no había ninguna huérfana (4 referentes activos, 0 s
 `sql/tests/obras_036.sql`, 8/8. Los casos 07 y 08 no son de esta migración: cubren la cascada que
 ya existía —entidad desactivada → sus `obras_persona_empresa` caen—, que no tenía test y quedaba
 expuesta al reordenamiento de las ramas.
+
+
+---
+
+## El buscador global no inventa visibilidad (`sql/037`)
+
+Una sola barra para obra, empresa y persona. Lo que había que decidir no era el
+match sino el alcance: son tres entidades con tres reglas distintas, y un buscador
+que las junta es el lugar perfecto para escribir una cuarta sin darse cuenta.
+
+**No hay cuarta regla.** `obras_buscar` es `SECURITY INVOKER` y las ramas de obras
+y empresas son `SELECT` directos: deciden las policies que ya existen. Escribir el
+alcance adentro de una DEFINER habría dejado dos copias de la misma condición, y la
+que se desactualiza es siempre la que nadie mira.
+
+La rama de personas es la única que necesita ver más que quien pregunta, así que va
+en su propia función DEFINER: las que están fuera de alcance vuelven con identidad
+mínima y `visible = false`. Es la capa de `obras_buscar_duplicados_persona` otra vez
+—encontrar a alguien no es abrirle la ficha— y el contacto sigue saliendo solo por
+`obras_ficha_persona()`, que registra. El caso 12 del test lo afirma: buscar no deja
+a nadie adentro de `obras_accesos_persona`.
+
+Es el mismo corte de `sql/033` entre el match crudo y el enmascarado, con los roles
+al revés: acá lo enmascarado es lo interno y lo que llama la app es el envoltorio
+INVOKER. Consecuencia: `obras_buscar_personas` necesita `GRANT EXECUTE` a
+`authenticated` aunque no la llame nadie más, porque corre con el rol de quien
+pregunta.
+
+**La obra ajena no aparece.** El aviso ciego la devuelve con `nombre`, `direccion` y
+`localidad` en NULL, así que como resultado sería una fila sin nada que mostrar. El
+caso que importa —dos vendedores cargando el mismo edificio— ya lo cubre el aviso al
+crear, que es cuando sirve. Buscar es para encontrar lo que uno puede abrir.
+
+**Substring y no `similarity`.** El parecido de `pg_trgm` responde "esto ya está
+cargado"; un buscador responde "empecé a escribir el nombre", y ahí
+`similarity('gonz', 'juan gonzalez')` no llega ni cerca del umbral. Se busca con
+`LIKE '%texto%'` sobre las columnas `_norm`, que ya existen y ya están indexadas. De
+paso, la normalización desarma el patrón: un `%` tipeado en la barra queda en
+espacio, no en comodín. El caso 14 lo fija.
+
+Lo que el substring no hace: "perez juan" no encuentra a Juan Pérez. Partir el texto
+en palabras y exigirlas todas mata el uso del índice, y es una vuelta que todavía
+nadie pidió.
+
+---
+
+## La barra va en la línea del título, no adentro de una tab
+
+Misma regla que el filtro de días: el control vive donde llega su efecto. El
+buscador cruza las tres entidades, así que ponerlo abajo de las tabs diría que busca
+en la que está abierta.
+
+El bloque obligatorio de CLAUDE.md —`<h1>` con ícono y nombre antes de las tabs—
+queda igual; lo que cambia es que ahora comparte renglón con la barra, y el `mb-4`
+pasó del `<h1>` al envoltorio. En mobile la barra se lleva su propio renglón por
+`flex-wrap`, sin media query.
+
+Vive en el `layout.tsx`, así que sobrevive a la navegación entre tabs y a abrir una
+ficha. Se limpia sola al elegir un resultado: dejar el texto puesto haría que el
+panel se reabra al volver.
+
+**El resultado fuera de alcance no es un link.** La persona que no se ve se lista
+con badge y el nombre de quien la cargó —"la cargó Ana"— y no lleva a ninguna parte:
+su ficha cortaría con 404 y la fila estaría prometiendo algo que no pasa. El nombre
+del que la cargó es el mismo criterio del aviso ciego, que devuelve el del
+responsable: alcanza para ir a preguntar, no para leer la agenda del otro.
+
+**Reusa `SearchInput` sin tocarlo.** `Escape` y el foco se manejan en el envoltorio
+—los dos eventos burbujean— así que el componente compartido no crece props para un
+solo consumidor. El panel es un `.card` con el padding pisado, como los vacíos de
+sección.
+
+**Con debounce, no en `onBlur`.** El aviso de duplicados espera el `onBlur` porque
+solo tiene sentido con el nombre completo; un buscador es lo contrario, así que
+busca mientras se tipea, 250ms después de la última tecla. El `setState` va adentro
+del `setTimeout` y del callback de la promesa, nunca en el cuerpo del efecto — el
+lint del repo corta el síncrono.
+
+**El piso de 2 caracteres está en los dos lados.** En el cliente evita el viaje, en
+la base es la regla — la misma repartición que Zod y `safeParse`.
+
+**No hay total de resultados.** La guía lo pide para listados, pero acá la función
+devuelve 5 por tipo y contar el resto sería una segunda consulta para un número que
+no se puede usar. En su lugar el panel dice que muestra los primeros de cada tipo y
+que la búsqueda se puede afinar.

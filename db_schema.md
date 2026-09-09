@@ -6,7 +6,7 @@ Proyecto Supabase: `qbpudocgdvpeadcyyhfh`. Regenerar tipos tras cada migración:
 `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public > erp-app/src/lib/supabase/database.types.ts`
 (requiere `supabase login` o `SUPABASE_ACCESS_TOKEN`)
 
-Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. Agenda de Obras (`sql/027` a `sql/034`) corrida vía MCP. `database.types.ts` sincronizado tras 027-034. `sql/035_advisors_hardening.sql` corrida vía MCP — no toca tablas, columnas ni enums.
+Estado actual: `sql/001_usuarios_permisos.sql`, `sql/002_dashboard.sql`, `sql/003_vistas_funciones.sql`, `sql/020_usuarios_activo.sql`, `sql/021_usuarios_editar.sql`, `sql/022_perfil_propio.sql` corridos en Supabase. El módulo comercial (`sql/018`) se eliminó entero con `sql/026_drop_comercial.sql` — tablas, enums, funciones y submódulos ya no existen. Agenda de Obras (`sql/027` a `sql/037`) corrida vía MCP. `database.types.ts` sincronizado tras 027-037. `sql/035_advisors_hardening.sql` corrida vía MCP — no toca tablas, columnas ni enums; `sql/036` y `sql/037` tampoco: son funciones.
 
 **Las policies escriben `(select auth.uid())`, este documento escribe `auth.uid()`.** Desde `sql/035` las 35 policies que lo usaban envuelven la llamada en un subselect: sin eso Postgres la trata como VOLATILE y la re-evalúa una vez por fila. Es una diferencia de plan, no de lógica, así que abajo se sigue citando la forma corta — más legible y equivalente. Al escribir una policy nueva, usar la envuelta.
 
@@ -356,7 +356,7 @@ Verificación: `sql/tests/cascada_proyecto.sql` (10/10).
 
 ---
 
-## Módulo obras — Agenda de Obras (`sql/027_obras.sql` a `sql/034_obras_vincular_empresa.sql` — corridos en Supabase vía MCP)
+## Módulo obras — Agenda de Obras (`sql/027_obras.sql` a `sql/037_obras_buscar.sql` — corridos en Supabase vía MCP)
 
 Nombre visible: **Agenda de Obras**. `modulo = 'obras'`, ruta `/obras`. Fase 1 es registro y relación de datos: obras, empresas, personas, sus vínculos con roles múltiples, y referentes con comisión por obra. Sin prospectos, oportunidades, presupuestos ni actividades — ver `decisiones/obras.md`.
 
@@ -510,6 +510,25 @@ Las tres toman `p_excluir_id` (`sql/031`), que es lo que permite chequear tambi�
 En `obras_buscar_duplicados_obra` la localidad **no filtra**, ordena. Filtraba por igualdad exacta del normalizado hasta `sql/031`, y "Devoto" contra "Villa Devoto" alcanzaba para que el aviso no saltara — justo el caso para el que existe. Escrita igual, sube la fila al tope; escrita distinta, ya no esconde nada.
 
 Vincular una persona a una obra propia **no** requiere verla antes — es lo que hace usable la búsqueda de identidad mínima. Es acceso deliberado y queda registrado.
+
+### El buscador global (`sql/037`)
+
+Una barra arriba del módulo busca en las tres entidades y lleva a la ficha. Dos funciones:
+
+| función | seguridad | qué devuelve |
+|---|---|---|
+| `obras_buscar(p_texto)` | **INVOKER** | `(tipo, id, titulo, subtitulo, visible, cargada_por)` — 5 por tipo, ordenados por "empieza con lo que escribiste" y después por nombre |
+| `obras_buscar_personas(p_texto)` | DEFINER + guard `obras_ver`/`obras_personas` | identidad mínima —nombre, apellido, empresa principal— más `visible` y `cargada_por`. **Nunca** teléfono ni email |
+
+**INVOKER es la decisión, no un detalle.** Las ramas de obras y empresas son `SELECT` directos, así que la visibilidad la deciden las policies que ya existen y no hay una segunda copia de la regla. La única que necesita ver más que quien pregunta es la de personas, y por eso va aparte: devuelve las que están fuera de alcance con `visible = false` y sin contacto, igual que `obras_buscar_duplicados_persona`. Encontrar a alguien no es abrirle la ficha — el teléfono sigue saliendo solo por `obras_ficha_persona()`, que registra.
+
+Como `obras_buscar` corre con el rol de quien llama, `obras_buscar_personas` necesita `GRANT EXECUTE` a `authenticated` aunque no la llame nadie más.
+
+**La obra ajena no aparece.** El aviso ciego la devuelve con todo en NULL menos el responsable, así que como resultado de búsqueda sería una fila sin nada que mostrar; el caso que importa —no cargar dos veces el mismo edificio— ya lo cubre `obras_buscar_duplicados_obra` al crear.
+
+El match es `LIKE '%texto%'` sobre las columnas `_norm`, no `similarity`: el parecido de `pg_trgm` sirve para "esto ya está cargado", no para "empecé a escribir el nombre". La normalización además desarma el patrón —`%` y `_` se vuelven espacios— así que un comodín tipeado en la barra no es un comodín. Piso de 2 caracteres, escrito una vez en el CTE `patron`: con menos, las tres ramas se quedan sin fila contra qué joinear.
+
+Verificación: `sql/tests/obras_037.sql`, 15/15.
 
 ### Auditoría (`sql/031`)
 

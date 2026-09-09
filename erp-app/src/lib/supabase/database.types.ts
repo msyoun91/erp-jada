@@ -1384,6 +1384,17 @@ export type Database = {
           transferencia_id: string
         }[]
       }
+      obras_buscar: {
+        Args: { p_texto: string }
+        Returns: {
+          cargada_por: string
+          id: string
+          subtitulo: string
+          tipo: string
+          titulo: string
+          visible: boolean
+        }[]
+      }
       obras_buscar_duplicados_empresa: {
         Args: {
           p_excluir_id?: string
@@ -1427,6 +1438,17 @@ export type Database = {
           empresa: string
           nombre: string
           persona_id: string
+        }[]
+      }
+      obras_buscar_personas: {
+        Args: { p_texto: string }
+        Returns: {
+          apellido: string
+          cargada_por: string
+          empresa: string
+          nombre: string
+          persona_id: string
+          visible: boolean
         }[]
       }
       obras_es_mi_obra: { Args: { p_obra_id: string }; Returns: boolean }

@@ -1,5 +1,6 @@
 import { Building2 } from "lucide-react";
 import { ModuleTabs } from "@/components/layout/ModuleTabs";
+import { BuscadorGlobal } from "@/modules/obras/components/BuscadorGlobal";
 import {
   puedeVerAuditoria,
   puedeVerEmpresas,
@@ -27,10 +28,16 @@ export default async function ObrasLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex h-full flex-col">
-      <h1 className="t-h1 mb-4 flex items-center gap-2.5">
-        <Building2 size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
-        Agenda de Obras
-      </h1>
+      {/* El buscador va en la línea del título y no adentro de una tab: busca
+          en las tres entidades, así que su efecto llega más lejos que la tab
+          abierta. En mobile la barra se lleva su propio renglón. */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="t-h1 flex items-center gap-2.5">
+          <Building2 size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
+          Agenda de Obras
+        </h1>
+        {(obras || empresas || personas) && <BuscadorGlobal />}
+      </div>
       <ModuleTabs modulo="obras" tabs={tabs} />
       {children}
     </div>

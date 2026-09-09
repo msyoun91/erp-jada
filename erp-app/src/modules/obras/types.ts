@@ -421,6 +421,31 @@ export type DuplicadoPersona = {
   coincide: "email" | "telefono" | "nombre";
 };
 
+// El buscador global (`sql/037`). Una fila por resultado, con el mismo tipo
+// para las tres entidades: la barra no sabe de tablas, sabe de qué ficha abrir.
+//
+// `visible` es false solo en personas fuera de alcance — identidad mínima, sin
+// contacto y sin ficha, con `cargada_por` para saber a quién preguntarle. El
+// resto de los resultados son cosas que el usuario ya puede abrir.
+export const TIPOS_RESULTADO = ["obra", "empresa", "persona"] as const;
+
+export type TipoResultado = (typeof TIPOS_RESULTADO)[number];
+
+export const LABEL_TIPO_RESULTADO: Record<TipoResultado, string> = {
+  obra: "Obras",
+  empresa: "Empresas",
+  persona: "Personas",
+};
+
+export type ResultadoBusqueda = {
+  tipo: TipoResultado;
+  id: string;
+  titulo: string;
+  subtitulo: string | null;
+  visible: boolean;
+  cargada_por: string | null;
+};
+
 // Los dos logs, servidos por función: quien audita ve los accesos y las
 // transferencias de todos sin tener permiso sobre la agenda ni sobre las obras
 // ajenas. Nunca viaja contacto — la pantalla que vigila el acceso al teléfono
