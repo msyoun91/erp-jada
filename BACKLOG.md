@@ -51,13 +51,19 @@ Los cuatro app-wide reales están cerrados ahí (ThemeToggle flotante, `.card:ho
 clickeable, alturas de toolbar, el modal que no atenuaba el panel). El resto, en
 `decisiones/obras.md`.
 
-## Obras — avisarle al que cargó que le rechazaron el alta
+## Notificaciones — deep link a una tarea
 
-Con `sql/033`, rechazar es desactivar con motivo: la fila sale de los listados y el motivo solo se lee entrando a la ficha por URL directa, o desde el historial de la vista Pendientes — que quien cargó no tiene por qué poder ver.
+`sql/038` dejó la campanita andando, pero las tareas no tienen ruta por id: la vista Lista abre el panel por estado, no por URL, así que el aviso "te asignaron X" lleva a `/tareas` y la tarea hay que buscarla. Las obras, empresas y personas sí abren su ficha.
 
-No se resolvió ahora porque el módulo no tiene ningún canal de aviso y armarlo para esto sería construir media notificación. Cuando exista uno (o cuando el ERP tenga notificaciones), el rechazo es el primer caso: `obras_aprobaciones` ya guarda quién, cuándo, qué y por qué.
+No se resolvió ahora porque darle URL a una tarea es rehacer cómo la Lista abre sus paneles, y eso es una tarea del módulo tareas, no de la campanita. Cuando se haga, `RUTA` en `NotificacionesBell.tsx` es una línea.
 
-Alternativa barata si urge antes: mostrar en el listado propio las filas rechazadas de los últimos N días con badge y motivo, en vez de esconderlas junto con las desactivadas a mano.
+## Sugerencia de tareas — falta el vínculo entre una tarea y lo que la motivó
+
+Pedida junto con las notificaciones y no construida (ver `decisiones/global.md`). "¿Qué hago ahora?" ya lo contestan Misión y el orden de `useOrdenTemperatura`; lo que falta es "¿qué tarea debería existir y no existe?" — la obra sin movimiento hace 60 días, el edificio entregado sin propietarios averiguados.
+
+**El bloqueante no es la regla, es el vínculo.** Hoy una tarea no sabe de qué obra habla: `origen_app` y `origen_punto` son texto libre y solo se muestran en `TareaDetailPanel`. Sin un vínculo estructurado, la sugerencia no puede saber si ya la creaste y la repite para siempre.
+
+Cuando aparezca un caso real, el camino barato es una columna, no un motor: la regla la sabe el módulo dueño del dato, y la sugerencia debería abrir el flujo de plantillas que ya existe (`agregarTareasDesdePlantilla`), no un camino de creación nuevo.
 
 ## Obras — la obra después de la entrega: unidades y postventa
 

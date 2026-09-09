@@ -250,6 +250,49 @@ Portado el patrón de `erp-old-2`. `Sidebar.tsx` es server component: trae `nomb
 
 **Dark mode:** `--brand-50`, `--brand-700` y `--neutral-100` (usados por `.nav-item-active` y `.badge-brand`) pasaron a ser custom properties en `:root`/`[data-theme="dark"]` (mismo patrón que `--bg-*`/`--text-*`) en vez de hex fijo en `@theme inline` — sin esto, el ítem de nav activo quedaba con el celeste claro del light mode también en dark.
 
+### Notificaciones: infra sin submódulo, y sin motor (`sql/038`)
+
+Pedido como "motor de notificaciones y sugerencia de tareas". Se construyó la mitad de
+notificaciones; la de sugerencias no, y por qué está más abajo.
+
+**No es un motor.** No hay reglas configurables, plantillas de mensaje ni suscripciones: una tabla,
+tres triggers colgados de escrituras que ya ocurrían y dos funciones de lectura. Un tipo nuevo es un
+`PERFORM notificar(...)` más. La demanda concreta eran tres casos —el rechazo de un alta congelada
+que `BACKLOG.md` tenía anotado desde `sql/033`, la transferencia de una obra y la asignación de una
+tarea—, y un registro de reglas para tres casos es arquitectura especulativa.
+
+**No es un módulo: no lleva submódulo.** Va donde `usuario_widgets` y `usuario_tutorial` — prefijo
+`usuario_`, RLS directo por `auth.uid()`, sin vista ni permiso propio. Recibir el aviso de algo que
+ya podés ver no necesita autorización nueva: el permiso lo puso la entidad apuntada. Un submódulo
+`notificaciones_ver` habría sido un permiso que nadie puede negar sin romper la app.
+
+**La notificación apunta, no copia** — la decisión que gobierna todo el resto. La fila guarda
+`(entidad, entidad_id)` y el texto se arma al leer bajo la RLS del lector. Con el título copiado,
+`sql/013` —perder la asignación es dejar de ver— se rompía desde la campanita. Por eso
+`notificaciones_listar` es INVOKER y resuelve con INNER JOIN: lo que la RLS no devuelve, no aparece.
+Verificado: sacarle la asignación al destinatario vacía su bandeja y la fila sigue existiendo.
+
+**Evento es fila, estado es consulta.** "Te asignaron X" pasó una vez y tiene destinatario único.
+"Tenés 3 vencidas" es el estado de hoy: como fila necesitaría un cron que la cree a medianoche y
+otra pasada que la borre al completar la tarea. Es `notificaciones_avisos()`, mismo criterio que
+`reactivar_posponer_vencidos()`. El ERP sigue sin cron.
+
+**El badge cuenta lo no leído de la lista, no de la tabla.** Contar filas crudas daría un número más
+alto que lo que se ve, porque las de entidades ya invisibles no se muestran. Los avisos de
+vencimiento no suman al badge: un badge que no puede llegar a cero deja de significar algo.
+
+**Dónde está la campanita.** Arriba a la derecha de las dos superficies de nav —el `<aside>` de
+escritorio y la barra de `MobileNav`—, y **no** en el drawer: ahí estaría escondida detrás del botón
+que hay que apretar para verla. Los datos los trae `Sidebar.tsx` (server) y se refrescan con la
+navegación; sin polling ni Realtime hasta que alguien los pida.
+
+**La sugerencia de tareas no se construyó.** "¿Qué hago ahora?" ya es la vista Misión más el orden de
+`useOrdenTemperatura` — un sugeridor sería una segunda autoridad sobre la misma pregunta. "¿Qué
+tarea debería existir?" sí es nueva, pero hoy una tarea no sabe de qué obra habla (`origen_app` /
+`origen_punto` son texto libre y solo decorativos), así que la sugerencia no puede saber si ya la
+creaste y la repetiría para siempre. Ese vínculo es el prerequisito, y es una columna, no un motor.
+Queda en `BACKLOG.md`.
+
 ---
 
 ## La regla de negocio vive en Postgres, no en `actions.ts`

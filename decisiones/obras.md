@@ -350,11 +350,15 @@ La pantalla acompaña: `ObraDetalle` solo ofrece "Referente" sobre personas con 
 
 ---
 
-## Lo que el rechazo todavía no resuelve
+## ~~Lo que el rechazo todavía no resuelve~~ — resuelto por `sql/038`
 
-Rechazar desactiva la fila, así que sale de los listados: quien la cargó se entera solo si entra a la ficha por URL directa. El motivo está guardado y la ficha lo muestra, pero nadie le avisa.
+~~Rechazar desactiva la fila, así que sale de los listados: quien la cargó se entera solo si entra a la ficha por URL directa. El motivo está guardado y la ficha lo muestra, pero nadie le avisa.~~
 
-No se resolvió acá porque el módulo no tiene ningún canal de aviso y armarlo para esto sería construir media notificación. Queda en `BACKLOG.md` con el camino barato anotado.
+~~No se resolvió acá porque el módulo no tiene ningún canal de aviso y armarlo para esto sería construir media notificación. Queda en `BACKLOG.md` con el camino barato anotado.~~
+
+El canal existe: `trg_notificar_decision_obra` sobre `obras_aprobaciones` le manda el aviso al solicitante con el motivo y el link a la ficha, aprobada o rechazada. Ver `decisiones/global.md` → *Notificaciones: infra sin submódulo, y sin motor*.
+
+Dos cosas del módulo cambiaron para eso, las dos verificadas contra las 72 filas de las cinco tablas: `obras_etiqueta` pasó a `SECURITY INVOKER` (otorgarla siendo DEFINER habría sido un bypass del aviso ciego de `sql/037`) y el mapa "de esta fila, quién pidió el alta" salió del UNION de `obras_pendientes()` a `obras_solicitante(tipo, id)`, que ahora usan los dos.
 
 ---
 

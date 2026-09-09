@@ -4,14 +4,20 @@ import { useState } from "react";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { NotificacionesBell } from "@/modules/notificaciones/components/NotificacionesBell";
+import type { Avisos, Notificacion } from "@/modules/notificaciones/types";
 import { SidebarNav } from "./SidebarNav";
 
 export function MobileNav({
   modulosVisibles,
   nombre,
+  notificaciones,
+  avisos,
 }: {
   modulosVisibles: string[];
   nombre: string;
+  notificaciones: Notificacion[];
+  avisos: Avisos;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -36,6 +42,9 @@ export function MobileNav({
           <Menu size={18} strokeWidth={1.75} />
         </button>
         <Image src="/logo.svg" alt="JADA" width={60} height={22} className="logo" priority />
+        <div className="ml-auto">
+          <NotificacionesBell notificaciones={notificaciones} avisos={avisos} />
+        </div>
       </div>
 
       {open && (

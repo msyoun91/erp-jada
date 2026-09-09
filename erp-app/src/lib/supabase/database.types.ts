@@ -1138,6 +1138,60 @@ export type Database = {
           },
         ]
       }
+      usuario_notificaciones: {
+        Row: {
+          activo: boolean
+          actor_id: string | null
+          created_at: string
+          entidad: string
+          entidad_id: string
+          id: string
+          leida_at: string | null
+          tipo: Database["public"]["Enums"]["tipo_notificacion"]
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          activo?: boolean
+          actor_id?: string | null
+          created_at?: string
+          entidad: string
+          entidad_id: string
+          id?: string
+          leida_at?: string | null
+          tipo: Database["public"]["Enums"]["tipo_notificacion"]
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          activo?: boolean
+          actor_id?: string | null
+          created_at?: string
+          entidad?: string
+          entidad_id?: string
+          id?: string
+          leida_at?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_notificacion"]
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_notificaciones_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuario_notificaciones_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuario_submodulos: {
         Row: {
           activo: boolean
@@ -1360,6 +1414,37 @@ export type Database = {
         Returns: boolean
       }
       es_responsable_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
+      notificaciones_avisos: {
+        Args: never
+        Returns: {
+          vencen_hoy: number
+          vencidas: number
+        }[]
+      }
+      notificaciones_listar: {
+        Args: { p_limite?: number }
+        Returns: {
+          actor: string
+          created_at: string
+          destino: string
+          destino_id: string
+          etiqueta: string
+          id: string
+          leida: boolean
+          motivo: string
+          tipo: Database["public"]["Enums"]["tipo_notificacion"]
+        }[]
+      }
+      notificar: {
+        Args: {
+          p_actor_id: string
+          p_entidad: string
+          p_entidad_id: string
+          p_tipo: Database["public"]["Enums"]["tipo_notificacion"]
+          p_usuario_id: string
+        }
+        Returns: undefined
+      }
       obras_array_sin_duplicados: { Args: { a: unknown }; Returns: boolean }
       obras_auditoria_accesos: {
         Args: { p_dias?: number }
@@ -1579,6 +1664,10 @@ export type Database = {
           persona_id: string
         }[]
       }
+      obras_solicitante: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: string
+      }
       obras_transferir: {
         Args: { p_a_usuario_id: string; p_obra_id: string }
         Returns: undefined
@@ -1684,6 +1773,11 @@ export type Database = {
         | "influenciador"
         | "contacto_comercial"
         | "otro"
+      tipo_notificacion:
+        | "alta_aprobada"
+        | "alta_rechazada"
+        | "obra_transferida"
+        | "tarea_asignada"
       tipo_obra:
         | "edificio"
         | "casa"
@@ -1891,6 +1985,12 @@ export const Constants = {
         "influenciador",
         "contacto_comercial",
         "otro",
+      ],
+      tipo_notificacion: [
+        "alta_aprobada",
+        "alta_rechazada",
+        "obra_transferida",
+        "tarea_asignada",
       ],
       tipo_obra: [
         "edificio",
