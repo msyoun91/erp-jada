@@ -1,4 +1,5 @@
 import { ListTodo } from "lucide-react";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ModuleTabs } from "@/components/layout/ModuleTabs";
 import {
   puedeVerAuditoria,
@@ -34,6 +35,7 @@ export default async function TareasLayout({
 
   return (
     <div className="flex h-full flex-col">
+      <Breadcrumb modulo="tareas" tabs={tabs} />
       <div className="mb-4 flex items-center justify-between gap-3">
         <h1 className="t-h1 flex items-center gap-2.5">
           <ListTodo size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />

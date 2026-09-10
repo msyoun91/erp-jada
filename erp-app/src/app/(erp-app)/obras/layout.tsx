@@ -1,4 +1,5 @@
 import { Building2 } from "lucide-react";
+import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ModuleTabs } from "@/components/layout/ModuleTabs";
 import { BuscadorGlobal } from "@/modules/obras/components/BuscadorGlobal";
 import {
@@ -28,6 +29,7 @@ export default async function ObrasLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex h-full flex-col">
+      <Breadcrumb modulo="obras" tabs={tabs} />
       {/* El buscador va en la línea del título y no adentro de una tab: busca
           en las tres entidades, así que su efecto llega más lejos que la tab
           abierta. En mobile la barra se lleva su propio renglón. */}

@@ -14,6 +14,7 @@ Spec completa extraída y volcada en `.claude/guides/design-system/JADA-design-s
 
 - **Breakpoints**: no definidos en el fuente. Se usan defaults de Tailwind (sm 640/md 768/lg 1024/xl 1280).
 - **Tabs (ModuleTabs)**: no existe componente fuente. Replica patrón de nav-item (underline horizontal o pill).
+- **Breadcrumb**: no existe en el fuente. Viene del prototipo `obsoletos/prototipo-obras-tareas.html` (`.crumb`, arriba del `<h1>`). Regla en CLAUDE.md → "Encabezado de módulo". Renderiza `Módulo / Vista` con `t-caption`; no navega hacia arriba (el módulo ya está en el sidebar), es orientación. Reusa `LABEL_MAP` y `tabActiva` — sin fuente de verdad nueva. Sin hoja de detalle por ahora: la agrega el que la necesite pasándole el nombre por prop.
 - **Paginación**: no existe. Replica jx-icon-btn + números con mismo patrón de estado activo que sidebar/tabs.
 - **List-item mobile** (reemplazo de tablas en mobile, regla ya existente): no existe. Deriva de los tokens de fila de tabla del sistema (jd-table row).
 - **Touch targets 44px**: el fuente es desktop (~34px). Se fuerza min-height 44px solo en mobile (`@media max-width:767px`), sin cambiar el look visual.

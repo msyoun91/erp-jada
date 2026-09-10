@@ -3,20 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type Tab = { codigo: string; label: string; href: string };
+export type Tab = { codigo: string; label: string; href: string };
+
+// Obras es el único módulo con páginas de detalle (/obras/{id},
+// /obras/personas/{id}): la tab activa es la del href más largo que sea
+// prefijo del pathname, porque /obras lo es de todas las demás.
+// Compartida con Breadcrumb — misma noción de "dónde estoy".
+export function tabActiva(pathname: string, tabs: Tab[]): string | null {
+  return tabs.reduce<string | null>((mejor, tab) => {
+    if (pathname !== tab.href && !pathname.startsWith(`${tab.href}/`)) return mejor;
+    return mejor === null || tab.href.length > mejor.length ? tab.href : mejor;
+  }, null);
+}
 
 export function ModuleTabs({ modulo, tabs }: { modulo: string; tabs: Tab[] }) {
   const pathname = usePathname();
 
   if (tabs.length <= 1) return null;
 
-  // Obras es el único módulo con páginas de detalle (/obras/{id},
-  // /obras/personas/{id}): la tab activa es la del href más largo que sea
-  // prefijo del pathname, porque /obras lo es de todas las demás.
-  const activo = tabs.reduce<string | null>((mejor, tab) => {
-    if (pathname !== tab.href && !pathname.startsWith(`${tab.href}/`)) return mejor;
-    return mejor === null || tab.href.length > mejor.length ? tab.href : mejor;
-  }, null);
+  const activo = tabActiva(pathname, tabs);
 
   return (
     <div

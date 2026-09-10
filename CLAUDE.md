@@ -211,12 +211,14 @@ Cuando un Server Component necesita pasarle "qué ícono mostrar" a un Client Co
 
 ## Encabezado de módulo
 
-Todo módulo tiene `<h1>` con ícono + nombre visible antes de los tabs. Estructura obligatoria en el `layout.tsx` del módulo:
+Todo módulo tiene un `<Breadcrumb>` (`Módulo / Vista`) y un `<h1>` con ícono + nombre, en ese orden, antes de los tabs. Estructura obligatoria en el `layout.tsx` del módulo:
 
 ```tsx
 import { IconName } from 'lucide-react'
+import { Breadcrumb } from '@/components/layout/Breadcrumb'
 
 <div className="flex flex-col h-full">
+  <Breadcrumb modulo="nombre" tabs={tabs} />
   <h1 className="t-h1 mb-4 flex items-center gap-2.5">
     <IconName size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
     Nombre del Módulo
@@ -226,7 +228,7 @@ import { IconName } from 'lucide-react'
 </div>
 ```
 
-El ícono y el label se toman del `ICON_MAP` y `LABEL_MAP` de `SidebarNav.tsx` — misma fuente de verdad.
+El ícono y el label del `<h1>` se toman del `ICON_MAP` y `LABEL_MAP` de `SidebarNav.tsx` — misma fuente de verdad. El `<Breadcrumb>` reusa `LABEL_MAP` para el módulo y la tab activa (misma lógica que `ModuleTabs`, en `tabActiva`) para la vista; con una sola tab muestra solo el módulo. La hoja de detalle (nombre de la obra/persona) todavía no se muestra — se agrega cuando haga falta.
 
 ## Patrón UI de submódulos
 
