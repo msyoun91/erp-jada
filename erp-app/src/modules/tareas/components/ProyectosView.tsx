@@ -38,28 +38,28 @@ export function ProyectosView({
   });
   const { visibles, ...paginado } = usePaginado(filtrados);
 
-  // Mismo criterio que la vista Lista: sin tareas_gestionar_ajenas el filtro
-  // ofrece solo "yo" y "Todos los usuarios".
-  const opcionesUsuario = gestionarAjenas ? usuarios : usuarios.filter((u) => u.id === usuarioActualId);
-
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar proyecto…" />
-        <select
-          data-tour="tareas_proyectos_miembro"
-          className="input w-auto"
-          value={miembroId}
-          onChange={(e) => setMiembroId(e.target.value)}
-          aria-label="Filtrar por miembro"
-        >
-          <option value="">Todos los usuarios</option>
-          {opcionesUsuario.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.nombre}
-            </option>
-          ))}
-        </select>
+        {/* Mismo criterio que la vista Lista: sin tareas_gestionar_ajenas la vista
+            queda fija en los proyectos propios y el selector no aparece. */}
+        {gestionarAjenas && (
+          <select
+            data-tour="tareas_proyectos_miembro"
+            className="input w-auto"
+            value={miembroId}
+            onChange={(e) => setMiembroId(e.target.value)}
+            aria-label="Filtrar por miembro"
+          >
+            <option value="">Todos los usuarios</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nombre}
+              </option>
+            ))}
+          </select>
+        )}
         {puedeCrear && (
           <button
             data-tour="tareas_proyectos_crear"

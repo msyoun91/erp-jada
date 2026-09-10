@@ -168,7 +168,7 @@ Unidad mínima de trabajo. `proyecto_id` solo se usa cuando la tarea está suelt
 | recurrencia_cantidad | int | nullable, junto con recurrencia_unidad (ambos o ninguno) |
 | recurrencia_unidad | enum `recurrencia_unidad` (`dia`\|`mes`) | nullable |
 | nota_anterior / nota_siguiente | text | nullable — "nota de la última vez" de tareas recurrentes |
-| origen_app / origen_punto | text | nullable — qué app externa la generó y el deep link, si existe |
+| origen_app / origen_punto | text | nullable — qué módulo o app la generó y el deep link a la acción. `origen_punto` solo ruta interna (`/...`), validado en `crearTareaSchema` y de nuevo al renderizar (`modules/tareas/origen.ts`) |
 | modo_completado | enum `modo_completado` (`manual`\|`automatico`\|`hibrido`) | default `manual` |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |

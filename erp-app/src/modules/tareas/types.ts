@@ -103,7 +103,11 @@ export const crearTareaSchema = tareaEditableSchema
     asignados: z.array(z.string().uuid()).min(1, "Debe haber al menos un asignado"),
     modo_completado: z.enum(["manual", "automatico", "hibrido"]).default("manual"),
     origen_app: z.string().max(100).optional(),
-    origen_punto: z.string().max(500).optional(),
+    origen_punto: z
+      .string()
+      .max(500)
+      .regex(/^\/(?!\/)/, "El punto de origen debe ser una ruta interna del ERP")
+      .optional(),
   })
   .refine((d) => !(d.hilo_id && d.proyecto_id), {
     message: "Una tarea con hilo no lleva proyecto propio — lo hereda del hilo",

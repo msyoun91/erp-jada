@@ -90,7 +90,11 @@ Pedido de usuario en la misma tanda. Es un submódulo-función bajo la vista `ta
 
 Aplicado en Supabase vía MCP. Tests posteriores: `rls_visibilidad_tareas.sql` 17/17, `rls_miembros_asignables.sql` 15/15.
 
-**El filtro por usuario ofrece la lista del equipo solo con `tareas_gestionar_ajenas`** (`TareasListaView`, `ProyectosView`). Sin la función quedan dos opciones: "Todos los usuarios" — que ya es lo propio más lo público, o sea todo lo que RLS devuelve — y uno mismo. No es una barrera (recortar por otro usuario nunca mostró de más, la RLS filtra antes) sino no ofrecer un recorte que no es de quien mira. `AuditoriaView` conserva el picker completo: la vista entera está gateada por `tareas_auditoria` y ese filtro es su razón de ser.
+~~**El filtro por usuario ofrece la lista del equipo solo con `tareas_gestionar_ajenas`** (`TareasListaView`, `ProyectosView`). Sin la función quedan dos opciones: "Todos los usuarios" — que ya es lo propio más lo público, o sea todo lo que RLS devuelve — y uno mismo.~~ **Superado por *El selector de usuario se oculta sin la función* (abajo).** `AuditoriaView` conserva el picker completo: la vista entera está gateada por `tareas_auditoria` y ese filtro es su razón de ser.
+
+## El selector de usuario se oculta sin la función
+
+Pedido de usuario. Sin `tareas_gestionar_ajenas` el `<select>` de usuario ya no se renderiza en `TareasListaView` ni `ProyectosView` — antes mostraba dos opciones ("Todos los usuarios" + uno mismo). El default de `asignadoId` / `miembroId` sigue siendo `usuarioActualId`, así que la vista queda fija en lo propio y el toggle Míos/Involucrado sigue apareciendo. Sigue sin ser una barrera: RLS filtra antes y el servidor rechaza igual. Cambio solo de UI, cero SQL.
 
 ## Ver miembros exige proyecto activo (`sql/016`)
 
@@ -639,7 +643,7 @@ Sesión posterior comparó el módulo ya construido contra la spec funcional ori
 
 **§10 Badges:** recurrencia y vínculo con app externa pasan a ser ícono + tooltip (antes no existían); "pospuesta" pasa de badge de texto a ícono + tooltip (antes badge-warning) para no competir con el color de la fecha. Se sacó el badge "Vencida" — ahora el color (neutro/ámbar/rojo) va directo sobre el texto de la fecha de vencimiento. Tareas sin vencimiento muestran "Creada hace X días" con la misma lógica de color invertida. Umbrales (`PROXIMA_DIAS=3`, `ANTIGUEDAD_AMBAR_DIAS=14`, `ANTIGUEDAD_ROJO_DIAS=30`) quedaron como constantes fijas en `TareaRow.tsx`, no configurables — la spec pide "umbral configurable" pero no hay todavía un segundo caso real que justifique una UI de settings para esto (simplicidad antes que abstracción). Avatares de multi-asignado ahora se superponen (margin negativo) y el del usuario actual queda con outline propio.
 
-**Deliberadamente no implementado — §6 (botón "Realizar tarea", deep link, `modo_completado` en la UI):** la spec ya marca este punto como "pendiente de definir con detalle... a retomar cuando exista una segunda aplicación real en el sistema", y hoy no existe ninguna. `origen_app`/`origen_punto`/`modo_completado` siguen en el schema y en `crearTareaSchema` pero no se exponen en `TareaFormPanel` — construir la UI de integración ahora sería adelantarse a un caso que todavía no existe (misma regla que ya frenó el diseño de una capa de integración genérica en la spec original). Retomar cuando haya una segunda app real.
+**Deliberadamente no implementado — §6 (botón "Realizar tarea", ~~deep link~~, `modo_completado` en la UI):** la spec ya marca este punto como "pendiente de definir con detalle... a retomar cuando exista una segunda aplicación real en el sistema", y hoy no existe ninguna. `origen_app`/`origen_punto`/`modo_completado` siguen en el schema y en `crearTareaSchema` pero no se exponen en `TareaFormPanel` — construir la UI de integración ahora sería adelantarse a un caso que todavía no existe (misma regla que ya frenó el diseño de una capa de integración genérica en la spec original). Retomar cuando haya una segunda app real. **El deep link sí se implementó** — ver "Tareas generadas por otro módulo" al final de este archivo.
 
 
 ## Notas, panel de proyecto, "Mis tareas", islas (`sql/008`)
@@ -753,3 +757,36 @@ ninguna decisión.
 **Lo que no se trajo del prototipo:** el tick de completada a la izquierda del título —el badge
 de estado ya lo dice, y un círculo no distingue `en_progreso` de `cancelada`— y los chips de
 persona/obra vinculada, que necesitan columnas nuevas en `tareas`.
+
+## Tareas generadas por otro módulo = `origen_app` + `origen_punto` (sin SQL)
+
+Pedido: *"algunos módulos generan tareas en el módulo de tareas, con leyenda
+'generado por X' que me lleva a realizar la acción del módulo"*.
+
+No hace falta nada nuevo: las dos columnas existen desde `sql/005` y
+`crearTarea` ya las acepta vía `crearTareaSchema`. Un módulo que quiera generar
+trabajo llama a la misma server action que la UI:
+
+```ts
+await crearTarea({ titulo, responsable_id, asignados: [...], origen_app: "compras", origen_punto: "/compras/oc/123" })
+```
+
+Sin tabla de "generadores", sin registry, sin cola. La tarea generada es una
+tarea igual a todas — misma RLS, mismo panel, misma auditoría. El módulo origen
+no queda acoplado a tareas más allá de un import de la action.
+
+**`origen_punto` solo acepta rutas internas** (`^/(?!/)`). Lo escribe quien
+inserta la fila y RLS no valida su contenido, así que sin el corte un
+`javascript:` o un `//host-ajeno` llegarían intactos al `href`. Validado en
+`crearTareaSchema` (escritura) y otra vez en `origenHref` (`modules/tareas/origen.ts`,
+render): duplicación permitida porque es límite de seguridad, no lógica de
+negocio. `origen.test.ts` cubre los cuatro casos hostiles.
+
+**El link vive solo en el panel, no en la isla.** La isla entera es clickeable
+(`Isla.onAbrir`): un `<Link>` adentro pelea con ese click y obliga a
+`stopPropagation`. La isla muestra `origen_app` como texto dentro de la línea de
+contexto; el panel — donde ya viven todas las acciones — lo muestra como link.
+Dos clicks para llegar al módulo; se acorta si molesta.
+
+**`origen_app` es texto libre, no enum.** Un enum obligaría a migración por cada
+módulo nuevo que genere tareas. Se muestra tal cual llega.

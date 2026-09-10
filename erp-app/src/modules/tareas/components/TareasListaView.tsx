@@ -115,30 +115,29 @@ export function TareasListaView({
   const totalTareas = sueltasVisibles.length + gruposVisibles.reduce((n, g) => n + g.propias, 0);
   const hayFiltro = Boolean(texto || asignadoId || ocultas);
 
-  // Sin tareas_gestionar_ajenas el filtro no ofrece la lista del equipo: solo
-  // "yo" y "Todos los usuarios" (lo propio + lo público, que es todo lo que
-  // RLS devuelve). No es una barrera — recortar por otro usuario nunca mostró
-  // de más — sino no ofrecer un recorte que no es de quien mira.
-  const opcionesUsuario = gestionarAjenas ? usuarios : usuarios.filter((u) => u.id === usuarioActualId);
-
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar tarea o hilo…" />
-        <select
-          data-tour="tareas_lista_usuario"
-          className="input w-auto"
-          value={asignadoId}
-          onChange={(e) => setAsignadoId(e.target.value)}
-          aria-label="Filtrar por usuario"
-        >
-          <option value="">Todos los usuarios</option>
-          {opcionesUsuario.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.nombre}
-            </option>
-          ))}
-        </select>
+        {/* Sin tareas_gestionar_ajenas no hay recorte por usuario que ofrecer: la
+            vista queda fija en lo propio (default de asignadoId) y el selector no
+            aparece. No es una barrera — RLS ya limita lo que se ve. */}
+        {gestionarAjenas && (
+          <select
+            data-tour="tareas_lista_usuario"
+            className="input w-auto"
+            value={asignadoId}
+            onChange={(e) => setAsignadoId(e.target.value)}
+            aria-label="Filtrar por usuario"
+          >
+            <option value="">Todos los usuarios</option>
+            {usuarios.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nombre}
+              </option>
+            ))}
+          </select>
+        )}
         {asignadoId && (
           <div
             data-tour="tareas_lista_relacion"

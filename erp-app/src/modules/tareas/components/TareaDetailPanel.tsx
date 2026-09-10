@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   Archive,
@@ -45,6 +46,7 @@ import {
 } from "./tareaLabels";
 import type { PasoEnCadena } from "./cadenaPasos";
 import { useTareasContexto } from "./tareasContexto";
+import { origenHref } from "../origen";
 
 // Todo lo que se hace y se lee de una tarea: la isla (TareaCard) solo resume.
 // El estado y la temperatura optimistas viven en la isla y bajan por props —
@@ -308,12 +310,21 @@ export function TareaDetailPanel({
                 Cada {tarea.recurrencia_cantidad} {RECURRENCIA_LABEL[tarea.recurrencia_unidad ?? "dia"]}
               </span>
             )}
-            {tarea.origen_app && (
-              <span className="flex items-center gap-1">
-                <ExternalLink size={13} strokeWidth={1.75} />
-                {tarea.origen_app}
-              </span>
-            )}
+            {tarea.origen_app &&
+              (origenHref(tarea.origen_punto) ? (
+                <Link
+                  href={origenHref(tarea.origen_punto) as string}
+                  className="flex items-center gap-1 text-brand-500 hover:underline"
+                >
+                  <ExternalLink size={13} strokeWidth={1.75} />
+                  Generado por {tarea.origen_app} — ir
+                </Link>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <ExternalLink size={13} strokeWidth={1.75} />
+                  Generado por {tarea.origen_app}
+                </span>
+              ))}
             {tarea.posponer_hasta && (
               <span className="flex items-center gap-1 text-warning-text">
                 <Clock size={13} strokeWidth={1.75} />
