@@ -17,12 +17,10 @@ export function EmpresasView({
   empresas,
   puedeCrear,
   veTodas,
-  miId,
 }: {
   empresas: Empresa[];
   puedeCrear: boolean;
   veTodas: boolean;
-  miId: string | null;
 }) {
   const [texto, setTexto] = useState("");
   const [creando, setCreando] = useState(false);
@@ -79,9 +77,6 @@ export function EmpresasView({
                     {e.razon_social}
                   </span>
                   {e.pendiente && <span className="badge badge-warning shrink-0">Pendiente</span>}
-                  {miId && e.creado_por !== miId && (
-                    <span className="badge badge-neutral shrink-0">Ajena</span>
-                  )}
                 </span>
                 <span className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1 md:contents">
                   <span className={e.nombre_comercial ? "truncate" : "hidden md:block"}>

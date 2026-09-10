@@ -26,16 +26,23 @@ const COLUMNAS = "md:grid-cols-[minmax(0,1fr)_7.5rem_9rem_9rem_11rem]";
 const COLUMNAS_CON_RESPONSABLE =
   "md:grid-cols-[minmax(0,1fr)_7.5rem_9rem_9rem_11rem_8rem]";
 
+// Misma forma que el toggle de RolesPicker: el borde es la señal que sobrevive
+// al contraste bajo, el relleno acompaña.
+const chipEstado = (activo: boolean) =>
+  `tap-target t-caption flex items-center gap-1.5 rounded-md border px-3 py-1 ${
+    activo
+      ? "border-brand-500 bg-brand-50 font-semibold text-brand-700"
+      : "border-border text-text-tertiary"
+  }`;
+
 export function ObrasView({
   obras,
   puedeCrear,
   puedeTransferir,
-  miId,
 }: {
   obras: ObraListado[];
   puedeCrear: boolean;
   puedeTransferir: boolean;
-  miId: string | null;
 }) {
   const [texto, setTexto] = useState("");
   const [estado, setEstado] = useState<EstadoObra | "">("");
@@ -43,51 +50,68 @@ export function ObrasView({
   const [creando, setCreando] = useState(false);
 
   const q = texto.trim().toLowerCase();
-  const filtradas = obras.filter((o) => {
+  // Los chips de estado cuentan sobre lo que dejan pasar los otros filtros, no
+  // sobre sí mismos: así el número es lo que se ve al tocarlos.
+  const base = obras.filter((o) => {
     if (q && !o.nombre.toLowerCase().includes(q) && !(o.localidad ?? "").toLowerCase().includes(q))
       return false;
-    if (estado && o.estado !== estado) return false;
     if (tipo && o.tipo !== tipo) return false;
     return true;
   });
+  const conteo = base.reduce<Partial<Record<EstadoObra, number>>>((acc, o) => {
+    acc[o.estado] = (acc[o.estado] ?? 0) + 1;
+    return acc;
+  }, {});
+  const filtradas = estado ? base.filter((o) => o.estado === estado) : base;
   const { visibles, ...paginado } = usePaginado(filtradas);
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <SearchInput value={texto} onChange={setTexto} placeholder="Buscar obra o localidad…" />
-        <select
-          className="input w-auto"
-          value={estado}
-          onChange={(e) => setEstado(e.target.value as EstadoObra | "")}
-          aria-label="Filtrar por estado"
-        >
-          <option value="">Todos los estados</option>
-          {ESTADOS_OBRA.map((e) => (
-            <option key={e} value={e}>
-              {LABEL_ESTADO[e]}
-            </option>
-          ))}
-        </select>
-        <select
-          className="input w-auto"
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value as TipoObra | "")}
-          aria-label="Filtrar por tipo"
-        >
-          <option value="">Todos los tipos</option>
-          {TIPOS_OBRA.map((t) => (
-            <option key={t} value={t}>
-              {LABEL_TIPO[t]}
-            </option>
-          ))}
-        </select>
-        {puedeCrear && (
-          <button className="btn btn-primary" onClick={() => setCreando(true)}>
-            <Plus size={16} />
-            Nueva obra
+      <div className="mb-4 flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <SearchInput value={texto} onChange={setTexto} placeholder="Buscar obra o localidad…" />
+          <select
+            className="input w-auto"
+            value={tipo}
+            onChange={(e) => setTipo(e.target.value as TipoObra | "")}
+            aria-label="Filtrar por tipo"
+          >
+            <option value="">Todos los tipos</option>
+            {TIPOS_OBRA.map((t) => (
+              <option key={t} value={t}>
+                {LABEL_TIPO[t]}
+              </option>
+            ))}
+          </select>
+          {puedeCrear && (
+            <button className="btn btn-primary" onClick={() => setCreando(true)}>
+              <Plus size={16} />
+              Nueva obra
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por estado">
+          <button
+            type="button"
+            className={chipEstado(estado === "")}
+            aria-pressed={estado === ""}
+            onClick={() => setEstado("")}
+          >
+            Todas <span className="tabular-nums opacity-70">{base.length}</span>
           </button>
-        )}
+          {ESTADOS_OBRA.map((e) => (
+            <button
+              key={e}
+              type="button"
+              className={chipEstado(estado === e)}
+              aria-pressed={estado === e}
+              onClick={() => setEstado(e)}
+            >
+              {LABEL_ESTADO[e]} <span className="tabular-nums opacity-70">{conteo[e] ?? 0}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {puedeTransferir && (
@@ -128,9 +152,6 @@ export function ObrasView({
                   {/* Congelada: existe y la ve su responsable, pero todavía no
                       se le puede vincular nada. */}
                   {o.pendiente && <span className="badge badge-warning shrink-0">Pendiente</span>}
-                  {miId && o.responsable_id !== miId && (
-                    <span className="badge badge-neutral shrink-0">Ajena</span>
-                  )}
                 </span>
                 {/* `md:contents` disuelve este envoltorio en la grilla: una sola
                     escritura del marcado sirve para la línea que envuelve en

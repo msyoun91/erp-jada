@@ -13,12 +13,10 @@ export function PersonasView({
   personas,
   puedeCrear,
   veTodas,
-  miId,
 }: {
   personas: PersonaListado[];
   puedeCrear: boolean;
   veTodas: boolean;
-  miId: string | null;
 }) {
   const [texto, setTexto] = useState("");
   const [creando, setCreando] = useState(false);
@@ -80,9 +78,6 @@ export function PersonasView({
                   {p.nombre} {p.apellido ?? ""}
                 </span>
                 {p.pendiente && <span className="badge badge-warning">Pendiente</span>}
-                {miId && p.creado_por !== miId && (
-                  <span className="badge badge-neutral">Ajena</span>
-                )}
               </Link>
             </li>
           ))}

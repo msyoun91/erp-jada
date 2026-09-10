@@ -4,7 +4,7 @@ import {
   puedeVerEmpresas,
   puedeVerTodasLasEmpresas,
 } from "@/modules/obras/permissions";
-import { getEmpresas, getUsuarioActualId } from "@/modules/obras/queries";
+import { getEmpresas } from "@/modules/obras/queries";
 import { EmpresasView } from "@/modules/obras/components/EmpresasView";
 
 export default async function EmpresasPage({
@@ -17,14 +17,11 @@ export default async function EmpresasPage({
   const { alcance: alcanceParam } = await searchParams;
   const alcance = alcanceParam === "todos" ? "todos" : "propios";
 
-  const [empresas, crear, veTodas, miId] = await Promise.all([
+  const [empresas, crear, veTodas] = await Promise.all([
     getEmpresas(undefined, alcance),
     puedeCrearEmpresa(),
     puedeVerTodasLasEmpresas(),
-    getUsuarioActualId(),
   ]);
 
-  return (
-    <EmpresasView empresas={empresas} puedeCrear={crear} veTodas={veTodas} miId={miId} />
-  );
+  return <EmpresasView empresas={empresas} puedeCrear={crear} veTodas={veTodas} />;
 }

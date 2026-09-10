@@ -618,6 +618,28 @@ palabra arriba no agrega nada.
 
 ---
 
+## El estado se filtra con chips, no con un `<select>`
+
+El listado de Obras filtraba estado con un `<select>` "Todos los estados". Con el reloj comercial
+en el enum (`sql/046`, seis valores) el vendedor quiere ver de un vistazo cuántas obras tiene en
+cada tramo, y un desplegable esconde eso hasta que se abre.
+
+**Decidido:** fila de chips arriba del listado — `Todas 14 · Idea 6 · En cotización 0 · …`. Cada
+chip cuenta **sobre lo que dejan pasar los otros filtros** (texto, tipo), no sobre sí mismo, así
+el número es lo que se ve al tocarlo. Misma forma que el toggle de `RolesPicker` (`chipEstado()`
+local): borde como señal, relleno acompaña. El estado sigue en `useState`, no en la URL —
+`AlcanceToggle` es el único filtro del módulo que viaja en `?`, y es porque afecta la query del
+server; este no.
+
+El filtro de **tipo** se quedó como `<select>`: ocho valores que nadie mira por conteo, y una
+segunda fila de ocho chips compite con la de estado.
+
+El badge "Ajena" salió de los tres listados en la misma pasada: con el `AlcanceToggle` visible,
+marcar cada fila ajena era ruido. El "Ajeno" del `BuscadorGlobal` se queda — ahí la fila
+enmascarada no es link y el badge es lo que lo dice.
+
+---
+
 ## El filtro vive donde llega su efecto
 
 Auditoría y Pendientes son tabs hermanas y tenían el filtro de días en lugares distintos. La

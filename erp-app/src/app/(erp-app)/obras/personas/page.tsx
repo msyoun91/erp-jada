@@ -4,7 +4,7 @@ import {
   puedeVerPersonas,
   puedeVerTodasLasPersonas,
 } from "@/modules/obras/permissions";
-import { getPersonas, getUsuarioActualId } from "@/modules/obras/queries";
+import { getPersonas } from "@/modules/obras/queries";
 import { PersonasView } from "@/modules/obras/components/PersonasView";
 
 export default async function PersonasPage({
@@ -17,14 +17,11 @@ export default async function PersonasPage({
   const { alcance: alcanceParam } = await searchParams;
   const alcance = alcanceParam === "todos" ? "todos" : "propios";
 
-  const [personas, crear, todas, miId] = await Promise.all([
+  const [personas, crear, todas] = await Promise.all([
     getPersonas(undefined, alcance),
     puedeCrearPersona(),
     puedeVerTodasLasPersonas(),
-    getUsuarioActualId(),
   ]);
 
-  return (
-    <PersonasView personas={personas} puedeCrear={crear} veTodas={todas} miId={miId} />
-  );
+  return <PersonasView personas={personas} puedeCrear={crear} veTodas={todas} />;
 }
