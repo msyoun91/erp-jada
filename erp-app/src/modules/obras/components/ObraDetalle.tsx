@@ -118,7 +118,10 @@ export function ObraDetalle({
   const [editando, setEditando] = useState(false);
   const [vinculandoEmpresa, setVinculandoEmpresa] = useState<VinculoEmpresa | true | null>(null);
   const [vinculandoPersona, setVinculandoPersona] = useState<VinculoPersona | true | null>(null);
-  const [editandoReferente, setEditandoReferente] = useState<ReferenteVista | true | null>(null);
+  // string = alta con persona ya elegida desde su fila; true = alta sin persona
+  const [editandoReferente, setEditandoReferente] = useState<ReferenteVista | string | true | null>(
+    null,
+  );
   const [transfiriendo, setTransfiriendo] = useState(false);
   const [compartiendo, setCompartiendo] = useState(false);
   const [confirmando, setConfirmando] = useState<Confirmacion | null>(null);
@@ -336,7 +339,7 @@ export function ObraDetalle({
                                 accion: () => quitarReferente(ref.id, obra.id),
                                 ok: "Referente quitado",
                               })
-                            : setEditandoReferente(true),
+                            : setEditandoReferente(p.persona_id),
                       },
                     ]
                   : []),
@@ -446,7 +449,8 @@ export function ObraDetalle({
         <ReferentePanel
           obraId={obra.id}
           personas={personas.map((p) => ({ id: p.persona_id, nombre: p.nombre }))}
-          referente={editandoReferente === true ? undefined : editandoReferente}
+          referente={typeof editandoReferente === "object" ? editandoReferente : undefined}
+          personaIdInicial={typeof editandoReferente === "string" ? editandoReferente : undefined}
           onClose={() => setEditandoReferente(null)}
         />
       )}

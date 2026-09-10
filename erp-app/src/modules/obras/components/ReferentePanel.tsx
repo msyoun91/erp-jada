@@ -11,14 +11,16 @@ export function ReferentePanel({
   obraId,
   personas,
   referente,
+  personaIdInicial,
   onClose,
 }: {
   obraId: string;
   personas: { id: string; nombre: string }[];
   referente?: { persona_id: string; porcentaje_comision: number; observaciones: string | null };
+  personaIdInicial?: string;
   onClose: () => void;
 }) {
-  const [personaId, setPersonaId] = useState(referente?.persona_id ?? "");
+  const [personaId, setPersonaId] = useState(referente?.persona_id ?? personaIdInicial ?? "");
   const [comision, setComision] = useState(referente?.porcentaje_comision?.toString() ?? "");
   const [observaciones, setObservaciones] = useState(referente?.observaciones ?? "");
   const [enviando, setEnviando] = useState(false);
