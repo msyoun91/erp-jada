@@ -139,21 +139,23 @@ export async function getObra(id: string) {
 
   const { data, error } = await supabase
     .from("obras")
-    .select(
-      `*,
-       responsable:usuarios(id, nombre),
-       obras_obra_empresa(id, roles, observaciones, obras_empresas(id, razon_social, nombre_comercial)),
-       obras_obra_persona(id, roles, observaciones, empresa_id,
-         obras_personas(id, nombre, apellido, creado_por),
-         obras_empresas(id, razon_social))`,
-    )
+    .select("*, responsable:usuarios(id, nombre)")
     .eq("id", id)
-    .eq("obras_obra_empresa.activo", true)
-    .eq("obras_obra_persona.activo", true)
     .maybeSingle();
 
   if (error) throw error;
   return data;
+}
+
+// Los vínculos de la ficha por función y no por embed: la empresa/persona que
+// sumó un receptor de la obra compartida es privada de ese receptor, así que
+// el embed la traería en NULL. `obras_vinculos_de_obra` resuelve el nombre
+// (identidad mínima) y marca quién lo agregó.
+export async function getVinculosObra(obraId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("obras_vinculos_de_obra", { p_obra_id: obraId });
+  if (error) throw error;
+  return data ?? [];
 }
 
 // Separado de getObra: la fila trae la comisión, así que la policy exige

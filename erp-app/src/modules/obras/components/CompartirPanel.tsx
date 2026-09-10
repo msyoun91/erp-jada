@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmModal } from "@/components/ui/Modal";
 import { RightPanel } from "@/components/ui/RightPanel";
 import {
   compartirEmpresa,
   compartirObra,
   compartirPersona,
+  contarVinculosReceptor,
   relacionesCompartiblesEmpresa,
   relacionesCompartiblesObra,
   revocarEmpresa,
@@ -41,6 +43,9 @@ export function CompartirPanel({
   const [error, setError] = useState<string>();
   const [relaciones, setRelaciones] = useState<RelacionCompartible[]>([]);
   const [tildadas, setTildadas] = useState<Set<string>>(new Set());
+  const [revocando, setRevocando] = useState<{ usuarioId: string; usuario: string; n: number } | null>(
+    null,
+  );
 
   const yaCompartida = new Set(compartidos.map((c) => c.usuario_id));
   const editando = yaCompartida.has(destino);
@@ -100,6 +105,14 @@ export function CompartirPanel({
     toast.success(editando ? "Cambios guardados" : "Compartida");
   }
 
+  // Al revocar una obra, los vínculos que el receptor le agregó con contactos
+  // suyos se desactivan (obras_revocar_obra). Se avisa antes si hay alguno.
+  async function pedirRevocar(usuarioId: string, usuario: string) {
+    const n = tipo === "obra" ? await contarVinculosReceptor(id, usuarioId) : 0;
+    if (n > 0) setRevocando({ usuarioId, usuario, n });
+    else revocar(usuarioId);
+  }
+
   async function revocar(usuarioId: string) {
     const result =
       tipo === "obra"
@@ -107,11 +120,13 @@ export function CompartirPanel({
         : tipo === "empresa"
           ? await revocarEmpresa(id, usuarioId)
           : await revocarPersona(id, usuarioId);
+    setRevocando(null);
     if (!result.success) return toast.error(result.error);
     toast.success("Acceso revocado");
   }
 
   return (
+    <>
     <RightPanel
       title={`Compartir ${tipo}`}
       subtitle={nombre}
@@ -206,7 +221,7 @@ export function CompartirPanel({
                     type="button"
                     className="btn-ghost text-tertiary tap-target"
                     aria-label={`Revocar acceso de ${c.usuario}`}
-                    onClick={() => revocar(c.usuario_id)}
+                    onClick={() => pedirRevocar(c.usuario_id, c.usuario)}
                   >
                     <X size={16} strokeWidth={1.75} />
                   </button>
@@ -222,5 +237,20 @@ export function CompartirPanel({
         </p>
       </div>
     </RightPanel>
+
+    {revocando && (
+      <ConfirmModal
+        title="Revocar acceso"
+        mensaje={`«${revocando.usuario}» agregó ${revocando.n} ${
+          revocando.n === 1 ? "vínculo" : "vínculos"
+        } a esta obra con contactos suyos. Al revocar, esos vínculos se desactivan.`}
+        confirmLabel="Revocar"
+        onConfirm={async () => {
+          await revocar(revocando.usuarioId);
+        }}
+        onClose={() => setRevocando(null)}
+      />
+    )}
+    </>
   );
 }

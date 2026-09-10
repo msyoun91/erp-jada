@@ -6,6 +6,7 @@ import { argsRpc } from "@/lib/supabase/rpc";
 import { mensajeError } from "@/lib/utils";
 import {
   getEmpresas,
+  getPersonas,
   getContactosExclusivosObra,
   getContactosExclusivosEmpresa,
   getRelacionesCompartiblesObra,
@@ -311,6 +312,18 @@ export async function revocarObra(obraId: string, usuarioId: string) {
   revalidatePath(`/obras/${obraId}`);
   revalidatePath("/obras/compartido");
   return { success: true as const };
+}
+
+// Cuántos vínculos agregó el receptor a esta obra. Se caen al revocar
+// (obras_revocar_obra), así que el panel avisa antes.
+export async function contarVinculosReceptor(obraId: string, usuarioId: string): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("obras_contar_vinculos_receptor", {
+    p_obra_id: obraId,
+    p_usuario_id: usuarioId,
+  });
+  if (error) return 0;
+  return data ?? 0;
 }
 
 // Lecturas que un componente cliente necesita antes de transferir o compartir:
@@ -793,6 +806,22 @@ export async function buscarGlobal(texto: string): Promise<ResultadoBusqueda[]> 
 //
 // Los tres devuelven la misma forma para que los coma el mismo <Buscador />, y
 // son actions porque los llama un componente cliente.
+
+// Solo mi agenda: vincular a una obra —propia o compartida— es sumar un
+// contacto MÍO. El buscador de identidad mínima cross-owner quedó para el
+// aviso de duplicados del alta, no para vincular (ver decisiones/obras.md).
+export async function buscarPersonasParaVincular(texto: string) {
+  const personas = await getPersonas(texto.trim() || undefined);
+
+  return personas
+    .filter((p) => !p.pendiente)
+    .slice(0, 20)
+    .map((p) => ({
+      id: p.id,
+      etiqueta: `${p.nombre} ${p.apellido ?? ""}`.trim(),
+      detalle: null,
+    }));
+}
 
 export async function buscarEmpresasParaVincular(texto: string) {
   const empresas = await getEmpresas(texto.trim() || undefined);

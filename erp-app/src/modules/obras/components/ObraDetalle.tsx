@@ -96,8 +96,18 @@ export function ObraDetalle({
 }: {
   obra: Obra;
   responsable: Usuario | null;
-  empresas: (VinculoEmpresa & { razon_social: string })[];
-  personas: (VinculoPersona & { empresa: string | null })[];
+  empresas: (VinculoEmpresa & {
+    razon_social: string;
+    agregadoPor: string | null;
+    puedeEditar: boolean;
+    puedeQuitar: boolean;
+  })[];
+  personas: (VinculoPersona & {
+    empresa: string | null;
+    agregadoPor: string | null;
+    puedeEditar: boolean;
+    puedeQuitar: boolean;
+  })[];
   referentes: ReferenteVista[];
   transferencias: TransferenciaVista[];
   usuarios: Usuario[];
@@ -228,29 +238,21 @@ export function ObraDetalle({
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
-            {empresas.map((e) => (
-              <li key={e.id} className="card flex items-center gap-3 p-3">
-                <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/obras/empresas/${e.empresa_id}`}
-                    className="t-body-m block truncate font-semibold hover:underline"
-                  >
-                    {e.razon_social}
-                  </Link>
-                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="t-caption">
-                      {e.roles.map((r) => LABEL_ROL_EMPRESA[r]).join(" · ")}
-                    </span>
-                  </div>
-                </div>
-                {permisos.vincular && (
-                  <OverflowMenu
-                    items={[
+            {empresas.map((e) => {
+              // El vínculo que sumó un receptor: el responsable lo quita pero
+              // no lo edita (el trigger corta con OB028).
+              const acciones = [
+                ...(e.puedeEditar
+                  ? [
                       {
                         label: "Editar vínculo",
                         icon: <Pencil size={14} strokeWidth={1.75} />,
                         onClick: () => setVinculandoEmpresa(e),
                       },
+                    ]
+                  : []),
+                ...(e.puedeQuitar
+                  ? [
                       {
                         label: "Quitar de la obra",
                         icon: <Unlink size={14} strokeWidth={1.75} />,
@@ -264,11 +266,31 @@ export function ObraDetalle({
                           }),
                         destructive: true,
                       },
-                    ]}
-                  />
-                )}
-              </li>
-            ))}
+                    ]
+                  : []),
+              ];
+              return (
+                <li key={e.id} className="card flex items-center gap-3 p-3">
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/obras/empresas/${e.empresa_id}`}
+                      className="t-body-m block truncate font-semibold hover:underline"
+                    >
+                      {e.razon_social}
+                    </Link>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="t-caption">
+                        {e.roles.map((r) => LABEL_ROL_EMPRESA[r]).join(" · ")}
+                      </span>
+                      {e.agregadoPor && (
+                        <span className="badge badge-neutral">lo agregó {e.agregadoPor}</span>
+                      )}
+                    </div>
+                  </div>
+                  {permisos.vincular && acciones.length > 0 && <OverflowMenu items={acciones} />}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -318,13 +340,19 @@ export function ObraDetalle({
                       },
                     ]
                   : []),
-                ...(permisos.vincular
+                // Lo que sumó un receptor: el responsable lo quita, no lo edita
+                // (trigger OB028).
+                ...(permisos.vincular && p.puedeEditar
                   ? [
                       {
                         label: "Editar vínculo",
                         icon: <Pencil size={14} strokeWidth={1.75} />,
                         onClick: () => setVinculandoPersona(p),
                       },
+                    ]
+                  : []),
+                ...(permisos.vincular && p.puedeQuitar
+                  ? [
                       {
                         label: "Quitar de la obra",
                         icon: <Unlink size={14} strokeWidth={1.75} />,
@@ -359,6 +387,9 @@ export function ObraDetalle({
                         <span className="badge badge-brand">
                           Referente {ref.porcentaje_comision.toFixed(2)}%
                         </span>
+                      )}
+                      {p.agregadoPor && (
+                        <span className="badge badge-neutral">lo agregó {p.agregadoPor}</span>
                       )}
                     </div>
                   </div>

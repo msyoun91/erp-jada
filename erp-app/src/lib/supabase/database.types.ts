@@ -360,6 +360,7 @@ export type Database = {
         Row: {
           activo: boolean;
           created_at: string;
+          creado_por: string;
           empresa_id: string;
           id: string;
           obra_id: string;
@@ -370,6 +371,7 @@ export type Database = {
         Insert: {
           activo?: boolean;
           created_at?: string;
+          creado_por?: string;
           empresa_id: string;
           id?: string;
           obra_id: string;
@@ -380,6 +382,7 @@ export type Database = {
         Update: {
           activo?: boolean;
           created_at?: string;
+          creado_por?: string;
           empresa_id?: string;
           id?: string;
           obra_id?: string;
@@ -408,6 +411,7 @@ export type Database = {
         Row: {
           activo: boolean;
           created_at: string;
+          creado_por: string;
           empresa_id: string | null;
           id: string;
           obra_id: string;
@@ -419,6 +423,7 @@ export type Database = {
         Insert: {
           activo?: boolean;
           created_at?: string;
+          creado_por?: string;
           empresa_id?: string | null;
           id?: string;
           obra_id: string;
@@ -430,6 +435,7 @@ export type Database = {
         Update: {
           activo?: boolean;
           created_at?: string;
+          creado_por?: string;
           empresa_id?: string | null;
           id?: string;
           obra_id?: string;
@@ -1889,6 +1895,10 @@ export type Database = {
           tipo: string;
         }[];
       };
+      obras_contar_vinculos_receptor: {
+        Args: { p_obra_id: string; p_usuario_id: string };
+        Returns: number;
+      };
       obras_es_mi_obra: { Args: { p_obra_id: string }; Returns: boolean };
       obras_etiqueta: {
         Args: { p_id: string; p_tipo: string };
@@ -2094,6 +2104,22 @@ export type Database = {
           personas_pendientes: number;
           vinculo_id: string;
           vinculo_pendiente: boolean;
+        }[];
+      };
+      obras_vinculos_de_obra: {
+        Args: { p_obra_id: string };
+        Returns: {
+          creado_por: string;
+          creado_por_nombre: string;
+          detalle: string;
+          empresa_id: string;
+          entidad_id: string;
+          es_de_receptor: boolean;
+          nombre: string;
+          observaciones: string;
+          roles: string[];
+          tipo: string;
+          vinculo_id: string;
         }[];
       };
       proyecto_tiene_miembros: {

@@ -110,6 +110,74 @@ el árbol ya ordena.
 
 ---
 
+## El receptor de una obra compartida vincula sus contactos (`sql/051`)
+
+Pedido del usuario, sobre *Compartir con checklist*. Recibí una obra compartida y quiero sumarle
+**mis** empresas y personas. El dueño de la obra sí ve lo que sumé —con el nombre y "lo agregó
+Fulano"—, pero no puede reescribir mis roles/observaciones. Y a la inversa: la ficha del receptor
+no renderiza el interior que no se le compartió, ni siquiera la fila vacía. Cinco decisiones,
+varias revierten cosas escritas más arriba:
+
+**1. El buscador de persona al vincular deja de ser el de identidad mínima.** `VincularPersonaPanel`
+llamaba a `buscarDuplicadosPersona` (DEFINER, cross-owner, "encontrar no es abrir la ficha"). Ahora
+llama a `buscarPersonasParaVincular` → `getPersonas()`, acotado a mi agenda, igual que el panel de
+empresas ya hacía con `getEmpresas()`. **Supera** *MODEL A → búsqueda de identidad mínima* y
+*UI → La persona se elige por búsqueda*: el aviso de "ya cargada por otro" queda solo en el alta
+(`PersonaFormPanel`), que es donde el duplicado importa. Vincular es sumar algo mío.
+
+**2. Los vínculos tienen `creado_por`, y separan "vínculo de la obra" de "lo que sumó un
+receptor".** `obras_obra_empresa` / `obras_obra_persona` ganan la columna (NOT NULL, la pone el
+trigger `set_creado_por`, no editable por el cliente; backfill = `obras.responsable_id`). El SELECT
+de vínculos deja de colgar de `obras_puede_ver_obra` (que sql/047 volvió `true` entero para el
+receptor) y pasa a: **mío** (`creado_por = auth.uid()`) · **responsable** de la obra
+(`obras_es_mi_obra` — ve todo, incluido lo del receptor) · **admin** (`obras_transferir`) ·
+**receptor** solo si la obra **y** la entidad me están compartidas. El responsable ve todo, pero
+la empresa/persona que sumó un receptor es privada de ese receptor, así que el nombre no llega por
+el embed de PostgREST (vendría NULL → la ficha mostraría "—"). Lo resuelve
+**`obras_vinculos_de_obra(obra)`** (DEFINER, identidad mínima — nombre/razón social + roles, nunca
+contacto) que además trae `creado_por` + su nombre y `es_de_receptor`. `getObra` deja de embeber
+los vínculos y usa esta función; la ficha marca "lo agregó Fulano" cuando `es_de_receptor` y
+`creado_por <> yo`. Para el **receptor**, el interior no compartido no vuelve en la función — ni
+la fila vacía. Reversa de *sql/047 → El receptor ve la obra y sus vínculos*.
+
+**Editar un vínculo es de quien lo creó.** La policy de UPDATE deja pasar al responsable (para
+QUITAR de la obra lo del receptor, y editar lo suyo y lo heredado de una transferencia). El
+trigger `obras_vinculo_guard_edicion` acota: si la fila la creó alguien que hoy es receptor de la
+obra y no es él quien edita, `roles` / `observaciones` / `empresa_id` no se tocan — solo `activo`
+(`OB028`). "Heredado de una transferencia" no dispara: el `creado_por` saliente no es receptor. La
+ficha esconde "Editar vínculo" cuando `es_de_receptor && creado_por <> yo`; "Quitar de la obra"
+queda.
+
+**3. El INSERT de vínculo se abre al receptor, acotado a lo suyo.** `obras_obra_*_insert` exigía
+`obras_es_mi_obra(obra_id)`. Ahora: mi obra (cualquier entidad visible, como antes) **o** obra
+compartida conmigo **y** `entidad.creado_por = auth.uid()`. La barrera está en RLS, no en el
+buscador — ocultar no autoriza.
+
+**4. El receptor no ve comisiones.** `obras_obra_referente_select` pasa a
+`obras_es_mi_obra OR obras_transferir`. sql/047 dejó dicho "un receptor con `obras_referentes` ve
+los referentes de la obra compartida — si molesta se acota; hoy no". Ahora molesta: es interior no
+compartido y la comisión es el dato sensible de la ficha. `permisos.referentes` en la page se
+gatea además con `esMio` para que el botón "Marcar referente" no quede muerto.
+
+**5. Revocar arrastra los vínculos del receptor, y el panel avisa.** `obras_revocar_obra` desactiva
+además los `obras_obra_empresa` / `obras_obra_persona` de esa obra con `creado_por = p_usuario_id`
+(al bajar las de persona, `cascada_desactivar` de sql/036 limpia sus referentes). Antes de revocar,
+`CompartirPanel` llama a `obras_contar_vinculos_receptor(obra, usuario)` (DEFINER, gate responsable)
+y, si hay alguno, abre un `ConfirmModal` que dice cuántos se van a desactivar.
+
+**Helpers (DEFINER, una línea)**: `obras_obra_compartida_con(obra, usuario)` + wrapper `_conmigo`,
+`obras_empresa_compartida_conmigo` / `obras_persona_compartida_conmigo`. El EXISTS inline en la
+policy con la columna `*_id` sin calificar repite el sombreado que ya mordió en sql/047-048
+(`c.obra_id = c.obra_id`); un parámetro de función no se sombrea.
+
+**Fuera de alcance:** el receptor de una **empresa** compartida agregándole empleados
+(`obras_persona_empresa` no tiene `creado_por`); el usuario habló de obras. Si aparece, misma
+receta.
+
+Test: `sql/tests/obras_051.sql`.
+
+---
+
 ## Nombre: nada de CRM
 
 La spec prohíbe explícitamente "CRM", "Comercial", "Prospectos" y "Oportunidades" como nombre visible. El módulo administra el universo de obras y sus relaciones, no un pipeline de ventas. `modulo = 'obras'` cumple.

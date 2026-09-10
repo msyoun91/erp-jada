@@ -4,22 +4,16 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { buscarDuplicadosPersona, editarVinculoPersona, vincularPersona } from "../actions";
+import { buscarPersonasParaVincular, editarVinculoPersona, vincularPersona } from "../actions";
 import { LABEL_ROL_PERSONA, ROLES_PERSONA, type RolPersona } from "../types";
 import { Buscador } from "./Buscador";
 import { RolesPicker } from "./RolesPicker";
 import { PersonaFormPanel } from "./PersonaFormPanel";
 
-// Identidad mínima: nombre, apellido y empresa principal. Estable entre
-// renders porque el <Buscador /> la toma como dependencia.
-const buscarPersonas = async (texto: string) => {
-  const encontradas = await buscarDuplicadosPersona(texto);
-  return encontradas.map((d) => ({
-    id: d.persona_id,
-    etiqueta: `${d.nombre} ${d.apellido ?? ""}`.trim(),
-    detalle: d.empresa,
-  }));
-};
+// Solo mi agenda: vincular es sumar un contacto mío, también en una obra
+// compartida. Estable entre renders porque el <Buscador /> la toma como
+// dependencia.
+const buscarPersonas = (texto: string) => buscarPersonasParaVincular(texto);
 
 export type VinculoPersona = {
   id: string;

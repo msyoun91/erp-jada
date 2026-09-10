@@ -16,6 +16,7 @@ import {
   getTransferencias,
   getUsuarioActualId,
   getUsuariosParaTransferir,
+  getVinculosObra,
 } from "@/modules/obras/queries";
 import { ObraDetalle } from "@/modules/obras/components/ObraDetalle";
 import type { Obra, RolEmpresa, RolPersona, Usuario } from "@/modules/obras/types";
@@ -44,32 +45,50 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
   // Solo se piden si hacen falta: la de usuarios alimenta los paneles de
   // transferencia y de compartir. Las empresas ya no se traen enteras — el
   // panel de vinculación las busca.
-  const [usuarios, referentes, transferencias, compartidos] = await Promise.all([
+  const [usuarios, referentes, transferencias, compartidos, vinculos] = await Promise.all([
     transferir || esMio ? getUsuariosParaTransferir() : Promise.resolve([]),
     referentesPerm ? getReferentes(id) : Promise.resolve([]),
     getTransferencias(id),
     esMio ? getCompartidosObra(id) : Promise.resolve([]),
+    getVinculosObra(id),
   ]);
 
-  const { obras_obra_empresa, obras_obra_persona, responsable, ...datos } = obra;
+  const { responsable, ...datos } = obra;
 
-  const empresas = obras_obra_empresa.map((v) => ({
-    id: v.id,
-    empresa_id: v.obras_empresas?.id ?? "",
-    roles: v.roles as RolEmpresa[],
-    observaciones: v.observaciones,
-    razon_social: v.obras_empresas?.razon_social ?? "—",
-  }));
+  // Quién puede qué sobre cada vínculo:
+  //  - `agregadoPor`: nombre de quien lo sumó, si es un receptor y no soy yo
+  //  - `puedeEditar`: el creador, o el responsable si NO lo sumó un receptor
+  //    (el trigger OB028 lo confirma en la base)
+  //  - `puedeQuitar`: el creador, o el responsable siempre
+  const flags = (v: (typeof vinculos)[number]) => ({
+    agregadoPor: v.es_de_receptor && v.creado_por !== miId ? v.creado_por_nombre : null,
+    puedeEditar: v.creado_por === miId || (esMio && !v.es_de_receptor),
+    puedeQuitar: v.creado_por === miId || esMio,
+  });
 
-  const personas = obras_obra_persona.map((v) => ({
-    id: v.id,
-    persona_id: v.obras_personas?.id ?? "",
-    empresa_id: v.empresa_id,
-    roles: v.roles as RolPersona[],
-    observaciones: v.observaciones,
-    nombre: `${v.obras_personas?.nombre ?? ""} ${v.obras_personas?.apellido ?? ""}`.trim() || "—",
-    empresa: v.obras_empresas?.razon_social ?? null,
-  }));
+  const empresas = vinculos
+    .filter((v) => v.tipo === "empresa")
+    .map((v) => ({
+      id: v.vinculo_id,
+      empresa_id: v.entidad_id,
+      roles: v.roles as RolEmpresa[],
+      observaciones: v.observaciones,
+      razon_social: v.nombre,
+      ...flags(v),
+    }));
+
+  const personas = vinculos
+    .filter((v) => v.tipo === "persona")
+    .map((v) => ({
+      id: v.vinculo_id,
+      persona_id: v.entidad_id,
+      empresa_id: v.empresa_id,
+      roles: v.roles as RolPersona[],
+      observaciones: v.observaciones,
+      nombre: v.nombre,
+      empresa: v.detalle,
+      ...flags(v),
+    }));
 
   return (
     <ObraDetalle
@@ -97,7 +116,10 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
       permisos={{
         editar,
         vincular,
-        referentes: referentesPerm,
+        // El receptor de una obra compartida no ve comisiones (RLS de
+        // obras_obra_referente): sin esto el botón "Marcar referente" queda
+        // muerto en su ficha.
+        referentes: referentesPerm && esMio,
         transferir,
         desactivar,
         crearEmpresa,
