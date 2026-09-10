@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Toaster } from "sonner";
+import { TopLayerToaster } from "@/components/feedback/TopLayerToaster";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,8 +28,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
         />
         {children}
-        {/* En mobile el toaster ocupa el ancho completo y el topbar mide 56px: sin offset lo tapa. */}
-        <Toaster position="top-right" richColors mobileOffset={{ top: "72px" }} />
+        {/* En mobile el toaster ocupa el ancho completo y el topbar mide 56px: sin offset lo tapa.
+            Vive en el top layer (ver TopLayerToaster) para verse sobre los <dialog> de RightPanel/Modal. */}
+        <TopLayerToaster />
       </body>
     </html>
   );

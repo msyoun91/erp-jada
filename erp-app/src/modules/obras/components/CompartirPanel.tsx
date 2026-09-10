@@ -1,19 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import {
   compartirEmpresa,
+  compartirObra,
   compartirPersona,
+  relacionesCompartiblesEmpresa,
+  relacionesCompartiblesObra,
   revocarEmpresa,
+  revocarObra,
   revocarPersona,
 } from "../actions";
-import type { Compartido, Usuario } from "../types";
+import type { Compartido, RelacionCompartible, Usuario } from "../types";
 
-// Compartir es acto del dueño: da lectura de la ficha (contacto incluido, vía
-// obras_ficha_persona que registra). Revocable. No se re-comparte.
+type Tipo = "obra" | "empresa" | "persona";
+
+// Compartir es acto del dueño: da lectura de la ficha, revocable, no se
+// re-comparte. Obra y empresa además ofrecen un checklist de lo vinculado que
+// es mío para compartirlo en el mismo acto; persona va sola.
 export function CompartirPanel({
   tipo,
   id,
@@ -22,7 +29,7 @@ export function CompartirPanel({
   usuarios,
   onClose,
 }: {
-  tipo: "persona" | "empresa";
+  tipo: Tipo;
   id: string;
   nombre: string;
   compartidos: Compartido[];
@@ -32,27 +39,74 @@ export function CompartirPanel({
   const [destino, setDestino] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string>();
+  const [relaciones, setRelaciones] = useState<RelacionCompartible[]>([]);
+  const [tildadas, setTildadas] = useState<Set<string>>(new Set());
 
   const yaCompartida = new Set(compartidos.map((c) => c.usuario_id));
-  const disponibles = usuarios.filter((u) => !yaCompartida.has(u.id));
+  const editando = yaCompartida.has(destino);
+  const conChecklist = tipo === "obra" || tipo === "empresa";
+
+  // El checklist depende del destino: marca lo que ese usuario ya tiene. Sin
+  // reset síncrono — si no hay destino el bloque no se renderiza igual, y el
+  // `cancelado` evita que una respuesta vieja pise a la nueva.
+  useEffect(() => {
+    if (!conChecklist || !destino) return;
+    let cancelado = false;
+    const cargar =
+      tipo === "obra"
+        ? relacionesCompartiblesObra(id, destino)
+        : relacionesCompartiblesEmpresa(id, destino);
+    cargar.then((r) => {
+      if (cancelado) return;
+      setRelaciones(r);
+      setTildadas(new Set(r.filter((x) => x.ya_compartida).map((x) => x.id)));
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, [conChecklist, tipo, id, destino]);
+
+  function toggle(relId: string) {
+    setTildadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(relId)) next.delete(relId);
+      else next.add(relId);
+      return next;
+    });
+  }
 
   async function compartir() {
     if (!destino) return setError("Elegí con quién compartirla");
     setError(undefined);
     setEnviando(true);
-    const result =
-      tipo === "persona"
-        ? await compartirPersona({ id, usuario_id: destino })
-        : await compartirEmpresa({ id, usuario_id: destino });
+
+    const seleccion = [...tildadas];
+    let result;
+    if (tipo === "obra") {
+      result = await compartirObra({
+        id,
+        usuario_id: destino,
+        empresas: relaciones.filter((r) => r.tipo === "empresa" && tildadas.has(r.id)).map((r) => r.id),
+        personas: relaciones.filter((r) => r.tipo === "persona" && tildadas.has(r.id)).map((r) => r.id),
+      });
+    } else if (tipo === "empresa") {
+      result = await compartirEmpresa({ id, usuario_id: destino, personas: seleccion });
+    } else {
+      result = await compartirPersona({ id, usuario_id: destino });
+    }
+
     setEnviando(false);
     if (!result.success) return setError(result.error);
-    toast.success("Compartida");
-    setDestino("");
+    toast.success(editando ? "Cambios guardados" : "Compartida");
   }
 
   async function revocar(usuarioId: string) {
     const result =
-      tipo === "persona" ? await revocarPersona(id, usuarioId) : await revocarEmpresa(id, usuarioId);
+      tipo === "obra"
+        ? await revocarObra(id, usuarioId)
+        : tipo === "empresa"
+          ? await revocarEmpresa(id, usuarioId)
+          : await revocarPersona(id, usuarioId);
     if (!result.success) return toast.error(result.error);
     toast.success("Acceso revocado");
   }
@@ -79,9 +133,10 @@ export function CompartirPanel({
               onChange={(e) => setDestino(e.target.value)}
             >
               <option value="">Elegí un usuario…</option>
-              {disponibles.map((u) => (
+              {usuarios.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.nombre}
+                  {yaCompartida.has(u.id) ? " · ya compartida" : ""}
                 </option>
               ))}
             </select>
@@ -91,11 +146,41 @@ export function CompartirPanel({
               onClick={compartir}
               disabled={enviando}
             >
-              {enviando ? "…" : "Compartir"}
+              {enviando ? "…" : editando ? "Guardar" : "Compartir"}
             </button>
           </div>
+          {editando && (
+            <p className="t-caption mt-1">
+              Ya compartida con esta persona. Ajustá el reparto y guardá.
+            </p>
+          )}
           {error && <p className="input-error-text">{error}</p>}
         </div>
+
+        {conChecklist && destino && relaciones.length > 0 && (
+          <div>
+            <p className="t-label mb-1">Compartir también</p>
+            <p className="t-caption mb-2">
+              Lo vinculado a {tipo === "obra" ? "esta obra" : "esta empresa"} que cargaste vos.
+              Tildado se comparte; destildado se deja de compartir. Todo se revoca junto con{" "}
+              {tipo === "obra" ? "la obra" : "la empresa"}.
+            </p>
+            <ul className="flex flex-col gap-1">
+              {relaciones.map((r) => (
+                <li key={r.id}>
+                  <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
+                    <input type="checkbox" checked={tildadas.has(r.id)} onChange={() => toggle(r.id)} />
+                    <span className="t-body-m truncate">
+                      {r.etiqueta}
+                      <span className="t-caption"> · {r.tipo}</span>
+                      {r.detalle && <span className="t-caption"> · {r.detalle}</span>}
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {compartidos.length > 0 && (
           <div>
@@ -106,7 +191,17 @@ export function CompartirPanel({
                   key={c.usuario_id}
                   className="flex items-center justify-between rounded-md border border-border px-3 py-2"
                 >
-                  <span className="t-body-m truncate">{c.usuario}</span>
+                  {conChecklist ? (
+                    <button
+                      type="button"
+                      className="t-body-m min-w-0 flex-1 truncate text-left hover:underline"
+                      onClick={() => setDestino(c.usuario_id)}
+                    >
+                      {c.usuario}
+                    </button>
+                  ) : (
+                    <span className="t-body-m truncate">{c.usuario}</span>
+                  )}
                   <button
                     type="button"
                     className="btn-ghost text-tertiary tap-target"

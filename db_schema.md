@@ -479,13 +479,22 @@ Log de cambios de dueño: `tipo` (`obra`\|`persona`\|`empresa`, `sql/041`), `obr
 
 Sin `activo`: es un log, la fila significa "esto pasó". El trigger de notificación solo dispara para `tipo = 'obra'`.
 
-### obras_persona_compartida / obras_empresa_compartida / obras_persona_grant_contextual (`sql/039`)
+### obras_obra_compartida / obras_persona_compartida / obras_empresa_compartida / obras_persona_grant_contextual
 
-Grants que otorga el dueño. Las dos "compartida": `(persona_id|empresa_id, usuario_id, otorgada_por, activo)`, UNIQUE **entero** por par (re-compartir revive la fila, no inserta otra), CHECK `usuario_id <> otorgada_por`. Dan lectura de la ficha completa (contacto incluido, vía `obras_ficha_persona`).
+Grants que otorga el dueño. Las tres "compartida": `(obra_id|persona_id|empresa_id, usuario_id, otorgada_por, activo)`, UNIQUE **entero** por par (re-compartir revive la fila, no inserta otra), CHECK `usuario_id <> otorgada_por`. Dan lectura de la ficha completa (contacto incluido, vía `obras_ficha_persona`), sin editar, revocable.
+
+- `obras_obra_compartida` (`sql/047`): compartir una obra sin mover `responsable_id`. El receptor la ve en su agenda y ve sus vínculos (`obras_puede_ver_obra` suma la rama). `obras_select` y `obras_puede_ver_obra` califican `obras.id` en el EXISTS — la columna `id` de la tabla de grant la sombrea.
+- `obras_persona_compartida` / `obras_empresa_compartida` ganan `origen_obra_id` / `origen_empresa_id` (nullable, `sql/047`): marca "este grant nació de tildar la relación en el checklist de compartir ese padre". Compartir por checklist setea el origen al padre; compartir directo lo limpia (última escritura gana). `obras_revocar_obra` / `_empresa` usan el origen para la cascada: revocar el padre desactiva los grants hijos con ese origen.
+- **Bug preexistente arreglado en `sql/047`**: `obras_empresas_select` (sql/039) tenía el EXISTS como `c.empresa_id = c.id` (mismo sombreado de `id`), así que `obras_compartir_empresa` nunca dio visibilidad real. Ningún test lo ejercía — model_a solo probó compartir persona.
 
 `obras_persona_grant_contextual`: `(persona_id, usuario_id, obra_id XOR empresa_id, otorgada_por, activo)`, unique parcial por ancla. El contacto se ve solo desde esa ficha (`obras_ficha_persona(p_persona_id, 'obra'|'empresa', ctx_id)`); muere con el vínculo, validado en vivo por `obras_persona_grant_ctx_vigente`.
 
-RLS: solo SELECT para `authenticated` (dueño o receptor). La escritura pasa por `obras_compartir_*` / `obras_revocar_*` / `obras_transferir*` (DEFINER, exigen `creado_por`).
+RLS: solo SELECT para `authenticated` (dueño o receptor). La escritura pasa por `obras_compartir_*` / `obras_revocar_*` / `obras_transferir*` (DEFINER, exigen `creado_por` / `responsable_id`).
+
+Checklists y vista: `obras_relaciones_compartibles_obra/_empresa(entidad, usuario)` → identidad mínima de lo mío vinculado + `ya_compartida`. `obras_compartidos_por_mi()` (DEFINER, gate `obras_compartido`) → todo lo que compartí, con quién y de qué origen, tope 500.
+
+- **Bug arreglado en `sql/048`**: `obras_relaciones_compartibles_obra/_empresa` (sql/047) declaran `RETURNS TABLE (..., id uuid, ...)`, así que `id` es variable plpgsql y el guard `SELECT 1 FROM obras WHERE id = p_obra_id` tiraba `42702` (ambiguo) al planear — la RPC fallaba siempre y el checklist "Compartir también" del panel nunca se poblaba. Fix: calificar la columna (`o.id` / `e.id`). Test `sql/tests/obras_047.sql` sumó casos 10-11.
+- **`sql/049` — checklist = estado deseado**: `obras_compartir_obra/_empresa` re-llamadas con un usuario que ya tiene la entidad también desactivan la cascada de ese padre (`origen_* = padre`, `otorgada_por = auth.uid()`) que quedó fuera del array. Ajusta el reparto sin revocar. Grant directo (origen NULL) o de otro padre intacto; array vacío apaga toda la cascada de ese padre. Test: `sql/tests/obras_049.sql`, 4/4.
 
 ### obras_accesos_persona
 
@@ -580,6 +589,9 @@ Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían c
 | `OB017` | `obras_resolver_pendiente` | ya resuelta o inexistente |
 | `OB018` | `obras_personas_de_empresa` | sin permiso para vincular |
 | `OB019` | `obras_guard_congelado` | marcar referente a alguien que no se ve: el vínculo tiene que existir y estar autorizado |
+| `OB020`–`OB025` | compartir / transferir persona-empresa (`sql/039`, `sql/041`) | dueño, autocompartir, usuario inexistente, sin permiso, entidad inexistente |
+| `OB026` | `obras_compartir_obra` · `obras_revocar_obra` · `obras_relaciones_compartibles_obra` (`sql/047`) | solo el responsable de la obra comparte o revoca |
+| `OB027` | `obras_compartidos_por_mi` (`sql/047`) | sin acceso a la vista Compartido |
 
 `mensajeError()` devuelve el texto de la base cuando el código matchea `/^OB\d{3}$/`, y cae en el mapa o en el genérico para todo lo demás. No se copió el mapa código → texto de `tareas` porque `OB001` y `OB002` llevan un conteo que un texto fijo perdería. La lista blanca es por código, no por confiar en el mensaje: un `P0001` nuevo sigue cayendo en el genérico. Ver `decisiones/obras.md`.
 
@@ -668,6 +680,7 @@ Verificado: `has_function_privilege('anon', ...)` da `false` en las 18.
 | obras_personas | vista | — | |
 | obras_auditoria | vista | — | los dos logs. Aparte de `obras_personas_todas`: ese permiso es ver la agenda completa, este es ver quién la estuvo mirando |
 | obras_pendientes | vista | — | la cola de autorizaciones y su historial (`sql/033`) |
+| obras_compartido | vista | — | `sql/047` — lo que uno compartió, con revocar. Solo datos propios, bajo riesgo; sigue el patrón tab = submódulo. Compartir/revocar no tienen gate propio: son acto del dueño, como ya era `obras_compartir_persona` |
 | obras_crear | funcion | obras_ver | |
 | obras_editar | funcion | obras_ver | solo sobre obras propias |
 | obras_vincular | funcion | obras_ver | obra↔empresa y obra↔persona, con sus roles |

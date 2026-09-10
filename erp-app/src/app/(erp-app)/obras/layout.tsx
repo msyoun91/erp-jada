@@ -4,6 +4,7 @@ import { ModuleTabs } from "@/components/layout/ModuleTabs";
 import { BuscadorGlobal } from "@/modules/obras/components/BuscadorGlobal";
 import {
   puedeVerAuditoria,
+  puedeVerCompartido,
   puedeVerEmpresas,
   puedeVerObras,
   puedeVerPendientes,
@@ -11,12 +12,13 @@ import {
 } from "@/modules/obras/permissions";
 
 export default async function ObrasLayout({ children }: { children: React.ReactNode }) {
-  const [obras, empresas, personas, pendientes, auditoria] = await Promise.all([
+  const [obras, empresas, personas, pendientes, auditoria, compartido] = await Promise.all([
     puedeVerObras(),
     puedeVerEmpresas(),
     puedeVerPersonas(),
     puedeVerPendientes(),
     puedeVerAuditoria(),
+    puedeVerCompartido(),
   ]);
 
   const tabs = [
@@ -25,6 +27,7 @@ export default async function ObrasLayout({ children }: { children: React.ReactN
     personas && { codigo: "obras_personas", label: "Personas", href: "/obras/personas" },
     pendientes && { codigo: "obras_pendientes", label: "Pendientes", href: "/obras/pendientes" },
     auditoria && { codigo: "obras_auditoria", label: "Auditoría", href: "/obras/auditoria" },
+    compartido && { codigo: "obras_compartido", label: "Compartido", href: "/obras/compartido" },
   ].filter((t): t is { codigo: string; label: string; href: string } => Boolean(t));
 
   return (

@@ -199,3 +199,16 @@
     .tap-target { min-height: 44px; }
   }
 }
+
+/* El <ol> de sonner se abre como popover (ver TopLayerToaster) para vivir en
+   el top layer. Sin layer, para ganarle a las UA popover styles que si no
+   pintan borde/fondo/padding y un inset:0 que estira el <ol>. El top/right
+   los sigue poniendo sonner. */
+[data-sonner-toaster][popover] {
+  inset: auto;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  overflow: visible;
+}

@@ -177,6 +177,7 @@ export type Database = {
           created_at: string;
           empresa_id: string;
           id: string;
+          origen_obra_id: string | null;
           otorgada_por: string;
           updated_at: string;
           usuario_id: string;
@@ -186,6 +187,7 @@ export type Database = {
           created_at?: string;
           empresa_id: string;
           id?: string;
+          origen_obra_id?: string | null;
           otorgada_por: string;
           updated_at?: string;
           usuario_id: string;
@@ -195,6 +197,7 @@ export type Database = {
           created_at?: string;
           empresa_id?: string;
           id?: string;
+          origen_obra_id?: string | null;
           otorgada_por?: string;
           updated_at?: string;
           usuario_id?: string;
@@ -205,6 +208,13 @@ export type Database = {
             columns: ["empresa_id"];
             isOneToOne: false;
             referencedRelation: "obras_empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "obras_empresa_compartida_origen_obra_id_fkey";
+            columns: ["origen_obra_id"];
+            isOneToOne: false;
+            referencedRelation: "obras";
             referencedColumns: ["id"];
           },
           {
@@ -288,6 +298,58 @@ export type Database = {
           {
             foreignKeyName: "obras_empresas_creado_por_fkey";
             columns: ["creado_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      obras_obra_compartida: {
+        Row: {
+          activo: boolean | null;
+          created_at: string | null;
+          id: string;
+          obra_id: string;
+          otorgada_por: string;
+          updated_at: string | null;
+          usuario_id: string;
+        };
+        Insert: {
+          activo?: boolean | null;
+          created_at?: string | null;
+          id?: string;
+          obra_id: string;
+          otorgada_por: string;
+          updated_at?: string | null;
+          usuario_id: string;
+        };
+        Update: {
+          activo?: boolean | null;
+          created_at?: string | null;
+          id?: string;
+          obra_id?: string;
+          otorgada_por?: string;
+          updated_at?: string | null;
+          usuario_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "obras_obra_compartida_obra_id_fkey";
+            columns: ["obra_id"];
+            isOneToOne: false;
+            referencedRelation: "obras";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "obras_obra_compartida_otorgada_por_fkey";
+            columns: ["otorgada_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "obras_obra_compartida_usuario_id_fkey";
+            columns: ["usuario_id"];
             isOneToOne: false;
             referencedRelation: "usuarios";
             referencedColumns: ["id"];
@@ -453,6 +515,8 @@ export type Database = {
           activo: boolean;
           created_at: string;
           id: string;
+          origen_empresa_id: string | null;
+          origen_obra_id: string | null;
           otorgada_por: string;
           persona_id: string;
           updated_at: string;
@@ -462,6 +526,8 @@ export type Database = {
           activo?: boolean;
           created_at?: string;
           id?: string;
+          origen_empresa_id?: string | null;
+          origen_obra_id?: string | null;
           otorgada_por: string;
           persona_id: string;
           updated_at?: string;
@@ -471,12 +537,28 @@ export type Database = {
           activo?: boolean;
           created_at?: string;
           id?: string;
+          origen_empresa_id?: string | null;
+          origen_obra_id?: string | null;
           otorgada_por?: string;
           persona_id?: string;
           updated_at?: string;
           usuario_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "obras_persona_compartida_origen_empresa_id_fkey";
+            columns: ["origen_empresa_id"];
+            isOneToOne: false;
+            referencedRelation: "obras_empresas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "obras_persona_compartida_origen_obra_id_fkey";
+            columns: ["origen_obra_id"];
+            isOneToOne: false;
+            referencedRelation: "obras";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "obras_persona_compartida_otorgada_por_fkey";
             columns: ["otorgada_por"];
@@ -1643,6 +1725,7 @@ export type Database = {
         Args: { p_dias?: number };
         Returns: {
           acceso_id: string;
+          contexto: string;
           created_at: string;
           persona: string;
           persona_id: string;
@@ -1753,8 +1836,33 @@ export type Database = {
           titulo: string;
         }[];
       };
+      obras_compartidos_por_mi: {
+        Args: never;
+        Returns: {
+          compartida_el: string;
+          entidad_id: string;
+          entidad_nombre: string;
+          origen: string;
+          tipo: string;
+          usuario_id: string;
+          usuario_nombre: string;
+        }[];
+      };
       obras_compartir_empresa: {
-        Args: { p_empresa_id: string; p_usuario_id: string };
+        Args: {
+          p_empresa_id: string;
+          p_personas?: string[];
+          p_usuario_id: string;
+        };
+        Returns: undefined;
+      };
+      obras_compartir_obra: {
+        Args: {
+          p_empresas?: string[];
+          p_obra_id: string;
+          p_personas?: string[];
+          p_usuario_id: string;
+        };
         Returns: undefined;
       };
       obras_compartir_persona: {
@@ -1865,6 +1973,26 @@ export type Database = {
         Args: { p_persona_id: string };
         Returns: boolean;
       };
+      obras_relaciones_compartibles_empresa: {
+        Args: { p_empresa_id: string; p_usuario_id: string };
+        Returns: {
+          detalle: string;
+          etiqueta: string;
+          id: string;
+          tipo: string;
+          ya_compartida: boolean;
+        }[];
+      };
+      obras_relaciones_compartibles_obra: {
+        Args: { p_obra_id: string; p_usuario_id: string };
+        Returns: {
+          detalle: string;
+          etiqueta: string;
+          id: string;
+          tipo: string;
+          ya_compartida: boolean;
+        }[];
+      };
       obras_resolver_pendiente: {
         Args: {
           p_aprobar: boolean;
@@ -1876,6 +2004,10 @@ export type Database = {
       };
       obras_revocar_empresa: {
         Args: { p_empresa_id: string; p_usuario_id: string };
+        Returns: undefined;
+      };
+      obras_revocar_obra: {
+        Args: { p_obra_id: string; p_usuario_id: string };
         Returns: undefined;
       };
       obras_revocar_persona: {
@@ -2198,7 +2330,14 @@ export const Constants = {
   public: {
     Enums: {
       estado_hilo: ["abierto", "cerrado"],
-      estado_obra: ["idea", "en_cotizacion", "en_ejecucion", "en_postventa", "perdida", "terminada"],
+      estado_obra: [
+        "idea",
+        "en_cotizacion",
+        "en_ejecucion",
+        "en_postventa",
+        "perdida",
+        "terminada",
+      ],
       estado_tarea: ["pendiente", "en_progreso", "completada", "cancelada"],
       modo_completado: ["manual", "automatico", "hibrido"],
       motivo_perdida: [

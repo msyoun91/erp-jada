@@ -8,6 +8,8 @@ import {
   getEmpresas,
   getContactosExclusivosObra,
   getContactosExclusivosEmpresa,
+  getRelacionesCompartiblesObra,
+  getRelacionesCompartiblesEmpresa,
 } from "./queries";
 import {
   crearObraSchema,
@@ -24,6 +26,8 @@ import {
   transferirPersonaSchema,
   transferirEmpresaSchema,
   compartirSchema,
+  compartirObraSchema,
+  compartirEmpresaSchema,
   resolverPendienteSchema,
   type CrearObraForm,
   type EditarObraForm,
@@ -39,6 +43,8 @@ import {
   type TransferirPersonaForm,
   type TransferirEmpresaForm,
   type CompartirForm,
+  type CompartirObraForm,
+  type CompartirEmpresaForm,
   type ResolverPendienteForm,
   type PersonaDeEmpresa,
   type SimilarPendiente,
@@ -220,6 +226,7 @@ export async function compartirPersona(input: CompartirForm) {
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath(`/obras/personas/${parsed.data.id}`);
+  revalidatePath("/obras/compartido");
   return { success: true as const };
 }
 
@@ -233,11 +240,12 @@ export async function revocarPersona(personaId: string, usuarioId: string) {
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath(`/obras/personas/${personaId}`);
+  revalidatePath("/obras/compartido");
   return { success: true as const };
 }
 
-export async function compartirEmpresa(input: CompartirForm) {
-  const parsed = compartirSchema.safeParse(input);
+export async function compartirEmpresa(input: CompartirEmpresaForm) {
+  const parsed = compartirEmpresaSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false as const, error: parsed.error.issues[0].message };
   }
@@ -246,11 +254,13 @@ export async function compartirEmpresa(input: CompartirForm) {
   const { error } = await supabase.rpc("obras_compartir_empresa", {
     p_empresa_id: parsed.data.id,
     p_usuario_id: parsed.data.usuario_id,
+    p_personas: parsed.data.personas,
   });
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath(`/obras/empresas/${parsed.data.id}`);
+  revalidatePath("/obras/compartido");
   return { success: true as const };
 }
 
@@ -264,17 +274,61 @@ export async function revocarEmpresa(empresaId: string, usuarioId: string) {
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath(`/obras/empresas/${empresaId}`);
+  revalidatePath("/obras/compartido");
   return { success: true as const };
 }
 
-// Lecturas que un componente cliente necesita antes de transferir: el checklist
-// de contactos exclusivos. Van como actions porque las llama el panel.
+export async function compartirObra(input: CompartirObraForm) {
+  const parsed = compartirObraSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("obras_compartir_obra", {
+    p_obra_id: parsed.data.id,
+    p_usuario_id: parsed.data.usuario_id,
+    p_empresas: parsed.data.empresas,
+    p_personas: parsed.data.personas,
+  });
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath(`/obras/${parsed.data.id}`);
+  revalidatePath("/obras/compartido");
+  return { success: true as const };
+}
+
+export async function revocarObra(obraId: string, usuarioId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("obras_revocar_obra", {
+    p_obra_id: obraId,
+    p_usuario_id: usuarioId,
+  });
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath(`/obras/${obraId}`);
+  revalidatePath("/obras/compartido");
+  return { success: true as const };
+}
+
+// Lecturas que un componente cliente necesita antes de transferir o compartir:
+// los checklists. Van como actions porque las llama el panel.
 export async function contactosExclusivosObra(obraId: string) {
   return getContactosExclusivosObra(obraId);
 }
 
 export async function contactosExclusivosEmpresa(empresaId: string) {
   return getContactosExclusivosEmpresa(empresaId);
+}
+
+export async function relacionesCompartiblesObra(obraId: string, usuarioId: string) {
+  return getRelacionesCompartiblesObra(obraId, usuarioId);
+}
+
+export async function relacionesCompartiblesEmpresa(empresaId: string, usuarioId: string) {
+  return getRelacionesCompartiblesEmpresa(empresaId, usuarioId);
 }
 
 export async function crearEmpresa(input: CrearEmpresaForm) {

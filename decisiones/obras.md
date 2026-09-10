@@ -39,6 +39,70 @@ Clases de error nuevas: `OB020`–`OB025` (lista blanca `mensajeError`, texto pa
 
 ---
 
+## Compartir con checklist y cascada de revocación (`sql/047`)
+
+Pedido del usuario, sobre el modelo de *MODEL A*. Tres cosas:
+
+**1. Compartir obra.** Antes la obra solo se transfería. `obras_obra_compartida` +
+`obras_compartir_obra` / `obras_revocar_obra` le dan lo mismo que persona y empresa: lectura sin
+mover `responsable_id`, revocable. `obras_select` y `obras_puede_ver_obra` suman la rama. El
+receptor ve la obra y sus vínculos; el contacto de las personas sigue pasando por
+`obras_ficha_persona()`, y solo abre la ficha completa de las que además recibieron su propio
+grant (las tildadas). **Consecuencia sobre la comisión:** un receptor con `obras_referentes` ve
+los referentes de la obra compartida — el dueño optó por compartirla, y el permiso sigue siendo
+la barrera. Si molesta, se acota `obras_obra_referente_select`; hoy no.
+
+**2. Checklist al compartir.** `obras_compartir_obra(obra, usuario, empresas[], personas[])` y
+`obras_compartir_empresa(empresa, usuario, personas[])` — lo tildado, que tiene que ser **mío** y
+estar vinculado, recibe su propio grant completo. Persona no lleva checklist: sus únicas
+relaciones son empresas y el usuario la quiere compartir sola. Los checklists los sirve
+`obras_relaciones_compartibles_obra/_empresa` (DEFINER, identidad mínima, `ya_compartida`).
+
+**3. Cascada por origen.** `obras_empresa_compartida` / `obras_persona_compartida` ganan
+`origen_obra_id` / `origen_empresa_id` nullable. **Última escritura gana:** compartir por
+checklist setea el origen al padre (pisa lo que hubiera); compartir directo lo limpia. Revocar el
+padre desactiva solo los grants con ese `origen_*` y `otorgada_por = auth.uid()` — un grant
+directo, o colgado de otro padre, sobrevive.
+
+**Bug preexistente arreglado acá.** `obras_empresas_select` (sql/039) tenía el EXISTS como
+`c.empresa_id = c.id`: la columna `id` de `obras_empresa_compartida` sombrea `obras_empresas.id`,
+así que comparaba la fila del grant contra sí misma. `obras_compartir_empresa` escribía la fila y
+el receptor nunca veía la empresa. Ningún test lo cazó porque `obras_model_a.sql` solo probó
+compartir **persona** (que pasa por `obras_puede_ver_persona`, DEFINER, sin sombreado). Mismo
+sombreado evitado en `obras_select` de `sql/047` (`obras.id` calificado).
+
+**Vista Compartido** (`obras_compartido`, tab). `obras_compartidos_por_mi()` — DEFINER como las
+de Auditoría (los JOIN tienen que resolver aunque un nombre quede fuera de la RLS del que
+pregunta), gate propio, tope 500. Muestra qué compartí, con quién y de qué origen. Compartir y
+revocar no son submódulos: son acto del dueño, igual que ya era `obras_compartir_persona`. "Solo
+lo que compartí", no "lo que me compartieron" — eso último, si alguien lo pide.
+
+Clases de error nuevas: `OB026` (solo el responsable comparte/revoca la obra), `OB027` (sin
+acceso a la vista Compartido).
+
+Test: `sql/tests/obras_047.sql`, 11/11 (los casos 10-11 son la regresión de `sql/048`).
+
+**Bug que vale recordar (`sql/048`): el OUT param `id` de un `RETURNS TABLE` sombrea la
+columna.** `obras_relaciones_compartibles_obra/_empresa` devuelven `(tipo, id, etiqueta, …)`, así
+que dentro del cuerpo `id` es la variable plpgsql. El guard `IF NOT EXISTS (SELECT 1 FROM obras
+WHERE id = p_obra_id …)` es ambiguo (`42702`) y aborta la función entera al planear — no en la
+fila, en la primera llamada. La RPC fallaba siempre, `getRelacionesCompartibles*` tiraba, la
+action rechazaba, y el `.then()` del panel nunca corría: el bloque "Compartir también" quedaba
+invisible con datos válidos detrás. Los 9 casos de `obras_047.sql` no ejercían estas dos
+funciones. **Regla:** en una función con `RETURNS TABLE`, toda referencia a una columna que
+comparte nombre con un campo de salida va calificada por tabla/alias.
+
+**Compartir editable (`sql/049`).** El checklist pasó de "agregar" a **estado deseado**:
+`obras_compartir_obra` / `obras_compartir_empresa` re-llamadas con un usuario que ya tiene la
+obra/empresa ahora también **desactivan** la cascada de ese padre que quedó destildada
+(`origen_* = padre`, `otorgada_por = auth.uid()`). Deja ajustar el reparto —sacar una empresa,
+sumar una persona— sin revocar y volver a compartir. Un grant directo (`origen` NULL) o colgado
+de otro padre no se toca, igual que en `obras_revocar_*`. Array vacío = se apaga toda la cascada
+de ese padre. El alta inicial no cambia: no hay grants de origen que apagar. El panel abre este
+modo al clickear un usuario de "Compartida con". Test: `sql/tests/obras_049.sql`, 4/4.
+
+---
+
 ## Nombre: nada de CRM
 
 La spec prohíbe explícitamente "CRM", "Comercial", "Prospectos" y "Oportunidades" como nombre visible. El módulo administra el universo de obras y sus relaciones, no un pipeline de ventas. `modulo = 'obras'` cumple.

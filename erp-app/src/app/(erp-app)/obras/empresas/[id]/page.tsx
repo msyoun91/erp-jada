@@ -60,7 +60,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
       esMio={esMio}
       veTodas={veTodas}
       compartidos={compartidos}
-      usuarios={usuarios}
+      usuarios={usuarios.filter((u) => u.id !== miId)}
     />
   );
 }

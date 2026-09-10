@@ -126,7 +126,7 @@ export default async function PersonaPage({
       esMio={esMio}
       veTodas={veTodas}
       compartidos={compartidos}
-      usuarios={usuarios}
+      usuarios={usuarios.filter((u) => u.id !== miId)}
     />
   );
 }

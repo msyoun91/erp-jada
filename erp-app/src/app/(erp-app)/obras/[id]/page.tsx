@@ -10,9 +10,11 @@ import {
   puedeVincular,
 } from "@/modules/obras/permissions";
 import {
+  getCompartidosObra,
   getObra,
   getReferentes,
   getTransferencias,
+  getUsuarioActualId,
   getUsuariosParaTransferir,
 } from "@/modules/obras/queries";
 import { ObraDetalle } from "@/modules/obras/components/ObraDetalle";
@@ -36,13 +38,17 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
       puedeCrearPersona(),
     ]);
 
-  // Solo se piden si hacen falta: la de usuarios alimenta el panel de
-  // transferencia. Las empresas ya no se traen enteras — el panel de
-  // vinculación las busca.
-  const [usuarios, referentes, transferencias] = await Promise.all([
-    transferir ? getUsuariosParaTransferir() : Promise.resolve([]),
+  const miId = await getUsuarioActualId();
+  const esMio = !!miId && obra.responsable_id === miId;
+
+  // Solo se piden si hacen falta: la de usuarios alimenta los paneles de
+  // transferencia y de compartir. Las empresas ya no se traen enteras — el
+  // panel de vinculación las busca.
+  const [usuarios, referentes, transferencias, compartidos] = await Promise.all([
+    transferir || esMio ? getUsuariosParaTransferir() : Promise.resolve([]),
     referentesPerm ? getReferentes(id) : Promise.resolve([]),
     getTransferencias(id),
+    esMio ? getCompartidosObra(id) : Promise.resolve([]),
   ]);
 
   const { obras_obra_empresa, obras_obra_persona, responsable, ...datos } = obra;
@@ -85,7 +91,9 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
         de: t.de?.nombre ?? "—",
         a: t.a?.nombre ?? "—",
       }))}
-      usuarios={usuarios}
+      usuarios={usuarios.filter((u) => u.id !== miId)}
+      esMio={esMio}
+      compartidos={compartidos}
       permisos={{
         editar,
         vincular,

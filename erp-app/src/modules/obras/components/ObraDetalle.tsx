@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Archive, BadgePercent, Link2, Pencil, Plus, Unlink, UserRoundCog } from "lucide-react";
+import {
+  Archive,
+  BadgePercent,
+  Link2,
+  Pencil,
+  Plus,
+  Share2,
+  Unlink,
+  UserRoundCog,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
@@ -23,10 +32,12 @@ import {
   LABEL_ROL_EMPRESA,
   LABEL_ROL_PERSONA,
   LABEL_TIPO,
+  type Compartido,
   type Obra,
   type Usuario,
 } from "../types";
 import { Breadcrumb } from "./Breadcrumb";
+import { CompartirPanel } from "./CompartirPanel";
 import { EstadoPendiente } from "./EstadoPendiente";
 import { ObraFormPanel } from "./ObraFormPanel";
 import { ReferentePanel } from "./ReferentePanel";
@@ -79,6 +90,8 @@ export function ObraDetalle({
   referentes,
   transferencias,
   usuarios,
+  esMio,
+  compartidos,
   permisos,
 }: {
   obra: Obra;
@@ -88,6 +101,8 @@ export function ObraDetalle({
   referentes: ReferenteVista[];
   transferencias: TransferenciaVista[];
   usuarios: Usuario[];
+  esMio: boolean;
+  compartidos: Compartido[];
   permisos: Permisos;
 }) {
   const [editando, setEditando] = useState(false);
@@ -95,6 +110,7 @@ export function ObraDetalle({
   const [vinculandoPersona, setVinculandoPersona] = useState<VinculoPersona | true | null>(null);
   const [editandoReferente, setEditandoReferente] = useState<ReferenteVista | true | null>(null);
   const [transfiriendo, setTransfiriendo] = useState(false);
+  const [compartiendo, setCompartiendo] = useState(false);
   const [confirmando, setConfirmando] = useState<Confirmacion | null>(null);
 
   const comisionPorPersona = new Map(referentes.map((r) => [r.persona_id, r]));
@@ -137,6 +153,15 @@ export function ObraDetalle({
                 icon: <Link2 size={14} strokeWidth={1.75} />,
                 onClick: () => copiarEnlace(`/obras/${obra.id}`),
               },
+              ...(esMio
+                ? [
+                    {
+                      label: "Compartir",
+                      icon: <Share2 size={14} strokeWidth={1.75} />,
+                      onClick: () => setCompartiendo(true),
+                    },
+                  ]
+                : []),
               ...(permisos.transferir
                 ? [
                     {
@@ -402,6 +427,17 @@ export function ObraDetalle({
           responsableActual={responsable?.nombre ?? null}
           usuarios={usuarios}
           onClose={() => setTransfiriendo(false)}
+        />
+      )}
+
+      {compartiendo && (
+        <CompartirPanel
+          tipo="obra"
+          id={obra.id}
+          nombre={obra.nombre}
+          compartidos={compartidos}
+          usuarios={usuarios}
+          onClose={() => setCompartiendo(false)}
         />
       )}
 

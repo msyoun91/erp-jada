@@ -409,14 +409,28 @@ export const transferirEmpresaSchema = z.object({
 
 export type TransferirEmpresaForm = z.input<typeof transferirEmpresaSchema>;
 
-// Compartir una persona o empresa con otro usuario. Lo inicia el dueño; la
-// verificación real está en obras_compartir_persona / _empresa.
+// Compartir con otro usuario. Lo inicia el dueño; la verificación real está en
+// obras_compartir_*. Persona va sola; obra y empresa arrastran las relaciones
+// mías que se tilden en el checklist.
 export const compartirSchema = z.object({
   id: z.string().uuid(),
   usuario_id: z.string().uuid(),
 });
 
 export type CompartirForm = z.input<typeof compartirSchema>;
+
+export const compartirObraSchema = compartirSchema.extend({
+  empresas: z.array(z.string().uuid()).default([]),
+  personas: z.array(z.string().uuid()).default([]),
+});
+
+export type CompartirObraForm = z.input<typeof compartirObraSchema>;
+
+export const compartirEmpresaSchema = compartirSchema.extend({
+  personas: z.array(z.string().uuid()).default([]),
+});
+
+export type CompartirEmpresaForm = z.input<typeof compartirEmpresaSchema>;
 
 // Lo que devuelve `obras_contactos_exclusivos_de_*`: identidad mínima de lo
 // vinculado solo a esa obra/empresa, para el checklist de confirmación.
@@ -427,11 +441,32 @@ export type ContactoExclusivo = {
   detalle: string | null;
 };
 
+// `obras_relaciones_compartibles_*`: identidad mínima de lo vinculado que es
+// mío, para el checklist al compartir. `ya_compartida` viene tildada.
+export type RelacionCompartible = {
+  tipo: "persona" | "empresa";
+  id: string;
+  etiqueta: string;
+  detalle: string | null;
+  ya_compartida: boolean;
+};
+
 // Con quién está compartida una ficha (persona o empresa).
 export type Compartido = {
   usuario_id: string;
   usuario: string;
   created_at: string;
+};
+
+// Una fila de la vista Compartido: qué compartí, con quién y de qué origen.
+export type CompartidoRow = {
+  tipo: "obra" | "empresa" | "persona";
+  entidad_id: string;
+  entidad_nombre: string;
+  usuario_id: string;
+  usuario_nombre: string;
+  origen: string;
+  compartida_el: string;
 };
 
 // Alcance del listado. Solo surte efecto para quien tiene el permiso `_todas`

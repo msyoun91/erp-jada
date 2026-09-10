@@ -83,6 +83,13 @@ export function puedeVerPendientes() {
   return tienePermiso("obras_pendientes");
 }
 
+// Vista Compartido: lo que uno compartió, con revocar. Solo muestra datos
+// propios, así que es una puerta de bajo riesgo — pero sigue el patrón de
+// tab = submódulo.
+export function puedeVerCompartido() {
+  return tienePermiso("obras_compartido");
+}
+
 // Es el "administrador" de los pedidos del usuario: el sistema no tiene roles,
 // así que autorizar altas y vínculos es un submódulo más.
 export function puedeAprobar() {

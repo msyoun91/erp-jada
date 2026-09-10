@@ -9,6 +9,7 @@ import type {
   AccesoAuditoria,
   Alcance,
   Compartido,
+  CompartidoRow,
   ContactoExclusivo,
   Empresa,
   FiltrosObras,
@@ -17,6 +18,7 @@ import type {
   ObraListado,
   Pendiente,
   PersonaListado,
+  RelacionCompartible,
   TransferenciaAuditoria,
   Usuario,
 } from "./types";
@@ -54,7 +56,12 @@ export async function getObras(filtros: FiltrosObras = {}): Promise<ObraListado[
   if (!verTodos) {
     const me = await getUsuarioActualId();
     if (!me) return [];
-    query = query.eq("responsable_id", me);
+    // Por default el listado muestra lo propio + lo que me compartieron (la RLS
+    // ya deja ver ambas; esto es solo el recorte de UI).
+    const compartidas = await obraIdsCompartidasConmigo(me);
+    query = compartidas.length
+      ? query.or(`responsable_id.eq.${me},id.in.(${compartidas.join(",")})`)
+      : query.eq("responsable_id", me);
   }
 
   if (filtros.nombre) query = query.ilike("nombre", `%${filtros.nombre}%`);
@@ -114,6 +121,17 @@ async function obraIdsPorRelacion(filtros: FiltrosObras): Promise<string[] | nul
   }
 
   return listas.reduce((a, b) => a.filter((id) => b.includes(id)));
+}
+
+async function obraIdsCompartidasConmigo(me: string): Promise<string[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("obras_obra_compartida")
+    .select("obra_id")
+    .eq("usuario_id", me)
+    .eq("activo", true);
+  if (error) throw error;
+  return (data ?? []).map((r) => r.obra_id);
 }
 
 export async function getObra(id: string) {
@@ -352,6 +370,34 @@ export async function getCompartidosEmpresa(empresaId: string): Promise<Comparti
   }));
 }
 
+export async function getCompartidosObra(obraId: string): Promise<Compartido[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("obras_obra_compartida")
+    .select("usuario_id, created_at, usuario:usuario_id(nombre)")
+    .eq("obra_id", obraId)
+    .eq("activo", true)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    usuario_id: r.usuario_id,
+    usuario: (r.usuario as { nombre: string } | null)?.nombre ?? "—",
+    created_at: r.created_at ?? "",
+  }));
+}
+
+// Todo lo que compartí, para la vista Compartido. Por función: los JOIN a
+// obras/empresas/personas/usuarios tienen que resolver aunque no vea alguna
+// fila por RLS.
+export async function getCompartidosPorMi(): Promise<CompartidoRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("obras_compartidos_por_mi");
+  if (error) throw error;
+  return (data ?? []) as CompartidoRow[];
+}
+
 // Lo vinculado solo a esta obra/empresa que el dueño saliente posee: el
 // checklist de confirmación de la transferencia.
 export async function getContactosExclusivosObra(obraId: string): Promise<ContactoExclusivo[]> {
@@ -374,6 +420,36 @@ export async function getContactosExclusivosEmpresa(
   });
   if (error) throw error;
   return (data ?? []) as ContactoExclusivo[];
+}
+
+// Lo vinculado que es mío y puedo compartir junto con la obra/empresa. Depende
+// del usuario destino: marca lo que ya tiene.
+export async function getRelacionesCompartiblesObra(
+  obraId: string,
+  usuarioId: string,
+): Promise<RelacionCompartible[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_relaciones_compartibles_obra", {
+    p_obra_id: obraId,
+    p_usuario_id: usuarioId,
+  });
+  if (error) throw error;
+  return (data ?? []) as RelacionCompartible[];
+}
+
+export async function getRelacionesCompartiblesEmpresa(
+  empresaId: string,
+  usuarioId: string,
+): Promise<RelacionCompartible[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_relaciones_compartibles_empresa", {
+    p_empresa_id: empresaId,
+    p_usuario_id: usuarioId,
+  });
+  if (error) throw error;
+  return (data ?? []) as RelacionCompartible[];
 }
 
 // Los dos logs de la vista de Auditoría. Van por función y no por select

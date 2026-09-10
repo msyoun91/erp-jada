@@ -43,6 +43,8 @@ backdrop tapa al anterior. Sin z-index ni clase nueva.
 
 **`hayCambios` en `RightPanel` y `Modal`: cerrar por backdrop, Escape o X pregunta antes de descartar.** Un click al costado borraba un formulario a medio llenar sin aviso. Se conecta con `formState.isDirty` de RHF en los siete paneles con form, y con `nota.trim().length > 0` en `CompletarModal`. El submit exitoso llama `onClose` directo, así que no pasa por la guardia. `DescartarCambios` vive dentro de `Modal.tsx` — es `ConfirmModal` con copy fijo, y en archivo propio armaba un ciclo de imports con quien lo usa.
 
+**El toaster también entra al top layer: `components/feedback/TopLayerToaster.tsx` nuevo.** El `<ol>` de sonner es un nodo normal, así que cualquier `toast` disparado con un `RightPanel`/`Modal` abierto quedaba tapado por el `<dialog>` — invisible tanto el error como el "Guardado". `TopLayerToaster` envuelve a `<Toaster>`, le pone `popover="manual"` al `[data-sonner-toaster]` y lo re-promueve (`hidePopover()`+`showPopover()`) con un `MutationObserver` cada vez que aparece un toast, para que quede sobre el último `<dialog>`. sonner ya deja el `<ol>` con `pointer-events:none` (solo el toast en sí es clickeable), así que estar arriba no bloquea el panel. Una regla sin `@layer` en `globals.css` (`[data-sonner-toaster][popover]`) anula el borde/fondo/padding/`inset` que las UA popover styles le pintarían al `<ol>`; `top`/`right` los sigue poniendo sonner.
+
 ### `ConfirmModal`
 
 **`ConfirmModal` acepta `cancelLabel`.** Con la acción confirmada llamándose "Cancelar la tarea", un botón de salida que dice "Cancelar" no se puede leer. Acá dice "Volver"; el default sigue siendo "Cancelar" para el resto.
