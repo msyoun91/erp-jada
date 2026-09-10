@@ -385,7 +385,7 @@ Entidad central. Puede existir sin empresas, sin personas y sin dirección.
 | id | uuid PK | |
 | nombre | text NOT NULL | libre, no tiene que ser el nombre oficial ("Edificio próximo a Cabildo" es válido) |
 | tipo | enum `tipo_obra` | `edificio`\|`casa`\|`refaccion`\|`complejo_viviendas`\|`local`\|`oficina`\|`hotel`\|`otro` |
-| estado | enum `estado_obra` | `idea`\|`en_construccion`\|`perdida`\|`terminada`, default `idea` |
+| estado | enum `estado_obra` | `idea`\|`en_cotizacion`\|`en_ejecucion`\|`en_postventa`\|`perdida`\|`terminada`, default `idea` |
 | direccion / localidad | text | opcionales |
 | provincia | enum `provincia` | 24 valores (23 provincias + `caba`). Enum y no texto: con texto libre el filtro por ubicación muere el primer día |
 | origen | enum `origen_obra` | informativo. No crea relación con empresa ni persona |

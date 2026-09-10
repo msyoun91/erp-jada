@@ -21,7 +21,14 @@ export type Provincia = Enums<"provincia">;
 
 export type Usuario = { id: string; nombre: string };
 
-export const ESTADOS_OBRA: EstadoObra[] = ["idea", "en_construccion", "perdida", "terminada"];
+export const ESTADOS_OBRA: EstadoObra[] = [
+  "idea",
+  "en_cotizacion",
+  "en_ejecucion",
+  "en_postventa",
+  "perdida",
+  "terminada",
+];
 
 export const TIPOS_OBRA: TipoObra[] = [
   "edificio",
@@ -108,7 +115,9 @@ export const PROVINCIAS: Provincia[] = [
 // Los enums viajan en snake_case a la base; la UI nunca los muestra crudos.
 export const LABEL_ESTADO: Record<EstadoObra, string> = {
   idea: "Idea",
-  en_construccion: "En construcción",
+  en_cotizacion: "En cotización",
+  en_ejecucion: "En ejecución",
+  en_postventa: "En post-venta",
   perdida: "Perdida",
   terminada: "Terminada",
 };
@@ -117,7 +126,9 @@ export const LABEL_ESTADO: Record<EstadoObra, string> = {
 // listado y la ficha no elijan cada uno el suyo.
 export const BADGE_ESTADO: Record<EstadoObra, string> = {
   idea: "badge-neutral",
-  en_construccion: "badge-info",
+  en_cotizacion: "badge-warning",
+  en_ejecucion: "badge-info",
+  en_postventa: "badge-brand",
   perdida: "badge-error",
   terminada: "badge-success",
 };

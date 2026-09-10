@@ -70,14 +70,19 @@ Cuando aparezca un caso real, el camino barato es una columna, no un motor: la r
 Dirección acordada el 2026-09-09. Nada que construir hasta que exista el módulo de presupuestos.
 Ejemplos visuales de esta decisión: https://claude.ai/code/artifact/237043ec-43fb-42cf-8081-37d5ce31eeaa
 
+**Parcial: `sql/046` ya cambió el vocabulario del enum** — `en_construccion` → `en_cotizacion` /
+`en_ejecucion` / `en_postventa` (pedido del usuario, ver `decisiones/obras.md`). Lo de abajo sigue
+pendiente: la columna todavía mide dos relojes, `perdida` / `terminada` no se movieron, no hay
+`obras_unidades` ni `cantidad_unidades`.
+
 **La obra es el edificio, no la venta. Una ficha por edificio, para siempre.** El grueso del negocio
 es venta y colocación de aberturas; al entregar, el edificio se atomiza y las garantías y servicios
 —que solo se ofrecen a quien compró la ventana— se le venden a cada propietario, que no es el que
 compró. La casa particular no se divide: una contraparte para siempre, y la ficha de hoy le sirve
 tal cual.
 
-`estado_obra` mide hoy dos relojes en una columna: el del edificio (`idea` → `en_construccion` →
-`terminada`, monótono, pasa una vez) y el comercial (cíclico). Con una sola venta por obra se
+`estado_obra` mide dos relojes en una columna: el del edificio (monótono, pasa una vez) y el
+comercial (cíclico — `en_cotizacion` → `en_ejecucion` → `en_postventa`). Con una sola venta por obra se
 sostiene; con postventa se rompe, porque `terminada` tendría que significar a la vez "está
 construido" y "acá se terminó nuestra relación".
 

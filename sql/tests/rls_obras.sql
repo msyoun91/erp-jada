@@ -75,7 +75,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin)::text, true);
 
   INSERT INTO obras (nombre, tipo, estado, localidad, responsable_id)
-  VALUES ('Edificio Libertador 2450', 'edificio', 'en_construccion', 'CABA', v_admin)
+  VALUES ('Edificio Libertador 2450', 'edificio', 'en_ejecucion', 'CABA', v_admin)
   RETURNING id INTO v_obra;
 
   INSERT INTO obras_empresas (razon_social, creado_por)

@@ -88,9 +88,9 @@ ON CONFLICT (id) DO NOTHING;
 -- ---------- Obras ----------
 -- 9 de Admin, 5 de Tester. Los `_norm` los pone el trigger.
 INSERT INTO obras (id, nombre, tipo, estado, direccion, localidad, provincia, origen, observaciones, motivo_perdida, detalle_perdida, responsable_id, activo) VALUES
-  ('b0000000-0000-4000-a000-000000000001', 'Edificio Nogoyá 3400', 'edificio', 'en_construccion', 'Nogoyá 3400', 'Villa Devoto', 'caba', 'arquitecto', 'Losa del 4º piso en septiembre. El pedido grande entra por Ferreyra.', NULL, NULL, '015fa985-fe21-4434-b3c5-7ac78732d765', true),
+  ('b0000000-0000-4000-a000-000000000001', 'Edificio Nogoyá 3400', 'edificio', 'en_ejecucion', 'Nogoyá 3400', 'Villa Devoto', 'caba', 'arquitecto', 'Losa del 4º piso en septiembre. El pedido grande entra por Ferreyra.', NULL, NULL, '015fa985-fe21-4434-b3c5-7ac78732d765', true),
   ('b0000000-0000-4000-a000-000000000002', 'Torre Vicente López', 'edificio', 'idea', 'Av. del Libertador 2100', 'Vicente López', 'buenos_aires', 'referido', 'Todavía en anteproyecto.', NULL, NULL, '015fa985-fe21-4434-b3c5-7ac78732d765', true),
-  ('b0000000-0000-4000-a000-000000000003', 'Casa Los Álamos', 'casa', 'en_construccion', 'Los Álamos 145', 'Villa Allende', 'cordoba', 'deteccion_propia', NULL, NULL, NULL, '015fa985-fe21-4434-b3c5-7ac78732d765', true),
+  ('b0000000-0000-4000-a000-000000000003', 'Casa Los Álamos', 'casa', 'en_ejecucion', 'Los Álamos 145', 'Villa Allende', 'cordoba', 'deteccion_propia', NULL, NULL, NULL, '015fa985-fe21-4434-b3c5-7ac78732d765', true),
   ('b0000000-0000-4000-a000-000000000004', 'Complejo Costa Norte', 'complejo_viviendas', 'idea', 'Ruta 25 km 4', 'Escobar', 'buenos_aires', 'inmobiliaria', '120 unidades en tres etapas.', NULL, NULL, '015fa985-fe21-4434-b3c5-7ac78732d765', true),
   ('b0000000-0000-4000-a000-000000000005', 'Refacción Local Av. Santa Fe', 'refaccion', 'terminada', 'Av. Santa Fe 3200', 'Palermo', 'caba', 'internet', 'Entregada en marzo.', NULL, NULL, '015fa985-fe21-4434-b3c5-7ac78732d765', true),
   ('b0000000-0000-4000-a000-000000000006', 'Hotel Andes Boutique', 'hotel', 'idea', NULL, 'Chacras de Coria', 'mendoza', 'desarrolladora', 'Contacto inicial, sin proyecto todavía.', NULL, NULL, '015fa985-fe21-4434-b3c5-7ac78732d765', true),
@@ -98,9 +98,9 @@ INSERT INTO obras (id, nombre, tipo, estado, direccion, localidad, provincia, or
   ('b0000000-0000-4000-a000-000000000008', 'Local Palermo Soho', 'local', 'perdida', 'Gurruchaga 1800', 'Palermo', 'caba', 'referido', NULL, 'otro', 'El cliente puso la obra en pausa por tiempo indeterminado; no hubo competencia.', '015fa985-fe21-4434-b3c5-7ac78732d765', true),
   ('b0000000-0000-4000-a000-000000000009', 'Depósito Zona Sur', 'otro', 'idea', 'Camino Gral. Belgrano 4500', 'Quilmes', 'buenos_aires', 'otro', 'Cargada por error, se archiva.', NULL, NULL, '015fa985-fe21-4434-b3c5-7ac78732d765', false),
   ('b0000000-0000-4000-a000-000000000010', 'Edificio Nogoya 3400', 'edificio', 'idea', 'Nogoya 3400', 'Devoto', 'caba', 'deteccion_propia', 'La vi de la calle, averiguar quién construye.', NULL, NULL, '48b90421-a639-4637-b361-501fa7e1a1a0', true),
-  ('b0000000-0000-4000-a000-000000000011', 'Barrio Cerrado Los Robles', 'complejo_viviendas', 'en_construccion', 'Ruta 8 km 62', 'Pilar', 'buenos_aires', 'desarrolladora', '48 lotes con casa incluida.', NULL, NULL, '48b90421-a639-4637-b361-501fa7e1a1a0', true),
+  ('b0000000-0000-4000-a000-000000000011', 'Barrio Cerrado Los Robles', 'complejo_viviendas', 'en_ejecucion', 'Ruta 8 km 62', 'Pilar', 'buenos_aires', 'desarrolladora', '48 lotes con casa incluida.', NULL, NULL, '48b90421-a639-4637-b361-501fa7e1a1a0', true),
   ('b0000000-0000-4000-a000-000000000012', 'Casa Quinta Funes', 'casa', 'idea', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '48b90421-a639-4637-b361-501fa7e1a1a0', true),
-  ('b0000000-0000-4000-a000-000000000013', 'Ampliación Clínica Neuquén', 'refaccion', 'en_construccion', 'Av. Olascoaga 950', 'Neuquén', 'neuquen', 'arquitecto', 'Obra en dos etapas, con la clínica funcionando.', NULL, NULL, '48b90421-a639-4637-b361-501fa7e1a1a0', true),
+  ('b0000000-0000-4000-a000-000000000013', 'Ampliación Clínica Neuquén', 'refaccion', 'en_ejecucion', 'Av. Olascoaga 950', 'Neuquén', 'neuquen', 'arquitecto', 'Obra en dos etapas, con la clínica funcionando.', NULL, NULL, '48b90421-a639-4637-b361-501fa7e1a1a0', true),
   ('b0000000-0000-4000-a000-000000000014', 'Edificio Rosario Centro', 'edificio', 'terminada', 'Córdoba 1450', 'Rosario', 'santa_fe', 'constructora', 'Venía de la cartera de Admin.', NULL, NULL, '48b90421-a639-4637-b361-501fa7e1a1a0', true)
 ON CONFLICT (id) DO NOTHING;
 

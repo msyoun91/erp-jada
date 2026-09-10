@@ -197,6 +197,28 @@ El setup ahora apaga todo `obras` de los dos usuarios antes de prender la lista 
 
 ---
 
+## `estado_obra`: los estados comerciales entran antes de presupuestos (`sql/046`)
+
+Pedido del usuario. `estado_obra` pasó de `idea` / `en_construccion` / `perdida` / `terminada` a
+`idea` / `en_cotizacion` / `en_ejecucion` / `en_postventa` / `perdida` / `terminada`. `en_construccion`
+salió; las 4 obras que lo tenían (todas seed dummy) se remapearon a `en_ejecucion`.
+
+Postgres no deja quitar un valor de un enum, así que `sql/046` reconstruye el tipo: rename a
+`_old`, `CREATE TYPE` nuevo, `ALTER COLUMN ... USING` con el remapeo, `DROP TYPE _old`. Hubo que
+soltar y recrear el CHECK `obras_perdida_con_motivo` porque referencia la columna.
+
+**Esto adelanta parte de lo que `BACKLOG.md` → *La obra después de la entrega* difería a cuando
+exista presupuestos.** Ahí la dirección era bajar `estado_obra` a 3 valores y mudar `perdida` /
+`motivo_perdida` al presupuesto. Sigue pendiente: `perdida` y `terminada` no se movieron, la
+columna sigue midiendo dos relojes (el del edificio y el comercial) en un solo campo, y no hay
+`obras_unidades` ni `cantidad_unidades`. Lo único que cambió es el vocabulario del reloj comercial.
+
+La UI no necesitó tocarse: `ObraFormPanel`, `ObrasView` y las fichas leen `ESTADOS_OBRA` /
+`LABEL_ESTADO` / `BADGE_ESTADO` de `types.ts`. Badges nuevos: `en_cotizacion` → `badge-warning`,
+`en_ejecucion` → `badge-info`, `en_postventa` → `badge-brand`.
+
+---
+
 ## Roles como array, no tabla puente
 
 `obras_obra_empresa.roles rol_empresa[]` y `obras_obra_persona.roles rol_persona[]`. La spec es explícita: una empresa que es constructora **y** desarrolladora de la misma obra es una relación con dos roles, no dos relaciones. Una tabla puente de la tabla puente no aporta nada acá.

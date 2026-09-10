@@ -1984,7 +1984,13 @@ export type Database = {
     };
     Enums: {
       estado_hilo: "abierto" | "cerrado";
-      estado_obra: "idea" | "en_construccion" | "perdida" | "terminada";
+      estado_obra:
+        | "idea"
+        | "en_cotizacion"
+        | "en_ejecucion"
+        | "en_postventa"
+        | "perdida"
+        | "terminada";
       estado_tarea: "pendiente" | "en_progreso" | "completada" | "cancelada";
       modo_completado: "manual" | "automatico" | "hibrido";
       motivo_perdida:
@@ -2192,7 +2198,7 @@ export const Constants = {
   public: {
     Enums: {
       estado_hilo: ["abierto", "cerrado"],
-      estado_obra: ["idea", "en_construccion", "perdida", "terminada"],
+      estado_obra: ["idea", "en_cotizacion", "en_ejecucion", "en_postventa", "perdida", "terminada"],
       estado_tarea: ["pendiente", "en_progreso", "completada", "cancelada"],
       modo_completado: ["manual", "automatico", "hibrido"],
       motivo_perdida: [
