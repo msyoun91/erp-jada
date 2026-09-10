@@ -2,10 +2,16 @@ import { notFound } from "next/navigation";
 import {
   puedeEditarEmpresa,
   puedeVerEmpresas,
+  puedeVerTodasLasEmpresas,
   puedeVincular,
   puedeVincularPersonaEmpresa,
 } from "@/modules/obras/permissions";
-import { getEmpresa } from "@/modules/obras/queries";
+import {
+  getCompartidosEmpresa,
+  getEmpresa,
+  getUsuariosParaTransferir,
+  getUsuarioActualId,
+} from "@/modules/obras/queries";
 import { EmpresaDetalle } from "@/modules/obras/components/EmpresaDetalle";
 import type { Empresa, EstadoObra, RolEmpresa } from "@/modules/obras/types";
 
@@ -13,15 +19,21 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
   if (!(await puedeVerEmpresas())) notFound();
 
   const { id } = await params;
-  const [empresa, editar, vincularPersona, vincularObra] = await Promise.all([
-    getEmpresa(id),
-    puedeEditarEmpresa(),
-    puedeVincularPersonaEmpresa(),
-    puedeVincular(),
-  ]);
+  const [empresa, editar, vincularPersona, vincularObra, veTodas, compartidos, usuarios, miId] =
+    await Promise.all([
+      getEmpresa(id),
+      puedeEditarEmpresa(),
+      puedeVincularPersonaEmpresa(),
+      puedeVincular(),
+      puedeVerTodasLasEmpresas(),
+      getCompartidosEmpresa(id),
+      getUsuariosParaTransferir(),
+      getUsuarioActualId(),
+    ]);
   if (!empresa) notFound();
 
   const { obras_persona_empresa, obras_obra_empresa, ...datos } = empresa;
+  const esMio = !!miId && empresa.creado_por === miId;
 
   return (
     <EmpresaDetalle
@@ -43,9 +55,12 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
           estado: v.obras!.estado as EstadoObra,
           localidad: v.obras!.localidad,
           roles: v.roles as RolEmpresa[],
-          pendiente: v.pendiente,
         }))}
       permisos={{ editar, vincularPersona, vincularObra }}
+      esMio={esMio}
+      veTodas={veTodas}
+      compartidos={compartidos}
+      usuarios={usuarios}
     />
   );
 }

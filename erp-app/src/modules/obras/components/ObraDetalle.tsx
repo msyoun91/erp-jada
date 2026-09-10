@@ -83,10 +83,8 @@ export function ObraDetalle({
 }: {
   obra: Obra;
   responsable: Usuario | null;
-  // `pendiente` no vive en el tipo del panel de vinculación: ahí no se usa, y
-  // acá es lo que distingue un vínculo real de uno que todavía espera.
-  empresas: (VinculoEmpresa & { razon_social: string; pendiente: boolean })[];
-  personas: (VinculoPersona & { empresa: string | null; pendiente: boolean })[];
+  empresas: (VinculoEmpresa & { razon_social: string })[];
+  personas: (VinculoPersona & { empresa: string | null })[];
   referentes: ReferenteVista[];
   transferencias: TransferenciaVista[];
   usuarios: Usuario[];
@@ -218,7 +216,6 @@ export function ObraDetalle({
                     <span className="t-caption">
                       {e.roles.map((r) => LABEL_ROL_EMPRESA[r]).join(" · ")}
                     </span>
-                    {e.pendiente && <span className="badge badge-warning">Pendiente</span>}
                   </div>
                 </div>
                 {permisos.vincular && (
@@ -254,10 +251,10 @@ export function ObraDetalle({
       <section>
         <div className="mb-2 flex items-center gap-2">
           <h3 className="t-h3 flex-1">Personas</h3>
-          {/* Referente solo de gente ya vinculada y autorizada: la fila de
-              referente también da acceso al contacto, y la base la corta con
-              OB019 si el vínculo todavía está pendiente. */}
-          {permisos.referentes && personas.some((p) => !p.pendiente) && (
+          {/* Referente solo de gente ya vinculada: la fila de referente también
+              da acceso al contacto, y la base la corta con OB019 si la persona
+              no es visible. */}
+          {permisos.referentes && personas.length > 0 && (
             <button className="btn btn-secondary btn-sm" onClick={() => setEditandoReferente(true)}>
               Marcar referente
             </button>
@@ -278,7 +275,7 @@ export function ObraDetalle({
             {personas.map((p) => {
               const ref = comisionPorPersona.get(p.persona_id);
               const acciones = [
-                ...(permisos.referentes && !p.pendiente
+                ...(permisos.referentes
                   ? [
                       {
                         label: ref ? "Quitar referente" : "Marcar referente",
@@ -323,7 +320,7 @@ export function ObraDetalle({
                 <li key={p.id} className="card flex items-center gap-3 p-3">
                   <div className="min-w-0 flex-1">
                     <Link
-                      href={`/obras/personas/${p.persona_id}`}
+                      href={`/obras/personas/${p.persona_id}?ctx=obra:${obra.id}`}
                       className="t-body-m block truncate font-semibold hover:underline"
                     >
                       {p.nombre}
@@ -333,9 +330,6 @@ export function ObraDetalle({
                       <span className="t-caption">
                         {p.roles.map((r) => LABEL_ROL_PERSONA[r]).join(" · ")}
                       </span>
-                      {/* El vínculo pendiente no abre la ficha de contacto: hasta
-                          que lo autoricen, la persona ajena sigue siendo ajena. */}
-                      {p.pendiente && <span className="badge badge-warning">Pendiente</span>}
                       {ref && (
                         <span className="badge badge-brand">
                           Referente {ref.porcentaje_comision.toFixed(2)}%
@@ -395,9 +389,7 @@ export function ObraDetalle({
       {editandoReferente && (
         <ReferentePanel
           obraId={obra.id}
-          personas={personas
-            .filter((p) => !p.pendiente)
-            .map((p) => ({ id: p.persona_id, nombre: p.nombre }))}
+          personas={personas.map((p) => ({ id: p.persona_id, nombre: p.nombre }))}
           referente={editandoReferente === true ? undefined : editandoReferente}
           onClose={() => setEditandoReferente(null)}
         />

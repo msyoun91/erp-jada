@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Archive, Link2, Pencil, Plus } from "lucide-react";
+import { Archive, Link2, Pencil, Plus, Share2, UserRoundCog } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
@@ -12,14 +12,18 @@ import {
   LABEL_ESTADO,
   LABEL_PROVINCIA,
   LABEL_ROL_EMPRESA,
+  type Compartido,
   type Empresa,
   type EstadoObra,
   type RolEmpresa,
+  type Usuario,
 } from "../types";
 import { Breadcrumb } from "./Breadcrumb";
+import { CompartirPanel } from "./CompartirPanel";
 import { Dato, Observaciones } from "./Dato";
 import { EmpresaFormPanel } from "./EmpresaFormPanel";
 import { EstadoPendiente } from "./EstadoPendiente";
+import { TransferirEntidadPanel } from "./TransferirEntidadPanel";
 import { VincularObraPanel } from "./VincularObraPanel";
 import { VincularPersonaEmpresaPanel } from "./VincularPersonaEmpresaPanel";
 
@@ -28,6 +32,10 @@ export function EmpresaDetalle({
   personas,
   obras,
   permisos,
+  esMio,
+  veTodas,
+  compartidos,
+  usuarios,
 }: {
   empresa: Empresa;
   personas: { id: string; persona_id: string; nombre: string; cargo: string | null; es_principal: boolean }[];
@@ -38,16 +46,21 @@ export function EmpresaDetalle({
     estado: EstadoObra;
     localidad: string | null;
     roles: RolEmpresa[];
-    pendiente: boolean;
   }[];
   // Vincular personas y vincular obras son dos permisos distintos porque son
   // dos tablas distintas: `obras_personas_empresas` y `obras_vincular`.
   permisos: { editar: boolean; vincularPersona: boolean; vincularObra: boolean };
+  esMio: boolean;
+  veTodas: boolean;
+  compartidos: Compartido[];
+  usuarios: Usuario[];
 }) {
   const [editando, setEditando] = useState(false);
   const [desactivando, setDesactivando] = useState(false);
   const [vinculandoPersona, setVinculandoPersona] = useState(false);
   const [vinculandoObra, setVinculandoObra] = useState(false);
+  const [compartiendo, setCompartiendo] = useState(false);
+  const [transfiriendo, setTransfiriendo] = useState(false);
 
   const congelada = empresa.pendiente;
 
@@ -74,6 +87,24 @@ export function EmpresaDetalle({
                 icon: <Link2 size={14} strokeWidth={1.75} />,
                 onClick: () => copiarEnlace(`/obras/empresas/${empresa.id}`),
               },
+              ...(esMio
+                ? [
+                    {
+                      label: "Compartir",
+                      icon: <Share2 size={14} strokeWidth={1.75} />,
+                      onClick: () => setCompartiendo(true),
+                    },
+                  ]
+                : []),
+              ...(veTodas
+                ? [
+                    {
+                      label: "Transferir",
+                      icon: <UserRoundCog size={14} strokeWidth={1.75} />,
+                      onClick: () => setTransfiriendo(true),
+                    },
+                  ]
+                : []),
               ...(permisos.editar
                 ? [
                     {
@@ -135,7 +166,7 @@ export function EmpresaDetalle({
             {personas.map((p) => (
               <li key={p.id} className="card p-3">
                 <Link
-                  href={`/obras/personas/${p.persona_id}`}
+                  href={`/obras/personas/${p.persona_id}?ctx=empresa:${empresa.id}`}
                   className="t-body-m block truncate font-semibold hover:underline"
                 >
                   {p.nombre}
@@ -181,7 +212,6 @@ export function EmpresaDetalle({
                   <span className="t-caption">
                     {o.roles.map((r) => LABEL_ROL_EMPRESA[r]).join(" · ")}
                   </span>
-                  {o.pendiente && <span className="badge badge-warning">Pendiente</span>}
                 </div>
               </li>
             ))}
@@ -190,6 +220,28 @@ export function EmpresaDetalle({
       </section>
 
       {editando && <EmpresaFormPanel empresa={empresa} onClose={() => setEditando(false)} />}
+
+      {compartiendo && (
+        <CompartirPanel
+          tipo="empresa"
+          id={empresa.id}
+          nombre={empresa.razon_social}
+          compartidos={compartidos}
+          usuarios={usuarios}
+          onClose={() => setCompartiendo(false)}
+        />
+      )}
+
+      {transfiriendo && (
+        <TransferirEntidadPanel
+          tipo="empresa"
+          id={empresa.id}
+          nombre={empresa.razon_social}
+          duenioActual={null}
+          usuarios={usuarios}
+          onClose={() => setTransfiriendo(false)}
+        />
+      )}
 
       {vinculandoPersona && (
         <VincularPersonaEmpresaPanel

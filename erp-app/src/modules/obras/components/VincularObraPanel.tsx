@@ -72,15 +72,7 @@ export function VincularObraPanel({
       return;
     }
 
-    if (result.pendiente) {
-      toast.warning(
-        empresa
-          ? "Vínculo creado, pendiente de autorización: la empresa la cargó otro usuario"
-          : "Vínculo creado, pendiente de autorización: la persona la cargó otro usuario",
-      );
-    } else {
-      toast.success("Vínculo creado");
-    }
+    toast.success("Vínculo creado");
     onClose();
   }
 

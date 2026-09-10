@@ -15,6 +15,7 @@ import {
   type ObraListado,
   type TipoObra,
 } from "../types";
+import { AlcanceToggle } from "./AlcanceToggle";
 import { ObraFormPanel } from "./ObraFormPanel";
 
 // Abajo de `md` la fila son dos líneas: nombre arriba, metadata abajo. Arriba,
@@ -29,10 +30,12 @@ export function ObrasView({
   obras,
   puedeCrear,
   puedeTransferir,
+  miId,
 }: {
   obras: ObraListado[];
   puedeCrear: boolean;
   puedeTransferir: boolean;
+  miId: string | null;
 }) {
   const [texto, setTexto] = useState("");
   const [estado, setEstado] = useState<EstadoObra | "">("");
@@ -87,11 +90,14 @@ export function ObrasView({
         )}
       </div>
 
-      <Paginacion {...paginado} etiqueta="obras" />
-
       {puedeTransferir && (
-        <p className="t-caption mb-2">Ves todas las obras porque podés transferirlas.</p>
+        <div className="mb-3 flex items-center gap-2">
+          <AlcanceToggle />
+          <span className="t-caption">Podés transferir obras, así que las ves todas.</span>
+        </div>
       )}
+
+      <Paginacion {...paginado} etiqueta="obras" />
 
       {filtradas.length === 0 ? (
         <div className="empty-state">
@@ -122,6 +128,9 @@ export function ObrasView({
                   {/* Congelada: existe y la ve su responsable, pero todavía no
                       se le puede vincular nada. */}
                   {o.pendiente && <span className="badge badge-warning shrink-0">Pendiente</span>}
+                  {miId && o.responsable_id !== miId && (
+                    <span className="badge badge-neutral shrink-0">Ajena</span>
+                  )}
                 </span>
                 {/* `md:contents` disuelve este envoltorio en la grilla: una sola
                     escritura del marcado sirve para la línea que envuelve en

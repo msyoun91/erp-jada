@@ -104,6 +104,7 @@ export function AuditoriaView({
                   <span className="t-caption shrink-0">{formatFechaHora(a.created_at)}</span>
                   <span>
                     <span className="font-semibold">{a.usuario}</span> abrió la ficha de {a.persona}
+                    {a.contexto && <span className="t-caption"> · desde «{a.contexto}»</span>}
                   </span>
                 </li>
               ))}

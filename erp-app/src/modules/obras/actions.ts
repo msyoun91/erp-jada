@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { argsRpc } from "@/lib/supabase/rpc";
 import { mensajeError } from "@/lib/utils";
-import { getEmpresas } from "./queries";
+import {
+  getEmpresas,
+  getContactosExclusivosObra,
+  getContactosExclusivosEmpresa,
+} from "./queries";
 import {
   crearObraSchema,
   editarObraSchema,
@@ -17,6 +21,9 @@ import {
   vincularPersonaEmpresaSchema,
   referenteSchema,
   transferirObraSchema,
+  transferirPersonaSchema,
+  transferirEmpresaSchema,
+  compartirSchema,
   resolverPendienteSchema,
   type CrearObraForm,
   type EditarObraForm,
@@ -29,6 +36,9 @@ import {
   type VincularPersonaEmpresaForm,
   type ReferenteForm,
   type TransferirObraForm,
+  type TransferirPersonaForm,
+  type TransferirEmpresaForm,
+  type CompartirForm,
   type ResolverPendienteForm,
   type PersonaDeEmpresa,
   type SimilarPendiente,
@@ -140,12 +150,131 @@ export async function transferirObra(input: TransferirObraForm) {
   const { error } = await supabase.rpc("obras_transferir", {
     p_obra_id: parsed.data.obra_id,
     p_a_usuario_id: parsed.data.a_usuario_id,
+    p_contactos_exclusivos: parsed.data.contactos_exclusivos,
   });
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidarObras(parsed.data.obra_id);
+  revalidatePath("/obras/personas");
+  revalidatePath("/obras/empresas");
   return { success: true as const };
+}
+
+export async function transferirPersona(input: TransferirPersonaForm) {
+  const parsed = transferirPersonaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("obras_transferir_persona", {
+    p_persona_id: parsed.data.persona_id,
+    p_a_usuario_id: parsed.data.a_usuario_id,
+  });
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath("/obras/personas");
+  revalidatePath(`/obras/personas/${parsed.data.persona_id}`);
+  return { success: true as const };
+}
+
+export async function transferirEmpresa(input: TransferirEmpresaForm) {
+  const parsed = transferirEmpresaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("obras_transferir_empresa", {
+    p_empresa_id: parsed.data.empresa_id,
+    p_a_usuario_id: parsed.data.a_usuario_id,
+    p_personas_exclusivas: parsed.data.personas_exclusivas,
+  });
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath("/obras/empresas");
+  revalidatePath(`/obras/empresas/${parsed.data.empresa_id}`);
+  revalidatePath("/obras/personas");
+  return { success: true as const };
+}
+
+// ── Compartir / revocar (dueño desde la ficha) ───────────────
+
+export async function compartirPersona(input: CompartirForm) {
+  const parsed = compartirSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("obras_compartir_persona", {
+    p_persona_id: parsed.data.id,
+    p_usuario_id: parsed.data.usuario_id,
+  });
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath(`/obras/personas/${parsed.data.id}`);
+  return { success: true as const };
+}
+
+export async function revocarPersona(personaId: string, usuarioId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("obras_revocar_persona", {
+    p_persona_id: personaId,
+    p_usuario_id: usuarioId,
+  });
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath(`/obras/personas/${personaId}`);
+  return { success: true as const };
+}
+
+export async function compartirEmpresa(input: CompartirForm) {
+  const parsed = compartirSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("obras_compartir_empresa", {
+    p_empresa_id: parsed.data.id,
+    p_usuario_id: parsed.data.usuario_id,
+  });
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath(`/obras/empresas/${parsed.data.id}`);
+  return { success: true as const };
+}
+
+export async function revocarEmpresa(empresaId: string, usuarioId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("obras_revocar_empresa", {
+    p_empresa_id: empresaId,
+    p_usuario_id: usuarioId,
+  });
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath(`/obras/empresas/${empresaId}`);
+  return { success: true as const };
+}
+
+// Lecturas que un componente cliente necesita antes de transferir: el checklist
+// de contactos exclusivos. Van como actions porque las llama el panel.
+export async function contactosExclusivosObra(obraId: string) {
+  return getContactosExclusivosObra(obraId);
+}
+
+export async function contactosExclusivosEmpresa(empresaId: string) {
+  return getContactosExclusivosEmpresa(empresaId);
 }
 
 export async function crearEmpresa(input: CrearEmpresaForm) {
@@ -347,17 +476,14 @@ export async function vincularPersona(input: VincularPersonaForm) {
 
   const supabase = await createClient();
 
-  const { data, error } = await supabase
-    .from("obras_obra_persona")
-    .insert(parsed.data)
-    .select("pendiente")
-    .single();
+  // Bajo model A no se vincula lo que no se ve: el WITH CHECK de la policy lo
+  // rechaza. `mensajeError` traduce el 42501 a algo legible.
+  const { error } = await supabase.from("obras_obra_persona").insert(parsed.data);
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidarObras(parsed.data.obra_id);
-  revalidatePath("/obras/pendientes");
-  return { success: true as const, pendiente: data.pendiente };
+  return { success: true as const };
 }
 
 export async function editarVinculoPersona(id: string, input: VincularPersonaForm) {

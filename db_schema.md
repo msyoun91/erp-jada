@@ -434,7 +434,9 @@ Sin `empresa_id` y sin columna de rol: lo primero vive en `obras_persona_empresa
 | telefono_norm / whatsapp_norm | text | solo dígitos — "11 4567-8900" y "+54 11 4567 8900" son el mismo teléfono |
 | pendiente / motivo_rechazo | boolean, text | `sql/033` — congelada la ve solo quien la cargó |
 
-RLS SELECT: `(tiene_permiso('obras_ver') OR tiene_permiso('obras_personas')) AND (creado_por = auth.uid() OR obras_puede_ver_persona(id))`.
+> **MODEL A (`sql/039`, ver `decisiones/obras.md`).** `telefono`/`whatsapp`/`email` + sus `_norm` salieron del `GRANT SELECT` de `authenticated`: un `select` directo ya no los trae, solo `obras_ficha_persona()` (DEFINER, con contexto opcional). RLS SELECT ahora: `… AND (creado_por = auth.uid() OR obras_puede_ver_persona(id) OR obras_persona_grant_ctx_vigente(id))`, y `obras_puede_ver_persona` = dueño / `obras_persona_compartida` activa / `obras_personas_todas` (sin ramas de vínculo ni referente). UPDATE exige `creado_por = auth.uid()`.
+
+RLS SELECT (histórico): `(tiene_permiso('obras_ver') OR tiene_permiso('obras_personas')) AND (creado_por = auth.uid() OR obras_puede_ver_persona(id))`.
 
 `creado_por` se prueba **como columna y no dentro de la función**. La versión anterior resolvía todo por `obras_puede_ver_persona(id)`, que relee la fila: en un `INSERT ... RETURNING` — lo que hace `.insert().select()` de Supabase — la fila nueva todavía no está en el snapshot de una función `STABLE`, así que el creador no podía leer lo que acababa de escribir (42501). Crear una persona habría fallado siempre en la app. Lo cazó `sql/tests/rls_obras.sql`.
 
@@ -455,7 +457,7 @@ Las dos tablas puente con la obra. `roles` es un **array de enum**, no filas sep
 | obras_obra_empresa | `rol_empresa[]` — `constructora`\|`desarrolladora`\|`inmobiliaria`\|`estudio_arquitectura`\|`direccion_obra`\|`otro` | |
 | obras_obra_persona | `rol_persona[]` — `arquitecto`\|`desarrollador`\|`inversor`\|`director_obra`\|`compras`\|`oficina_tecnica`\|`decisor`\|`influenciador`\|`contacto_comercial`\|`otro` | `empresa_id` nullable: a quién representa esa persona en esta obra. FK simple, sin validación cruzada — es contexto, no invariante |
 
-Las dos llevan además `pendiente` y `motivo_rechazo` (`sql/033`): vincular una entidad que cargó otro usuario espera autorización, y **el vínculo pendiente no cuenta** — ni para los conteos del listado ni, sobre todo, para `obras_puede_ver_persona`.
+~~Las dos llevan además `pendiente` y `motivo_rechazo` (`sql/033`)~~ — **`sql/040` las dropeó.** Bajo MODEL A no se vincula lo que no se ve (WITH CHECK de INSERT exige `obras_puede_ver_persona` / `_empresa`), así que el estado "vínculo pendiente" no existe.
 
 CHECK en ambas: `cardinality(roles) > 0` y `obras_array_sin_duplicados(roles)`. Unique parcial por par `WHERE activo`.
 
@@ -473,13 +475,21 @@ RLS SELECT exige `obras_referentes` además de ver la obra. La fila **contiene**
 
 ### obras_transferencias
 
-Log de cambios de responsable: `obra_id`, `de_usuario_id`, `a_usuario_id`, `ejecutada_por`, `created_at`. CHECK `de <> a`.
+Log de cambios de dueño: `tipo` (`obra`\|`persona`\|`empresa`, `sql/041`), `obra_id`/`persona_id`/`empresa_id` (nullable, uno por fila según `tipo` — CHECK `transferencia_tipo_ancla`), `de_usuario_id`, `a_usuario_id`, `ejecutada_por`, `created_at`. CHECK `de <> a`.
 
-Sin `activo`: es un log, la fila significa "esto pasó". Ahora que el responsable decide quién ve la obra, "¿por qué no la veo más?" necesita respuesta.
+Sin `activo`: es un log, la fila significa "esto pasó". El trigger de notificación solo dispara para `tipo = 'obra'`.
+
+### obras_persona_compartida / obras_empresa_compartida / obras_persona_grant_contextual (`sql/039`)
+
+Grants que otorga el dueño. Las dos "compartida": `(persona_id|empresa_id, usuario_id, otorgada_por, activo)`, UNIQUE **entero** por par (re-compartir revive la fila, no inserta otra), CHECK `usuario_id <> otorgada_por`. Dan lectura de la ficha completa (contacto incluido, vía `obras_ficha_persona`).
+
+`obras_persona_grant_contextual`: `(persona_id, usuario_id, obra_id XOR empresa_id, otorgada_por, activo)`, unique parcial por ancla. El contacto se ve solo desde esa ficha (`obras_ficha_persona(p_persona_id, 'obra'|'empresa', ctx_id)`); muere con el vínculo, validado en vivo por `obras_persona_grant_ctx_vigente`.
+
+RLS: solo SELECT para `authenticated` (dueño o receptor). La escritura pasa por `obras_compartir_*` / `obras_revocar_*` / `obras_transferir*` (DEFINER, exigen `creado_por`).
 
 ### obras_accesos_persona
 
-`usuario_id`, `persona_id`, `created_at`. Escrita por `obras_ficha_persona()`, que es el **único** camino por el que la app lee teléfono, whatsapp y email.
+`usuario_id`, `persona_id`, `contexto` (`sql/039` — `obra:<id>` / `empresa:<id>` cuando se vio por grant contextual, NULL si fue acceso directo; `obras_auditoria_accesos` lo resuelve al nombre), `created_at`. Escrita por `obras_ficha_persona()`, que es el **único** camino por el que la app lee teléfono, whatsapp y email.
 
 Que sea el único es lo que hace que el log sirva. Contra un insider autorizado no hay prevención — quien ve un teléfono lo puede fotografiar — pero esto convierte "se llevó la agenda" en una consulta que muestra 340 fichas abiertas en dos días. RLS SELECT: solo `obras_personas_todas`.
 
@@ -511,9 +521,11 @@ En `obras_buscar_duplicados_obra` la localidad **no filtra**, ordena. Filtraba p
 
 Vincular una persona a una obra propia **no** requiere verla antes — es lo que hace usable la búsqueda de identidad mínima. Es acceso deliberado y queda registrado.
 
-### El buscador global (`sql/037`)
+### El buscador global (`sql/037`, enmascarado en `sql/042`)
 
-Una barra arriba del módulo busca en las tres entidades y lleva a la ficha. Dos funciones:
+> **MODEL A (`sql/042`).** Las tres ramas pasan por funciones DEFINER (`obras_buscar_obras` / `_empresas` / `_personas`) que devuelven `(tipo, id, titulo, subtitulo, es_ajeno, duenio)`. Lo ajeno aparece **enmascarado**: `id` NULL, `es_ajeno = true`, `duenio` con el nombre del dueño, sin link. `visible`/`cargada_por` → `es_ajeno`/`duenio`. `obras_buscar_duplicados_empresa` pasó a DEFINER + enmascarado; `obras_buscar_duplicados_obra` ahora muestra el nombre de la obra ajena.
+
+Una barra arriba del módulo busca en las tres entidades y lleva a la ficha. Dos funciones (pre-`sql/042`):
 
 | función | seguridad | qué devuelve |
 |---|---|---|
@@ -573,7 +585,9 @@ Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían c
 
 `obras_guardar_referente(obra, persona, porcentaje, observaciones)` — `SECURITY INVOKER`, `INSERT ... ON CONFLICT (obra_id, persona_id) WHERE activo DO UPDATE`. Reemplaza el SELECT + UPDATE/INSERT que hacía `actions.ts` en dos requests. La autoridad no se mueve: las policies de `obras_obra_referente` siguen exigiendo `obras_referentes` y que la obra sea propia. Un referente dado de baja no revive por acá: el índice parcial no ve su fila, así que se inserta una nueva.
 
-### Autorizaciones pendientes (`sql/033`)
+### Autorizaciones pendientes (`sql/033`, recortadas por `sql/040`)
+
+> **MODEL A (`sql/040`).** Solo el **alta** parecida se congela. Se dropeó `pendiente`/`motivo_rechazo` de `obras_obra_empresa` y `obras_obra_persona`, la función/triggers `obras_guard_congelado` entera (la regla de referente OB019 pasó al WITH CHECK de `obras_obra_referente_insert`), y `obras_marcar_pendiente` perdió las dos ramas de vínculo. `obras_pendientes` / `obras_pendiente_similares` / `obras_resolver_pendiente` / `obras_solicitante` / `obras_etiqueta` / `obras_aprobaciones.tipo` quedaron con `obra`\|`empresa`\|`persona`. Lo de abajo describe el estado pre-`sql/040`.
 
 Dos pedidos del usuario con una sola mecánica: un alta que se parece a algo ya cargado, y un vínculo con una persona o empresa que cargó otro, no entran a la agenda — entran **congelados**, y alguien con `obras_aprobar` decide.
 
@@ -665,8 +679,9 @@ Verificado: `has_function_privilege('anon', ...)` da `false` en las 18.
 | obras_personas_crear | funcion | obras_personas | |
 | obras_personas_editar | funcion | obras_personas | |
 | obras_personas_empresas | funcion | obras_personas | relacionar persona↔empresa. El botón de la ficha de empresa usa este mismo permiso — una función pertenece a una sola vista |
-| obras_personas_todas | funcion | obras_personas | ve la agenda completa y el log de accesos |
-| obras_aprobar | funcion | obras_pendientes | aprobar o rechazar. Es el "administrador" de los pedidos del usuario — **no** da acceso a la agenda: `obras_puede_ver_persona` no lo mira |
+| obras_personas_todas | funcion | obras_personas | ve la agenda completa de personas, el log de accesos, y **transfiere personas** (`sql/041`) |
+| obras_empresas_todas | funcion | obras_empresas | `sql/039` — simétrico a `obras_personas_todas` ahora que las empresas son privadas por dueño. Ve todas + transfiere empresas |
+| obras_aprobar | funcion | obras_pendientes | aprobar o rechazar el **alta** parecida. Es el "administrador" de los pedidos del usuario — **no** da acceso a la agenda: `obras_puede_ver_persona` no lo mira |
 
 Combinación a tener presente: crear una empresa o persona desde adentro de una obra necesita `obras_empresas_crear` / `obras_personas_crear` además de `obras_vincular`. Con solo `obras_vincular` se pueden enlazar las que ya existen.
 

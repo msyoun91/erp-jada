@@ -6,6 +6,7 @@ import { Briefcase, Plus } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import type { Empresa } from "../types";
+import { AlcanceToggle } from "./AlcanceToggle";
 import { EmpresaFormPanel } from "./EmpresaFormPanel";
 
 // Misma fila de dos líneas en mobile y grilla de anchos fijos en escritorio que
@@ -15,9 +16,13 @@ const COLUMNAS = "md:grid-cols-[minmax(0,1fr)_10rem_9rem_9rem]";
 export function EmpresasView({
   empresas,
   puedeCrear,
+  veTodas,
+  miId,
 }: {
   empresas: Empresa[];
   puedeCrear: boolean;
+  veTodas: boolean;
+  miId: string | null;
 }) {
   const [texto, setTexto] = useState("");
   const [creando, setCreando] = useState(false);
@@ -42,6 +47,12 @@ export function EmpresasView({
           </button>
         )}
       </div>
+
+      {veTodas && (
+        <div className="mb-3">
+          <AlcanceToggle />
+        </div>
+      )}
 
       <Paginacion {...paginado} etiqueta="empresas" />
 
@@ -68,6 +79,9 @@ export function EmpresasView({
                     {e.razon_social}
                   </span>
                   {e.pendiente && <span className="badge badge-warning shrink-0">Pendiente</span>}
+                  {miId && e.creado_por !== miId && (
+                    <span className="badge badge-neutral shrink-0">Ajena</span>
+                  )}
                 </span>
                 <span className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1 md:contents">
                   <span className={e.nombre_comercial ? "truncate" : "hidden md:block"}>

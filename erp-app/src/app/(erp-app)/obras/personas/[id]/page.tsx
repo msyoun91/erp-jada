@@ -2,13 +2,17 @@ import { notFound } from "next/navigation";
 import {
   puedeEditarPersona,
   puedeVerPersonas,
+  puedeVerTodasLasPersonas,
   puedeVincular,
   puedeVincularPersonaEmpresa,
 } from "@/modules/obras/permissions";
 import {
+  getCompartidosPersona,
   getEstadoPersona,
   getFichaPersona,
   getReferenciasDePersona,
+  getUsuariosParaTransferir,
+  getUsuarioActualId,
   getVinculosPersona,
 } from "@/modules/obras/queries";
 import { Breadcrumb } from "@/modules/obras/components/Breadcrumb";
@@ -16,15 +20,28 @@ import { EstadoPendiente } from "@/modules/obras/components/EstadoPendiente";
 import { PersonaDetalle } from "@/modules/obras/components/PersonaDetalle";
 import type { EstadoObra, RolPersona } from "@/modules/obras/types";
 
-export default async function PersonaPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PersonaPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ ctx?: string }>;
+}) {
   if (!(await puedeVerPersonas())) notFound();
 
   const { id } = await params;
 
+  // `?ctx=obra:<id>` / `empresa:<id>`: enlace desde una ficha donde el usuario
+  // tiene grant contextual. Sin eso el contacto solo lo abre el dueño / grant
+  // completo / obras_personas_todas.
+  const { ctx: ctxParam } = await searchParams;
+  const m = ctxParam?.match(/^(obra|empresa):([0-9a-f-]{36})$/);
+  const ctx = m ? { tipo: m[1] as "obra" | "empresa", id: m[2] } : undefined;
+
   // getFichaPersona registra el acceso: es la única puerta a los datos de
   // contacto, y tira si la persona está fuera del alcance del usuario.
   const [persona, estado] = await Promise.all([
-    getFichaPersona(id).catch(() => null),
+    getFichaPersona(id, ctx).catch(() => null),
     getEstadoPersona(id),
   ]);
 
@@ -53,16 +70,30 @@ export default async function PersonaPage({ params }: { params: Promise<{ id: st
     );
   }
 
-  const [{ empresas, obras }, referencias, editar, vincularEmpresa, vincularObra] =
-    await Promise.all([
-      getVinculosPersona(id),
-      getReferenciasDePersona(id),
-      puedeEditarPersona(),
-      puedeVincularPersonaEmpresa(),
-      puedeVincular(),
-    ]);
+  const [
+    { empresas, obras },
+    referencias,
+    editar,
+    vincularEmpresa,
+    vincularObra,
+    veTodas,
+    compartidos,
+    usuarios,
+    miId,
+  ] = await Promise.all([
+    getVinculosPersona(id),
+    getReferenciasDePersona(id),
+    puedeEditarPersona(),
+    puedeVincularPersonaEmpresa(),
+    puedeVincular(),
+    puedeVerTodasLasPersonas(),
+    getCompartidosPersona(id),
+    getUsuariosParaTransferir(),
+    getUsuarioActualId(),
+  ]);
 
   const comisionPorObra = new Map(referencias.map((r) => [r.obra_id, r.porcentaje_comision]));
+  const esMio = !!miId && persona.creado_por === miId;
 
   return (
     <PersonaDetalle
@@ -90,9 +121,12 @@ export default async function PersonaPage({ params }: { params: Promise<{ id: st
           empresa: v.obras_empresas?.razon_social ?? null,
           roles: v.roles as RolPersona[],
           comision: comisionPorObra.get(v.obras!.id) ?? null,
-          pendiente: v.pendiente,
         }))}
       permisos={{ editar, vincularEmpresa, vincularObra }}
+      esMio={esMio}
+      veTodas={veTodas}
+      compartidos={compartidos}
+      usuarios={usuarios}
     />
   );
 }

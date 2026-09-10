@@ -1,12 +1,30 @@
 import { notFound } from "next/navigation";
-import { puedeCrearEmpresa, puedeVerEmpresas } from "@/modules/obras/permissions";
-import { getEmpresas } from "@/modules/obras/queries";
+import {
+  puedeCrearEmpresa,
+  puedeVerEmpresas,
+  puedeVerTodasLasEmpresas,
+} from "@/modules/obras/permissions";
+import { getEmpresas, getUsuarioActualId } from "@/modules/obras/queries";
 import { EmpresasView } from "@/modules/obras/components/EmpresasView";
 
-export default async function EmpresasPage() {
+export default async function EmpresasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ alcance?: string }>;
+}) {
   if (!(await puedeVerEmpresas())) notFound();
 
-  const [empresas, crear] = await Promise.all([getEmpresas(), puedeCrearEmpresa()]);
+  const { alcance: alcanceParam } = await searchParams;
+  const alcance = alcanceParam === "todos" ? "todos" : "propios";
 
-  return <EmpresasView empresas={empresas} puedeCrear={crear} />;
+  const [empresas, crear, veTodas, miId] = await Promise.all([
+    getEmpresas(undefined, alcance),
+    puedeCrearEmpresa(),
+    puedeVerTodasLasEmpresas(),
+    getUsuarioActualId(),
+  ]);
+
+  return (
+    <EmpresasView empresas={empresas} puedeCrear={crear} veTodas={veTodas} miId={miId} />
+  );
 }

@@ -6,6 +6,39 @@ Leer antes de tocar el módulo. Lo que está acá es lo que la spec **no** dice 
 
 ---
 
+## MODEL A — obras, empresas y personas son privadas por dueño (`sql/039`–`044`)
+
+Pedido del usuario, y reescribe varias decisiones de más abajo. **Nada se comparte salvo acto explícito del dueño.** Las empresas dejan de ser globales.
+
+**Visibilidad.** `obras.responsable_id` / `obras_empresas.creado_por` / `obras_personas.creado_por` gobiernan. Ves lo tuyo, lo que te compartieron, y —con el permiso `_todas`— todo. `obras_puede_ver_persona` / `obras_puede_ver_empresa` ya no cuentan vínculos ni referencias: solo dueño, grant completo, o `_todas`.
+
+**El contacto de persona se protege a nivel columna.** `telefono`/`whatsapp`/`email` (y sus `_norm`) salieron del `GRANT SELECT` de `obras_personas`. Antes un `select` directo los leía sin registro; el "único camino" era convención. Ahora `obras_ficha_persona()` —DEFINER, saltea el grant de columna— es de verdad el único, y toma contexto opcional (`obra`/`empresa` + id) para autorizar por grant contextual. Todo `select("*")` sobre `obras_personas` en el cliente pasó a lista de columnas.
+
+**Compartir — dos formas, las dos las inicia `creado_por`:**
+1. **Completa** (`obras_persona_compartida` / `obras_empresa_compartida`, funciones `obras_compartir_*` / `obras_revocar_*`): la entidad entra a la agenda del receptor. Lectura, no edición. Revocable.
+2. **Contextual** (`obras_persona_grant_contextual`, ancla obra XOR empresa): el contacto de la persona se ve **solo dentro de esa ficha** de obra/empresa (`/obras/personas/{id}?ctx=obra:{id}`). No entra a la agenda ni al buscador. Muere con el vínculo —validado en vivo, sin trigger de limpieza—. Nace de transferir una obra/empresa o del checklist de "contactos exclusivos".
+
+Un grant recibido **no se re-comparte**: las funciones exigen `creado_por`. **Ver no es editar:** `obras_*_update` exigen `creado_por = auth.uid()`; `_todas` mira y transfiere, no corrige — para editar lo ajeno hay que transferírselo (una puerta, no dos).
+
+**Transferir — funciones separadas, una por entidad:**
+- `obras_transferir(obra, a, contactos_exclusivos[])` — gate `obras_transferir`. Reasigna `responsable_id` + cascada.
+- `obras_transferir_persona(persona, a)` — gate `obras_personas_todas`. Reasigna `creado_por`, revoca los grants del dueño saliente.
+- `obras_transferir_empresa(empresa, a, personas_exclusivas[])` — gate `obras_empresas_todas` (submódulo nuevo).
+
+**Cascada con confirmación.** `obras_contactos_exclusivos_de_obra` / `_de_empresa` listan lo vinculado **solo** a esa obra/empresa que el dueño saliente posee. El checklist del panel: tildado → cambia de dueño con ella; destildado → grant contextual (personas) o `obras_empresa_compartida` (empresas, no son sensibles). Lo compartido-al-saliente no cascadea.
+
+**La cola de aprobación se recorta a las altas.** Bajo model A no se puede vincular lo que no se ve, así que el estado "vínculo a entidad ajena, congelado" desaparece: se dropeó `pendiente`/`motivo_rechazo` de `obras_obra_empresa` / `obras_obra_persona`, y `obras_guard_congelado` entera. Queda solo el alta parecida de obra/empresa/persona → congelada → `obras_aprobar`. `obras_marcar_pendiente` perdió las ramas de vínculo; la regla "marcar referente exige ver a la persona" pasó al WITH CHECK de `obras_obra_referente_insert`.
+
+**El buscador enmascara, no esconde (`sql/042`).** El match crudo cross-owner (global y aviso de duplicados) devuelve la entidad ajena en **identidad mínima + nombre del dueño**, sin link, sin ficha. `obras_buscar` reparte tres funciones DEFINER que devuelven `es_ajeno` + `duenio`. `obras_buscar_duplicados_obra` ahora sí muestra el nombre de la obra ajena (sin dirección ni localidad); `obras_buscar_duplicados_empresa` pasó a DEFINER y enmascara igual.
+
+**Filtro de alcance + badge.** `_todas` / `obras_transferir` habilitan un toggle `Míos | Todos` (URL `?alcance=`, default `propios`). Filas ajenas → badge "Ajena". El `getObras`/`getEmpresas`/`getPersonas` filtra server-side por dueño salvo que `alcance=todos` **y** el permiso lo respalde.
+
+**Corte limpio, sin backfill.** Al aplicar: 0 vínculos cross-owner, 0 pendientes. Quien veía por vínculo pierde acceso y se re-comparte a mano.
+
+Clases de error nuevas: `OB020`–`OB025` (lista blanca `mensajeError`, texto para el usuario).
+
+---
+
 ## Nombre: nada de CRM
 
 La spec prohíbe explícitamente "CRM", "Comercial", "Prospectos" y "Oportunidades" como nombre visible. El módulo administra el universo de obras y sus relaciones, no un pipeline de ventas. `modulo = 'obras'` cumple.
@@ -36,6 +69,8 @@ Las transferencias se registran en `obras_transferencias`. Sin eso, "¿por qué 
 
 ## Las personas tienen alcance; las empresas no
 
+> **Superado por *MODEL A* (arriba).** Las empresas también son privadas por dueño; el alcance de personas ya no incluye "vinculada a una obra propia". El resto del razonamiento (registro de acceso, búsqueda de identidad mínima, sin exportar) sigue vigente.
+
 La decisión inicial fue que empresas y personas fueran globales, para no duplicar entidades. Se revisó al plantear el escenario de robo de contactos: un vendedor con acceso al módulo se llevaba la agenda entera de JADA.
 
 **Decidido, en capas:**
@@ -61,6 +96,8 @@ La comisión sí necesitaba tratamiento: es un dato sensible dentro de la ficha 
 ---
 
 ## Aviso ciego de duplicados
+
+> **Actualizado por *MODEL A* / `sql/042`.** La obra ajena ahora devuelve el **nombre** (sin dirección ni localidad); `obra_id` sigue NULL. Mismo criterio ahora en empresas (`obras_buscar_duplicados_empresa` pasó a DEFINER + enmascarado).
 
 Conflicto real: la spec pide avisar si ya existe una obra parecida, pero las obras ajenas son invisibles. Si el aviso no salta, dos vendedores cargan el mismo edificio.
 
@@ -236,6 +273,8 @@ La comisión de fase 1 **solo se registra**. No se liquida, no se paga, no se ca
 
 ## Congelada, no marcada
 
+> **Recortado por *MODEL A* / `sql/040`.** Solo el **alta** parecida se congela. El "vínculo con una persona o empresa de otro" ya no existe como estado: bajo model A no se puede vincular lo que no se ve, así que se dropeó `pendiente` de las dos tablas de vínculo y `obras_guard_congelado` entera.
+
 Pedido del usuario: un alta que se parece a algo ya cargado, y un vínculo con una persona o empresa de otro, esperan autorización. La pregunta que decidía el diseño era qué puede hacer el que cargó mientras espera. **Decidido: nada.** La fila existe, la ve solo quien la creó, y no acepta ni participa de ningún vínculo hasta que se resuelva (`sql/033`).
 
 La alternativa —badge y a otra cosa— dejaba al duplicado propagándose por las obras mientras la cola espera, que es justo lo que la cola viene a evitar.
@@ -247,6 +286,8 @@ Sin estado nuevo: `pendiente = true` es la cola, `pendiente = false` con `activo
 ---
 
 ## El vínculo pendiente no abre la ficha
+
+> **Superado por *MODEL A* / `sql/039`–`040`.** Ya no hay vínculo pendiente. `obras_puede_ver_persona` dejó de contar **cualquier** vínculo: para ver una persona hay que ser su dueño, tener grant, o `obras_personas_todas`. El WITH CHECK de `obras_obra_persona_insert` exige visibilidad — no se vincula lo que no se ve.
 
 Es el punto entero del pedido 2, y lo que lo hace algo más que un trámite: `obras_puede_ver_persona` dejó de contar los vínculos pendientes. Si los contara, el vendedor vincularía, leería el teléfono por `obras_ficha_persona()` y esperaría el rechazo sentado — con el dato ya copiado.
 
@@ -337,6 +378,8 @@ Nada de tokens ni de links públicos — la ficha sigue exigiendo sesión y perm
 ---
 
 ## Marcar referente era el atajo que dejaba pasar todo
+
+> **Ajustado por *MODEL A* / `sql/040`.** El guard OB019 sigue, pero ahora está en el WITH CHECK de `obras_obra_referente_insert` (no en un trigger), y "visible" ya no significa "vínculo aprobado" sino "dueño / grant / `obras_personas_todas`".
 
 Con el vínculo obra↔persona ya cerrado, quedaba una puerta más: `obras_puede_ver_persona` cuenta las filas de `obras_obra_referente` como acceso —una comisión asignada a alguien que no podés ver no significa nada— y esa tabla **no** tiene `pendiente`.
 
@@ -646,6 +689,8 @@ expuesta al reordenamiento de las ramas.
 ---
 
 ## El buscador global no inventa visibilidad (`sql/037`)
+
+> **Reescrito por *MODEL A* / `sql/042`.** Las tres ramas pasan por funciones DEFINER (`obras_buscar_obras` / `_empresas` / `_personas`) que enmascaran lo ajeno: identidad mínima + `duenio`, `id` NULL, `es_ajeno = true`. La obra/empresa ajena **sí aparece** ahora (enmascarada), no desaparece. `visible`/`cargada_por` → `es_ajeno`/`duenio`.
 
 Una sola barra para obra, empresa y persona. Lo que había que decidir no era el
 match sino el alcance: son tres entidades con tres reglas distintas, y un buscador

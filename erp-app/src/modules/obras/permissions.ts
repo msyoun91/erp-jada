@@ -61,9 +61,16 @@ export function puedeVincularPersonaEmpresa() {
 }
 
 // Ve la agenda completa, no solo las personas de sus obras. Es el permiso que
-// levanta el alcance por fila de obras_personas.
+// levanta el alcance por fila de obras_personas. También habilita transferir
+// personas (ver-todo = ver + transferir, igual que obras_transferir).
 export function puedeVerTodasLasPersonas() {
   return tienePermiso("obras_personas_todas");
+}
+
+// Simétrico a obras_personas_todas ahora que las empresas son privadas por
+// dueño. Ve todas las empresas + transferirlas.
+export function puedeVerTodasLasEmpresas() {
+  return tienePermiso("obras_empresas_todas");
 }
 
 // Ver los dos logs. Aparte de `obras_personas_todas` a propósito: ese permiso

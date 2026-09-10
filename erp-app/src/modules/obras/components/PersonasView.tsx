@@ -5,17 +5,20 @@ import Link from "next/link";
 import { Plus, UserRound } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
-import type { Persona } from "../types";
+import type { PersonaListado } from "../types";
+import { AlcanceToggle } from "./AlcanceToggle";
 import { PersonaFormPanel } from "./PersonaFormPanel";
 
 export function PersonasView({
   personas,
   puedeCrear,
   veTodas,
+  miId,
 }: {
-  personas: Persona[];
+  personas: PersonaListado[];
   puedeCrear: boolean;
   veTodas: boolean;
+  miId: string | null;
 }) {
   const [texto, setTexto] = useState("");
   const [creando, setCreando] = useState(false);
@@ -38,14 +41,18 @@ export function PersonasView({
         )}
       </div>
 
-      <Paginacion {...paginado} etiqueta="personas" />
-
-      {!veTodas && (
+      {veTodas ? (
+        <div className="mb-3">
+          <AlcanceToggle />
+        </div>
+      ) : (
         <p className="t-caption mb-2">
-          Ves las personas de tus obras y las que cargaste vos. Si buscás a alguien que no aparece,
-          el formulario de alta te avisa si ya está cargada.
+          Ves las personas que cargaste vos y las que te compartieron. Si buscás a alguien que no
+          aparece, el formulario de alta te avisa si ya está cargada.
         </p>
       )}
+
+      <Paginacion {...paginado} etiqueta="personas" />
 
       {filtradas.length === 0 ? (
         <div className="empty-state">
@@ -73,6 +80,9 @@ export function PersonasView({
                   {p.nombre} {p.apellido ?? ""}
                 </span>
                 {p.pendiente && <span className="badge badge-warning">Pendiente</span>}
+                {miId && p.creado_por !== miId && (
+                  <span className="badge badge-neutral">Ajena</span>
+                )}
               </Link>
             </li>
           ))}

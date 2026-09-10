@@ -2,17 +2,26 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Archive, Link2, Pencil, Plus, Unlink } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { desactivarPersona, desvincularPersonaEmpresa } from "../actions";
 import { copiarEnlace } from "../copiarEnlace";
-import { LABEL_ESTADO, LABEL_ROL_PERSONA, type EstadoObra, type RolPersona } from "../types";
+import { Archive, Link2, Pencil, Plus, Share2, Unlink, UserRoundCog } from "lucide-react";
+import {
+  LABEL_ESTADO,
+  LABEL_ROL_PERSONA,
+  type Compartido,
+  type EstadoObra,
+  type RolPersona,
+  type Usuario,
+} from "../types";
 import { Breadcrumb } from "./Breadcrumb";
+import { CompartirPanel } from "./CompartirPanel";
 import { Dato, Observaciones } from "./Dato";
 import { EstadoPendiente } from "./EstadoPendiente";
 import { PersonaFormPanel, type PersonaEditable } from "./PersonaFormPanel";
+import { TransferirEntidadPanel } from "./TransferirEntidadPanel";
 import { VincularObraPanel } from "./VincularObraPanel";
 import { VincularPersonaEmpresaPanel } from "./VincularPersonaEmpresaPanel";
 
@@ -32,6 +41,10 @@ export function PersonaDetalle({
   empresas,
   obras,
   permisos,
+  esMio,
+  veTodas,
+  compartidos,
+  usuarios,
 }: {
   persona: PersonaEditable;
   // `obras_ficha_persona` sirve los datos de contacto y nada más: el estado de
@@ -46,13 +59,19 @@ export function PersonaDetalle({
     empresa: string | null;
     roles: RolPersona[];
     comision: number | null;
-    pendiente: boolean;
   }[];
   permisos: { editar: boolean; vincularEmpresa: boolean; vincularObra: boolean };
+  // Compartir es solo del dueño; transferir, de quien tiene obras_personas_todas.
+  esMio: boolean;
+  veTodas: boolean;
+  compartidos: Compartido[];
+  usuarios: Usuario[];
 }) {
   const [editando, setEditando] = useState(false);
   const [vinculando, setVinculando] = useState(false);
   const [vinculandoObra, setVinculandoObra] = useState(false);
+  const [compartiendo, setCompartiendo] = useState(false);
+  const [transfiriendo, setTransfiriendo] = useState(false);
   const [confirmando, setConfirmando] = useState<Confirmacion | null>(null);
 
   const nombre = `${persona.nombre} ${persona.apellido ?? ""}`.trim();
@@ -86,6 +105,24 @@ export function PersonaDetalle({
                 icon: <Link2 size={14} strokeWidth={1.75} />,
                 onClick: () => copiarEnlace(`/obras/personas/${persona.id}`),
               },
+              ...(esMio
+                ? [
+                    {
+                      label: "Compartir",
+                      icon: <Share2 size={14} strokeWidth={1.75} />,
+                      onClick: () => setCompartiendo(true),
+                    },
+                  ]
+                : []),
+              ...(veTodas
+                ? [
+                    {
+                      label: "Transferir",
+                      icon: <UserRoundCog size={14} strokeWidth={1.75} />,
+                      onClick: () => setTransfiriendo(true),
+                    },
+                  ]
+                : []),
               ...(permisos.editar
                 ? [
                     {
@@ -233,7 +270,6 @@ export function PersonaDetalle({
                   {o.comision !== null && (
                     <span className="badge badge-brand">Referente {o.comision.toFixed(2)}%</span>
                   )}
-                  {o.pendiente && <span className="badge badge-warning">Pendiente</span>}
                 </div>
               </li>
             ))}
@@ -242,6 +278,28 @@ export function PersonaDetalle({
       </section>
 
       {editando && <PersonaFormPanel persona={persona} onClose={() => setEditando(false)} />}
+
+      {compartiendo && (
+        <CompartirPanel
+          tipo="persona"
+          id={persona.id}
+          nombre={nombre}
+          compartidos={compartidos}
+          usuarios={usuarios}
+          onClose={() => setCompartiendo(false)}
+        />
+      )}
+
+      {transfiriendo && (
+        <TransferirEntidadPanel
+          tipo="persona"
+          id={persona.id}
+          nombre={nombre}
+          duenioActual={null}
+          usuarios={usuarios}
+          onClose={() => setTransfiriendo(false)}
+        />
+      )}
 
       {vinculando && (
         <VincularPersonaEmpresaPanel

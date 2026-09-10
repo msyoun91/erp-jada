@@ -1,14 +1,22 @@
 import { createClient } from "@/lib/supabase/server";
-import { getUsuariosActivos } from "@/lib/usuarios";
+import { getUsuariosActivos, getUsuarioActualId } from "@/lib/usuarios";
+import {
+  puedeTransferir,
+  puedeVerTodasLasEmpresas,
+  puedeVerTodasLasPersonas,
+} from "./permissions";
 import type {
   AccesoAuditoria,
+  Alcance,
+  Compartido,
+  ContactoExclusivo,
   Empresa,
   FiltrosObras,
   HistorialAprobacion,
   Obra,
   ObraListado,
   Pendiente,
-  Persona,
+  PersonaListado,
   TransferenciaAuditoria,
   Usuario,
 } from "./types";
@@ -22,8 +30,10 @@ export function getUsuariosParaTransferir(): Promise<Usuario[]> {
   return getUsuariosActivos();
 }
 
-// RLS ya acota a las obras del usuario (o a todas, si tiene obras_transferir).
-// Acá no se re-implementa visibilidad.
+// RLS ya acota a lo del usuario (o a todo, con el permiso `_todas` /
+// `obras_transferir`). `alcance` es una comodidad de UI: por default el listado
+// muestra lo propio incluso a quien puede ver todo; sube a "todos" solo si lo
+// pide y el permiso lo respalda.
 export async function getObras(filtros: FiltrosObras = {}): Promise<ObraListado[]> {
   const supabase = await createClient();
 
@@ -36,13 +46,16 @@ export async function getObras(filtros: FiltrosObras = {}): Promise<ObraListado[
       "*, responsable:usuarios(id, nombre), obras_obra_empresa(id), obras_obra_persona(id)",
     )
     .eq("activo", true)
-    // El vínculo pendiente no cuenta como vínculo: todavía no participa de la
-    // obra y puede terminar rechazado.
     .eq("obras_obra_empresa.activo", true)
-    .eq("obras_obra_empresa.pendiente", false)
     .eq("obras_obra_persona.activo", true)
-    .eq("obras_obra_persona.pendiente", false)
     .order("updated_at", { ascending: false });
+
+  const verTodos = filtros.alcance === "todos" && (await puedeTransferir());
+  if (!verTodos) {
+    const me = await getUsuarioActualId();
+    if (!me) return [];
+    query = query.eq("responsable_id", me);
+  }
 
   if (filtros.nombre) query = query.ilike("nombre", `%${filtros.nombre}%`);
   if (filtros.estado) query = query.eq("estado", filtros.estado);
@@ -111,9 +124,9 @@ export async function getObra(id: string) {
     .select(
       `*,
        responsable:usuarios(id, nombre),
-       obras_obra_empresa(id, roles, observaciones, pendiente, obras_empresas(id, razon_social, nombre_comercial)),
-       obras_obra_persona(id, roles, observaciones, empresa_id, pendiente,
-         obras_personas(id, nombre, apellido),
+       obras_obra_empresa(id, roles, observaciones, obras_empresas(id, razon_social, nombre_comercial)),
+       obras_obra_persona(id, roles, observaciones, empresa_id,
+         obras_personas(id, nombre, apellido, creado_por),
          obras_empresas(id, razon_social))`,
     )
     .eq("id", id)
@@ -148,13 +161,14 @@ export async function getTransferencias(obraId: string) {
     .from("obras_transferencias")
     .select("id, created_at, de:de_usuario_id(nombre), a:a_usuario_id(nombre)")
     .eq("obra_id", obraId)
+    .eq("tipo", "obra")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
   return data ?? [];
 }
 
-export async function getEmpresas(busqueda?: string): Promise<Empresa[]> {
+export async function getEmpresas(busqueda?: string, alcance?: Alcance): Promise<Empresa[]> {
   const supabase = await createClient();
 
   let query = supabase
@@ -162,6 +176,13 @@ export async function getEmpresas(busqueda?: string): Promise<Empresa[]> {
     .select("*")
     .eq("activo", true)
     .order("razon_social");
+
+  const verTodos = alcance === "todos" && (await puedeVerTodasLasEmpresas());
+  if (!verTodos) {
+    const me = await getUsuarioActualId();
+    if (!me) return [];
+    query = query.eq("creado_por", me);
+  }
 
   if (busqueda) query = query.ilike("razon_social", `%${busqueda}%`);
 
@@ -178,7 +199,7 @@ export async function getEmpresa(id: string) {
     .select(
       `*,
        obras_persona_empresa(id, cargo, es_principal, obras_personas(id, nombre, apellido)),
-       obras_obra_empresa(id, roles, pendiente, obras(id, nombre, estado, localidad))`,
+       obras_obra_empresa(id, roles, obras(id, nombre, estado, localidad))`,
     )
     .eq("id", id)
     .eq("obras_persona_empresa.activo", true)
@@ -189,17 +210,28 @@ export async function getEmpresa(id: string) {
   return data;
 }
 
-// Solo las personas al alcance del usuario: RLS filtra por obra propia,
-// creación propia o `obras_personas_todas`.
-export async function getPersonas(busqueda?: string): Promise<Persona[]> {
+// Solo las personas al alcance del usuario: RLS filtra por creación propia,
+// grant o `obras_personas_todas`. El listado nunca trae contacto — desde
+// sql/039 `telefono`/`whatsapp`/`email` no tienen GRANT SELECT y un `select("*")`
+// daría 403. El contacto sale solo por `getFichaPersona`.
+export async function getPersonas(busqueda?: string, alcance?: Alcance): Promise<PersonaListado[]> {
   const supabase = await createClient();
 
   let query = supabase
     .from("obras_personas")
-    .select("*")
+    .select(
+      "id, nombre, apellido, nombre_norm, observaciones, creado_por, activo, pendiente, motivo_rechazo, created_at, updated_at",
+    )
     .eq("activo", true)
     .order("apellido", { nullsFirst: false })
     .order("nombre");
+
+  const verTodos = alcance === "todos" && (await puedeVerTodasLasPersonas());
+  if (!verTodos) {
+    const me = await getUsuarioActualId();
+    if (!me) return [];
+    query = query.eq("creado_por", me);
+  }
 
   if (busqueda) query = query.ilike("nombre_norm", `%${busqueda.toLowerCase()}%`);
 
@@ -209,11 +241,19 @@ export async function getPersonas(busqueda?: string): Promise<Persona[]> {
 }
 
 // Único camino a teléfono, whatsapp y email. Cada llamada queda registrada en
-// obras_accesos_persona — por eso no se reemplaza por un select directo.
-export async function getFichaPersona(id: string) {
+// obras_accesos_persona — por eso no se reemplaza por un select directo. Con
+// `ctx` (obra o empresa) autoriza por grant contextual: el contacto se ve solo
+// desde esa ficha.
+export async function getFichaPersona(
+  id: string,
+  ctx?: { tipo: "obra" | "empresa"; id: string },
+) {
   const supabase = await createClient();
 
-  const { data, error } = await supabase.rpc("obras_ficha_persona", { p_persona_id: id });
+  const { data, error } = await supabase.rpc("obras_ficha_persona", {
+    p_persona_id: id,
+    ...(ctx ? { p_ctx_tipo: ctx.tipo, p_ctx_id: ctx.id } : {}),
+  });
   if (error) throw error;
   return data?.[0] ?? null;
 }
@@ -228,7 +268,7 @@ export async function getEstadoPersona(id: string) {
 
   const { data, error } = await supabase
     .from("obras_personas")
-    .select("id, nombre, apellido, activo, pendiente, motivo_rechazo")
+    .select("id, nombre, apellido, activo, pendiente, motivo_rechazo, creado_por")
     .eq("id", id)
     .maybeSingle();
 
@@ -248,7 +288,7 @@ export async function getVinculosPersona(id: string) {
         .eq("activo", true),
       supabase
         .from("obras_obra_persona")
-        .select("id, roles, pendiente, obras(id, nombre, estado), obras_empresas(id, razon_social)")
+        .select("id, roles, obras(id, nombre, estado), obras_empresas(id, razon_social)")
         .eq("persona_id", id)
         .eq("activo", true),
     ]);
@@ -274,6 +314,68 @@ export async function getReferenciasDePersona(personaId: string) {
   return data ?? [];
 }
 
+// Con quién está compartida una ficha. Solo lo ve el dueño (RLS de
+// obras_persona_compartida / _empresa).
+export async function getCompartidosPersona(personaId: string): Promise<Compartido[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("obras_persona_compartida")
+    .select("usuario_id, created_at, usuario:usuario_id(nombre)")
+    .eq("persona_id", personaId)
+    .eq("activo", true)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    usuario_id: r.usuario_id,
+    usuario: (r.usuario as { nombre: string } | null)?.nombre ?? "—",
+    created_at: r.created_at,
+  }));
+}
+
+export async function getCompartidosEmpresa(empresaId: string): Promise<Compartido[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("obras_empresa_compartida")
+    .select("usuario_id, created_at, usuario:usuario_id(nombre)")
+    .eq("empresa_id", empresaId)
+    .eq("activo", true)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((r) => ({
+    usuario_id: r.usuario_id,
+    usuario: (r.usuario as { nombre: string } | null)?.nombre ?? "—",
+    created_at: r.created_at,
+  }));
+}
+
+// Lo vinculado solo a esta obra/empresa que el dueño saliente posee: el
+// checklist de confirmación de la transferencia.
+export async function getContactosExclusivosObra(obraId: string): Promise<ContactoExclusivo[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_contactos_exclusivos_de_obra", {
+    p_obra_id: obraId,
+  });
+  if (error) throw error;
+  return (data ?? []) as ContactoExclusivo[];
+}
+
+export async function getContactosExclusivosEmpresa(
+  empresaId: string,
+): Promise<ContactoExclusivo[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_contactos_exclusivos_de_empresa", {
+    p_empresa_id: empresaId,
+  });
+  if (error) throw error;
+  return (data ?? []) as ContactoExclusivo[];
+}
+
 // Los dos logs de la vista de Auditoría. Van por función y no por select
 // directo: `obras_accesos_persona` solo la ve quien tiene
 // `obras_personas_todas`, y las transferencias solo quien ve la obra — con un
@@ -296,8 +398,8 @@ export async function getAuditoriaTransferencias(dias: number) {
 }
 
 // La cola de autorizaciones y su historial. Van por función por lo mismo que
-// la auditoría: quien aprueba necesita ver las cinco tablas enteras y no tiene
-// por qué tener permiso sobre la agenda ni sobre las obras ajenas.
+// la auditoría: quien aprueba necesita ver las tres tablas de alta enteras y no
+// tiene por qué tener permiso sobre la agenda ni sobre las obras ajenas.
 export async function getPendientes(): Promise<Pendiente[]> {
   const supabase = await createClient();
 

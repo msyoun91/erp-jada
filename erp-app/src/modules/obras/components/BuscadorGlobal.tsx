@@ -116,8 +116,8 @@ export function BuscadorGlobal() {
                       {LABEL_TIPO_RESULTADO[tipo]}
                     </p>
                     <ul className="flex flex-col gap-1">
-                      {grupo.map((r) => (
-                        <li key={`${r.tipo}-${r.id}`}>
+                      {grupo.map((r, i) => (
+                        <li key={`${r.tipo}-${r.id ?? `ajeno-${i}`}`}>
                           <Fila resultado={r} onElegir={elegir} />
                         </li>
                       ))}
@@ -154,29 +154,27 @@ function Fila({
       <span className="min-w-0 flex-1">
         <span
           className={`t-body-m block truncate ${
-            resultado.visible ? "font-semibold text-text-primary" : "text-text-tertiary"
+            resultado.es_ajeno ? "text-text-tertiary" : "font-semibold text-text-primary"
           }`}
         >
           {resultado.titulo}
         </span>
-        {(resultado.subtitulo || resultado.cargada_por) && (
+        {(resultado.subtitulo || resultado.duenio) && (
           <span className="t-caption block truncate">
             {[
               resultado.subtitulo,
-              !resultado.visible && resultado.cargada_por && `la cargó ${resultado.cargada_por}`,
+              resultado.es_ajeno && resultado.duenio && `la cargó ${resultado.duenio}`,
             ]
               .filter(Boolean)
               .join(" · ")}
           </span>
         )}
       </span>
-      {!resultado.visible && (
-        <span className="badge badge-neutral shrink-0">Fuera de tu alcance</span>
-      )}
+      {resultado.es_ajeno && <span className="badge badge-neutral shrink-0">Ajeno</span>}
     </>
   );
 
-  if (!resultado.visible) {
+  if (resultado.es_ajeno || !resultado.id) {
     return <div className="tap-target flex items-center gap-2.5 p-2">{contenido}</div>;
   }
 

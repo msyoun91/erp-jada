@@ -52,7 +52,6 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
     empresa_id: v.obras_empresas?.id ?? "",
     roles: v.roles as RolEmpresa[],
     observaciones: v.observaciones,
-    pendiente: v.pendiente,
     razon_social: v.obras_empresas?.razon_social ?? "—",
   }));
 
@@ -62,7 +61,6 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
     empresa_id: v.empresa_id,
     roles: v.roles as RolPersona[],
     observaciones: v.observaciones,
-    pendiente: v.pendiente,
     nombre: `${v.obras_personas?.nombre ?? ""} ${v.obras_personas?.apellido ?? ""}`.trim() || "—",
     empresa: v.obras_empresas?.razon_social ?? null,
   }));

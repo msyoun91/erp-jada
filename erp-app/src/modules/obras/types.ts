@@ -374,9 +374,59 @@ export type ReferenteForm = z.input<typeof referenteSchema>;
 export const transferirObraSchema = z.object({
   obra_id: z.string().uuid(),
   a_usuario_id: z.string().uuid(),
+  // Contactos vinculados SOLO a esta obra que el checklist de confirmación
+  // tildó para mover de dueño con ella. El resto queda como grant contextual.
+  contactos_exclusivos: z.array(z.string().uuid()).default([]),
 });
 
 export type TransferirObraForm = z.input<typeof transferirObraSchema>;
+
+// Transferir personas y empresas es su propia función (gate obras_personas_todas
+// / obras_empresas_todas). La empresa arrastra a su gente exclusiva tildada.
+export const transferirPersonaSchema = z.object({
+  persona_id: z.string().uuid(),
+  a_usuario_id: z.string().uuid(),
+});
+
+export type TransferirPersonaForm = z.input<typeof transferirPersonaSchema>;
+
+export const transferirEmpresaSchema = z.object({
+  empresa_id: z.string().uuid(),
+  a_usuario_id: z.string().uuid(),
+  personas_exclusivas: z.array(z.string().uuid()).default([]),
+});
+
+export type TransferirEmpresaForm = z.input<typeof transferirEmpresaSchema>;
+
+// Compartir una persona o empresa con otro usuario. Lo inicia el dueño; la
+// verificación real está en obras_compartir_persona / _empresa.
+export const compartirSchema = z.object({
+  id: z.string().uuid(),
+  usuario_id: z.string().uuid(),
+});
+
+export type CompartirForm = z.input<typeof compartirSchema>;
+
+// Lo que devuelve `obras_contactos_exclusivos_de_*`: identidad mínima de lo
+// vinculado solo a esa obra/empresa, para el checklist de confirmación.
+export type ContactoExclusivo = {
+  tipo: "persona" | "empresa";
+  id: string;
+  etiqueta: string;
+  detalle: string | null;
+};
+
+// Con quién está compartida una ficha (persona o empresa).
+export type Compartido = {
+  usuario_id: string;
+  usuario: string;
+  created_at: string;
+};
+
+// Alcance del listado. Solo surte efecto para quien tiene el permiso `_todas`
+// (o `obras_transferir` en obras): el resto siempre ve lo propio.
+export const ALCANCES = ["propios", "todos"] as const;
+export type Alcance = (typeof ALCANCES)[number];
 
 export const filtrosObrasSchema = z.object({
   nombre: z.string().optional(),
@@ -388,27 +438,33 @@ export const filtrosObrasSchema = z.object({
   // Solo tiene sentido para quien tiene obras_transferir: es la vista que
   // encuentra las obras de un vendedor dado de baja para reasignarlas.
   responsable_inactivo: z.boolean().optional(),
+  // Default 'propios'. 'todos' solo lo respeta el server si el usuario tiene el
+  // permiso de ver todo; si no, se ignora.
+  alcance: z.enum(ALCANCES).optional(),
 });
 
 // Partial: los filtros llegan sueltos desde la URL, nunca todos juntos.
 export type FiltrosObras = Partial<z.input<typeof filtrosObrasSchema>>;
 
-// Lo que devuelven las RPC de duplicados. De una obra ajena solo llega el
-// nombre del responsable: el resto viene null a propósito.
+// Lo que devuelven las RPC de duplicados. De una entidad ajena llega el nombre
+// (obra/razón social) y el del dueño; el resto viene null a propósito, y
+// `obra_id`/`empresa_id` también, para que la UI no la enlace.
 export type DuplicadoObra = {
   es_mia: boolean;
   obra_id: string | null;
-  nombre: string | null;
+  nombre: string;
   direccion: string | null;
   localidad: string | null;
   responsable: string;
 };
 
 export type DuplicadoEmpresa = {
-  empresa_id: string;
+  es_mia: boolean;
+  empresa_id: string | null;
   razon_social: string;
   nombre_comercial: string | null;
   localidad: string | null;
+  cargada_por: string | null;
 };
 
 // Identidad mínima. No trae teléfono ni email — el contacto sale únicamente
@@ -421,12 +477,12 @@ export type DuplicadoPersona = {
   coincide: "email" | "telefono" | "nombre";
 };
 
-// El buscador global (`sql/037`). Una fila por resultado, con el mismo tipo
-// para las tres entidades: la barra no sabe de tablas, sabe de qué ficha abrir.
+// El buscador global (`sql/037`, enmascarado en `sql/042`). Una fila por
+// resultado, mismo tipo para las tres entidades.
 //
-// `visible` es false solo en personas fuera de alcance — identidad mínima, sin
-// contacto y sin ficha, con `cargada_por` para saber a quién preguntarle. El
-// resto de los resultados son cosas que el usuario ya puede abrir.
+// `es_ajeno` = true en lo que el usuario no puede abrir: identidad mínima, sin
+// contacto ni ficha, `id` en null y `duenio` con el nombre de quien la cargó
+// para saber a quién preguntarle. El resto son cosas que ya puede abrir.
 export const TIPOS_RESULTADO = ["obra", "empresa", "persona"] as const;
 
 export type TipoResultado = (typeof TIPOS_RESULTADO)[number];
@@ -439,11 +495,11 @@ export const LABEL_TIPO_RESULTADO: Record<TipoResultado, string> = {
 
 export type ResultadoBusqueda = {
   tipo: TipoResultado;
-  id: string;
+  id: string | null;
   titulo: string;
   subtitulo: string | null;
-  visible: boolean;
-  cargada_por: string | null;
+  es_ajeno: boolean;
+  duenio: string | null;
 };
 
 // Los dos logs, servidos por función: quien audita ve los accesos y las
@@ -457,6 +513,7 @@ export type AccesoAuditoria = {
   usuario: string;
   persona_id: string;
   persona: string;
+  contexto: string | null;
 };
 
 export type TransferenciaAuditoria = {
@@ -475,20 +532,20 @@ export type ObraListado = Obra & {
   personas: number;
 };
 
-// ── Autorizaciones pendientes (sql/033) ──────────────────────
-//
-// Cinco tablas pueden quedar esperando, y el `tipo` es lo que la función de
-// resolución usa para saber cuál tocar. No es un enum de Postgres: es una
-// lista blanca de nombres de tabla, y un enum obligaría a migrar para agregar
-// una sexta.
+// El listado de personas nunca trae contacto: desde sql/039 esas columnas no
+// tienen GRANT SELECT. El contacto sale solo por `getFichaPersona`.
+export type PersonaListado = Omit<
+  Persona,
+  "telefono" | "whatsapp" | "email" | "telefono_norm" | "whatsapp_norm" | "email_norm"
+>;
 
-export const TIPOS_PENDIENTE = [
-  "obra",
-  "empresa",
-  "persona",
-  "obra_empresa",
-  "obra_persona",
-] as const;
+// ── Autorizaciones pendientes (sql/033, recortadas en sql/040) ──────
+//
+// Solo las tres altas quedan en la cola: el vínculo a entidad ajena ya no se
+// congela (bajo model A no se puede vincular lo que no se ve). El `tipo` es una
+// lista blanca de nombres de tabla, no un enum de Postgres.
+
+export const TIPOS_PENDIENTE = ["obra", "empresa", "persona"] as const;
 
 export type TipoPendiente = (typeof TIPOS_PENDIENTE)[number];
 
@@ -496,8 +553,6 @@ export const LABEL_TIPO_PENDIENTE: Record<TipoPendiente, string> = {
   obra: "Obra nueva",
   empresa: "Empresa nueva",
   persona: "Persona nueva",
-  obra_empresa: "Empresa en una obra",
-  obra_persona: "Persona en una obra",
 };
 
 export type Pendiente = {

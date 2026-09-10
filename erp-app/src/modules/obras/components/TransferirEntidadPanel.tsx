@@ -3,22 +3,24 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { contactosExclusivosObra, transferirObra } from "../actions";
+import { contactosExclusivosEmpresa, transferirEmpresa, transferirPersona } from "../actions";
 import type { ContactoExclusivo, Usuario } from "../types";
 
-// Transferir cambia quién ve la obra, no solo una etiqueta: el responsable es
-// el eje de la RLS. Los contactos que están solo en esta obra pueden moverse de
-// dueño con ella — el checklist lo pregunta; el resto queda con grant contextual.
-export function TransferirPanel({
-  obraId,
-  obraNombre,
-  responsableActual,
+// Transferir cambia el dueño (`creado_por`). Para empresa, la gente que trabaja
+// solo en ella puede moverse también — el checklist lo pregunta. El resto queda
+// con grant contextual. Persona no tiene cascada.
+export function TransferirEntidadPanel({
+  tipo,
+  id,
+  nombre,
+  duenioActual,
   usuarios,
   onClose,
 }: {
-  obraId: string;
-  obraNombre: string;
-  responsableActual: string | null;
+  tipo: "persona" | "empresa";
+  id: string;
+  nombre: string;
+  duenioActual: string | null;
   usuarios: Usuario[];
   onClose: () => void;
 }) {
@@ -29,45 +31,44 @@ export function TransferirPanel({
   const [tildados, setTildados] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    contactosExclusivosObra(obraId).then((r) => {
+    if (tipo !== "empresa") return;
+    contactosExclusivosEmpresa(id).then((r) => {
       setExclusivos(r);
       setTildados(new Set(r.map((c) => c.id)));
     });
-  }, [obraId]);
+  }, [tipo, id]);
 
-  function toggle(id: string) {
+  function toggle(cid: string) {
     setTildados((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(cid)) next.delete(cid);
+      else next.add(cid);
       return next;
     });
   }
 
   async function transferir() {
     if (!destino) return setError("Elegí a quién transferirla");
-
     setError(undefined);
     setEnviando(true);
-    const result = await transferirObra({
-      obra_id: obraId,
-      a_usuario_id: destino,
-      contactos_exclusivos: [...tildados],
-    });
+    const result =
+      tipo === "persona"
+        ? await transferirPersona({ persona_id: id, a_usuario_id: destino })
+        : await transferirEmpresa({
+            empresa_id: id,
+            a_usuario_id: destino,
+            personas_exclusivas: [...tildados],
+          });
     setEnviando(false);
-
-    if (!result.success) {
-      setError(result.error);
-      return;
-    }
-    toast.success("Obra transferida");
+    if (!result.success) return setError(result.error);
+    toast.success(`${tipo === "persona" ? "Persona" : "Empresa"} transferida`);
     onClose();
   }
 
   return (
     <RightPanel
-      title="Transferir obra"
-      subtitle={obraNombre}
+      title={`Transferir ${tipo}`}
+      subtitle={nombre}
       onClose={onClose}
       hayCambios={!!destino}
       footer={
@@ -75,7 +76,12 @@ export function TransferirPanel({
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
             Cancelar
           </button>
-          <button type="button" className="btn btn-primary btn-sm" onClick={transferir} disabled={enviando}>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={transferir}
+            disabled={enviando}
+          >
             {enviando ? "Transfiriendo…" : "Transferir"}
           </button>
         </>
@@ -83,11 +89,11 @@ export function TransferirPanel({
     >
       <div className="flex flex-col gap-4 overflow-y-auto px-5 py-4">
         <p className="t-body-m">
-          Responsable actual: <span className="font-semibold">{responsableActual ?? "—"}</span>
+          Dueño actual: <span className="font-semibold">{duenioActual ?? "—"}</span>
         </p>
 
         <div>
-          <label className="t-label t-label-req mb-1 block">Nuevo responsable</label>
+          <label className="t-label t-label-req mb-1 block">Nuevo dueño</label>
           <select
             className={`input ${error ? "input-error" : ""}`}
             value={destino}
@@ -103,12 +109,11 @@ export function TransferirPanel({
           {error && <p className="input-error-text">{error}</p>}
         </div>
 
-        {exclusivos.length > 0 && (
+        {tipo === "empresa" && exclusivos.length > 0 && (
           <div>
-            <p className="t-label mb-1">Estos contactos están solo en esta obra</p>
+            <p className="t-label mb-1">Estas personas están solo en esta empresa</p>
             <p className="t-caption mb-2">
-              Las tildadas cambian de dueño con la obra. Las que destildes le quedan disponibles al
-              nuevo responsable solo desde esta ficha.
+              Las tildadas cambian de dueño con la empresa. Las que destildes quedan como están.
             </p>
             <ul className="flex flex-col gap-1">
               {exclusivos.map((c) => (
@@ -121,7 +126,7 @@ export function TransferirPanel({
                     />
                     <span className="t-body-m truncate">
                       {c.etiqueta}
-                      <span className="t-caption"> · {c.tipo === "persona" ? "persona" : "empresa"}</span>
+                      {c.detalle && <span className="t-caption"> · {c.detalle}</span>}
                     </span>
                   </label>
                 </li>
@@ -131,8 +136,8 @@ export function TransferirPanel({
         )}
 
         <p className="t-caption">
-          El responsable es quien ve la obra. Al transferirla dejás de verla, salvo que puedas
-          transferir obras. Queda registrado quién la pasó y a quién.
+          El dueño ve la ficha y la edita. Al transferirla, los accesos que vos habías compartido se
+          revocan; el nuevo dueño re-comparte si quiere. Queda registrado.
         </p>
       </div>
     </RightPanel>

@@ -52,14 +52,27 @@ export function AvisoDuplicadosEmpresa({
     <Marco>
       <p className="t-body-m font-semibold">Empresas parecidas ya cargadas</p>
       <ul className="t-caption mt-1 flex flex-col gap-1">
-        {duplicados.map((d) => (
-          <li key={d.empresa_id} className="flex flex-wrap items-center gap-2">
-            <span className="font-semibold">{d.razon_social}</span>
-            {d.localidad && <span>· {d.localidad}</span>}
-            {onUsar && (
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onUsar(d.empresa_id, d.razon_social)}>
-                Usar esta
-              </button>
+        {duplicados.map((d, i) => (
+          <li key={d.empresa_id ?? i} className="flex flex-wrap items-center gap-2">
+            {d.es_mia && d.empresa_id ? (
+              <>
+                <span className="font-semibold">{d.razon_social}</span>
+                {d.localidad && <span>· {d.localidad}</span>}
+                {onUsar && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => onUsar(d.empresa_id!, d.razon_social)}
+                  >
+                    Usar esta
+                  </button>
+                )}
+              </>
+            ) : (
+              <span>
+                «{d.razon_social}» está cargada por {d.cargada_por ?? "otro usuario"}. Consultale
+                antes de duplicarla.
+              </span>
             )}
           </li>
         ))}
