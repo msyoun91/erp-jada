@@ -101,6 +101,13 @@ de otro padre no se toca, igual que en `obras_revocar_*`. Array vacío = se apag
 de ese padre. El alta inicial no cambia: no hay grants de origen que apagar. El panel abre este
 modo al clickear un usuario de "Compartida con". Test: `sql/tests/obras_049.sql`, 4/4.
 
+**Vista Compartido anidada (`sql/050`).** `obras_compartidos_por_mi()` devuelve el origen como
+`(origen_tipo, origen_id, origen_nombre)` en vez de un texto ya armado — sin el id no se puede
+agrupar. `CompartidoView` anida cada fila de cascada bajo su obra/empresa padre (borde izquierdo
++ sangría, badge "vía la obra/empresa"). El padre siempre está en el resultado: `obras_compartir_*`
+inserta su grant antes que la cascada; si faltara, la fila cae como raíz. Sin sección por tipo:
+el árbol ya ordena.
+
 ---
 
 ## Nombre: nada de CRM

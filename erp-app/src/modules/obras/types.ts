@@ -459,13 +459,17 @@ export type Compartido = {
 };
 
 // Una fila de la vista Compartido: qué compartí, con quién y de qué origen.
+// `origen_tipo` NULL = compartido directo; si no, cuelga de esa obra/empresa
+// (id + nombre para agrupar y linkear en la UI).
 export type CompartidoRow = {
   tipo: "obra" | "empresa" | "persona";
   entidad_id: string;
   entidad_nombre: string;
   usuario_id: string;
   usuario_nombre: string;
-  origen: string;
+  origen_tipo: "obra" | "empresa" | null;
+  origen_id: string | null;
+  origen_nombre: string | null;
   compartida_el: string;
 };
 

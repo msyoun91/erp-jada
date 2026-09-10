@@ -1842,7 +1842,9 @@ export type Database = {
           compartida_el: string;
           entidad_id: string;
           entidad_nombre: string;
-          origen: string;
+          origen_id: string | null;
+          origen_nombre: string | null;
+          origen_tipo: string | null;
           tipo: string;
           usuario_id: string;
           usuario_nombre: string;

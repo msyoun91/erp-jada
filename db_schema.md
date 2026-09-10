@@ -495,6 +495,7 @@ Checklists y vista: `obras_relaciones_compartibles_obra/_empresa(entidad, usuari
 
 - **Bug arreglado en `sql/048`**: `obras_relaciones_compartibles_obra/_empresa` (sql/047) declaran `RETURNS TABLE (..., id uuid, ...)`, así que `id` es variable plpgsql y el guard `SELECT 1 FROM obras WHERE id = p_obra_id` tiraba `42702` (ambiguo) al planear — la RPC fallaba siempre y el checklist "Compartir también" del panel nunca se poblaba. Fix: calificar la columna (`o.id` / `e.id`). Test `sql/tests/obras_047.sql` sumó casos 10-11.
 - **`sql/049` — checklist = estado deseado**: `obras_compartir_obra/_empresa` re-llamadas con un usuario que ya tiene la entidad también desactivan la cascada de ese padre (`origen_* = padre`, `otorgada_por = auth.uid()`) que quedó fuera del array. Ajusta el reparto sin revocar. Grant directo (origen NULL) o de otro padre intacto; array vacío apaga toda la cascada de ese padre. Test: `sql/tests/obras_049.sql`, 4/4.
+- **`sql/050` — origen estructurado**: `obras_compartidos_por_mi()` devuelve `origen_tipo` (`NULL`/`'obra'`/`'empresa'`) + `origen_id` + `origen_nombre` en vez del texto `origen` ya formateado. La vista Compartido anida lo compartido en cascada bajo su obra/empresa padre (el padre siempre está en el mismo resultado). `ORDER BY` pasó a posición 9.
 
 ### obras_accesos_persona
 
