@@ -334,6 +334,22 @@ export async function getReferenciasDePersona(personaId: string) {
   return data ?? [];
 }
 
+// ¿El usuario tiene un grant DIRECTO sobre este contacto (no heredado del
+// checklist de una obra)? Decide si la ficha ofrece "Vincular obra" — la
+// barrera real es la RLS de obras_obra_persona / _empresa (sql/052); esto solo
+// evita un botón que el servidor va a rechazar.
+export async function tieneGrantDirectoPersona(personaId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("obras_persona_grant_directo", { p_persona_id: personaId });
+  return data ?? false;
+}
+
+export async function tieneGrantDirectoEmpresa(empresaId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("obras_empresa_grant_directo", { p_empresa_id: empresaId });
+  return data ?? false;
+}
+
 // Con quién está compartida una ficha. Solo lo ve el dueño (RLS de
 // obras_persona_compartida / _empresa).
 export async function getCompartidosPersona(personaId: string): Promise<Compartido[]> {

@@ -326,6 +326,34 @@ export async function contarVinculosReceptor(obraId: string, usuarioId: string):
   return data ?? 0;
 }
 
+// Cuántos vínculos armó el receptor con este contacto en sus obras. Se caen al
+// revocar el share directo (obras_revocar_persona / _empresa, sql/052).
+export async function contarVinculosPersonaReceptor(
+  personaId: string,
+  usuarioId: string,
+): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("obras_contar_vinculos_persona_receptor", {
+    p_persona_id: personaId,
+    p_usuario_id: usuarioId,
+  });
+  if (error) return 0;
+  return data ?? 0;
+}
+
+export async function contarVinculosEmpresaReceptor(
+  empresaId: string,
+  usuarioId: string,
+): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("obras_contar_vinculos_empresa_receptor", {
+    p_empresa_id: empresaId,
+    p_usuario_id: usuarioId,
+  });
+  if (error) return 0;
+  return data ?? 0;
+}
+
 // Lecturas que un componente cliente necesita antes de transferir o compartir:
 // los checklists. Van como actions porque las llama el panel.
 export async function contactosExclusivosObra(obraId: string) {

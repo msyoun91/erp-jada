@@ -132,9 +132,11 @@ export function CompartidoView({ filas }: { filas: CompartidoRow[] }) {
         <ConfirmModal
           title="Revocar acceso"
           mensaje={`${confirmando.usuario_nombre} deja de ver «${confirmando.entidad_nombre}».${
-            confirmando.tipo === "persona"
-              ? ""
-              : " Lo que se compartió junto con esta " + confirmando.tipo + " también se revoca."
+            confirmando.tipo === "obra"
+              ? " Lo que se compartió junto con esta obra también se revoca."
+              : confirmando.tipo === "empresa"
+                ? " Lo que se compartió junto con esta empresa se revoca, y los vínculos que haya armado con ella en sus obras se desactivan."
+                : " Los vínculos que haya armado con esta persona en sus obras se desactivan."
           }`}
           confirmLabel="Revocar"
           onConfirm={() => correr(confirmando)}

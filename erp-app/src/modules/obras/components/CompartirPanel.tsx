@@ -9,6 +9,8 @@ import {
   compartirEmpresa,
   compartirObra,
   compartirPersona,
+  contarVinculosEmpresaReceptor,
+  contarVinculosPersonaReceptor,
   contarVinculosReceptor,
   relacionesCompartiblesEmpresa,
   relacionesCompartiblesObra,
@@ -105,10 +107,16 @@ export function CompartirPanel({
     toast.success(editando ? "Cambios guardados" : "Compartida");
   }
 
-  // Al revocar una obra, los vínculos que el receptor le agregó con contactos
-  // suyos se desactivan (obras_revocar_obra). Se avisa antes si hay alguno.
+  // Al revocar, los vínculos que el receptor armó con contactos suyos se
+  // desactivan (obras_revocar_obra para obra; obras_revocar_persona / _empresa
+  // para un share directo, sql/052). Se avisa antes si hay alguno.
   async function pedirRevocar(usuarioId: string, usuario: string) {
-    const n = tipo === "obra" ? await contarVinculosReceptor(id, usuarioId) : 0;
+    const n =
+      tipo === "obra"
+        ? await contarVinculosReceptor(id, usuarioId)
+        : tipo === "persona"
+          ? await contarVinculosPersonaReceptor(id, usuarioId)
+          : await contarVinculosEmpresaReceptor(id, usuarioId);
     if (n > 0) setRevocando({ usuarioId, usuario, n });
     else revocar(usuarioId);
   }
@@ -243,7 +251,9 @@ export function CompartirPanel({
         title="Revocar acceso"
         mensaje={`«${revocando.usuario}» agregó ${revocando.n} ${
           revocando.n === 1 ? "vínculo" : "vínculos"
-        } a esta obra con contactos suyos. Al revocar, esos vínculos se desactivan.`}
+        } ${
+          tipo === "obra" ? "a esta obra con contactos suyos" : `a sus obras con esta ${tipo}`
+        }. Al revocar, esos vínculos se desactivan.`}
         confirmLabel="Revocar"
         onConfirm={async () => {
           await revocar(revocando.usuarioId);

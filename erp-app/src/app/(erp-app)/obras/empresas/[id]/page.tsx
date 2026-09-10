@@ -11,6 +11,7 @@ import {
   getEmpresa,
   getUsuariosParaTransferir,
   getUsuarioActualId,
+  tieneGrantDirectoEmpresa,
 } from "@/modules/obras/queries";
 import { EmpresaDetalle } from "@/modules/obras/components/EmpresaDetalle";
 import type { Empresa, EstadoObra, RolEmpresa } from "@/modules/obras/types";
@@ -19,21 +20,34 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
   if (!(await puedeVerEmpresas())) notFound();
 
   const { id } = await params;
-  const [empresa, editar, vincularPersona, vincularObra, veTodas, compartidos, usuarios, miId] =
-    await Promise.all([
-      getEmpresa(id),
-      puedeEditarEmpresa(),
-      puedeVincularPersonaEmpresa(),
-      puedeVincular(),
-      puedeVerTodasLasEmpresas(),
-      getCompartidosEmpresa(id),
-      getUsuariosParaTransferir(),
-      getUsuarioActualId(),
-    ]);
+  const [
+    empresa,
+    editar,
+    vincularPersona,
+    vincular,
+    veTodas,
+    compartidos,
+    usuarios,
+    miId,
+    grantDirecto,
+  ] = await Promise.all([
+    getEmpresa(id),
+    puedeEditarEmpresa(),
+    puedeVincularPersonaEmpresa(),
+    puedeVincular(),
+    puedeVerTodasLasEmpresas(),
+    getCompartidosEmpresa(id),
+    getUsuariosParaTransferir(),
+    getUsuarioActualId(),
+    tieneGrantDirectoEmpresa(id),
+  ]);
   if (!empresa) notFound();
 
   const { obras_persona_empresa, obras_obra_empresa, ...datos } = empresa;
   const esMio = !!miId && empresa.creado_por === miId;
+  // Colgar la empresa de una obra propia pide que sea mía: dueño, grant directo
+  // o obras_empresas_todas. Espeja la RLS de obras_obra_empresa_insert (sql/052).
+  const vincularObra = vincular && (esMio || grantDirecto || veTodas);
 
   return (
     <EmpresaDetalle

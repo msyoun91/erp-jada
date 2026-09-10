@@ -1895,9 +1895,21 @@ export type Database = {
           tipo: string;
         }[];
       };
+      obras_contar_vinculos_empresa_receptor: {
+        Args: { p_empresa_id: string; p_usuario_id: string };
+        Returns: number;
+      };
+      obras_contar_vinculos_persona_receptor: {
+        Args: { p_persona_id: string; p_usuario_id: string };
+        Returns: number;
+      };
       obras_contar_vinculos_receptor: {
         Args: { p_obra_id: string; p_usuario_id: string };
         Returns: number;
+      };
+      obras_empresa_grant_directo: {
+        Args: { p_empresa_id: string };
+        Returns: boolean;
       };
       obras_es_mi_obra: { Args: { p_obra_id: string }; Returns: boolean };
       obras_etiqueta: {
@@ -1961,6 +1973,10 @@ export type Database = {
         }[];
       };
       obras_persona_grant_ctx_vigente: {
+        Args: { p_persona_id: string };
+        Returns: boolean;
+      };
+      obras_persona_grant_directo: {
         Args: { p_persona_id: string };
         Returns: boolean;
       };

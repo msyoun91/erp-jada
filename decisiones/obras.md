@@ -178,6 +178,49 @@ Test: `sql/tests/obras_051.sql`.
 
 ---
 
+## El grant heredado de una obra ve el contacto, no lo reparte (`sql/052`)
+
+Pedido del usuario, sobre *Compartir con checklist*. Compartir una obra tildando una persona/empresa
+en el checklist le da al receptor un `obras_persona_compartida` / `obras_empresa_compartida`
+**completo** (solo con `origen_obra_id` seteado). `obras_puede_ver_persona` / `_ver_empresa` no
+miran `origen_*`, así que ese grant pasaba el WITH CHECK de `obras_obra_persona_insert` /
+`_empresa_insert` igual que un share directo: el receptor podía colgar ese contacto de **sus
+propias** obras, y quedaba un vínculo vivo en obras que el dueño del contacto ni ve.
+
+**El hueco llegaba por UI, no solo por RPC.** El botón "Vincular obra" de la ficha de persona/empresa
+se gateaba con `puedeVincular()` a secas, sin `esMio`. El receptor abría la ficha del contacto
+compartido (desde la ficha de la obra), clickeaba "Vincular obra", buscaba una obra suya y la
+colgaba. El sentido inverso (`VincularPersonaPanel` parado en la obra) ya estaba tapado: filtra a
+`getPersonas()` con `creado_por = me`.
+
+**Decidido — para colgar un contacto de una obra propia, el contacto tiene que ser mío:**
+`obras_obra_persona_insert` / `_empresa_insert` — la rama `obras_es_mi_obra(obra_id)` exige además
+dueño **o** `obras_persona_grant_directo` / `_empresa_grant_directo` (grant con `origen_* IS NULL`)
+**o** `obras_personas_todas` / `obras_empresas_todas`. El grant con origen abre la ficha **dentro
+de la obra que lo trajo** (`obras_ficha_persona` con contexto), no la cartera del receptor. La
+rama de obra compartida (`obras_obra_compartida_conmigo AND entidad.creado_por = auth.uid()`) no
+cambia — ahí ya se exigía contacto propio.
+
+**El share directo sí habilita, y al revocarlo cascadea.** Es un acto explícito del dueño sobre
+ese contacto puntual. `obras_revocar_persona` / `_empresa` ganan la cascada que `obras_revocar_obra`
+ya tenía (`sql/051`): desactivan los `obras_obra_persona` / `_empresa` de ese contacto con
+`creado_por = p_usuario_id` (los referentes caen por `cascada_desactivar` de `sql/036`).
+`obras_contar_vinculos_persona_receptor` / `_empresa_receptor(entidad, usuario)` (DEFINER, gate
+dueño de la entidad) alimentan el aviso previo — `CompartirPanel` abre un `ConfirmModal` con el
+conteo, `CompartidoView` avisa con texto fijo.
+
+**UI:** la ficha ofrece "Vincular obra" solo si `esMio || grantDirecto || veTodas`
+(`tieneGrantDirectoPersona` / `_Empresa` → `obras_*_grant_directo`). Espeja la RLS; la barrera
+real es el WITH CHECK.
+
+Helper nota: `obras_*_grant_directo` es `obras_*_compartida_conmigo` (sql/051) + `origen_* IS NULL`.
+DEFINER por lo mismo — un EXISTS inline en la policy podría recursar contra la policy de
+`obras_*_compartida`.
+
+Test: `sql/tests/obras_052.sql`, 5/5.
+
+---
+
 ## Nombre: nada de CRM
 
 La spec prohíbe explícitamente "CRM", "Comercial", "Prospectos" y "Oportunidades" como nombre visible. El módulo administra el universo de obras y sus relaciones, no un pipeline de ventas. `modulo = 'obras'` cumple.

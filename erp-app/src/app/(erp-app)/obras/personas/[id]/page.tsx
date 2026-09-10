@@ -14,6 +14,7 @@ import {
   getUsuariosParaTransferir,
   getUsuarioActualId,
   getVinculosPersona,
+  tieneGrantDirectoPersona,
 } from "@/modules/obras/queries";
 import { Breadcrumb } from "@/modules/obras/components/Breadcrumb";
 import { EstadoPendiente } from "@/modules/obras/components/EstadoPendiente";
@@ -75,11 +76,12 @@ export default async function PersonaPage({
     referencias,
     editar,
     vincularEmpresa,
-    vincularObra,
+    vincular,
     veTodas,
     compartidos,
     usuarios,
     miId,
+    grantDirecto,
   ] = await Promise.all([
     getVinculosPersona(id),
     getReferenciasDePersona(id),
@@ -90,10 +92,15 @@ export default async function PersonaPage({
     getCompartidosPersona(id),
     getUsuariosParaTransferir(),
     getUsuarioActualId(),
+    tieneGrantDirectoPersona(id),
   ]);
 
   const comisionPorObra = new Map(referencias.map((r) => [r.obra_id, r.porcentaje_comision]));
   const esMio = !!miId && persona.creado_por === miId;
+  // Colgar la persona de una obra propia pide que sea mía: dueño, grant directo
+  // (no el heredado del checklist de una obra) o obras_personas_todas. Espeja la
+  // RLS de obras_obra_persona_insert (sql/052).
+  const vincularObra = vincular && (esMio || grantDirecto || veTodas);
 
   return (
     <PersonaDetalle
