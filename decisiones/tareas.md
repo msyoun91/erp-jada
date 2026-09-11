@@ -210,6 +210,8 @@ Pedido: botón "crear siguiente paso" además de "crear tarea", ver los pasos pr
 
 ## Las plantillas generan una cadena
 
+> **Sigue vigente para las plantillas de tipo hilo** (y los hilos de una de proyecto). `agregarTareasDesdePlantilla` pasó a ser `usar_plantilla` — ver *Plantillas de sistema y privadas, tres tipos*.
+
 `agregarTareasDesdePlantilla` encadena los items en vez de crear N tareas sueltas: `paso_anterior_id` de cada uno apunta al anterior. `tareas_plantillas_items.orden` siempre significó "primero esto, después aquello" — hasta acá era una sugerencia visual sin consecuencia.
 
 **Sin flag ni checkbox: la plantilla siempre encadena.** Una columna `encadenada` en `tareas_plantillas`, o un check en "usar plantilla", sería una opción que nadie pidió todavía. Si aparece un caso real de plantilla-checklist (items sin orden entre sí), se agrega ahí.
@@ -285,6 +287,8 @@ Corrige la sección "Módulo tareas — isla compartida…": ahí `visibilidad` 
 
 ## Editar plantillas (sin SQL)
 
+> **Superada por *Plantillas de sistema y privadas, tres tipos* (`sql/053`).** La plantilla dejó de ser recurso de equipo (hay alcance), y guardar reemplaza los pasos enteros dentro de `guardar_plantilla` en vez del diff por paso de `actions.ts`. Sigue en pie que editar no toca lo ya generado.
+
 `editarPlantilla` reusa el mismo `PlantillaFormPanel` con prop `plantilla` (mismo patrón que `TareaFormPanel` para editar tarea) y **no necesitó migración**: `tareas_plantillas_update` / `tareas_plantillas_items_update` ya existían en `sql/005` (gateadas solo por `tiene_permiso('tareas_plantillas')` — la plantilla es un recurso de equipo, no del creador), y los items ya tenían `activo` y `orden`.
 
 **Un solo schema para crear y editar: `id` opcional en cada item.** `plantillaItemSchema` lleva `id?` — presente = paso que ya existe (se actualiza `titulo`/`orden`), ausente = paso nuevo (insert). Los items activos que no vuelven en el submit se desactivan (`activo = false`, nunca DELETE). `crearPlantilla` ignora el `id` porque ya mapeaba columna por columna.
@@ -297,10 +301,54 @@ Corrige la sección "Módulo tareas — isla compartida…": ahí `visibilidad` 
 
 ## Los items de todas las plantillas llegan en una query (sin SQL)
 
+> **Superada por *Plantillas de sistema y privadas, tres tipos*:** `getPlantillas()` trae ahora cada plantilla con sus hilos y pasos embebidos y `getItemsPorPlantilla` se borró. El criterio (una query, no N) es el mismo.
+
 `getPlantillaItems(plantillaId)` se reemplaza por `getItemsPorPlantilla()`, que trae todos los items activos y los agrupa por `plantilla_id` — mismo patrón que `getMiembrosPorProyecto`. La página llamaba una query por plantilla dentro de un `Promise.all`: N requests para una vista que siempre los quiere todos.
 
 **No cambia lo que ve cada usuario.** `tareas_plantillas_items_select` es plana (`tiene_permiso('tareas_plantillas')`, igual que la de `tareas_plantillas`): la query única devuelve exactamente la unión de las N. El mapa puede incluir items de plantillas desactivadas — `getPlantillas` solo trae las activas y la vista busca por id, así que nunca se leen.
 
+
+---
+
+# Plantillas
+
+## Plantillas de sistema y privadas, tres tipos (`sql/053`)
+
+Pedido de usuario, en dos fases acordadas: esta (plantillas completas, usadas a mano desde Tareas) y la de disparadores desde otros módulos, que está en `BACKLOG.md`.
+
+**Dos alcances; la función nueva es la del pedido.** "Las plantillas de sistema son administradas por aquellos que tienen función plantillas de sistema": `tareas_plantillas_sistema`, submódulo-función de la vista `tareas_plantillas`. La privada la ve, modifica y usa solo su dueño. Backfill de la función a quien tenía la vista, que hasta acá administraba todas — mismo criterio que `sql/013`/`014`.
+
+**El alcance no cambia después de crear.** `alcance` y `creado_por` quedan fuera del `GRANT UPDATE`: una privada no se vuelve de sistema ni cambia de dueño por PostgREST, y `puede_gestionar_plantilla` puede leer la fila vieja en el `WITH CHECK` sin tener que mirar la nueva.
+
+**Tres tipos, y el de proyecto con hilos adentro** (elegido por el usuario frente a "proyecto + referencias a otras plantillas" y "proyecto + tareas sueltas"). Los hilos viven en `tareas_plantillas_hilos` y cada paso apunta al suyo: ni un texto de agrupación repetido en cada paso (un typo parte el hilo) ni plantillas anidadas (desactivar una rompería la que la contiene).
+
+**Miembros y asignados de la plantilla son arrays**, no tablas: es configuración que se copia al usarla, no una relación viva. Lo que pudo cambiar desde que se guardó (usuario desactivado, ya no miembro) se revalida al usar.
+
+**Quien use la plantilla es un asignado más.** En la base, `incluir_ejecutor` + `responsable_id` NULL; en el form, el valor `EJECUTOR` dentro de los mismos arrays, para que el picker sea el mismo de siempre. El mapeo es `pasoPlantillaDb()` en `types.ts` y lo llama la action: es representación, no regla.
+
+**Guardar reemplaza los pasos.** Nada referencia a un paso de plantilla (usar copia), así que ids estables no compraban nada: `guardar_plantilla` desactiva lo activo e inserta lo nuevo, en una transacción. Antes eran dos a cuatro statements de `actions.ts` sin atomicidad y un diff por paso.
+
+**Usar es `SECURITY INVOKER`: decide la RLS de quien la usa**, igual que si armara todo con los formularios (crear proyecto pide `tareas_proyectos_crear`, asignar a otro `tareas_asignar`, recibir ser miembro). Hacerla `DEFINER` obligaba a copiar esas reglas adentro. En la fase 2 el disparo automático sí va a necesitar que la autoridad sea la plantilla; se decide ahí.
+
+**Si un asignado no puede recibir el paso, se descarta; si no queda nadie, el paso va a quien la usa con una nota.** Decisión del usuario (preguntado por el caso automático: "se crea para quien dispara"); se aplica igual al uso manual para que la regla sea una sola. Si quedan otros asignados no hay nota: el paso sigue en manos de alguien que la plantilla eligió. `usar_plantilla` devuelve cuántos cayeron y el toast lo dice. La vista previa de "Usar" muestra lo que la plantilla pide y explica la regla en texto — no calcula quién va a recibir, porque esa regla vive en la función.
+
+**Vencimiento tras el paso anterior: una columna y dos triggers.** `tareas.vence_dias_tras_previo`; la fecha queda NULL hasta que el previo se completa y ahí la ponen los triggers — única fuente, `editar_tarea` no la pisa (corregido en la misma tanda: primero la sobrescribía con lo que el form traía oculto). Reabrir el previo la vuelve a NULL: el siguiente vuelve a estar bloqueado y un plazo corriendo sobre algo bloqueado mentiría. En el primer paso de una cadena vale como "desde la creación". Se ofrece también en "Crear siguiente paso", no solo en plantillas.
+
+**Dos defectos latentes que las plantillas iban a pisar**, arreglados en la misma migración:
+
+- *Siembra de asignados.* Crear una tarea con otro como responsable daba `42501` a quien tenía `tareas_asignar` sin `gestionar_ajenas` (`tareas_asignados_insert` pedía ser el responsable). Nadie lo sufría porque hoy la función solo la tiene quien tiene las dos. Se reprodujo en una transacción revertida antes de tocar nada. Salida: `es_siembra_tarea()`, el creador carga asignados mientras la tarea no tuvo **nunca** ninguno — "nunca" para no reabrir el hueco de `sql/013`.
+- *`created_at` con `now()`.* Es el orden de los pasos en la Lista y `now()` es la hora de la transacción: la cadena que crea una función quedaba toda con el mismo instante (desde `sql/023`). Pasa a `clock_timestamp()`.
+
+**UI.**
+
+- **Asignados por buscador** (pedido): `SelectorUsuarios` — chips con ×, búsqueda y hasta seis sugerencias visibles sin foco (sin popover que abrir y cerrar); Enter agrega la primera en vez de mandar el form. Lo usan `AsignadosPicker` (nueva tarea, reasignar, pasos de plantilla) y los miembros de `ProyectoFormPanel` y de la plantilla de proyecto: misma pregunta, misma cara.
+- `AsignadosPicker` nombra sus campos por prop (`pasos.2.asignados`) y suma "Quien la use" con `conEjecutor`.
+- `Segmentado.tsx`: tercera copia del segmented de la Lista, extraída al módulo.
+- La vista Plantillas monta `TareasContextoProvider` (el picker y el destino de "Usar" lo necesitan).
+- El editor pliega cada paso en una línea de resumen y lo abre solo si tiene error. Cambiar de tipo reacomoda en vez de tirar: hilo → proyecto envuelve la cadena en un hilo, proyecto → hilo la aplana, → tarea conserva el primer paso y avisa.
+- "Usar" de una plantilla de proyecto se deshabilita sin `tareas_proyectos_crear` y lo dice en texto (en touch no hay tooltip).
+
+**Tests** (`sql/tests/`): `plantillas.sql` 22/22 (nuevo); `atomicidad_tareas.sql` 15/15 — los casos 09-13 pasaron a `usar_plantilla`: el 12 cambia de "rechazo" a "se descarta y queda ADMIN", y el 13 prueba que una cadena rechazada en el paso 2 no deja el 1, exigiendo `42501` (un `TA008` querría decir que falló antes de empezar); `atomicidad_edicion_tareas.sql` 18/18; `rls_miembros_asignables.sql` sin cambios de resultado con la siembra (en todos sus casos el creador es también responsable).
 
 ---
 
@@ -610,7 +658,7 @@ Cubre lo que decide: `bloqueada` mira el paso previo inmediato y no el arranque 
 
 Backend (SQL + `types.ts`/`permissions.ts`/`queries.ts`/`actions.ts`) venía de una sesión anterior, ya corrido en Supabase. Esta sesión agregó la UI completa (`modules/tareas/components/` + `app/(erp-app)/tareas/`).
 
-**"Usar plantilla" vive en `HiloCard`, no en la vista Plantillas.** `agregarTareasDesdePlantilla` siempre necesita un `hilo_id` destino — la vista Plantillas quedó como catálogo puro (crear/listar/desactivar), sin función propia de "usar" (coincide con el seed de `submodulos`: `tareas_plantillas` no tiene función separada).
+~~**"Usar plantilla" vive en `HiloCard`, no en la vista Plantillas.**~~ **Superado por `sql/053`**: una plantilla ya no necesita hilo destino (crea el suyo, o un proyecto), así que se usa desde la vista Plantillas; desde el hilo sigue para las de tipo tarea/hilo. Texto original: **"Usar plantilla" vive en `HiloCard`, no en la vista Plantillas.** `agregarTareasDesdePlantilla` siempre necesita un `hilo_id` destino — la vista Plantillas quedó como catálogo puro (crear/listar/desactivar), sin función propia de "usar" (coincide con el seed de `submodulos`: `tareas_plantillas` no tiene función separada).
 
 **`agregarTareasDesdePlantilla` no tenía `safeParse` server-side** (actions.ts pre-existente) — regla "Validar en dos lugares" es de las Reglas Siempre Activas. Se agregó `agregarDesdePlantillaSchema` en `types.ts` y se cambió la firma de la action a recibir un solo objeto validado, mismo patrón que el resto de `actions.ts`.
 
@@ -698,7 +746,7 @@ Las seis pasan a funciones `SECURITY INVOKER` en `sql/023`, llamadas con `.rpc()
 
 **`errorDeUpdate()` se vuelve `TA008` adentro de la función.** Un UPDATE que RLS rechaza afecta 0 filas y vuelve sin error; el chequeo que en TypeScript era `{ count: "exact" }` acá es `IF NOT FOUND THEN RAISE`. Mismo texto de mensaje, ahora en `MENSAJES_ERROR` (`TA008`). `TA009` es la plantilla sin pasos. `errorDeUpdate` sigue vivo para las actions de una sola tabla, que no se tocaron.
 
-**`agregar_tareas_desde_plantilla` pasa de un INSERT multi-fila a un loop.** El INSERT agrupado existía para ahorrar round-trips desde el server; adentro de la función no hay round-trips que ahorrar, y el loop expresa la cadena directamente (`v_anterior` es el `paso_anterior_id` del siguiente).
+**`agregar_tareas_desde_plantilla` pasa de un INSERT multi-fila a un loop.** (Borrada en `sql/053`: la reemplaza `usar_plantilla`, que mantiene el loop y crea cada paso por `crear_tarea`.) El INSERT agrupado existía para ahorrar round-trips desde el server; adentro de la función no hay round-trips que ahorrar, y el loop expresa la cadena directamente (`v_anterior` es el `paso_anterior_id` del siguiente).
 
 **`deshacer_conversion_hilo` conserva el orden del TypeScript** — primero restaura la más antigua, después desactiva el resto. Invertirlo cambiaría comportamiento: si algo activo tiene a la más antigua como paso previo, `validar_paso_tarea` corta con `TA006`, y con el resto ya desactivado no cortaría. Ese rechazo es el que ya existía y no se toca en esta tanda.
 

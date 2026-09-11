@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Clock, Lock, UserRound } from "lucide-react";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla } from "../types";
+import type { TareaConAsignados, TareaHilo, PlantillaCompleta } from "../types";
 import { formatFecha } from "@/lib/utils";
 import { relacionTarea } from "../relacion";
 import { HiloDetailPanel } from "./HiloDetailPanel";
@@ -38,7 +38,7 @@ export function HiloCard({
 }: {
   hilo: TareaHilo;
   tareas: TareaConAsignados[];
-  plantillas: TareaPlantilla[];
+  plantillas: PlantillaCompleta[];
   relacionCon?: string | null;
   autoAbrir?: boolean;
   // Deep link desde una notificación de tarea: el paso propio con este id nace
@@ -90,7 +90,8 @@ export function HiloCard({
   const cadenas = cadenasDePasos(tareasDelHilo);
 
   // created_at asc = orden de los pasos: no hay columna `orden` y
-  // agregarTareasDesdePlantilla inserta en el orden de la plantilla.
+  // usar_plantilla inserta en el orden de la plantilla (con clock_timestamp,
+  // sql/053: now() le daba a toda la cadena el mismo instante).
   const enSecuencia = [...tareasDelHilo].sort((a, b) => a.created_at.localeCompare(b.created_at));
   const esPropia = (t: TareaConAsignados) => (relacionCon ? relacionTarea(t, relacionCon) !== null : true);
   const propias = enSecuencia.filter(esPropia);

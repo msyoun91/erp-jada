@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Users } from "lucide-react";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto } from "../types";
+import type { TareaConAsignados, TareaHilo, PlantillaCompleta, TareaProyecto } from "../types";
 import { Isla } from "./Isla";
 import { MetricasResumen, contarTerminadas } from "./MetricasResumen";
 import { ProyectoDetailPanel } from "./ProyectoDetailPanel";
@@ -21,7 +21,7 @@ export function ProyectoCard({
   proyecto: TareaProyecto;
   hilos: TareaHilo[];
   tareas: TareaConAsignados[];
-  plantillas: TareaPlantilla[];
+  plantillas: PlantillaCompleta[];
   gestionarMiembros: boolean;
 }) {
   const { miembrosPorProyecto } = useTareasContexto();

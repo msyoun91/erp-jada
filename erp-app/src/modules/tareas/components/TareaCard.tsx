@@ -17,6 +17,7 @@ import {
   temperaturaRango,
   textoAntiguedad,
   textoPlazo,
+  textoVenceTrasPrevio,
 } from "./tareaLabels";
 import type { PasoEnCadena } from "./cadenaPasos";
 import { useTareasContexto } from "./tareasContexto";
@@ -155,6 +156,11 @@ export function TareaCard({
                 <span className={`flex items-center gap-1 ${fechaClase}`}>
                   <CalendarClock size={14} strokeWidth={1.75} />
                   {formatFecha(tarea.fecha_vencimiento)}
+                </span>
+              ) : tarea.vence_dias_tras_previo != null ? (
+                <span className="flex items-center gap-1">
+                  <CalendarClock size={14} strokeWidth={1.75} />
+                  {textoVenceTrasPrevio(tarea.vence_dias_tras_previo)}
                 </span>
               ) : (
                 <span className={`flex items-center gap-1 ${antiguedadClase}`}>

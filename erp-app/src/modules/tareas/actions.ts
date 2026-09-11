@@ -11,13 +11,13 @@ import {
   editarHiloSchema,
   crearProyectoSchema,
   editarProyectoSchema,
-  crearPlantillaSchema,
-  editarPlantillaSchema,
+  guardarPlantillaSchema,
+  pasoPlantillaDb,
+  usarPlantillaSchema,
   reasignarTareaSchema,
   posponerSchema,
   completarTareaSchema,
   cerrarHiloSchema,
-  agregarDesdePlantillaSchema,
   deshacerConversionSchema,
   agregarNotaTareaSchema,
   agregarNotaHiloSchema,
@@ -32,13 +32,12 @@ import {
   type EditarHiloForm,
   type CrearProyectoForm,
   type EditarProyectoForm,
-  type CrearPlantillaForm,
-  type EditarPlantillaForm,
+  type GuardarPlantillaForm,
+  type UsarPlantillaForm,
   type ReasignarTareaForm,
   type PosponerForm,
   type CompletarTareaForm,
   type CerrarHiloForm,
-  type AgregarDesdePlantillaForm,
   type DeshacerConversionForm,
   type AgregarNotaTareaForm,
   type AgregarNotaHiloForm,
@@ -96,6 +95,7 @@ export async function crearTarea(input: CrearTareaForm) {
     p_modo_completado: d.modo_completado,
     p_origen_app: d.origen_app ?? null,
     p_origen_punto: d.origen_punto ?? null,
+    p_vence_dias_tras_previo: d.vence_dias_tras_previo ?? null,
   }));
 
   if (error) return { success: false as const, error: mensajeError(error) };
@@ -125,6 +125,7 @@ export async function editarTarea(input: EditarTareaForm) {
     p_temperatura: d.temperatura,
     p_recurrencia_cantidad: d.recurrencia_cantidad ?? null,
     p_recurrencia_unidad: d.recurrencia_unidad ?? null,
+    p_vence_dias_tras_previo: d.vence_dias_tras_previo ?? null,
   }));
 
   if (error) return { success: false as const, error: mensajeError(error) };
@@ -294,97 +295,35 @@ export async function desactivarProyecto(id: string) {
   return { success: true as const };
 }
 
-export async function crearPlantilla(input: CrearPlantillaForm) {
-  const parsed = crearPlantillaSchema.safeParse(input);
+// Crear y editar son la misma función (sql/053): la plantilla y sus pasos se
+// guardan juntos o nada. Editar no toca las tareas ya generadas — usar una
+// plantilla copia, no referencia.
+export async function guardarPlantilla(input: GuardarPlantillaForm) {
+  const parsed = guardarPlantillaSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false as const, error: parsed.error.issues[0].message };
   }
 
   const supabase = await createClient();
-  const creado_por = await usuarioActualId();
-  const { items, ...plantilla } = parsed.data;
+  const d = parsed.data;
 
-  const { data, error } = await supabase
-    .from("tareas_plantillas")
-    .insert({ ...plantilla, creado_por })
-    .select("id")
-    .single();
+  const { data: id, error } = await supabase.rpc("guardar_plantilla", argsRpc<"guardar_plantilla">({
+    p_id: d.id ?? null,
+    p_nombre: d.nombre,
+    p_descripcion: d.descripcion || null,
+    p_alcance: d.alcance,
+    p_tipo: d.tipo,
+    p_visibilidad: d.visibilidad,
+    p_miembros: d.miembros,
+    p_hilos: d.hilos.map((h) => ({ titulo: h.titulo, pasos: h.pasos.map(pasoPlantillaDb) })),
+    p_pasos: d.pasos.map(pasoPlantillaDb),
+  }));
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  const { error: errorItems } = await supabase
-    .from("tareas_plantillas_items")
-    .insert(items.map((item) => ({ plantilla_id: data.id, titulo: item.titulo, orden: item.orden })));
-
-  if (errorItems) return { success: false as const, error: mensajeError(errorItems) };
-
   revalidatePath("/tareas/plantillas");
-  return { success: true as const, id: data.id };
-}
-
-// Editar plantilla no toca las tareas ya generadas: agregarTareasDesdePlantilla
-// copia los títulos, no referencia los items. Los cambios aplican a usos futuros.
-export async function editarPlantilla(input: EditarPlantillaForm) {
-  const parsed = editarPlantillaSchema.safeParse(input);
-  if (!parsed.success) {
-    return { success: false as const, error: parsed.error.issues[0].message };
-  }
-
-  const supabase = await createClient();
-  const { id, items, ...plantilla } = parsed.data;
-
-  const fallo = errorDeUpdate(
-    await supabase.from("tareas_plantillas").update(plantilla, { count: "exact" }).eq("id", id),
-  );
-  if (fallo) return { success: false as const, error: fallo };
-
-  const { data: actuales, error: errorActuales } = await supabase
-    .from("tareas_plantillas_items")
-    .select("id")
-    .eq("plantilla_id", id)
-    .eq("activo", true);
-
-  if (errorActuales) return { success: false as const, error: mensajeError(errorActuales) };
-
-  const conservados = new Set(items.map((item) => item.id).filter(Boolean));
-  const aDesactivar = (actuales ?? []).filter((a) => !conservados.has(a.id)).map((a) => a.id);
-
-  if (aDesactivar.length > 0) {
-    const falloDesactivar = errorDeUpdate(
-      await supabase
-        .from("tareas_plantillas_items")
-        .update({ activo: false }, { count: "exact" })
-        .in("id", aDesactivar),
-    );
-
-    if (falloDesactivar) return { success: false as const, error: falloDesactivar };
-  }
-
-  const nuevos = items.filter((item) => !item.id);
-  if (nuevos.length > 0) {
-    const { error: errorNuevos } = await supabase
-      .from("tareas_plantillas_items")
-      .insert(nuevos.map((item) => ({ plantilla_id: id, titulo: item.titulo, orden: item.orden })));
-
-    if (errorNuevos) return { success: false as const, error: mensajeError(errorNuevos) };
-  }
-
-  // Un update por paso existente: son un puñado por plantilla, no vale armar
-  // un upsert con todas las columnas para ahorrar round-trips.
-  const existentes = items.filter((item) => item.id);
-  const resultados = await Promise.all(
-    existentes.map((item) =>
-      supabase
-        .from("tareas_plantillas_items")
-        .update({ titulo: item.titulo, orden: item.orden }, { count: "exact" })
-        .eq("id", item.id!),
-    ),
-  );
-  const falloItem = resultados.map((r) => errorDeUpdate(r)).find(Boolean);
-  if (falloItem) return { success: false as const, error: falloItem };
-
-  revalidatePath("/tareas/plantillas");
-  return { success: true as const };
+  revalidatePath("/tareas");
+  return { success: true as const, id };
 }
 
 export async function desactivarPlantilla(id: string) {
@@ -405,26 +344,30 @@ export async function desactivarPlantilla(id: string) {
   return { success: true as const };
 }
 
-export async function agregarTareasDesdePlantilla(input: AgregarDesdePlantillaForm) {
-  const parsed = agregarDesdePlantillaSchema.safeParse(input);
+// `derivados` = pasos que quedaron para quien usa la plantilla porque sus
+// asignados no podían recibirlos (inactivos, fuera del proyecto o sin permiso
+// para asignarles). Cada uno lleva una nota que lo explica.
+export async function usarPlantilla(input: UsarPlantillaForm) {
+  const parsed = usarPlantillaSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false as const, error: parsed.error.issues[0].message };
   }
 
   const supabase = await createClient();
-  const { plantilla_id, hilo_id, responsable_id, asignados } = parsed.data;
+  const d = parsed.data;
 
-  const { error } = await supabase.rpc("agregar_tareas_desde_plantilla", {
-    p_plantilla_id: plantilla_id,
-    p_hilo_id: hilo_id,
-    p_responsable_id: responsable_id,
-    p_asignados: asignados,
-  });
+  const { data: derivados, error } = await supabase.rpc("usar_plantilla", argsRpc<"usar_plantilla">({
+    p_plantilla_id: d.plantilla_id,
+    p_titulo: d.titulo || null,
+    p_proyecto_id: d.proyecto_id,
+    p_hilo_id: d.hilo_id,
+  }));
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas");
-  return { success: true as const };
+  revalidatePath("/tareas/proyectos");
+  return { success: true as const, derivados };
 }
 
 export async function completarTarea(input: CompletarTareaForm) {

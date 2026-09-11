@@ -43,6 +43,7 @@ import {
   estadoVencimiento,
   temperaturaRango,
   textoAntiguedad,
+  textoVenceTrasPrevio,
 } from "./tareaLabels";
 import type { PasoEnCadena } from "./cadenaPasos";
 import { useTareasContexto } from "./tareasContexto";
@@ -302,7 +303,9 @@ export function TareaDetailPanel({
               <CalendarClock size={13} strokeWidth={1.75} />
               {tarea.fecha_vencimiento
                 ? `Vence ${formatFecha(tarea.fecha_vencimiento)}`
-                : `Creada ${textoAntiguedad(diasEntreISO(tarea.created_at.slice(0, 10), hoyISO()))}`}
+                : tarea.vence_dias_tras_previo != null
+                  ? textoVenceTrasPrevio(tarea.vence_dias_tras_previo)
+                  : `Creada ${textoAntiguedad(diasEntreISO(tarea.created_at.slice(0, 10), hoyISO()))}`}
             </span>
             {tarea.recurrencia_cantidad != null && (
               <span className="flex items-center gap-1">

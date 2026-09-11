@@ -931,6 +931,7 @@ export type Database = {
           temperatura: number;
           titulo: string;
           updated_at: string;
+          vence_dias_tras_previo: number | null;
           visibilidad: Database["public"]["Enums"]["visibilidad"];
         };
         Insert: {
@@ -958,6 +959,7 @@ export type Database = {
           temperatura?: number;
           titulo: string;
           updated_at?: string;
+          vence_dias_tras_previo?: number | null;
           visibilidad?: Database["public"]["Enums"]["visibilidad"];
         };
         Update: {
@@ -985,6 +987,7 @@ export type Database = {
           temperatura?: number;
           titulo?: string;
           updated_at?: string;
+          vence_dias_tras_previo?: number | null;
           visibilidad?: Database["public"]["Enums"]["visibilidad"];
         };
         Relationships: [
@@ -1263,30 +1266,42 @@ export type Database = {
       tareas_plantillas: {
         Row: {
           activo: boolean;
+          alcance: Database["public"]["Enums"]["alcance_plantilla"];
           creado_por: string;
           created_at: string;
           descripcion: string | null;
           id: string;
+          miembros: string[];
           nombre: string;
+          tipo: Database["public"]["Enums"]["tipo_plantilla"];
           updated_at: string;
+          visibilidad: Database["public"]["Enums"]["visibilidad"];
         };
         Insert: {
           activo?: boolean;
+          alcance?: Database["public"]["Enums"]["alcance_plantilla"];
           creado_por: string;
           created_at?: string;
           descripcion?: string | null;
           id?: string;
+          miembros?: string[];
           nombre: string;
+          tipo?: Database["public"]["Enums"]["tipo_plantilla"];
           updated_at?: string;
+          visibilidad?: Database["public"]["Enums"]["visibilidad"];
         };
         Update: {
           activo?: boolean;
+          alcance?: Database["public"]["Enums"]["alcance_plantilla"];
           creado_por?: string;
           created_at?: string;
           descripcion?: string | null;
           id?: string;
+          miembros?: string[];
           nombre?: string;
+          tipo?: Database["public"]["Enums"]["tipo_plantilla"];
           updated_at?: string;
+          visibilidad?: Database["public"]["Enums"]["visibilidad"];
         };
         Relationships: [
           {
@@ -1298,7 +1313,7 @@ export type Database = {
           },
         ];
       };
-      tareas_plantillas_items: {
+      tareas_plantillas_hilos: {
         Row: {
           activo: boolean;
           created_at: string;
@@ -1306,6 +1321,7 @@ export type Database = {
           orden: number;
           plantilla_id: string;
           titulo: string;
+          updated_at: string;
         };
         Insert: {
           activo?: boolean;
@@ -1314,6 +1330,7 @@ export type Database = {
           orden?: number;
           plantilla_id: string;
           titulo: string;
+          updated_at?: string;
         };
         Update: {
           activo?: boolean;
@@ -1322,13 +1339,87 @@ export type Database = {
           orden?: number;
           plantilla_id?: string;
           titulo?: string;
+          updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "tareas_plantillas_hilos_plantilla_id_fkey";
+            columns: ["plantilla_id"];
+            isOneToOne: false;
+            referencedRelation: "tareas_plantillas";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tareas_plantillas_items: {
+        Row: {
+          activo: boolean;
+          asignados: string[];
+          created_at: string;
+          descripcion: string | null;
+          hilo_id: string | null;
+          id: string;
+          incluir_ejecutor: boolean;
+          orden: number;
+          plantilla_id: string;
+          responsable_id: string | null;
+          temperatura: number;
+          titulo: string;
+          vence_dias: number | null;
+          vence_tras_previo: boolean;
+        };
+        Insert: {
+          activo?: boolean;
+          asignados?: string[];
+          created_at?: string;
+          descripcion?: string | null;
+          hilo_id?: string | null;
+          id?: string;
+          incluir_ejecutor?: boolean;
+          orden?: number;
+          plantilla_id: string;
+          responsable_id?: string | null;
+          temperatura?: number;
+          titulo: string;
+          vence_dias?: number | null;
+          vence_tras_previo?: boolean;
+        };
+        Update: {
+          activo?: boolean;
+          asignados?: string[];
+          created_at?: string;
+          descripcion?: string | null;
+          hilo_id?: string | null;
+          id?: string;
+          incluir_ejecutor?: boolean;
+          orden?: number;
+          plantilla_id?: string;
+          responsable_id?: string | null;
+          temperatura?: number;
+          titulo?: string;
+          vence_dias?: number | null;
+          vence_tras_previo?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tareas_plantillas_items_hilo_id_fkey";
+            columns: ["hilo_id"];
+            isOneToOne: false;
+            referencedRelation: "tareas_plantillas_hilos";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "tareas_plantillas_items_plantilla_id_fkey";
             columns: ["plantilla_id"];
             isOneToOne: false;
             referencedRelation: "tareas_plantillas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tareas_plantillas_items_responsable_id_fkey";
+            columns: ["responsable_id"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
             referencedColumns: ["id"];
           },
         ];
@@ -1608,15 +1699,6 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      agregar_tareas_desde_plantilla: {
-        Args: {
-          p_asignados: string[];
-          p_hilo_id: string;
-          p_plantilla_id: string;
-          p_responsable_id: string;
-        };
-        Returns: undefined;
-      };
       convertir_tarea_en_hilo: {
         Args: { p_tarea_id: string };
         Returns: string;
@@ -1646,6 +1728,7 @@ export type Database = {
           p_responsable_id: string;
           p_temperatura: number;
           p_titulo: string;
+          p_vence_dias_tras_previo: number;
           p_visibilidad: Database["public"]["Enums"]["visibilidad"];
         };
         Returns: string;
@@ -1677,6 +1760,7 @@ export type Database = {
           p_responsable_id: string;
           p_temperatura: number;
           p_titulo: string;
+          p_vence_dias_tras_previo: number;
           p_visibilidad: Database["public"]["Enums"]["visibilidad"];
         };
         Returns: undefined;
@@ -1695,6 +1779,21 @@ export type Database = {
         Returns: boolean;
       };
       es_responsable_tarea: { Args: { p_tarea_id: string }; Returns: boolean };
+      es_siembra_tarea: { Args: { p_tarea_id: string }; Returns: boolean };
+      guardar_plantilla: {
+        Args: {
+          p_alcance: Database["public"]["Enums"]["alcance_plantilla"];
+          p_descripcion: string;
+          p_hilos: Json;
+          p_id: string;
+          p_miembros: string[];
+          p_nombre: string;
+          p_pasos: Json;
+          p_tipo: Database["public"]["Enums"]["tipo_plantilla"];
+          p_visibilidad: Database["public"]["Enums"]["visibilidad"];
+        };
+        Returns: string;
+      };
       notificaciones_avisos: {
         Args: never;
         Returns: {
@@ -2142,6 +2241,10 @@ export type Database = {
         Args: { p_proyecto_id: string };
         Returns: boolean;
       };
+      puede_gestionar_plantilla: {
+        Args: { p_plantilla_id: string };
+        Returns: boolean;
+      };
       puede_ver_hilo: { Args: { p_hilo_id: string }; Returns: boolean };
       reactivar_posponer_vencidos: { Args: never; Returns: undefined };
       reasignar_tarea: {
@@ -2157,8 +2260,18 @@ export type Database = {
         Returns: undefined;
       };
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean };
+      usar_plantilla: {
+        Args: {
+          p_hilo_id: string;
+          p_plantilla_id: string;
+          p_proyecto_id: string;
+          p_titulo: string;
+        };
+        Returns: number;
+      };
     };
     Enums: {
+      alcance_plantilla: "sistema" | "privada";
       estado_hilo: "abierto" | "cerrado";
       estado_obra:
         | "idea"
@@ -2244,6 +2357,7 @@ export type Database = {
         | "oficina"
         | "hotel"
         | "otro";
+      tipo_plantilla: "tarea" | "hilo" | "proyecto";
       tipo_submodulo: "vista" | "funcion";
       visibilidad: "publico" | "privado";
     };
@@ -2373,6 +2487,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alcance_plantilla: ["sistema", "privada"],
       estado_hilo: ["abierto", "cerrado"],
       estado_obra: [
         "idea",
@@ -2466,6 +2581,7 @@ export const Constants = {
         "hotel",
         "otro",
       ],
+      tipo_plantilla: ["tarea", "hilo", "proyecto"],
       tipo_submodulo: ["vista", "funcion"],
       visibilidad: ["publico", "privado"],
     },

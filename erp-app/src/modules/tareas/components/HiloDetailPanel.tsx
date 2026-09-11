@@ -7,7 +7,7 @@ import { RightPanel } from "@/components/ui/RightPanel";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { desactivarHilo } from "../actions";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto } from "../types";
+import type { PlantillaCompleta, TareaConAsignados, TareaHilo, TareaProyecto } from "../types";
 import { TareaCard } from "./TareaCard";
 import { TareaFormPanel } from "./TareaFormPanel";
 import { HiloFormPanel } from "./HiloFormPanel";
@@ -34,11 +34,13 @@ export function HiloDetailPanel({
   hilo: TareaHilo;
   tareasDelHilo: TareaConAsignados[];
   proyecto: TareaProyecto | null;
-  plantillas: TareaPlantilla[];
+  plantillas: PlantillaCompleta[];
   relacionCon?: string | null;
   onClose: () => void;
 }) {
-  const { usuarios, miembrosPorProyecto, usuarioActualId, gestionarAjenas } = useTareasContexto();
+  const { usuarios, usuarioActualId, gestionarAjenas } = useTareasContexto();
+  // En un hilo existente entran pasos y tareas; una de proyecto crea el suyo.
+  const plantillasDeHilo = plantillas.filter((p) => p.tipo !== "proyecto");
   const [agregandoTarea, setAgregandoTarea] = useState(false);
   const [editando, setEditando] = useState(false);
   const [posponiendo, setPosponiendo] = useState(false);
@@ -54,9 +56,6 @@ export function HiloDetailPanel({
   // (un UPDATE denegado afecta 0 filas, no tira error) es peor que ocultarlas.
   const puedeGestionar = gestionarAjenas || hilo.responsable_id === usuarioActualId;
 
-  // Las tareas del hilo heredan su proyecto: quiénes pueden recibirlas sale
-  // de los miembros de ese proyecto.
-  const miembros = proyecto ? (miembrosPorProyecto[proyecto.id] ?? []) : null;
   const responsable = usuarios.find((u) => u.id === hilo.responsable_id)?.nombre ?? null;
   const terminadas = contarTerminadas(tareasDelHilo);
 
@@ -84,10 +83,10 @@ export function HiloDetailPanel({
               Modificar hilo
             </button>
           )}
-          {(plantillas.length > 0 || puedeGestionar) && (
+          {(plantillasDeHilo.length > 0 || puedeGestionar) && (
             <OverflowMenu
               items={[
-                ...(plantillas.length > 0
+                ...(plantillasDeHilo.length > 0
                   ? [
                       {
                         label: "Usar plantilla",
@@ -186,8 +185,7 @@ export function HiloDetailPanel({
       {usandoPlantilla && (
         <UsarPlantillaPanel
           hiloId={hilo.id}
-          plantillas={plantillas}
-          miembros={miembros}
+          plantillas={plantillasDeHilo}
           onClose={() => setUsandoPlantilla(false)}
         />
       )}

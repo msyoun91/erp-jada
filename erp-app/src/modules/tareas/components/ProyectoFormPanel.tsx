@@ -8,6 +8,7 @@ import { RightPanel } from "@/components/ui/RightPanel";
 import { crearProyecto, editarProyecto } from "../actions";
 import { crearProyectoSchema, type CrearProyectoForm } from "../types";
 import type { TareaProyecto } from "../types";
+import { SelectorUsuarios } from "./SelectorUsuarios";
 import { useTareasContexto } from "./tareasContexto";
 
 // Crear y modificar en el mismo panel (prop `proyecto`), mismo patrón que
@@ -47,13 +48,6 @@ export function ProyectoFormPanel({
   });
 
   const miembrosField = useController({ name: "miembros", control });
-  const seleccionados = miembrosField.field.value ?? [];
-
-  function toggle(id: string) {
-    miembrosField.field.onChange(
-      seleccionados.includes(id) ? seleccionados.filter((x) => x !== id) : [...seleccionados, id]
-    );
-  }
 
   async function onSubmit(data: CrearProyectoForm) {
     setEnviando(true);
@@ -117,22 +111,13 @@ export function ProyectoFormPanel({
           <div>
             <label className="t-label t-label-req mb-1 block">Miembros</label>
             <p className="t-caption mb-1">Solo los miembros pueden recibir tareas del proyecto.</p>
-            <div className="max-h-40 overflow-y-auto rounded-md border-[1.5px] border-border-strong">
-              {usuarios.map((u) => (
-                <label
-                  key={u.id}
-                  className="tap-target flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-bg-subtle"
-                >
-                  <input
-                    type="checkbox"
-                    checked={seleccionados.includes(u.id)}
-                    onChange={() => toggle(u.id)}
-                    className="h-4 w-4 shrink-0 accent-brand-700"
-                  />
-                  <span className="t-body-m">{u.nombre}</span>
-                </label>
-              ))}
-            </div>
+            <SelectorUsuarios
+              opciones={usuarios}
+              seleccionados={miembrosField.field.value ?? []}
+              onChange={miembrosField.field.onChange}
+              nombreDe={(id) => usuarios.find((u) => u.id === id)?.nombre ?? "Usuario inactivo"}
+              sinOpciones="No hay usuarios activos."
+            />
             {errors.miembros && <p className="input-error-text">{errors.miembros.message}</p>}
           </div>
         )}

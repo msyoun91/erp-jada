@@ -50,6 +50,8 @@ const MENSAJES_ERROR: Record<string, string> = {
   TA007: "Ese paso tiene un paso siguiente activo — desactivá la cadena desde el final",
   TA008: "No se pudo guardar: el registro ya no existe o no tenés permiso para modificarlo",
   TA009: "La plantilla no tiene pasos",
+  TA010: "La plantilla no corresponde a su tipo — una de tarea lleva un solo paso y solo una de proyecto lleva hilos",
+  TA011: "Una plantilla de proyecto crea su propio proyecto — usala desde Plantillas",
   email_exists: "Ese email ya está registrado",
   weak_password: "La contraseña es demasiado débil",
   invalid_credentials: "Email o contraseña incorrectos",

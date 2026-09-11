@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Paginacion } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla } from "../types";
+import type { TareaConAsignados, TareaHilo, PlantillaCompleta } from "../types";
 import { type Relacion, relacionHilo, relacionTarea } from "../relacion";
 import { HiloCard } from "./HiloCard";
 import { TareaCard } from "./TareaCard";
@@ -28,7 +28,7 @@ export function TareasListaView({
 }: {
   hilos: TareaHilo[];
   tareas: TareaConAsignados[];
-  plantillas: TareaPlantilla[];
+  plantillas: PlantillaCompleta[];
 }) {
   const { usuarios, usuarioActualId, gestionarAjenas } = useTareasContexto();
   const router = useRouter();

@@ -12,7 +12,26 @@ El proyecto **no se convierte en hilo** (sin `estado` abierto/cerrado ni cierre 
 
 ## Tareas — plantilla-checklist (items sin orden entre sí)
 
-Desde `sql/017` toda plantilla genera una cadena: cada item espera al anterior (`agregarTareasDesdePlantilla`). Decidido no agregar flag ni checkbox hasta que exista una plantilla real cuyos items sean paralelos — ahí el camino barato es una columna `encadenada boolean` en `tareas_plantillas`, no una opción en "usar plantilla" (la plantilla sabe cómo es, quien la usa no debería tener que decidirlo cada vez).
+Desde `sql/017` toda plantilla de hilo genera una cadena: cada item espera al anterior (`usar_plantilla` desde `sql/053`). Desde `sql/053` las plantillas de proyecto tienen tareas sueltas, que no se esperan entre sí — pero un hilo de pasos paralelos sigue sin existir. Decidido no agregar flag ni checkbox hasta que exista una plantilla real así — ahí el camino barato es una columna `encadenada boolean` en `tareas_plantillas_hilos` (y en la plantilla de tipo hilo), no una opción en "usar plantilla" (la plantilla sabe cómo es, quien la usa no debería tener que decidirlo cada vez).
+
+## Tareas — plantillas disparadas por otros módulos (fase 2)
+
+La fase 1 (`sql/053`, ver `decisiones/tareas.md` → *Plantillas de sistema y privadas, tres tipos*) dejó las plantillas completas y usadas a mano. La fase 2 las conecta con los módulos. **Alcance acordado con el usuario: un solo disparador, para probar la idea** — la obra cambia de estado (su ejemplo: de cotización a en ejecución → "Cobrar obra X"). El resto se suma cuando haga falta.
+
+Decidido con el usuario:
+
+- **"Click de botón relevante" es una acción que el módulo ya tiene** (transferir, compartir, vincular empresa/persona, marcar referente, crear obra), no un botón "Crear tareas" nuevo. Obras no suma funciones ni botones: solo avisa cuando pasa algo.
+- **El texto se copia en la tarea** ("Cobrar obra {nombre}"): el asignado lo lee aunque no vea la obra. Los enlaces a la ficha sí respetan permisos. El editor lo avisa.
+- **Si un asignado no puede recibir el paso, queda para quien disparó con una nota** — ya implementado en `usar_plantilla`.
+- **Nunca teléfono ni email como dato**: el contacto sale solo por `obras_ficha_persona`, que registra el acceso.
+
+Propuesto, sin objeción del usuario (confirmar al construir):
+
+- Listado de disparadores = una tabla que siembra la migración de cada módulo (código, módulo, datos que ofrece, submódulo que pide cada uno). Una plantilla de sistema se ve solo con todos los submódulos que usa, se muestran como etiquetas, y quien la arma solo usa lo que tiene autorizado — todo en RLS.
+- Enlaces estructurados tarea ↔ obra/empresa/persona (`tareas_vinculos`), chips con link a la ficha. Cierra *Sugerencia de tareas — falta el vínculo* (abajo).
+- La automática corre una vez por (plantilla, obra); ir y volver de estado no duplica. Una privada con disparador solo corre si el dueño es quien dispara.
+- **Autoridad:** el disparo automático no puede correr con los permisos de quien cambia el estado (un vendedor sin `tareas_asignar` no podría crearle la tarea a Cobranzas y el cambio de estado fallaría). La autoridad pasa a ser la plantilla: se valida al guardarla y la ejecución corre `SECURITY DEFINER` revalidando lo que pudo cambiar. Es mover autorización adentro de una función — registrarlo como excepción explícita en `decisiones/tareas.md` antes de escribirlo.
+- Esto **es** un motor de reglas: al construirlo, superar en `decisiones/global.md` *Notificaciones: infra sin submódulo, y sin motor* con el puntero.
 
 ## Tareas — verificar `Content-Range` en el PATCH
 

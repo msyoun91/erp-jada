@@ -1,7 +1,11 @@
 "use client";
 
-import { useController, type Control, type Path } from "react-hook-form";
+import { useController, type Control, type FieldValues, type Path } from "react-hook-form";
+import { EJECUTOR, type Usuario } from "../types";
+import { SelectorUsuarios } from "./SelectorUsuarios";
 import { useTareasContexto } from "./tareasContexto";
+
+const SIN_MIEMBROS = "Solo los miembros del proyecto pueden recibir tareas.";
 
 // `miembros` = ids habilitados para recibir la tarea (miembros del proyecto);
 // null = la tarea no tiene proyecto y cualquiera puede recibirla. El filtro es
@@ -10,26 +14,36 @@ import { useTareasContexto } from "./tareasContexto";
 // `puedeAsignar` (función `tareas_asignar`, sql/014) decide si hay picker o
 // solo el resumen de a quién le queda la tarea: los valores viajan igual como
 // defaults ocultos del form. El bloque de solo-lectura vive acá y no en cada
-// panel para no repetirlo en TareaFormPanel y UsarPlantillaPanel.
-export function AsignadosPicker<T extends { asignados: string[]; responsable_id: string }>({
+// panel para no repetirlo en TareaFormPanel, ReasignarPanel y PlantillaFormPanel.
+//
+// Los campos se nombran por prop para poder apuntar a un paso de plantilla
+// (`pasos.2.asignados`); `conEjecutor` suma "Quien la use" como un asignado más.
+export function AsignadosPicker<T extends FieldValues>({
   control,
   miembros,
+  campoAsignados = "asignados" as Path<T>,
+  campoResponsable = "responsable_id" as Path<T>,
+  conEjecutor = false,
 }: {
   control: Control<T>;
   miembros: string[] | null;
+  campoAsignados?: Path<T>;
+  campoResponsable?: Path<T>;
+  conEjecutor?: boolean;
 }) {
   const { usuarios, puedeAsignar } = useTareasContexto();
-  const asignadosField = useController({ name: "asignados" as Path<T>, control });
-  const responsableField = useController({ name: "responsable_id" as Path<T>, control });
+  const asignadosField = useController({ name: campoAsignados, control });
+  const responsableField = useController({ name: campoResponsable, control });
 
-  const elegibles = miembros ? usuarios.filter((u) => miembros.includes(u.id)) : usuarios;
+  const ejecutor: Usuario[] = conEjecutor ? [{ id: EJECUTOR, nombre: "Quien la use" }] : [];
+  const elegibles = [...ejecutor, ...(miembros ? usuarios.filter((u) => miembros.includes(u.id)) : usuarios)];
+  const nombreDe = (id: string) =>
+    [...ejecutor, ...usuarios].find((u) => u.id === id)?.nombre ?? "Usuario inactivo";
+
   const seleccionados = (asignadosField.field.value as string[] | undefined) ?? [];
   const responsableId = (responsableField.field.value as string | undefined) ?? "";
 
-  function toggle(id: string) {
-    const next = seleccionados.includes(id)
-      ? seleccionados.filter((x) => x !== id)
-      : [...seleccionados, id];
+  function cambiar(next: string[]) {
     asignadosField.field.onChange(next);
     if (!next.includes(responsableId)) {
       responsableField.field.onChange(next[0] ?? "");
@@ -37,14 +51,11 @@ export function AsignadosPicker<T extends { asignados: string[]; responsable_id:
   }
 
   if (!puedeAsignar) {
-    const nombres = usuarios.filter((u) => seleccionados.includes(u.id)).map((u) => u.nombre);
     return (
       <div>
         <label className="t-label mb-1 block">Asignados</label>
         <p className="t-caption">
-          {nombres.length > 0
-            ? nombres.join(", ")
-            : "Solo los miembros del proyecto pueden recibir tareas."}
+          {seleccionados.length > 0 ? seleccionados.map(nombreDe).join(", ") : SIN_MIEMBROS}
         </p>
         {asignadosField.fieldState.error && (
           <p className="input-error-text">{asignadosField.fieldState.error.message}</p>
@@ -56,25 +67,13 @@ export function AsignadosPicker<T extends { asignados: string[]; responsable_id:
   return (
     <div>
       <label className="t-label t-label-req mb-1 block">Asignados</label>
-      <div className="max-h-40 overflow-y-auto rounded-md border-[1.5px] border-border-strong">
-        {elegibles.length === 0 && (
-          <p className="t-caption px-3 py-2">Solo los miembros del proyecto pueden recibir tareas.</p>
-        )}
-        {elegibles.map((u) => (
-          <label
-            key={u.id}
-            className="tap-target flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-bg-subtle"
-          >
-            <input
-              type="checkbox"
-              checked={seleccionados.includes(u.id)}
-              onChange={() => toggle(u.id)}
-              className="h-4 w-4 shrink-0 accent-brand-700"
-            />
-            <span className="t-body-m">{u.nombre}</span>
-          </label>
-        ))}
-      </div>
+      <SelectorUsuarios
+        opciones={elegibles}
+        seleccionados={seleccionados}
+        onChange={cambiar}
+        nombreDe={nombreDe}
+        sinOpciones={SIN_MIEMBROS}
+      />
       {asignadosField.fieldState.error && (
         <p className="input-error-text">{asignadosField.fieldState.error.message}</p>
       )}
@@ -88,13 +87,11 @@ export function AsignadosPicker<T extends { asignados: string[]; responsable_id:
         disabled={seleccionados.length === 0}
       >
         <option value="">— seleccionar —</option>
-        {elegibles
-          .filter((u) => seleccionados.includes(u.id))
-          .map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.nombre}
-            </option>
-          ))}
+        {seleccionados.map((id) => (
+          <option key={id} value={id}>
+            {nombreDe(id)}
+          </option>
+        ))}
       </select>
       {responsableField.fieldState.error && (
         <p className="input-error-text">{responsableField.fieldState.error.message}</p>

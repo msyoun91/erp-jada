@@ -7,11 +7,20 @@ export type TareaProyecto = Tables<"tareas_proyectos">;
 export type TareaAsignado = Tables<"tareas_asignados">;
 export type TareaProyectoMiembro = Tables<"tareas_proyectos_miembros">;
 export type TareaPlantilla = Tables<"tareas_plantillas">;
+export type TareaPlantillaHilo = Tables<"tareas_plantillas_hilos">;
 export type TareaPlantillaItem = Tables<"tareas_plantillas_items">;
 export type TareaEvento = Tables<"tareas_eventos">;
 
+// La plantilla con sus hilos y pasos activos, ya ordenados — getPlantillas
+// la arma en una sola query.
+export type PlantillaCompleta = TareaPlantilla & {
+  hilos: TareaPlantillaHilo[];
+  items: TareaPlantillaItem[];
+};
+
 export type EstadoTarea = Enums<"estado_tarea">;
 export type RecurrenciaUnidad = Enums<"recurrencia_unidad">;
+export type TipoPlantilla = Enums<"tipo_plantilla">;
 
 export type Usuario = { id: string; nombre: string };
 type UsuarioNombre = { nombre: string };
@@ -75,12 +84,19 @@ const uuidOpcional = z
 // Campos comunes a crear y editar (estado/temperatura tienen su propia
 // action) — base de crearTareaSchema y editarTareaSchema, para no duplicar
 // validadores.
+// Plazo en días que el form manda como número o null (setValueAs); un input
+// vacío no es 0.
+const diasOpcional = z.number().int().positive("Tiene que ser al menos 1 día").nullish();
+
 const tareaEditableSchema = z.object({
   titulo: z.string().min(1, "El título es obligatorio").max(200),
   descripcion: z.string().max(2000).optional(),
   proyecto_id: uuidOpcional,
   visibilidad: z.enum(["publico", "privado"]).default("privado"),
   fecha_vencimiento: fechaOpcional,
+  // Con valor, la fecha la derivan los triggers de sql/053 al completarse el
+  // paso anterior y `fecha_vencimiento` se ignora.
+  vence_dias_tras_previo: diasOpcional,
   temperatura: z.coerce.number().int().min(1).max(100).default(50),
   recurrencia_cantidad: z.coerce.number().int().positive().nullish(),
   recurrencia_unidad: z.enum(["dia", "mes"]).nullish(),
@@ -120,6 +136,10 @@ export const crearTareaSchema = tareaEditableSchema
   .refine((d) => !(d.paso_anterior_id && d.recurrencia_cantidad), {
     message: "Un paso de una cadena no puede ser recurrente",
     path: ["recurrencia_cantidad"],
+  })
+  .refine((d) => !d.vence_dias_tras_previo || !!d.paso_anterior_id, {
+    message: "El plazo desde el paso anterior solo aplica a un paso con previo",
+    path: ["vence_dias_tras_previo"],
   })
   .refine(recurrenciaCompleta, {
     message: "Cantidad y unidad de recurrencia van juntas",
@@ -195,25 +215,119 @@ export const editarProyectoSchema = crearProyectoSchema.extend({ id: z.string().
 
 export type EditarProyectoForm = z.input<typeof editarProyectoSchema>;
 
-// `id` presente = paso que ya existe (se actualiza); ausente = paso nuevo.
-// crearPlantilla lo ignora — mismo schema para crear y editar.
-const plantillaItemSchema = z.object({
-  id: z.string().uuid().optional(),
-  titulo: z.string().min(1, "El paso no puede estar vacío"),
-  orden: z.number().int().default(0),
+// Quien use la plantilla, como un asignado más del form. En la base es
+// `incluir_ejecutor` + `responsable_id` NULL — `pasoPlantillaDb` hace el cambio.
+export const EJECUTOR = "ejecutor";
+
+const asignableSchema = z.union([z.string().uuid(), z.literal(EJECUTOR)]);
+
+const pasoPlantillaSchema = z
+  .object({
+    titulo: z.string().min(1, "El paso no puede estar vacío").max(200),
+    descripcion: z.string().max(2000).optional(),
+    asignados: z.array(asignableSchema).min(1, "Debe haber al menos un asignado"),
+    responsable_id: asignableSchema,
+    vence_dias: diasOpcional,
+    vence_tras_previo: z.boolean().default(false),
+    temperatura: z.coerce.number().int().min(1).max(100).default(50),
+  })
+  .refine((p) => p.asignados.includes(p.responsable_id), {
+    message: "El responsable debe estar entre los asignados",
+    path: ["responsable_id"],
+  })
+  .refine((p) => !p.vence_tras_previo || p.vence_dias != null, {
+    message: "Indicá cuántos días",
+    path: ["vence_dias"],
+  });
+
+export type PasoPlantillaForm = z.input<typeof pasoPlantillaSchema>;
+
+const hiloPlantillaSchema = z.object({
+  titulo: z.string().min(1, "El hilo necesita un título").max(200),
+  pasos: z.array(pasoPlantillaSchema).min(1, "El hilo necesita al menos un paso"),
 });
 
-export const crearPlantillaSchema = z.object({
-  nombre: z.string().min(1, "El nombre es obligatorio").max(200),
-  descripcion: z.string().max(2000).optional(),
-  items: z.array(plantillaItemSchema).min(1, "Agregá al menos un paso"),
+// Un solo schema para crear y editar (`id` presente = editar). La forma según
+// el tipo la vuelve a exigir `guardar_plantilla` (TA009/TA010): acá es para
+// que el error aparezca en el campo y no como toast.
+export const guardarPlantillaSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    nombre: z.string().min(1, "El nombre es obligatorio").max(200),
+    descripcion: z.string().max(2000).optional(),
+    alcance: z.enum(["privada", "sistema"]).default("privada"),
+    tipo: z.enum(["tarea", "hilo", "proyecto"]),
+    visibilidad: z.enum(["publico", "privado"]).default("privado"),
+    miembros: z.array(z.string().uuid()).default([]),
+    hilos: z.array(hiloPlantillaSchema).default([]),
+    pasos: z.array(pasoPlantillaSchema).default([]),
+  })
+  .superRefine((d, ctx) => {
+    if (d.tipo === "tarea" && d.pasos.length !== 1) {
+      ctx.addIssue({ code: "custom", path: ["pasos"], message: "Una plantilla de tarea tiene un solo paso" });
+    }
+    if (d.tipo === "hilo" && d.pasos.length === 0) {
+      ctx.addIssue({ code: "custom", path: ["pasos"], message: "Agregá al menos un paso" });
+    }
+    if (d.tipo !== "proyecto" && (d.hilos.length > 0 || d.miembros.length > 0)) {
+      ctx.addIssue({ code: "custom", path: ["tipo"], message: "Solo una plantilla de proyecto lleva hilos y miembros" });
+    }
+    if (d.tipo !== "proyecto") return;
+    if (d.hilos.length === 0 && d.pasos.length === 0) {
+      ctx.addIssue({ code: "custom", path: ["pasos"], message: "Agregá al menos un hilo o una tarea" });
+    }
+    // Al usarla, un asignado que no es miembro se descarta (sql/053): se
+    // avisa acá para no guardar un paso que después va a caer en otro.
+    const noMiembro = (p: { asignados: string[] }) =>
+      p.asignados.some((a) => a !== EJECUTOR && !d.miembros.includes(a));
+    d.hilos.forEach((h, i) =>
+      h.pasos.forEach((p, j) => {
+        if (noMiembro(p)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["hilos", i, "pasos", j, "asignados"],
+            message: "Solo los miembros del proyecto pueden recibir tareas",
+          });
+        }
+      }),
+    );
+    d.pasos.forEach((p, j) => {
+      if (noMiembro(p)) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["pasos", j, "asignados"],
+          message: "Solo los miembros del proyecto pueden recibir tareas",
+        });
+      }
+    });
+  });
+
+export type GuardarPlantillaForm = z.input<typeof guardarPlantillaSchema>;
+export type GuardarPlantillaValues = z.output<typeof guardarPlantillaSchema>;
+
+export function pasoPlantillaDb(p: z.output<typeof pasoPlantillaSchema>) {
+  return {
+    titulo: p.titulo,
+    descripcion: p.descripcion ?? null,
+    asignados: p.asignados.filter((a) => a !== EJECUTOR),
+    incluir_ejecutor: p.asignados.includes(EJECUTOR),
+    responsable_id: p.responsable_id === EJECUTOR ? null : p.responsable_id,
+    vence_dias: p.vence_dias ?? null,
+    vence_tras_previo: p.vence_tras_previo,
+    temperatura: p.temperatura,
+  };
+}
+
+// `titulo` nombra lo que se crea (el proyecto, o el hilo nuevo); vacío = el
+// nombre de la plantilla. `hilo_id` = sumar los pasos a un hilo existente.
+export const usarPlantillaSchema = z.object({
+  plantilla_id: z.string().uuid("Elegí una plantilla"),
+  titulo: z.string().max(200).optional(),
+  proyecto_id: uuidOpcional,
+  hilo_id: uuidOpcional,
 });
 
-export type CrearPlantillaForm = z.input<typeof crearPlantillaSchema>;
-
-export const editarPlantillaSchema = crearPlantillaSchema.extend({ id: z.string().uuid() });
-
-export type EditarPlantillaForm = z.input<typeof editarPlantillaSchema>;
+export type UsarPlantillaForm = z.input<typeof usarPlantillaSchema>;
 
 export const reasignarTareaSchema = z
   .object({
@@ -247,20 +361,6 @@ export const cerrarHiloSchema = z.object({
 });
 
 export type CerrarHiloForm = z.infer<typeof cerrarHiloSchema>;
-
-export const agregarDesdePlantillaSchema = z
-  .object({
-    plantilla_id: z.string().uuid("Elegí una plantilla"),
-    hilo_id: z.string().uuid(),
-    responsable_id: z.string().uuid(),
-    asignados: z.array(z.string().uuid()).min(1, "Debe haber al menos un asignado"),
-  })
-  .refine((d) => d.asignados.includes(d.responsable_id), {
-    message: "El responsable debe estar entre los asignados",
-    path: ["responsable_id"],
-  });
-
-export type AgregarDesdePlantillaForm = z.infer<typeof agregarDesdePlantillaSchema>;
 
 export const deshacerConversionSchema = z.object({
   hilo_id: z.string().uuid(),

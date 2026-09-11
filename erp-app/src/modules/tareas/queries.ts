@@ -3,11 +3,10 @@ import { getUsuariosActivos } from "@/lib/usuarios";
 import { sumarDiasISO } from "@/lib/utils";
 import type {
   EventoAuditoria,
+  PlantillaCompleta,
   TareaConAsignados,
   TareaHilo,
   TareaPendiente,
-  TareaPlantilla,
-  TareaPlantillaItem,
   TareaProyecto,
   Usuario,
 } from "./types";
@@ -104,36 +103,25 @@ export async function getMiembrosPorProyecto(): Promise<Record<string, string[]>
   return mapa;
 }
 
-export async function getPlantillas(): Promise<TareaPlantilla[]> {
+// Las plantillas visibles con sus hilos y pasos en una sola query (RLS ya
+// recorta por alcance). `activo` y el orden de los embeds se resuelven acá:
+// guardar reemplaza los pasos, así que cada plantilla arrastra filas
+// desactivadas de sus versiones anteriores.
+export async function getPlantillas(): Promise<PlantillaCompleta[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tareas_plantillas")
-    .select("*")
+    .select("*, tareas_plantillas_hilos(*), tareas_plantillas_items(*)")
     .eq("activo", true)
     .order("nombre");
 
   if (error) throw error;
-  return data ?? [];
-}
 
-// Mapa plantilla -> sus items activos, en una sola query para todas las
-// plantillas (mismo motivo que getMiembrosPorProyecto): la vista los necesita
-// todos a la vez y pedirlos por plantilla eran N requests.
-export async function getItemsPorPlantilla(): Promise<Record<string, TareaPlantillaItem[]>> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tareas_plantillas_items")
-    .select("*")
-    .eq("activo", true)
-    .order("orden");
-
-  if (error) throw error;
-
-  const mapa: Record<string, TareaPlantillaItem[]> = {};
-  for (const item of data ?? []) {
-    (mapa[item.plantilla_id] ??= []).push(item);
-  }
-  return mapa;
+  return (data ?? []).map(({ tareas_plantillas_hilos, tareas_plantillas_items, ...p }) => ({
+    ...p,
+    hilos: tareas_plantillas_hilos.filter((h) => h.activo).sort((a, b) => a.orden - b.orden),
+    items: tareas_plantillas_items.filter((i) => i.activo).sort((a, b) => a.orden - b.orden),
+  }));
 }
 
 // Auditoría: solo cambios a 'completada' — "qué se realizó", no cada

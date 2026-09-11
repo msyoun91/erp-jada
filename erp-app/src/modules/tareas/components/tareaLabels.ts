@@ -68,6 +68,12 @@ export function textoAntiguedad(dias: number) {
   return `hace ${dias} ${dias === 1 ? "día" : "días"}`;
 }
 
+// El plazo de un paso que espera al anterior todavía no es una fecha
+// (sql/053): mostrar "Creada hace…" escondía que ya tiene vencimiento pactado.
+export function textoVenceTrasPrevio(dias: number) {
+  return `Vence ${dias} ${dias === 1 ? "día" : "días"} después del paso anterior`;
+}
+
 // "en 7 d" / "hace 2 d" / "hoy". Se lee en la columna derecha de la isla, que
 // es lo único que alinea en vertical a lo largo del listado: la fecha exacta
 // sigue en la meta, esto contesta cuánto falta sin hacer la cuenta.

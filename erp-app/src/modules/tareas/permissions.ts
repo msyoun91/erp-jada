@@ -32,6 +32,10 @@ export function puedeVerPlantillas() {
   return tienePermiso("tareas_plantillas");
 }
 
+export function puedeGestionarPlantillasSistema() {
+  return tienePermiso("tareas_plantillas_sistema");
+}
+
 export function puedeVerAuditoria() {
   return tienePermiso("tareas_auditoria");
 }

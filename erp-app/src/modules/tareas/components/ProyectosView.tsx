@@ -4,7 +4,7 @@ import { useState } from "react";
 import { FolderPlus } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla } from "../types";
+import type { TareaConAsignados, TareaHilo, PlantillaCompleta } from "../types";
 import { ProyectoFormPanel } from "./ProyectoFormPanel";
 import { ProyectoCard } from "./ProyectoCard";
 import { useTareasContexto } from "./tareasContexto";
@@ -18,7 +18,7 @@ export function ProyectosView({
 }: {
   hilos: TareaHilo[];
   tareas: TareaConAsignados[];
-  plantillas: TareaPlantilla[];
+  plantillas: PlantillaCompleta[];
   gestionarMiembros: boolean;
   puedeCrear: boolean;
 }) {

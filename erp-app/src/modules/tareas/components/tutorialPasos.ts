@@ -17,7 +17,7 @@ const LISTA: PasoTutorial[] = [
     codigo: "tareas_tabs",
     titulo: "Cinco vistas de lo mismo",
     texto:
-      "Lista es el panorama completo. Misión te pasa tus tareas de a una. Proyectos agrupa el trabajo por obra o cliente, Plantillas guarda cadenas de pasos que se repiten, y Auditoría muestra qué se completó.",
+      "Lista es el panorama completo. Misión te pasa tus tareas de a una. Proyectos agrupa el trabajo por obra o cliente, Plantillas guarda el trabajo que se repite, y Auditoría muestra qué se completó.",
   },
   {
     codigo: "tareas_lista_usuario",
@@ -96,15 +96,15 @@ const PROYECTOS: PasoTutorial[] = [
 const PLANTILLAS: PasoTutorial[] = [
   {
     codigo: "tareas_plantillas_crear",
-    titulo: "Una plantilla es una cadena de pasos",
+    titulo: "Una tarea, un hilo o un proyecto entero",
     texto:
-      "Guardá acá el trabajo que se repite igual. Al usarla crea todas las tareas de una, encadenadas en el orden que tengan los pasos.",
+      "Guardá acá el trabajo que se repite igual: a quién le toca cada paso, cuándo vence y con qué temperatura. Una privada es solo tuya; una de sistema la usa todo el equipo.",
   },
   {
     codigo: "tareas_plantillas_lista",
-    titulo: "El orden de los pasos es la regla",
+    titulo: "«Usar» crea todo de una",
     texto:
-      "Un clic en el nombre abre la plantilla para editarla. Los pasos se reordenan con ↑↓ — el orden decide qué espera a qué.",
+      "Los pasos de un hilo se crean encadenados: cada uno espera al anterior, y su vencimiento puede correr desde que el anterior se completa. Si alguien no puede recibir un paso, queda para vos con una nota.",
   },
 ];
 

@@ -9,6 +9,7 @@ import { crearTarea, editarTarea } from "../actions";
 import { crearTareaSchema, type CrearTareaForm } from "../types";
 import type { TareaConAsignados } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
+import { Segmentado } from "./Segmentado";
 import { puedeTrabajarEnProyecto } from "./proyectoTareas";
 import { TEMPERATURA_NIVELES, temperaturaRango } from "./tareaLabels";
 import { hoyISO, sumarDiasISO } from "@/lib/utils";
@@ -42,6 +43,7 @@ export function TareaFormPanel({
   const { proyectos, miembrosPorProyecto, usuarioActualId, puedeAsignar } = useTareasContexto();
   const [enviando, setEnviando] = useState(false);
   const [tieneRecurrencia, setTieneRecurrencia] = useState(tarea?.recurrencia_cantidad != null);
+  const [venceTrasPrevio, setVenceTrasPrevio] = useState(tarea?.vence_dias_tras_previo != null);
   const proyectosDisponibles = proyectos.filter((p) =>
     puedeTrabajarEnProyecto(miembrosPorProyecto[p.id] ?? [], usuarioActualId, puedeAsignar)
   );
@@ -76,6 +78,7 @@ export function TareaFormPanel({
           responsable_id: tarea.responsable_id,
           asignados: tarea.tareas_asignados.filter((a) => a.activo).map((a) => a.usuario_id),
           fecha_vencimiento: tarea.fecha_vencimiento,
+          vence_dias_tras_previo: tarea.vence_dias_tras_previo,
           temperatura: tarea.temperatura,
           recurrencia_cantidad: tarea.recurrencia_cantidad,
           recurrencia_unidad: tarea.recurrencia_unidad,
@@ -210,22 +213,64 @@ export function TareaFormPanel({
         <div className="grid gap-4 sm:grid-cols-2 sm:gap-x-[14px]">
           <div>
             <label className="t-label mb-1 block">Vencimiento</label>
-            <input type="date" className="input" {...register("fecha_vencimiento")} />
-            {/* Chips y no `btn-secondary`: con peso de botón se leían igual que
-                el "Cancelar" del footer, y son atajos de relleno del campo de
-                arriba, no acciones del formulario. */}
-            <div className="mt-2 flex flex-wrap gap-2">
-              {VENCIMIENTO_PRESETS.map((dias) => (
-                <button
-                  key={dias}
-                  type="button"
-                  className="tap-target t-caption rounded-full border border-border px-3 py-1 text-text-secondary hover:bg-bg-subtle"
-                  onClick={() => setValue("fecha_vencimiento", sumarDiasISO(hoyISO(), dias))}
-                >
-                  {dias} {dias === 1 ? "día" : "días"}
-                </button>
-              ))}
-            </div>
+            {/* Un paso puede vencer a N días de completarse el anterior: la
+                fecha no se conoce hasta entonces y la ponen los triggers de
+                sql/053. Las dos formas se excluyen — se limpia la otra. */}
+            {esPaso && (
+              <div className="mb-2">
+                <Segmentado
+                  etiqueta="Cómo corre el vencimiento"
+                  opciones={[
+                    { valor: "fecha", label: "Fecha" },
+                    { valor: "tras_previo", label: "Tras el paso anterior" },
+                  ]}
+                  valor={venceTrasPrevio ? "tras_previo" : "fecha"}
+                  onChange={(v) => {
+                    setVenceTrasPrevio(v === "tras_previo");
+                    if (v === "fecha") setValue("vence_dias_tras_previo", null, { shouldDirty: true });
+                    else setValue("fecha_vencimiento", null, { shouldDirty: true });
+                  }}
+                />
+              </div>
+            )}
+            {venceTrasPrevio ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    aria-label="Días después de completar el paso anterior"
+                    className={`input w-20 ${errors.vence_dias_tras_previo ? "input-error" : ""}`}
+                    {...register("vence_dias_tras_previo", {
+                      setValueAs: (v) => (v === "" || v == null ? null : Number(v)),
+                    })}
+                  />
+                  <span className="t-caption">días después de completar el anterior</span>
+                </div>
+                {errors.vence_dias_tras_previo && (
+                  <p className="input-error-text">{errors.vence_dias_tras_previo.message}</p>
+                )}
+              </>
+            ) : (
+              <>
+                <input type="date" className="input" {...register("fecha_vencimiento")} />
+                {/* Chips y no `btn-secondary`: con peso de botón se leían igual que
+                    el "Cancelar" del footer, y son atajos de relleno del campo de
+                    arriba, no acciones del formulario. */}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {VENCIMIENTO_PRESETS.map((dias) => (
+                    <button
+                      key={dias}
+                      type="button"
+                      className="tap-target t-caption rounded-full border border-border px-3 py-1 text-text-secondary hover:bg-bg-subtle"
+                      onClick={() => setValue("fecha_vencimiento", sumarDiasISO(hoyISO(), dias))}
+                    >
+                      {dias} {dias === 1 ? "día" : "días"}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           <div>

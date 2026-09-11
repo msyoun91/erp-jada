@@ -7,7 +7,7 @@ import { RightPanel } from "@/components/ui/RightPanel";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { desactivarProyecto } from "../actions";
-import type { TareaConAsignados, TareaHilo, TareaPlantilla, TareaProyecto } from "../types";
+import type { TareaConAsignados, TareaHilo, PlantillaCompleta, TareaProyecto } from "../types";
 import { HiloCard } from "./HiloCard";
 import { TareaCard } from "./TareaCard";
 import { TareaFormPanel } from "./TareaFormPanel";
@@ -33,7 +33,7 @@ export function ProyectoDetailPanel({
   proyecto: TareaProyecto;
   hilos: TareaHilo[];
   tareas: TareaConAsignados[];
-  plantillas: TareaPlantilla[];
+  plantillas: PlantillaCompleta[];
   gestionarMiembros: boolean;
   onClose: () => void;
 }) {
