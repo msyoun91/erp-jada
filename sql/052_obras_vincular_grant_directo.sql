@@ -2,7 +2,7 @@
 -- no habilita a vincularlo a las obras propias del receptor. Solo el share
 -- DIRECTO lo hace, y al revocarlo la cascada arrastra esos vínculos.
 --
--- Contexto (decisiones/obras.md → "El grant heredado de obra ve, no reparte"):
+-- Contexto (decisiones/obras/visibilidad.md → "El grant heredado de obra ve, no reparte"):
 --
 --   `obras_compartir_obra` / `obras_compartir_empresa` tildando el checklist
 --   escriben `obras_persona_compartida` / `obras_empresa_compartida` COMPLETO,

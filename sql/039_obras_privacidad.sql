@@ -58,7 +58,7 @@
 -- quien veía por vínculo deja de ver y se re-comparte a mano.
 --
 -- Las clases OB020–OB023 se suman a la lista blanca de `mensajeError()`
--- (decisiones/obras.md → "Los mensajes de la base los deja pasar una lista
+-- (decisiones/obras/modelo.md → "Los mensajes de la base los deja pasar una lista
 -- blanca de códigos"): son texto escrito para que lo lea un usuario.
 -- ============================================================
 

@@ -9,7 +9,7 @@
 -- puede desactivar.
 --
 -- Eso desmentía tres decisiones ya escritas:
---   · `decisiones/obras.md` — "El mensaje viene de la base."
+--   · `decisiones/obras/modelo.md` — "El mensaje viene de la base."
 --   · `sql/027` §13 — "El mensaje dice cuántas obras, nunca cuáles."
 --   · el ConfirmModal de empresa y de persona, que promete que la base va a
 --     explicar por qué no procede.

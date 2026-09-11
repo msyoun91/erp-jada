@@ -18,7 +18,7 @@
 --
 -- Último resultado: 33/33.
 --
--- Encontró tres agujeros, todos anotados en `decisiones/obras.md`: el guard de
+-- Encontró tres agujeros, todos anotados en `decisiones/obras/`: el guard de
 -- congelado explotaba con 42703 sobre `obras_persona_empresa`, `obras_aprobar`
 -- daba acceso a la agenda entera por dentro de `obras_puede_ver_persona`, y
 -- marcar referente era un atajo para saltear la autorización.

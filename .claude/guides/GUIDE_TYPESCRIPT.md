@@ -1,10 +1,10 @@
 # GUIDE_TYPESCRIPT — TypeScript y Código
 
+Lo que ya dice CLAUDE.md (strict sin `any`, nombrado, validar en dos lugares, `service_role` solo en servidor) no se repite acá.
+
 ## Reglas base
 
-- Modo strict en todo el proyecto
-- Nunca `any`. Tipo desconocido → `unknown`, resolver correctamente
-- Tipos de BD se generan desde Supabase (`types/database.types.ts`). Nunca a mano
+- Tipos de BD en `lib/supabase/database.types.ts`, generados desde Supabase (comando y avisos en `db_schema/README.md`). Los argumentos nulables de RPC se corrigen con `argsRpc()` (`lib/supabase/rpc.ts`), no editando el archivo generado
 - Componentes simples, una sola responsabilidad. Más de 150 líneas → separar
 
 ## Imports
@@ -18,14 +18,6 @@ Utilizar imports absolutos.
 // Evitar
 ../../../components/ui/button
 ```
-
-## Naming
-
-| Contexto | Idioma | Ejemplos |
-|---|---|---|
-| Lógica de negocio | Español | `getPedidosByCliente()`, `useCobranzaForm()` |
-| Columnas SQL | Español | `fecha_entrega`, `monto_total`, `estado_pago` |
-| Infraestructura técnica | Inglés | `middleware.ts`, `layout.tsx`, `createClient()` |
 
 ## Comentarios
 
@@ -43,14 +35,12 @@ Sin docstrings multilínea.
 - Sin feature flags ni shims de compatibilidad hacia atrás cuando se puede cambiar el código
 - Todo server action maneja tres estados: cargando / éxito / error
 
-## Validación
+## Seguridad
 
-- Validación en dos lugares siempre: frontend (Zod/RHF) + server action (safeParse)
 - Nunca exponer datos sensibles en el cliente
 - Queries con datos de otros usuarios solo en server components o server actions
 - Nunca saltear RLS desde el frontend
-- `service_role` solo en servidor, nunca en cliente
-- Permisos verificados en middleware y en server action (doble barrera)
+- Permisos: la vista se verifica en su `page.tsx`, la función en la server action — ver `GUIDE_PERMISSIONS.md`
 - Contraseñas: las maneja Supabase Auth exclusivamente. Nunca almacenar, loguear ni manipular
 - Toda acción de escritura requiere usuario autenticado con permiso verificado en servidor
 - No introducir: XSS, SQL injection, command injection ni otras vulnerabilidades OWASP top 10
@@ -66,7 +56,7 @@ export const registroSchema = z.object({
   // ... campos del módulo
 });
 
-export type RegistroForm = z.infer<typeof registroSchema>;
+export type RegistroForm = z.input<typeof registroSchema>;
 ```
 
 **Reglas:**
@@ -74,6 +64,14 @@ export type RegistroForm = z.infer<typeof registroSchema>;
 - Mensajes de error siempre en español
 - `useForm` siempre con `resolver: zodResolver(schema)`
 - Nunca validar con lógica ad-hoc fuera del schema
+
+**Trampas:**
+- **Schema con `.default()` → tipar `useForm<z.input<typeof schema>>`**, no `z.infer`/`z.output`. `zodResolver` espera el tipo de entrada (pre-default); con el de salida TS da un error sobre `Resolver<...>` que no deja ver la causa.
+- **Un `<select>` o `<input type="date">` con opción vacía manda `""`, no `undefined`**: `uuid().nullish()` o una fecha fallan la validación. Usar `uuidOpcional` / `fechaOpcional` (`modules/tareas/types.ts`): unión con `literal("")` + `transform` a `null`.
+
+## React
+
+- **`react-hooks/set-state-in-effect` es error, no warning** (React Compiler). Para sincronizar estado local con una prop, guardar la última prop vista en un state paralelo y ajustar **durante el render** ("adjusting state during render" de la doc de React), no en un `useEffect`. Para estado de un sistema externo (atributo del DOM, storage), `useSyncExternalStore` (ver `ThemeToggle`).
 
 ## Gestión de estado del cliente
 

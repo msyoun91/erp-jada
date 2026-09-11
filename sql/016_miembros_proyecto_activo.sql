@@ -6,7 +6,7 @@
 -- El EXISTS directo sobre `tareas_proyectos` no recursa: el lado de vuelta
 -- (`tareas_proyectos_select`) no mira esta tabla con un EXISTS sino a través de
 -- `es_miembro_proyecto`, que es SECURITY DEFINER. El ciclo que documenta
--- db_schema.md ya está roto de ese lado.
+-- db_schema/tareas.md ya está roto de ese lado.
 DROP POLICY IF EXISTS tareas_proyectos_miembros_select ON tareas_proyectos_miembros;
 CREATE POLICY tareas_proyectos_miembros_select ON tareas_proyectos_miembros FOR SELECT
   USING (

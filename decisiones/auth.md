@@ -47,7 +47,7 @@ El card usaba `shadow-lg`, que el spec (§5) reserva para modales — *"la eleva
 ## Auditoría de UI del login
 
 Los dos hallazgos globales de esta auditoría (`.input:focus` vs `.input-error`, tokens
-semánticos dark-aware) están en `decisiones/global.md`.
+semánticos dark-aware) están en `decisiones/global/ui.md`.
 
 Cinco arreglos salidos de auditar la pantalla en browser. Tres son del login; dos son globales y se descubrieron acá.
 

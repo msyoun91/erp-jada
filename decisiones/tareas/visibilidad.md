@@ -1,0 +1,171 @@
+# Modelo: visibilidad y autorización
+
+Tres ejes ortogonales, ninguno saltea a otro:
+`tareas_gestionar_ajenas` = autoridad sobre lo ajeno · la membresía del proyecto = quién
+puede trabajar · `tareas_asignar` = quién reparte.
+
+## Ser creador deja de dar visibilidad (`sql/013`)
+
+Pedido de usuario, verificado contra el código antes de tocar nada: la regla que quería ("sin `tareas_gestionar_ajenas` se ve lo asignado y lo público; si te sacan la asignación dejás de ver, aunque lo hayas creado") **no se cumplía**, y la brecha estaba entera en SQL — los paneles no re-filtran, muestran lo que RLS devolvió. `tareas_select`, `puede_ver_hilo` y `tareas_proyectos_select` autorizaban por `creado_por`.
+
+**Qué cambia.** `creado_por` sale de la visibilidad de tareas, hilos y proyectos. Sobreviven tres actores: `tareas_gestionar_ajenas`, la asignación activa, y `tareas_hilos.responsable_id` — el dueño del hilo, que es un rol, no una asignación. En tareas, `responsable_id` salió del SELECT: el schema ya exige `responsable ∈ asignados` (`crearTareaSchema`) y la base confirmó 0 filas donde no se cumpliera, así que la rama era redundante.
+
+**La tarea suelta, pública y sin proyecto ahora se ve.** `tareas_select` exigía `proyecto_id IS NOT NULL` para la rama pública; sin la rama del creador tapando el hueco, esa tarea no la vería nadie. Hay 1 en la base.
+
+**Los UPDATE se alinearon con los SELECT.** Dejar `creado_por` en el UPDATE habría creado la fila modificable pero invisible — y un UPDATE denegado por RLS no falla, afecta 0 filas: el bug sería silencioso. Consecuencia buscada: el creador de un proyecto que se sacó a sí mismo de los miembros ya no puede editarlo (hay 1 proyecto así).
+
+Dos huecos que aparecieron al sacar al creador y hubo que cerrar en la misma pasada, porque devolvían por API la visibilidad que la regla quita:
+
+- `es_responsable_o_creador_tarea()` → `es_responsable_tarea()` (la vieja se borró). Con la rama del creador, quien perdía la asignación se re-insertaba en `tareas_asignados`. No hace falta para crear: `tareas_insert` ya exige `responsable_id = auth.uid()` a quien no tiene `tareas_gestionar_ajenas`.
+- `tareas_asignados_update` acota `usuario_id = auth.uid()` a `NOT activo` en el `WITH CHECK`. Sacarme de una tarea sigue siendo mío; reactivar mi propia fila, no.
+
+**Contrapartida: el responsable del hilo puede tocar las tareas de su hilo** (rama nueva en `tareas_update`). Sin eso, "deshacer conversión" y el cierre de hilo — que actualizan tareas a las que el dueño no está asignado — pasaban a no hacer nada, en silencio.
+
+**`crearTarea`, `crearProyecto` y `agregarTareasDesdePlantilla` generan el id en el server** y dejan de pedir `RETURNING`. Sin la rama del creador, la fila recién insertada todavía no es visible para quien la insertó (sus asignados/miembros se insertan en el statement siguiente) y `.select()` rompía con RLS violation. Es el mismo patrón — y el mismo comentario — que ya tenía `crearHilo` por el motivo análogo.
+
+**La UI dejó de ofrecer lo que la RLS después descarta.** `TareaDetailPanel`, `HiloDetailPanel` y `ProyectoDetailPanel` derivaban `puedeGestionar` de `creado_por`; ahora usan responsable / asignado / miembro, espejo exacto del `USING` de cada policy. El filtro de la vista Lista conservó `creado_por` un rato más — "es un filtro sobre lo ya visible, no una barrera" — y eso fue un error de UX: filtrar por un usuario le mostraba tareas que creó y asignó a otro, contradiciendo la regla que el resto del módulo ya seguía. `estaInvolucrado()` pasó a `esDeUsuario()` = `responsable_id` OR asignado activo, y el match de hilos perdió `h.creado_por`. Sigue sin ser una barrera; es que "de quién es esta tarea" lo contesta la asignación, no la autoría.
+
+Verificado con `sql/tests/rls_visibilidad_tareas.sql` (mismo mecanismo que el test de `sql/009`: dos usuarios reales, rol `authenticated`, `ROLLBACK` al final). Correr los dos tests después de tocar estas policies.
+
+## La visibilidad de una tarea con hilo deja de mostrarse
+
+Contracara de lo anterior: `tareas_select` lee `tareas.visibilidad` **solo** en la rama de tarea suelta (`hilo_id IS NULL`, `sql/013:57-64`). Con hilo, la visibilidad la resuelve entero `puede_ver_hilo` — quien está asignado a una tarea del hilo ve todas las demás, marcadas privadas o no. La UI ofrecía el control igual y lo mostraba en la isla y el panel, así que una tarea decía "🔒 Privada" a un usuario que la estaba leyendo.
+
+- `TareaFormPanel`: el select de Visibilidad se esconde con `hiloId` o `tarea.hilo_id`, mismo criterio que el select de Proyecto (que ya se escondía). El valor viaja como default oculto — no se pierde, y vuelve a mandar si la tarea sale del hilo (`deshacerConversionHilo`).
+- `TareaCard` y `TareaDetailPanel`: el indicador "Privada" pide además `hilo_id === null`.
+- Sin SQL: la cascada todo-o-nada del hilo es el diseño, no el bug. El hilo es la unidad de trabajo; hacer que `privado` recorte dentro de él sería otra regla, no un arreglo.
+
+## Miembros de proyecto = quién puede recibir tareas (`sql/009`)
+
+Implementado. **Todo proyecto exige al menos un miembro** (antes solo los privados) y los asignables de una tarea con proyecto se limitan a los miembros de ese proyecto. Los dos ejes quedan ortogonales: `visibilidad` decide **quién ve**, la membresía decide **quién trabaja**. Aplica a proyectos públicos y privados por igual — por eso la acción "Miembros" ya no se esconde en los públicos.
+
+La regla vive en la base, en tres piezas, porque tiene tres caras y una sola no alcanza:
+
+1. `tareas_asignados_insert`/`update` — cambian los asignados de una tarea. La condición se exige solo si la fila queda activa (`NOT activo OR es_miembro_proyecto_de_tarea(...)`): desactivar una asignación al reasignar tiene que seguir siendo posible aunque el usuario ya no sea miembro.
+2. Trigger `validar_proyecto_tarea` — cambia el proyecto de la tarea (editarla, asociarla a un hilo de otro proyecto). Se valida en trigger y no en policy porque el dato que se compara vive en otra tabla.
+3. Trigger `validar_quitar_miembro` — se quita un miembro que tiene tareas activas: error explícito (`TA001`), no desactivación silenciosa de sus asignaciones.
+
+`tareas_gestionar_ajenas` **no** saltea la regla: es una regla de negocio ("quién trabaja"), no un nivel de permiso — un manager agrega el miembro primero. El filtro del picker es UX, no barrera.
+
+Efectos colaterales que la implementación obligó a resolver:
+
+- `tareas_proyectos_miembros_select` se extendió con `es_miembro_proyecto(proyecto_id, auth.uid())`. Sin eso, un miembro que no es creador del proyecto solo se ve a sí mismo y el picker de asignados le queda vacío.
+- `gestionarMiembrosProyecto` pasó a guardar un **diff** (quitados/agregados) en vez de desactivar todo y reinsertar: el patrón viejo disparaba `TA001` sobre los miembros que se quedaban.
+- `getProyectoMiembros(id)` (N+1, solo privados) se reemplazó por `getMiembrosPorProyecto()`: una query que devuelve `Record<proyecto_id, usuario_id[]>` para todos los proyectos visibles. Ese mapa se dropea por props junto a `proyectos`, igual que `plantillas`.
+- El proyecto efectivo de una tarea es `COALESCE(tarea.proyecto_id, hilo.proyecto_id)` — de ahí el prop `proyectoHeredadoId` en `TareaFormPanel`/`TareaRow`: la tarea de un hilo no guarda proyecto propio (lo prohíbe un CHECK) pero igual hereda sus miembros.
+- Backfill de proyectos sin miembros activos = creador + responsables de sus hilos + todo usuario con asignación activa en sus tareas, para no dejar bloqueada ninguna reasignación existente.
+
+Verificado end-to-end con dos usuarios (`sql/tests/rls_miembros_asignables.sql`, 15/15). El test no es una migración: corre dentro de una transacción con `ROLLBACK`, cambia a rol `authenticated` y setea `request.jwt.claims` para mover `auth.uid()` entre los dos usuarios. Le desactiva `tareas_gestionar_ajenas` al usuario de prueba dentro de la tx — con el bypass puesto, las policies se cortan en la primera rama y no se prueba nada. Confirmado en la base, no solo por lectura del SQL:
+
+- Un miembro que no es creador ve a **todos** los miembros del proyecto (el caso que dejaba el picker vacío); en un proyecto ajeno ve 0.
+- La membresía se exige sobre el **asignado**, no sobre quien actúa, y también cuando el proyecto se hereda del hilo.
+- `tareas_gestionar_ajenas` no saltea la regla ni siendo creador del proyecto.
+- Desactivar la asignación de alguien que ya no es miembro sigue permitido; reactivarla, no.
+
+Volver a correrlo entero después de tocar esas policies.
+
+Fuera de alcance por ahora: `tareas_hilos.responsable_id` y `tareas.responsable_id` no se validan contra la membresía. El responsable siempre está entre los asignados por schema (`crearTareaSchema`), así que la policy de `tareas_asignados` ya lo cubre en la práctica; el responsable de un hilo no es una asignación.
+
+## Miembros de proyecto = función propia del módulo (`tareas_proyectos_miembros`)
+
+Pedido de usuario en la misma tanda. Es un submódulo-función bajo la vista `tareas_proyectos` — no un permiso nuevo ni un rol: la regla del proyecto es que toda autorización nueva se implementa como submódulo. Las policies de `tareas_proyectos_miembros` pasan de `es_creador_proyecto()` a `tiene_permiso('tareas_proyectos_miembros')`.
+
+**La siembra inicial es la excepción, y está acotada.** Todo proyecto exige al menos un miembro (`sql/009`), así que sin una salida `tareas_proyectos_crear` no alcanzaría para crear nada. La rama `es_creador_proyecto(...) AND NOT proyecto_tiene_miembros(...)` la habilita solo mientras el proyecto no tenga miembros: una vez creado, cambiar quién trabaja en él exige la función. Sin esa cota, el creador se re-agregaba como miembro y recuperaba el acceso que `sql/013` le saca.
+
+**El bloque Miembros sigue dentro de `ProyectoFormPanel`** — no vuelve a ser panel aparte (eso se decidió y se mantiene). Lo que cambia es que se renderiza solo con el permiso; sin él la membresía viaja como default oculto del form, igual que proyecto/visibilidad en `HiloFormPanel`, y el diff de `editarProyecto` queda vacío. La barrera real es la RLS, no el condicional.
+
+**Backfill:** la función se le otorga a los creadores de proyectos activos, para no romper proyectos en curso. Para el resto, alta manual desde Usuarios.
+
+**El SELECT de `tareas_proyectos_miembros` no mira la función.** El primer intento la agregaba ahí y el test de `sql/009` lo cazó (caso 02: TESTER, que recibió la función por el backfill, veía los miembros de un proyecto del que no es parte). La rama sobraba además de filtrar: editar un proyecto ya exige ser creador-y-miembro o tener ajenas, así que quien usa la función entra igual por `es_miembro_proyecto`.
+
+**Límite conocido:** administrar miembros de un proyecto **privado** exige además verlo, y eso ahora es ser miembro o tener `tareas_gestionar_ajenas`. La función sola no abre proyectos privados ajenos — es deliberado: sería una segunda puerta de visibilidad, justo lo que `sql/013` cierra.
+
+Aplicado en Supabase vía MCP. Tests posteriores: `rls_visibilidad_tareas.sql` 17/17, `rls_miembros_asignables.sql` 15/15.
+
+~~**El filtro por usuario ofrece la lista del equipo solo con `tareas_gestionar_ajenas`** (`TareasListaView`, `ProyectosView`). Sin la función quedan dos opciones: "Todos los usuarios" — que ya es lo propio más lo público, o sea todo lo que RLS devuelve — y uno mismo.~~ **Superado por *El selector de usuario se oculta sin la función* (abajo).** `AuditoriaView` conserva el picker completo: la vista entera está gateada por `tareas_auditoria` y ese filtro es su razón de ser.
+
+## El selector de usuario se oculta sin la función
+
+Pedido de usuario. Sin `tareas_gestionar_ajenas` el `<select>` de usuario ya no se renderiza en `TareasListaView` ni `ProyectosView` — antes mostraba dos opciones ("Todos los usuarios" + uno mismo). El default de `asignadoId` / `miembroId` sigue siendo `usuarioActualId`, así que la vista queda fija en lo propio y el toggle Míos/Involucrado sigue apareciendo. Sigue sin ser una barrera: RLS filtra antes y el servidor rechaza igual. Cambio solo de UI, cero SQL.
+
+## Ver miembros exige proyecto activo (`sql/016`)
+
+`tareas_proyectos_miembros_select` no miraba `tareas_proyectos.activo`: archivar un
+proyecto lo sacaba de la lista pero dejaba sus membresías visibles.
+
+El filtro va en la policy y no en `getMiembrosPorProyecto` porque es la misma
+pregunta que ya responde el SELECT de la tabla — "qué membresías te tocan" — y
+duplicarla en la query dejaba la base contestando de más.
+
+El `EXISTS` directo sobre `tareas_proyectos` fue lo primero que verifiqué: el
+ciclo `tareas_proyectos` ↔ `tareas_proyectos_miembros` que documenta
+`db_schema/tareas.md` causa `42P17` con `EXISTS` en ambas direcciones, pero acá el lado
+de vuelta pasa por `es_miembro_proyecto` (`SECURITY DEFINER`), que ya lo rompe.
+Probado en transacción antes de aplicar: sin recursión, 5 → 2 filas visibles.
+
+## Asignar usuarios a una tarea es una función (`sql/014`)
+
+Pedido de usuario: **el que no está autorizado no puede asignar**. Antes no había función que mirar — `tareas_asignados_insert` solo pedía ser responsable de la tarea, y como quien crea queda responsable, cualquiera podía repartir trabajo. La UI mostraba el picker en "Nueva tarea" sin chequear nada, y en "Modificar tarea" no lo mostraba nunca.
+
+Submódulo-función nuevo `tareas_asignar` ("Asignar usuarios", vista `tareas_lista`). La regla es una sola y vive en la base: **poner a OTRO usuario en una tarea — como asignado o como responsable — exige la función; asignarse uno mismo, no.**
+
+Tercer eje, ortogonal a los dos que ya había: `tareas_gestionar_ajenas` es autoridad sobre tareas que no son propias, la membresía del proyecto es quién puede trabajar, `tareas_asignar` es quién reparte. Las tres condiciones se exigen juntas y ninguna saltea a otra — por eso `sql/014` hace backfill de `tareas_asignar` a todos los que ya tenían `tareas_gestionar_ajenas` (mismo criterio que el backfill de `tareas_proyectos_miembros` en `sql/013`), en vez de dejar el bypass escrito en la policy.
+
+`tareas_insert` **pierde** su rama `tareas_gestionar_ajenas`: nombrar responsable a otro al crear pasa a pedir `tareas_asignar`. El traspaso del responsable de una tarea que ya existe va por trigger (`validar_responsable_tarea`, `TA003`) y no por policy, porque `WITH CHECK` solo ve la fila nueva: no puede distinguir "cambió el responsable" de "el UPDATE tocó otra columna".
+
+En la UI:
+
+- **El picker aparece también al modificar la tarea** (decisión del usuario, antes solo al crear). El gate vive dentro de `AsignadosPicker` (`puedeAsignar`), no en cada panel: sin la función muestra solo el resumen de a quién le queda la tarea, y los valores siguen viajando como defaults ocultos del form. Un solo lugar para el bloque de solo-lectura, que si no se repetía en `TareaFormPanel` y `UsarPlantillaPanel`.
+- "Reasignar" sigue en el menú como atajo, ahora gateado por la función. Con dos entradas para lo mismo, `tareas_asignados` necesitaba un solo escritor: `sincronizarAsignados()` en `actions.ts`, que usan `editarTarea` y `reasignarTarea`.
+- **`sincronizarAsignados()` no toca nada si el conjunto no cambió.** Editar el título no debe reescribir asignaciones, y sin ese corte quien no tiene la función no podría guardar ningún cambio en una tarea compartida: los asignados viajan igual como defaults ocultos y reinsertarlos choca contra la policy.
+- `TareaDetailPanel` pasa `proyectoHeredadoId` a `TareaFormPanel` al editar. Sin eso, la tarea de un hilo abría el picker con todos los usuarios en vez de con los miembros del proyecto del hilo — invisible mientras el picker no existía en edición.
+
+Verificado end-to-end contra la base con `sql/tests/rls_miembros_asignables.sql` (19/19). El test creció a dos bloques: el primero corre con TESTER **sin** `tareas_asignar` ni `tareas_gestionar_ajenas`, el segundo le devuelve `tareas_asignar` y repite los mismos UPDATE — tienen que pasar de RECHAZO a OK. Sin ese espejo, un rechazo por membresía o por RLS de otra rama se leería como si la función nueva estuviera funcionando.
+
+- `11`/`16` reactivar la asignación de ADMIN en P: ADMIN **es** miembro, así que el único motivo posible de rechazo es la función — aísla la regla nueva de la de `sql/009`.
+- `12`/`18` traspasar el responsable: sin la función corta el trigger con `TA003`, no la policy con `42501`.
+- `17` (ex `12`) sigue probando que la membresía se evalúa sobre el asignado y no sobre quien actúa, ahora con la función puesta.
+
+Fuera de alcance: el responsable de un **hilo** (`HiloFormPanel`) sigue gateado por `tareas_gestionar_ajenas` en `tareas_hilos_insert`/`update`. El dueño del hilo no es una asignación (mismo criterio que `sql/009`).
+
+## Nombrar responsable de un hilo = `tareas_asignar` (`sql/015`)
+
+`tareas_hilos_insert` seguía pidiendo `tareas_gestionar_ajenas` para poner a
+otro como responsable, mientras `sql/014` había movido esa misma decisión sobre
+`tareas` a la función `tareas_asignar`. Dos ejes para una sola regla: poner a
+OTRO a cargo exige `tareas_asignar`, y nada la saltea — tampoco
+`gestionar_ajenas`, que es autoridad sobre lo ajeno, no permiso para repartir
+trabajo.
+
+Tres piezas, mismo reparto que en `tareas`:
+
+- `tareas_hilos_insert` — `responsable_id = auth.uid() OR tiene_permiso('tareas_asignar')`.
+- Trigger `validar_responsable_hilo` — el traspaso necesita el valor viejo, que
+  un `WITH CHECK` no ve. Reusa `TA003`: el mensaje ya era genérico.
+- `tareas_hilos_update` — el `WITH CHECK` suma `OR tiene_permiso('tareas_asignar')`.
+
+La tercera pieza apareció al correr el test, no al escribir la policy: sin ella
+el traspaso quedaba imposible incluso con la función, porque la fila nueva tiene
+`responsable_id` ajeno y el `WITH CHECK` solo aceptaba `responsable_id = auth.uid()`.
+En `tareas` el caso no aparece porque ahí el `WITH CHECK` tiene además la rama
+del asignado activo (`sql/013`). El reparto que queda: el `USING` decide quién
+puede tocar el hilo, el trigger decide quién puede quedar a cargo.
+
+El caso `20b` de `sql/tests/rls_miembros_asignables.sql` existe para eso —
+verifica que ese `WITH CHECK` más laxo no habilitó editar hilos ajenos.
+
+## No se ofrece crear trabajo donde no podés trabajar
+
+`puedeTrabajarEnProyecto` (`components/proyectoTareas.ts`) decide si el panel
+del proyecto muestra "Agregar hilo/tarea" y si un proyecto aparece en el select
+de `TareaFormPanel` y `HiloFormPanel`.
+
+La regla sale de `sql/009` + `sql/014`: crear una tarea exige al menos un
+asignado y solo los miembros del proyecto pueden serlo. Sin `tareas_asignar` el
+único asignado posible es uno mismo, así que hay que ser miembro; con la
+función alcanza con que haya algún miembro visible. `idsMiembros` ya viene
+recortado por RLS — de un proyecto que no trabajás no ves a nadie.
+
+Antes el form abría igual y moría en la validación de Zod pidiendo un asignado
+que no se podía elegir. No es una barrera de seguridad (RLS ya lo bloquea):
+es no ofrecer un camino que siempre termina en error.

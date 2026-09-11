@@ -1,154 +1,83 @@
 # GUIDE_DASHBOARD — Dashboard y Widgets
 
-## Módulo nuevo vs módulo ya existente
+El dashboard es la ruta `/` (`app/(erp-app)/page.tsx`). Hoy hay un solo widget real (`usuarios`); es la referencia a copiar.
 
-**Módulo nuevo:** seguir los pasos 1-5 en orden.
-
-**Módulo ya existente:** los pasos son los mismos pero:
-- `types.ts` del módulo ya existe → solo agregar campos a `DashboardData` en `modules/dashboard/types.ts`
-- `queries.ts` del módulo ya existe → reutilizar sus queries dentro de `getDashboardData()` en `modules/dashboard/queries.ts`, no duplicarlas
-- `permissions.ts` ya existe → el widget se muestra automáticamente si el usuario tiene el permiso del módulo
-- Reemplazar el `WidgetPendiente` existente en `DashboardView.tsx` por el widget real
-
-## Estructura del sistema de widgets
+## Estructura
 
 ```
 modules/dashboard/
-├── types.ts          ← registro WIDGETS + tipos
-├── queries.ts        ← getDashboardData() agrega los datos del nuevo widget
-├── actions.ts        ← sin cambios (toggle es genérico)
+├── types.ts          ← registro WIDGETS + DashboardData
+├── queries.ts        ← getDashboardData() + getWidgetPrefs()
+├── permissions.ts    ← getWidgetsPermitidos(): filtra WIDGETS por módulo autorizado (no se toca)
+├── actions.ts        ← toggle de visibilidad en usuario_widgets (genérico, no se toca)
 └── components/
-    ├── DashboardView.tsx   ← conecta widget_id → componente
-    ├── WidgetCard.tsx      ← base reutilizable (no editar por módulo)
-    ├── WidgetUsuarios.tsx  ← ejemplo de widget con datos reales
-    ├── WidgetPendiente.tsx ← placeholder para módulos sin datos aún
-    └── WidgetNuevo.tsx     ← el archivo que vos creás
+    ├── DashboardView.tsx     ← conecta widget.id → componente
+    ├── WidgetCard.tsx        ← base reutilizable + ICON_MAP de los widgets
+    ├── WidgetUsuarios.tsx    ← ejemplo
+    └── ConfigurarWidgets.tsx ← el toggle "Configurar"
 ```
 
 ## Paso 1 — Registrar el widget en `types.ts`
 
 ```typescript
-// modules/dashboard/types.ts
-
 export const WIDGETS: WidgetDefinicion[] = [
   // existentes...
   {
-    id: "nombre_modulo",       // debe coincidir con ModuloNombre en database.types.ts
-    titulo: "Nombre visible",  // texto que ve el usuario
-    columnas: 1,               // 1 = KPI simple | 2 = lista o múltiples KPIs
-    moduloRequerido: "nombre_modulo",  // igual que id
-    icono: "nombre_icono",     // "pedidos" | "cobranza" | "usuarios" (agregar si es nuevo)
+    id: "pedidos",              // clave en DashboardView y en usuario_widgets.widget_id
+    titulo: "Pedidos",
+    columnas: 1,                // 1 = KPI simple | 2 = lista o múltiples KPIs
+    moduloRequerido: "pedidos", // prefijo de los códigos de submódulo (`pedidos_ver` → `pedidos`)
+    icono: "pedidos",           // clave del ICON_MAP de WidgetCard.tsx
   },
 ];
 ```
 
-**Regla:** `id` y `moduloRequerido` deben ser exactamente el valor del enum `modulo_nombre` en Supabase.
+El widget aparece solo si el usuario tiene **algún** submódulo del módulo: `getWidgetsPermitidos()` compara `moduloRequerido` con lo que está antes del primer `_` de cada código. No hace falta tocar `permissions.ts`.
 
-## Paso 2 — Agregar datos en `queries.ts`
+## Paso 2 — Datos en `DashboardData` y `getDashboardData()`
 
-El tipo `DashboardData` en `types.ts` acumula todos los datos de todos los widgets.
-Agregar los campos del nuevo widget:
+Sumar los campos a `DashboardData` (`types.ts`) y la consulta a `getDashboardData()` (`queries.ts`). Si el módulo ya tiene la query en su `queries.ts`, reusarla, no duplicarla. Con más de una consulta, todas en `Promise.all()` — nunca en secuencia.
 
-```typescript
-// En types.ts
-export type DashboardData = {
-  totalUsuariosActivos: number;
-  // agregar acá:
-  totalPedidosPendientes: number;
-  montoPorCobrar: number;
-};
-```
+Las consultas corren con el cliente del usuario, así que RLS ya acota lo que cuenta cada uno.
 
-Luego en `queries.ts`, extender `getDashboardData()`:
-
-```typescript
-export async function getDashboardData(): Promise<DashboardData> {
-  const supabase = createClient();
-
-  // queries en paralelo
-  const [{ count: usuarios }, { count: pedidos }, cobranzaData] = await Promise.all([
-    supabase.from("usuarios").select("id", { count: "exact", head: true }).eq("activo", true),
-    supabase.from("pedidos").select("id", { count: "exact", head: true }).eq("estado", "pendiente").eq("activo", true),
-    supabase.from("cobranza").select("monto_total").eq("estado", "pendiente").eq("activo", true),
-  ]);
-
-  const montoPorCobrar = (cobranzaData.data ?? []).reduce(
-    (acc, row) => acc + row.monto_total, 0
-  );
-
-  return {
-    totalUsuariosActivos: usuarios ?? 0,
-    totalPedidosPendientes: pedidos ?? 0,
-    montoPorCobrar,
-  };
-}
-```
-
-**Regla:** todas las queries van en `Promise.all()`. Nunca en secuencia.
-
-## Paso 3 — Crear el componente `WidgetNuevo.tsx`
+## Paso 3 — El componente
 
 ```tsx
 // modules/dashboard/components/WidgetPedidos.tsx
-
 import { WidgetCard } from "./WidgetCard";
 
-type Props = {
-  totalPendientes: number;
-  columnas: 1 | 2;
-};
-
-export function WidgetPedidos({ totalPendientes, columnas }: Props) {
+export function WidgetPedidos({ pendientes, columnas }: { pendientes: number; columnas: 1 | 2 }) {
   return (
     <WidgetCard titulo="Pedidos" icono="pedidos" href="/pedidos" columnas={columnas}>
-
-      {/* KPI principal — siempre visible en mobile y desktop */}
-      <div className="flex flex-col gap-0.5">
-        <p className="font-display font-bold text-[28px] leading-none tracking-[.01em] text-[var(--text-primary)]">
-          {totalPendientes}
-        </p>
-        <p className="mt-1 text-[11px] text-[var(--text-secondary)]">Pedidos pendientes</p>
-      </div>
-
-      {/* Contenido extra — solo en widget de 2 columnas */}
-      {columnas === 2 && (
-        <div className="mt-4 border-t border-[rgba(13,18,32,.08)] pt-3">
-          {/* lista compacta, stats secundarias, etc. */}
-        </div>
-      )}
-
+      <p className="t-h2 tabular-nums">{pendientes}</p>
+      <p className="t-caption mt-1">Pedidos pendientes</p>
+      {columnas === 2 && <div className="mt-4 border-t border-border pt-3">{/* detalle */}</div>}
     </WidgetCard>
   );
 }
 ```
 
-## Paso 4 — Conectar en `DashboardView.tsx`
+- Solo clases del design system (`t-*`, tokens de `globals.css`), sin hex ni `text-[..px]`.
+- `href` opcional: con `href` la card es link y toma `.card-link` (sombra al hover); sin `href`, no promete click.
+
+## Paso 4 — Ícono
+
+`WidgetCard.tsx` tiene su propio `ICON_MAP` (lucide, `size={16}`, `strokeWidth={1.75}`). Sumar la clave; reusar el mismo ícono que el módulo tiene en `SidebarNav.tsx`.
+
+## Paso 5 — Conectar en `DashboardView.tsx`
 
 ```tsx
-// modules/dashboard/components/DashboardView.tsx
-import { WidgetPedidos } from "./WidgetPedidos";
-
-{widgetsVisibles.map((widget) => {
-  if (widget.id === "pedidos") {
-    return <WidgetPedidos key={widget.id} totalPendientes={data.totalPedidosPendientes} columnas={widget.columnas} />;
-  }
-  return <WidgetPendiente key={widget.id} titulo={widget.titulo} icono={widget.icono} columnas={widget.columnas} />;
-})}
+if (widget.id === "pedidos") {
+  return <WidgetPedidos key={widget.id} pendientes={data.pedidosPendientes} columnas={widget.columnas} />;
+}
 ```
 
-## Paso 5 — Agregar ícono SVG si es necesario
+## Checklist
 
-Los íconos viven en `WidgetCard.tsx` dentro de `WidgetIcon()`.
-Usar SVGs simples de 16×16, stroke `#064379`, strokeWidth `1.5`.
-Sin fill. Sin librerías de íconos externas.
-
-## Checklist antes de dar el widget por terminado
-
-- [ ] Widget registrado en `WIDGETS` con `id`, `titulo`, `columnas`, `moduloRequerido`
-- [ ] Datos agregados en `DashboardData` type y en `getDashboardData()`
-- [ ] Componente `WidgetXxx.tsx` creado con WidgetCard como base
+- [ ] Registrado en `WIDGETS` con `moduloRequerido` = prefijo real de los códigos del módulo
+- [ ] Campos en `DashboardData` y consulta en `getDashboardData()`
+- [ ] Componente sobre `WidgetCard`, ícono en su `ICON_MAP`
 - [ ] Caso conectado en `DashboardView.tsx`
-- [ ] Mobile probado: KPI visible, sin overflow horizontal
-- [ ] Desktop probado: col-span correcto, grid-flow-dense rellena huecos
-- [ ] Widget aparece/desaparece con el toggle de configurar
-- [ ] Si el widget tiene `href`, la navegación funciona
+- [ ] Mobile: KPI visible, sin overflow horizontal · Desktop: `col-span` correcto, el grid denso rellena huecos
+- [ ] Aparece/desaparece con "Configurar" y según los submódulos del usuario
+- [ ] Si tiene `href`, la navegación funciona

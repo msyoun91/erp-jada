@@ -20,31 +20,15 @@ Preferir siempre la solución más simple compatible con los requisitos actuales
 
 ## Fuente única de verdad
 
-Toda información debe tener una única autoridad.
-
-Duplicar lógica o reglas de negocio genera inconsistencias.
+Toda información y toda regla tiene una única autoridad. Si una regla existe en más de un lugar, debe extraerse: la duplicación de lógica es un error arquitectónico.
 
 La duplicación de validación es aceptable únicamente cuando protege límites de seguridad o comunicación entre sistemas.
 
 ---
 
-## Sin duplicar lógica
-
-Si una regla existe en más de un lugar, debe extraerse.
-
-La duplicación de lógica es un error arquitectónico.
-
-La duplicación de validación es aceptable únicamente cuando protege límites de seguridad.
-
----
-
 ## Seguridad en servidor
 
-La interfaz nunca constituye una barrera de seguridad.
-
-Toda operación sensible debe verificarse nuevamente en servidor.
-
-Ocultar botones no equivale a autorizar acciones.
+La interfaz nunca constituye una barrera de seguridad. Toda operación sensible se verifica nuevamente en servidor. Ocultar botones no equivale a autorizar acciones.
 
 ---
 
@@ -54,10 +38,8 @@ Ante varias alternativas:
 
 1. Elegir la más simple.
 2. Elegir la que genere menos código.
-3. Elegir la que reutilice estructuras existentes.
-4. Evitar nuevas dependencias.
-5. Evitar nuevas abstracciones hasta que exista una necesidad demostrada.
-6. Verificar si ya existe una solución en el proyecto.
+3. Reutilizar lo que ya existe: verificar primero si el proyecto ya lo resuelve.
+4. Evitar nuevas dependencias y nuevas abstracciones hasta que exista una necesidad demostrada.
 
 # PRIORIDAD DE REGLAS
 
@@ -84,14 +66,13 @@ La regla más alta prevalece.
 - **Sin librerías nuevas** sin consultar
 - **Sin comentarios** salvo que el WHY sea no obvio
 - **Premisas de auditorías/planes: verificar contra código antes de construir.** Si el código contradice el plan, corregir el plan primero
-- **Cargar guides solo cuando la tarea lo pide**, y solo el guide necesario. Cada guide leído queda en contexto el resto de la sesión.
-- **`db_schema.md` siempre sincronizado.** Ante cualquier cambio en tablas, columnas o enums — ya sea en `database.types.ts`, SQL, o migración — actualizar `db_schema.md` antes de cerrar la tarea.
+- **Leer por tema, no por archivo.** Cargar solo la guía, el archivo de decisiones y el de `db_schema/` que la tarea necesita (tabla GUIDES). En `decisiones/<modulo>/`, primero el `README.md` índice y después solo los archivos del tema. Todo lo leído queda en contexto el resto de la sesión.
+- **`db_schema/` siempre sincronizado.** Ante cualquier cambio en tablas, columnas o enums — ya sea en `database.types.ts`, SQL, o migración — actualizar `db_schema/<modulo>.md` antes de cerrar la tarea.
 - **`/clear` entre tareas.** Terminás un módulo o cambiás de tema → `/clear`. El costo dominante son tokens de contexto reenviados cada turno (cache_read); sesiones de 200+ turnos cuestan ~3× por turno que las cortas.
-- Antes de modificar un módulo, leer `decisiones/<modulo>.md` — **solo ese archivo**. `decisiones/global.md` únicamente si tocás `components/ui/`, `globals.css`, permisos o infraestructura.
-- No crear roles. No crear permisos por módulo. Toda autorización nueva se implementa mediante submódulos, incluso si el permiso parece más fino que un submódulo (ej: por fila o por campo) — si un caso real no puede resolverse así, se registra en `decisiones/global.md` como excepción explícita antes de romper la regla, no se decide ad-hoc
-- **Regla de negocio → Postgres, no `actions.ts`.** Toda invariante (validación cruzada, cascada, derivación, orquestación multi-tabla) vive en constraint, trigger o función `SECURITY INVOKER` llamada con `.rpc()`. `actions.ts` queda como glue: `safeParse` → llamar → `revalidatePath`. Si una regla no puede expresarse en SQL, registrarla en `decisiones/<modulo>.md` como excepción explícita antes de escribirla en TypeScript
-- **`obsoletos/` no se lee.** Es el cementerio: docs cerradas, boilerplate y código retirado. Entrar solo para restaurar algo, nunca como contexto de una tarea. Un puntero a `obsoletos/` desde `decisiones/` o `BACKLOG.md` es histórico — la decisión está escrita en el archivo que apunta
-- No crear nuevas dependencias sin necesidad demostrada.
+- No crear roles. No crear permisos por módulo. Toda autorización nueva se implementa mediante submódulos, incluso si el permiso parece más fino que un submódulo (ej: por fila o por campo) — si un caso real no puede resolverse así, se registra en `decisiones/global/permisos.md` como excepción explícita antes de romper la regla, no se decide ad-hoc
+- **Regla de negocio → Postgres, no `actions.ts`.** Toda invariante (validación cruzada, cascada, derivación, orquestación multi-tabla) vive en constraint, trigger o función `SECURITY INVOKER` llamada con `.rpc()`. `actions.ts` queda como glue: `safeParse` → llamar → `revalidatePath`. Si una regla no puede expresarse en SQL, registrarla en `decisiones/<modulo>` como excepción explícita antes de escribirla en TypeScript
+- **`obsoletos/` no se lee.** Es el cementerio: docs cerradas, boilerplate, código retirado y backups. Entrar solo para restaurar algo, nunca como contexto de una tarea. Un puntero a `obsoletos/` desde `decisiones/` o `BACKLOG.md` es histórico — la decisión está escrita en el archivo que apunta
+- **Módulo nuevo → leer `.claude/guides/GUIDE_MODULO_NUEVO.md` antes de escribir nada.** Arranca con la lista de vistas y funciones aprobada por el usuario; sin esa lista no hay SQL.
 
 ---
 
@@ -101,6 +82,9 @@ La regla más alta prevalece.
 repo/
 ├── erp-app/         # Sistema principal. Fuente de verdad del negocio.
 ├── erp-cliente/     # Portal para clientes. Solo consulta/solicitud. Nunca autoridad.
+├── decisiones/      # Por qué se decidió cada cosa. Por módulo; los grandes, en carpeta con índice
+├── db_schema/       # Esquema actual, un archivo por módulo
+├── sql/             # Migraciones y tests de RLS (sql/tests/)
 └── obsoletos/       # Retirados. No leer salvo restaurar — ver obsoletos/README.md
 ```
 
@@ -111,10 +95,12 @@ Las apps nunca se importan entre sí. Cuando haga falta compartir schemas y tipo
 
 ```
 erp-app/src/
+├── proxy.ts                      # Sesión y usuario activo (Next 16: ex-middleware.ts)
 ├── app/
 │   └── (erp-app)/
 │       └── [modulo]/
-│           └── page.tsx          # Solo renderiza el componente principal
+│           ├── layout.tsx        # Encabezado de módulo + tabs
+│           └── page.tsx          # Permiso de la vista, datos y componente principal
 ├── modules/
 │   └── [modulo]/
 │       ├── components/           # Componentes visuales del módulo
@@ -127,7 +113,7 @@ erp-app/src/
 │   ├── layout/                   # Sidebar, Header
 │   └── feedback/                 # Toasts, loaders, errores
 └── lib/
-    ├── supabase/                  # client.ts · server.ts · middleware.ts
+    ├── supabase/                  # client.ts · server.ts · middleware.ts · rpc.ts
     ├── permissions/               # index.ts — lógica central de permisos
     └── utils.ts
 ```
@@ -139,53 +125,21 @@ erp-app/src/
 
 ---
 
-# ORDEN DE CONSTRUCCIÓN — siempre este orden, sin saltar pasos
-
-0. **Módulo nuevo: listar vistas y funciones por vista, confirmar con el usuario antes de escribir código.** Formato:
-   ```
-   Módulo: Nombre
-   ├── modulo_vista1 (vista)
-   │   ├── modulo_accion1 (funcion)
-   │   └── modulo_accion2 (funcion)
-   └── modulo_vista2 (vista, sin funciones)
-   ```
-   Toda vista arranca con mayúscula. Todo módulo tiene al menos 1 vista. Una vista puede no tener funciones. No avanzar a SQL sin esta lista aprobada.
-1. SQL y tipos de base de datos (leer `GUIDE_DB.md`)
-2. `types.ts` — schema Zod + tipos TypeScript
-3. `permissions.ts` — verificación de acceso (leer `GUIDE_PERMISSIONS.md`)
-4. `queries.ts` + `actions.ts`
-5. Widget del dashboard (si aplica — leer `GUIDE_DASHBOARD.md`)
-6. Componentes de UI (leer `GUIDE_DESIGN.md`)
-7. Integración y prueba completa por usuario
-
-## Checklist de módulo nuevo
-
-- [ ] Vistas y funciones por vista listadas y aprobadas
-- [ ] SQL creado
-- [ ] RLS creado
-- [ ] Trigger updated_at creado
-- [ ] types.ts creado
-- [ ] permissions.ts creado
-- [ ] queries.ts creado
-- [ ] actions.ts creado
-- [ ] UI creada
-- [ ] Dashboard integrado
-- [ ] `decisiones/<modulo>.md` creado
-
----
-
 # GUIDES — cargar solo el necesario
 
 | Guide | Cargar cuando |
 |-------|--------------|
 | `.claude/guides/GUIDE_DB.md` | tablas, migrations, Supabase, queries, RLS, enums |
-| `.claude/guides/GUIDE_PERMISSIONS.md` | permisos, auth, submódulos, middleware |
+| `.claude/guides/GUIDE_PERMISSIONS.md` | permisos, submódulos, vistas y funciones, tabs, proxy |
 | `.claude/guides/GUIDE_TYPESCRIPT.md` | tipos, forms, validación, state, imports |
-| `.claude/guides/GUIDE_DESIGN.md` | UI, UX, mobile, diseño visual, feedback |
+| `.claude/guides/GUIDE_DESIGN.md` | UI, UX, mobile, layout de módulo, diseño visual, feedback |
 | `.claude/guides/GUIDE_DASHBOARD.md` | widgets, dashboard, KPIs |
+| `.claude/guides/GUIDE_MODULO_NUEVO.md` | crear un módulo |
 | `.claude/guides/GUIDE_SYNC.md` | sincronización erp-app ↔ erp-cliente |
-| `decisiones/<modulo>.md` | modificar un módulo existente — leer **solo el del módulo**: `tareas`, `usuarios`, `auth` |
-| `decisiones/global.md` | tocar `components/ui/`, `globals.css`, permisos o infraestructura |
+| `decisiones/<modulo>/README.md` | modificar `tareas` u `obras` — el índice dice qué archivo del tema abrir |
+| `decisiones/<modulo>.md` | modificar `usuarios` o `auth` |
+| `decisiones/global/` | `ui.md`: `components/ui/`, `globals.css` · `permisos.md`: permisos · `infra.md`: infraestructura |
+| `db_schema/<modulo>.md` | leer o cambiar el esquema de ese módulo · `core.md`: usuarios y permisos |
 
 ---
 
@@ -193,58 +147,8 @@ erp-app/src/
 
 1. `npx tsc --noEmit` — cero errores nuevos
 2. Suite de tests, si existe — corre y pasa
-3. ¿Tocaste tablas/enums? → `db_schema.md` + `database.types.ts` sincronizados
+3. ¿Tocaste tablas/enums? → `db_schema/<modulo>.md` + `database.types.ts` sincronizados
 4. ¿Hay SQL sin correr? → archivo en `sql/` + avisar al usuario
-5. ¿Decisión no obvia? → registrar en `decisiones/<modulo>.md`. ¿Decidida pero sin implementar? → `BACKLOG.md`
-   Si superás una decisión ya escrita, tachala y dejá el puntero a la nueva — no la borres sin dejar rastro
-6. Estado de módulos actualizado
-
----
-
-# DECISIONES DE ARQUITECTURA
-
-## Server → Client boundary
-
-Nunca pasar props no-serializables de Server Component a Client Component. Lucide icons, React components, funciones y class instances causan error en runtime: `"Only plain objects can be passed to Client Components from Server Components."`
-
-Cuando un Server Component necesita pasarle "qué ícono mostrar" a un Client Component: pasar string key (ej: `modulo: 'dashboard'`). El Client Component resuelve el string a componente con un `ICON_MAP` local. Mismo patrón para cualquier dato no-serializable.
-
-## Encabezado de módulo
-
-Todo módulo tiene un `<Breadcrumb>` (`Módulo / Vista`) y un `<h1>` con ícono + nombre, en ese orden, antes de los tabs. Estructura obligatoria en el `layout.tsx` del módulo:
-
-```tsx
-import { IconName } from 'lucide-react'
-import { Breadcrumb } from '@/components/layout/Breadcrumb'
-
-<div className="flex flex-col h-full">
-  <Breadcrumb modulo="nombre" tabs={tabs} />
-  <h1 className="t-h1 mb-4 flex items-center gap-2.5">
-    <IconName size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
-    Nombre del Módulo
-  </h1>
-  <ModuleTabs modulo="nombre" tabs={tabs} />
-  {children}
-</div>
-```
-
-El ícono y el label del `<h1>` se toman del `ICON_MAP` y `LABEL_MAP` de `SidebarNav.tsx` — misma fuente de verdad. El `<Breadcrumb>` reusa `LABEL_MAP` para el módulo y la tab activa (misma lógica que `ModuleTabs`, en `tabActiva`) para la vista; con una sola tab muestra solo el módulo. La hoja de detalle (nombre de la obra/persona) todavía no se muestra — se agrega cuando haga falta.
-
-## Patrón UI de submódulos
-
-Submódulos tienen dos tipos:
-- **Vista**: aparecen como tabs horizontales en el módulo
-- **Función**: aparecen como botones/toolbar, contextuales a la tab activa
-
-La vista sabe qué acciones ofrece y las renderiza directamente verificando permisos:
-
-```tsx
-{hasPermission('modulo', 'nombre_funcion') && (
-  <Button onClick={...}>Acción</Button>
-)}
-```
-
-El submódulo-función existe solo para la capa de permisos — no como entidad de UI independiente ni como mapeo declarativo. No crear configs que mapeen vistas↔funciones.
-
-- Orden de tabs: fijo en código (no customizable hasta que un usuario lo pida)
-- Agrupación visual en nav: puramente cosmética, sin lógica de negocio ni permisos
+5. ¿Decisión no obvia? → registrar en `decisiones/<modulo>`, en el archivo del tema (si el archivo o la sección son nuevos, sumarlos al `README.md` índice). ¿Decidida pero sin implementar? → `BACKLOG.md`
+   - Formato corto: la decisión en una línea en negrita, el porqué en 1–3 líneas, los archivos que toca
+   - Si superás una decisión ya escrita, tachá su título y reemplazá el cuerpo por el puntero a la nueva — el texto viejo queda en git

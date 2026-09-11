@@ -1,6 +1,6 @@
 # GUIDE_DESIGN — Diseño y UX
 
-> El sistema de diseño visual (colores, tipografía, espaciado) está en `.claude/guides/design-system/JADA-design-system.md`. Nunca hardcodear valores.
+> El sistema de diseño visual (colores, tipografía, espaciado) está en `.claude/guides/design-system/JADA-design-system.md`; la implementación viva, en `globals.css`. Nunca hardcodear valores.
 
 ## Mobile-first — obligatorio
 
@@ -11,6 +11,35 @@ El sistema se usa desde celular en obra y en oficina.
 - Sin hover states como única interacción (touch no tiene hover)
 - Sin tablas en mobile → usar lista compacta o solo totales
 - Conectividad intermitente: considerar que la red puede fallar
+
+## Encabezado de módulo
+
+Todo módulo tiene un `<Breadcrumb>` (`Módulo / Vista`) y un `<h1>` con ícono + nombre, en ese orden, antes de los tabs. Estructura obligatoria en el `layout.tsx` del módulo:
+
+```tsx
+import { IconName } from 'lucide-react'
+import { Breadcrumb } from '@/components/layout/Breadcrumb'
+
+<div className="flex flex-col h-full">
+  <Breadcrumb modulo="nombre" tabs={tabs} />
+  <h1 className="t-h1 mb-4 flex items-center gap-2.5">
+    <IconName size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
+    Nombre del Módulo
+  </h1>
+  <ModuleTabs modulo="nombre" tabs={tabs} />
+  {children}
+</div>
+```
+
+- Ícono y label del `<h1>`: del `ICON_MAP` y `LABEL_MAP` de `SidebarNav.tsx` — misma fuente de verdad. Nunca uno distinto al del nav
+- El `<Breadcrumb>` reusa `LABEL_MAP` para el módulo y la tab activa (`tabActiva`, misma lógica que `ModuleTabs`) para la vista; con una sola tab muestra solo el módulo
+- La hoja de detalle (nombre de la obra/persona) no la muestra el breadcrumb del layout: las fichas de obras usan su propio `modules/obras/components/Breadcrumb` (ver `decisiones/obras/ui.md`)
+
+## Server → Client boundary
+
+Nunca pasar props no-serializables de Server Component a Client Component. Lucide icons, React components, funciones y class instances causan error en runtime: `"Only plain objects can be passed to Client Components from Server Components."`
+
+Cuando un Server Component necesita pasarle "qué ícono mostrar" a un Client Component: pasar string key (ej: `modulo: 'dashboard'`). El Client Component resuelve el string a componente con un `ICON_MAP` local. Mismo patrón para cualquier dato no-serializable.
 
 ## Estados visuales obligatorios en formularios
 
@@ -25,16 +54,11 @@ Todo formulario tiene tres estados:
 - **Toasts** (Sonner) para confirmaciones rápidas de acciones
 - **Mensajes inline** para errores de formulario
 - El usuario nunca se queda preguntando si algo funcionó
-- Los errores de Supabase siempre se traducen a español comprensible. Nunca mostrar errores técnicos en pantalla
+- Los errores de Supabase siempre se traducen a español comprensible (`mensajeError()` de `lib/utils.ts`). Nunca mostrar errores técnicos en pantalla
 
-## Optimistic Updates
+## Acciones: esperar al servidor, sin optimistic updates
 
-En acciones clave (cambio de estado, registro de pago, desactivar elemento):
-
-1. Actualizar la UI inmediatamente sin esperar respuesta del servidor
-2. Si la sincronización falla → revertir el cambio visualmente
-3. Mostrar mensaje de error claro en español
-4. Nunca bloquear la UI esperando una respuesta que puede no llegar
+No hay `useOptimistic` en la app. Una acción espera la server action con el botón deshabilitado, muestra el toast de éxito o error y la lista se refresca por `revalidatePath`. Si algún día se agrega optimistic, se decide app-wide en `decisiones/global/`, no en un módulo (ver `decisiones/obras/ui.md` → *Sin optimistic update*).
 
 ## Crear y editar: panel lateral, no modal
 
@@ -65,28 +89,7 @@ Si no hay datos: mostrar mensaje claro que explique por qué y qué hacer.
 Muestra únicamente los módulos que el usuario tiene autorizados.
 Lo no autorizado no se ve, no existe.
 
-## Encabezado de módulo
-
-Todo módulo tiene `<h1>` con ícono + nombre antes de los tabs. Va en el `layout.tsx` del módulo:
-
-```tsx
-import { Tag } from 'lucide-react'  // ícono del módulo, ver SidebarNav.tsx
-
-<div className="flex flex-col h-full">
-  <h1 className="t-h1 mb-4 flex items-center gap-2.5">
-    <Tag size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
-    Lista de Precios
-  </h1>
-  <ModuleTabs modulo="precios" tabs={tabs} />
-  {children}
-</div>
-```
-
-- Ícono: tomarlo del `ICON_MAP` en `SidebarNav.tsx`
-- Label: tomarlo del `LABEL_MAP` en `SidebarNav.tsx`
-- Nunca hardcodear ícono o label diferente al que aparece en el nav
-
 ## Campos obligatorios
 
-Indicar visualmente antes de que el usuario intente guardar.
+Indicar visualmente antes de que el usuario intente guardar (`.t-label-req` + `aria-required`).
 No solo mostrar el error después de intentar enviar.

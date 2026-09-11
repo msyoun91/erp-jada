@@ -1,0 +1,298 @@
+# Módulo tareas
+
+Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053` (más las que cita cada sección) — corridas en Supabase vía MCP.
+
+**Regla de visibilidad (`sql/013`): se ve lo asignado y lo público, nada más** — `creado_por` no autoriza. Excepciones: `tareas_gestionar_ajenas` y `tareas_hilos.responsable_id`. Los UPDATE están alineados con los SELECT. El porqué, en `decisiones/tareas/visibilidad.md`.
+
+## tareas_proyectos
+
+Contenedor organizacional. Pone el techo de visibilidad para sus hilos/tareas.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| nombre | text | |
+| descripcion | text | nullable |
+| visibilidad | enum `visibilidad` (`publico`\|`privado`) | default `privado` (`sql/008`, antes `publico`) |
+| creado_por | uuid FK → usuarios | |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | |
+
+## tareas_proyectos_miembros
+
+Lista explícita de membresía: **quién puede recibir tareas del proyecto** (`sql/009`). Ortogonal a `visibilidad`, que decide quién lo ve — aunque desde `sql/013` la membresía también da acceso a los proyectos privados, porque el creador dejó de tenerlo por serlo. Todo proyecto — público o privado — necesita al menos un miembro.
+
+Alta y baja de miembros exigen la función `tareas_proyectos_miembros` (o `tareas_gestionar_ajenas`). Única excepción: la siembra inicial, acotada por `proyecto_tiene_miembros()` — sin ella `tareas_proyectos_crear` no alcanzaría para crear nada, ya que el proyecto exige al menos un miembro. **El SELECT de la tabla no mira esa función**: leer la membresía sigue siendo de miembros y managers (agregarla filtraba los miembros de proyectos que el usuario ni ve — lo detectó el caso 02 de `sql/tests/rls_miembros_asignables.sql`).
+
+El SELECT sí exige que el proyecto siga **activo** (`sql/016`): archivar un proyecto le saca la fila de la lista, pero sus membresías seguían visibles y `getMiembrosPorProyecto` armaba entradas de mapa para proyectos que ya no existen para el usuario. El `EXISTS` directo sobre `tareas_proyectos` no recursa — el lado de vuelta llega a esta tabla por `es_miembro_proyecto` (`SECURITY DEFINER`), así que el ciclo ya está roto.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| proyecto_id | uuid FK → tareas_proyectos | |
+| usuario_id | uuid FK → usuarios | |
+| activo | boolean | unique parcial (proyecto_id, usuario_id) WHERE activo |
+| created_at | timestamptz | |
+
+## tareas_hilos
+
+Agrupador de tareas relacionadas. Sin vencimiento propio (se deriva de sus tareas en `queries.ts`).
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| proyecto_id | uuid FK → tareas_proyectos, nullable | null = hilo personal |
+| titulo | text | |
+| descripcion | text | nullable |
+| visibilidad | enum `visibilidad` | default `privado` (`sql/008`, antes `publico`) — solo importa si proyecto_id no es null |
+| estado | enum `estado_hilo` (`abierto`\|`cerrado`) | default `abierto`. Cierre manual (modal en UI) bloqueado por trigger si queda alguna tarea sin completar. Reapertura automática al agregar/mover una tarea al hilo |
+| responsable_id | uuid FK → usuarios | dueño — default = creador |
+| creado_por | uuid FK → usuarios | |
+| posponer_desde / posponer_hasta | date | nullable — oculta el hilo entero de la lista activa mientras esté vigente |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | |
+
+## tareas
+
+Unidad mínima de trabajo. `proyecto_id` solo se usa cuando la tarea está suelta (sin `hilo_id`) — si tiene hilo, el proyecto/visibilidad se heredan del hilo (`CHECK (hilo_id IS NULL OR proyecto_id IS NULL)`, fuente única).
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| hilo_id | uuid FK → tareas_hilos, nullable | |
+| proyecto_id | uuid FK → tareas_proyectos, nullable | solo si hilo_id es null |
+| paso_anterior_id | uuid FK → tareas, nullable | `sql/017` — tarea que debe estar `completada` antes de empezar esta. Inmutable tras el INSERT. Unique parcial `(paso_anterior_id) WHERE activo` (la cadena no bifurca), CHECK `paso_anterior_id IS NULL OR hilo_id IS NOT NULL`, CHECK `paso_anterior_id IS NULL OR recurrencia_cantidad IS NULL` |
+| titulo / descripcion | text | |
+| visibilidad | enum `visibilidad` | default `privado` (`sql/008`, antes `publico`) — solo importa si hilo_id es null y proyecto_id no |
+| estado | enum `estado_tarea` (`pendiente`\|`en_progreso`\|`completada`\|`cancelada`) | default `pendiente` |
+| temperatura | int | default 50, CHECK 1-100 — orden personal en UI, cualquier asignado la mueve. La UI escribe solo 85/50/20 (Alta/Media/Baja); el rango sigue siendo 1-100 para no migrar los valores viejos |
+| responsable_id | uuid FK → usuarios | dueño — default = creador. Gatea "forzar completado" (modo híbrido) y aparece en auditoría |
+| creado_por | uuid FK → usuarios | |
+| fecha_vencimiento | date | nullable. Con `vence_dias_tras_previo` es derivada: la escriben los triggers de `sql/053` y `editar_tarea` no la pisa |
+| vence_dias_tras_previo | int | nullable, `sql/053` — el plazo corre desde que se completa el paso anterior. CHECK `> 0 AND paso_anterior_id IS NOT NULL`. Mientras el previo no esté completado, `fecha_vencimiento` es NULL |
+| posponer_desde / posponer_hasta | date | nullable — sin cron: se recalcula al leer (`queries.ts`), no vía job |
+| recurrencia_cantidad | int | nullable, junto con recurrencia_unidad (ambos o ninguno) |
+| recurrencia_unidad | enum `recurrencia_unidad` (`dia`\|`mes`) | nullable |
+| nota_anterior / nota_siguiente | text | nullable — "nota de la última vez" de tareas recurrentes |
+| origen_app / origen_punto | text | nullable — qué módulo o app la generó y el deep link a la acción. `origen_punto` solo ruta interna (`/...`), validado en `crearTareaSchema` y de nuevo al renderizar (`modules/tareas/origen.ts`) |
+| modo_completado | enum `modo_completado` (`manual`\|`automatico`\|`hibrido`) | default `manual` |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | `created_at` default `clock_timestamp()` desde `sql/053` (no `now()`): es el orden de los pasos en la Lista, y `now()` le daba a toda la cadena que crea una función el mismo instante |
+
+**Vencimiento tras el paso anterior (`sql/053`).** Dos triggers `SECURITY DEFINER`, única fuente de la fecha derivada: `trg_fijar_vencimiento_tras_previo` (`BEFORE INSERT OR UPDATE OF vence_dias_tras_previo`, solo cuando el plazo cambia) la pone en `current_date + N` si el previo ya está completado y en NULL si no; `trg_arrancar_vencimiento_siguiente` (`AFTER UPDATE OF estado`, al entrar o salir de `completada`) la arranca en el paso siguiente al completar y la vuelve a NULL al reabrir. DEFINER porque quien completa un paso puede no tener UPDATE sobre el siguiente.
+
+**Recurrencia sin `pg_cron`:** la próxima instancia se genera al completar la actual (trigger `generar_recurrencia`), no por fecha de calendario — copia asignados y `nota_siguiente` → `nota_anterior` de la nueva.
+
+## tareas_asignados
+
+Multi-asignado — cualquiera puede completar la tarea.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| tarea_id | uuid FK → tareas | |
+| usuario_id | uuid FK → usuarios | |
+| activo | boolean | unique parcial (tarea_id, usuario_id) WHERE activo |
+| created_at | timestamptz | |
+
+## tareas_notas / tareas_hilos_notas (`sql/008`)
+
+Historial de notas — "agregar", no "editar": sin UPDATE de texto, solo `activo` para ocultar una nota propia (nunca DELETE). `tareas_notas.tarea_id` FK → `tareas`; `tareas_hilos_notas.hilo_id` FK → `tareas_hilos`. Ambas con `usuario_id` FK → `usuarios` (autor) y `nota text`.
+
+SELECT vía `EXISTS` directo sobre la tabla padre (`tareas`/`tareas_hilos`) — sin función `SECURITY DEFINER`: la RLS de la tabla padre ya resuelve visibilidad en cascada para el rol que consulta, y no hay recursión porque esa policy no mira hacia las tablas de notas. INSERT: mismo actor que puede gestionar la fila padre (`tareas_notas` reusa `es_responsable_tarea`/`es_asignado_tarea`; `tareas_hilos_notas` usa `responsable_id` del hilo), más `tareas_gestionar_ajenas`. UPDATE (solo `activo=false`): autor o ajenas.
+
+## tareas_plantillas / tareas_plantillas_hilos / tareas_plantillas_items (`sql/053`)
+
+Dos alcances. **Privada**: la ve, la modifica y la usa solo su dueño (`creado_por`). **De sistema**: la ve y la usa todo el que tiene la vista `tareas_plantillas`; la crea, modifica y desactiva quien tiene la función `tareas_plantillas_sistema`. Hasta `sql/053` eran un único recurso de equipo que cualquiera con la vista editaba.
+
+Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados) y `proyecto` (proyecto + miembros + hilos de pasos + tareas sueltas).
+
+| tareas_plantillas | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| nombre / descripcion | text | descripcion nullable |
+| alcance | enum `alcance_plantilla` (`sistema`\|`privada`) | default `privada`. Inmutable: fuera del `GRANT UPDATE` |
+| tipo | enum `tipo_plantilla` (`tarea`\|`hilo`\|`proyecto`) | default `hilo` |
+| visibilidad | enum `visibilidad` | default `privado` — la del proyecto que crea una de tipo `proyecto` |
+| miembros | uuid[] | default `{}`, CHECK solo en tipo `proyecto`. Array y no tabla: es configuración que se copia al usar, no una relación viva. Al usarla se descartan los inactivos y se suma quien la usa |
+| creado_por | uuid FK → usuarios | dueño de la privada. Fuera del `GRANT UPDATE` |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | |
+
+| tareas_plantillas_hilos | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| plantilla_id | uuid FK → tareas_plantillas | solo en plantillas de tipo `proyecto` |
+| titulo | text | título del hilo que se crea |
+| orden | int | |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | |
+
+| tareas_plantillas_items | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| plantilla_id | uuid FK → tareas_plantillas | |
+| hilo_id | uuid FK → tareas_plantillas_hilos, nullable | NULL = paso de un hilo/tarea, o tarea suelta de un proyecto |
+| titulo / descripcion | text | descripcion nullable |
+| orden | int | default 0 — dentro de su hilo, el orden de la cadena |
+| asignados | uuid[] | usuarios fijos. Sin FK: se validan al usar |
+| incluir_ejecutor | boolean | default true — quien usa la plantilla queda entre los asignados. CHECK `incluir_ejecutor OR cardinality(asignados) > 0` |
+| responsable_id | uuid FK → usuarios, nullable | NULL = quien la usa (exige `incluir_ejecutor`); si no, tiene que estar en `asignados` |
+| vence_dias | int | nullable, > 0 |
+| vence_tras_previo | boolean | default false — el plazo corre desde que se completa el paso anterior (exige `vence_dias`). En el primer paso de una cadena vale como "desde la creación" |
+| temperatura | int | default 50, 1-100 |
+| activo | boolean | |
+| created_at | timestamptz | |
+
+**RLS.** `tareas_plantillas_select`: vista `tareas_plantillas` y (`alcance = 'sistema'` o dueño). INSERT: dueño + vista, y `alcance = 'privada'` o la función. UPDATE (tabla y los dos hijos): `puede_gestionar_plantilla(id)` — función `SECURITY INVOKER STABLE` (la de sistema, con la función; la privada, su dueño); no recursa porque las policies de `tareas_plantillas` no miran a los hijos. SELECT de los hijos: `EXISTS` sobre `tareas_plantillas` (su RLS decide). INSERT/UPDATE de items suma la regla de `sql/014`: asignados o responsable ajenos exigen `tareas_asignar`.
+
+**Escritura por función.** `guardar_plantilla(p_id, p_nombre, p_descripcion, p_alcance, p_tipo, p_visibilidad, p_miembros, p_hilos jsonb, p_pasos jsonb) → uuid` crea o edita (`p_id` NULL = crear; `p_alcance` solo se lee al crear). Guardar **reemplaza**: desactiva los hilos y pasos activos e inserta los nuevos — nada referencia a un paso de plantilla. Valida la forma según el tipo (`TA010`) y que haya pasos (`TA009`). `usar_plantilla(p_plantilla_id, p_titulo, p_proyecto_id, p_hilo_id) → int` — ver la tabla de escrituras multi-tabla.
+
+## tareas_eventos
+
+Auditoría append-only. **Excepción a "nunca DELETE, siempre `activo`": sin columna `activo`** — una auditoría no debe poder ocultar sus propias filas. Necesaria porque `estado` se resetea en cada ciclo de recurrencia y `updated_at` se mueve con cualquier edición — ninguna columna sobre `tareas` puede reconstruir el historial. `GRANT SELECT` únicamente — el INSERT entra solo por el trigger `log_evento_tarea` (`SECURITY DEFINER`).
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| tarea_id | uuid FK → tareas | |
+| usuario_id | uuid FK → usuarios, nullable | null = evento del sistema |
+| estado_anterior | enum `estado_tarea`, nullable | |
+| estado_nuevo | enum `estado_tarea` | |
+| created_at | timestamptz | |
+
+## Función `puede_ver_hilo(uuid)`
+
+`SECURITY DEFINER`, `STABLE` — resuelve visibilidad en cascada de un hilo (responsable/asignado a alguna de sus tareas/permiso `tareas_gestionar_ajenas`/cascada proyecto público-o-miembro). **Sin `creado_por` desde `sql/013`.** Usada en RLS de `tareas_hilos` y `tareas`. `EXECUTE` revocado de `PUBLIC`, otorgado solo a `authenticated` (`sql/006`).
+
+## Funciones `es_creador_proyecto(uuid)` / `es_responsable_tarea(uuid)` / `es_asignado_tarea(uuid)` / `proyecto_tiene_miembros(uuid)`
+
+`SECURITY DEFINER`, `STABLE` — mismo criterio que `puede_ver_hilo`. Usadas en las policies de `tareas_proyectos_miembros` y `tareas_asignados` para no consultar directamente `tareas_proyectos`/`tareas`/`tareas_asignados` desde dentro de su propia política: dos tablas con policies que se referencian mutuamente (`tareas_proyectos` ↔ `tareas_proyectos_miembros`, `tareas` ↔ `tareas_asignados`) causan `42P17 infinite recursion detected in policy` si la referencia es un `EXISTS` directo bajo RLS. Envolver el lado "de vuelta" en una función `SECURITY DEFINER` rompe el ciclo (`sql/005`, fix aplicado post-creación).
+
+`es_responsable_tarea` reemplaza a `es_responsable_o_creador_tarea` (borrada en `sql/013`): con la rama del creador, quien perdía la asignación se la devolvía a sí mismo por API insertando en `tareas_asignados`. No hace falta esa rama para crear — `tareas_insert` ya exige `responsable_id = auth.uid()` a quien no tiene `tareas_asignar` (`tareas_gestionar_ajenas` hasta `sql/014`). Por el mismo motivo, `tareas_asignados_update` acota `usuario_id = auth.uid()` a `NOT activo` en su `WITH CHECK`: sacarme de una tarea es mío, re-agregarme no.
+
+## Funciones `es_miembro_proyecto(uuid, uuid)` / `es_miembro_proyecto_de_tarea(uuid, uuid)` (`sql/009`)
+
+`SECURITY DEFINER`, `STABLE` — mismo criterio anti-recursión que `es_creador_proyecto`. La segunda resuelve el proyecto **efectivo** de una tarea (`COALESCE(tareas.proyecto_id, tareas_hilos.proyecto_id)`) y devuelve `true` si la tarea no tiene proyecto. Usadas por `tareas_asignados_insert`/`update` (`AND (NOT activo OR es_miembro_proyecto_de_tarea(tarea_id, usuario_id))` — la regla se exige solo sobre filas activas, para no bloquear la desactivación al reasignar) y por `tareas_proyectos_miembros_select`, extendida para que un miembro vea a los demás miembros (sin eso el picker de asignados queda vacío para quien no es creador del proyecto). Ni `tareas_gestionar_ajenas` saltea la regla: es regla de negocio, no nivel de permiso.
+
+## Triggers `validar_proyecto_tarea` / `validar_quitar_miembro` (`sql/009`)
+
+Las policies cubren "cambian los asignados"; estos dos triggers cubren las otras dos caras de la misma regla:
+
+- `validar_proyecto_tarea` — `BEFORE UPDATE OF proyecto_id, hilo_id ON tareas`: mover una tarea a un proyecto donde algún asignado activo no es miembro falla con `ERRCODE = 'TA002'`.
+- `validar_quitar_miembro` — `BEFORE UPDATE ON tareas_proyectos_miembros WHEN (OLD.activo AND NOT NEW.activo)`: quitar un miembro con tareas `pendiente`/`en_progreso` en el proyecto falla con `ERRCODE = 'TA001'`, en vez de desactivar sus asignaciones por detrás.
+
+Ambos SQLSTATE están mapeados a mensaje en `MENSAJES_ERROR` (`lib/utils.ts`). Por eso `editarProyecto` guarda un diff (quitados/agregados) en vez de desactivar todo y reinsertar: lo segundo dispararía `TA001` sobre los miembros que se quedan.
+
+## Pasos de tarea — triggers (`sql/017`)
+
+`paso_anterior_id` es el eje ortogonal al hilo: el hilo **agrupa** tareas paralelas, la cadena de pasos las **ordena**. La cadena vive entera dentro de un hilo, y de ahí sale su visibilidad — `tareas_select` ya cascadea por `puede_ver_hilo`, así que ver los pasos previos no necesitó ninguna regla nueva.
+
+**"Bloqueada" no es un estado guardado**: se deriva de `paso_anterior.estado <> 'completada'`. No hay valor nuevo en `estado_tarea` — meterlo obligaría a sincronizarlo en cada completar/cancelar/reabrir.
+
+- `validar_paso_tarea` — `BEFORE INSERT OR UPDATE OF paso_anterior_id, hilo_id, recurrencia_cantidad ON tareas`. En INSERT valida que el previo exista, esté activo, tenga el mismo `hilo_id` y no sea recurrente. En UPDATE bloquea tres cosas con `TA005`/`TA006`: cambiar `paso_anterior_id` (inmutable), mover de hilo una tarea encadenada, y volver recurrente una tarea que tiene paso siguiente.
+- `validar_paso_previo` — `BEFORE INSERT OR UPDATE OF estado ON tareas`: pasar a `en_progreso`/`completada` con el previo sin completar falla con `TA004`. **`cancelada` queda fuera a propósito** — si un paso se cancela la cadena queda trabada, y cancelar los que siguen tiene que seguir siendo posible o el hilo no cierra nunca.
+- `validar_desactivar_paso` — `CONSTRAINT TRIGGER ... DEFERRABLE INITIALLY DEFERRED AFTER UPDATE ON tareas WHEN (OLD.activo AND NOT NEW.activo)`: desactivar un paso con siguiente activo falla con `TA007`. Diferido y no `BEFORE` porque `deshacerConversionHilo` desactiva la cadena entera en un solo `.in(...)` — un trigger por fila la vería a medio desactivar según el orden de las filas; al COMMIT ya están todas.
+
+**Ciclos: imposibles por construcción, sin validación.** `paso_anterior_id` solo se puede fijar en el INSERT, y una fila nueva nunca es ancestro de otra → el grafo es siempre un bosque.
+
+**Recurrencia y pasos no conviven** (CHECK del lado siguiente + trigger del lado previo). Por eso `generar_recurrencia` no necesitó cambios: nunca dispara sobre una tarea encadenada.
+
+**Escape hatch de una cadena**: desactivar desde la cola. El último paso nunca tiene siguiente activo, así que siempre se puede sacar.
+
+## Poner a otro en una tarea = función `tareas_asignar` (`sql/014`)
+
+Tercer eje, independiente de `tareas_gestionar_ajenas` (autoridad sobre tareas ajenas) y de la membresía (quién puede trabajar): **quién puede repartir trabajo**. Sin la función, uno se asigna a sí mismo y nada más. Tres piezas, una por cara:
+
+- `tareas_asignados_insert`/`update` — `AND (usuario_id = auth.uid() OR tiene_permiso('tareas_asignar'))`, sumado a las condiciones que ya tenían. Cubre agregar a otro y, por el mismo conjunto, sacarlo (reasignar = desactivar + reinsertar).
+- `tareas_insert` — `responsable_id = auth.uid() OR tiene_permiso('tareas_asignar')`. **Reemplaza** la rama `tareas_gestionar_ajenas` que tenía desde `sql/005`: nombrar responsable a otro es asignar, no es gestionar lo ajeno.
+- Trigger `validar_responsable_tarea` — `BEFORE UPDATE OF responsable_id ON tareas WHEN (NEW.responsable_id IS DISTINCT FROM OLD.responsable_id)`: traspasar el responsable a otro sin la función falla con `ERRCODE = 'TA003'`. Va en trigger porque un `WITH CHECK` solo ve la fila nueva y no puede distinguir "cambió el responsable" de "el UPDATE tocó otra columna".
+
+`tareas_gestionar_ajenas` **no** saltea la regla; el backfill de `sql/014` le dio `tareas_asignar` a quien ya la tenía, para no romper equipos en curso.
+
+**Siembra de asignados (`sql/053`).** `tareas_asignados_insert` pedía además ser responsable de la tarea (o `tareas_gestionar_ajenas`), así que crear una tarea con **otro** como responsable fallaba con `42501` para quien tenía `tareas_asignar` sin `gestionar_ajenas` — el backfill de arriba lo tapaba. Suma la rama `es_siembra_tarea(tarea_id)` (`SECURITY DEFINER STABLE`): el creador carga asignados mientras la tarea no tuvo **nunca** ninguno (ni inactivo). "Nunca" y no "ninguno activo": si no, el creador que quedó afuera volvería a entrar cuando el último asignado se saca solo — el hueco que cerró `sql/013`. Mismo patrón que la siembra de miembros de proyecto.
+
+## El mismo eje sobre hilos (`sql/017`)
+
+`tareas_hilos` no tiene tabla de asignados — el responsable es una columna — así que el eje se aplica en las dos caras de esa columna:
+
+- `tareas_hilos_insert` — `creado_por = auth.uid() AND (responsable_id = auth.uid() OR tiene_permiso('tareas_asignar'))`. **Reemplaza** la rama `tareas_gestionar_ajenas`, igual que `sql/014` hizo con `tareas_insert`.
+- `tareas_hilos_update` — el `WITH CHECK` suma `OR tiene_permiso('tareas_asignar')`. Sin eso el traspaso era imposible incluso con la función: la fila nueva tiene `responsable_id` ajeno y el `WITH CHECK` solo aceptaba `responsable_id = auth.uid()`. En `tareas` el problema no aparece porque ahí el `WITH CHECK` tiene además la rama del asignado activo (`sql/013`). Quién puede **tocar** el hilo lo sigue decidiendo el `USING`; quién puede quedar **a cargo** es del trigger.
+- Trigger `validar_responsable_hilo` — `BEFORE UPDATE OF responsable_id ON tareas_hilos WHEN (NEW.responsable_id IS DISTINCT FROM OLD.responsable_id)`: mismo `ERRCODE = 'TA003'` y mismo motivo que `validar_responsable_tarea`.
+
+## Escrituras multi-tabla — funciones `SECURITY INVOKER` (`sql/023`)
+
+Toda action que escribía dos o más tablas es ahora **una** función, invocada con `.rpc()`: el cuerpo corre en una sola transacción, así que un fallo tardío no deja cometido lo anterior. `SECURITY INVOKER` a propósito — RLS se sigue evaluando con la identidad de quien llama y la autoridad no se mueve de las policies.
+
+| función | reemplaza a | tablas |
+|---|---|---|
+| `crear_tarea(...)` → uuid | `crearTarea` | `tareas` + `tareas_asignados` |
+| `crear_proyecto(...)` → uuid | `crearProyecto` | `tareas_proyectos` + `tareas_proyectos_miembros` |
+| `convertir_tarea_en_hilo(uuid)` → uuid | `convertirTareaEnHilo` | `tareas_hilos` + `tareas` |
+| `deshacer_conversion_hilo(uuid)` | `deshacerConversionHilo` | `tareas` + `tareas_hilos` |
+| `desactivar_hilo(uuid)` | `desactivarHilo` | `tareas` + `tareas_hilos` |
+| ~~`agregar_tareas_desde_plantilla(...)`~~ | ~~`agregarTareasDesdePlantilla`~~ | borrada en `sql/053` → `usar_plantilla` |
+| `usar_plantilla(uuid, text, uuid, uuid)` → int (`sql/053`) | `usarPlantilla` | `tareas_proyectos` + miembros + `tareas_hilos` + `tareas` + `tareas_asignados` + `tareas_notas` |
+| `guardar_plantilla(...)` → uuid (`sql/053`) | `guardarPlantilla` (reemplaza `crearPlantilla`/`editarPlantilla`) | `tareas_plantillas` + `_hilos` + `_items` |
+
+`crear_tarea` y `editar_tarea` suman `p_vence_dias_tras_previo int` al final (`sql/053`, firma nueva; la vieja se borró).
+
+**`usar_plantilla`** es `SECURITY INVOKER`: se usa a mano y la RLS de quien la usa decide igual que en los formularios. Crea según el tipo — `tarea`: una tarea en `p_hilo_id` o suelta (con `p_proyecto_id` o personal); `hilo`: pasos encadenados en `p_hilo_id` o en un hilo nuevo titulado `p_titulo`; `proyecto`: un proyecto nuevo (`p_titulo`) con sus miembros activos + quien la usa, un hilo público por hilo de la plantilla y sus tareas sueltas (`TA011` si se le pasa destino). Cada paso lo reciben los asignados fijos que pueden (activos, miembros del proyecto efectivo, y ajenos solo si quien la usa tiene `tareas_asignar`) más quien la usa si `incluir_ejecutor`; **si no queda nadie, el paso va a quien la usa con una nota en `tareas_notas` que dice por qué** (decisión del usuario: la tarea no se pierde). Devuelve cuántos pasos cayeron así. Toda la creación pasa por `crear_tarea` / `crear_proyecto`.
+
+Los ids se generan con `gen_random_uuid()` en una variable en vez de pedir `RETURNING`: en ese punto la fila todavía no pasa la policy de SELECT (la tarea no tiene asignados, el proyecto no tiene miembros, `puede_ver_hilo` relee su propia tabla).
+
+SQLSTATE mapeados en `MENSAJES_ERROR` (`lib/utils.ts`): **`TA008`** — un UPDATE afectó 0 filas, que es como RLS rechaza (reemplaza al `errorDeUpdate()` de TypeScript); **`TA009`** — la plantilla no tiene pasos; **`TA010`** (`sql/053`) — la plantilla no corresponde a su tipo; **`TA011`** (`sql/053`) — una plantilla de proyecto usada con destino. `EXECUTE` revocado de `PUBLIC` y otorgado a `authenticated`, mismo criterio que `sql/006`.
+
+Verificación: `sql/tests/atomicidad_tareas.sql` (15/15).
+
+## Ediciones multi-tabla — `sql/024`
+
+Cola de la tanda anterior, con otro modo de falla: estas no dejaban una fila invisible sino **visible y a medio guardar** (el título cambiado con los asignados viejos).
+
+| función | reemplaza a | tablas |
+|---|---|---|
+| `editar_tarea(...)` | `editarTarea` | `tareas` + `tareas_asignados` |
+| `reasignar_tarea(uuid, uuid, uuid[])` | `reasignarTarea` | `tareas` + `tareas_asignados` |
+| `editar_proyecto(...)` | `editarProyecto` | `tareas_proyectos` + `tareas_proyectos_miembros` |
+| `sincronizar_asignados(uuid, uuid[])` | helper homónimo de `actions.ts` | `tareas_asignados` |
+
+`sincronizar_asignados` es el único escritor de `tareas_asignados` sobre una tarea que ya existe — la comparten `editar_tarea` y `reasignar_tarea`, y si el conjunto no cambió no toca nada. Lleva `GRANT` a `authenticated` porque una función `SECURITY INVOKER` llamada desde otra exige `EXECUTE` al rol que invoca; quedar expuesta por PostgREST no abre nada nuevo (la tabla ya acepta INSERT/UPDATE directo bajo las mismas policies).
+
+En `editar_tarea` el orden es fila-primero-asignados-después, como era en TypeScript: `validar_proyecto_tarea` valida el cambio de `proyecto_id` contra los asignados de ese momento. En `editar_proyecto` la membresía se resuelve por diff — barrer y reinsertar dispararía `validar_quitar_miembro` (TA001) sobre los miembros que se quedan.
+
+Verificación: `sql/tests/atomicidad_edicion_tareas.sql`.
+
+## Archivar un proyecto cascadea — trigger `cascada_desactivar_proyecto` (`sql/025`)
+
+`AFTER UPDATE ON tareas_proyectos ... WHEN (OLD.activo AND NOT NEW.activo)`: desactiva las tareas de los hilos del proyecto y sus tareas sueltas (`proyecto_id` solo se usa sin `hilo_id`), y después los hilos. Simétrico con `desactivar_hilo`, que ya se lleva sus tareas. Antes quedaba todo activo apuntando a un proyecto archivado: el trabajo perdía la agrupación y el select de proyecto del form aparecía vacío sobre un valor todavía seteado.
+
+**Trigger y no función `.rpc()`** porque la cascada no es un acto aparte del usuario sino la consecuencia de archivar; así vale para cualquier escritor de `activo = false` y `desactivarProyecto` sigue siendo el UPDATE de una sola tabla que era.
+
+**`SECURITY DEFINER`, sin mover la autorización.** Quien archiva es el creador-miembro o un manager (`tareas_proyectos_update`), y eso no da UPDATE sobre los hilos de adentro (`tareas_hilos_update` exige ser responsable del hilo o `tareas_gestionar_ajenas`). Con `SECURITY INVOKER` la cascada se frenaría contra RLS en silencio —0 filas no es error— dejando el proyecto archivado y la mitad de adentro viva. El permiso del acto sigue en la policy del UPDATE que dispara el trigger: si esa no pasa, el trigger no corre.
+
+Una cadena de pasos vive entera dentro de un hilo, así que cae completa en una sola sentencia y `trg_validar_desactivar_paso` no encuentra siguientes activos. Los miembros del proyecto no se tocan — no son trabajo, y su SELECT ya exige el proyecto activo (`sql/016`). Reactivar el proyecto no revive nada: archivar es de ida.
+
+Verificación: `sql/tests/cascada_proyecto.sql` (10/10).
+
+## Función `reactivar_posponer_vencidos()`
+
+`SECURITY DEFINER` — sin cron: `queries.getListaTareas()` la invoca (`supabase.rpc(...)`) antes de leer la lista. Limpia `posponer_desde`/`posponer_hasta` de `tareas`/`tareas_hilos` cuyo `posponer_hasta` ya venció, y en `tareas` corre `fecha_vencimiento` el mismo intervalo que duró el pospuesto. `EXECUTE` solo para `authenticated` (`sql/007`).
+
+**Hardening (`sql/006`):** `EXECUTE` revocado de `PUBLIC` en las funciones `SECURITY DEFINER` de solo-trigger (`generar_recurrencia`, `log_evento_tarea`, `reabrir_hilo_en_tarea`, `validar_cierre_hilo`) — PostgREST expone toda función a `PUBLIC` por default y estas no necesitan ser invocables vía RPC. Índices agregados en FKs `creado_por`/`responsable_id` sin cobertura.
+
+## Permisos (submódulos `modulo = 'tareas'`)
+
+| codigo | tipo | vista_id | notas |
+|---|---|---|---|
+| tareas_lista | vista | — | listado unificado personal + proyectos visibles |
+| tareas_proyectos | vista | — | |
+| tareas_plantillas | vista | — | ver y usar las de sistema; crear, ver y usar las privadas propias |
+| tareas_auditoria | vista | — | solo-lectura, se asigna directo a managers |
+| tareas_mision | vista | — | `sql/017` — tarea actual de a una, ordenada por temperatura. Sin función propia: "crear siguiente paso" es crear una tarea, ya gateado por `tareas_lista`. Backfill: la recibió todo el que tenía `tareas_lista` |
+| tareas_gestionar_ajenas | funcion | tareas_lista | completar/cerrar hilo/reasignar tarea **ajena** — acciones sobre lo propio no requieren función |
+| tareas_asignar | funcion | tareas_lista | "Asignar usuarios" (`sql/014`) — poner a otro como asignado o responsable. Sin ella el `AsignadosPicker` muestra solo el resumen y "Reasignar" no aparece en el menú |
+| tareas_proyectos_crear | funcion | tareas_proyectos | |
+| tareas_proyectos_miembros | funcion | tareas_proyectos | "Asignar miembros" (`sql/013`) — alta/baja de miembros. Sin ella el bloque Miembros no se muestra en `ProyectoFormPanel` y la membresía viaja como default oculto |
+| tareas_plantillas_sistema | funcion | tareas_plantillas | "Plantillas de sistema" (`sql/053`) — crear, modificar y desactivar plantillas de sistema. Backfill: todo el que tenía la vista `tareas_plantillas`, que hasta ahí administraba todas |
+
+`usuarios_select` extendida con `OR tiene_permiso('tareas_lista') OR tiene_permiso('tareas_proyectos')` — picker de asignados/miembros necesita listar usuarios activos.

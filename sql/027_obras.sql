@@ -8,7 +8,7 @@
 -- Las funciones de negocio (transferir, desactivar, detección difusa de
 -- duplicados, ficha de persona con registro de acceso) van en `sql/028`.
 --
--- DECISIONES QUE ESTE ARCHIVO IMPLEMENTA (ver decisiones/obras.md):
+-- DECISIONES QUE ESTE ARCHIVO IMPLEMENTA (ver decisiones/obras/):
 --
 -- 1. Ser referente NO es un rol de `rol_persona`: es la existencia de una fila
 --    en `obras_obra_referente`. Una sola fuente de verdad.

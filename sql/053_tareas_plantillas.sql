@@ -2,7 +2,7 @@
 -- 053 — Plantillas: sistema y privadas, tres tipos, pasos completos
 --
 -- Fase 1 del rediseño de plantillas (la fase 2 las conecta con disparadores
--- de otros módulos). Ver decisiones/tareas.md → "Plantillas de sistema y
+-- de otros módulos). Ver decisiones/tareas/plantillas.md → "Plantillas de sistema y
 -- privadas".
 --
 --   1. Fix de siembra: crear una tarea con OTRO como responsable fallaba para

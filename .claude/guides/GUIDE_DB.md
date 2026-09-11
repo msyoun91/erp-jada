@@ -1,5 +1,7 @@
 # GUIDE_DB — Base de Datos y Supabase
 
+Esquema actual: `db_schema/` — leer el `README.md` y solo el archivo del módulo que se toca.
+
 ## Migraciones
 
 Toda modificación de esquema debe realizarse mediante migración SQL.
@@ -16,9 +18,9 @@ Toda migración debe ser idempotente cuando sea posible.
 |---|---|---|
 | Client Components (`'use client'`) | `lib/supabase/client.ts` | `createBrowserClient` |
 | Server Components / Actions / Route Handlers | `lib/supabase/server.ts` | `createServerClient` + cookies |
-| Middleware (`middleware.ts`) | `lib/supabase/middleware.ts` | `updateSession(request)` |
+| Proxy (`src/proxy.ts`, ex-`middleware.ts` en Next 16) | `lib/supabase/middleware.ts` | `updateSession(request)` — solo sesión y usuario activo, no permisos |
 
-**`service_role`** solo en server actions específicos que lo requieran (ej: crear usuario desde admin). Nunca en cliente, nunca NEXT_PUBLIC_.
+**`service_role`** solo cuando RLS no puede expresar la autorización (ej: crear usuario desde admin). Una preferencia propia del usuario va con RLS directo por `auth.uid()` (`usuario_widgets`), no con `service_role`.
 
 ---
 
@@ -70,11 +72,12 @@ Esto permite un registro desactivado con el mismo valor y crear uno nuevo sin co
 ```sql
 ALTER TABLE nombre_tabla ENABLE ROW LEVEL SECURITY;
 
--- Ejemplo de política
 CREATE POLICY "usuarios ven sus propios registros"
   ON nombre_tabla FOR SELECT
-  USING (usuario_id = auth.uid());
+  USING (usuario_id = (select auth.uid()));
 ```
+
+**`auth.uid()` siempre envuelto en `(select ...)`.** Suelto, Postgres lo trata como VOLATILE y lo re-evalúa una vez por fila; en subselect se resuelve una sola vez (`sql/035`).
 
 ### `GRANT` — RLS no alcanza sin él
 
@@ -94,7 +97,13 @@ Solo las operaciones que el cliente normal (no `service_role`) ejecuta directo. 
 
 Toda función `SECURITY DEFINER` nueva declara `SET search_path = public` y usa tablas schema-calificadas (`public.tabla`). Además de evitar ese bug, es la mitigación estándar contra search_path injection.
 
-Una policy que necesita mirar otra tabla RLS-protegida que puede mirar hacia atrás usa una función `SECURITY DEFINER STABLE`, no un `EXISTS` directo: dos policies que se consultan mutuamente dan `42P17 infinite recursion detected in policy`.
+Las funciones llamadas con `.rpc()` son `SECURITY INVOKER` por defecto, para que RLS siga evaluándose con la identidad de quien llama. `DEFINER` solo si hay que cruzar RLS a propósito (ej: la cascada de `sql/025`), y la autorización del acto sigue en la policy que lo dispara.
+
+### Trampas de RLS
+
+- **Dos policies que se consultan mutuamente → `42P17 infinite recursion detected in policy`.** Si una policy tiene que mirar otra tabla RLS-protegida que puede mirar hacia atrás, el lado de vuelta va en una función `SECURITY DEFINER STABLE`, no en un `EXISTS` directo. `tsc` no lo detecta: aparece recién al usar la ruta logueado.
+- **`INSERT … RETURNING` (`.insert().select()`) pasa por la policy de SELECT con la fila nueva.** Si esa policy autoriza con una función que relee la misma tabla, o la visibilidad depende de filas que se insertan en el statement siguiente (asignados, miembros), la fila todavía no se ve y falla con `42501` / `new row violates row-level security policy`. Salidas: autorizar la fila nueva por columna (`creado_por = auth.uid()`), o generar el `id` antes (`gen_random_uuid()` en SQL, `crypto.randomUUID()` en TS) y no pedir `RETURNING`.
+- **Un UPDATE que RLS rechaza no falla: afecta 0 filas.** En SQL, `IF NOT FOUND THEN RAISE`; en una action de una sola tabla, `{ count: "exact" }` y chequear `count` (ver `errorDeUpdate` en las actions de tareas y obras). Alinear el `USING` del UPDATE con el del SELECT: una fila modificable pero invisible es un bug silencioso.
 
 ### Auditoría
 
@@ -104,7 +113,7 @@ Toda modificación de estado importante se registra con: quién, qué, cuándo y
 
 Prefijo con el nombre completo del módulo dueño: `{modulo}_{entidad}` (ej: `pedidos_items`, `cobranza_pagos`). No usar iniciales/abreviaturas — generan ambigüedad (`ped` → ¿pedidos? ¿pedidos_especiales?). Mismo criterio que `submodulos.codigo`.
 
-Excepción: tablas de infraestructura cross-módulo (`usuarios`, `submodulos`, `usuario_submodulos`) no llevan prefijo — no pertenecen a un módulo de negocio específico.
+Excepción: tablas de infraestructura cross-módulo (`usuarios`, `submodulos`, `usuario_submodulos`, `usuario_*`) no llevan prefijo de módulo — no pertenecen a un módulo de negocio específico.
 
 ### Enums
 

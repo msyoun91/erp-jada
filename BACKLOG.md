@@ -16,7 +16,7 @@ Desde `sql/017` toda plantilla de hilo genera una cadena: cada item espera al an
 
 ## Tareas — plantillas disparadas por otros módulos (fase 2)
 
-La fase 1 (`sql/053`, ver `decisiones/tareas.md` → *Plantillas de sistema y privadas, tres tipos*) dejó las plantillas completas y usadas a mano. La fase 2 las conecta con los módulos. **Alcance acordado con el usuario: un solo disparador, para probar la idea** — la obra cambia de estado (su ejemplo: de cotización a en ejecución → "Cobrar obra X"). El resto se suma cuando haga falta.
+La fase 1 (`sql/053`, ver `decisiones/tareas/plantillas.md` → *Plantillas de sistema y privadas, tres tipos*) dejó las plantillas completas y usadas a mano. La fase 2 las conecta con los módulos. **Alcance acordado con el usuario: un solo disparador, para probar la idea** — la obra cambia de estado (su ejemplo: de cotización a en ejecución → "Cobrar obra X"). El resto se suma cuando haga falta.
 
 Decidido con el usuario:
 
@@ -30,8 +30,8 @@ Propuesto, sin objeción del usuario (confirmar al construir):
 - Listado de disparadores = una tabla que siembra la migración de cada módulo (código, módulo, datos que ofrece, submódulo que pide cada uno). Una plantilla de sistema se ve solo con todos los submódulos que usa, se muestran como etiquetas, y quien la arma solo usa lo que tiene autorizado — todo en RLS.
 - Enlaces estructurados tarea ↔ obra/empresa/persona (`tareas_vinculos`), chips con link a la ficha. Cierra *Sugerencia de tareas — falta el vínculo* (abajo).
 - La automática corre una vez por (plantilla, obra); ir y volver de estado no duplica. Una privada con disparador solo corre si el dueño es quien dispara.
-- **Autoridad:** el disparo automático no puede correr con los permisos de quien cambia el estado (un vendedor sin `tareas_asignar` no podría crearle la tarea a Cobranzas y el cambio de estado fallaría). La autoridad pasa a ser la plantilla: se valida al guardarla y la ejecución corre `SECURITY DEFINER` revalidando lo que pudo cambiar. Es mover autorización adentro de una función — registrarlo como excepción explícita en `decisiones/tareas.md` antes de escribirlo.
-- Esto **es** un motor de reglas: al construirlo, superar en `decisiones/global.md` *Notificaciones: infra sin submódulo, y sin motor* con el puntero.
+- **Autoridad:** el disparo automático no puede correr con los permisos de quien cambia el estado (un vendedor sin `tareas_asignar` no podría crearle la tarea a Cobranzas y el cambio de estado fallaría). La autoridad pasa a ser la plantilla: se valida al guardarla y la ejecución corre `SECURITY DEFINER` revalidando lo que pudo cambiar. Es mover autorización adentro de una función — registrarlo como excepción explícita en `decisiones/tareas/plantillas.md` antes de escribirlo.
+- Esto **es** un motor de reglas: al construirlo, superar en `decisiones/global/infra.md` *Notificaciones: infra sin submódulo, y sin motor* con el puntero.
 
 ## Tareas — verificar `Content-Range` en el PATCH
 
@@ -64,15 +64,15 @@ La segunda pasada de navegador midió el footer del sidebar con el usuario real 
 mobile, y el avatar 18.7px en 28px. Ni truncado ni solape en ninguno de los dos anchos. Lo que
 se había leído como `A…dmin` era el puntero del mouse que dibuja la herramienta de captura,
 apoyado sobre el avatar; en la segunda pasada el mismo círculo cayó sobre el logo y lo dejó en
-`S⬤DA`. No hay nada que decidir, así que no va a `decisiones/global.md`.
+`S⬤DA`. No hay nada que decidir, así que no va a `decisiones/global/`.
 
 Los cuatro app-wide reales están cerrados ahí (ThemeToggle flotante, `.card:hover` en lo no
 clickeable, alturas de toolbar, el modal que no atenuaba el panel). El resto, en
-`decisiones/obras.md`.
+`decisiones/obras/ui.md`.
 
 ## Sugerencia de tareas — falta el vínculo entre una tarea y lo que la motivó
 
-Pedida junto con las notificaciones y no construida (ver `decisiones/global.md`). "¿Qué hago ahora?" ya lo contestan Misión y el orden de `useOrdenTemperatura`; lo que falta es "¿qué tarea debería existir y no existe?" — la obra sin movimiento hace 60 días, el edificio entregado sin propietarios averiguados.
+Pedida junto con las notificaciones y no construida (ver `decisiones/global/infra.md`). "¿Qué hago ahora?" ya lo contestan Misión y el orden de `useOrdenTemperatura`; lo que falta es "¿qué tarea debería existir y no existe?" — la obra sin movimiento hace 60 días, el edificio entregado sin propietarios averiguados.
 
 **El bloqueante no es la regla, es el vínculo.** Hoy una tarea no sabe de qué obra habla: `origen_app` y `origen_punto` son texto libre y solo se muestran en `TareaDetailPanel`. Sin un vínculo estructurado, la sugerencia no puede saber si ya la creaste y la repite para siempre.
 
@@ -84,7 +84,7 @@ Dirección acordada el 2026-09-09. Nada que construir hasta que exista el módul
 Ejemplos visuales de esta decisión: https://claude.ai/code/artifact/237043ec-43fb-42cf-8081-37d5ce31eeaa
 
 **Parcial: `sql/046` ya cambió el vocabulario del enum** — `en_construccion` → `en_cotizacion` /
-`en_ejecucion` / `en_postventa` (pedido del usuario, ver `decisiones/obras.md`). Lo de abajo sigue
+`en_ejecucion` / `en_postventa` (pedido del usuario, ver `decisiones/obras/modelo.md`). Lo de abajo sigue
 pendiente: la columna todavía mide dos relojes, `perdida` / `terminada` no se movieron, no hay
 `obras_unidades` ni `cantidad_unidades`.
 
@@ -160,5 +160,5 @@ una vista sobre los mismos datos, así que puede esperar.
 
 Supabase puede rechazar contraseñas que figuran en HaveIBeenPwned. Está apagado.
 
-No es SQL: es un toggle en el dashboard de Auth (Authentication → Policies), así que no entra en una migración ni queda versionado en `sql/`. Sale como WARN en `get_advisors('security')` y es lo único que quedó pendiente de ese barrido — el resto se resolvió o se descartó en `sql/035` (ver `decisiones/global.md`).
+No es SQL: es un toggle en el dashboard de Auth (Authentication → Policies), así que no entra en una migración ni queda versionado en `sql/`. Sale como WARN en `get_advisors('security')` y es lo único que quedó pendiente de ese barrido — el resto se resolvió o se descartó en `sql/035` (ver `decisiones/global/infra.md`).
 

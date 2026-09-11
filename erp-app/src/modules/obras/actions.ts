@@ -837,7 +837,7 @@ export async function buscarGlobal(texto: string): Promise<ResultadoBusqueda[]> 
 
 // Solo mi agenda: vincular a una obra —propia o compartida— es sumar un
 // contacto MÍO. El buscador de identidad mínima cross-owner quedó para el
-// aviso de duplicados del alta, no para vincular (ver decisiones/obras.md).
+// aviso de duplicados del alta, no para vincular (ver decisiones/obras/duplicados-aprobaciones.md).
 export async function buscarPersonasParaVincular(texto: string) {
   const personas = await getPersonas(texto.trim() || undefined);
 
