@@ -39,6 +39,7 @@ export function TareaCard({
   cadena,
   relacionCon,
   grande,
+  autoAbrir,
   onTemperaturaChange,
   onConvertida,
 }: {
@@ -53,11 +54,13 @@ export function TareaCard({
   relacionCon?: string | null;
   // Misión muestra una sola tarea: la isla se despliega en vez de comprimirse.
   grande?: boolean;
+  // Deep link desde una notificación: la card nace con el panel ya abierto.
+  autoAbrir?: boolean;
   onTemperaturaChange?: (id: string, temperatura: number) => void;
   onConvertida?: (hiloId: string) => void;
 }) {
   const { usuarios, usuarioActualId } = useTareasContexto();
-  const [detalleAbierto, setDetalleAbierto] = useState(false);
+  const [detalleAbierto, setDetalleAbierto] = useState(autoAbrir ?? false);
   const { estado, temperatura, cambiarEstado, cambiarTemperatura } = useTareaOptimista(
     tarea,
     onTemperaturaChange,

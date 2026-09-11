@@ -33,6 +33,7 @@ export function HiloCard({
   plantillas,
   relacionCon,
   autoAbrir,
+  autoAbrirTareaId,
   onTemperaturaChange,
 }: {
   hilo: TareaHilo;
@@ -40,6 +41,10 @@ export function HiloCard({
   plantillas: TareaPlantilla[];
   relacionCon?: string | null;
   autoAbrir?: boolean;
+  // Deep link desde una notificación de tarea: el paso propio con este id nace
+  // con su panel abierto. Notificar solo avisa al asignado, así que el paso
+  // siempre cae del lado `esPropia` — nunca hace falta expandir los ajenos.
+  autoAbrirTareaId?: string | null;
   onTemperaturaChange?: (id: string, temperatura: number) => void;
 }) {
   const { usuarios, proyectos, usuarioActualId, gestionarAjenas } = useTareasContexto();
@@ -163,6 +168,7 @@ export function HiloCard({
                   proyectoHeredadoId={hilo.proyecto_id}
                   cadena={cadenas.get(t.id)}
                   relacionCon={relacionCon}
+                  autoAbrir={t.id === autoAbrirTareaId}
                   onTemperaturaChange={onTemperaturaChange}
                 />
               ) : (

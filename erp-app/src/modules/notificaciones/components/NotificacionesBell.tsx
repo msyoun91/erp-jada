@@ -43,13 +43,14 @@ const COLOR: Record<TipoNotificacion, string> = {
   tarea_asignada: "text-brand-500",
 };
 
-// Las tareas no tienen ruta por id —la Lista abre el panel por estado, no por
-// URL—, así que el aviso lleva a la vista.
+// La Lista abre el panel por estado, no por URL: `?tarea=` es leído una sola
+// vez por `TareasListaView`, que abre el panel de esa tarea si la encuentra
+// entre las visibles y limpia el parámetro.
 const RUTA: Record<string, (id: string) => string> = {
   obra: (id) => `/obras/${id}`,
   empresa: (id) => `/obras/empresas/${id}`,
   persona: (id) => `/obras/personas/${id}`,
-  tarea: () => "/tareas",
+  tarea: (id) => `/tareas?tarea=${id}`,
 };
 
 export function NotificacionesBell({

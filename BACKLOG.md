@@ -51,12 +51,6 @@ Los cuatro app-wide reales están cerrados ahí (ThemeToggle flotante, `.card:ho
 clickeable, alturas de toolbar, el modal que no atenuaba el panel). El resto, en
 `decisiones/obras.md`.
 
-## Notificaciones — deep link a una tarea
-
-`sql/038` dejó la campanita andando, pero las tareas no tienen ruta por id: la vista Lista abre el panel por estado, no por URL, así que el aviso "te asignaron X" lleva a `/tareas` y la tarea hay que buscarla. Las obras, empresas y personas sí abren su ficha.
-
-No se resolvió ahora porque darle URL a una tarea es rehacer cómo la Lista abre sus paneles, y eso es una tarea del módulo tareas, no de la campanita. Cuando se haga, `RUTA` en `NotificacionesBell.tsx` es una línea.
-
 ## Sugerencia de tareas — falta el vínculo entre una tarea y lo que la motivó
 
 Pedida junto con las notificaciones y no construida (ver `decisiones/global.md`). "¿Qué hago ahora?" ya lo contestan Misión y el orden de `useOrdenTemperatura`; lo que falta es "¿qué tarea debería existir y no existe?" — la obra sin movimiento hace 60 días, el edificio entregado sin propietarios averiguados.
