@@ -73,7 +73,7 @@ BEGIN
   -- ============================================================
   PERFORM set_config('role', 'authenticated', true);
   PERFORM editar_tarea(v_tarea, 'T editada', 'desc nueva', v_proy, 'publico',
-                       v_admin, ARRAY[v_admin], NULL, 70, NULL, NULL);
+                       v_admin, ARRAY[v_admin], NULL, 70, NULL, NULL, NULL);
   PERFORM set_config('role', 'none', true);
 
   SELECT count(*) INTO v_n FROM tareas
@@ -92,7 +92,7 @@ BEGIN
   PERFORM set_config('role', 'authenticated', true);
   BEGIN
     PERFORM editar_tarea(v_tarea, 'T a medias', NULL, v_proy_b, 'publico',
-                         v_admin, ARRAY[v_admin, v_tester], NULL, 70, NULL, NULL);
+                         v_admin, ARRAY[v_admin, v_tester], NULL, 70, NULL, NULL, NULL);
     PERFORM set_config('role', 'none', true);
     r := r || E'\n03 editar_tarea con asignado no miembro: FALLO (no rechazo)';
   EXCEPTION WHEN OTHERS THEN
@@ -111,7 +111,7 @@ BEGIN
   PERFORM set_config('role', 'authenticated', true);
   BEGIN
     PERFORM editar_tarea(v_fantasma, 'T inexistente', NULL, NULL, 'privado',
-                         v_admin, ARRAY[v_admin], NULL, 50, NULL, NULL);
+                         v_admin, ARRAY[v_admin], NULL, 50, NULL, NULL, NULL);
     r := r || E'\n06 editar una tarea que no existe: FALLO (no rechazo)';
   EXCEPTION WHEN OTHERS THEN
     r := r || E'\n06 editar una tarea que no existe: ' ||

@@ -1,4 +1,5 @@
--- Verificación de las seis funciones de sql/023.
+-- Verificación de las seis funciones de sql/023 (la de plantillas, con la
+-- firma de sql/053: `usar_plantilla`).
 -- NO es una migración: todo corre dentro de un DO que termina en RAISE
 -- EXCEPTION, así que la transacción entera se revierte — no persiste ningún
 -- dato. Los resultados salen en el mensaje del error (ese es el reporte).
@@ -30,7 +31,11 @@ DECLARE
   v_fantasma uuid := '00000000-0000-4000-8000-0000000000ff'; -- no existe en usuarios
   v_proy    uuid;
   v_plant   uuid;
+  v_plant2  uuid;   -- asigna a ADMIN y a TESTER, que no es miembro
+  v_plant_t uuid;   -- de TESTER: el paso 2 cae en él y no es miembro
   v_vacia   uuid;
+  v_proy_pub uuid;  -- público: TESTER ve el hilo pero no es miembro
+  v_hilo_pub uuid;
   v_hilo_p  uuid;   -- hilo dentro del proyecto
   v_hilo_d  uuid;   -- hilo para deshacer
   v_hilo_x  uuid;   -- hilo para desactivar
@@ -53,6 +58,27 @@ BEGIN
 
   INSERT INTO tareas_plantillas (nombre, creado_por)
     VALUES ('PL vacia', v_admin) RETURNING id INTO v_vacia;
+
+  INSERT INTO tareas_plantillas (nombre, creado_por)
+    VALUES ('PL no miembro', v_admin) RETURNING id INTO v_plant2;
+  INSERT INTO tareas_plantillas_items (plantilla_id, titulo, orden, asignados, incluir_ejecutor, responsable_id)
+    VALUES (v_plant2, 'Paso NM', 1, ARRAY[v_admin, v_tester], false, v_admin);
+
+  INSERT INTO tareas_plantillas (nombre, creado_por)
+    VALUES ('PL de tester', v_tester) RETURNING id INTO v_plant_t;
+  INSERT INTO tareas_plantillas_items (plantilla_id, titulo, orden, asignados, incluir_ejecutor, responsable_id) VALUES
+    (v_plant_t, 'T paso 1', 1, ARRAY[v_admin], false, v_admin),
+    (v_plant_t, 'T paso 2', 2, '{}', true, NULL);
+
+  INSERT INTO tareas_proyectos (nombre, visibilidad, creado_por)
+    VALUES ('P publico', 'publico', v_admin) RETURNING id INTO v_proy_pub;
+  INSERT INTO tareas_proyectos_miembros (proyecto_id, usuario_id) VALUES (v_proy_pub, v_admin);
+  INSERT INTO tareas_hilos (proyecto_id, titulo, visibilidad, responsable_id, creado_por)
+    VALUES (v_proy_pub, 'H publico', 'publico', v_admin, v_admin) RETURNING id INTO v_hilo_pub;
+
+  INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+    SELECT v_tester, id FROM submodulos WHERE codigo IN ('tareas_plantillas', 'tareas_asignar')
+    ON CONFLICT (usuario_id, submodulo_id) DO UPDATE SET activo = true;
 
   INSERT INTO tareas_hilos (proyecto_id, titulo, responsable_id, creado_por)
     VALUES (v_proy, 'H en proyecto', v_admin, v_admin) RETURNING id INTO v_hilo_p;
@@ -92,7 +118,7 @@ BEGIN
   -- ============================================================
   PERFORM set_config('role', 'authenticated', true);
   v_id := crear_tarea('T feliz', NULL, NULL, v_proy, NULL, 'privado', v_admin,
-                      ARRAY[v_admin], NULL, 50, NULL, NULL, 'manual', NULL, NULL);
+                      ARRAY[v_admin], NULL, 50, NULL, NULL, 'manual', NULL, NULL, NULL);
   PERFORM set_config('role', 'none', true);
 
   SELECT count(*) INTO v_n FROM tareas_asignados WHERE tarea_id = v_id AND activo;
@@ -104,7 +130,7 @@ BEGIN
   PERFORM set_config('role', 'authenticated', true);
   BEGIN
     v_id := crear_tarea('T huerfana', NULL, NULL, v_proy, NULL, 'privado', v_admin,
-                        ARRAY[v_admin, v_tester], NULL, 50, NULL, NULL, 'manual', NULL, NULL);
+                        ARRAY[v_admin, v_tester], NULL, 50, NULL, NULL, 'manual', NULL, NULL, NULL);
     PERFORM set_config('role', 'none', true);
     r := r || E'\n02 crear_tarea con asignado no miembro: FALLO (no rechazo)';
   EXCEPTION WHEN OTHERS THEN
@@ -164,10 +190,10 @@ BEGIN
   PERFORM set_config('role', 'none', true);
 
   -- ============================================================
-  -- agregar_tareas_desde_plantilla
+  -- usar_plantilla (sql/053 reemplazó a agregar_tareas_desde_plantilla)
   -- ============================================================
   PERFORM set_config('role', 'authenticated', true);
-  PERFORM agregar_tareas_desde_plantilla(v_plant, v_hilo_p, v_admin, ARRAY[v_admin]);
+  PERFORM usar_plantilla(v_plant, NULL, NULL, v_hilo_p);
   PERFORM set_config('role', 'none', true);
 
   SELECT count(*) INTO v_n FROM tareas WHERE hilo_id = v_hilo_p AND activo;
@@ -180,27 +206,44 @@ BEGIN
 
   PERFORM set_config('role', 'authenticated', true);
   BEGIN
-    PERFORM agregar_tareas_desde_plantilla(v_vacia, v_hilo_p, v_admin, ARRAY[v_admin]);
+    PERFORM usar_plantilla(v_vacia, NULL, NULL, v_hilo_p);
     r := r || E'\n11 plantilla sin pasos: FALLO (no rechazo)';
   EXCEPTION WHEN OTHERS THEN
     r := r || E'\n11 plantilla sin pasos: ' ||
       CASE WHEN SQLSTATE = 'TA009' THEN 'OK (TA009)' ELSE 'FALLO (' || SQLSTATE || ')' END;
   END;
 
-  -- Un asignado que no es miembro corta en el primer paso: la cadena no puede
-  -- quedar a medio crear.
+  -- Desde sql/053 el asignado que no es miembro no corta: se descarta y el
+  -- paso queda para los que pueden recibirlo.
+  PERFORM usar_plantilla(v_plant2, NULL, NULL, v_hilo_p);
+  PERFORM set_config('role', 'none', true);
+
+  SELECT count(*) INTO v_n FROM tareas t
+   WHERE t.hilo_id = v_hilo_p AND t.titulo = 'Paso NM'
+     AND (SELECT array_agg(usuario_id) FROM tareas_asignados WHERE tarea_id = t.id AND activo) = ARRAY[v_admin];
+  r := r || E'\n12 plantilla con asignado no miembro: se descarta, queda ADMIN: ' ||
+    CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO' END;
+
+  -- El paso 1 va a ADMIN (miembro) y pasa; el 2 cae en TESTER, que no es
+  -- miembro, y lo rechaza la policy. El paso 1 no puede quedar suelto.
+  -- Se exige 42501: un TA008 querría decir que TESTER no ve el hilo y el
+  -- rechazo pasó antes del paso 1, sin probar nada.
+  PERFORM set_config('request.jwt.claims',
+    '{"sub":"48b90421-a639-4637-b361-501fa7e1a1a0","role":"authenticated"}', true);
+  PERFORM set_config('role', 'authenticated', true);
   BEGIN
-    PERFORM agregar_tareas_desde_plantilla(v_plant, v_hilo_p, v_admin, ARRAY[v_admin, v_tester]);
-    PERFORM set_config('role', 'none', true);
-    r := r || E'\n12 plantilla con asignado no miembro: FALLO (no rechazo)';
+    PERFORM usar_plantilla(v_plant_t, NULL, NULL, v_hilo_pub);
+    r := r || E'\n13 la cadena rechazada en el paso 2 no dejó el 1: FALLO (no rechazo)';
   EXCEPTION WHEN OTHERS THEN
     PERFORM set_config('role', 'none', true);
-    r := r || E'\n12 plantilla con asignado no miembro: rechazo ' || SQLSTATE;
+    SELECT count(*) INTO v_n FROM tareas WHERE hilo_id = v_hilo_pub;
+    r := r || E'\n13 la cadena rechazada en el paso 2 no dejó el 1: ' ||
+      CASE WHEN v_n = 0 AND SQLSTATE = '42501' THEN 'OK'
+           ELSE 'FALLO (' || v_n || ' tareas, ' || SQLSTATE || ')' END;
   END;
-
-  SELECT count(*) INTO v_n FROM tareas WHERE hilo_id = v_hilo_p AND activo;
-  r := r || E'\n13 la cadena rechazada no dejó pasos sueltos: ' ||
-    CASE WHEN v_n = 3 THEN 'OK' ELSE 'FALLO (' || v_n || ' tareas, esperaba 3)' END;
+  PERFORM set_config('role', 'none', true);
+  PERFORM set_config('request.jwt.claims',
+    '{"sub":"015fa985-fe21-4434-b3c5-7ac78732d765","role":"authenticated"}', true);
 
   -- ============================================================
   -- desactivar_hilo
