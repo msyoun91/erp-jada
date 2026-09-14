@@ -99,6 +99,8 @@ Toda función `SECURITY DEFINER` nueva declara `SET search_path = public` y usa 
 
 Las funciones llamadas con `.rpc()` son `SECURITY INVOKER` por defecto, para que RLS siga evaluándose con la identidad de quien llama. `DEFINER` solo si hay que cruzar RLS a propósito (ej: la cascada de `sql/025`), y la autorización del acto sigue en la policy que lo dispara.
 
+**`DROP FUNCTION` + `CREATE` pierde los privilegios; `CREATE OR REPLACE` los conserva.** La función recreada nace con `EXECUTE` para `PUBLIC` — llamable sin sesión por `/rest/v1/rpc/`. La migración que la dropea (p. ej. para cambiar el tipo de retorno) repite su `REVOKE EXECUTE ... FROM PUBLIC` + `GRANT ... TO authenticated`. `get_advisors('security')` lo marca como lint 0028 (`sql/054`).
+
 ### Trampas de RLS
 
 - **Dos policies que se consultan mutuamente → `42P17 infinite recursion detected in policy`.** Si una policy tiene que mirar otra tabla RLS-protegida que puede mirar hacia atrás, el lado de vuelta va en una función `SECURITY DEFINER STABLE`, no en un `EXISTS` directo. `tsc` no lo detecta: aparece recién al usar la ruta logueado.

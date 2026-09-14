@@ -165,9 +165,11 @@ Tres funciones de búsqueda, con tres niveles de exposición distintos:
 
 | función | seguridad | qué devuelve |
 |---|---|---|
-| `obras_buscar_duplicados_empresa` | INVOKER | todo — las empresas son compartidas, no hay nada que ocultar |
+| `obras_buscar_duplicados_empresa` | DEFINER (`sql/042`) | de una empresa ajena, `razon_social` y quién la cargó. `empresa_id`, `nombre_comercial` y `localidad` vienen NULL |
 | `obras_buscar_duplicados_persona` | DEFINER | identidad mínima: nombre, apellido, empresa principal. **Nunca** teléfono ni email |
-| `obras_buscar_duplicados_obra` | DEFINER | de una obra ajena, solo el nombre del responsable. `obra_id`, `nombre`, `direccion` y `localidad` vienen NULL |
+| `obras_buscar_duplicados_obra` | DEFINER | de una obra ajena, el nombre de la obra (`sql/042`) y el del responsable. `obra_id`, `direccion` y `localidad` vienen NULL |
+
+Las tres: `EXECUTE` solo para `authenticated` (la de empresa lo recuperó en `sql/054`).
 
 El aviso ciego de obras es la salida a un conflicto real: dos vendedores no pueden cargar el mismo edificio, pero tampoco pueden ver las obras del otro. Avisa sin mostrar, y alcanza para que el vendedor vaya a preguntar.
 

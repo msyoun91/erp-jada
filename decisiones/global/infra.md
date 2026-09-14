@@ -146,7 +146,11 @@ que sigue vigente:
   evalúa sin sesión, falla con `42501 permission denied for function tiene_permiso`, un error que no
   nombra la policy. Hoy no hay lectura anónima: el proxy manda a `/login` antes.
 - **Sin tocar, a propósito:** los índices que el advisor marca sin uso (la base es joven) y *leaked
-  password protection* (toggle del dashboard de Auth, en `BACKLOG.md`).
+  password protection* (toggle del dashboard de Auth; salió de `BACKLOG.md` el 2026-09-14 sin
+  activarse).
+- **`sql/054`: `obras_buscar_duplicados_empresa` había quedado abierta a `anon`** desde `sql/042`,
+  que la recreó con `DROP` + `CREATE` sin repetir el `REVOKE`. Las 55 `SECURITY DEFINER` que el
+  advisor sigue listando para `authenticated` son las de arriba. Regla en `GUIDE_DB.md`.
 
 Los tests de RLS se corrieron como un único `DO` que termina en `RAISE EXCEPTION`: un statement es
 atómico, así que revierte aunque falle a la mitad. El detalle del barrido, en git.

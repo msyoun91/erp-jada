@@ -66,11 +66,11 @@ Postgres no deja quitar un valor de un enum, así que `sql/046` reconstruye el t
 `_old`, `CREATE TYPE` nuevo, `ALTER COLUMN ... USING` con el remapeo, `DROP TYPE _old`. Hubo que
 soltar y recrear el CHECK `obras_perdida_con_motivo` porque referencia la columna.
 
-**Esto adelanta parte de lo que `BACKLOG.md` → *La obra después de la entrega* difería a cuando
-exista presupuestos.** Ahí la dirección era bajar `estado_obra` a 3 valores y mudar `perdida` /
-`motivo_perdida` al presupuesto. Sigue pendiente: `perdida` y `terminada` no se movieron, la
-columna sigue midiendo dos relojes (el del edificio y el comercial) en un solo campo, y no hay
-`obras_unidades` ni `cantidad_unidades`. Lo único que cambió es el vocabulario del reloj comercial.
+**`estado_obra` queda en estos seis valores.** La dirección de bajarlo a tres cuando existiera
+presupuestos —mudar `perdida` / `motivo_perdida` al presupuesto y sumar `obras_unidades` y
+`cantidad_unidades` para la postventa por propietario— salió de `BACKLOG.md` el 2026-09-14 sin
+implementarse; el texto, en git (`a1989e5`). La columna sigue midiendo en un solo campo el reloj del
+edificio (`terminada`) y el comercial.
 
 La UI no necesitó tocarse: `ObraFormPanel`, `ObrasView` y las fichas leen `ESTADOS_OBRA` /
 `LABEL_ESTADO` / `BADGE_ESTADO` de `types.ts`. Badges nuevos: `en_cotizacion` → `badge-warning`,
