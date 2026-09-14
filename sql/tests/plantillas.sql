@@ -1,5 +1,6 @@
 -- Verificación de sql/053 (plantillas de sistema y privadas, vencimiento tras
--- el paso previo, siembra de asignados).
+-- el paso previo, siembra de asignados) y sql/057 (nombre de lo que crea,
+-- hilos en paralelo).
 -- NO es una migración: corre dentro de un DO que termina en RAISE EXCEPTION,
 -- así que la transacción entera se revierte. Los resultados salen en el
 -- mensaje del error. Mismo andamiaje que atomicidad_tareas.sql: `authenticated`
@@ -9,9 +10,9 @@
 -- `tareas_plantillas_sistema`; dentro de la transacción recibe la vista
 -- `tareas_plantillas` y, en el bloque de siembra, `tareas_asignar`.
 --
--- Volver a correrlo entero después de tocar sql/053.
+-- Volver a correrlo entero después de tocar sql/053 o sql/057.
 --
--- Último resultado: 22/22.
+-- Último resultado: 27/27.
 
 DO $test$
 DECLARE
@@ -262,6 +263,54 @@ BEGIN
       OR (t.titulo = 'Suelta' AND t.proyecto_id = v_proy AND t.hilo_id IS NULL));
   r := r || E'\n20 hilo con cadena (paso 2 para TESTER) + tarea suelta en el proyecto: ' ||
     CASE WHEN v_n = 3 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+
+  -- ============================================================
+  -- sql/057: nombre de lo que crea e hilos en paralelo (sigue ADMIN)
+  -- ============================================================
+  PERFORM set_config('role', 'authenticated', true);
+  v_id := guardar_plantilla(NULL, 'PL paralela', NULL, 'privada', 'hilo', 'privado', '{}',
+    '[]'::jsonb, '[{"titulo":"P-a"},{"titulo":"P-b","vence_dias":2,"vence_tras_previo":true}]'::jsonb,
+    NULL, NULL, 'Hilo paralelo creado', false);
+  PERFORM usar_plantilla(v_id, NULL, NULL, NULL);
+  PERFORM usar_plantilla(v_id, 'Hilo pisado', NULL, NULL);
+  PERFORM set_config('role', 'none', true);
+
+  SELECT count(*) INTO v_n FROM tareas t JOIN tareas_hilos h ON h.id = t.hilo_id
+   WHERE h.titulo = 'Hilo paralelo creado' AND t.activo AND t.paso_anterior_id IS NULL;
+  r := r || E'\n21 hilo en paralelo: dos pasos sin anterior, en el hilo que nombra titulo_creado: ' ||
+    CASE WHEN v_n = 2 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+
+  SELECT count(*) INTO v_n FROM tareas t JOIN tareas_hilos h ON h.id = t.hilo_id
+   WHERE h.titulo = 'Hilo paralelo creado' AND t.titulo = 'P-b'
+     AND t.fecha_vencimiento = current_date + 2 AND t.vence_dias_tras_previo IS NULL;
+  r := r || E'\n22 sin cadena, "tras el anterior" vence desde la creación: ' ||
+    CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO' END;
+
+  SELECT count(*) INTO v_n FROM tareas_hilos WHERE titulo = 'Hilo pisado';
+  r := r || E'\n23 el título escrito en Usar pisa a titulo_creado: ' ||
+    CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+
+  PERFORM set_config('role', 'authenticated', true);
+  v_id := guardar_plantilla(NULL, 'PL proyecto mixto', NULL, 'privada', 'proyecto', 'privado', '{}',
+    '[{"titulo":"Cadena","pasos":[{"titulo":"M-a"},{"titulo":"M-b"}]},{"titulo":"Paralelo","encadenada":false,"pasos":[{"titulo":"M-c"},{"titulo":"M-d"}]}]'::jsonb,
+    '[]'::jsonb, NULL, NULL, NULL, false);
+  PERFORM usar_plantilla(v_id, NULL, NULL, NULL);
+  v_pl := guardar_plantilla(NULL, 'PL tarea con título', NULL, 'privada', 'tarea', 'privado', '{}',
+    '[]'::jsonb, '[{"titulo":"T"}]'::jsonb, NULL, NULL, 'No aplica', true);
+  PERFORM set_config('role', 'none', true);
+
+  SELECT id INTO v_proy FROM tareas_proyectos WHERE nombre = 'PL proyecto mixto';
+  SELECT count(*) INTO v_n FROM tareas t JOIN tareas_hilos h ON h.id = t.hilo_id
+   WHERE t.activo AND h.proyecto_id = v_proy AND (
+         (t.titulo = 'M-b' AND h.titulo = 'Cadena' AND t.paso_anterior_id IS NOT NULL)
+      OR (t.titulo IN ('M-c', 'M-d') AND h.titulo = 'Paralelo' AND t.paso_anterior_id IS NULL));
+  r := r || E'\n24 proyecto sin titulo_creado: lleva el nombre, un hilo encadenado y otro en paralelo: ' ||
+    CASE WHEN v_n = 3 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+
+  SELECT count(*) INTO v_n FROM tareas_plantillas
+   WHERE (id = v_id AND encadenada) OR (id = v_pl AND titulo_creado IS NULL);
+  r := r || E'\n25 fuera de su tipo se guardan neutros (proyecto encadenada, tarea sin titulo_creado): ' ||
+    CASE WHEN v_n = 2 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   RAISE EXCEPTION 'RESULTADO:%', r;
 END

@@ -1,4 +1,5 @@
--- Verificación de sql/055 (plantillas disparadas por el estado de una obra).
+-- Verificación de sql/055 (plantillas disparadas por el estado de una obra) y
+-- sql/056 (aviso a quien dispara de que la plantilla corrió).
 -- NO es una migración: corre dentro de un DO que termina en RAISE EXCEPTION,
 -- así que la transacción entera se revierte. Los resultados salen en el
 -- mensaje del error. Mismo andamiaje que plantillas.sql: `authenticated` +
@@ -8,9 +9,9 @@
 -- obras_ver/crear/editar, y sin tareas_asignar, tareas_proyectos_crear ni
 -- tareas_plantillas_sistema. ADMIN tiene todo.
 --
--- Volver a correrlo entero después de tocar sql/055.
+-- Volver a correrlo entero después de tocar sql/055 o sql/056.
 --
--- Último resultado: 29/29.
+-- Último resultado: 34/34.
 
 DO $test$
 DECLARE
@@ -24,6 +25,7 @@ DECLARE
   v_obra_a uuid;
   v_t      uuid;
   v_n      int;
+  v_m      int;
   r        text := '';
 BEGIN
   SET CONSTRAINTS ALL IMMEDIATE;
@@ -92,7 +94,7 @@ BEGIN
 
   PERFORM set_config('role', 'authenticated', true);
   v_priv := guardar_plantilla(NULL, 'ZZ Visitar {nombre}', NULL, 'privada', 'hilo', 'privado', '{}', '[]'::jsonb,
-    '[{"titulo":"Visitar {nombre}"}]'::jsonb, 'obra', 'en_ejecucion');
+    '[{"titulo":"Visitar {nombre}"},{"titulo":"Informar {nombre}"}]'::jsonb, 'obra', 'en_ejecucion');
 
   BEGIN
     INSERT INTO tareas_vinculos (tarea_id, ente, registro_id, plantilla_id)
@@ -136,13 +138,19 @@ BEGIN
     CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   SELECT count(*) INTO v_n FROM tareas_vinculos WHERE ente = 'obra' AND registro_id = v_obra;
-  r := r || E'\n12 un vínculo por tarea generada: ' || CASE WHEN v_n = 2 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n12 un vínculo por tarea generada: ' || CASE WHEN v_n = 3 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+
+  SELECT count(*) INTO v_n FROM usuario_notificaciones
+   WHERE usuario_id = v_tester AND tipo = 'plantilla_disparada' AND entidad = 'plantilla'
+     AND entidad_id IN (v_sis, v_priv) AND actor_id IS NULL;
+  r := r || E'\n13 un aviso por plantilla que corrió, no por tarea (la de hilo creó dos): ' ||
+    CASE WHEN v_n = 2 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   PERFORM set_config('role', 'authenticated', true);
   UPDATE obras SET estado = 'en_ejecucion', observaciones = 'x' WHERE id = v_obra;
   PERFORM set_config('role', 'none', true);
   SELECT count(*) INTO v_n FROM tareas WHERE titulo = 'Cobrar obra ZZ Disparo 4821';
-  r := r || E'\n13 editar sin cambiar el estado no dispara: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n14 editar sin cambiar el estado no dispara: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   UPDATE tareas SET estado = 'completada' WHERE titulo = 'Cobrar obra ZZ Disparo 4821';
   PERFORM set_config('role', 'authenticated', true);
@@ -150,7 +158,7 @@ BEGIN
   UPDATE obras SET estado = 'en_ejecucion' WHERE id = v_obra;
   PERFORM set_config('role', 'none', true);
   SELECT count(*) INTO v_n FROM tareas WHERE titulo = 'Cobrar obra ZZ Disparo 4821';
-  r := r || E'\n14 completada no se duplica al ir y volver de estado: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n15 completada no se duplica al ir y volver de estado: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   UPDATE tareas SET activo = false WHERE titulo = 'Cobrar obra ZZ Disparo 4821';
   PERFORM set_config('role', 'authenticated', true);
@@ -158,9 +166,16 @@ BEGIN
   UPDATE obras SET estado = 'en_ejecucion' WHERE id = v_obra;
   PERFORM set_config('role', 'none', true);
   SELECT count(*) INTO v_n FROM tareas WHERE titulo = 'Cobrar obra ZZ Disparo 4821' AND activo;
-  r := r || E'\n15 archivado lo que generó, vuelve a disparar: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n16 archivado lo que generó, vuelve a disparar: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
   SELECT count(*) INTO v_n FROM tareas WHERE titulo = 'Visitar ZZ Disparo 4821';
-  r := r || E'\n16 la otra plantilla, con su tarea activa, no se repite: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n17 la otra plantilla, con su tarea activa, no se repite: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+
+  SELECT count(*) FILTER (WHERE entidad_id = v_sis), count(*) FILTER (WHERE entidad_id = v_priv)
+    INTO v_n, v_m
+    FROM usuario_notificaciones
+   WHERE usuario_id = v_tester AND tipo = 'plantilla_disparada';
+  r := r || E'\n18 el aviso sale solo cuando la plantilla corrió de verdad: ' ||
+    CASE WHEN v_n = 2 AND v_m = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ', ' || v_m || ')' END;
 
   -- ============================================================
   -- No puede correr: el estado cambia igual y avisa
@@ -178,12 +193,15 @@ BEGIN
   PERFORM set_config('role', 'none', true);
 
   SELECT count(*) INTO v_n FROM obras WHERE id = v_obra AND estado = 'en_cotizacion';
-  r := r || E'\n17 sin tareas_proyectos_crear el cambio de estado pasa igual: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO' END;
+  r := r || E'\n19 sin tareas_proyectos_crear el cambio de estado pasa igual: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO' END;
   SELECT count(*) INTO v_n FROM usuario_notificaciones
    WHERE usuario_id = v_tester AND tipo = 'plantilla_fallida' AND entidad = 'plantilla' AND entidad_id = v_proy;
-  r := r || E'\n18 ... y a quien la activó le llega el aviso: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n20 ... y a quien la activó le llega el aviso: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  SELECT count(*) INTO v_n FROM usuario_notificaciones
+   WHERE usuario_id = v_tester AND tipo = 'plantilla_disparada' AND entidad_id = v_proy;
+  r := r || E'\n21 ... y no el de que corrió: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
   SELECT count(*) INTO v_n FROM tareas_proyectos WHERE nombre = 'ZZ Proyecto ZZ Disparo 4821';
-  r := r || E'\n19 ... sin dejar nada a medias: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n22 ... sin dejar nada a medias: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   -- ============================================================
   -- Quien sí puede asignar: la tarea le llega al asignado, con aviso
@@ -201,15 +219,18 @@ BEGIN
   SELECT id INTO v_t FROM tareas WHERE titulo = 'Avisar ZZ Disparo admin 7730' AND activo AND responsable_id = v_tester;
   SELECT count(*) INTO v_n FROM usuario_notificaciones
    WHERE usuario_id = v_tester AND tipo = 'tarea_asignada' AND entidad_id = v_t AND actor_id = v_admin;
-  r := r || E'\n20 la tarea de un disparo le avisa a su asignado: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n23 la tarea de un disparo le avisa a su asignado: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
   SELECT count(*) INTO v_n FROM tareas WHERE titulo = 'Cobrar obra ZZ Disparo admin 7730';
-  r := r || E'\n21 la de sistema no corre para quien no la activó: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n24 la de sistema no corre para quien no la activó: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  SELECT count(*) INTO v_n FROM usuario_notificaciones
+   WHERE usuario_id = v_admin AND tipo = 'plantilla_disparada' AND entidad_id = v_aviso;
+  r := r || E'\n25 quien dispara recibe el aviso aunque la tarea sea de otro: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   UPDATE tareas SET activo = false WHERE id = v_t;
   UPDATE obras SET estado = 'terminada' WHERE id = v_obra_a;
   UPDATE obras SET estado = 'idea' WHERE id = v_obra_a;
   SELECT count(*) INTO v_n FROM tareas WHERE titulo = 'Avisar ZZ Disparo admin 7730' AND activo;
-  r := r || E'\n22 un cambio de estado fuera de authenticated no dispara: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n26 un cambio de estado fuera de authenticated no dispara: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   -- ============================================================
   -- Campanita: guardar y archivar
@@ -225,28 +246,33 @@ BEGIN
 
   SELECT count(*) INTO v_n FROM usuario_notificaciones
    WHERE usuario_id = v_tester AND entidad_id = v_sis AND tipo IN ('plantilla_modificada', 'plantilla_archivada');
-  r := r || E'\n23 guardar y archivar una de sistema le avisa a quien la activó: ' || CASE WHEN v_n = 2 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n27 guardar y archivar una de sistema le avisa a quien la activó: ' || CASE WHEN v_n = 2 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
   SELECT count(*) INTO v_n FROM usuario_notificaciones WHERE entidad_id = v_sis AND usuario_id = v_admin;
-  r := r || E'\n24 ... y no a quien la guardó: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
-  SELECT count(*) INTO v_n FROM usuario_notificaciones WHERE entidad_id = v_aviso;
-  r := r || E'\n25 una privada no avisa: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n28 ... y no a quien la guardó: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  SELECT count(*) INTO v_n FROM usuario_notificaciones
+   WHERE entidad_id = v_aviso AND tipo IN ('plantilla_modificada', 'plantilla_archivada');
+  r := r || E'\n29 una privada no avisa: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_tester, 'role', 'authenticated')::text, true);
   PERFORM set_config('role', 'authenticated', true);
   SELECT count(*) INTO v_n FROM notificaciones_listar(200) l
    WHERE l.destino_id = v_sis AND l.destino IS NULL AND l.tipo IN ('plantilla_modificada', 'plantilla_archivada');
-  r := r || E'\n26 la bandeja muestra los dos avisos, sin destino porque está archivada: ' || CASE WHEN v_n = 2 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n30 la bandeja muestra los dos avisos, sin destino porque está archivada: ' || CASE WHEN v_n = 2 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
   SELECT count(*) INTO v_n FROM notificaciones_listar(200) l
    WHERE l.destino_id = v_proy AND l.destino = 'plantilla' AND l.tipo = 'plantilla_fallida';
-  r := r || E'\n27 el aviso de fallo lleva a la plantilla: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n31 el aviso de fallo lleva a la plantilla: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  SELECT count(*) INTO v_n FROM notificaciones_listar(200) l
+   WHERE l.destino_id IN (v_sis, v_priv) AND l.destino = 'tareas' AND l.tipo = 'plantilla_disparada';
+  r := r || E'\n32 el de que corrió lleva a Tareas, aunque la plantilla esté archivada: ' || CASE WHEN v_n = 3 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   -- Las dos DEFINER que llama el disparo tienen EXECUTE para `authenticated`:
   -- fuera de un trigger no hacen nada.
   SELECT count(*) INTO v_n FROM usuario_notificaciones WHERE usuario_id = v_tester;
-  PERFORM notificar_plantilla_fallida(v_sis);
+  PERFORM notificar_disparo(v_sis, true);
+  PERFORM notificar_disparo(v_sis, false);
   SELECT count(*) - v_n INTO v_n FROM usuario_notificaciones WHERE usuario_id = v_tester;
-  r := r || E'\n28 por RPC, notificar_plantilla_fallida no escribe nada: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
-  r := r || E'\n29 por RPC, plantilla_disparada contesta false: ' ||
+  r := r || E'\n33 por RPC, notificar_disparo no escribe nada: ' || CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  r := r || E'\n34 por RPC, plantilla_disparada contesta false: ' ||
     CASE WHEN NOT plantilla_disparada(v_priv, 'obra', v_obra) THEN 'OK' ELSE 'FALLO' END;
   PERFORM set_config('role', 'none', true);
 
