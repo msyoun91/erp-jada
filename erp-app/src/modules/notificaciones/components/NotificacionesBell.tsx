@@ -3,11 +3,14 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
+  Archive,
   ArrowRightLeft,
   Bell,
   CalendarClock,
   CheckCircle2,
   ListTodo,
+  Pencil,
   XCircle,
   type LucideIcon,
 } from "lucide-react";
@@ -24,6 +27,9 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   alta_rechazada: XCircle,
   obra_transferida: ArrowRightLeft,
   tarea_asignada: ListTodo,
+  plantilla_modificada: Pencil,
+  plantilla_archivada: Archive,
+  plantilla_fallida: AlertTriangle,
 };
 
 const TEXTO: Record<TipoNotificacion, string> = {
@@ -31,6 +37,9 @@ const TEXTO: Record<TipoNotificacion, string> = {
   alta_rechazada: "Rechazaron el alta de",
   obra_transferida: "Te transfirieron",
   tarea_asignada: "Te asignaron",
+  plantilla_modificada: "Modificaron la plantilla",
+  plantilla_archivada: "Archivaron la plantilla",
+  plantilla_fallida: "No pudo correr tu plantilla",
 };
 
 // Los pares `-text` y no `text-success`/`text-error`: esos son hex fijos y en
@@ -41,16 +50,21 @@ const COLOR: Record<TipoNotificacion, string> = {
   alta_rechazada: "text-error-text",
   obra_transferida: "text-brand-500",
   tarea_asignada: "text-brand-500",
+  plantilla_modificada: "text-brand-500",
+  plantilla_archivada: "text-warning-text",
+  plantilla_fallida: "text-error-text",
 };
 
 // La Lista abre el panel por estado, no por URL: `?tarea=` es leído una sola
 // vez por `TareasListaView`, que abre el panel de esa tarea si la encuentra
-// entre las visibles y limpia el parámetro.
+// entre las visibles y limpia el parámetro. `?plantilla=` igual, en
+// `PlantillasView`: filtra la lista por esa plantilla.
 const RUTA: Record<string, (id: string) => string> = {
   obra: (id) => `/obras/${id}`,
   empresa: (id) => `/obras/empresas/${id}`,
   persona: (id) => `/obras/personas/${id}`,
   tarea: (id) => `/tareas?tarea=${id}`,
+  plantilla: (id) => `/tareas/plantillas?plantilla=${id}`,
 };
 
 export function NotificacionesBell({
@@ -71,7 +85,7 @@ export function NotificacionesBell({
     setAbierto(false);
     startTransition(async () => {
       if (!n.leida) await marcarLeida(n.id);
-      const ruta = RUTA[n.destino];
+      const ruta = n.destino ? RUTA[n.destino] : undefined;
       if (ruta) router.push(ruta(n.destino_id));
     });
   }

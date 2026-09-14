@@ -7,6 +7,7 @@ import {
   puedeVerPlantillas,
 } from "@/modules/tareas/permissions";
 import {
+  getEntes,
   getMiembrosPorProyecto,
   getPlantillas,
   getProyectos,
@@ -24,6 +25,7 @@ export default async function TareasPlantillasPage() {
 
   const [
     plantillas,
+    entes,
     usuarios,
     proyectos,
     miembrosPorProyecto,
@@ -34,6 +36,7 @@ export default async function TareasPlantillasPage() {
     crearProyecto,
   ] = await Promise.all([
     getPlantillas(),
+    getEntes(),
     getUsuariosParaAsignar(),
     getProyectos(),
     getMiembrosPorProyecto(),
@@ -55,7 +58,12 @@ export default async function TareasPlantillasPage() {
         puedeAsignar: asignar,
       }}
     >
-      <PlantillasView plantillas={plantillas} puedeSistema={sistema} puedeCrearProyecto={crearProyecto} />
+      <PlantillasView
+        plantillas={plantillas}
+        entes={entes}
+        puedeSistema={sistema}
+        puedeCrearProyecto={crearProyecto}
+      />
     </TareasContextoProvider>
   );
 }

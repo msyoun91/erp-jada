@@ -6,10 +6,10 @@ tablas, columnas o enums, actualizar ese archivo y `database.types.ts`.
 
 | Archivo | Contenido |
 |---|---|
-| `core.md` | `usuarios`, `submodulos`, `usuario_submodulos`, `usuario_tutorial`, `usuario_widgets`, `tiene_permiso()` |
+| `core.md` | `usuarios`, `submodulos`, `usuario_submodulos`, `entes`, `usuario_tutorial`, `usuario_widgets`, `tiene_permiso()` |
 | `tareas.md` | proyectos, miembros, hilos, tareas, asignados, notas, plantillas, eventos · helpers de visibilidad · triggers de pasos y membresía · funciones RPC multi-tabla (`sql/023`–`025`) · submódulos |
 | `obras.md` | modelo de visibilidad · obras, empresas, personas, vínculos, referentes, transferencias, compartidos · duplicados, buscador, auditoría, códigos `OB`, aprobaciones · submódulos |
-| `notificaciones.md` | `usuario_notificaciones`, `notificar()`, sus tres triggers y las funciones de lectura |
+| `notificaciones.md` | `usuario_notificaciones`, `notificar()`, sus triggers (también el de plantillas de `sql/055`) y las funciones de lectura |
 
 Proyecto Supabase: `qbpudocgdvpeadcyyhfh`. Regenerar tipos tras cada migración:
 `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public > erp-app/src/lib/supabase/database.types.ts`

@@ -37,3 +37,37 @@ Pedido de usuario, en dos fases acordadas: esta (plantillas completas, usadas a 
 - "Usar" de una plantilla de proyecto se deshabilita sin `tareas_proyectos_crear` y lo dice en texto (en touch no hay tooltip).
 
 **Tests** (`sql/tests/`): `plantillas.sql` 22/22 (nuevo); `atomicidad_tareas.sql` 15/15 — los casos 09-13 pasaron a `usar_plantilla`: el 12 cambia de "rechazo" a "se descarta y queda ADMIN", y el 13 prueba que una cadena rechazada en el paso 2 no deja el 1, exigiendo `42501` (un `TA008` querría decir que falló antes de empezar); `atomicidad_edicion_tareas.sql` 18/18; `rls_miembros_asignables.sql` sin cambios de resultado con la siembra (en todos sus casos el creador es también responsable).
+
+## Plantillas disparadas por estado (`sql/055`)
+
+Fase 2 de la anterior, decidida con el usuario el 2026-09-14. Un solo ente para probar la idea: la obra (su ejemplo: pasa a en ejecución → "Cobrar obra X").
+
+**El disparador es genérico: un registro entra a un estado.** La plantilla elige ente y estado destino (`disparo_ente`, `disparo_estado`), sin estado de origen: de `idea` directo a `en_ejecucion` también hay que cobrarla, y crear la obra ya en ese estado cuenta como entrar. Cada módulo registra su ente en `entes` (módulo, submódulo que pide, enum de estados, datos citables, ruta) y cuelga un trigger de una línea sobre su columna de estado. Obras no suma funciones ni botones.
+
+**Corre como quien cambia el estado, si la tiene activada.** `disparar_plantillas()` es `INVOKER` y llama a `usar_plantilla`, igual que usarla a mano: las tareas nacen con su RLS. Por eso no hay excepción de autorización, y la activación es por usuario (`tareas_plantillas_activaciones`): la de sistema arranca apagada, la privada prendida para su dueño. Descartado: "la autoridad pasa a ser la plantilla", con `SECURITY DEFINER` revalidando.
+
+- **Guarda de `current_user`.** Si el cambio de estado lo hiciera una función DEFINER, `usar_plantilla` correría como `postgres`, con BYPASSRLS. Ahí no corre: mejor una plantilla que no dispara que una que crea lo que su usuario no puede.
+- **Cada plantilla en su bloque `EXCEPTION`.** Si una no puede correr (perdió un permiso, quedó mal armada) se revierte lo suyo, el estado cambia igual y la campanita avisa (`plantilla_fallida`). Una plantilla mal configurada no traba una venta.
+- **Costo aceptado:** la organización no puede garantizar una tarea. "Cobrar obra X" llega a Cobranzas solo si quien cambia el estado la activó y tiene `tareas_asignar`; si no, le queda a él con la nota de `sql/053`.
+
+**Una vez para siempre por (plantilla, registro), salvo archivadas.** `tareas_vinculos` guarda qué tareas salieron de cada disparo y `plantilla_disparada` mira si queda alguna activa. Completadas y canceladas siguen activas, así que no la reabren; archivar lo generado (alcanza con el hilo o el proyecto, por cascada) la deja volver a disparar en el próximo cambio de estado real. Es DEFINER: quien cambia el estado puede no ver lo que generó otro.
+
+**Los vínculos solo los escribe un disparo** (`WITH CHECK (pg_trigger_depth() > 0)`). Un vínculo inventado —(plantilla, obra) con una tarea cualquiera— bloquearía el disparo real para todos. Las dos DEFINER que llama el disparo tienen EXECUTE para `authenticated` y, por la misma guarda, fuera de un trigger no hacen nada.
+
+**Con disparador no se usa a mano, y sin disparador no se dispara** (`TA013`): los textos citan `{nombre}` y a mano quedarían literales. En la vista, "Usar" se reemplaza por el interruptor "Activada".
+
+**El texto se copia; el link respeta permisos.** "Cobrar obra {nombre}" se rellena al crear, así que el asignado lo lee aunque no vea la obra. Nunca contacto como dato: `entes.datos` de la obra es `{nombre}`. El link va por `origen_app`/`origen_punto`, que el panel de la tarea ya mostraba ("Generado por obras — ir"). Elegido por el usuario frente a chips en el panel, que pedían resolver etiqueta y ruta por ente para un solo ente.
+
+**Se ve y se arma solo con el submódulo del ente** (confirmado por el usuario). Las policies de `tareas_plantillas` hacen EXISTS contra `entes`, cuya RLS es `tiene_permiso(submodulo)`: quien no ve obras no ve "Cobrar obra {nombre}", no la activa (nunca cambia el estado de una obra) y no arma otra (`TA012`).
+
+**La campanita avisa cuando guardan o archivan una plantilla de sistema que tenés activada** (`plantilla_modificada`, `plantilla_archivada`). Guardar sin cambios también avisa: `guardar_plantilla` reemplaza los pasos y no sabe si algo cambió. El aviso de una archivada sale sin destino, porque la vista no lista archivadas. `?plantilla=` abre la vista filtrada por esa plantilla y se limpia de la URL, mismo patrón que `?tarea=`.
+
+**Las asignaciones de un disparo sí avisan.** `notificar_tarea_asignada` descartaba todo lo que naciera adentro de un trigger (por la copia de `generar_recurrencia`); el disparo marca la transacción con `tareas.disparo` y el filtro lo deja pasar.
+
+**Las etiquetas de estado de obra suben a `lib/entes.ts`**: Tareas las muestra en el editor y en la lista. `modules/obras/types.ts` las re-exporta como `LABEL_ESTADO`, así que obras no cambió. La base sabe qué entes hay; cómo se nombran lo sabe la UI (`ENTES`).
+
+**Una obra congelada por posible duplicado dispara igual.** El trigger es genérico y no sabe de `pendiente`; si el alta se rechaza, lo generado se archiva a mano. Esperar la aprobación haría disparar a quien aprueba, no a quien la cargó.
+
+**Supera** *Notificaciones: infra sin submódulo, y sin motor* (`decisiones/global/infra.md`): esto sí es un motor de reglas, chico.
+
+**Tests:** `sql/tests/plantillas_disparo.sql` 29/29 (nuevo). `plantillas.sql` 22/22 y `atomicidad_tareas.sql` 15/15 sin tocar: los parámetros nuevos de `guardar_plantilla` y `usar_plantilla` tienen DEFAULT, así que las llamadas viejas siguen valiendo.

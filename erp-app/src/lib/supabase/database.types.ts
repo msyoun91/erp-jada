@@ -14,6 +14,45 @@ export type Database = {
   };
   public: {
     Tables: {
+      entes: {
+        Row: {
+          activo: boolean;
+          codigo: string;
+          created_at: string;
+          datos: string[];
+          estados: unknown;
+          id: string;
+          modulo: string;
+          ruta: string;
+          submodulo: string;
+          updated_at: string;
+        };
+        Insert: {
+          activo?: boolean;
+          codigo: string;
+          created_at?: string;
+          datos?: string[];
+          estados: unknown;
+          id?: string;
+          modulo: string;
+          ruta: string;
+          submodulo: string;
+          updated_at?: string;
+        };
+        Update: {
+          activo?: boolean;
+          codigo?: string;
+          created_at?: string;
+          datos?: string[];
+          estados?: unknown;
+          id?: string;
+          modulo?: string;
+          ruta?: string;
+          submodulo?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       obras: {
         Row: {
           activo: boolean;
@@ -1270,6 +1309,8 @@ export type Database = {
           creado_por: string;
           created_at: string;
           descripcion: string | null;
+          disparo_ente: string | null;
+          disparo_estado: string | null;
           id: string;
           miembros: string[];
           nombre: string;
@@ -1283,6 +1324,8 @@ export type Database = {
           creado_por: string;
           created_at?: string;
           descripcion?: string | null;
+          disparo_ente?: string | null;
+          disparo_estado?: string | null;
           id?: string;
           miembros?: string[];
           nombre: string;
@@ -1296,6 +1339,8 @@ export type Database = {
           creado_por?: string;
           created_at?: string;
           descripcion?: string | null;
+          disparo_ente?: string | null;
+          disparo_estado?: string | null;
           id?: string;
           miembros?: string[];
           nombre?: string;
@@ -1307,6 +1352,55 @@ export type Database = {
           {
             foreignKeyName: "tareas_plantillas_creado_por_fkey";
             columns: ["creado_por"];
+            isOneToOne: false;
+            referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tareas_plantillas_disparo_ente_fkey";
+            columns: ["disparo_ente"];
+            isOneToOne: false;
+            referencedRelation: "entes";
+            referencedColumns: ["codigo"];
+          },
+        ];
+      };
+      tareas_plantillas_activaciones: {
+        Row: {
+          activo: boolean;
+          created_at: string;
+          id: string;
+          plantilla_id: string;
+          updated_at: string;
+          usuario_id: string;
+        };
+        Insert: {
+          activo?: boolean;
+          created_at?: string;
+          id?: string;
+          plantilla_id: string;
+          updated_at?: string;
+          usuario_id: string;
+        };
+        Update: {
+          activo?: boolean;
+          created_at?: string;
+          id?: string;
+          plantilla_id?: string;
+          updated_at?: string;
+          usuario_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tareas_plantillas_activaciones_plantilla_id_fkey";
+            columns: ["plantilla_id"];
+            isOneToOne: false;
+            referencedRelation: "tareas_plantillas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tareas_plantillas_activaciones_usuario_id_fkey";
+            columns: ["usuario_id"];
             isOneToOne: false;
             referencedRelation: "usuarios";
             referencedColumns: ["id"];
@@ -1500,6 +1594,61 @@ export type Database = {
             columns: ["usuario_id"];
             isOneToOne: false;
             referencedRelation: "usuarios";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tareas_vinculos: {
+        Row: {
+          activo: boolean;
+          created_at: string;
+          ente: string;
+          id: string;
+          plantilla_id: string;
+          registro_id: string;
+          tarea_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          activo?: boolean;
+          created_at?: string;
+          ente: string;
+          id?: string;
+          plantilla_id: string;
+          registro_id: string;
+          tarea_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          activo?: boolean;
+          created_at?: string;
+          ente?: string;
+          id?: string;
+          plantilla_id?: string;
+          registro_id?: string;
+          tarea_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tareas_vinculos_ente_fkey";
+            columns: ["ente"];
+            isOneToOne: false;
+            referencedRelation: "entes";
+            referencedColumns: ["codigo"];
+          },
+          {
+            foreignKeyName: "tareas_vinculos_plantilla_id_fkey";
+            columns: ["plantilla_id"];
+            isOneToOne: false;
+            referencedRelation: "tareas_plantillas";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tareas_vinculos_tarea_id_fkey";
+            columns: ["tarea_id"];
+            isOneToOne: false;
+            referencedRelation: "tareas";
             referencedColumns: ["id"];
           },
         ];
@@ -1784,6 +1933,8 @@ export type Database = {
         Args: {
           p_alcance: Database["public"]["Enums"]["alcance_plantilla"];
           p_descripcion: string;
+          p_disparo_ente?: string;
+          p_disparo_estado?: string;
           p_hilos: Json;
           p_id: string;
           p_miembros: string[];
@@ -1823,6 +1974,10 @@ export type Database = {
           p_tipo: Database["public"]["Enums"]["tipo_notificacion"];
           p_usuario_id: string;
         };
+        Returns: undefined;
+      };
+      notificar_plantilla_fallida: {
+        Args: { p_plantilla_id: string };
         Returns: undefined;
       };
       obras_array_sin_duplicados: { Args: { a: unknown }; Returns: boolean };
@@ -2245,8 +2400,16 @@ export type Database = {
         Args: { p_plantilla_id: string };
         Returns: boolean;
       };
+      plantilla_disparada: {
+        Args: { p_ente: string; p_plantilla_id: string; p_registro_id: string };
+        Returns: boolean;
+      };
       puede_ver_hilo: { Args: { p_hilo_id: string }; Returns: boolean };
       reactivar_posponer_vencidos: { Args: never; Returns: undefined };
+      rellenar_datos: {
+        Args: { p_datos: Json; p_texto: string };
+        Returns: string;
+      };
       reasignar_tarea: {
         Args: {
           p_asignados: string[];
@@ -2262,9 +2425,12 @@ export type Database = {
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean };
       usar_plantilla: {
         Args: {
+          p_datos?: Json;
+          p_ente?: string;
           p_hilo_id: string;
           p_plantilla_id: string;
           p_proyecto_id: string;
+          p_registro_id?: string;
           p_titulo: string;
         };
         Returns: number;
@@ -2347,7 +2513,10 @@ export type Database = {
         | "alta_aprobada"
         | "alta_rechazada"
         | "obra_transferida"
-        | "tarea_asignada";
+        | "tarea_asignada"
+        | "plantilla_modificada"
+        | "plantilla_archivada"
+        | "plantilla_fallida";
       tipo_obra:
         | "edificio"
         | "casa"
@@ -2570,6 +2739,9 @@ export const Constants = {
         "alta_rechazada",
         "obra_transferida",
         "tarea_asignada",
+        "plantilla_modificada",
+        "plantilla_archivada",
+        "plantilla_fallida",
       ],
       tipo_obra: [
         "edificio",

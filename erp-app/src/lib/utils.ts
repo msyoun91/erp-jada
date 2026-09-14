@@ -52,6 +52,8 @@ const MENSAJES_ERROR: Record<string, string> = {
   TA009: "La plantilla no tiene pasos",
   TA010: "La plantilla no corresponde a su tipo — una de tarea lleva un solo paso y solo una de proyecto lleva hilos",
   TA011: "Una plantilla de proyecto crea su propio proyecto — usala desde Plantillas",
+  TA012: "El disparador no es válido — elegí un estado del módulo, y necesitás tener acceso a ese módulo",
+  TA013: "Esta plantilla se crea sola cuando cambia el estado — no se usa a mano",
   email_exists: "Ese email ya está registrado",
   weak_password: "La contraseña es demasiado débil",
   invalid_credentials: "Email o contraseña incorrectos",

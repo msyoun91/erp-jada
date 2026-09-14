@@ -1,6 +1,6 @@
 # Módulo tareas
 
-Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053` (más las que cita cada sección) — corridas en Supabase vía MCP.
+Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055` (más las que cita cada sección) — corridas en Supabase vía MCP.
 
 **Regla de visibilidad (`sql/013`): se ve lo asignado y lo público, nada más** — `creado_por` no autoriza. Excepciones: `tareas_gestionar_ajenas` y `tareas_hilos.responsable_id`. Los UPDATE están alineados con los SELECT. El porqué, en `decisiones/tareas/visibilidad.md`.
 
@@ -116,6 +116,8 @@ Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados) y `proyecto` (proyecto
 | visibilidad | enum `visibilidad` | default `privado` — la del proyecto que crea una de tipo `proyecto` |
 | miembros | uuid[] | default `{}`, CHECK solo en tipo `proyecto`. Array y no tabla: es configuración que se copia al usar, no una relación viva. Al usarla se descartan los inactivos y se suma quien la usa |
 | creado_por | uuid FK → usuarios | dueño de la privada. Fuera del `GRANT UPDATE` |
+| disparo_ente | text FK → entes(codigo), nullable | `sql/055` — el ente cuyo estado la dispara (`core.md`). NULL = se usa a mano |
+| disparo_estado | text, nullable | `sql/055` — estado destino. CHECK `tareas_plantillas_disparo_completo`: los dos o ninguno. `guardar_plantilla` valida que exista en el enum del ente (`TA012`) |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
@@ -147,6 +149,35 @@ Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados) y `proyecto` (proyecto
 **RLS.** `tareas_plantillas_select`: vista `tareas_plantillas` y (`alcance = 'sistema'` o dueño). INSERT: dueño + vista, y `alcance = 'privada'` o la función. UPDATE (tabla y los dos hijos): `puede_gestionar_plantilla(id)` — función `SECURITY INVOKER STABLE` (la de sistema, con la función; la privada, su dueño); no recursa porque las policies de `tareas_plantillas` no miran a los hijos. SELECT de los hijos: `EXISTS` sobre `tareas_plantillas` (su RLS decide). INSERT/UPDATE de items suma la regla de `sql/014`: asignados o responsable ajenos exigen `tareas_asignar`.
 
 **Escritura por función.** `guardar_plantilla(p_id, p_nombre, p_descripcion, p_alcance, p_tipo, p_visibilidad, p_miembros, p_hilos jsonb, p_pasos jsonb) → uuid` crea o edita (`p_id` NULL = crear; `p_alcance` solo se lee al crear). Guardar **reemplaza**: desactiva los hilos y pasos activos e inserta los nuevos — nada referencia a un paso de plantilla. Valida la forma según el tipo (`TA010`) y que haya pasos (`TA009`). `usar_plantilla(p_plantilla_id, p_titulo, p_proyecto_id, p_hilo_id) → int` — ver la tabla de escrituras multi-tabla.
+
+**Disparador (`sql/055`).** Con `disparo_ente`, la plantilla no se usa a mano: corre sola cuando un registro de ese ente entra a `disparo_estado`, para quien lo cambió y la tiene activada. Las tres policies de `tareas_plantillas` suman `disparo_ente IS NULL OR EXISTS (entes)`; la RLS de `entes` pide su submódulo, así que sin `obras_ver` una plantilla de obra no se ve ni se arma. En UPDATE va en el `WITH CHECK`, sobre la fila nueva, porque el disparador sí cambia. `GRANT UPDATE` suma las dos columnas.
+
+| tareas_plantillas_activaciones (`sql/055`) | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| plantilla_id | uuid FK → tareas_plantillas | |
+| usuario_id | uuid FK → usuarios | |
+| activo | boolean | el interruptor. UNIQUE normal (plantilla_id, usuario_id), por upsert |
+| created_at / updated_at | timestamptz | |
+
+La de sistema arranca apagada (sin fila); la privada, prendida: `guardar_plantilla` inserta la fila del dueño cuando tiene disparador, con `ON CONFLICT DO NOTHING` para no pisar un apagado. RLS: SELECT la propia; INSERT/UPDATE la propia, y además ver la plantilla y que tenga disparador. `GRANT SELECT, INSERT, UPDATE`.
+
+| tareas_vinculos (`sql/055`) | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| tarea_id | uuid FK → tareas | |
+| ente | text FK → entes(codigo) | misma forma que `usuario_notificaciones.entidad` |
+| registro_id | uuid | sin FK — apunta a la tabla del ente |
+| plantilla_id | uuid FK → tareas_plantillas, NOT NULL | hoy el único que vincula es un disparo |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | |
+
+Qué tareas salieron de cada (plantilla, registro). RLS: SELECT si la tarea es visible; INSERT solo con `pg_trigger_depth() > 0` — la escribe `usar_plantilla` adentro del disparo, y un vínculo insertado por el cliente bloquearía el disparo real para todos. `GRANT SELECT, INSERT`.
+
+**El disparo — `disparar_plantillas()` (`sql/055`).** Trigger genérico `SECURITY INVOKER`; `TG_ARGV` = (ente, columna de estado). Hoy cuelga de `obras` (ver `obras.md`). Corre al INSERT o cuando la columna cambia de verdad, si la fila está activa y `current_user = 'authenticated'` (bajo una DEFINER correría con BYPASSRLS). Arma los datos desde la fila (`entes.datos`), recorre las plantillas visibles cuyo `disparo_ente`/`disparo_estado` coinciden y que quien cambió tiene activadas, y por cada una, si `plantilla_disparada(plantilla, ente, registro)` es falso, llama a `usar_plantilla(..., p_ente, p_registro_id, p_datos)`. Cada plantilla va en su bloque `EXCEPTION`: si falla, se revierte lo suyo y llama a `notificar_plantilla_fallida`. Marca la transacción con `tareas.disparo` para que las asignaciones avisen (ver `notificaciones.md`).
+
+- `plantilla_disparada(uuid, text, uuid)` — `SECURITY DEFINER STABLE`: hay alguna tarea **activa** vinculada a (plantilla, ente, registro). Completadas y canceladas cuentan; archivadas no. EXECUTE para `authenticated` (la llama el disparo), y fuera de un trigger devuelve false.
+- `rellenar_datos(text, jsonb)` — `{clave}` → valor, en título y descripción de cada paso, título de hilo y nombre de lo que crea. `IMMUTABLE`.
 
 ## tareas_eventos
 
@@ -232,8 +263,8 @@ Toda action que escribía dos o más tablas es ahora **una** función, invocada 
 | `deshacer_conversion_hilo(uuid)` | `deshacerConversionHilo` | `tareas` + `tareas_hilos` |
 | `desactivar_hilo(uuid)` | `desactivarHilo` | `tareas` + `tareas_hilos` |
 | ~~`agregar_tareas_desde_plantilla(...)`~~ | ~~`agregarTareasDesdePlantilla`~~ | borrada en `sql/053` → `usar_plantilla` |
-| `usar_plantilla(uuid, text, uuid, uuid)` → int (`sql/053`) | `usarPlantilla` | `tareas_proyectos` + miembros + `tareas_hilos` + `tareas` + `tareas_asignados` + `tareas_notas` |
-| `guardar_plantilla(...)` → uuid (`sql/053`) | `guardarPlantilla` (reemplaza `crearPlantilla`/`editarPlantilla`) | `tareas_plantillas` + `_hilos` + `_items` |
+| `usar_plantilla(uuid, text, uuid, uuid, text, uuid, jsonb)` → int (`sql/053`; `sql/055` suma `p_ente`, `p_registro_id`, `p_datos` con DEFAULT NULL) | `usarPlantilla` y el disparo | `tareas_proyectos` + miembros + `tareas_hilos` + `tareas` + `tareas_asignados` + `tareas_notas` + `tareas_vinculos` |
+| `guardar_plantilla(...)` → uuid (`sql/053`; `sql/055` suma `p_disparo_ente`, `p_disparo_estado` con DEFAULT NULL) | `guardarPlantilla` (reemplaza `crearPlantilla`/`editarPlantilla`) | `tareas_plantillas` + `_hilos` + `_items` + `_activaciones` |
 
 `crear_tarea` y `editar_tarea` suman `p_vence_dias_tras_previo int` al final (`sql/053`, firma nueva; la vieja se borró).
 
@@ -241,7 +272,7 @@ Toda action que escribía dos o más tablas es ahora **una** función, invocada 
 
 Los ids se generan con `gen_random_uuid()` en una variable en vez de pedir `RETURNING`: en ese punto la fila todavía no pasa la policy de SELECT (la tarea no tiene asignados, el proyecto no tiene miembros, `puede_ver_hilo` relee su propia tabla).
 
-SQLSTATE mapeados en `MENSAJES_ERROR` (`lib/utils.ts`): **`TA008`** — un UPDATE afectó 0 filas, que es como RLS rechaza (reemplaza al `errorDeUpdate()` de TypeScript); **`TA009`** — la plantilla no tiene pasos; **`TA010`** (`sql/053`) — la plantilla no corresponde a su tipo; **`TA011`** (`sql/053`) — una plantilla de proyecto usada con destino. `EXECUTE` revocado de `PUBLIC` y otorgado a `authenticated`, mismo criterio que `sql/006`.
+SQLSTATE mapeados en `MENSAJES_ERROR` (`lib/utils.ts`): **`TA008`** — un UPDATE afectó 0 filas, que es como RLS rechaza (reemplaza al `errorDeUpdate()` de TypeScript); **`TA009`** — la plantilla no tiene pasos; **`TA010`** (`sql/053`) — la plantilla no corresponde a su tipo; **`TA011`** (`sql/053`) — una plantilla de proyecto usada con destino; **`TA012`** (`sql/055`) — el disparador no es válido (estado fuera del enum del ente, o ente sin su submódulo); **`TA013`** (`sql/055`) — una plantilla con disparador usada a mano, o una sin disparador disparada. `EXECUTE` revocado de `PUBLIC` y otorgado a `authenticated`, mismo criterio que `sql/006`.
 
 Verificación: `sql/tests/atomicidad_tareas.sql` (15/15).
 

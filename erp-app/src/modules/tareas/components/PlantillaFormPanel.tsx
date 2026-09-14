@@ -15,10 +15,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
 import { RightPanel } from "@/components/ui/RightPanel";
+import { ENTES } from "@/lib/entes";
 import { guardarPlantilla } from "../actions";
 import {
   EJECUTOR,
   guardarPlantillaSchema,
+  type Ente,
   type GuardarPlantillaForm,
   type PasoPlantillaForm,
   type PlantillaCompleta,
@@ -93,6 +95,8 @@ function valoresIniciales(p?: PlantillaCompleta): Form {
       miembros: [],
       hilos: [],
       pasos: [pasoVacio()],
+      disparo_ente: null,
+      disparo_estado: null,
     };
   }
   return {
@@ -108,6 +112,8 @@ function valoresIniciales(p?: PlantillaCompleta): Form {
       pasos: p.items.filter((i) => i.hilo_id === h.id).map(pasoDesdeItem),
     })),
     pasos: p.items.filter((i) => !i.hilo_id).map(pasoDesdeItem),
+    disparo_ente: p.disparo_ente,
+    disparo_estado: p.disparo_estado,
   };
 }
 
@@ -115,10 +121,12 @@ function valoresIniciales(p?: PlantillaCompleta): Form {
 // pasos enteros (sql/053), así que el form no lleva ids de paso.
 export function PlantillaFormPanel({
   plantilla,
+  entes,
   puedeSistema,
   onClose,
 }: {
   plantilla?: PlantillaCompleta;
+  entes: Ente[];
   puedeSistema: boolean;
   onClose: () => void;
 }) {
@@ -139,6 +147,11 @@ export function PlantillaFormPanel({
   const tipo = useWatch({ control, name: "tipo" });
   const alcance = useWatch({ control, name: "alcance" }) ?? "privada";
   const miembros = useWatch({ control, name: "miembros" }) ?? [];
+  const disparoEnte = useWatch({ control, name: "disparo_ente" }) ?? null;
+  // Los que la RLS dejó ver (`getEntes`) y la UI sabe nombrar.
+  const entesDisponibles = entes.filter((e) => ENTES[e.codigo]);
+  const enteElegido = disparoEnte ? ENTES[disparoEnte] : undefined;
+  const datosDelEnte = entes.find((e) => e.codigo === disparoEnte)?.datos ?? [];
 
   // Cambiar de tipo reacomoda lo cargado en vez de tirarlo: los pasos de un
   // hilo pasan a ser un hilo del proyecto, y al revés se aplanan en orden.
@@ -241,6 +254,58 @@ export function PlantillaFormPanel({
           </div>
           <p className="t-caption">{AYUDA_TIPO[tipo]}</p>
         </div>
+
+        {(entesDisponibles.length > 0 || enteElegido) && (
+          <div>
+            <label className="t-label mb-1 block">Cuándo se usa</label>
+            <select
+              aria-label="Cuándo se usa"
+              className="input"
+              value={disparoEnte ?? ""}
+              onChange={(e) => {
+                setValue("disparo_ente", e.target.value || null, { shouldDirty: true });
+                setValue("disparo_estado", null, { shouldDirty: true });
+              }}
+            >
+              <option value="">A mano, desde esta vista</option>
+              {entesDisponibles.map((e) => (
+                <option key={e.codigo} value={e.codigo}>
+                  Sola, cuando {ENTES[e.codigo].un} cambia de estado
+                </option>
+              ))}
+            </select>
+            {enteElegido && (
+              <>
+                <select
+                  aria-label="Estado que la dispara"
+                  className={`input mt-2 ${errors.disparo_estado ? "input-error" : ""}`}
+                  {...register("disparo_estado", { setValueAs: (v) => v || null })}
+                >
+                  <option value="">Elegí el estado…</option>
+                  {Object.entries(enteElegido.estados).map(([valor, label]) => (
+                    <option key={valor} value={valor}>
+                      Cuando pasa a «{label}»
+                    </option>
+                  ))}
+                </select>
+                {errors.disparo_estado && <p className="input-error-text">{errors.disparo_estado.message}</p>}
+                <p className="t-caption mt-1">
+                  Corre para quien cambia el estado, con sus permisos, y solo si la tiene activada:{" "}
+                  {alcance === "sistema"
+                    ? "cada uno la activa para sí desde Plantillas."
+                    : "vos la tenés activada desde que la guardás."}
+                  {tipo !== "tarea" && " El hilo o proyecto que crea lleva el nombre de la plantilla."}
+                </p>
+                {datosDelEnte.length > 0 && (
+                  <p className="t-caption mt-1">
+                    Podés citar {datosDelEnte.map((d) => `{${d}}`).join(", ")} en el nombre y en los pasos. El texto se
+                    copia en la tarea: quien la recibe lo lee aunque no pueda abrir {enteElegido.el}.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        )}
 
         {tipo === "proyecto" && (
           <>

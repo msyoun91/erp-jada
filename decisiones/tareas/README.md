@@ -36,9 +36,10 @@ Hilos, pasos encadenados (`sql/017`), isla compartida, panel de proyecto y edici
 
 ## `plantillas.md`
 
-Plantillas de sistema y privadas, tres tipos (`sql/053`).
+Plantillas de sistema y privadas, tres tipos (`sql/053`), y disparadas por el estado de un registro de otro módulo (`sql/055`).
 
 - Plantillas de sistema y privadas, tres tipos (`sql/053`)
+- Plantillas disparadas por estado (`sql/055`)
 
 ## `escrituras-postgres.md`
 

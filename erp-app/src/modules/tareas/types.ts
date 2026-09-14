@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ENTES } from "@/lib/entes";
 import type { Enums, Tables } from "@/lib/supabase/database.types";
 
 export type Tarea = Tables<"tareas">;
@@ -11,12 +12,17 @@ export type TareaPlantillaHilo = Tables<"tareas_plantillas_hilos">;
 export type TareaPlantillaItem = Tables<"tareas_plantillas_items">;
 export type TareaEvento = Tables<"tareas_eventos">;
 
-// La plantilla con sus hilos y pasos activos, ya ordenados — getPlantillas
-// la arma en una sola query.
+// La plantilla con sus hilos y pasos activos, ya ordenados, y si quien la mira
+// la tiene activada — getPlantillas la arma en una sola query.
 export type PlantillaCompleta = TareaPlantilla & {
   hilos: TareaPlantillaHilo[];
   items: TareaPlantillaItem[];
+  activada: boolean;
 };
+
+// Un ente que quien arma la plantilla puede usar de disparador: la RLS de
+// `entes` ya dejó afuera los que no tiene autorizados.
+export type Ente = Pick<Tables<"entes">, "codigo" | "datos">;
 
 export type EstadoTarea = Enums<"estado_tarea">;
 export type RecurrenciaUnidad = Enums<"recurrencia_unidad">;
@@ -261,8 +267,14 @@ export const guardarPlantillaSchema = z
     miembros: z.array(z.string().uuid()).default([]),
     hilos: z.array(hiloPlantillaSchema).default([]),
     pasos: z.array(pasoPlantillaSchema).default([]),
+    disparo_ente: z.string().nullable().default(null),
+    disparo_estado: z.string().nullable().default(null),
   })
   .superRefine((d, ctx) => {
+    // `guardar_plantilla` lo vuelve a exigir contra el enum (TA012).
+    if (d.disparo_ente && !(d.disparo_estado && d.disparo_estado in (ENTES[d.disparo_ente]?.estados ?? {}))) {
+      ctx.addIssue({ code: "custom", path: ["disparo_estado"], message: "Elegí a qué estado tiene que pasar" });
+    }
     if (d.tipo === "tarea" && d.pasos.length !== 1) {
       ctx.addIssue({ code: "custom", path: ["pasos"], message: "Una plantilla de tarea tiene un solo paso" });
     }
@@ -328,6 +340,13 @@ export const usarPlantillaSchema = z.object({
 });
 
 export type UsarPlantillaForm = z.input<typeof usarPlantillaSchema>;
+
+export const activarPlantillaSchema = z.object({
+  plantilla_id: z.string().uuid(),
+  activa: z.boolean(),
+});
+
+export type ActivarPlantillaForm = z.input<typeof activarPlantillaSchema>;
 
 export const reasignarTareaSchema = z
   .object({

@@ -47,6 +47,8 @@ RLS SELECT: `(responsable_id = auth.uid() AND tiene_permiso('obras_ver')) OR tie
 
 **`responsable_id` y `activo` no tienen `GRANT UPDATE`.** Editar, transferir y desactivar son tres permisos distintos; las dos últimas pasan por función que verifica el suyo. Sin esto, cualquiera con `obras_editar` podría transferirse una obra con un UPDATE directo por PostgREST.
 
+**Dispara plantillas de tareas (`sql/055`).** Trigger `disparar_plantillas` AFTER INSERT OR UPDATE OF estado → `disparar_plantillas('obra', 'estado')`. Obras solo avisa que una obra entró a un estado, sin funciones ni botones nuevos: qué se crea lo deciden las plantillas que tiene activadas quien la cambió (ver `tareas.md`). La obra está registrada en `entes` (`core.md`), con `nombre` como único dato citable.
+
 ## obras_empresas
 
 Sin campo `cuit` (decisión del usuario). La detección de duplicados va por razón social y nombre comercial difusos.

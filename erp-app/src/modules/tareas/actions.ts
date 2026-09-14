@@ -11,6 +11,7 @@ import {
   editarHiloSchema,
   crearProyectoSchema,
   editarProyectoSchema,
+  activarPlantillaSchema,
   guardarPlantillaSchema,
   pasoPlantillaDb,
   usarPlantillaSchema,
@@ -32,6 +33,7 @@ import {
   type EditarHiloForm,
   type CrearProyectoForm,
   type EditarProyectoForm,
+  type ActivarPlantillaForm,
   type GuardarPlantillaForm,
   type UsarPlantillaForm,
   type ReasignarTareaForm,
@@ -317,6 +319,8 @@ export async function guardarPlantilla(input: GuardarPlantillaForm) {
     p_miembros: d.miembros,
     p_hilos: d.hilos.map((h) => ({ titulo: h.titulo, pasos: h.pasos.map(pasoPlantillaDb) })),
     p_pasos: d.pasos.map(pasoPlantillaDb),
+    p_disparo_ente: d.disparo_ente,
+    p_disparo_estado: d.disparo_estado,
   }));
 
   if (error) return { success: false as const, error: mensajeError(error) };
@@ -340,6 +344,28 @@ export async function desactivarPlantilla(id: string) {
       .eq("id", parsed.data),
   );
   if (fallo) return { success: false as const, error: fallo };
+  revalidatePath("/tareas/plantillas");
+  return { success: true as const };
+}
+
+// El sí de quien la mira a una plantilla con disparador (sql/055). Upsert de
+// la fila propia: la RLS exige ver la plantilla y que tenga disparador.
+export async function activarPlantilla(input: ActivarPlantillaForm) {
+  const parsed = activarPlantillaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("tareas_plantillas_activaciones")
+    .upsert(
+      { plantilla_id: parsed.data.plantilla_id, usuario_id: await usuarioActualId(), activo: parsed.data.activa },
+      { onConflict: "plantilla_id,usuario_id" },
+    );
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
   revalidatePath("/tareas/plantillas");
   return { success: true as const };
 }

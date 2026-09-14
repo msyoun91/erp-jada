@@ -1,4 +1,4 @@
-# Notificaciones (`sql/038_notificaciones.sql` — corrida en Supabase vía MCP)
+# Notificaciones (`sql/038_notificaciones.sql`, `sql/040`, `sql/055` — corridas en Supabase vía MCP)
 
 Infra cross-módulo como `usuario_widgets` y `usuario_tutorial`: prefijo `usuario_`, RLS directo por `auth.uid()`, **sin submódulo y sin vista propia**. Nadie necesita permiso para recibir avisos de cosas que ya puede ver — el permiso lo puso la entidad apuntada, no la notificación.
 
@@ -10,9 +10,9 @@ Infra cross-módulo como `usuario_widgets` y `usuario_tutorial`: prefijo `usuari
 |---|---|---|
 | id | uuid PK | |
 | usuario_id | uuid FK → usuarios | destinatario |
-| tipo | enum `tipo_notificacion` (`alta_aprobada`\|`alta_rechazada`\|`obra_transferida`\|`tarea_asignada`) | |
-| entidad | text | CHECK `obra`\|`empresa`\|`persona`\|`obra_empresa`\|`obra_persona`\|`tarea`. Text y no enum: es el discriminador de a qué tabla apunta `entidad_id`, mismo vocabulario y misma forma que `obras_aprobaciones.tipo` |
-| entidad_id | uuid | sin FK — apunta a seis tablas |
+| tipo | enum `tipo_notificacion` (`alta_aprobada`\|`alta_rechazada`\|`obra_transferida`\|`tarea_asignada`\|`plantilla_modificada`\|`plantilla_archivada`\|`plantilla_fallida`) | los tres de plantilla, `sql/055` |
+| entidad | text | CHECK `obra`\|`empresa`\|`persona`\|`obra_empresa`\|`obra_persona`\|`tarea`\|`plantilla`. Text y no enum: es el discriminador de a qué tabla apunta `entidad_id`, mismo vocabulario y misma forma que `obras_aprobaciones.tipo` |
+| entidad_id | uuid | sin FK — apunta a varias tablas |
 | actor_id | uuid FK → usuarios, nullable | quién lo provocó. Null = evento del sistema |
 | leida_at | timestamptz, nullable | |
 | activo | boolean | descartar sin borrar |
@@ -24,21 +24,30 @@ Infra cross-módulo como `usuario_widgets` y `usuario_tutorial`: prefijo `usuari
 
 `SECURITY DEFINER`. Único lugar donde nace una notificación, y donde vive "no te notifiques a vos mismo". `IS DISTINCT FROM` y no `<>`: con `auth.uid()` NULL (service_role, SQL editor) la comparación daría NULL y el aviso se perdería en silencio.
 
-## Los tres triggers
+## Los triggers
 
 | trigger | tabla | destinatario |
 |---|---|---|
 | `trg_notificar_decision_obra` | `obras_aprobaciones` AFTER INSERT | `obras_solicitante(tipo, registro_id)` — `alta_aprobada` o `alta_rechazada` según `aprobada` |
 | `trg_notificar_transferencia_obra` | `obras_transferencias` AFTER INSERT | `a_usuario_id` |
 | `trg_notificar_tarea_asignada` | `tareas_asignados` AFTER INSERT OR UPDATE OF activo | `usuario_id`, solo cuando la fila pasa a activa |
+| `trg_notificar_cambio_plantilla` (`sql/055`) | `tareas_plantillas` AFTER UPDATE | quienes tienen activada la plantilla — `plantilla_modificada` si sigue activa, `plantilla_archivada` si pasó a `activo = false`. Solo alcance `sistema`: una privada tiene un único activador, que es quien la edita |
 
 **Al que le sacaron la obra no se le avisa.** Ya no la ve (`obras_select` es `obras_puede_ver_obra`): un aviso con el nombre sería la única grieta del módulo y uno sin el nombre no diría nada. Esa pregunta la contesta `obras_auditoria_transferencias`.
 
-**`pg_trigger_depth() > 1`** en el de tareas filtra la copia de asignados de `generar_recurrencia`: una tarea diaria mandaría un aviso por día a cada asignado, y ahí nadie asignó a nadie.
+**`pg_trigger_depth() > 1`** en el de tareas filtra la copia de asignados de `generar_recurrencia`: una tarea diaria mandaría un aviso por día a cada asignado, y ahí nadie asignó a nadie. **Excepción (`sql/055`):** las tareas de un disparo de plantilla también nacen adentro de un trigger, pero ahí sí asignó alguien. `disparar_plantillas()` marca la transacción con `set_config('tareas.disparo', 'on', true)` y el filtro deja pasar esas.
+
+**Guardar sin cambios también avisa:** `guardar_plantilla` siempre hace el UPDATE y reemplaza los pasos, así que no sabe si algo cambió.
+
+## Función `notificar_plantilla_fallida(p_plantilla_id)` (`sql/055`)
+
+`SECURITY DEFINER`, con EXECUTE para `authenticated` porque la llama `disparar_plantillas()`, que es INVOKER. Le escribe `plantilla_fallida` a `auth.uid()` —quien cambió el estado y tenía la plantilla activada— con actor NULL. Fuera de un trigger (`pg_trigger_depth() = 0`) no hace nada: por RPC no se fabrican avisos.
 
 ## Función `notificaciones_listar(p_limite int DEFAULT 30)`
 
 `SECURITY INVOKER`. Cada rama del UNION es un INNER JOIN contra la tabla apuntada, así que la RLS del lector decide qué sobrevive — una notificación cuya entidad dejó de ser visible desaparece de la lista sin una segunda copia de la regla de visibilidad. Devuelve `etiqueta`, `motivo` (el `motivo_rechazo` de la fila), `actor`, y `destino`/`destino_id` para navegar; los vínculos llevan a la obra, que es la que tiene ficha.
+
+**Rama `plantilla` (`sql/055`):** etiqueta = nombre de la plantilla, destino `plantilla` (`/tareas/plantillas?plantilla={id}`). `tareas_plantillas_select` no filtra `activo`, así que el aviso de una archivada sobrevive en la bandeja; como la vista Plantillas no lista archivadas, sale con `destino` NULL y la campanita no navega.
 
 El badge cuenta las no leídas **de esta lista**, no de la tabla: si contara filas crudas quedaría más alto que lo que se ve.
 

@@ -38,11 +38,10 @@ Portado el patrón de `erp-old-2`. `Sidebar.tsx` es server component: trae `nomb
 Pedido como "motor de notificaciones y sugerencia de tareas". Se construyó la mitad de
 notificaciones; la de sugerencias no, y por qué está más abajo.
 
-**No es un motor.** No hay reglas configurables, plantillas de mensaje ni suscripciones: una tabla,
-tres triggers colgados de escrituras que ya ocurrían y dos funciones de lectura. Un tipo nuevo es un
-`PERFORM notificar(...)` más. La demanda concreta eran tres casos —el rechazo de un alta congelada
-que `BACKLOG.md` tenía anotado desde `sql/033`, la transferencia de una obra y la asignación de una
-tarea—, y un registro de reglas para tres casos es arquitectura especulativa.
+~~**No es un motor.**~~ — superado por `sql/055`: las plantillas disparadas por estado son un motor
+de reglas chico, que cada usuario activa para sí. Ver `decisiones/tareas/plantillas.md` →
+*Plantillas disparadas por estado*. Las notificaciones siguen siendo un `PERFORM notificar(...)`
+por tipo.
 
 **No es un módulo: no lleva submódulo.** Va donde `usuario_widgets` y `usuario_tutorial` — prefijo
 `usuario_`, RLS directo por `auth.uid()`, sin vista ni permiso propio. Recibir el aviso de algo que

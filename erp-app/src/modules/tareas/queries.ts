@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUsuariosActivos } from "@/lib/usuarios";
 import { sumarDiasISO } from "@/lib/utils";
 import type {
+  Ente,
   EventoAuditoria,
   PlantillaCompleta,
   TareaConAsignados,
@@ -104,24 +105,36 @@ export async function getMiembrosPorProyecto(): Promise<Record<string, string[]>
 }
 
 // Las plantillas visibles con sus hilos y pasos en una sola query (RLS ya
-// recorta por alcance). `activo` y el orden de los embeds se resuelven acá:
-// guardar reemplaza los pasos, así que cada plantilla arrastra filas
-// desactivadas de sus versiones anteriores.
+// recorta por alcance y por el submódulo del disparador). `activo` y el orden
+// de los embeds se resuelven acá: guardar reemplaza los pasos, así que cada
+// plantilla arrastra filas desactivadas de sus versiones anteriores. De las
+// activaciones, la RLS solo devuelve la propia.
 export async function getPlantillas(): Promise<PlantillaCompleta[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tareas_plantillas")
-    .select("*, tareas_plantillas_hilos(*), tareas_plantillas_items(*)")
+    .select("*, tareas_plantillas_hilos(*), tareas_plantillas_items(*), tareas_plantillas_activaciones(activo)")
     .eq("activo", true)
     .order("nombre");
 
   if (error) throw error;
 
-  return (data ?? []).map(({ tareas_plantillas_hilos, tareas_plantillas_items, ...p }) => ({
+  return (data ?? []).map(({ tareas_plantillas_hilos, tareas_plantillas_items, tareas_plantillas_activaciones, ...p }) => ({
     ...p,
     hilos: tareas_plantillas_hilos.filter((h) => h.activo).sort((a, b) => a.orden - b.orden),
     items: tareas_plantillas_items.filter((i) => i.activo).sort((a, b) => a.orden - b.orden),
+    activada: tareas_plantillas_activaciones.some((a) => a.activo),
   }));
+}
+
+// Los entes que quien arma una plantilla puede usar de disparador: la RLS de
+// `entes` deja solo los de submódulos que tiene.
+export async function getEntes(): Promise<Ente[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("entes").select("codigo, datos").order("codigo");
+
+  if (error) throw error;
+  return data ?? [];
 }
 
 // Auditoría: solo cambios a 'completada' — "qué se realizó", no cada

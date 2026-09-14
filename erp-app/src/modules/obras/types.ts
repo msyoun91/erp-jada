@@ -112,15 +112,7 @@ export const PROVINCIAS: Provincia[] = [
   "tucuman",
 ];
 
-// Los enums viajan en snake_case a la base; la UI nunca los muestra crudos.
-export const LABEL_ESTADO: Record<EstadoObra, string> = {
-  idea: "Idea",
-  en_cotizacion: "En cotización",
-  en_ejecucion: "En ejecución",
-  en_postventa: "En post-venta",
-  perdida: "Perdida",
-  terminada: "Terminada",
-};
+export { LABEL_ESTADO_OBRA as LABEL_ESTADO } from "@/lib/entes";
 
 // El estado es dato codificado por color: vive al lado de su label para que el
 // listado y la ficha no elijan cada uno el suyo.

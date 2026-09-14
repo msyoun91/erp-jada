@@ -1,35 +1,64 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Archive, Pencil, Plus } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
-import { desactivarPlantilla } from "../actions";
-import type { PlantillaCompleta, TipoPlantilla } from "../types";
+import { ENTES } from "@/lib/entes";
+import { activarPlantilla, desactivarPlantilla } from "../actions";
+import type { Ente, PlantillaCompleta, TipoPlantilla } from "../types";
 import { PlantillaFormPanel } from "./PlantillaFormPanel";
 import { UsarPlantillaPanel } from "./UsarPlantillaPanel";
 import { useTareasContexto } from "./tareasContexto";
 
 const TIPO_LABEL: Record<TipoPlantilla, string> = { tarea: "Tarea", hilo: "Hilo", proyecto: "Proyecto" };
 
+// Corre para quien cambia el estado (sql/055), así que la frase le habla a
+// quien la lee.
+function cuandoCorre(p: PlantillaCompleta) {
+  const ente = p.disparo_ente ? ENTES[p.disparo_ente] : undefined;
+  const estado = p.disparo_estado ? (ente?.estados[p.disparo_estado] ?? p.disparo_estado) : "";
+  return `Corre sola cuando pasás ${ente?.un ?? "un registro"} a «${estado}», si la tenés activada.`;
+}
+
 export function PlantillasView({
   plantillas,
+  entes,
   puedeSistema,
   puedeCrearProyecto,
 }: {
   plantillas: PlantillaCompleta[];
+  entes: Ente[];
   puedeSistema: boolean;
   puedeCrearProyecto: boolean;
 }) {
   const { usuarioActualId } = useTareasContexto();
-  const [texto, setTexto] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+  const sp = useSearchParams();
+  // Deep link desde la campanita (`?plantilla=`), leído una sola vez: arranca
+  // filtrando por esa plantilla y el efecto de abajo lo saca de la URL.
+  const plantillaParam = sp.get("plantilla");
+  const [texto, setTexto] = useState(() => plantillas.find((p) => p.id === plantillaParam)?.nombre ?? "");
   const [creando, setCreando] = useState(false);
   const [editando, setEditando] = useState<PlantillaCompleta | null>(null);
   const [usando, setUsando] = useState<PlantillaCompleta | null>(null);
   const [desactivando, setDesactivando] = useState<PlantillaCompleta | null>(null);
+  const [activando, startActivar] = useTransition();
+
+  useEffect(() => {
+    if (!plantillaParam) return;
+    const p = new URLSearchParams(sp);
+    p.delete("plantilla");
+    const qs = p.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    // Se lee una sola vez, al montar con el parámetro puesto.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Espejo de `puede_gestionar_plantilla` (sql/053): ofrecer lo que la RLS
   // después rechaza sería mentir. La barrera sigue siendo la base.
@@ -40,6 +69,14 @@ export function PlantillasView({
     const result = await desactivarPlantilla(plantilla.id);
     if (!result.success) toast.error(result.error);
     else toast.success("Plantilla desactivada");
+  }
+
+  function onActivar(plantilla: PlantillaCompleta, activa: boolean) {
+    startActivar(async () => {
+      const result = await activarPlantilla({ plantilla_id: plantilla.id, activa });
+      if (!result.success) toast.error(result.error);
+      else toast.success(activa ? "Activada para vos" : "Apagada para vos");
+    });
   }
 
   const q = texto.trim().toLowerCase();
@@ -70,7 +107,7 @@ export function PlantillasView({
       ) : (
         <div data-tour="tareas_plantillas_lista" className="flex flex-col rounded-lg border border-border bg-bg-surface">
           {visibles.map((p) => {
-            const sinPermisoProyecto = p.tipo === "proyecto" && !puedeCrearProyecto;
+            const proyectoSinPermiso = p.tipo === "proyecto" && !puedeCrearProyecto;
             return (
               <div key={p.id} className="border-b border-border row last:border-b-0">
                 <div className="flex items-center gap-2">
@@ -84,13 +121,27 @@ export function PlantillasView({
                     </div>
                     {p.descripcion && <p className="t-caption truncate">{p.descripcion}</p>}
                   </div>
-                  <button
-                    className="btn btn-secondary btn-sm shrink-0"
-                    onClick={() => setUsando(p)}
-                    disabled={sinPermisoProyecto}
-                  >
-                    Usar
-                  </button>
+                  {/* Con disparador no se usa a mano (TA013): sus textos citan
+                      datos del registro que la dispara. */}
+                  {p.disparo_ente ? (
+                    <label className="tap-target flex shrink-0 items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={p.activada}
+                        disabled={activando}
+                        onChange={(e) => onActivar(p, e.target.checked)}
+                      />
+                      <span className="t-body-m">Activada</span>
+                    </label>
+                  ) : (
+                    <button
+                      className="btn btn-secondary btn-sm shrink-0"
+                      onClick={() => setUsando(p)}
+                      disabled={proyectoSinPermiso}
+                    >
+                      Usar
+                    </button>
+                  )}
                   {puedeGestionar(p) && (
                     <OverflowMenu
                       items={[
@@ -110,8 +161,13 @@ export function PlantillasView({
                   )}
                 </div>
                 <Contenido plantilla={p} />
-                {sinPermisoProyecto && (
-                  <p className="t-caption mt-1">Usarla crea un proyecto: necesitás el permiso «Crear proyectos».</p>
+                {p.disparo_ente && <p className="t-caption mt-1">{cuandoCorre(p)}</p>}
+                {proyectoSinPermiso && (
+                  <p className="t-caption mt-1">
+                    {p.disparo_ente
+                      ? "Crea un proyecto: sin el permiso «Crear proyectos» no va a poder correr para vos."
+                      : "Usarla crea un proyecto: necesitás el permiso «Crear proyectos»."}
+                  </p>
                 )}
               </div>
             );
@@ -122,19 +178,26 @@ export function PlantillasView({
       {desactivando && (
         <ConfirmModal
           title="Desactivar plantilla"
-          mensaje={`¿Desactivar la plantilla "${desactivando.nombre}"? Lo que ya se creó con ella no se toca.`}
+          mensaje={`¿Desactivar la plantilla "${desactivando.nombre}"? Lo que ya se creó con ella no se toca.${
+            desactivando.disparo_ente ? " Deja de correr para todos los que la activaron." : ""
+          }`}
           onConfirm={() => onDesactivar(desactivando)}
           onClose={() => setDesactivando(null)}
         />
       )}
 
-      {creando && <PlantillaFormPanel puedeSistema={puedeSistema} onClose={() => setCreando(false)} />}
+      {creando && <PlantillaFormPanel entes={entes} puedeSistema={puedeSistema} onClose={() => setCreando(false)} />}
       {editando && (
-        <PlantillaFormPanel plantilla={editando} puedeSistema={puedeSistema} onClose={() => setEditando(null)} />
+        <PlantillaFormPanel
+          plantilla={editando}
+          entes={entes}
+          puedeSistema={puedeSistema}
+          onClose={() => setEditando(null)}
+        />
       )}
       {usando && (
         <UsarPlantillaPanel
-          plantillas={plantillas.filter((p) => p.tipo !== "proyecto" || puedeCrearProyecto)}
+          plantillas={plantillas.filter((p) => !p.disparo_ente && (p.tipo !== "proyecto" || puedeCrearProyecto))}
           plantillaId={usando.id}
           onClose={() => setUsando(null)}
         />
