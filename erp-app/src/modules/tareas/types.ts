@@ -466,7 +466,10 @@ export const vincularTareaSchema = z.object({
 
 export type VincularTareaForm = z.input<typeof vincularTareaSchema>;
 
-export const buscarRegistrosSchema = z.string().trim().min(2).max(100);
+export const buscarRegistrosSchema = z.object({
+  modulo: z.string().min(1).max(50),
+  texto: z.string().trim().min(2).max(100),
+});
 
 export const cambiarEstadoTareaSchema = z.object({
   tarea_id: uuidSchema,

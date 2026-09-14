@@ -1877,7 +1877,7 @@ export type Database = {
         Returns: string;
       };
       buscar_registros: {
-        Args: { p_texto: string };
+        Args: { p_modulo: string; p_texto: string };
         Returns: {
           detalle: string;
           ente: string;

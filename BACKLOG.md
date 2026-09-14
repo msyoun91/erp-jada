@@ -10,13 +10,15 @@ y la entrada se borra de este archivo.
 
 Decidido con el usuario el 2026-09-14. Queda compartir al asignar (lo demás está en `decisiones/tareas/`).
 
-- **Compartir al asignar.** Si un asignado no puede abrir lo vinculado, se pregunta con el checklist de compartir de Obras (solo se ofrece lo que es de quien asigna). Regla única, a mano y en el disparo: quien no puede abrirlo no queda asignado; si no queda nadie, la tarea va a quien asigna, con nota. En el disparo se pregunta al guardar el cambio de estado, y cerrar el panel es no compartir.
+- **Compartir al asignar.** Si un asignado no puede abrir lo vinculado, se pregunta con el checklist de compartir de Obras (solo se ofrece lo que es de quien asigna). Regla única, a mano y en el disparo: quien no puede abrirlo no queda asignado; si no queda nadie, la tarea va a quien asigna, con nota. En el disparo se pregunta al guardar el cambio de estado, y cerrar el panel es no compartir. Relacionar un registro con una tarea que ya existe también saca al asignado que no lo abre; una obra creada ya en un estado que dispara aplica la regla y avisa.
 
-  Relevado antes de construir (2026-09-14):
-  - **Saber si otro usuario puede abrir un registro.** La regla de Obras está escrita para `auth.uid()`: `obras_puede_ver_obra` (sql/047), `obras_puede_ver_persona` (sql/039), la policy inline `obras_empresas_select` (sql/047) y `tiene_permiso`. Para no copiarla: funciones con el usuario como parámetro, que las actuales envuelvan con `auth.uid()`, y correr los tests de RLS de Obras (`rls_obras`, `obras_047`–`052`) antes y después. Los grants de contexto (`obras_persona_grant_contextual`) no alcanzan: el chip abre la ficha sin contexto.
-  - **Solo el dueño comparte** (`OB026`): `obras_compartir_obra(obra, usuario, empresas[], personas[])` y `obras_relaciones_compartibles_obra(obra, usuario)`, que ya marca `ya_compartida`. Si quien asigna no es el dueño, no hay nada que preguntar: se aplica la regla y se avisa.
-  - **El checklist vive en `modules/obras/components/CompartirPanel.tsx`** y lo van a necesitar Tareas (asignar a mano, "Relacionar" con asignados que no lo ven) y Obras (el cambio de estado que dispara): son dos módulos, así que va a `components/`.
-  - **Orden en `usar_plantilla`:** hoy `crear_tarea` inserta los asignados y después se insertan los vínculos del disparo. Para que la regla viva en la base (un asignado sin acceso a un vínculo no entra) hay que vincular primero.
+  **Plan de implementación: `PLAN_TAREAS_VINCULOS.md`** (fases C, D y E). El relevamiento que estaba acá se verificó contra el código y se corrigió ahí: `CompartirPanel` no se mueve (importa las actions de Obras; va un panel nuevo en `components/ui/`), compartir para una tarea tiene que ser aditivo (`obras_compartir_obra` es "estado deseado" desde `sql/049`), los vínculos del disparo entran por `crear_tarea`, y la pregunta del disparo sale de un ensayo con rollback.
+
+## Tareas — la ficha (Fase B del plan)
+
+Decidido con el usuario el 2026-09-14. Plan en `PLAN_TAREAS_VINCULOS.md`. Fase A (buscador de "Relacionar" por módulo) cerrada — decisión en `decisiones/tareas/integracion.md`.
+
+- **Fase B:** "Nueva tarea" y el panel de cada tarea se abren sobre la ficha de obra, empresa o persona, sin ir a Tareas.
 
 ## Tareas — verificar `Content-Range` en el PATCH
 

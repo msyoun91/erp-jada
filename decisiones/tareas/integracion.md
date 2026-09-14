@@ -110,3 +110,13 @@ Pedido del usuario el 2026-09-14: ver en la ficha de una obra, empresa o persona
 **Tests:** `sql/tests/vinculos_tareas.sql` 14/14 (nuevo). `origen_heredado.sql` 4/4 sin tocar, con la firma nueva de `crear_tarea` (el parámetro tiene DEFAULT).
 
 Archivos: `sql/059`, `lib/tareas.ts`, `lib/entes.ts`, `RelacionarRegistro.tsx`, `VinculosChips.tsx`, `TareaFormPanel.tsx`, `TareaDetailPanel.tsx`, `TareasListaView.tsx`, `tareas/page.tsx`, `TareasRelacionadas.tsx` y las tres fichas de Obras.
+
+## El buscador de Relacionar elige módulo primero (`sql/061`)
+
+Pedido del usuario el 2026-09-14 (fase A de `PLAN_TAREAS_VINCULOS.md`): con más de un módulo registrando entes, buscar en todos a la vez mezcla resultados que no se pueden distinguir a simple vista. Se decidió: primero el módulo, después el buscador — y el toggle entero arranca cerrado.
+
+**`buscar_registros(text)` pasa a `buscar_registros(p_modulo text, p_texto text)`**, `plpgsql` con un `IF p_modulo = '…'` por rama — mismo patrón que `etiqueta_registro` y `relacionados_de_registro`: un módulo que registre entes suma la suya, sin tocar las demás. Sin función para listar módulos: `getModulosRelacionables()` hace `select("modulo")` sobre `entes`, que la RLS ya deja solo en los que quien busca tiene submódulo.
+
+**`RelacionarRegistro` pasa a tener su propio toggle** — antes cada superficie (form, panel) lo manejaba con su propio `useState`. Una sola fuente evita que el form y el panel diverjan en el comportamiento del toggle. Carga los módulos en el `onClick` de abrir, no en un efecto (`react-hooks/set-state-in-effect`). Cambiar de módulo limpia texto y resultados; el debounce depende de `[modulo, consulta]`.
+
+Archivos: `sql/061`, `RelacionarRegistro.tsx`, `TareaDetailPanel.tsx`, `queries.ts` (`getModulosRelacionables`), `actions.ts` (`buscarRegistros`, `modulosRelacionables`).

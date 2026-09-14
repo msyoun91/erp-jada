@@ -8,7 +8,6 @@ import {
   CalendarClock,
   Clock,
   GitBranch,
-  Link2,
   ListOrdered,
   Lock,
   Pencil,
@@ -89,7 +88,6 @@ export function TareaDetailPanel({
   const [agregandoPaso, setAgregandoPaso] = useState(false);
   const [desactivando, setDesactivando] = useState(false);
   const [cancelando, setCancelando] = useState(false);
-  const [relacionando, setRelacionando] = useState(false);
   const vinculos = tarea.vinculos ?? [];
 
   // El trigger `validar_paso_previo` (sql/017) rechaza pasar a en_progreso o
@@ -170,7 +168,6 @@ export function TareaDetailPanel({
       return;
     }
     toast.success(`Relacionada con «${r.etiqueta}»`);
-    setRelacionando(false);
   }
 
   async function desvincular(id: string) {
@@ -348,27 +345,17 @@ export function TareaDetailPanel({
           </div>
 
           <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <VinculosChips
-                vinculos={vinculos.map((v) => ({
-                  key: v.id,
-                  ente: v.ente,
-                  etiqueta: v.etiqueta,
-                  href: v.href,
-                  quitable: !v.de_plantilla,
-                }))}
-                onQuitar={desvincular}
-              />
-              <button
-                type="button"
-                className="tap-target t-caption flex items-center gap-1 font-semibold text-brand-700"
-                onClick={() => setRelacionando(!relacionando)}
-              >
-                <Link2 size={13} strokeWidth={1.75} />
-                {relacionando ? "Cerrar" : "Relacionar"}
-              </button>
-            </div>
-            {relacionando && <RelacionarRegistro yaElegidos={vinculos} onElegir={relacionar} />}
+            <VinculosChips
+              vinculos={vinculos.map((v) => ({
+                key: v.id,
+                ente: v.ente,
+                etiqueta: v.etiqueta,
+                href: v.href,
+                quitable: !v.de_plantilla,
+              }))}
+              onQuitar={desvincular}
+            />
+            <RelacionarRegistro yaElegidos={vinculos} onElegir={relacionar} />
           </div>
 
           {activa && esAsignado && (

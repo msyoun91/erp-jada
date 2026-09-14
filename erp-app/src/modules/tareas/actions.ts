@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { argsRpc } from "@/lib/supabase/rpc";
 import { hoyISO, mensajeError } from "@/lib/utils";
+import { getModulosRelacionables } from "./queries";
 import {
   crearTareaSchema,
   editarTareaSchema,
@@ -708,14 +709,17 @@ export async function marcarTutorialVisto(pasos: string[]) {
   return { success: true as const };
 }
 
-// "Relacionar" busca en los módulos que registran entes (sql/059): solo lo que
+// "Relacionar" busca dentro de un módulo elegido antes (sql/061): solo lo que
 // quien busca puede abrir.
-export async function buscarRegistros(texto: string): Promise<RegistroElegido[]> {
-  const parsed = buscarRegistrosSchema.safeParse(texto);
+export async function buscarRegistros(modulo: string, texto: string): Promise<RegistroElegido[]> {
+  const parsed = buscarRegistrosSchema.safeParse({ modulo, texto });
   if (!parsed.success) return [];
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("buscar_registros", { p_texto: parsed.data });
+  const { data, error } = await supabase.rpc("buscar_registros", {
+    p_modulo: parsed.data.modulo,
+    p_texto: parsed.data.texto,
+  });
   if (error) return [];
   return (data ?? []).map((r) => ({
     ente: r.ente,
@@ -724,6 +728,10 @@ export async function buscarRegistros(texto: string): Promise<RegistroElegido[]>
     detalle: r.detalle,
     href: r.href,
   }));
+}
+
+export async function modulosRelacionables(): Promise<string[]> {
+  return getModulosRelacionables();
 }
 
 export async function vincularTarea(input: VincularTareaForm) {

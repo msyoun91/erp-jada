@@ -1,6 +1,6 @@
 # Módulo tareas
 
-Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`060` (más las que cita cada sección) — corridas en Supabase vía MCP.
+Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`061` (más las que cita cada sección) — corridas en Supabase vía MCP.
 
 **Regla de visibilidad (`sql/013`): se ve lo asignado y lo público, nada más** — `creado_por` no autoriza. Excepciones: `tareas_gestionar_ajenas` y `tareas_hilos.responsable_id`. Los UPDATE están alineados con los SELECT. El porqué, en `decisiones/tareas/visibilidad.md`.
 
@@ -185,7 +185,7 @@ Lecturas (`sql/059`, las tres `SECURITY INVOKER STABLE`, EXECUTE para `authentic
 
 - `vinculos_de_tareas()` — los vínculos activos de las tareas activas visibles, con `etiqueta`, `href` (la `ruta` del ente con el id) y `de_plantilla`. Sin fila si el registro no se ve. La precarga `getListaTareas`.
 - `tareas_de_registro(ente, registro_id)` — la sección Tareas de una ficha de Obras: tareas activas visibles vinculadas (título, estado, vencimiento, responsable, hilo, proyecto), lo terminado al final. Vacío si el registro no se ve.
-- `buscar_registros(texto)` — "Relacionar": `obras_buscar` sin lo ajeno enmascarado y solo entes cuyo submódulo tiene quien busca, con `href`.
+- `buscar_registros(modulo, texto)` (`sql/061`) — "Relacionar": el módulo se elige antes (toggle en la UI). Hoy solo `obras` → `obras_buscar` sin lo ajeno enmascarado y solo entes cuyo submódulo tiene quien busca, con `href`. Un módulo que registre entes suma su rama (`plpgsql`, `IF p_modulo = '…'`).
 
 **El disparo — `disparar_plantillas()` (`sql/055`, `sql/056`).** Trigger genérico `SECURITY INVOKER`; `TG_ARGV` = (ente, columna de estado). Hoy cuelga de `obras` (ver `obras.md`). Corre al INSERT o cuando la columna cambia de verdad, si la fila está activa y `current_user = 'authenticated'` (bajo una DEFINER correría con BYPASSRLS). Arma los datos desde la fila (`entes.datos`), recorre las plantillas visibles cuyo `disparo_ente`/`disparo_estado` coinciden y que quien cambió tiene activadas, y por cada una, si `plantilla_disparada(plantilla, ente, registro)` es falso, llama a `usar_plantilla(..., p_ente, p_registro_id, p_datos)`. Cada plantilla va en su bloque `EXCEPTION`: si corre, `notificar_disparo(plantilla, true)` le avisa a quien disparó; si falla, se revierte lo suyo y `notificar_disparo(plantilla, false)`. Si no creó ningún paso porque todos pedían un rol que el registro no tiene (`TA014`, `sql/060`), se revierte sin aviso. Marca la transacción con `tareas.disparo` para que las asignaciones avisen (ver `notificaciones.md`).
 

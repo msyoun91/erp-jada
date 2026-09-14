@@ -145,6 +145,16 @@ export async function getEntes(): Promise<Ente[]> {
   return data ?? [];
 }
 
+// Módulos para el toggle de "Relacionar": la RLS de `entes` ya deja solo los
+// de submódulos que quien busca tiene.
+export async function getModulosRelacionables(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("entes").select("modulo").order("modulo");
+
+  if (error) throw error;
+  return [...new Set((data ?? []).map((e) => e.modulo))];
+}
+
 // Auditoría: solo cambios a 'completada' — "qué se realizó", no cada
 // transición de estado (el trigger loguea todas, la vista filtra acá).
 // fecha_asignacion se resuelve aparte: no hay FK directa entre

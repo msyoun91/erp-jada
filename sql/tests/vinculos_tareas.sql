@@ -12,7 +12,7 @@
 --
 -- Volver a correrlo entero después de tocar sql/059.
 --
--- Último resultado: 14/14.
+-- Último resultado: 15/15 (sql/061 suma 08b).
 
 DO $test$
 DECLARE
@@ -106,10 +106,14 @@ BEGIN
   r := r || E'\n07 la ficha de una obra que no ve no lista nada, aunque vea la tarea: ' ||
     CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
-  SELECT count(*) INTO v_n FROM buscar_registros('Quebracho Sur') b WHERE b.registro_id = v_obra_t;
-  SELECT count(*) INTO v_m FROM buscar_registros('Alfa Vinculo Norte') b WHERE b.etiqueta = 'Alfa Vinculo Norte 5512';
+  SELECT count(*) INTO v_n FROM buscar_registros('obras', 'Quebracho Sur') b WHERE b.registro_id = v_obra_t;
+  SELECT count(*) INTO v_m FROM buscar_registros('obras', 'Alfa Vinculo Norte') b WHERE b.etiqueta = 'Alfa Vinculo Norte 5512';
   r := r || E'\n08 buscar_registros trae la obra propia y no la ajena: ' ||
     CASE WHEN v_n = 1 AND v_m = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ', ' || v_m || ')' END;
+
+  SELECT count(*) INTO v_n FROM buscar_registros('otro', 'Quebracho Sur');
+  r := r || E'\n08b un módulo que no registra entes no devuelve nada: ' ||
+    CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   -- ============================================================
   -- Vincular y desvincular desde el cliente
