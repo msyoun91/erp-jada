@@ -12,21 +12,44 @@ Desde `sql/017` toda plantilla de hilo genera una cadena: cada item espera al an
 
 ## Tareas — plantillas disparadas por otros módulos (fase 2)
 
-La fase 1 (`sql/053`, ver `decisiones/tareas/plantillas.md` → *Plantillas de sistema y privadas, tres tipos*) dejó las plantillas completas y usadas a mano. La fase 2 las conecta con los módulos. **Alcance acordado con el usuario: un solo disparador, para probar la idea** — la obra cambia de estado (su ejemplo: de cotización a en ejecución → "Cobrar obra X"). El resto se suma cuando haga falta.
+La fase 1 (`sql/053`, ver `decisiones/tareas/plantillas.md` → *Plantillas de sistema y privadas, tres tipos*) dejó las plantillas completas y usadas a mano. La fase 2 las conecta con los módulos. **Alcance acordado con el usuario: un solo ente, la obra, para probar la idea** (su ejemplo: pasa a en ejecución → "Cobrar obra X"). El resto se suma cuando haga falta.
 
-Decidido con el usuario:
+Decidido con el usuario (lo de 2026-09-14 reemplaza lo propuesto antes):
 
-- **"Click de botón relevante" es una acción que el módulo ya tiene** (transferir, compartir, vincular empresa/persona, marcar referente, crear obra), no un botón "Crear tareas" nuevo. Obras no suma funciones ni botones: solo avisa cuando pasa algo.
+**El disparador es genérico: un ente con estado entra a un estado.** La plantilla elige el ente y el estado destino; obras es solo el primero en registrar el suyo.
+
+- Sin estado de origen: una obra que pasa de `idea` directo a `en_ejecucion` también hay que cobrarla.
+- Crear el registro ya en ese estado cuenta como entrar — el form de obras deja crear directo en ejecución (`obras/types.ts`, `crearObraSchema`).
+- Cada módulo registra sus entes en su migración: una fila de catálogo (ente, módulo, datos que ofrece, submódulo que pide) y un trigger de una línea sobre su columna de estado, mismo patrón que `notificar()`. Hoy tienen estado: obra, y en tareas la tarea y el hilo. Primera tanda, solo obra.
+- Obras no suma funciones ni botones: solo avisa cuando pasa algo.
+
+**Una vez para siempre por (plantilla, registro), salvo archivadas.** Si todo lo que generó la vez anterior está archivado, vuelve a disparar cuando el estado cambie de verdad — el caso es el disparo por accidente. Archivar el hilo o el proyecto generado alcanza (`desactivar_hilo`, cascada de `sql/025`). Completadas y canceladas no la reabren: "Cobrar obra X" terminada no se duplica al ir y volver de estado. Pide saber qué tareas salieron de cada (plantilla, registro) — el vínculo, abajo.
+
+**Cada usuario activa para sí las plantillas con disparador, desde la vista Plantillas.** Corre solo si quien dispara la tiene activada. No se pregunta al cambiar de estado: sumaría un paso al form de cada módulo, y un trigger no puede preguntar.
+
+- La de sistema **arranca apagada**: las tareas se crean a tu nombre y con tus permisos, así que tiene que haber un sí tuyo. La privada arranca prendida para su dueño — misma regla y mismo interruptor para las dos.
+- **Por eso no hay excepción de autorización.** Descartado: "la autoridad pasa a ser la plantilla", `SECURITY DEFINER` revalidando y `guardada_por`. El disparo es `usar_plantilla` `INVOKER`, igual que usarla a mano.
+- Quien dispara siempre puede abrir Tareas (necesitó la vista Plantillas para activarla), así que el paso que ningún asignado puede recibir va a él con la nota, como `usar_plantilla` ya hace.
+- Si al disparar no puede correr (perdió un permiso), el cambio de estado pasa igual y el aviso le llega a quien la activó. Una plantilla mal configurada no traba una venta.
+- Editar una plantilla de sistema no la apaga para quienes la activaron.
+- **Costo aceptado:** la organización no puede garantizar una tarea. "Cobrar obra X" llega a Cobranzas solo si el vendedor que cambia el estado la activó y tiene `tareas_asignar`; si no, le queda a él con la nota.
+
+**La campanita avisa cuando guardan o archivan una plantilla que tenés activada**, apuntando a la plantilla.
+
+- Tipos nuevos en `tipo_notificacion`, `plantilla` en el CHECK de `entidad`, rama nueva en `notificaciones_listar` con INNER JOIN a `tareas_plantillas`. Destinatarios: quienes la tienen activada; `notificar()` ya excluye a quien la guardó. Una privada nunca avisa.
+- Guardar sin cambios también avisa: `guardar_plantilla` reemplaza los pasos y no sabe si algo cambió. Aceptado — detectarlo era el diff por paso que la fase 1 sacó.
+- Link `/tareas/plantillas?plantilla={id}`, patrón de `153319a`. Hoy la vista Plantillas no lee parámetros.
+- `tareas_plantillas_select` no filtra `activo` (`sql/053`), así que el aviso de archivada sobrevive en la bandeja. Al construir: si la vista no lista archivadas, el link de ese aviso no tiene qué abrir.
+
+**Se mantiene de antes:**
+
 - **El texto se copia en la tarea** ("Cobrar obra {nombre}"): el asignado lo lee aunque no vea la obra. Los enlaces a la ficha sí respetan permisos. El editor lo avisa.
-- **Si un asignado no puede recibir el paso, queda para quien disparó con una nota** — ya implementado en `usar_plantilla`.
 - **Nunca teléfono ni email como dato**: el contacto sale solo por `obras_ficha_persona`, que registra el acceso.
 
 Propuesto, sin objeción del usuario (confirmar al construir):
 
-- Listado de disparadores = una tabla que siembra la migración de cada módulo (código, módulo, datos que ofrece, submódulo que pide cada uno). Una plantilla de sistema se ve solo con todos los submódulos que usa, se muestran como etiquetas, y quien la arma solo usa lo que tiene autorizado — todo en RLS.
-- Enlaces estructurados tarea ↔ obra/empresa/persona (`tareas_vinculos`), chips con link a la ficha. Cierra *Sugerencia de tareas — falta el vínculo* (abajo).
-- La automática corre una vez por (plantilla, obra); ir y volver de estado no duplica. Una privada con disparador solo corre si el dueño es quien dispara.
-- **Autoridad:** el disparo automático no puede correr con los permisos de quien cambia el estado (un vendedor sin `tareas_asignar` no podría crearle la tarea a Cobranzas y el cambio de estado fallaría). La autoridad pasa a ser la plantilla: se valida al guardarla y la ejecución corre `SECURITY DEFINER` revalidando lo que pudo cambiar. Es mover autorización adentro de una función — registrarlo como excepción explícita en `decisiones/tareas/plantillas.md` antes de escribirlo.
+- Una plantilla de sistema se ve solo con todos los submódulos que usan sus entes, se muestran como etiquetas, y quien la arma solo usa lo que tiene autorizado — todo en RLS.
+- Enlaces estructurados tarea ↔ registro de un ente (`tareas_vinculos`, `(tarea, ente, registro)` con la misma forma que `usuario_notificaciones`), chips con link a la ficha. Cierra *Sugerencia de tareas — falta el vínculo* (abajo).
 - Esto **es** un motor de reglas: al construirlo, superar en `decisiones/global/infra.md` *Notificaciones: infra sin submódulo, y sin motor* con el puntero.
 
 ## Tareas — verificar `Content-Range` en el PATCH
@@ -72,5 +95,5 @@ Pedida junto con las notificaciones y no construida (ver `decisiones/global/infr
 
 **El bloqueante no es la regla, es el vínculo.** Hoy una tarea no sabe de qué obra habla: `origen_app` y `origen_punto` son texto libre y solo se muestran en `TareaDetailPanel`. Sin un vínculo estructurado, la sugerencia no puede saber si ya la creaste y la repite para siempre.
 
-Cuando aparezca un caso real, el camino barato es una columna, no un motor: la regla la sabe el módulo dueño del dato, y la sugerencia debería abrir el flujo de plantillas que ya existe (`agregarTareasDesdePlantilla`), no un camino de creación nuevo.
+Cuando aparezca un caso real, el camino barato es una columna, no un motor: la regla la sabe el módulo dueño del dato, y la sugerencia debería abrir el flujo de plantillas que ya existe (`usarPlantilla`), no un camino de creación nuevo.
 
