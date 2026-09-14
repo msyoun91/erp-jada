@@ -1,4 +1,4 @@
-# Notificaciones (`sql/038_notificaciones.sql`, `sql/040`, `sql/055` — corridas en Supabase vía MCP)
+# Notificaciones (`sql/038_notificaciones.sql`, `sql/040`, `sql/055`, `sql/056` — corridas en Supabase vía MCP)
 
 Infra cross-módulo como `usuario_widgets` y `usuario_tutorial`: prefijo `usuario_`, RLS directo por `auth.uid()`, **sin submódulo y sin vista propia**. Nadie necesita permiso para recibir avisos de cosas que ya puede ver — el permiso lo puso la entidad apuntada, no la notificación.
 
@@ -10,7 +10,7 @@ Infra cross-módulo como `usuario_widgets` y `usuario_tutorial`: prefijo `usuari
 |---|---|---|
 | id | uuid PK | |
 | usuario_id | uuid FK → usuarios | destinatario |
-| tipo | enum `tipo_notificacion` (`alta_aprobada`\|`alta_rechazada`\|`obra_transferida`\|`tarea_asignada`\|`plantilla_modificada`\|`plantilla_archivada`\|`plantilla_fallida`) | los tres de plantilla, `sql/055` |
+| tipo | enum `tipo_notificacion` (`alta_aprobada`\|`alta_rechazada`\|`obra_transferida`\|`tarea_asignada`\|`plantilla_modificada`\|`plantilla_archivada`\|`plantilla_fallida`\|`plantilla_disparada`) | los tres primeros de plantilla, `sql/055`; `plantilla_disparada`, `sql/056` |
 | entidad | text | CHECK `obra`\|`empresa`\|`persona`\|`obra_empresa`\|`obra_persona`\|`tarea`\|`plantilla`. Text y no enum: es el discriminador de a qué tabla apunta `entidad_id`, mismo vocabulario y misma forma que `obras_aprobaciones.tipo` |
 | entidad_id | uuid | sin FK — apunta a varias tablas |
 | actor_id | uuid FK → usuarios, nullable | quién lo provocó. Null = evento del sistema |
@@ -39,15 +39,17 @@ Infra cross-módulo como `usuario_widgets` y `usuario_tutorial`: prefijo `usuari
 
 **Guardar sin cambios también avisa:** `guardar_plantilla` siempre hace el UPDATE y reemplaza los pasos, así que no sabe si algo cambió.
 
-## Función `notificar_plantilla_fallida(p_plantilla_id)` (`sql/055`)
+## Función `notificar_disparo(p_plantilla_id, p_corrio)` (`sql/056`, reemplaza a `notificar_plantilla_fallida` de `sql/055`)
 
-`SECURITY DEFINER`, con EXECUTE para `authenticated` porque la llama `disparar_plantillas()`, que es INVOKER. Le escribe `plantilla_fallida` a `auth.uid()` —quien cambió el estado y tenía la plantilla activada— con actor NULL. Fuera de un trigger (`pg_trigger_depth() = 0`) no hace nada: por RPC no se fabrican avisos.
+`SECURITY DEFINER`, con EXECUTE para `authenticated` porque la llama `disparar_plantillas()`, que es INVOKER. Le escribe a `auth.uid()` —quien cambió el estado y tenía la plantilla activada—, con actor NULL, uno de dos tipos: `plantilla_disparada` si la plantilla corrió (un aviso por plantilla, no por tarea) o `plantilla_fallida` si no pudo. El tipo sale del booleano, así que por acá no se escribe otro aviso. Fuera de un trigger (`pg_trigger_depth() = 0`) no hace nada: por RPC no se fabrican avisos.
+
+Apunta a la plantilla y no a lo creado porque quien dispara puede no ver la tarea (una de tipo tarea asignada solo a otro), y la rama `tarea` de la bandeja la descartaría.
 
 ## Función `notificaciones_listar(p_limite int DEFAULT 30)`
 
 `SECURITY INVOKER`. Cada rama del UNION es un INNER JOIN contra la tabla apuntada, así que la RLS del lector decide qué sobrevive — una notificación cuya entidad dejó de ser visible desaparece de la lista sin una segunda copia de la regla de visibilidad. Devuelve `etiqueta`, `motivo` (el `motivo_rechazo` de la fila), `actor`, y `destino`/`destino_id` para navegar; los vínculos llevan a la obra, que es la que tiene ficha.
 
-**Rama `plantilla` (`sql/055`):** etiqueta = nombre de la plantilla, destino `plantilla` (`/tareas/plantillas?plantilla={id}`). `tareas_plantillas_select` no filtra `activo`, así que el aviso de una archivada sobrevive en la bandeja; como la vista Plantillas no lista archivadas, sale con `destino` NULL y la campanita no navega.
+**Rama `plantilla` (`sql/055`):** etiqueta = nombre de la plantilla, destino `plantilla` (`/tareas/plantillas?plantilla={id}`). `tareas_plantillas_select` no filtra `activo`, así que el aviso de una archivada sobrevive en la bandeja; como la vista Plantillas no lista archivadas, sale con `destino` NULL y la campanita no navega. Excepción (`sql/056`): `plantilla_disparada` sale con `destino = 'tareas'` (`/tareas`, la vista general, sin id) aunque la plantilla esté archivada, porque las tareas creadas siguen ahí.
 
 El badge cuenta las no leídas **de esta lista**, no de la tabla: si contara filas crudas quedaría más alto que lo que se ve.
 

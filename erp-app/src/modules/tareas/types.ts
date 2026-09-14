@@ -24,6 +24,27 @@ export type PlantillaCompleta = TareaPlantilla & {
 // `entes` ya dejó afuera los que no tiene autorizados.
 export type Ente = Pick<Tables<"entes">, "codigo" | "datos">;
 
+// Un registro de otro módulo con el que se relaciona una tarea (sql/059), con
+// su nombre y su ruta. El que puso un disparo no se desvincula.
+export type VinculoTarea = {
+  id: string;
+  tarea_id: string;
+  ente: string;
+  registro_id: string;
+  etiqueta: string;
+  href: string;
+  de_plantilla: boolean;
+};
+
+// Lo que devuelve "Relacionar", antes de guardar.
+export type RegistroElegido = {
+  ente: string;
+  registro_id: string;
+  etiqueta: string;
+  detalle: string | null;
+  href: string;
+};
+
 export type EstadoTarea = Enums<"estado_tarea">;
 export type RecurrenciaUnidad = Enums<"recurrencia_unidad">;
 export type TipoPlantilla = Enums<"tipo_plantilla">;
@@ -36,6 +57,7 @@ export type TareaConAsignados = Tarea & {
   // Precargadas por getListaTareas — con las notas visibles por defecto en
   // cada panel de tarea, pedirlas de a una desde el cliente serían N requests.
   tareas_notas?: TareaNota[];
+  vinculos?: VinculoTarea[];
 };
 
 export type EventoAuditoria = {
@@ -130,6 +152,7 @@ export const crearTareaSchema = tareaEditableSchema
       .max(500)
       .regex(/^\/(?!\/)/, "El punto de origen debe ser una ruta interna del ERP")
       .optional(),
+    vinculos: z.array(z.object({ ente: z.string().min(1).max(50), registro_id: z.string().uuid() })).default([]),
   })
   .refine((d) => !(d.hilo_id && d.proyecto_id), {
     message: "Una tarea con hilo no lleva proyecto propio — lo hereda del hilo",
@@ -227,6 +250,9 @@ export const EJECUTOR = "ejecutor";
 
 const asignableSchema = z.union([z.string().uuid(), z.literal(EJECUTOR)]);
 
+// Un rol del registro que dispara: `ente:rol` (`persona:arquitecto`, sql/060).
+const rolSchema = z.string().regex(/^[a-z_]+:[a-z_]+$/, "Rol inválido");
+
 const pasoPlantillaSchema = z
   .object({
     titulo: z.string().min(1, "El paso no puede estar vacío").max(200),
@@ -236,6 +262,8 @@ const pasoPlantillaSchema = z
     vence_dias: diasOpcional,
     vence_tras_previo: z.boolean().default(false),
     temperatura: z.coerce.number().int().min(1).max(100).default(50),
+    adjuntos: z.array(rolSchema).default([]),
+    condicion: rolSchema.nullable().default(null),
   })
   .refine((p) => p.asignados.includes(p.responsable_id), {
     message: "El responsable debe estar entre los asignados",
@@ -250,6 +278,7 @@ export type PasoPlantillaForm = z.input<typeof pasoPlantillaSchema>;
 
 const hiloPlantillaSchema = z.object({
   titulo: z.string().min(1, "El hilo necesita un título").max(200),
+  encadenada: z.boolean().default(true),
   pasos: z.array(pasoPlantillaSchema).min(1, "El hilo necesita al menos un paso"),
 });
 
@@ -261,6 +290,10 @@ export const guardarPlantillaSchema = z
     id: z.string().uuid().optional(),
     nombre: z.string().min(1, "El nombre es obligatorio").max(200),
     descripcion: z.string().max(2000).optional(),
+    // El hilo o proyecto que crea; vacío = el nombre de la plantilla (sql/057).
+    titulo_creado: z.string().max(200).optional(),
+    // La cadena de la plantilla de hilo; en la de proyecto la decide cada hilo.
+    encadenada: z.boolean().default(true),
     alcance: z.enum(["privada", "sistema"]).default("privada"),
     tipo: z.enum(["tarea", "hilo", "proyecto"]),
     visibilidad: z.enum(["publico", "privado"]).default("privado"),
@@ -317,7 +350,9 @@ export const guardarPlantillaSchema = z
 export type GuardarPlantillaForm = z.input<typeof guardarPlantillaSchema>;
 export type GuardarPlantillaValues = z.output<typeof guardarPlantillaSchema>;
 
-export function pasoPlantillaDb(p: z.output<typeof pasoPlantillaSchema>) {
+// Sin disparador no hay registro de dónde sacar roles: se descartan en vez de
+// rebotar el guardado (TA015), igual que el editor deja de mostrarlos.
+export function pasoPlantillaDb(p: z.output<typeof pasoPlantillaSchema>, conRoles: boolean) {
   return {
     titulo: p.titulo,
     descripcion: p.descripcion ?? null,
@@ -327,6 +362,8 @@ export function pasoPlantillaDb(p: z.output<typeof pasoPlantillaSchema>) {
     vence_dias: p.vence_dias ?? null,
     vence_tras_previo: p.vence_tras_previo,
     temperatura: p.temperatura,
+    adjuntos: conRoles ? p.adjuntos : [],
+    condicion: conRoles ? p.condicion : null,
   };
 }
 
@@ -418,6 +455,18 @@ export type MarcarTutorialForm = z.infer<typeof marcarTutorialSchema>;
 // estado): no tienen formulario, pero la regla de validar en servidor no
 // distingue — un id mal formado corta acá y no llega a la base.
 export const uuidSchema = z.string().uuid("Identificador inválido");
+
+// "Relacionar" (sql/059): si el registro se puede abrir lo decide la RLS de
+// `tareas_vinculos`.
+export const vincularTareaSchema = z.object({
+  tarea_id: uuidSchema,
+  ente: z.string().min(1).max(50),
+  registro_id: uuidSchema,
+});
+
+export type VincularTareaForm = z.input<typeof vincularTareaSchema>;
+
+export const buscarRegistrosSchema = z.string().trim().min(2).max(100);
 
 export const cambiarEstadoTareaSchema = z.object({
   tarea_id: uuidSchema,

@@ -36,6 +36,10 @@ import { useTareasContexto } from "./tareasContexto";
 type Form = GuardarPlantillaForm;
 type Lista = "pasos" | `hilos.${number}.pasos`;
 type Paso = `pasos.${number}` | `hilos.${number}.pasos.${number}`;
+type CampoConDatos = "titulo_creado" | `hilos.${number}.titulo` | `${Paso}.titulo` | `${Paso}.descripcion`;
+type Dato = { codigo: string; label: string; ejemplo: string };
+// `valor` es `ente:rol`, como lo guarda la base (sql/060).
+type RolOpcion = { valor: string; ente: string; label: string };
 
 const TIPOS = [
   { valor: "tarea", label: "Tarea" },
@@ -45,8 +49,8 @@ const TIPOS = [
 
 const AYUDA_TIPO: Record<TipoPlantilla, string> = {
   tarea: "Crea una tarea.",
-  hilo: "Crea un hilo con pasos encadenados: cada uno se habilita al completar el anterior.",
-  proyecto: "Crea un proyecto con sus miembros, sus hilos de pasos y sus tareas sueltas.",
+  hilo: "Crea un hilo con sus pasos, encadenados o en paralelo.",
+  proyecto: "Crea un proyecto con sus miembros, sus hilos y sus tareas sueltas.",
 };
 
 type ModoVence = "sin" | "creacion" | "tras_previo";
@@ -70,6 +74,8 @@ function pasoVacio(): PasoPlantillaForm {
     vence_dias: null,
     vence_tras_previo: false,
     temperatura: 50,
+    adjuntos: [],
+    condicion: null,
   };
 }
 
@@ -82,6 +88,8 @@ function pasoDesdeItem(i: TareaPlantillaItem): PasoPlantillaForm {
     vence_dias: i.vence_dias,
     vence_tras_previo: i.vence_tras_previo,
     temperatura: i.temperatura,
+    adjuntos: i.adjuntos,
+    condicion: i.condicion,
   };
 }
 
@@ -91,6 +99,7 @@ function valoresIniciales(p?: PlantillaCompleta): Form {
       nombre: "",
       alcance: "privada",
       tipo: "hilo",
+      encadenada: true,
       visibilidad: "privado",
       miembros: [],
       hilos: [],
@@ -105,10 +114,13 @@ function valoresIniciales(p?: PlantillaCompleta): Form {
     descripcion: p.descripcion ?? undefined,
     alcance: p.alcance,
     tipo: p.tipo,
+    titulo_creado: p.titulo_creado ?? undefined,
+    encadenada: p.encadenada,
     visibilidad: p.visibilidad,
     miembros: p.miembros,
     hilos: p.hilos.map((h) => ({
       titulo: h.titulo,
+      encadenada: h.encadenada,
       pasos: p.items.filter((i) => i.hilo_id === h.id).map(pasoDesdeItem),
     })),
     pasos: p.items.filter((i) => !i.hilo_id).map(pasoDesdeItem),
@@ -145,13 +157,24 @@ export function PlantillaFormPanel({
   });
 
   const tipo = useWatch({ control, name: "tipo" });
+  const nombre = useWatch({ control, name: "nombre" });
+  const encadenada = useWatch({ control, name: "encadenada" }) ?? true;
   const alcance = useWatch({ control, name: "alcance" }) ?? "privada";
   const miembros = useWatch({ control, name: "miembros" }) ?? [];
   const disparoEnte = useWatch({ control, name: "disparo_ente" }) ?? null;
-  // Los que la RLS dejó ver (`getEntes`) y la UI sabe nombrar.
-  const entesDisponibles = entes.filter((e) => ENTES[e.codigo]);
+  // Los que la RLS dejó ver (`getEntes`) y tienen estados que la disparen.
+  const entesDisponibles = entes.filter((e) => ENTES[e.codigo]?.estados);
   const enteElegido = disparoEnte ? ENTES[disparoEnte] : undefined;
   const datosDelEnte = entes.find((e) => e.codigo === disparoEnte)?.datos ?? [];
+  // Los que la base ofrece (`entes.datos`) y la UI sabe nombrar.
+  const datos: Dato[] = datosDelEnte.flatMap((codigo) => {
+    const d = enteElegido?.datos[codigo];
+    return d ? [{ codigo, ...d }] : [];
+  });
+  // Los roles del ente que dispara: se adjuntan a la tarea o la condicionan.
+  const roles: RolOpcion[] = Object.entries(enteElegido?.roles ?? {}).flatMap(([ente, porRol]) =>
+    Object.entries(porRol).map(([rol, label]) => ({ valor: `${ente}:${rol}`, ente, label })),
+  );
 
   // Cambiar de tipo reacomoda lo cargado en vez de tirarlo: los pasos de un
   // hilo pasan a ser un hilo del proyecto, y al revés se aplanan en orden.
@@ -163,7 +186,11 @@ export function PlantillaFormPanel({
 
     if (nuevo === "proyecto") {
       if (tipo === "hilo" && pasos.length > 0) {
-        setValue("hilos", [{ titulo: getValues("nombre") || "Hilo", pasos }], opciones);
+        setValue(
+          "hilos",
+          [{ titulo: getValues("titulo_creado") || getValues("nombre") || "Hilo", encadenada: getValues("encadenada") ?? true, pasos }],
+          opciones,
+        );
         setValue("pasos", [], opciones);
       }
     } else {
@@ -282,7 +309,7 @@ export function PlantillaFormPanel({
                   {...register("disparo_estado", { setValueAs: (v) => v || null })}
                 >
                   <option value="">Elegí el estado…</option>
-                  {Object.entries(enteElegido.estados).map(([valor, label]) => (
+                  {Object.entries(enteElegido.estados ?? {}).map(([valor, label]) => (
                     <option key={valor} value={valor}>
                       Cuando pasa a «{label}»
                     </option>
@@ -294,16 +321,31 @@ export function PlantillaFormPanel({
                   {alcance === "sistema"
                     ? "cada uno la activa para sí desde Plantillas."
                     : "vos la tenés activada desde que la guardás."}
-                  {tipo !== "tarea" && " El hilo o proyecto que crea lleva el nombre de la plantilla."}
                 </p>
-                {datosDelEnte.length > 0 && (
+                {datos.length > 0 && (
                   <p className="t-caption mt-1">
-                    Podés citar {datosDelEnte.map((d) => `{${d}}`).join(", ")} en el nombre y en los pasos. El texto se
-                    copia en la tarea: quien la recibe lo lee aunque no pueda abrir {enteElegido.el}.
+                    Debajo de cada texto, tocá un dato para sumarlo: al crearse se completa con el de {enteElegido.el}.
+                    Quien recibe la tarea lo lee aunque no pueda abrir {enteElegido.el}.
                   </p>
                 )}
               </>
             )}
+          </div>
+        )}
+
+        {tipo !== "tarea" && (
+          <div>
+            <label className="t-label mb-1 block">
+              {tipo === "proyecto" ? "Nombre del proyecto que crea" : "Título del hilo que crea"}
+            </label>
+            <input
+              className={`input ${errors.titulo_creado ? "input-error" : ""}`}
+              placeholder={nombre}
+              {...register("titulo_creado")}
+            />
+            {errors.titulo_creado && <p className="input-error-text">{errors.titulo_creado.message}</p>}
+            <DatosChips control={control} setValue={setValue} nombre="titulo_creado" datos={datos} />
+            <p className="t-caption mt-1">Vacío = el nombre de la plantilla.</p>
           </div>
         )}
 
@@ -345,6 +387,8 @@ export function PlantillaFormPanel({
               control={control}
               register={register}
               setValue={setValue}
+              datos={datos}
+              roles={roles}
               nombre="pasos.0"
               etiqueta="Tarea"
               miembros={null}
@@ -354,30 +398,43 @@ export function PlantillaFormPanel({
         )}
 
         {tipo === "hilo" && (
-          <ListaPasos
-            control={control}
-            register={register}
-            setValue={setValue}
-            nombre="pasos"
-            titulo="Pasos"
-            ayuda="El orden manda: cada paso se habilita al completar el anterior."
-            encadenada
-            miembros={null}
-            agregar="Agregar paso"
-          />
-        )}
-
-        {tipo === "proyecto" && (
-          <>
-            <HilosEditor control={control} register={register} setValue={setValue} miembros={miembros} />
+          <div>
+            <label className="t-label mb-1 block">Pasos</label>
+            <ModoCadena valor={encadenada} onChange={(v) => setValue("encadenada", v, { shouldDirty: true })} />
             <ListaPasos
               control={control}
               register={register}
               setValue={setValue}
+              datos={datos}
+              roles={roles}
+              nombre="pasos"
+              modo={encadenada ? "cadena" : "paralelo"}
+              miembros={null}
+              agregar="Agregar paso"
+            />
+          </div>
+        )}
+
+        {tipo === "proyecto" && (
+          <>
+            <HilosEditor
+              control={control}
+              register={register}
+              setValue={setValue}
+              datos={datos}
+              roles={roles}
+              miembros={miembros}
+            />
+            <ListaPasos
+              control={control}
+              register={register}
+              setValue={setValue}
+              datos={datos}
+              roles={roles}
               nombre="pasos"
               titulo="Tareas sueltas"
               ayuda="Tareas del proyecto que no esperan a nada."
-              encadenada={false}
+              modo="sueltas"
               miembros={miembros}
               agregar="Agregar tarea suelta"
             />
@@ -398,44 +455,114 @@ type Comunes = {
   control: Control<Form>;
   register: UseFormRegister<Form>;
   setValue: UseFormSetValue<Form>;
+  datos: Dato[];
+  roles: RolOpcion[];
 };
 
-function HilosEditor({ control, register, setValue, miembros }: Comunes & { miembros: string[] }) {
+// Un chip por dato: tocarlo inserta `{dato}` donde quedó el cursor del campo.
+// Clic y no arrastre: no hay librería de dnd y el arrastre nativo no anda en
+// touch. El chip va afuera del campo porque adentro pediría un editor
+// enriquecido; en la base el texto sigue siendo `{dato}`.
+function DatosChips({
+  control,
+  setValue,
+  nombre,
+  datos,
+}: Pick<Comunes, "control" | "setValue" | "datos"> & { nombre: CampoConDatos }) {
+  const texto = (useWatch({ control, name: nombre }) as string | undefined) ?? "";
+  if (datos.length === 0) return null;
+
+  // El campo es de RHF (sin ref propia): se lo busca en el form del botón.
+  function insertar(boton: HTMLButtonElement, codigo: string) {
+    const campo = boton.form?.elements.namedItem(nombre);
+    if (!(campo instanceof HTMLInputElement || campo instanceof HTMLTextAreaElement)) return;
+    const dato = `{${codigo}}`;
+    const inicio = campo.selectionStart ?? campo.value.length;
+    const fin = campo.selectionEnd ?? inicio;
+    setValue(nombre, campo.value.slice(0, inicio) + dato + campo.value.slice(fin), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    campo.focus();
+    campo.setSelectionRange(inicio + dato.length, inicio + dato.length);
+  }
+
+  // Mismo reemplazo que `rellenar_datos` (sql/055), con el ejemplo de cada dato.
+  const ejemplo = datos.reduce((t, d) => t.replaceAll(`{${d.codigo}}`, d.ejemplo), texto);
+
+  return (
+    <div className="mt-1">
+      <div className="flex flex-wrap gap-x-1.5">
+        {datos.map((d) => (
+          <button
+            key={d.codigo}
+            type="button"
+            aria-label={`Sumar «${d.label}» al texto`}
+            className="tap-target group inline-flex items-center"
+            onClick={(e) => insertar(e.currentTarget, d.codigo)}
+          >
+            <span className="t-caption inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 font-medium text-brand-700 ring-brand-500 group-hover:ring-1">
+              <Plus size={12} />
+              {d.label}
+            </span>
+          </button>
+        ))}
+      </div>
+      {ejemplo !== texto && (
+        <p className="t-caption">
+          Así se va a ver: <span className="text-text-primary">{ejemplo}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function HilosEditor({ control, register, setValue, datos, roles, miembros }: Comunes & { miembros: string[] }) {
   const { fields, append, remove, move } = useFieldArray({ control, name: "hilos" });
   const { errors } = useFormState({ control, name: "hilos" });
+  const hilos = useWatch({ control, name: "hilos" });
 
   return (
     <div>
       <label className="t-label mb-1 block">Hilos</label>
-      <p className="t-caption mb-2">Cada hilo es una cadena: sus pasos se habilitan de a uno.</p>
+      <p className="t-caption mb-2">Cada hilo elige si sus pasos van encadenados o en paralelo.</p>
       <div className="flex flex-col gap-3">
         {fields.map((field, h) => (
           <div key={field.id} className="rounded-lg border border-border p-3">
-            <div className="mb-3 flex items-center gap-2">
-              <input
-                aria-label={`Título del hilo ${h + 1}`}
-                placeholder="Título del hilo"
-                className={`input ${mensajeDe(errors, `hilos.${h}.titulo`) ? "input-error" : ""}`}
-                {...register(`hilos.${h}.titulo`)}
-              />
-              <BotonesOrden
-                indice={h}
-                total={fields.length}
-                onMover={move}
-                onQuitar={remove}
-                minimo={0}
-                que="hilo"
-              />
+            <div className="mb-3">
+              <div className="flex items-center gap-2">
+                <input
+                  aria-label={`Título del hilo ${h + 1}`}
+                  placeholder="Título del hilo"
+                  className={`input ${mensajeDe(errors, `hilos.${h}.titulo`) ? "input-error" : ""}`}
+                  {...register(`hilos.${h}.titulo`)}
+                />
+                <BotonesOrden
+                  indice={h}
+                  total={fields.length}
+                  onMover={move}
+                  onQuitar={remove}
+                  minimo={0}
+                  que="hilo"
+                />
+              </div>
+              {mensajeDe(errors, `hilos.${h}.titulo`) && (
+                <p className="input-error-text">{mensajeDe(errors, `hilos.${h}.titulo`)}</p>
+              )}
+              <DatosChips control={control} setValue={setValue} nombre={`hilos.${h}.titulo`} datos={datos} />
             </div>
-            {mensajeDe(errors, `hilos.${h}.titulo`) && (
-              <p className="input-error-text -mt-2 mb-2">{mensajeDe(errors, `hilos.${h}.titulo`)}</p>
-            )}
+            <ModoCadena
+              valor={hilos?.[h]?.encadenada ?? true}
+              onChange={(v) => setValue(`hilos.${h}.encadenada`, v, { shouldDirty: true })}
+            />
             <ListaPasos
               control={control}
               register={register}
               setValue={setValue}
+              datos={datos}
+              roles={roles}
               nombre={`hilos.${h}.pasos`}
-              encadenada
+              modo={(hilos?.[h]?.encadenada ?? true) ? "cadena" : "paralelo"}
               miembros={miembros}
               agregar="Agregar paso"
             />
@@ -445,7 +572,7 @@ function HilosEditor({ control, register, setValue, miembros }: Comunes & { miem
       <button
         type="button"
         className="btn btn-ghost btn-sm mt-2"
-        onClick={() => append({ titulo: "", pasos: [pasoVacio()] })}
+        onClick={() => append({ titulo: "", encadenada: true, pasos: [pasoVacio()] })}
       >
         <Plus size={14} />
         Agregar hilo
@@ -458,17 +585,19 @@ function ListaPasos({
   control,
   register,
   setValue,
+  datos,
+  roles,
   nombre,
   titulo,
   ayuda,
-  encadenada,
+  modo,
   miembros,
   agregar,
 }: Comunes & {
   nombre: Lista;
   titulo?: string;
   ayuda?: string;
-  encadenada: boolean;
+  modo: "cadena" | "paralelo" | "sueltas";
   miembros: string[] | null;
   agregar: string;
 }) {
@@ -488,18 +617,20 @@ function ListaPasos({
             control={control}
             register={register}
             setValue={setValue}
+            datos={datos}
+            roles={roles}
             nombre={`${nombre}.${i}`}
-            etiqueta={encadenada ? `Paso ${i + 1}` : `Tarea ${i + 1}`}
+            etiqueta={modo === "sueltas" ? `Tarea ${i + 1}` : `Paso ${i + 1}`}
             miembros={miembros}
-            puedeTrasPrevio={encadenada && i > 0}
+            puedeTrasPrevio={modo === "cadena" && i > 0}
             orden={
               <BotonesOrden
                 indice={i}
                 total={fields.length}
                 onMover={move}
                 onQuitar={remove}
-                minimo={encadenada ? 1 : 0}
-                que={encadenada ? "paso" : "tarea"}
+                minimo={modo === "sueltas" ? 0 : 1}
+                que={modo === "sueltas" ? "tarea" : "paso"}
               />
             }
           />
@@ -511,6 +642,110 @@ function ListaPasos({
         {agregar}
       </button>
     </div>
+  );
+}
+
+// Encadenados: cada paso espera al anterior. En paralelo: ninguno espera (sql/057).
+function ModoCadena({ valor, onChange }: { valor: boolean; onChange: (encadenada: boolean) => void }) {
+  return (
+    <div className="mb-2">
+      <Segmentado
+        etiqueta="Cómo se habilitan los pasos"
+        opciones={[
+          { valor: "cadena", label: "Encadenados" },
+          { valor: "paralelo", label: "En paralelo" },
+        ]}
+        valor={valor ? "cadena" : "paralelo"}
+        onChange={(v) => onChange(v === "cadena")}
+      />
+      <p className="t-caption mt-1">
+        {valor
+          ? "Cada paso se habilita al completar el anterior: el orden manda."
+          : "Todos se habilitan juntos; el orden es solo cómo se listan."}
+      </p>
+    </div>
+  );
+}
+
+// Los roles del registro en un paso (sql/060). Adjuntar suma a la tarea un chip
+// que abre la ficha de quien tenga ese rol; la condición saltea el paso si,
+// cuando la plantilla corre, nadie lo tiene.
+function RolesPaso({
+  control,
+  setValue,
+  nombre,
+  roles,
+}: Pick<Comunes, "control" | "setValue" | "roles"> & { nombre: Paso }) {
+  const adjuntos = (useWatch({ control, name: `${nombre}.adjuntos` }) as string[] | undefined) ?? [];
+  const condicion = (useWatch({ control, name: `${nombre}.condicion` }) as string | null | undefined) ?? null;
+  const entes = [...new Set(roles.map((r) => r.ente))];
+
+  function alternar(valor: string) {
+    setValue(
+      `${nombre}.adjuntos`,
+      adjuntos.includes(valor) ? adjuntos.filter((a) => a !== valor) : [...adjuntos, valor],
+      { shouldDirty: true },
+    );
+  }
+
+  return (
+    <>
+      <div>
+        <label className="t-label mb-1 block">Adjuntar a la tarea</label>
+        <p className="t-caption mb-2">Quien la recibe ve un chip que abre la ficha de quien tenga ese rol en la obra.</p>
+        {entes.map((ente) => (
+          <div key={ente} className="mb-2">
+            <p className="t-caption mb-1">{ENTES[ente]?.nombre ?? ente}</p>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Adjuntar — ${ENTES[ente]?.nombre ?? ente}`}>
+              {roles
+                .filter((r) => r.ente === ente)
+                .map((r) => {
+                  const activo = adjuntos.includes(r.valor);
+                  return (
+                    <button
+                      key={r.valor}
+                      type="button"
+                      aria-pressed={activo}
+                      className={`tap-target t-caption rounded-full border px-2.5 py-0.5 ${
+                        activo ? "border-brand-500 bg-brand-50 font-semibold text-brand-700" : "border-border text-text-tertiary"
+                      }`}
+                      onClick={() => alternar(r.valor)}
+                    >
+                      {r.label}
+                    </button>
+                  );
+                })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <label className="t-label mb-1 block">Se crea</label>
+        <select
+          aria-label="Cuándo se crea este paso"
+          className="input"
+          value={condicion ?? ""}
+          onChange={(e) => setValue(`${nombre}.condicion`, e.target.value || null, { shouldDirty: true })}
+        >
+          <option value="">Siempre</option>
+          {entes.map((ente) => (
+            <optgroup key={ente} label={`Solo si la obra tiene ${ENTES[ente]?.un ?? ente} con rol…`}>
+              {roles
+                .filter((r) => r.ente === ente)
+                .map((r) => (
+                  <option key={r.valor} value={r.valor}>
+                    {r.label}
+                  </option>
+                ))}
+            </optgroup>
+          ))}
+        </select>
+        {condicion && (
+          <p className="t-caption mt-1">Si se saltea, el paso siguiente espera al anterior que sí se creó.</p>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -568,6 +803,8 @@ function PasoEditor({
   control,
   register,
   setValue,
+  datos,
+  roles,
   nombre,
   etiqueta,
   miembros,
@@ -604,7 +841,10 @@ function PasoEditor({
       ? "Sin vencimiento"
       : `Vence a ${paso.vence_dias} d ${modo === "tras_previo" ? "del paso anterior" : "de creada"}`,
     temperaturaRango(temperatura).label,
-  ].join(" · ");
+    paso?.condicion && `Solo si hay ${(roles.find((r) => r.valor === paso.condicion)?.label ?? paso.condicion).toLowerCase()}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   function cambiarModo(v: ModoVence) {
     setModoVence(v);
@@ -628,6 +868,7 @@ function PasoEditor({
         {orden}
       </div>
       {errorTitulo && <p className="input-error-text">{errorTitulo}</p>}
+      <DatosChips control={control} setValue={setValue} nombre={`${nombre}.titulo`} datos={datos} />
 
       <button
         type="button"
@@ -644,6 +885,7 @@ function PasoEditor({
           <div>
             <label className="t-label mb-1 block">Descripción</label>
             <textarea rows={2} className="input" {...register(`${nombre}.descripcion`)} />
+            <DatosChips control={control} setValue={setValue} nombre={`${nombre}.descripcion`} datos={datos} />
           </div>
 
           <AsignadosPicker
@@ -704,6 +946,8 @@ function PasoEditor({
               })}
             </div>
           </div>
+
+          {roles.length > 0 && <RolesPaso control={control} setValue={setValue} nombre={nombre} roles={roles} />}
         </div>
       )}
     </div>

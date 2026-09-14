@@ -1,6 +1,6 @@
 # Módulo tareas
 
-Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055` (más las que cita cada sección) — corridas en Supabase vía MCP.
+Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`060` (más las que cita cada sección) — corridas en Supabase vía MCP.
 
 **Regla de visibilidad (`sql/013`): se ve lo asignado y lo público, nada más** — `creado_por` no autoriza. Excepciones: `tareas_gestionar_ajenas` y `tareas_hilos.responsable_id`. Los UPDATE están alineados con los SELECT. El porqué, en `decisiones/tareas/visibilidad.md`.
 
@@ -74,7 +74,7 @@ Unidad mínima de trabajo. `proyecto_id` solo se usa cuando la tarea está suelt
 | recurrencia_cantidad | int | nullable, junto con recurrencia_unidad (ambos o ninguno) |
 | recurrencia_unidad | enum `recurrencia_unidad` (`dia`\|`mes`) | nullable |
 | nota_anterior / nota_siguiente | text | nullable — "nota de la última vez" de tareas recurrentes |
-| origen_app / origen_punto | text | nullable — qué módulo o app la generó y el deep link a la acción. `origen_punto` solo ruta interna (`/...`), validado en `crearTareaSchema` y de nuevo al renderizar (`modules/tareas/origen.ts`) |
+| origen_app / origen_punto | text | nullable — qué módulo o app la generó y el deep link a la acción. `origen_punto` solo ruta interna (`/...`), validado en `crearTareaSchema` y de nuevo al renderizar (`modules/tareas/origen.ts`). Al nacer en un hilo sin link propio, `trg_heredar_origen_hilo` (`sql/058`, BEFORE INSERT, INVOKER) copia el de la tarea activa más antigua del hilo que tenga uno |
 | modo_completado | enum `modo_completado` (`manual`\|`automatico`\|`hibrido`) | default `manual` |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | `created_at` default `clock_timestamp()` desde `sql/053` (no `now()`): es el orden de los pasos en la Lista, y `now()` le daba a toda la cadena que crea una función el mismo instante |
@@ -105,7 +105,7 @@ SELECT vía `EXISTS` directo sobre la tabla padre (`tareas`/`tareas_hilos`) — 
 
 Dos alcances. **Privada**: la ve, la modifica y la usa solo su dueño (`creado_por`). **De sistema**: la ve y la usa todo el que tiene la vista `tareas_plantillas`; la crea, modifica y desactiva quien tiene la función `tareas_plantillas_sistema`. Hasta `sql/053` eran un único recurso de equipo que cualquiera con la vista editaba.
 
-Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados) y `proyecto` (proyecto + miembros + hilos de pasos + tareas sueltas).
+Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados o, desde `sql/057`, en paralelo) y `proyecto` (proyecto + miembros + hilos de pasos + tareas sueltas).
 
 | tareas_plantillas | tipo | notas |
 |---|---|---|
@@ -118,6 +118,8 @@ Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados) y `proyecto` (proyecto
 | creado_por | uuid FK → usuarios | dueño de la privada. Fuera del `GRANT UPDATE` |
 | disparo_ente | text FK → entes(codigo), nullable | `sql/055` — el ente cuyo estado la dispara (`core.md`). NULL = se usa a mano |
 | disparo_estado | text, nullable | `sql/055` — estado destino. CHECK `tareas_plantillas_disparo_completo`: los dos o ninguno. `guardar_plantilla` valida que exista en el enum del ente (`TA012`) |
+| titulo_creado | text, nullable | `sql/057` — nombre del hilo o proyecto que crea; NULL = `nombre`. Admite `{dato}`. En tipo `tarea` se guarda NULL |
+| encadenada | boolean | default true, `sql/057` — solo la lee el tipo `hilo`: false = sus pasos no se esperan entre sí. Fuera de ese tipo se guarda true |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
@@ -127,6 +129,7 @@ Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados) y `proyecto` (proyecto
 | plantilla_id | uuid FK → tareas_plantillas | solo en plantillas de tipo `proyecto` |
 | titulo | text | título del hilo que se crea |
 | orden | int | |
+| encadenada | boolean | default true, `sql/057` — false = los pasos del hilo no se esperan entre sí |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
@@ -143,12 +146,14 @@ Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados) y `proyecto` (proyecto
 | vence_dias | int | nullable, > 0 |
 | vence_tras_previo | boolean | default false — el plazo corre desde que se completa el paso anterior (exige `vence_dias`). En el primer paso de una cadena vale como "desde la creación" |
 | temperatura | int | default 50, 1-100 |
+| adjuntos | text[] | default `{}`, `sql/060` — roles (`ente:rol`, como `persona:arquitecto`) cuyos registros se vinculan a la tarea al disparar. CHECK de formato |
+| condicion | text, nullable | `sql/060` — rol que tiene que existir en el registro para que el paso se cree. CHECK de formato |
 | activo | boolean | |
 | created_at | timestamptz | |
 
 **RLS.** `tareas_plantillas_select`: vista `tareas_plantillas` y (`alcance = 'sistema'` o dueño). INSERT: dueño + vista, y `alcance = 'privada'` o la función. UPDATE (tabla y los dos hijos): `puede_gestionar_plantilla(id)` — función `SECURITY INVOKER STABLE` (la de sistema, con la función; la privada, su dueño); no recursa porque las policies de `tareas_plantillas` no miran a los hijos. SELECT de los hijos: `EXISTS` sobre `tareas_plantillas` (su RLS decide). INSERT/UPDATE de items suma la regla de `sql/014`: asignados o responsable ajenos exigen `tareas_asignar`.
 
-**Escritura por función.** `guardar_plantilla(p_id, p_nombre, p_descripcion, p_alcance, p_tipo, p_visibilidad, p_miembros, p_hilos jsonb, p_pasos jsonb) → uuid` crea o edita (`p_id` NULL = crear; `p_alcance` solo se lee al crear). Guardar **reemplaza**: desactiva los hilos y pasos activos e inserta los nuevos — nada referencia a un paso de plantilla. Valida la forma según el tipo (`TA010`) y que haya pasos (`TA009`). `usar_plantilla(p_plantilla_id, p_titulo, p_proyecto_id, p_hilo_id) → int` — ver la tabla de escrituras multi-tabla.
+**Escritura por función.** `guardar_plantilla(p_id, p_nombre, p_descripcion, p_alcance, p_tipo, p_visibilidad, p_miembros, p_hilos jsonb, p_pasos jsonb, p_disparo_ente, p_disparo_estado, p_titulo_creado, p_encadenada) → uuid` (cada hilo de `p_hilos` lleva su `encadenada`) crea o edita (`p_id` NULL = crear; `p_alcance` solo se lee al crear). Guardar **reemplaza**: desactiva los hilos y pasos activos e inserta los nuevos — nada referencia a un paso de plantilla. Valida la forma según el tipo (`TA010`) y que haya pasos (`TA009`); sin disparador, rechaza pasos con roles (`TA015`, `sql/060`). `usar_plantilla(p_plantilla_id, p_titulo, p_proyecto_id, p_hilo_id) → int` — ver la tabla de escrituras multi-tabla. Lo que crea se llama `p_titulo`, si no `titulo_creado`, si no `nombre`; los pasos se encadenan según `encadenada` de la plantilla (tipo `hilo`) o de su hilo (tipo `proyecto`), y sin cadena «vence tras el anterior» corre desde la creación (`sql/057`).
 
 **Disparador (`sql/055`).** Con `disparo_ente`, la plantilla no se usa a mano: corre sola cuando un registro de ese ente entra a `disparo_estado`, para quien lo cambió y la tiene activada. Las tres policies de `tareas_plantillas` suman `disparo_ente IS NULL OR EXISTS (entes)`; la RLS de `entes` pide su submódulo, así que sin `obras_ver` una plantilla de obra no se ve ni se arma. En UPDATE va en el `WITH CHECK`, sobre la fila nueva, porque el disparador sí cambia. `GRANT UPDATE` suma las dos columnas.
 
@@ -162,22 +167,31 @@ Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados) y `proyecto` (proyecto
 
 La de sistema arranca apagada (sin fila); la privada, prendida: `guardar_plantilla` inserta la fila del dueño cuando tiene disparador, con `ON CONFLICT DO NOTHING` para no pisar un apagado. RLS: SELECT la propia; INSERT/UPDATE la propia, y además ver la plantilla y que tenga disparador. `GRANT SELECT, INSERT, UPDATE`.
 
-| tareas_vinculos (`sql/055`) | tipo | notas |
+| tareas_vinculos (`sql/055`, `sql/059`) | tipo | notas |
 |---|---|---|
 | id | uuid PK | |
 | tarea_id | uuid FK → tareas | |
 | ente | text FK → entes(codigo) | misma forma que `usuario_notificaciones.entidad` |
 | registro_id | uuid | sin FK — apunta a la tabla del ente |
-| plantilla_id | uuid FK → tareas_plantillas, NOT NULL | hoy el único que vincula es un disparo |
+| plantilla_id | uuid FK → tareas_plantillas, nullable | `sql/059`: NULL = vinculada a mano (al crear o con «Relacionar»); con valor, la vinculó un disparo |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
-Qué tareas salieron de cada (plantilla, registro). RLS: SELECT si la tarea es visible; INSERT solo con `pg_trigger_depth() > 0` — la escribe `usar_plantilla` adentro del disparo, y un vínculo insertado por el cliente bloquearía el disparo real para todos. `GRANT SELECT, INSERT`.
+Con qué registros de otros módulos se relaciona cada tarea, y qué tareas salieron de cada (plantilla, registro). Unique parcial `idx_tareas_vinculos_activo_unico (tarea_id, ente, registro_id) WHERE activo` (`sql/059`).
 
-**El disparo — `disparar_plantillas()` (`sql/055`).** Trigger genérico `SECURITY INVOKER`; `TG_ARGV` = (ente, columna de estado). Hoy cuelga de `obras` (ver `obras.md`). Corre al INSERT o cuando la columna cambia de verdad, si la fila está activa y `current_user = 'authenticated'` (bajo una DEFINER correría con BYPASSRLS). Arma los datos desde la fila (`entes.datos`), recorre las plantillas visibles cuyo `disparo_ente`/`disparo_estado` coinciden y que quien cambió tiene activadas, y por cada una, si `plantilla_disparada(plantilla, ente, registro)` es falso, llama a `usar_plantilla(..., p_ente, p_registro_id, p_datos)`. Cada plantilla va en su bloque `EXCEPTION`: si falla, se revierte lo suyo y llama a `notificar_plantilla_fallida`. Marca la transacción con `tareas.disparo` para que las asignaciones avisen (ver `notificaciones.md`).
+RLS: SELECT si la tarea es visible. INSERT (`sql/059`), dos caminos: con `plantilla_id`, solo con `pg_trigger_depth() > 0` —lo escribe `usar_plantilla` adentro del disparo, y uno insertado por el cliente bloquearía el disparo real para todos—; sin `plantilla_id`, la tarea visible o en siembra (`es_siembra_tarea`) y el registro visible (`etiqueta_registro` no NULL, ver `core.md`). UPDATE solo de `activo` y solo sin plantilla: apagar el de un disparo lo dejaría volver a disparar. `GRANT SELECT, INSERT, UPDATE (activo)`.
+
+Lecturas (`sql/059`, las tres `SECURITY INVOKER STABLE`, EXECUTE para `authenticated`):
+
+- `vinculos_de_tareas()` — los vínculos activos de las tareas activas visibles, con `etiqueta`, `href` (la `ruta` del ente con el id) y `de_plantilla`. Sin fila si el registro no se ve. La precarga `getListaTareas`.
+- `tareas_de_registro(ente, registro_id)` — la sección Tareas de una ficha de Obras: tareas activas visibles vinculadas (título, estado, vencimiento, responsable, hilo, proyecto), lo terminado al final. Vacío si el registro no se ve.
+- `buscar_registros(texto)` — "Relacionar": `obras_buscar` sin lo ajeno enmascarado y solo entes cuyo submódulo tiene quien busca, con `href`.
+
+**El disparo — `disparar_plantillas()` (`sql/055`, `sql/056`).** Trigger genérico `SECURITY INVOKER`; `TG_ARGV` = (ente, columna de estado). Hoy cuelga de `obras` (ver `obras.md`). Corre al INSERT o cuando la columna cambia de verdad, si la fila está activa y `current_user = 'authenticated'` (bajo una DEFINER correría con BYPASSRLS). Arma los datos desde la fila (`entes.datos`), recorre las plantillas visibles cuyo `disparo_ente`/`disparo_estado` coinciden y que quien cambió tiene activadas, y por cada una, si `plantilla_disparada(plantilla, ente, registro)` es falso, llama a `usar_plantilla(..., p_ente, p_registro_id, p_datos)`. Cada plantilla va en su bloque `EXCEPTION`: si corre, `notificar_disparo(plantilla, true)` le avisa a quien disparó; si falla, se revierte lo suyo y `notificar_disparo(plantilla, false)`. Si no creó ningún paso porque todos pedían un rol que el registro no tiene (`TA014`, `sql/060`), se revierte sin aviso. Marca la transacción con `tareas.disparo` para que las asignaciones avisen (ver `notificaciones.md`).
 
 - `plantilla_disparada(uuid, text, uuid)` — `SECURITY DEFINER STABLE`: hay alguna tarea **activa** vinculada a (plantilla, ente, registro). Completadas y canceladas cuentan; archivadas no. EXECUTE para `authenticated` (la llama el disparo), y fuera de un trigger devuelve false.
 - `rellenar_datos(text, jsonb)` — `{clave}` → valor, en título y descripción de cada paso, título de hilo y nombre de lo que crea. `IMMUTABLE`.
+- Roles (`sql/060`): con `relacionados_de_registro` (ver `core.md`), `usar_plantilla` saltea el paso cuya `condicion` nadie cumple —la cadena sigue del último creado y un hilo de proyecto sin pasos no se abre— y vincula a cada tarea los registros con alguno de sus `adjuntos`. Sin ningún paso creado, `TA014`.
 
 ## tareas_eventos
 
@@ -257,7 +271,7 @@ Toda action que escribía dos o más tablas es ahora **una** función, invocada 
 
 | función | reemplaza a | tablas |
 |---|---|---|
-| `crear_tarea(...)` → uuid | `crearTarea` | `tareas` + `tareas_asignados` |
+| `crear_tarea(...)` → uuid | `crearTarea` | `tareas` + `tareas_vinculos` (`sql/059`) + `tareas_asignados` |
 | `crear_proyecto(...)` → uuid | `crearProyecto` | `tareas_proyectos` + `tareas_proyectos_miembros` |
 | `convertir_tarea_en_hilo(uuid)` → uuid | `convertirTareaEnHilo` | `tareas_hilos` + `tareas` |
 | `deshacer_conversion_hilo(uuid)` | `deshacerConversionHilo` | `tareas` + `tareas_hilos` |
@@ -266,7 +280,7 @@ Toda action que escribía dos o más tablas es ahora **una** función, invocada 
 | `usar_plantilla(uuid, text, uuid, uuid, text, uuid, jsonb)` → int (`sql/053`; `sql/055` suma `p_ente`, `p_registro_id`, `p_datos` con DEFAULT NULL) | `usarPlantilla` y el disparo | `tareas_proyectos` + miembros + `tareas_hilos` + `tareas` + `tareas_asignados` + `tareas_notas` + `tareas_vinculos` |
 | `guardar_plantilla(...)` → uuid (`sql/053`; `sql/055` suma `p_disparo_ente`, `p_disparo_estado` con DEFAULT NULL) | `guardarPlantilla` (reemplaza `crearPlantilla`/`editarPlantilla`) | `tareas_plantillas` + `_hilos` + `_items` + `_activaciones` |
 
-`crear_tarea` y `editar_tarea` suman `p_vence_dias_tras_previo int` al final (`sql/053`, firma nueva; la vieja se borró).
+`crear_tarea` y `editar_tarea` suman `p_vence_dias_tras_previo int` al final (`sql/053`, firma nueva; la vieja se borró). `sql/059` suma a `crear_tarea` `p_vinculos jsonb DEFAULT '[]'` (`[{ente, registro_id}]`), insertados antes que los asignados para que la siembra deje vincular una tarea que quien la crea no va a ver.
 
 **`usar_plantilla`** es `SECURITY INVOKER`: se usa a mano y la RLS de quien la usa decide igual que en los formularios. Crea según el tipo — `tarea`: una tarea en `p_hilo_id` o suelta (con `p_proyecto_id` o personal); `hilo`: pasos encadenados en `p_hilo_id` o en un hilo nuevo titulado `p_titulo`; `proyecto`: un proyecto nuevo (`p_titulo`) con sus miembros activos + quien la usa, un hilo público por hilo de la plantilla y sus tareas sueltas (`TA011` si se le pasa destino). Cada paso lo reciben los asignados fijos que pueden (activos, miembros del proyecto efectivo, y ajenos solo si quien la usa tiene `tareas_asignar`) más quien la usa si `incluir_ejecutor`; **si no queda nadie, el paso va a quien la usa con una nota en `tareas_notas` que dice por qué** (decisión del usuario: la tarea no se pierde). Devuelve cuántos pasos cayeron así. Toda la creación pasa por `crear_tarea` / `crear_proyecto`.
 

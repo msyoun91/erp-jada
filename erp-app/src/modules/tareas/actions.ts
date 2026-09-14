@@ -27,6 +27,8 @@ import {
   cambiarEstadoTareaSchema,
   asociarTareaHiloSchema,
   temperaturaSchema,
+  vincularTareaSchema,
+  buscarRegistrosSchema,
   type CrearTareaForm,
   type EditarTareaForm,
   type CrearHiloForm,
@@ -45,6 +47,8 @@ import {
   type AgregarNotaHiloForm,
   type TareaNota,
   type HiloNota,
+  type VincularTareaForm,
+  type RegistroElegido,
 } from "./types";
 
 // Sin chequeo de permisos acá: estas actions usan el cliente normal (no
@@ -98,6 +102,7 @@ export async function crearTarea(input: CrearTareaForm) {
     p_origen_app: d.origen_app ?? null,
     p_origen_punto: d.origen_punto ?? null,
     p_vence_dias_tras_previo: d.vence_dias_tras_previo ?? null,
+    p_vinculos: d.vinculos,
   }));
 
   if (error) return { success: false as const, error: mensajeError(error) };
@@ -308,6 +313,7 @@ export async function guardarPlantilla(input: GuardarPlantillaForm) {
 
   const supabase = await createClient();
   const d = parsed.data;
+  const conRoles = Boolean(d.disparo_ente);
 
   const { data: id, error } = await supabase.rpc("guardar_plantilla", argsRpc<"guardar_plantilla">({
     p_id: d.id ?? null,
@@ -317,10 +323,16 @@ export async function guardarPlantilla(input: GuardarPlantillaForm) {
     p_tipo: d.tipo,
     p_visibilidad: d.visibilidad,
     p_miembros: d.miembros,
-    p_hilos: d.hilos.map((h) => ({ titulo: h.titulo, pasos: h.pasos.map(pasoPlantillaDb) })),
-    p_pasos: d.pasos.map(pasoPlantillaDb),
+    p_hilos: d.hilos.map((h) => ({
+      titulo: h.titulo,
+      encadenada: h.encadenada,
+      pasos: h.pasos.map((p) => pasoPlantillaDb(p, conRoles)),
+    })),
+    p_pasos: d.pasos.map((p) => pasoPlantillaDb(p, conRoles)),
     p_disparo_ente: d.disparo_ente,
     p_disparo_estado: d.disparo_estado,
+    p_titulo_creado: d.titulo_creado || null,
+    p_encadenada: d.encadenada,
   }));
 
   if (error) return { success: false as const, error: mensajeError(error) };
@@ -693,5 +705,53 @@ export async function marcarTutorialVisto(pasos: string[]) {
     );
 
   if (error) return { success: false as const, error: mensajeError(error) };
+  return { success: true as const };
+}
+
+// "Relacionar" busca en los módulos que registran entes (sql/059): solo lo que
+// quien busca puede abrir.
+export async function buscarRegistros(texto: string): Promise<RegistroElegido[]> {
+  const parsed = buscarRegistrosSchema.safeParse(texto);
+  if (!parsed.success) return [];
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("buscar_registros", { p_texto: parsed.data });
+  if (error) return [];
+  return (data ?? []).map((r) => ({
+    ente: r.ente,
+    registro_id: r.registro_id,
+    etiqueta: r.etiqueta,
+    detalle: r.detalle,
+    href: r.href,
+  }));
+}
+
+export async function vincularTarea(input: VincularTareaForm) {
+  const parsed = vincularTareaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("tareas_vinculos").insert(parsed.data);
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath("/tareas");
+  return { success: true as const };
+}
+
+export async function desvincularTarea(id: string) {
+  const parsed = uuidSchema.safeParse(id);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const fallo = errorDeUpdate(
+    await supabase.from("tareas_vinculos").update({ activo: false }, { count: "exact" }).eq("id", parsed.data),
+  );
+  if (fallo) return { success: false as const, error: fallo };
+
+  revalidatePath("/tareas");
   return { success: true as const };
 }

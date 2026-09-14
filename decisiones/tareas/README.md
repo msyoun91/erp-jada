@@ -26,7 +26,7 @@ Quién ve y quién toca: los tres ejes (`tareas_gestionar_ajenas`, membresía de
 Hilos, pasos encadenados (`sql/017`), isla compartida, panel de proyecto y edición de hilos y plantillas.
 
 - Pasos de tarea y vista Misión (`sql/017`)
-- Las plantillas generan una cadena
+- Las plantillas generan una cadena (en parte superada por `sql/057`)
 - Verificación con RLS real (`sql/tests/pasos_tarea.sql`, bloque 2)
 - Desactivar un hilo se lleva sus tareas (sin SQL)
 - Isla compartida, panel de proyecto y edición de hilo
@@ -36,10 +36,13 @@ Hilos, pasos encadenados (`sql/017`), isla compartida, panel de proyecto y edici
 
 ## `plantillas.md`
 
-Plantillas de sistema y privadas, tres tipos (`sql/053`), y disparadas por el estado de un registro de otro módulo (`sql/055`).
+Plantillas de sistema y privadas, tres tipos (`sql/053`), disparadas por el estado de un registro de otro módulo (`sql/055`), con datos por chips y aviso a quien la dispara (`sql/056`), nombre de lo que crea e hilos en paralelo (`sql/057`), roles de la obra en cada paso (`sql/060`).
 
 - Plantillas de sistema y privadas, tres tipos (`sql/053`)
 - Plantillas disparadas por estado (`sql/055`)
+- Datos con chips y aviso de que la plantilla corrió (`sql/056`)
+- Nombre de lo que crea e hilos en paralelo (`sql/057`)
+- Roles de la obra en la plantilla (`sql/060`)
 
 ## `escrituras-postgres.md`
 
@@ -51,10 +54,12 @@ Escrituras y ediciones multi-tabla como funciones SQL (`sql/023`–`024`) y la c
 
 ## `integracion.md`
 
-Tareas generadas por otros módulos (`origen_app` / `origen_punto`) y deep link desde la notificación.
+Tareas generadas por otros módulos (`origen_app` / `origen_punto`), deep link desde la notificación, link heredado dentro del hilo (`sql/058`) y tareas relacionadas con obras, empresas y personas (`sql/059`).
 
 - Tareas generadas por otro módulo = `origen_app` + `origen_punto` (sin SQL)
 - Deep link a una tarea desde la notificación (sin SQL)
+- El link de origen se hereda dentro del hilo (`sql/058`)
+- Tareas relacionadas con obras, empresas y personas (`sql/059`)
 
 ## `vista-lista.md`
 

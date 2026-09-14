@@ -36,9 +36,11 @@ import {
   type Obra,
   type Usuario,
 } from "../types";
+import type { TareaRelacionada } from "@/lib/tareas";
 import { Breadcrumb } from "./Breadcrumb";
 import { CompartirPanel } from "./CompartirPanel";
 import { EstadoPendiente } from "./EstadoPendiente";
+import { TareasRelacionadas } from "./TareasRelacionadas";
 import { ObraFormPanel } from "./ObraFormPanel";
 import { ReferentePanel } from "./ReferentePanel";
 import { TransferirPanel } from "./TransferirPanel";
@@ -93,6 +95,7 @@ export function ObraDetalle({
   esMio,
   compartidos,
   permisos,
+  tareas,
 }: {
   obra: Obra;
   responsable: Usuario | null;
@@ -114,6 +117,8 @@ export function ObraDetalle({
   esMio: boolean;
   compartidos: Compartido[];
   permisos: Permisos;
+  // null = sin la vista de Tareas: la sección no se muestra.
+  tareas: TareaRelacionada[] | null;
 }) {
   const [editando, setEditando] = useState(false);
   const [vinculandoEmpresa, setVinculandoEmpresa] = useState<VinculoEmpresa | true | null>(null);
@@ -403,6 +408,8 @@ export function ObraDetalle({
           </ul>
         )}
       </section>
+
+      {tareas && <TareasRelacionadas ente="obra" registroId={obra.id} tareas={tareas} />}
 
       {transferencias.length > 0 && (
         <section>

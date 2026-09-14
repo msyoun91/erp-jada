@@ -5,6 +5,7 @@ import type {
   Ente,
   EventoAuditoria,
   PlantillaCompleta,
+  RegistroElegido,
   TareaConAsignados,
   TareaHilo,
   TareaPendiente,
@@ -30,7 +31,11 @@ export async function getListaTareas(): Promise<{ hilos: TareaHilo[]; tareas: Ta
   const supabase = await createClient();
   await supabase.rpc("reactivar_posponer_vencidos");
 
-  const [{ data: hilos, error: errorHilos }, { data: tareas, error: errorTareas }] = await Promise.all([
+  const [
+    { data: hilos, error: errorHilos },
+    { data: tareas, error: errorTareas },
+    { data: vinculos, error: errorVinculos },
+  ] = await Promise.all([
     supabase
       .from("tareas_hilos")
       .select("*")
@@ -43,10 +48,12 @@ export async function getListaTareas(): Promise<{ hilos: TareaHilo[]; tareas: Ta
       )
       .eq("activo", true)
       .order("created_at", { ascending: false }),
+    supabase.rpc("vinculos_de_tareas"),
   ]);
 
   if (errorHilos) throw errorHilos;
   if (errorTareas) throw errorTareas;
+  if (errorVinculos) throw errorVinculos;
 
   // activo/orden de las notas se resuelven acá y no en la query: filtrar un
   // embed en PostgREST lo vuelve inner join y perderíamos las tareas sin notas.
@@ -55,6 +62,7 @@ export async function getListaTareas(): Promise<{ hilos: TareaHilo[]; tareas: Ta
     tareas_notas: t.tareas_notas
       .filter((n) => n.activo)
       .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    vinculos: (vinculos ?? []).filter((v) => v.tarea_id === t.id),
   }));
 
   return { hilos: hilos ?? [], tareas: conNotas };
@@ -143,6 +151,18 @@ export async function getEntes(): Promise<Ente[]> {
 // tareas_eventos y tareas_asignados, así que se arma un mapa
 // (tarea_id, usuario_id) -> primera vez que ese usuario quedó asignado
 // (incluye filas inactivas — reasignado no debe perder el dato histórico).
+// El registro desde el que se pidió "Nueva tarea" (`/tareas?nueva=obra:{id}`),
+// si quien llega lo puede abrir.
+export async function getRegistro(ente: string, id: string): Promise<RegistroElegido | null> {
+  const supabase = await createClient();
+  const [{ data: etiqueta }, { data: e }] = await Promise.all([
+    supabase.rpc("etiqueta_registro", { p_ente: ente, p_id: id }),
+    supabase.from("entes").select("ruta").eq("codigo", ente).maybeSingle(),
+  ]);
+  if (!etiqueta || !e) return null;
+  return { ente, registro_id: id, etiqueta, detalle: null, href: e.ruta.replace("{id}", id) };
+}
+
 export async function getAuditoria(
   desde: string,
   hasta: string,

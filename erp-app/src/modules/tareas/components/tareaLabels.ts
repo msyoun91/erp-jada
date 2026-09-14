@@ -5,19 +5,8 @@ import type { EstadoTarea, RecurrenciaUnidad } from "../types";
 // panel (TareaDetailPanel): la misma tarea no puede leerse distinto según
 // dónde se la mire.
 
-export const ESTADO_LABEL: Record<EstadoTarea, string> = {
-  pendiente: "Pendiente",
-  en_progreso: "En progreso",
-  completada: "Completada",
-  cancelada: "Cancelada",
-};
-
-export const ESTADO_BADGE: Record<EstadoTarea, string> = {
-  pendiente: "badge-neutral",
-  en_progreso: "badge-info",
-  completada: "badge-success",
-  cancelada: "badge-error",
-};
+// Las de estado viven en lib/tareas.ts: Obras también las muestra.
+export { LABEL_ESTADO_TAREA as ESTADO_LABEL, BADGE_ESTADO_TAREA as ESTADO_BADGE } from "@/lib/tareas";
 
 export const RECURRENCIA_LABEL: Record<RecurrenciaUnidad, string> = { dia: "día(s)", mes: "mes(es)" };
 

@@ -28,11 +28,11 @@ Pedido: botón "crear siguiente paso" además de "crear tarea", ver los pasos pr
 
 ## Las plantillas generan una cadena
 
-> **Sigue vigente para las plantillas de tipo hilo** (y los hilos de una de proyecto). `agregarTareasDesdePlantilla` pasó a ser `usar_plantilla` — ver *Plantillas de sistema y privadas, tres tipos*.
+> **Encadenar es el default, ya no la única opción** (`sql/057`): la plantilla de hilo y cada hilo de una de proyecto eligen con `encadenada` — ver *Nombre de lo que crea e hilos en paralelo* en `plantillas.md`. `agregarTareasDesdePlantilla` pasó a ser `usar_plantilla` — ver *Plantillas de sistema y privadas, tres tipos*.
 
 `agregarTareasDesdePlantilla` encadena los items en vez de crear N tareas sueltas: `paso_anterior_id` de cada uno apunta al anterior. `tareas_plantillas_items.orden` siempre significó "primero esto, después aquello" — hasta acá era una sugerencia visual sin consecuencia.
 
-**Sin flag ni checkbox: la plantilla siempre encadena.** Una columna `encadenada` en `tareas_plantillas`, o un check en "usar plantilla", sería una opción que nadie pidió todavía. Si aparece un caso real de plantilla-checklist (items sin orden entre sí), se agrega ahí.
+~~**Sin flag ni checkbox: la plantilla siempre encadena.**~~ Superada por `sql/057`: apareció el caso real y la columna quedó donde decía esta decisión.
 
 **Un solo INSERT multi-fila, no N inserts.** Depende de que el `BEFORE ROW` de `validar_paso_tarea` en la fila 2 vea la fila 1 de la **misma sentencia** — Postgres procesa las tuplas de a una y el trigger la encuentra. Verificado contra la base y fijado como caso 14 de `sql/tests/pasos_tarea.sql`, porque si esa semántica cambiara la plantilla tendría que insertar de a una fila (N round trips por PostgREST).
 

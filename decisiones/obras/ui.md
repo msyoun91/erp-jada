@@ -248,6 +248,10 @@ El badge "Ajena" salió de los tres listados en la misma pasada: con el `Alcance
 marcar cada fila ajena era ruido. El "Ajeno" del `BuscadorGlobal` se queda — ahí la fila
 enmascarada no es link y el badge es lo que lo dice.
 
+**"Perdida" y "Terminada" quedan fuera de "Todas"** (pedido del usuario, 2026-09-14; "Perdida" ya
+estaba así sin escribir). Lo cerrado no ocupa la vista de trabajo: se ve tocando su chip, que sigue
+contando. `OCULTAS_POR_DEFECTO` en `ObrasView.tsx`; el número de "Todas" es lo que muestra.
+
 ---
 
 ## El filtro vive donde llega su efecto
@@ -347,3 +351,9 @@ la base es la regla — la misma repartición que Zod y `safeParse`.
 devuelve 5 por tipo y contar el resto sería una segunda consulta para un número que
 no se puede usar. En su lugar el panel dice que muestra los primeros de cada tipo y
 que la búsqueda se puede afinar.
+
+---
+
+## La sección Tareas de las fichas
+
+Obra, empresa y persona muestran sus tareas relacionadas (`TareasRelacionadas`, pedido del usuario el 2026-09-14). El porqué y la regla de visibilidad están en `decisiones/tareas/integracion.md` → *Tareas relacionadas con obras, empresas y personas*. Acá, la forma: la misma sección que Empresas y Personas (h3, botón secundario, lista de `.card`), al final de la ficha y antes del historial de responsables. La fila y "Nueva tarea" son links a Tareas: obras no importa ese módulo.

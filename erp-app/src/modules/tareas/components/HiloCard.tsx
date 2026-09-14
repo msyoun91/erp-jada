@@ -41,9 +41,10 @@ export function HiloCard({
   plantillas: PlantillaCompleta[];
   relacionCon?: string | null;
   autoAbrir?: boolean;
-  // Deep link desde una notificación de tarea: el paso propio con este id nace
-  // con su panel abierto. Notificar solo avisa al asignado, así que el paso
-  // siempre cae del lado `esPropia` — nunca hace falta expandir los ajenos.
+  // Deep link a una tarea: el paso con este id nace con su panel abierto. Cae
+  // siempre del lado `esPropia`: la notificación solo avisa al asignado, y un
+  // link a una tarea ajena (desde una ficha) llega con la Lista sin recorte por
+  // usuario (TareasListaView), así que nunca hace falta expandir los ajenos.
   autoAbrirTareaId?: string | null;
   onTemperaturaChange?: (id: string, temperatura: number) => void;
 }) {

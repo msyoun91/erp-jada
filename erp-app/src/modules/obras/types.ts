@@ -157,27 +157,8 @@ export const LABEL_MOTIVO_PERDIDA: Record<MotivoPerdida, string> = {
   otro: "Otro",
 };
 
-export const LABEL_ROL_EMPRESA: Record<RolEmpresa, string> = {
-  constructora: "Constructora",
-  desarrolladora: "Desarrolladora",
-  inmobiliaria: "Inmobiliaria",
-  estudio_arquitectura: "Estudio de arquitectura",
-  direccion_obra: "Dirección de obra",
-  otro: "Otro",
-};
-
-export const LABEL_ROL_PERSONA: Record<RolPersona, string> = {
-  arquitecto: "Arquitecto",
-  desarrollador: "Desarrollador",
-  inversor: "Inversor",
-  director_obra: "Director de obra",
-  compras: "Compras",
-  oficina_tecnica: "Oficina técnica",
-  decisor: "Decisor",
-  influenciador: "Influenciador",
-  contacto_comercial: "Contacto comercial",
-  otro: "Otro",
-};
+// Viven en lib/entes.ts: Tareas también los muestra (plantillas, sql/060).
+export { LABEL_ROL_EMPRESA, LABEL_ROL_PERSONA } from "@/lib/entes";
 
 export const LABEL_PROVINCIA: Record<Provincia, string> = {
   caba: "CABA",

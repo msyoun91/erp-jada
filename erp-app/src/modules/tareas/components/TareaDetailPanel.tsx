@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { toast } from "sonner";
 import {
   Archive,
   ArrowRightLeft,
   CalendarClock,
   Clock,
-  ExternalLink,
   GitBranch,
+  Link2,
   ListOrdered,
   Lock,
   Pencil,
@@ -27,6 +26,8 @@ import {
   convertirTareaEnHilo,
   desactivarTarea,
   desasociarTareaHilo,
+  desvincularTarea,
+  vincularTarea,
 } from "../actions";
 import type { EstadoTarea, TareaConAsignados, TareaHilo } from "../types";
 import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
@@ -35,6 +36,10 @@ import { PosponerPanel } from "./PosponerPanel";
 import { CompletarModal } from "./CompletarModal";
 import { TareaFormPanel } from "./TareaFormPanel";
 import { NotasSection } from "./NotasSection";
+import { OrigenLink } from "./OrigenLink";
+import { RelacionarRegistro } from "./RelacionarRegistro";
+import { VinculosChips } from "./VinculosChips";
+import type { RegistroElegido } from "../types";
 import {
   ESTADO_BADGE,
   ESTADO_LABEL,
@@ -47,7 +52,6 @@ import {
 } from "./tareaLabels";
 import type { PasoEnCadena } from "./cadenaPasos";
 import { useTareasContexto } from "./tareasContexto";
-import { origenHref } from "../origen";
 
 // Todo lo que se hace y se lee de una tarea: la isla (TareaCard) solo resume.
 // El estado y la temperatura optimistas viven en la isla y bajan por props —
@@ -85,6 +89,8 @@ export function TareaDetailPanel({
   const [agregandoPaso, setAgregandoPaso] = useState(false);
   const [desactivando, setDesactivando] = useState(false);
   const [cancelando, setCancelando] = useState(false);
+  const [relacionando, setRelacionando] = useState(false);
+  const vinculos = tarea.vinculos ?? [];
 
   // El trigger `validar_paso_previo` (sql/017) rechaza pasar a en_progreso o
   // completada mientras el paso previo no esté completado. Cancelar sí se
@@ -155,6 +161,22 @@ export function TareaDetailPanel({
     }
     toast.success("Tarea desactivada");
     onClose();
+  }
+
+  async function relacionar(r: RegistroElegido) {
+    const result = await vincularTarea({ tarea_id: tarea.id, ente: r.ente, registro_id: r.registro_id });
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success(`Relacionada con «${r.etiqueta}»`);
+    setRelacionando(false);
+  }
+
+  async function desvincular(id: string) {
+    const result = await desvincularTarea(id);
+    if (!result.success) toast.error(result.error);
+    else toast.success("Relación quitada");
   }
 
   // Cancelar saca la tarea de toda cola de trabajo: es un cambio de estado
@@ -313,27 +335,40 @@ export function TareaDetailPanel({
                 Cada {tarea.recurrencia_cantidad} {RECURRENCIA_LABEL[tarea.recurrencia_unidad ?? "dia"]}
               </span>
             )}
-            {tarea.origen_app &&
-              (origenHref(tarea.origen_punto) ? (
-                <Link
-                  href={origenHref(tarea.origen_punto) as string}
-                  className="flex items-center gap-1 text-brand-500 hover:underline"
-                >
-                  <ExternalLink size={13} strokeWidth={1.75} />
-                  Generado por {tarea.origen_app} — ir
-                </Link>
-              ) : (
-                <span className="flex items-center gap-1">
-                  <ExternalLink size={13} strokeWidth={1.75} />
-                  Generado por {tarea.origen_app}
-                </span>
-              ))}
+            {/* La de un disparo ya muestra su registro como chip: el link sería el mismo dos veces. */}
+            {tarea.origen_app && !vinculos.some((v) => v.href === tarea.origen_punto) && (
+              <OrigenLink app={tarea.origen_app} punto={tarea.origen_punto} />
+            )}
             {tarea.posponer_hasta && (
               <span className="flex items-center gap-1 text-warning-text">
                 <Clock size={13} strokeWidth={1.75} />
                 Pospuesta hasta {formatFecha(tarea.posponer_hasta)}
               </span>
             )}
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <VinculosChips
+                vinculos={vinculos.map((v) => ({
+                  key: v.id,
+                  ente: v.ente,
+                  etiqueta: v.etiqueta,
+                  href: v.href,
+                  quitable: !v.de_plantilla,
+                }))}
+                onQuitar={desvincular}
+              />
+              <button
+                type="button"
+                className="tap-target t-caption flex items-center gap-1 font-semibold text-brand-700"
+                onClick={() => setRelacionando(!relacionando)}
+              >
+                <Link2 size={13} strokeWidth={1.75} />
+                {relacionando ? "Cerrar" : "Relacionar"}
+              </button>
+            </div>
+            {relacionando && <RelacionarRegistro yaElegidos={vinculos} onElegir={relacionar} />}
           </div>
 
           {activa && esAsignado && (

@@ -1311,10 +1311,12 @@ export type Database = {
           descripcion: string | null;
           disparo_ente: string | null;
           disparo_estado: string | null;
+          encadenada: boolean;
           id: string;
           miembros: string[];
           nombre: string;
           tipo: Database["public"]["Enums"]["tipo_plantilla"];
+          titulo_creado: string | null;
           updated_at: string;
           visibilidad: Database["public"]["Enums"]["visibilidad"];
         };
@@ -1326,10 +1328,12 @@ export type Database = {
           descripcion?: string | null;
           disparo_ente?: string | null;
           disparo_estado?: string | null;
+          encadenada?: boolean;
           id?: string;
           miembros?: string[];
           nombre: string;
           tipo?: Database["public"]["Enums"]["tipo_plantilla"];
+          titulo_creado?: string | null;
           updated_at?: string;
           visibilidad?: Database["public"]["Enums"]["visibilidad"];
         };
@@ -1341,10 +1345,12 @@ export type Database = {
           descripcion?: string | null;
           disparo_ente?: string | null;
           disparo_estado?: string | null;
+          encadenada?: boolean;
           id?: string;
           miembros?: string[];
           nombre?: string;
           tipo?: Database["public"]["Enums"]["tipo_plantilla"];
+          titulo_creado?: string | null;
           updated_at?: string;
           visibilidad?: Database["public"]["Enums"]["visibilidad"];
         };
@@ -1411,6 +1417,7 @@ export type Database = {
         Row: {
           activo: boolean;
           created_at: string;
+          encadenada: boolean;
           id: string;
           orden: number;
           plantilla_id: string;
@@ -1420,6 +1427,7 @@ export type Database = {
         Insert: {
           activo?: boolean;
           created_at?: string;
+          encadenada?: boolean;
           id?: string;
           orden?: number;
           plantilla_id: string;
@@ -1429,6 +1437,7 @@ export type Database = {
         Update: {
           activo?: boolean;
           created_at?: string;
+          encadenada?: boolean;
           id?: string;
           orden?: number;
           plantilla_id?: string;
@@ -1448,7 +1457,9 @@ export type Database = {
       tareas_plantillas_items: {
         Row: {
           activo: boolean;
+          adjuntos: string[];
           asignados: string[];
+          condicion: string | null;
           created_at: string;
           descripcion: string | null;
           hilo_id: string | null;
@@ -1464,7 +1475,9 @@ export type Database = {
         };
         Insert: {
           activo?: boolean;
+          adjuntos?: string[];
           asignados?: string[];
+          condicion?: string | null;
           created_at?: string;
           descripcion?: string | null;
           hilo_id?: string | null;
@@ -1480,7 +1493,9 @@ export type Database = {
         };
         Update: {
           activo?: boolean;
+          adjuntos?: string[];
           asignados?: string[];
+          condicion?: string | null;
           created_at?: string;
           descripcion?: string | null;
           hilo_id?: string | null;
@@ -1604,7 +1619,7 @@ export type Database = {
           created_at: string;
           ente: string;
           id: string;
-          plantilla_id: string;
+          plantilla_id: string | null;
           registro_id: string;
           tarea_id: string;
           updated_at: string;
@@ -1614,7 +1629,7 @@ export type Database = {
           created_at?: string;
           ente: string;
           id?: string;
-          plantilla_id: string;
+          plantilla_id?: string | null;
           registro_id: string;
           tarea_id: string;
           updated_at?: string;
@@ -1624,7 +1639,7 @@ export type Database = {
           created_at?: string;
           ente?: string;
           id?: string;
-          plantilla_id?: string;
+          plantilla_id?: string | null;
           registro_id?: string;
           tarea_id?: string;
           updated_at?: string;
@@ -1861,6 +1876,41 @@ export type Database = {
         };
         Returns: string;
       };
+      buscar_registros: {
+        Args: { p_texto: string };
+        Returns: {
+          detalle: string;
+          ente: string;
+          etiqueta: string;
+          href: string;
+          registro_id: string;
+        }[];
+      };
+      etiqueta_registro: { Args: { p_ente: string; p_id: string }; Returns: string };
+      tareas_de_registro: {
+        Args: { p_ente: string; p_registro_id: string };
+        Returns: {
+          estado: Database["public"]["Enums"]["estado_tarea"];
+          fecha_vencimiento: string;
+          hilo: string;
+          id: string;
+          proyecto: string;
+          responsable: string;
+          titulo: string;
+        }[];
+      };
+      vinculos_de_tareas: {
+        Args: never;
+        Returns: {
+          de_plantilla: boolean;
+          ente: string;
+          etiqueta: string;
+          href: string;
+          id: string;
+          registro_id: string;
+          tarea_id: string;
+        }[];
+      };
       crear_tarea: {
         Args: {
           p_asignados: string[];
@@ -1878,6 +1928,7 @@ export type Database = {
           p_temperatura: number;
           p_titulo: string;
           p_vence_dias_tras_previo: number;
+          p_vinculos?: Json;
           p_visibilidad: Database["public"]["Enums"]["visibilidad"];
         };
         Returns: string;
@@ -1935,12 +1986,14 @@ export type Database = {
           p_descripcion: string;
           p_disparo_ente?: string;
           p_disparo_estado?: string;
+          p_encadenada?: boolean;
           p_hilos: Json;
           p_id: string;
           p_miembros: string[];
           p_nombre: string;
           p_pasos: Json;
           p_tipo: Database["public"]["Enums"]["tipo_plantilla"];
+          p_titulo_creado?: string;
           p_visibilidad: Database["public"]["Enums"]["visibilidad"];
         };
         Returns: string;
@@ -1976,8 +2029,8 @@ export type Database = {
         };
         Returns: undefined;
       };
-      notificar_plantilla_fallida: {
-        Args: { p_plantilla_id: string };
+      notificar_disparo: {
+        Args: { p_corrio: boolean; p_plantilla_id: string };
         Returns: undefined;
       };
       obras_array_sin_duplicados: { Args: { a: unknown }; Returns: boolean };
@@ -2516,7 +2569,8 @@ export type Database = {
         | "tarea_asignada"
         | "plantilla_modificada"
         | "plantilla_archivada"
-        | "plantilla_fallida";
+        | "plantilla_fallida"
+        | "plantilla_disparada";
       tipo_obra:
         | "edificio"
         | "casa"
@@ -2742,6 +2796,7 @@ export const Constants = {
         "plantilla_modificada",
         "plantilla_archivada",
         "plantilla_fallida",
+        "plantilla_disparada",
       ],
       tipo_obra: [
         "edificio",

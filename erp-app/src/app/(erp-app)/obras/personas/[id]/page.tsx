@@ -5,6 +5,7 @@ import {
   puedeVerTodasLasPersonas,
   puedeVincular,
   puedeVincularPersonaEmpresa,
+  puedeVerTareas,
 } from "@/modules/obras/permissions";
 import {
   getCompartidosPersona,
@@ -15,6 +16,7 @@ import {
   getUsuarioActualId,
   getVinculosPersona,
   tieneGrantDirectoPersona,
+  getTareasDeRegistro,
 } from "@/modules/obras/queries";
 import { Breadcrumb } from "@/modules/obras/components/Breadcrumb";
 import { EstadoPendiente } from "@/modules/obras/components/EstadoPendiente";
@@ -82,6 +84,7 @@ export default async function PersonaPage({
     usuarios,
     miId,
     grantDirecto,
+    tareas,
   ] = await Promise.all([
     getVinculosPersona(id),
     getReferenciasDePersona(id),
@@ -93,6 +96,7 @@ export default async function PersonaPage({
     getUsuariosParaTransferir(),
     getUsuarioActualId(),
     tieneGrantDirectoPersona(id),
+    puedeVerTareas().then((ver) => (ver ? getTareasDeRegistro("persona", id) : null)),
   ]);
 
   const comisionPorObra = new Map(referencias.map((r) => [r.obra_id, r.porcentaje_comision]));
@@ -129,6 +133,7 @@ export default async function PersonaPage({
           roles: v.roles as RolPersona[],
           comision: comisionPorObra.get(v.obras!.id) ?? null,
         }))}
+      tareas={tareas}
       permisos={{ editar, vincularEmpresa, vincularObra }}
       esMio={esMio}
       veTodas={veTodas}

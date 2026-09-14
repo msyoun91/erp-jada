@@ -5,6 +5,7 @@ import {
   puedeVerTodasLasEmpresas,
   puedeVincular,
   puedeVincularPersonaEmpresa,
+  puedeVerTareas,
 } from "@/modules/obras/permissions";
 import {
   getCompartidosEmpresa,
@@ -12,6 +13,7 @@ import {
   getUsuariosParaTransferir,
   getUsuarioActualId,
   tieneGrantDirectoEmpresa,
+  getTareasDeRegistro,
 } from "@/modules/obras/queries";
 import { EmpresaDetalle } from "@/modules/obras/components/EmpresaDetalle";
 import type { Empresa, EstadoObra, RolEmpresa } from "@/modules/obras/types";
@@ -30,6 +32,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
     usuarios,
     miId,
     grantDirecto,
+    tareas,
   ] = await Promise.all([
     getEmpresa(id),
     puedeEditarEmpresa(),
@@ -40,6 +43,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
     getUsuariosParaTransferir(),
     getUsuarioActualId(),
     tieneGrantDirectoEmpresa(id),
+    puedeVerTareas().then((ver) => (ver ? getTareasDeRegistro("empresa", id) : null)),
   ]);
   if (!empresa) notFound();
 
@@ -70,6 +74,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
           localidad: v.obras!.localidad,
           roles: v.roles as RolEmpresa[],
         }))}
+      tareas={tareas}
       permisos={{ editar, vincularPersona, vincularObra }}
       esMio={esMio}
       veTodas={veTodas}

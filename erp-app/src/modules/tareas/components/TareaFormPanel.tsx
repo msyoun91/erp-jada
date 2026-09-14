@@ -7,9 +7,11 @@ import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { crearTarea, editarTarea } from "../actions";
 import { crearTareaSchema, type CrearTareaForm } from "../types";
-import type { TareaConAsignados } from "../types";
+import type { RegistroElegido, TareaConAsignados } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
+import { RelacionarRegistro } from "./RelacionarRegistro";
 import { Segmentado } from "./Segmentado";
+import { VinculosChips } from "./VinculosChips";
 import { puedeTrabajarEnProyecto } from "./proyectoTareas";
 import { TEMPERATURA_NIVELES, temperaturaRango } from "./tareaLabels";
 import { hoyISO, sumarDiasISO } from "@/lib/utils";
@@ -27,6 +29,7 @@ export function TareaFormPanel({
   pasoAnteriorId,
   proyectoHeredadoId,
   tarea,
+  vinculosIniciales,
   onClose,
 }: {
   hiloId?: string;
@@ -38,12 +41,15 @@ export function TareaFormPanel({
   // hereda), pero limita igual quiénes pueden recibirla.
   proyectoHeredadoId?: string | null;
   tarea?: TareaConAsignados;
+  // Desde la ficha de un registro («Nueva tarea» en Obras): nace relacionada.
+  vinculosIniciales?: RegistroElegido[];
   onClose: () => void;
 }) {
   const { proyectos, miembrosPorProyecto, usuarioActualId, puedeAsignar } = useTareasContexto();
   const [enviando, setEnviando] = useState(false);
   const [tieneRecurrencia, setTieneRecurrencia] = useState(tarea?.recurrencia_cantidad != null);
   const [venceTrasPrevio, setVenceTrasPrevio] = useState(tarea?.vence_dias_tras_previo != null);
+  const [vinculos, setVinculos] = useState<RegistroElegido[]>(vinculosIniciales ?? []);
   const proyectosDisponibles = proyectos.filter((p) =>
     puedeTrabajarEnProyecto(miembrosPorProyecto[p.id] ?? [], usuarioActualId, puedeAsignar)
   );
@@ -92,6 +98,7 @@ export function TareaFormPanel({
           visibilidad: proyectoInicial ? "publico" : "privado",
           responsable_id: autoAsignado ?? "",
           asignados: autoAsignado ? [autoAsignado] : [],
+          vinculos: (vinculosIniciales ?? []).map(({ ente, registro_id }) => ({ ente, registro_id })),
           temperatura: 50,
         },
   });
@@ -116,6 +123,16 @@ export function TareaFormPanel({
     const validos = (getValues("asignados") ?? []).filter((id) => permitidos.includes(id));
     setValue("asignados", validos);
     if (!validos.includes(getValues("responsable_id"))) setValue("responsable_id", validos[0] ?? "");
+  }
+
+  // El nombre de cada registro vive en el estado; el form lleva solo la clave.
+  function cambiarVinculos(nuevos: RegistroElegido[]) {
+    setVinculos(nuevos);
+    setValue(
+      "vinculos",
+      nuevos.map(({ ente, registro_id }) => ({ ente, registro_id })),
+      { shouldDirty: true },
+    );
   }
 
   async function onSubmit(data: CrearTareaForm) {
@@ -166,6 +183,25 @@ export function TareaFormPanel({
           <label className="t-label mb-1 block">Descripción</label>
           <textarea rows={3} className="input" {...register("descripcion")} />
         </div>
+
+        {/* Al editar, las relaciones se tocan desde el panel de la tarea. */}
+        {!tarea && (
+          <div>
+            <label className="t-label mb-1 block">Relacionada con</label>
+            <VinculosChips
+              vinculos={vinculos.map((v) => ({
+                key: `${v.ente}:${v.registro_id}`,
+                ente: v.ente,
+                etiqueta: v.etiqueta,
+                quitable: true,
+              }))}
+              onQuitar={(key) => cambiarVinculos(vinculos.filter((v) => `${v.ente}:${v.registro_id}` !== key))}
+            />
+            <div className={vinculos.length > 0 ? "mt-2" : ""}>
+              <RelacionarRegistro yaElegidos={vinculos} onElegir={(r) => cambiarVinculos([...vinculos, r])} />
+            </div>
+          </div>
+        )}
 
         {/* Grid de dos columnas para los campos cortos (design system §8): el
             panel mide 448px y ocho campos full-width lo dejaban con el doble

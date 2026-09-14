@@ -26,7 +26,9 @@ const COLUMNAS = "md:grid-cols-[minmax(0,1fr)_7.5rem_9rem_9rem_11rem]";
 const COLUMNAS_CON_RESPONSABLE =
   "md:grid-cols-[minmax(0,1fr)_7.5rem_9rem_9rem_11rem_8rem]";
 
-// "Perdida" no ensucia la vista por defecto: solo aparece al abrir su chip.
+// Lo cerrado no ensucia la vista por defecto: solo aparece al abrir su chip.
+const OCULTAS_POR_DEFECTO: readonly EstadoObra[] = ["perdida", "terminada"];
+
 const ORDENES = {
   reciente: {
     label: "Más recientes",
@@ -80,11 +82,8 @@ export function ObrasView({
     acc[o.estado] = (acc[o.estado] ?? 0) + 1;
     return acc;
   }, {});
-  // Sin chip elegido, "Perdida" queda fuera: solo se ve al abrir su chip.
-  const filtradas = estado
-    ? base.filter((o) => o.estado === estado)
-    : base.filter((o) => o.estado !== "perdida");
-  const visiblesEnTodas = base.length - (conteo.perdida ?? 0);
+  const enTodas = base.filter((o) => !OCULTAS_POR_DEFECTO.includes(o.estado));
+  const filtradas = estado ? base.filter((o) => o.estado === estado) : enTodas;
   const ordenadas = [...filtradas].sort(ORDENES[orden].fn);
   const { visibles, ...paginado } = usePaginado(ordenadas);
 
@@ -133,7 +132,7 @@ export function ObrasView({
             aria-pressed={estado === ""}
             onClick={() => setEstado("")}
           >
-            Todas <span className="tabular-nums opacity-70">{visiblesEnTodas}</span>
+            Todas <span className="tabular-nums opacity-70">{enTodas.length}</span>
           </button>
           {ESTADOS_OBRA.map((e) => (
             <button

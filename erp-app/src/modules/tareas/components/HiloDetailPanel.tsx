@@ -16,6 +16,7 @@ import { UsarPlantillaPanel } from "./UsarPlantillaPanel";
 import { CerrarHiloModal } from "./CerrarHiloModal";
 import { DeshacerConversionModal } from "./DeshacerConversionModal";
 import { NotasSection } from "./NotasSection";
+import { OrigenLink } from "./OrigenLink";
 import { MetricasResumen, contarTerminadas } from "./MetricasResumen";
 import { useOrdenTemperatura } from "../useOrdenTemperatura";
 import { agruparCadenas, cadenasDePasos } from "./cadenaPasos";
@@ -58,6 +59,11 @@ export function HiloDetailPanel({
 
   const responsable = usuarios.find((u) => u.id === hilo.responsable_id)?.nombre ?? null;
   const terminadas = contarTerminadas(tareasDelHilo);
+  // El link del hilo es el de su tarea más antigua que tenga uno: el mismo que
+  // hereda lo que nace adentro (sql/058).
+  const origen = tareasDelHilo
+    .filter((t) => t.origen_app)
+    .reduce<TareaConAsignados | null>((a, t) => (!a || t.created_at < a.created_at ? t : a), null);
 
   async function onDesactivar() {
     const result = await desactivarHilo(hilo.id);
@@ -138,6 +144,7 @@ export function HiloDetailPanel({
               {terminadas}/{tareasDelHilo.length} terminadas
             </span>
             <MetricasResumen createdAt={hilo.created_at} tareas={tareasDelHilo} />
+            {origen?.origen_app && <OrigenLink app={origen.origen_app} punto={origen.origen_punto} />}
           </div>
         </div>
 

@@ -9,6 +9,7 @@ import {
   Bell,
   CalendarClock,
   CheckCircle2,
+  ListPlus,
   ListTodo,
   Pencil,
   XCircle,
@@ -30,6 +31,7 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   plantilla_modificada: Pencil,
   plantilla_archivada: Archive,
   plantilla_fallida: AlertTriangle,
+  plantilla_disparada: ListPlus,
 };
 
 const TEXTO: Record<TipoNotificacion, string> = {
@@ -40,6 +42,7 @@ const TEXTO: Record<TipoNotificacion, string> = {
   plantilla_modificada: "Modificaron la plantilla",
   plantilla_archivada: "Archivaron la plantilla",
   plantilla_fallida: "No pudo correr tu plantilla",
+  plantilla_disparada: "Se crearon tareas con tu plantilla",
 };
 
 // Los pares `-text` y no `text-success`/`text-error`: esos son hex fijos y en
@@ -53,13 +56,16 @@ const COLOR: Record<TipoNotificacion, string> = {
   plantilla_modificada: "text-brand-500",
   plantilla_archivada: "text-warning-text",
   plantilla_fallida: "text-error-text",
+  plantilla_disparada: "text-brand-500",
 };
 
 // La Lista abre el panel por estado, no por URL: `?tarea=` es leído una sola
 // vez por `TareasListaView`, que abre el panel de esa tarea si la encuentra
 // entre las visibles y limpia el parámetro. `?plantilla=` igual, en
-// `PlantillasView`: filtra la lista por esa plantilla.
+// `PlantillasView`: filtra la lista por esa plantilla. `tareas` es la vista
+// general, sin id: el aviso de una plantilla que corrió no lleva a lo creado.
 const RUTA: Record<string, (id: string) => string> = {
+  tareas: () => "/tareas",
   obra: (id) => `/obras/${id}`,
   empresa: (id) => `/obras/empresas/${id}`,
   persona: (id) => `/obras/personas/${id}`,

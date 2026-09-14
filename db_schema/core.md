@@ -46,9 +46,9 @@ Asignación usuario ↔ submódulo.
 | submodulo_id | uuid FK → submodulos | |
 | activo | boolean | UNIQUE normal (usuario_id, submodulo_id) — no parcial, por upsert (excepción GUIDE_DB) |
 
-## entes (`sql/055`)
+## entes (`sql/055`, `sql/059`)
 
-Catálogo de registros con estado que pueden disparar plantillas de tareas. Infra cross-módulo como `submodulos`: cada módulo agrega su fila en su migración, más un trigger de una línea sobre su columna de estado — `disparar_plantillas('<ente>', '<columna>')`, ver `tareas.md`. Desde la app no se escribe.
+Catálogo de registros de otros módulos que se relacionan con tareas; los que tienen estado, además, disparan plantillas. Infra cross-módulo como `submodulos`: cada módulo agrega su fila en su migración, más un trigger de una línea sobre su columna de estado — `disparar_plantillas('<ente>', '<columna>')`, ver `tareas.md`. Desde la app no se escribe.
 
 | columna | tipo | notas |
 |---|---|---|
@@ -56,17 +56,21 @@ Catálogo de registros con estado que pueden disparar plantillas de tareas. Infr
 | codigo | text | UNIQUE simple, no parcial: es destino de FK (`tareas_plantillas.disparo_ente`, `tareas_vinculos.ente`) y un ente no se reutiliza para otra cosa |
 | modulo | text | `origen_app` de las tareas que genera |
 | submodulo | text | el que pide: sin él, la plantilla no se ve ni se arma. Texto y no FK — `submodulos.codigo` es único parcial |
-| estados | regtype | el enum de la columna de estado; `guardar_plantilla` valida contra él (`TA012`) |
+| estados | regtype, nullable | el enum de la columna de estado; `guardar_plantilla` valida contra él (`TA012`). NULL (`sql/059`) = se vincula pero no dispara |
 | datos | text[] | columnas que la plantilla puede citar como `{columna}`. Nunca contacto: el texto se copia en la tarea y lo lee quien la recibe, vea o no el registro |
 | ruta | text | `origen_punto` de las tareas, con `{id}`. CHECK `^/[^/]` — ruta interna, el mismo corte que `origen_punto` |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
-Filas: `obra` — módulo `obras`, submódulo `obras_ver`, `estado_obra`, datos `{nombre}`, ruta `/obras/{id}`.
+Filas: `obra` — módulo `obras`, submódulo `obras_ver`, `estado_obra`, datos `{nombre}`, ruta `/obras/{id}`. `empresa` — `obras_empresas`, sin estado, ruta `/obras/empresas/{id}`; `persona` — `obras_personas`, sin estado, ruta `/obras/personas/{id}` (las dos, `sql/059`).
 
 **RLS:** SELECT `activo AND tiene_permiso(submodulo)` — lo que no podés usar no existe para vos, y las policies de `tareas_plantillas` se apoyan en eso. Sin escritura para `authenticated`.
 
-Cómo se nombra cada ente y sus estados vive en `lib/entes.ts` (`ENTES`): la base no sabe cómo se dicen. Un ente sin entrada ahí no se ofrece en el editor.
+Cómo se nombra cada ente y sus estados vive en `lib/entes.ts` (`ENTES`): la base no sabe cómo se dicen. Solo uno con `estados` se ofrece como disparador en el editor.
+
+**`etiqueta_registro(ente, id)` (`sql/059`)** — `SECURITY INVOKER STABLE`, EXECUTE para `authenticated`: el nombre de un registro para quien pregunta, NULL si no lo ve. Es también la regla de "lo ve": la RLS de `entes` pide el submódulo y la del módulo dueño decide la fila. Un `CASE` por `entes.modulo` (hoy `obras` → `obras_etiqueta`); un módulo que registre entes suma su rama.
+
+**`relacionados_de_registro(ente, id)` (`sql/060`)** — `SECURITY INVOKER STABLE`: `(ente, registro_id, rol)` de lo relacionado con un registro, para quien pregunta. Hoy solo `obra` → `obras_relacionados_obra`. Lo usan los roles de las plantillas de tareas.
 
 ## usuario_tutorial
 

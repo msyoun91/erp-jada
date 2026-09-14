@@ -5,14 +5,25 @@ import {
   getMiembrosPorProyecto,
   getPlantillas,
   getProyectos,
+  getRegistro,
   getUsuarioActualId,
   getUsuariosParaAsignar,
 } from "@/modules/tareas/queries";
+import { uuidSchema } from "@/modules/tareas/types";
 import { TareasContextoProvider } from "@/modules/tareas/components/tareasContexto";
 import { TareasListaView } from "@/modules/tareas/components/TareasListaView";
 
-export default async function TareasPage() {
+export default async function TareasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [clave: string]: string | string[] | undefined }>;
+}) {
   if (!(await puedeVerLista())) notFound();
+
+  // "Nueva tarea" desde la ficha de un registro de otro módulo: `?nueva=obra:{id}`.
+  const { nueva } = await searchParams;
+  const [ente, registroId] = typeof nueva === "string" ? nueva.split(":") : [];
+  const pideNueva = Boolean(ente) && uuidSchema.safeParse(registroId).success;
 
   const [
     { hilos, tareas },
@@ -23,6 +34,7 @@ export default async function TareasPage() {
     gestionarAjenas,
     asignar,
     usuarioActualId,
+    nuevaDesde,
   ] = await Promise.all([
     getListaTareas(),
     getUsuariosParaAsignar(),
@@ -32,6 +44,7 @@ export default async function TareasPage() {
     puedeGestionarAjenas(),
     puedeAsignar(),
     getUsuarioActualId(),
+    pideNueva ? getRegistro(ente, registroId) : Promise.resolve(null),
   ]);
 
   return (
@@ -45,7 +58,7 @@ export default async function TareasPage() {
         puedeAsignar: asignar,
       }}
     >
-      <TareasListaView hilos={hilos} tareas={tareas} plantillas={plantillas} />
+      <TareasListaView hilos={hilos} tareas={tareas} plantillas={plantillas} nuevaDesde={nuevaDesde} />
     </TareasContextoProvider>
   );
 }

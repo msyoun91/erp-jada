@@ -120,8 +120,8 @@ export function UsarPlantillaPanel({
             <label className="t-label mb-1 block">
               {elegida?.tipo === "proyecto" ? "Nombre del proyecto" : "Título del hilo"}
             </label>
-            <input className="input" placeholder={elegida?.nombre} {...register("titulo")} />
-            <p className="t-caption mt-1">Vacío = el nombre de la plantilla.</p>
+            <input className="input" placeholder={elegida?.titulo_creado ?? elegida?.nombre} {...register("titulo")} />
+            <p className="t-caption mt-1">Vacío = el que define la plantilla.</p>
           </div>
         )}
 
@@ -151,7 +151,7 @@ export function UsarPlantillaPanel({
             {elegida.hilos.map((h) => (
               <div key={h.id} className="mb-2">
                 <p className="t-body-m font-medium">Hilo «{h.titulo}»</p>
-                <ListaVista items={elegida.items.filter((i) => i.hilo_id === h.id)} ordenada nombreDe={nombreDe} />
+                <ListaVista items={elegida.items.filter((i) => i.hilo_id === h.id)} ordenada={h.encadenada} nombreDe={nombreDe} />
               </div>
             ))}
             {elegida.items.some((i) => !i.hilo_id) && (
@@ -162,13 +162,13 @@ export function UsarPlantillaPanel({
                 )}
                 <ListaVista
                   items={elegida.items.filter((i) => !i.hilo_id)}
-                  ordenada={elegida.tipo === "hilo"}
+                  ordenada={elegida.tipo === "hilo" && elegida.encadenada}
                   nombreDe={nombreDe}
                 />
               </div>
             )}
-            {elegida.tipo !== "tarea" && (
-              <p className="t-caption mt-2">Los pasos de un hilo se crean encadenados: cada uno se habilita al completar el anterior.</p>
+            {(elegida.tipo === "hilo" ? elegida.encadenada : elegida.hilos.some((h) => h.encadenada)) && (
+              <p className="t-caption mt-2">Los pasos numerados se crean encadenados: cada uno se habilita al completar el anterior.</p>
             )}
             <p className="t-caption mt-2">
               Si alguien no puede recibir un paso (inactivo, fuera del proyecto o sin permiso para asignarle), se

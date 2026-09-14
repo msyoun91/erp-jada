@@ -6,9 +6,17 @@ y la entrada se borra de este archivo.
 
 ---
 
-## Tareas — plantilla-checklist (items sin orden entre sí)
+## Tareas ↔ entes — vínculos, chips, condiciones y compartir
 
-Desde `sql/017` toda plantilla de hilo genera una cadena: cada item espera al anterior (`usar_plantilla` desde `sql/053`). Desde `sql/053` las plantillas de proyecto tienen tareas sueltas, que no se esperan entre sí — pero un hilo de pasos paralelos sigue sin existir. Decidido no agregar flag ni checkbox hasta que exista una plantilla real así — ahí el camino barato es una columna `encadenada boolean` en `tareas_plantillas_hilos` (y en la plantilla de tipo hilo), no una opción en "usar plantilla" (la plantilla sabe cómo es, quien la usa no debería tener que decidirlo cada vez).
+Decidido con el usuario el 2026-09-14. Queda compartir al asignar (lo demás está en `decisiones/tareas/`).
+
+- **Compartir al asignar.** Si un asignado no puede abrir lo vinculado, se pregunta con el checklist de compartir de Obras (solo se ofrece lo que es de quien asigna). Regla única, a mano y en el disparo: quien no puede abrirlo no queda asignado; si no queda nadie, la tarea va a quien asigna, con nota. En el disparo se pregunta al guardar el cambio de estado, y cerrar el panel es no compartir.
+
+  Relevado antes de construir (2026-09-14):
+  - **Saber si otro usuario puede abrir un registro.** La regla de Obras está escrita para `auth.uid()`: `obras_puede_ver_obra` (sql/047), `obras_puede_ver_persona` (sql/039), la policy inline `obras_empresas_select` (sql/047) y `tiene_permiso`. Para no copiarla: funciones con el usuario como parámetro, que las actuales envuelvan con `auth.uid()`, y correr los tests de RLS de Obras (`rls_obras`, `obras_047`–`052`) antes y después. Los grants de contexto (`obras_persona_grant_contextual`) no alcanzan: el chip abre la ficha sin contexto.
+  - **Solo el dueño comparte** (`OB026`): `obras_compartir_obra(obra, usuario, empresas[], personas[])` y `obras_relaciones_compartibles_obra(obra, usuario)`, que ya marca `ya_compartida`. Si quien asigna no es el dueño, no hay nada que preguntar: se aplica la regla y se avisa.
+  - **El checklist vive en `modules/obras/components/CompartirPanel.tsx`** y lo van a necesitar Tareas (asignar a mano, "Relacionar" con asignados que no lo ven) y Obras (el cambio de estado que dispara): son dos módulos, así que va a `components/`.
+  - **Orden en `usar_plantilla`:** hoy `crear_tarea` inserta los asignados y después se insertan los vínculos del disparo. Para que la regla viva en la base (un asignado sin acceso a un vínculo no entra) hay que vincular primero.
 
 ## Tareas — verificar `Content-Range` en el PATCH
 

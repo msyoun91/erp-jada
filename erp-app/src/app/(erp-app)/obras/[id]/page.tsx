@@ -8,6 +8,7 @@ import {
   puedeVerObras,
   puedeVerReferentes,
   puedeVincular,
+  puedeVerTareas,
 } from "@/modules/obras/permissions";
 import {
   getCompartidosObra,
@@ -17,6 +18,7 @@ import {
   getUsuarioActualId,
   getUsuariosParaTransferir,
   getVinculosObra,
+  getTareasDeRegistro,
 } from "@/modules/obras/queries";
 import { ObraDetalle } from "@/modules/obras/components/ObraDetalle";
 import type { Obra, RolEmpresa, RolPersona, Usuario } from "@/modules/obras/types";
@@ -28,7 +30,7 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
   const obra = await getObra(id);
   if (!obra) notFound();
 
-  const [editar, vincular, referentesPerm, transferir, desactivar, crearEmpresa, crearPersona] =
+  const [editar, vincular, referentesPerm, transferir, desactivar, crearEmpresa, crearPersona, verTareas] =
     await Promise.all([
       puedeEditarObra(),
       puedeVincular(),
@@ -37,6 +39,7 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
       puedeDesactivarObra(),
       puedeCrearEmpresa(),
       puedeCrearPersona(),
+      puedeVerTareas(),
     ]);
 
   const miId = await getUsuarioActualId();
@@ -45,12 +48,13 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
   // Solo se piden si hacen falta: la de usuarios alimenta los paneles de
   // transferencia y de compartir. Las empresas ya no se traen enteras — el
   // panel de vinculación las busca.
-  const [usuarios, referentes, transferencias, compartidos, vinculos] = await Promise.all([
+  const [usuarios, referentes, transferencias, compartidos, vinculos, tareas] = await Promise.all([
     transferir || esMio ? getUsuariosParaTransferir() : Promise.resolve([]),
     referentesPerm ? getReferentes(id) : Promise.resolve([]),
     getTransferencias(id),
     esMio ? getCompartidosObra(id) : Promise.resolve([]),
     getVinculosObra(id),
+    verTareas ? getTareasDeRegistro("obra", id) : Promise.resolve(null),
   ]);
 
   const { responsable, ...datos } = obra;
@@ -113,6 +117,7 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
       usuarios={usuarios.filter((u) => u.id !== miId)}
       esMio={esMio}
       compartidos={compartidos}
+      tareas={tareas}
       permisos={{
         editar,
         vincular,

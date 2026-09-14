@@ -21,7 +21,7 @@ const TIPO_LABEL: Record<TipoPlantilla, string> = { tarea: "Tarea", hilo: "Hilo"
 // quien la lee.
 function cuandoCorre(p: PlantillaCompleta) {
   const ente = p.disparo_ente ? ENTES[p.disparo_ente] : undefined;
-  const estado = p.disparo_estado ? (ente?.estados[p.disparo_estado] ?? p.disparo_estado) : "";
+  const estado = p.disparo_estado ? (ente?.estados?.[p.disparo_estado] ?? p.disparo_estado) : "";
   return `Corre sola cuando pasás ${ente?.un ?? "un registro"} a «${estado}», si la tenés activada.`;
 }
 
@@ -216,7 +216,7 @@ function Contenido({ plantilla }: { plantilla: PlantillaCompleta }) {
       <ul className="t-caption mt-2 flex list-disc flex-col gap-1 pl-4">
         {plantilla.hilos.map((h) => (
           <li key={h.id}>
-            Hilo «{h.titulo}»: {plantilla.items.filter((i) => i.hilo_id === h.id).map((i) => i.titulo).join(" → ")}
+            Hilo «{h.titulo}»: {plantilla.items.filter((i) => i.hilo_id === h.id).map((i) => i.titulo).join(h.encadenada ? " → " : ", ")}
           </li>
         ))}
         {sueltas.length > 0 && <li>Sueltas: {sueltas.map((i) => i.titulo).join(", ")}</li>}
@@ -226,7 +226,9 @@ function Contenido({ plantilla }: { plantilla: PlantillaCompleta }) {
 
   return (
     <p className="t-caption mt-2">
-      {plantilla.tipo === "hilo" ? sueltas.map((i) => i.titulo).join(" → ") : sueltas[0]?.titulo}
+      {plantilla.tipo === "hilo"
+        ? sueltas.map((i) => i.titulo).join(plantilla.encadenada ? " → " : ", ")
+        : sueltas[0]?.titulo}
     </p>
   );
 }

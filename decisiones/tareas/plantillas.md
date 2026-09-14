@@ -52,11 +52,11 @@ Fase 2 de la anterior, decidida con el usuario el 2026-09-14. Un solo ente para 
 
 **Una vez para siempre por (plantilla, registro), salvo archivadas.** `tareas_vinculos` guarda qué tareas salieron de cada disparo y `plantilla_disparada` mira si queda alguna activa. Completadas y canceladas siguen activas, así que no la reabren; archivar lo generado (alcanza con el hilo o el proyecto, por cascada) la deja volver a disparar en el próximo cambio de estado real. Es DEFINER: quien cambia el estado puede no ver lo que generó otro.
 
-**Los vínculos solo los escribe un disparo** (`WITH CHECK (pg_trigger_depth() > 0)`). Un vínculo inventado —(plantilla, obra) con una tarea cualquiera— bloquearía el disparo real para todos. Las dos DEFINER que llama el disparo tienen EXECUTE para `authenticated` y, por la misma guarda, fuera de un trigger no hacen nada.
+**Los vínculos con plantilla solo los escribe un disparo** (`WITH CHECK (pg_trigger_depth() > 0)`; desde `sql/059` el cliente vincula sin plantilla, ver *Tareas relacionadas con obras, empresas y personas* en `integracion.md`). Un vínculo inventado —(plantilla, obra) con una tarea cualquiera— bloquearía el disparo real para todos. Las dos DEFINER que llama el disparo tienen EXECUTE para `authenticated` y, por la misma guarda, fuera de un trigger no hacen nada.
 
 **Con disparador no se usa a mano, y sin disparador no se dispara** (`TA013`): los textos citan `{nombre}` y a mano quedarían literales. En la vista, "Usar" se reemplaza por el interruptor "Activada".
 
-**El texto se copia; el link respeta permisos.** "Cobrar obra {nombre}" se rellena al crear, así que el asignado lo lee aunque no vea la obra. Nunca contacto como dato: `entes.datos` de la obra es `{nombre}`. El link va por `origen_app`/`origen_punto`, que el panel de la tarea ya mostraba ("Generado por obras — ir"). Elegido por el usuario frente a chips en el panel, que pedían resolver etiqueta y ruta por ente para un solo ente.
+**El texto se copia; el link respeta permisos.** "Cobrar obra {nombre}" se rellena al crear, así que el asignado lo lee aunque no vea la obra. Nunca contacto como dato: `entes.datos` de la obra es `{nombre}`. El link va por `origen_app`/`origen_punto`, que el panel de la tarea ya mostraba ("Generado por obras — ir"). ~~Elegido por el usuario frente a chips en el panel, que pedían resolver etiqueta y ruta por ente para un solo ente.~~ Con más de un ente, los chips llegaron en `sql/059` y los roles de la obra van por ahí (*Roles de la obra en la plantilla*); el texto sigue citando solo `{nombre}`.
 
 **Se ve y se arma solo con el submódulo del ente** (confirmado por el usuario). Las policies de `tareas_plantillas` hacen EXISTS contra `entes`, cuya RLS es `tiene_permiso(submodulo)`: quien no ve obras no ve "Cobrar obra {nombre}", no la activa (nunca cambia el estado de una obra) y no arma otra (`TA012`).
 
@@ -71,3 +71,56 @@ Fase 2 de la anterior, decidida con el usuario el 2026-09-14. Un solo ente para 
 **Supera** *Notificaciones: infra sin submódulo, y sin motor* (`decisiones/global/infra.md`): esto sí es un motor de reglas, chico.
 
 **Tests:** `sql/tests/plantillas_disparo.sql` 29/29 (nuevo). `plantillas.sql` 22/22 y `atomicidad_tareas.sql` 15/15 sin tocar: los parámetros nuevos de `guardar_plantilla` y `usar_plantilla` tienen DEFAULT, así que las llamadas viejas siguen valiendo.
+
+## Datos con chips y aviso de que la plantilla corrió (`sql/056`)
+
+Pedido del usuario el 2026-09-14, después de construir la anterior: un usuario común no entiende que tiene que escribir `{nombre}`, y quien cambiaba el estado no se enteraba de lo que se había creado.
+
+**Los datos se insertan con chips debajo de cada texto que los acepta.** Tocar "Nombre de la obra" inserta `{nombre}` donde quedó el cursor, y abajo aparece "Así se va a ver: …" con un ejemplo. Es con clic y no con arrastre: no hay librería de dnd y el arrastre nativo no anda en touch. El chip va afuera del campo porque adentro pediría un editor enriquecido. En la base el texto sigue siendo `{nombre}` y `rellenar_datos` no cambió.
+
+- Hay chips en el título y la descripción de cada paso y en el título de cada hilo. ~~Y en el nombre de la plantilla~~: desde `sql/057` van en el nombre de lo que crea (*Nombre de lo que crea e hilos en paralelo*).
+- La etiqueta y el ejemplo de cada dato viven en `ENTES` (`lib/entes.ts`). `entes.datos` sigue diciendo cuáles hay, y un dato sin etiqueta no tiene chip. La vista previa repite en TS el reemplazo de `rellenar_datos`: es presentación, no una regla.
+- El chip busca su campo en el `form` del botón (`elements.namedItem`) en vez de encadenar la ref de RHF. Los títulos de hilo se registran adentro de un `map`, donde no se puede llamar a un hook.
+
+**Quien dispara recibe un aviso por plantilla que corrió, no uno por tarea** (`plantilla_disparada`). Es informativo y lleva a la vista general de Tareas (decisión del usuario). Va con actor NULL: con actor, `notificar()` lo descartaría.
+
+- **Apunta a la plantilla, no a lo creado.** Quien dispara puede no ver la tarea: una plantilla de tarea asignada solo a Cobranzas crea algo que `tareas_select` no le muestra (`sql/013`). La bandeja, que hace INNER JOIN con la RLS de quien lee, habría descartado el aviso justo en el caso que eligió el usuario ("avisar aunque la tarea no le quede a él"). La plantilla, en cambio, la ve siempre, porque la tiene activada.
+- `notificar_disparo(plantilla, corrio)` reemplaza a `notificar_plantilla_fallida`. Tiene el mismo resguardo (DEFINER, y fuera de un trigger no hace nada) y queda como único lugar para los dos avisos. El tipo sale del booleano, así que por ahí no se puede escribir otro aviso.
+- En la bandeja el aviso sale con `destino = 'tareas'` y sin id, aunque después se archive la plantilla: las tareas siguen existiendo.
+
+**Tests:** `plantillas_disparo.sql` 34/34: los 29 de antes más 5 nuevos. La plantilla de hilo del test pasó a tener dos pasos, para probar que el aviso es uno por plantilla y no uno por tarea.
+
+Archivos: `sql/056`, `lib/entes.ts`, `PlantillaFormPanel.tsx`, `NotificacionesBell.tsx`.
+
+## Nombre de lo que crea e hilos en paralelo (`sql/057`)
+
+Pedidos del usuario el 2026-09-14: "en la plantilla no se puede definir el nombre del proyecto" y "cuando creo un hilo, solamente se puede por pasos".
+
+**El nombre de lo que crea es un campo propio** (`titulo_creado`), con chips; vacío = el nombre de la plantilla. Hasta acá el hilo o proyecto se llamaba como la plantilla, así que "Cobrar {nombre}" era a la vez cómo se listaba la plantilla y cómo se llamaba lo creado. "Usar" a mano lo sigue pisando. Los chips se mudan a este campo; un `{nombre}` que ya estuviera en el nombre de una plantilla sigue andando, porque el nombre es el respaldo.
+
+**`encadenada` en la plantilla de hilo y en cada hilo de la de proyecto**, no en "Usar": es el camino que dejó escrito *Las plantillas generan una cadena* (`hilos-pasos.md`) para cuando apareciera el caso real. Quien la usa no decide algo que la plantilla ya sabe.
+
+- Fuera de su tipo se guardan neutros: `guardar_plantilla` deja `titulo_creado` NULL en la de tarea y `encadenada` true fuera de la de hilo. Sin CHECK: `usar_plantilla` no los lee ahí.
+- Sin cadena, "vence tras el anterior" corre desde la creación, como ya pasaba con el primer paso. El editor no ofrece esa opción en un hilo en paralelo.
+- UI: segmented "Encadenados / En paralelo" arriba de los pasos de la de hilo y en cada hilo de la de proyecto. "Usar" numera solo las listas encadenadas y la vista Plantillas une con → o con coma.
+
+**Tests:** `plantillas.sql` 27/27 (22 de antes + 5). `plantillas_disparo.sql` 34/34 y `atomicidad_tareas.sql` 15/15 sin tocar: los parámetros nuevos de `guardar_plantilla` tienen DEFAULT.
+
+Archivos: `sql/057`, `PlantillaFormPanel.tsx`, `UsarPlantillaPanel.tsx`, `PlantillasView.tsx`, `types.ts`, `actions.ts`.
+
+## Roles de la obra en la plantilla (`sql/060`)
+
+Pedido del usuario el 2026-09-14: "¿por qué no se muestran más entes cuando creo la plantilla? por ejemplo en obras los roles", y crear una tarea según exista un ente. Preguntado cómo, contestó: "con chips o links para que tengan acceso directo", y la condición por paso.
+
+**Un rol no se copia como texto: se adjunta.** Cada paso elige roles (`adjuntos`, `ente:rol`, como `persona:arquitecto`) y, al disparar, la tarea queda vinculada a quien tenga ese rol en la obra. Se ve como un chip que abre la ficha (`sql/059`). Copiar el nombre al título le mostraría un contacto a quien no puede abrirlo; el chip respeta la RLS. Qué pasa con quien recibe la tarea y no puede abrir lo adjunto es lo que sigue en el backlog (compartir al asignar).
+
+**La condición es por paso** (decisión del usuario, frente a "por plantilla"): `condicion`, un rol que tiene que existir cuando la plantilla corre. Si no existe, el paso no se crea y el siguiente se encadena al último que sí. Se evalúa antes de abrir el hilo del paso, así una plantilla de proyecto no deja hilos vacíos.
+
+- **Si no se crea ningún paso, no corresponde: no es un error.** `usar_plantilla` tira `TA014` y el disparo lo revierte sin avisar. Un `TA009` habría mandado "la plantilla no pudo correr" por algo que es la regla funcionando. Como no queda vínculo, si después se suma el rol y la obra vuelve a entrar al estado, la plantilla corre.
+- **Solo con disparador** (`TA015`): a mano no hay registro del cual sacar roles. El editor muestra la sección solo si el ente del disparador tiene `roles` en `ENTES`, y si se saca el disparador la action descarta los roles en vez de rebotar el guardado.
+- **Quién tiene qué rol lo dice el módulo dueño:** `obras_relacionados_obra` (INVOKER), detrás de `relacionados_de_registro`, que ramifica por ente como `etiqueta_registro`. Corre como quien cambió el estado, que es el responsable y ve todos los vínculos de su obra.
+- La forma `ente:rol` la valida un CHECK; que el rol exista lo cuida el editor, porque uno inexistente no encuentra a nadie y no rompe nada. Las etiquetas de rol suben a `lib/entes.ts` (obras las re-exporta).
+
+**Tests:** `sql/tests/plantillas_roles.sql` 7/7 (nuevo). `plantillas_disparo.sql` 34/34 y `plantillas.sql` 27/27 sin tocar.
+
+Archivos: `sql/060`, `lib/entes.ts`, `lib/utils.ts` (`TA015`), `PlantillaFormPanel.tsx`, `types.ts`, `actions.ts`.
