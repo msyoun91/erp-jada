@@ -16,12 +16,10 @@ import {
   type RolPersona,
   type Usuario,
 } from "../types";
-import type { TareaRelacionada } from "@/lib/tareas";
 import { Breadcrumb } from "./Breadcrumb";
 import { CompartirPanel } from "./CompartirPanel";
 import { Dato, Observaciones } from "./Dato";
 import { EstadoPendiente } from "./EstadoPendiente";
-import { TareasRelacionadas } from "./TareasRelacionadas";
 import { PersonaFormPanel, type PersonaEditable } from "./PersonaFormPanel";
 import { TransferirEntidadPanel } from "./TransferirEntidadPanel";
 import { VincularObraPanel } from "./VincularObraPanel";
@@ -47,7 +45,7 @@ export function PersonaDetalle({
   veTodas,
   compartidos,
   usuarios,
-  tareas,
+  seccionTareas,
 }: {
   persona: PersonaEditable;
   // `obras_ficha_persona` sirve los datos de contacto y nada más: el estado de
@@ -65,7 +63,7 @@ export function PersonaDetalle({
   }[];
   permisos: { editar: boolean; vincularEmpresa: boolean; vincularObra: boolean };
   // null = sin la vista de Tareas: la sección no se muestra.
-  tareas: TareaRelacionada[] | null;
+  seccionTareas: React.ReactNode;
   // Compartir es solo del dueño; transferir, de quien tiene obras_personas_todas.
   esMio: boolean;
   veTodas: boolean;
@@ -282,7 +280,7 @@ export function PersonaDetalle({
         )}
       </section>
 
-      {tareas && <TareasRelacionadas ente="persona" registroId={persona.id} tareas={tareas} />}
+      {seccionTareas}
 
       {editando && <PersonaFormPanel persona={persona} onClose={() => setEditando(false)} />}
 

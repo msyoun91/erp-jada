@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { refresh, revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { argsRpc } from "@/lib/supabase/rpc";
 import { hoyISO, mensajeError } from "@/lib/utils";
@@ -68,6 +68,14 @@ async function usuarioActualId() {
 
 const SIN_FILAS = "No se pudo guardar: el registro ya no existe o no tenés permiso para modificarlo";
 
+// `revalidatePath` solo repinta la UI si el cliente está parado en esa ruta
+// (doc de Next 16): estas actions también se llaman desde la sección Tareas
+// de una ficha de Obras, así que suman `refresh()` para refrescar ahí también.
+function revalidarTareas() {
+  revalidatePath("/tareas");
+  refresh();
+}
+
 // Un UPDATE que RLS rechaza no falla: afecta 0 filas y vuelve sin error, así que
 // la action devolvía success sobre un cambio que nunca ocurrió. Se usa en los
 // updates que apuntan a filas puntuales; donde 0 filas es un resultado legítimo
@@ -108,7 +116,7 @@ export async function crearTarea(input: CrearTareaForm) {
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const, id };
 }
 
@@ -138,7 +146,7 @@ export async function editarTarea(input: EditarTareaForm) {
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -160,7 +168,7 @@ export async function crearHilo(input: CrearHiloForm) {
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const, id };
 }
 
@@ -178,7 +186,7 @@ export async function editarHilo(input: EditarHiloForm) {
   );
   if (fallo) return { success: false as const, error: fallo };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   revalidatePath("/tareas/proyectos");
   return { success: true as const };
 }
@@ -203,7 +211,7 @@ export async function convertirTareaEnHilo(tareaId: string) {
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const, hiloId };
 }
 
@@ -226,7 +234,7 @@ export async function deshacerConversionHilo(input: DeshacerConversionForm) {
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -249,7 +257,7 @@ export async function crearProyecto(input: CrearProyectoForm) {
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas/proyectos");
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const, id };
 }
 
@@ -278,7 +286,7 @@ export async function editarProyecto(input: EditarProyectoForm) {
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas/proyectos");
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -299,7 +307,7 @@ export async function desactivarProyecto(id: string) {
   // El trigger de sql/025 se lleva los hilos y las tareas del proyecto: la
   // Lista también quedó vieja, no solo el listado de proyectos.
   revalidatePath("/tareas/proyectos");
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -339,7 +347,7 @@ export async function guardarPlantilla(input: GuardarPlantillaForm) {
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidatePath("/tareas/plantillas");
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const, id };
 }
 
@@ -404,7 +412,7 @@ export async function usarPlantilla(input: UsarPlantillaForm) {
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   revalidatePath("/tareas/proyectos");
   return { success: true as const, derivados };
 }
@@ -430,7 +438,7 @@ export async function completarTarea(input: CompletarTareaForm) {
 
   if (fallo) return { success: false as const, error: fallo };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -451,7 +459,7 @@ export async function cambiarEstadoTarea(
       .eq("id", parsed.data.tarea_id),
   );
   if (fallo) return { success: false as const, error: fallo };
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -472,7 +480,7 @@ export async function reasignarTarea(input: ReasignarTareaForm) {
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -492,7 +500,7 @@ export async function posponerTarea(input: PosponerForm) {
 
   if (fallo) return { success: false as const, error: fallo };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -512,7 +520,7 @@ export async function posponerHilo(input: PosponerForm) {
 
   if (fallo) return { success: false as const, error: fallo };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -532,7 +540,7 @@ export async function cerrarHilo(input: CerrarHiloForm) {
 
   if (fallo) return { success: false as const, error: fallo };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -549,7 +557,7 @@ export async function desactivarHilo(id: string) {
   const { error } = await supabase.rpc("desactivar_hilo", { p_hilo_id: parsed.data });
 
   if (error) return { success: false as const, error: mensajeError(error) };
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -564,7 +572,7 @@ export async function desactivarTarea(id: string) {
     await supabase.from("tareas").update({ activo: false }, { count: "exact" }).eq("id", parsed.data),
   );
   if (fallo) return { success: false as const, error: fallo };
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -582,7 +590,7 @@ export async function asociarTareaHilo(tareaId: string, hiloId: string) {
       .eq("id", parsed.data.tarea_id),
   );
   if (fallo) return { success: false as const, error: fallo };
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -597,7 +605,7 @@ export async function desasociarTareaHilo(tareaId: string) {
     await supabase.from("tareas").update({ hilo_id: null }, { count: "exact" }).eq("id", parsed.data),
   );
   if (fallo) return { success: false as const, error: fallo };
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -615,7 +623,7 @@ export async function actualizarTemperatura(tareaId: string, temperatura: number
       .eq("id", parsed.data.tarea_id),
   );
   if (fallo) return { success: false as const, error: fallo };
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -634,7 +642,7 @@ export async function agregarNotaTarea(input: AgregarNotaTareaForm) {
   const { error } = await supabase.from("tareas_notas").insert({ ...parsed.data, usuario_id });
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -649,7 +657,7 @@ export async function agregarNotaHilo(input: AgregarNotaHiloForm) {
   const { error } = await supabase.from("tareas_hilos_notas").insert({ ...parsed.data, usuario_id });
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -744,7 +752,7 @@ export async function vincularTarea(input: VincularTareaForm) {
   const { error } = await supabase.from("tareas_vinculos").insert(parsed.data);
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }
 
@@ -760,6 +768,6 @@ export async function desvincularTarea(id: string) {
   );
   if (fallo) return { success: false as const, error: fallo };
 
-  revalidatePath("/tareas");
+  revalidarTareas();
   return { success: true as const };
 }

@@ -356,4 +356,6 @@ que la búsqueda se puede afinar.
 
 ## La sección Tareas de las fichas
 
-Obra, empresa y persona muestran sus tareas relacionadas (`TareasRelacionadas`, pedido del usuario el 2026-09-14). El porqué y la regla de visibilidad están en `decisiones/tareas/integracion.md` → *Tareas relacionadas con obras, empresas y personas*. Acá, la forma: la misma sección que Empresas y Personas (h3, botón secundario, lista de `.card`), al final de la ficha y antes del historial de responsables. La fila y "Nueva tarea" son links a Tareas: obras no importa ese módulo.
+Obra, empresa y persona muestran sus tareas relacionadas. El porqué y la regla de visibilidad están en `decisiones/tareas/integracion.md` → *Tareas relacionadas con obras, empresas y personas*; la forma actual (el panel se abre sobre la ficha, sin ir a la Lista) está en la misma carpeta → *Las tareas de una ficha se abren sobre la ficha (sin SQL)*.
+
+Acá, solo la forma visual: mismo lugar que antes — al final de la ficha, antes del historial de responsables — mismo encabezado (h3 "Tareas", botón secundario "Nueva tarea"). `ObraDetalle`/`EmpresaDetalle`/`PersonaDetalle` reciben la sección entera como `seccionTareas: ReactNode` (la arma `TareasDeRegistro`, de `modules/tareas`) y solo la renderizan — no conocen su contenido. Obras sigue sin importar Tareas: quien compone es la page.

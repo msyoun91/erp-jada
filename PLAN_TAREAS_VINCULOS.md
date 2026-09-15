@@ -141,7 +141,10 @@ elegir el módulo; sin módulo elegido no hay buscador ni resultados.
 
 ---
 
-## Fase B — Nueva tarea y panel de la tarea sobre la ficha (sin SQL)
+## ~~Fase B — Nueva tarea y panel de la tarea sobre la ficha (sin SQL)~~ — cerrada
+
+Decisión final en `decisiones/tareas/integracion.md` → *Las tareas de una ficha se abren sobre la ficha (sin SQL)*. Forma visual también en `decisiones/obras/ui.md` → *La sección Tareas de las fichas*.
+
 
 **Objetivo:** en la ficha de obra, empresa y persona, "Nueva tarea" abre `TareaFormPanel` y cada tarea
 abre su panel **ahí mismo**. Al guardar o cerrar se sigue en la ficha y la lista se actualiza.

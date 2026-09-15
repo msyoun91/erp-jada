@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { getUsuariosActivos } from "@/lib/usuarios";
+import { getUsuarioActualId, getUsuariosActivos } from "@/lib/usuarios";
 import { sumarDiasISO } from "@/lib/utils";
+import { puedeAsignar, puedeGestionarAjenas } from "./permissions";
+import type { TareasContexto } from "./components/tareasContexto";
 import type {
   Ente,
   EventoAuditoria,
@@ -11,6 +13,7 @@ import type {
   TareaPendiente,
   TareaProyecto,
   Usuario,
+  VinculoTarea,
 } from "./types";
 
 function inicioDiaAR(fechaISO: string) {
@@ -18,10 +21,33 @@ function inicioDiaAR(fechaISO: string) {
   return `${fechaISO}T03:00:00.000Z`;
 }
 
-export { getUsuarioActualId } from "@/lib/usuarios";
+export { getUsuarioActualId };
 
 export function getUsuariosParaAsignar(): Promise<Usuario[]> {
   return getUsuariosActivos();
+}
+
+// Compartido por getListaTareas y getTareasDeRegistro: la misma forma de
+// tarea en toda la UI del módulo (isla, panel, hilo).
+const SELECT_TAREAS =
+  "*, tareas_asignados(usuario_id, activo, usuarios(nombre)), tareas_notas(id, tarea_id, usuario_id, nota, activo, created_at, usuarios(nombre))";
+
+type NotaCruda = { activo: boolean; created_at: string };
+
+// activo/orden de las notas se resuelven acá y no en la query: filtrar un
+// embed en PostgREST lo vuelve inner join y perderíamos las tareas sin notas.
+// Genérica (no fijada a TareaConAsignados) para que el tipo real del select
+// de cada llamada — que Supabase infiere distinto según el resto de la
+// query — siga viajando intacto hasta el return final de cada función.
+function conNotasYVinculos<T extends { id: string; tareas_notas: NotaCruda[] }>(
+  tareas: T[],
+  vinculos: VinculoTarea[],
+): (T & { vinculos: VinculoTarea[] })[] {
+  return tareas.map((t) => ({
+    ...t,
+    tareas_notas: t.tareas_notas.filter((n) => n.activo).sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    vinculos: vinculos.filter((v) => v.tarea_id === t.id),
+  }));
 }
 
 // Lista unificada de la vista "Lista": hilos + tareas sueltas visibles para
@@ -41,13 +67,7 @@ export async function getListaTareas(): Promise<{ hilos: TareaHilo[]; tareas: Ta
       .select("*")
       .eq("activo", true)
       .order("created_at", { ascending: false }),
-    supabase
-      .from("tareas")
-      .select(
-        "*, tareas_asignados(usuario_id, activo, usuarios(nombre)), tareas_notas(id, tarea_id, usuario_id, nota, activo, created_at, usuarios(nombre))",
-      )
-      .eq("activo", true)
-      .order("created_at", { ascending: false }),
+    supabase.from("tareas").select(SELECT_TAREAS).eq("activo", true).order("created_at", { ascending: false }),
     supabase.rpc("vinculos_de_tareas"),
   ]);
 
@@ -55,17 +75,73 @@ export async function getListaTareas(): Promise<{ hilos: TareaHilo[]; tareas: Ta
   if (errorTareas) throw errorTareas;
   if (errorVinculos) throw errorVinculos;
 
-  // activo/orden de las notas se resuelven acá y no en la query: filtrar un
-  // embed en PostgREST lo vuelve inner join y perderíamos las tareas sin notas.
-  const conNotas = (tareas ?? []).map((t) => ({
-    ...t,
-    tareas_notas: t.tareas_notas
-      .filter((n) => n.activo)
-      .sort((a, b) => b.created_at.localeCompare(a.created_at)),
-    vinculos: (vinculos ?? []).filter((v) => v.tarea_id === t.id),
-  }));
+  return { hilos: hilos ?? [], tareas: conNotasYVinculos(tareas ?? [], vinculos ?? []) };
+}
 
-  return { hilos: hilos ?? [], tareas: conNotas };
+// Los seis valores que toda vista de Tareas necesita para montar
+// TareasContextoProvider — idéntico en las cuatro pages del módulo (Lista,
+// Misión, Proyectos, Plantillas) y en la sección Tareas de una ficha.
+export async function getTareasContexto(): Promise<TareasContexto> {
+  const [usuarios, proyectos, miembrosPorProyecto, usuarioActualId, gestionarAjenas, asignar] = await Promise.all([
+    getUsuariosParaAsignar(),
+    getProyectos(),
+    getMiembrosPorProyecto(),
+    getUsuarioActualId(),
+    puedeGestionarAjenas(),
+    puedeAsignar(),
+  ]);
+  return { usuarios, proyectos, miembrosPorProyecto, usuarioActualId, gestionarAjenas, puedeAsignar: asignar };
+}
+
+// Las tareas de la sección "Tareas" de una ficha de obra, empresa o persona:
+// `tareas_de_registro` (RLS + `etiqueta_registro`) solo decide cuáles y en qué
+// orden — se re-consulta con el select completo (asignados y notas) para que
+// TareaCard reciba la misma forma que en la Lista. `delHilo` son las tareas
+// activas de los hilos con algún paso acá, para que `cadenasDePasos` calcule
+// posición y bloqueo igual que en la Lista; `hilos`, para el proyecto heredado.
+export async function getTareasDeRegistro(
+  ente: "obra" | "empresa" | "persona",
+  registroId: string,
+): Promise<{ tareas: TareaConAsignados[]; delHilo: TareaConAsignados[]; hilos: TareaHilo[] }> {
+  const supabase = await createClient();
+  await supabase.rpc("reactivar_posponer_vencidos");
+
+  const { data: filas, error: errorFilas } = await supabase.rpc("tareas_de_registro", {
+    p_ente: ente,
+    p_registro_id: registroId,
+  });
+  if (errorFilas) throw errorFilas;
+
+  const ids = (filas ?? []).map((f) => f.id);
+  if (ids.length === 0) return { tareas: [], delHilo: [], hilos: [] };
+
+  const [{ data: vinculos, error: errorVinculos }, { data: tareas, error: errorTareas }] = await Promise.all([
+    supabase.rpc("vinculos_de_tareas"),
+    supabase.from("tareas").select(SELECT_TAREAS).in("id", ids).eq("activo", true),
+  ]);
+  if (errorVinculos) throw errorVinculos;
+  if (errorTareas) throw errorTareas;
+
+  const conNotas = conNotasYVinculos(tareas ?? [], vinculos ?? []);
+  const porId = new Map(conNotas.map((t) => [t.id, t]));
+  // tareas_de_registro ya deja lo terminado al final — se respeta ese orden.
+  const ordenadas: TareaConAsignados[] = [];
+  for (const id of ids) {
+    const t = porId.get(id);
+    if (t) ordenadas.push(t);
+  }
+
+  const hiloIds = [...new Set(ordenadas.map((t) => t.hilo_id).filter((id): id is string => id !== null))];
+  if (hiloIds.length === 0) return { tareas: ordenadas, delHilo: [], hilos: [] };
+
+  const [{ data: delHilo, error: errorDelHilo }, { data: hilos, error: errorHilos }] = await Promise.all([
+    supabase.from("tareas").select(SELECT_TAREAS).in("hilo_id", hiloIds).eq("activo", true),
+    supabase.from("tareas_hilos").select("*").in("id", hiloIds),
+  ]);
+  if (errorDelHilo) throw errorDelHilo;
+  if (errorHilos) throw errorHilos;
+
+  return { tareas: ordenadas, delHilo: conNotasYVinculos(delHilo ?? [], vinculos ?? []), hilos: hilos ?? [] };
 }
 
 export async function getHiloTareas(hiloId: string): Promise<TareaConAsignados[]> {

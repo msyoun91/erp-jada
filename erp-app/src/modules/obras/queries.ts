@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import type { TareaRelacionada } from "@/lib/tareas";
 import { getUsuariosActivos, getUsuarioActualId } from "@/lib/usuarios";
 import {
   puedeTransferir,
@@ -509,16 +508,4 @@ export async function getHistorialAprobaciones(dias: number): Promise<HistorialA
   const { data, error } = await supabase.rpc("obras_historial_aprobaciones", { p_dias: dias });
   if (error) throw error;
   return (data ?? []) as HistorialAprobacion[];
-}
-
-// Las tareas relacionadas con una obra, empresa o persona que quien mira puede
-// ver (`tareas_de_registro`, sql/059): la visibilidad la decide Tareas.
-export async function getTareasDeRegistro(
-  ente: "obra" | "empresa" | "persona",
-  id: string,
-): Promise<TareaRelacionada[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("tareas_de_registro", { p_ente: ente, p_registro_id: id });
-  if (error) throw error;
-  return data ?? [];
 }

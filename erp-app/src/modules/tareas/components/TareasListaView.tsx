@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Paginacion } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
-import type { PlantillaCompleta, RegistroElegido, TareaConAsignados, TareaHilo } from "../types";
+import type { PlantillaCompleta, TareaConAsignados, TareaHilo } from "../types";
 import { type Relacion, relacionHilo, relacionTarea } from "../relacion";
 import { HiloCard } from "./HiloCard";
 import { TareaCard } from "./TareaCard";
@@ -25,12 +25,10 @@ export function TareasListaView({
   hilos,
   tareas,
   plantillas,
-  nuevaDesde,
 }: {
   hilos: TareaHilo[];
   tareas: TareaConAsignados[];
   plantillas: PlantillaCompleta[];
-  nuevaDesde?: RegistroElegido | null;
 }) {
   const { usuarios, usuarioActualId, gestionarAjenas } = useTareasContexto();
   const router = useRouter();
@@ -43,13 +41,9 @@ export function TareasListaView({
   const [texto, setTexto] = useState("");
   // Arranca filtrado en uno mismo: la vista es "lo mío" por defecto, pero el
   // panorama del equipo queda a un click (no es una restricción, es un default).
-  // Un link a una tarea que no es tuya (la ficha de una obra lista todas las
-  // que ves) arranca sin ese recorte: si no, no aparece y no se abre.
-  const [asignadoId, setAsignadoId] = useState(() =>
-    tareaObjetivo && usuarioActualId && relacionTarea(tareaObjetivo, usuarioActualId) === null
-      ? ""
-      : (usuarioActualId ?? ""),
-  );
+  // El deep link (`?tarea=`) siempre cae del lado propio: solo lo dispara la
+  // notificación "te asignaron X", que avisa únicamente al asignado.
+  const [asignadoId, setAsignadoId] = useState(usuarioActualId ?? "");
   // Segundo eje, independiente del anterior: el select dice de qué usuario, este
   // dice qué relación. `crearTareaSchema` obliga responsable ∈ asignados, así
   // que "responsable" y "asignado" son disjuntos.
@@ -62,22 +56,16 @@ export function TareasListaView({
   const [ocultarTerminadas, setOcultarTerminadas] = useState(
     () => !(tareaObjetivo && esTerminada(tareaObjetivo)),
   );
-  // "Nueva tarea" desde la ficha de un registro (`?nueva=`): el form abre solo,
-  // nace relacionado, y al cerrarlo se vuelve a la ficha. Se guarda al montar
-  // porque limpiar la URL vuelve a renderizar el server sin el parámetro.
-  const [volverA] = useState(nuevaDesde?.href ?? null);
-  const [vinculosNueva] = useState(nuevaDesde ? [nuevaDesde] : undefined);
-  const [creandoTarea, setCreandoTarea] = useState(Boolean(nuevaDesde));
+  const [creandoTarea, setCreandoTarea] = useState(false);
   const [creandoHilo, setCreandoHilo] = useState(false);
   const { ordenar, comparar, onTemperaturaChange } = useOrdenTemperatura();
   // Hilo recién creado al convertir una tarea: se abre su panel solo.
   const [hiloConvertido, setHiloConvertido] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!tareaIdParam && !sp.get("nueva")) return;
+    if (!tareaIdParam) return;
     const p = new URLSearchParams(sp);
     p.delete("tarea");
-    p.delete("nueva");
     const qs = p.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     // Se lee una sola vez, al montar con el parámetro puesto.
@@ -276,15 +264,7 @@ export function TareasListaView({
         </div>
       )}
 
-      {creandoTarea && (
-        <TareaFormPanel
-          vinculosIniciales={vinculosNueva}
-          onClose={() => {
-            setCreandoTarea(false);
-            if (volverA) router.push(volverA);
-          }}
-        />
-      )}
+      {creandoTarea && <TareaFormPanel onClose={() => setCreandoTarea(false)} />}
       {creandoHilo && (
         <HiloFormPanel
           onClose={() => setCreandoHilo(false)}

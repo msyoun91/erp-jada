@@ -8,7 +8,6 @@ import {
   puedeVerObras,
   puedeVerReferentes,
   puedeVincular,
-  puedeVerTareas,
 } from "@/modules/obras/permissions";
 import {
   getCompartidosObra,
@@ -18,9 +17,11 @@ import {
   getUsuarioActualId,
   getUsuariosParaTransferir,
   getVinculosObra,
-  getTareasDeRegistro,
 } from "@/modules/obras/queries";
+import { puedeVerLista } from "@/modules/tareas/permissions";
+import { getRegistro, getTareasContexto, getTareasDeRegistro } from "@/modules/tareas/queries";
 import { ObraDetalle } from "@/modules/obras/components/ObraDetalle";
+import { TareasDeRegistro } from "@/modules/tareas/components/TareasDeRegistro";
 import type { Obra, RolEmpresa, RolPersona, Usuario } from "@/modules/obras/types";
 
 export default async function ObraPage({ params }: { params: Promise<{ id: string }> }) {
@@ -39,7 +40,7 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
       puedeDesactivarObra(),
       puedeCrearEmpresa(),
       puedeCrearPersona(),
-      puedeVerTareas(),
+      puedeVerLista(),
     ]);
 
   const miId = await getUsuarioActualId();
@@ -48,14 +49,19 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
   // Solo se piden si hacen falta: la de usuarios alimenta los paneles de
   // transferencia y de compartir. Las empresas ya no se traen enteras — el
   // panel de vinculación las busca.
-  const [usuarios, referentes, transferencias, compartidos, vinculos, tareas] = await Promise.all([
-    transferir || esMio ? getUsuariosParaTransferir() : Promise.resolve([]),
-    referentesPerm ? getReferentes(id) : Promise.resolve([]),
-    getTransferencias(id),
-    esMio ? getCompartidosObra(id) : Promise.resolve([]),
-    getVinculosObra(id),
-    verTareas ? getTareasDeRegistro("obra", id) : Promise.resolve(null),
-  ]);
+  const [usuarios, referentes, transferencias, compartidos, vinculos, tareasContexto, tareasDeRegistro, registro] =
+    await Promise.all([
+      transferir || esMio ? getUsuariosParaTransferir() : Promise.resolve([]),
+      referentesPerm ? getReferentes(id) : Promise.resolve([]),
+      getTransferencias(id),
+      esMio ? getCompartidosObra(id) : Promise.resolve([]),
+      getVinculosObra(id),
+      verTareas ? getTareasContexto() : Promise.resolve(null),
+      verTareas
+        ? getTareasDeRegistro("obra", id)
+        : Promise.resolve({ tareas: [], delHilo: [], hilos: [] }),
+      verTareas ? getRegistro("obra", id) : Promise.resolve(null),
+    ]);
 
   const { responsable, ...datos } = obra;
 
@@ -117,7 +123,17 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
       usuarios={usuarios.filter((u) => u.id !== miId)}
       esMio={esMio}
       compartidos={compartidos}
-      tareas={tareas}
+      seccionTareas={
+        verTareas && tareasContexto && registro ? (
+          <TareasDeRegistro
+            contexto={tareasContexto}
+            registro={registro}
+            tareas={tareasDeRegistro.tareas}
+            delHilo={tareasDeRegistro.delHilo}
+            hilos={tareasDeRegistro.hilos}
+          />
+        ) : null
+      }
       permisos={{
         editar,
         vincular,

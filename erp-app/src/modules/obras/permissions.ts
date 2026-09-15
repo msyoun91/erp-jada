@@ -95,9 +95,3 @@ export function puedeVerCompartido() {
 export function puedeAprobar() {
   return tienePermiso("obras_aprobar");
 }
-
-// Tareas relacionadas en las fichas (sql/059): la sección y "Nueva tarea"
-// llevan a la Lista de Tareas, así que se muestran con su vista.
-export function puedeVerTareas() {
-  return tienePermiso("tareas_lista");
-}

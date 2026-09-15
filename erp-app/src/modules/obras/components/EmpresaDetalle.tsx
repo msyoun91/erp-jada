@@ -18,13 +18,11 @@ import {
   type RolEmpresa,
   type Usuario,
 } from "../types";
-import type { TareaRelacionada } from "@/lib/tareas";
 import { Breadcrumb } from "./Breadcrumb";
 import { CompartirPanel } from "./CompartirPanel";
 import { Dato, Observaciones } from "./Dato";
 import { EmpresaFormPanel } from "./EmpresaFormPanel";
 import { EstadoPendiente } from "./EstadoPendiente";
-import { TareasRelacionadas } from "./TareasRelacionadas";
 import { TransferirEntidadPanel } from "./TransferirEntidadPanel";
 import { VincularObraPanel } from "./VincularObraPanel";
 import { VincularPersonaEmpresaPanel } from "./VincularPersonaEmpresaPanel";
@@ -38,7 +36,7 @@ export function EmpresaDetalle({
   veTodas,
   compartidos,
   usuarios,
-  tareas,
+  seccionTareas,
 }: {
   empresa: Empresa;
   personas: { id: string; persona_id: string; nombre: string; cargo: string | null; es_principal: boolean }[];
@@ -54,7 +52,7 @@ export function EmpresaDetalle({
   // dos tablas distintas: `obras_personas_empresas` y `obras_vincular`.
   permisos: { editar: boolean; vincularPersona: boolean; vincularObra: boolean };
   // null = sin la vista de Tareas: la sección no se muestra.
-  tareas: TareaRelacionada[] | null;
+  seccionTareas: React.ReactNode;
   esMio: boolean;
   veTodas: boolean;
   compartidos: Compartido[];
@@ -224,7 +222,7 @@ export function EmpresaDetalle({
         )}
       </section>
 
-      {tareas && <TareasRelacionadas ente="empresa" registroId={empresa.id} tareas={tareas} />}
+      {seccionTareas}
 
       {editando && <EmpresaFormPanel empresa={empresa} onClose={() => setEditando(false)} />}
 

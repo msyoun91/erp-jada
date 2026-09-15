@@ -5,7 +5,6 @@ import {
   puedeVerTodasLasEmpresas,
   puedeVincular,
   puedeVincularPersonaEmpresa,
-  puedeVerTareas,
 } from "@/modules/obras/permissions";
 import {
   getCompartidosEmpresa,
@@ -13,9 +12,11 @@ import {
   getUsuariosParaTransferir,
   getUsuarioActualId,
   tieneGrantDirectoEmpresa,
-  getTareasDeRegistro,
 } from "@/modules/obras/queries";
+import { puedeVerLista } from "@/modules/tareas/permissions";
+import { getRegistro, getTareasContexto, getTareasDeRegistro } from "@/modules/tareas/queries";
 import { EmpresaDetalle } from "@/modules/obras/components/EmpresaDetalle";
+import { TareasDeRegistro } from "@/modules/tareas/components/TareasDeRegistro";
 import type { Empresa, EstadoObra, RolEmpresa } from "@/modules/obras/types";
 
 export default async function EmpresaPage({ params }: { params: Promise<{ id: string }> }) {
@@ -32,7 +33,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
     usuarios,
     miId,
     grantDirecto,
-    tareas,
+    verTareas,
   ] = await Promise.all([
     getEmpresa(id),
     puedeEditarEmpresa(),
@@ -43,9 +44,15 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
     getUsuariosParaTransferir(),
     getUsuarioActualId(),
     tieneGrantDirectoEmpresa(id),
-    puedeVerTareas().then((ver) => (ver ? getTareasDeRegistro("empresa", id) : null)),
+    puedeVerLista(),
   ]);
   if (!empresa) notFound();
+
+  const [tareasContexto, tareasDeRegistro, registro] = await Promise.all([
+    verTareas ? getTareasContexto() : Promise.resolve(null),
+    verTareas ? getTareasDeRegistro("empresa", id) : Promise.resolve({ tareas: [], delHilo: [], hilos: [] }),
+    verTareas ? getRegistro("empresa", id) : Promise.resolve(null),
+  ]);
 
   const { obras_persona_empresa, obras_obra_empresa, ...datos } = empresa;
   const esMio = !!miId && empresa.creado_por === miId;
@@ -74,7 +81,17 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
           localidad: v.obras!.localidad,
           roles: v.roles as RolEmpresa[],
         }))}
-      tareas={tareas}
+      seccionTareas={
+        verTareas && tareasContexto && registro ? (
+          <TareasDeRegistro
+            contexto={tareasContexto}
+            registro={registro}
+            tareas={tareasDeRegistro.tareas}
+            delHilo={tareasDeRegistro.delHilo}
+            hilos={tareasDeRegistro.hilos}
+          />
+        ) : null
+      }
       permisos={{ editar, vincularPersona, vincularObra }}
       esMio={esMio}
       veTodas={veTodas}

@@ -3,10 +3,22 @@ import type { EstadoTarea, RecurrenciaUnidad } from "../types";
 
 // Etiquetas y clases de una tarea, compartidas por la isla (TareaCard) y su
 // panel (TareaDetailPanel): la misma tarea no puede leerse distinto según
-// dónde se la mire.
+// dónde se la mire. Antes vivían en lib/tareas.ts porque Obras las mostraba
+// directamente (TareasRelacionadas); ahora la sección Tareas de una ficha
+// monta TareaCard, así que vuelven acá.
+export const ESTADO_LABEL: Record<EstadoTarea, string> = {
+  pendiente: "Pendiente",
+  en_progreso: "En progreso",
+  completada: "Completada",
+  cancelada: "Cancelada",
+};
 
-// Las de estado viven en lib/tareas.ts: Obras también las muestra.
-export { LABEL_ESTADO_TAREA as ESTADO_LABEL, BADGE_ESTADO_TAREA as ESTADO_BADGE } from "@/lib/tareas";
+export const ESTADO_BADGE: Record<EstadoTarea, string> = {
+  pendiente: "badge-neutral",
+  en_progreso: "badge-info",
+  completada: "badge-success",
+  cancelada: "badge-error",
+};
 
 export const RECURRENCIA_LABEL: Record<RecurrenciaUnidad, string> = { dia: "día(s)", mes: "mes(es)" };
 
