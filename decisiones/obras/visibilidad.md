@@ -247,6 +247,22 @@ El razonamiento detrás: contra un insider autorizado no existe prevención — 
 
 ---
 
+## La visibilidad se pregunta por usuario, sin copiarla (`sql/062`)
+
+Fase C de `PLAN_TAREAS_VINCULOS.md` (decidido el 2026-09-14, `BACKLOG.md` → "Compartir al asignar"). Tareas necesita contestar "¿el usuario U puede abrir el registro R?" para decidir quién queda asignado (Fase D) y qué ofrecer compartir (Fase E), sin escribir una segunda copia de las reglas de *MODEL A*.
+
+**`usuario_tiene_permiso(usuario, codigo)`** (`decisiones/global/permisos.md`) parametriza `tiene_permiso`. **`obras_puede_ver_obra_de/_empresa_de/_persona_de(id, usuario)`** son los cuerpos vigentes de `obras_puede_ver_obra/_empresa/_persona` con `auth.uid()` → el parámetro — las tres funciones de siempre quedan como envoltorios de una línea, ninguna policy se toca. **`obras_puede_abrir(tipo, id, usuario)`** es el mismo `CASE` que ya usa `obras_etiqueta`, sin la rama de grant contextual: el chip de un vínculo abre la ficha sin el contexto (obra/empresa) que ese grant necesita, así que no cuenta.
+
+**`puede_abrir_registro(ente, id, usuario)`** es la puerta genérica, cross-módulo: `entes.activo AND usuario_tiene_permiso(usuario, entes.submodulo) AND <rama del módulo>` — el submódulo del ente (`obras_personas` para una persona, no alcanza con `obras_ver`) más la fila. Mismo criterio de extensión que `etiqueta_registro`/`relacionados_de_registro` (`sql/059`/`060`): un módulo que registre entes suma su `WHEN`.
+
+**`queda_afuera(usuario, ente, id)`** es el único predicado de la regla completa (Fase D la usa tal cual): `usuario IS DISTINCT FROM auth.uid() AND NOT puede_abrir_registro(...)` — quien actúa nunca queda afuera de su propio acto, sin importar si podría abrir lo que vincula.
+
+**`sin_acceso(pares)` no puede llamar `etiqueta_registro` a ojos cerrados.** Al ser `DEFINER`, corre sin la RLS de quien pregunta — llamarla directo devolvería el nombre de una obra que quien pregunta no ve. El `CASE WHEN puede_abrir_registro(..., auth.uid()) THEN etiqueta_registro(...) END` es obligatorio: la etiqueta se apaga para **quien llama**, no para el usuario por el que se pregunta. **Exposición aceptada:** `sin_acceso`/`asignados_con_acceso` dejan confirmar si un usuario puede abrir un id que quien pregunta ya tiene — sin nombre de lo que no ve, y un uuid suelto no vale nada.
+
+**Compartir para una tarea es aditivo — a diferencia del checklist de Obras.** `obras_compartir_obra`/`_empresa` son "estado deseado" desde `sql/049`: re-llamarlas con un usuario que ya tiene la entidad apaga la cascada que quedó afuera del array. Eso rompe el flujo de Tareas — compartir para que alguien pueda abrir un vínculo no debe poder revocar nada. **`obras_compartir_registros(usuario, registros)`** es una función nueva y aditiva: cada upsert lleva `WHERE NOT <tabla>.activo`, así que un grant ya activo no se toca (ni origen ni cascada). Reutiliza los mismos cortes (`OB020`/`OB021`/`OB023`/`OB026`) y, para empresa/persona, busca sola el origen (una obra o empresa mía, activa, vinculada, ya compartida con ese usuario "en esta llamada o de antes") — se comporta como el checklist para la cascada, sin heredar su semántica destructiva. **`compartir_registros(selecciones)`** (INVOKER) agrupa por usuario y por `entes.modulo` y llama a la función del módulo — un módulo nuevo suma su rama.
+
+Test: `sql/tests/acceso_registros.sql`, 13/13 (con dos sub-chequeos en 04 y 08). La base de test solo tiene ADMIN y TESTER: varios casos activan/desactivan un submódulo dentro de la misma transacción para simular a alguien sin acceso — documentado en el header del archivo.
+
 ## El alcance por fila no es un permiso nuevo
 
 CLAUDE.md prohíbe permisos por fila o por campo fuera del sistema de submódulos. Nada de lo de arriba lo rompe: son las mismas vistas con alcance de datos en RLS, igual que las obras se acotan por responsable. No hay excepción que registrar.

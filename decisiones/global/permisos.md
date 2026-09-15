@@ -30,3 +30,7 @@ Hasta ahora `syncVista()` derivaba el checkbox de la vista de sus funciones: mar
 **Orden en `asignarSubmodulos()`:** la validación va **antes** del `update activo:false`. Al revés, un payload inválido dejaba al usuario sin ningún permiso y después devolvía error — la desactivación y el upsert no comparten transacción.
 
 Datos existentes verificados sin huérfanos antes del cambio (el modelo viejo los hacía imposibles), así que no hizo falta backfill.
+
+## `usuario_tiene_permiso(usuario, codigo)` — preguntar el permiso de otro (`sql/062`)
+
+Pedido por PLAN_TAREAS_VINCULOS.md Fase C (base de "compartir al asignar", `decisiones/obras/visibilidad.md`). `tiene_permiso(codigo)` solo podía preguntar por `auth.uid()`; para decidir si un asignado puede abrir un vínculo hace falta preguntar por **otro** usuario. `usuario_tiene_permiso(p_usuario, p_codigo)` es el cuerpo de siempre parametrizado; `tiene_permiso(codigo)` pasa a `SELECT usuario_tiene_permiso(auth.uid(), codigo)` — misma firma, mismos grants, ninguna policy existente se toca. Sin `GRANT`: solo la llaman otras `DEFINER` (`puede_abrir_registro`, `puede_compartir_registro`), nunca el cliente.

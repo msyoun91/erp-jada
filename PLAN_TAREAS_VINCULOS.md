@@ -235,6 +235,12 @@ saber de Tareas (hoy importa `@/lib/tareas` y tiene `getTareasDeRegistro`/`puede
 
 ---
 
+## ~~Fase C — Quién puede abrir un registro, preguntado por usuario (`sql/062`)~~ — cerrada
+
+Decisión final en `decisiones/obras/visibilidad.md` → *La visibilidad se pregunta por usuario, sin copiarla (`sql/062`)*. `db_schema/core.md` y `db_schema/obras.md` sincronizados. Test `sql/tests/acceso_registros.sql`, 13/13.
+
+<details><summary>Spec original de la fase (referencia para Fase D/E)</summary>
+
 ## Fase C — Quién puede abrir un registro, preguntado por usuario (`sql/062`)
 
 **Objetivo:** que la base conteste "¿el usuario U puede abrir el registro R?" y "¿puedo compartírselo?"
@@ -342,6 +348,10 @@ preguntar si otro usuario puede abrir un id que conocés. No devuelven el nombre
   para una tarea es aditivo*.
 - `decisiones/global/permisos.md`: una línea sobre `usuario_tiene_permiso`.
 - `database.types.ts`: las funciones con GRANT.
+
+---
+
+</details>
 
 ---
 

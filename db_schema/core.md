@@ -104,3 +104,18 @@ UNIQUE normal (usuario_id, widget_id) — no parcial, por upsert (misma razón q
 SQL function, `SECURITY DEFINER`, usada en RLS de las 3 tablas y disponible como fuente de verdad de autorización en DB.
 
 Exige `usuarios.activo` además de `usuario_submodulos.activo` y `submodulos.activo` (`sql/020_usuarios_activo.sql`): desactivar a alguien le saca todos los permisos sin tocar sus asignaciones, así reactivarlo se los devuelve tal cual estaban. Verificado con `sql/tests/usuarios_activo.sql`.
+
+`usuario_tiene_permiso(p_usuario uuid, p_codigo text)` (`sql/062`) es el mismo cuerpo parametrizado — `tiene_permiso(codigo)` pasa a `SELECT usuario_tiene_permiso(auth.uid(), codigo)`. Sin GRANT: solo la llaman otras `DEFINER`. Ver `decisiones/global/permisos.md`.
+
+## Acceso a un registro por usuario explícito (`sql/062`)
+
+Base de "compartir al asignar" (`decisiones/obras/visibilidad.md` → *La visibilidad se pregunta por usuario*). Todas `SECURITY DEFINER STABLE`, sin GRANT salvo que se diga.
+
+- **`puede_abrir_registro(p_ente text, p_id uuid, p_usuario uuid)`** — la misma puerta que la ruta de la ficha: `entes.activo AND usuario_tiene_permiso(usuario, entes.submodulo) AND <CASE por entes.modulo>` (hoy `obras` → `obras_puede_abrir`, sin la rama de grant contextual de persona). Un módulo que registre entes suma su rama, como `etiqueta_registro`.
+- **`queda_afuera(p_usuario uuid, p_ente text, p_id uuid)`** — único predicado de la regla "quien no puede abrirlo no queda asignado": `p_usuario IS DISTINCT FROM auth.uid() AND NOT puede_abrir_registro(...)`.
+- **`puede_compartir_registro(p_ente text, p_id uuid, p_usuario uuid)`** — si el registro es compartible a `p_usuario` por quien llama: usuario activo, submódulo del ente, y `<CASE por modulo>` (`obras` → `obras_puede_compartir`, que exige ser dueño).
+- **`asignados_con_acceso(p_asignados uuid[], p_vinculos jsonb) RETURNS uuid[]`**, **GRANT authenticated** — `p_asignados` sin los que `queda_afuera` de algún vínculo, en el mismo orden.
+- **`sin_acceso(p_pares jsonb) RETURNS TABLE(usuario_id, usuario, ente, registro_id, etiqueta, compartible)`**, **GRANT authenticated** — de `[{usuario_id, ente, registro_id}]`, los pares donde `queda_afuera`. `etiqueta` es NULL salvo que **quien llama** (no el usuario preguntado) pueda abrir el registro — si no, expondría el nombre de lo que no ve. Exposición aceptada: deja preguntar si un usuario puede abrir un id conocido, nunca el nombre de lo que quien pregunta no ve.
+- **`compartir_registros(p_selecciones jsonb)`**, `SECURITY INVOKER`, **GRANT authenticated** — de `[{usuario_id, ente, registro_id}]`, agrupa por usuario y por `entes.modulo` y llama a la función de compartir del módulo (hoy `obras_compartir_registros`, ver `db_schema/obras.md`).
+
+Test: `sql/tests/acceso_registros.sql`.
