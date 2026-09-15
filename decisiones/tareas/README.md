@@ -20,6 +20,7 @@ Quién ve y quién toca: los tres ejes (`tareas_gestionar_ajenas`, membresía de
 - Asignar usuarios a una tarea es una función (`sql/014`)
 - Nombrar responsable de un hilo = `tareas_asignar` (`sql/015`)
 - No se ofrece crear trabajo donde no podés trabajar
+- Quien no puede abrir lo relacionado no queda asignado (`sql/063`)
 
 ## `hilos-pasos.md`
 

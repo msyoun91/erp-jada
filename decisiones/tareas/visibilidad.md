@@ -169,3 +169,87 @@ recortado por RLS — de un proyecto que no trabajás no ves a nadie.
 Antes el form abría igual y moría en la validación de Zod pidiendo un asignado
 que no se podía elegir. No es una barrera de seguridad (RLS ya lo bloquea):
 es no ofrecer un camino que siempre termina en error.
+
+## Quien no puede abrir lo relacionado no queda asignado (`sql/063`)
+
+Fase D de `PLAN_TAREAS_VINCULOS.md`, sobre la base de acceso por usuario de
+`sql/062` (*Acceso a un registro por usuario explícito*, `db_schema/core.md`).
+Decisión del usuario el 2026-09-14: si un asignado no puede abrir lo
+relacionado con la tarea, no queda asignado; si no queda nadie, la tarea va a
+quien asigna, con una nota. Relacionar un registro con una tarea que ya
+existe aplica la misma regla, y también el disparo de una plantilla.
+
+**Regla única, un solo predicado.** `queda_afuera(usuario, ente, id)` (`sql/062`)
+decide todo: `usuario` distinto de quien actúa y no puede abrir el registro.
+`asignados_con_acceso(asignados, vinculos)` filtra un array contra todos los
+vínculos de la tarea. La aplican tres puntos, sin copiar la lógica:
+
+- `crear_tarea` — filtra antes de insertar. Si queda vacío, sustituye por
+  `auth.uid()` (quien crea, que la exención de `queda_afuera` nunca saca) y dos
+  párrafos más abajo escribe la nota. El responsable se recalcula sobre el
+  conjunto final: `p_responsable_id` si sobrevivió, si no `auth.uid()`, si no
+  el primero que quedó.
+- `sincronizar_asignados` (editar_tarea, reasignar_tarea) — mismo filtro, pero
+  sobre los vínculos *actuales* de la tarea (no los del momento de crearla).
+  **El early return compara contra el conjunto ya filtrado, no contra lo que
+  pidió el cliente**: si el resultado final no cambió, no hay nada que
+  reescribir, aunque el pedido pidiera de más.
+- `vincular_tarea` (nueva función, reemplaza el INSERT directo de la action
+  `vincularTarea`) — inserta el vínculo y, si la tarea tiene asignados
+  activos, vuelve a correr `sincronizar_asignados` sobre ellos. Sin asignados
+  no se llama: si no, relacionar asignaría a quien relaciona.
+
+**Sacar a alguien de una tarea sigue siendo asignar (`sql/014`).** Si el
+filtro de acceso deja a alguien afuera y quien edita o relaciona no tiene
+`tareas_asignar`, la función entera revierte con `TA016` en vez de sacarlo en
+silencio — ni siquiera toca otros campos del mismo UPDATE. Es la razón de que
+el chequeo de `TA016` vaya *antes* del early return de `sincronizar_asignados`:
+una edición que no cambia el conjunto de asignados pedido igual puede
+descubrir que alguien ya no tiene acceso, y sin la función para sacarlo la
+edición completa se cae.
+
+**El disparo arma los vínculos con `plantilla_id` y se los pasa a
+`crear_tarea`**, que ya trae el filtro — reemplaza los dos `INSERT` directos a
+`tareas_vinculos` que `usar_plantilla` hacía después de crear la tarea
+(`sql/060`). El `v_vacio` propio de la plantilla (asignados fijos que no
+pueden recibir el paso por otros motivos: inactivos, fuera del proyecto, sin
+`tareas_asignar`) no cambia — ese caso ya sustituye por `v_uid` (quien usa la
+plantilla), que la exención de `queda_afuera` nunca saca, así que
+`crear_tarea` no lo vuelve a vaciar y no hay nota doble.
+
+**Registro de la transacción para la UI y el ensayo (`registrar_sin_acceso`,
+`sin_acceso_registrado`).** Un GUC local (`tareas.sin_acceso`) acumula
+`{tarea_id, usuario_id, ente, registro_id}` por cada exclusión real de la
+transacción — nadie más lo escribe. Sirve para dos cosas: `disparar_plantillas`
+compara su longitud antes/después de cada `usar_plantilla` para saber si *esa*
+plantilla dejó a alguien afuera (y avisar `plantilla_sin_acceso` en vez de
+`plantilla_disparada`), y `obras_ensayar_estado` lo lee justo antes de forzar
+su propio rollback.
+
+**El aviso nuevo, `plantilla_sin_acceso`.** `notificar_disparo` gana un tercer
+parámetro (`p_sin_acceso`, `DEFAULT false`: las llamadas viejas de dos
+argumentos siguen andando) y el tipo sale de una prioridad —
+`plantilla_fallida` si no corrió, si no `plantilla_sin_acceso` si dejó a
+alguien afuera, si no `plantilla_disparada`. `notificaciones_listar` lo manda
+por la misma rama que `plantilla_disparada` (`destino = 'tareas'`, sin id: las
+tareas creadas siguen ahí aunque la plantilla se archive).
+
+**El ensayo de un cambio de estado (`obras_ensayar_estado`), para que la UI
+pregunte antes de guardar (Fase E).** Hace el `UPDATE` de verdad —así el
+trigger de Obras dispara sus plantillas de verdad, con vínculos y asignados
+reales— y lo revierte con un `RAISE ... USING ERRCODE = 'TA017'` que la misma
+función atrapa; el código nunca sale de acá, así que no entra a
+`MENSAJES_ERROR`. `INVOKER` a propósito: el disparo exige
+`current_user = 'authenticated'`, y con `DEFINER` el `UPDATE` correría como el
+dueño de la función y no dispararía nada. Cualquier otro error (RLS, el CHECK
+de pérdida) sube tal cual, sin que este bloque lo toque.
+
+**Verificado con `sql/tests/asignar_con_acceso.sql` (18/18):** el asignado sin
+acceso queda afuera en los tres caminos (crear, editar, relacionar) y en el
+disparo; si no queda nadie, va a quien crea con nota; quien actúa nunca queda
+afuera, ni por un rol adjunto (`sql/060`) que él mismo no puede abrir; un
+vínculo con `plantilla_id` fuera de un trigger sigue fallando (`sql/059`); sin
+`tareas_asignar`, sacar a alguien por la fuerza de los hechos revierte la
+operación entera con `TA016`; el ensayo devuelve el par excluido sin dejar
+nada (0 tareas, 0 avisos, estado sin cambiar) y, tras compartir el registro,
+el cambio de estado real sí deja al asignado.

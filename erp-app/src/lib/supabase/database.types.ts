@@ -2025,7 +2025,7 @@ export type Database = {
         Returns: undefined
       }
       notificar_disparo: {
-        Args: { p_corrio: boolean; p_plantilla_id: string }
+        Args: { p_corrio: boolean; p_plantilla_id: string; p_sin_acceso?: boolean }
         Returns: undefined
       }
       obras_array_sin_duplicados: { Args: { a: unknown }; Returns: boolean }
@@ -2220,6 +2220,22 @@ export type Database = {
       obras_empresa_grant_directo: {
         Args: { p_empresa_id: string }
         Returns: boolean
+      }
+      obras_ensayar_estado: {
+        Args: {
+          p_detalle_perdida: string
+          p_estado: Database["public"]["Enums"]["estado_obra"]
+          p_motivo_perdida: Database["public"]["Enums"]["motivo_perdida"]
+          p_obra_id: string
+        }
+        Returns: {
+          compartible: boolean
+          ente: string
+          etiqueta: string
+          registro_id: string
+          usuario: string
+          usuario_id: string
+        }[]
       }
       obras_es_mi_obra: { Args: { p_obra_id: string }; Returns: boolean }
       obras_etiqueta: {
@@ -2522,6 +2538,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      registrar_sin_acceso: {
+        Args: { p_tarea_id: string; p_usuarios: string[]; p_vinculos: Json }
+        Returns: undefined
+      }
       relacionados_de_registro: {
         Args: { p_ente: string; p_id: string }
         Returns: {
@@ -2545,6 +2565,7 @@ export type Database = {
           usuario_id: string
         }[]
       }
+      sin_acceso_registrado: { Args: never; Returns: Json }
       sincronizar_asignados: {
         Args: { p_asignados: string[]; p_tarea_id: string }
         Returns: undefined
@@ -2577,6 +2598,10 @@ export type Database = {
       usuario_tiene_permiso: {
         Args: { p_codigo: string; p_usuario: string }
         Returns: boolean
+      }
+      vincular_tarea: {
+        Args: { p_ente: string; p_registro_id: string; p_tarea_id: string }
+        Returns: undefined
       }
       vinculos_de_tareas: {
         Args: never
@@ -2673,6 +2698,7 @@ export type Database = {
         | "plantilla_archivada"
         | "plantilla_fallida"
         | "plantilla_disparada"
+        | "plantilla_sin_acceso"
       tipo_obra:
         | "edificio"
         | "casa"
@@ -2899,6 +2925,7 @@ export const Constants = {
         "plantilla_archivada",
         "plantilla_fallida",
         "plantilla_disparada",
+        "plantilla_sin_acceso",
       ],
       tipo_obra: [
         "edificio",

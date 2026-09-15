@@ -12,6 +12,7 @@ import {
   ListPlus,
   ListTodo,
   Pencil,
+  UserX,
   XCircle,
   type LucideIcon,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   plantilla_archivada: Archive,
   plantilla_fallida: AlertTriangle,
   plantilla_disparada: ListPlus,
+  plantilla_sin_acceso: UserX,
 };
 
 const TEXTO: Record<TipoNotificacion, string> = {
@@ -43,6 +45,7 @@ const TEXTO: Record<TipoNotificacion, string> = {
   plantilla_archivada: "Archivaron la plantilla",
   plantilla_fallida: "No pudo correr tu plantilla",
   plantilla_disparada: "Se crearon tareas con tu plantilla",
+  plantilla_sin_acceso: "Se crearon tareas con tu plantilla; alguien quedó afuera porque no puede abrir lo relacionado",
 };
 
 // Los pares `-text` y no `text-success`/`text-error`: esos son hex fijos y en
@@ -57,6 +60,7 @@ const COLOR: Record<TipoNotificacion, string> = {
   plantilla_archivada: "text-warning-text",
   plantilla_fallida: "text-error-text",
   plantilla_disparada: "text-brand-500",
+  plantilla_sin_acceso: "text-warning-text",
 };
 
 // La Lista abre el panel por estado, no por URL: `?tarea=` es leído una sola

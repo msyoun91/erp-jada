@@ -55,6 +55,7 @@ const MENSAJES_ERROR: Record<string, string> = {
   TA012: "El disparador no es válido — elegí un estado del módulo, y necesitás tener acceso a ese módulo",
   TA013: "Esta plantilla se crea sola cuando cambia el estado — no se usa a mano",
   TA015: "Los roles de la obra solo se usan en plantillas que corren solas",
+  TA016: "Alguien asignado no puede abrir lo relacionado y no tenés permiso para sacarlo de la tarea: compartíselo o pedile a quien pueda asignar.",
   email_exists: "Ese email ya está registrado",
   weak_password: "La contraseña es demasiado débil",
   invalid_credentials: "Email o contraseña incorrectos",

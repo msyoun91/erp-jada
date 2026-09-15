@@ -749,7 +749,11 @@ export async function vincularTarea(input: VincularTareaForm) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("tareas_vinculos").insert(parsed.data);
+  const { error } = await supabase.rpc("vincular_tarea", argsRpc<"vincular_tarea">({
+    p_tarea_id: parsed.data.tarea_id,
+    p_ente: parsed.data.ente,
+    p_registro_id: parsed.data.registro_id,
+  }));
   if (error) return { success: false as const, error: mensajeError(error) };
 
   revalidarTareas();

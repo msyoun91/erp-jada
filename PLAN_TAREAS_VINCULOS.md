@@ -355,6 +355,12 @@ preguntar si otro usuario puede abrir un id que conocés. No devuelven el nombre
 
 ---
 
+## ~~Fase D — La regla al asignar, relacionar y disparar (`sql/063`)~~ — cerrada
+
+Decisión final en `decisiones/tareas/visibilidad.md` → *Quien no puede abrir lo relacionado no queda asignado (`sql/063`)*. Test `sql/tests/asignar_con_acceso.sql`, 18/18.
+
+<details><summary>Spec original de la fase (referencia para Fase E)</summary>
+
 ## Fase D — La regla al asignar, relacionar y disparar (`sql/063`)
 
 **Objetivo:** la regla vive en la base y cubre todos los caminos: crear, editar, reasignar, relacionar
@@ -491,6 +497,10 @@ Volver a correr `vinculos_tareas`, `plantillas`, `plantillas_disparo`, `plantill
   asignado (`sql/063`)*: regla única en `crear_tarea` y `sincronizar_asignados`, quien actúa exento,
   `TA016`, Relacionar saca, la obra nueva aplica la regla y avisa, ensayo con rollback en vez de copiar
   la cuenta de `usar_plantilla`, y la nota que no nombra el registro.
+
+---
+
+</details>
 
 ---
 

@@ -49,6 +49,8 @@ RLS SELECT: `(responsable_id = auth.uid() AND tiene_permiso('obras_ver')) OR tie
 
 **Dispara plantillas de tareas (`sql/055`).** Trigger `disparar_plantillas` AFTER INSERT OR UPDATE OF estado → `disparar_plantillas('obra', 'estado')`. Obras solo avisa que una obra entró a un estado, sin funciones ni botones nuevos: qué se crea lo deciden las plantillas que tiene activadas quien la cambió (ver `tareas.md`). La obra está registrada en `entes` (`core.md`), con `nombre` como único dato citable. `obras_relacionados_obra(obra)` (`sql/060`, INVOKER) devuelve las empresas y personas vinculadas con cada rol, para los roles de las plantillas.
 
+**`obras_ensayar_estado(p_obra_id, p_estado, p_motivo_perdida, p_detalle_perdida)` (`sql/063`)** — `SECURITY INVOKER`, **GRANT authenticated**, misma salida que `sin_acceso` (`core.md`). Hace el `UPDATE` de verdad (así el trigger de arriba dispara sus plantillas de verdad) adentro de un bloque que lo revierte con `RAISE ... USING ERRCODE = 'TA017'` — atrapado por el mismo bloque, nunca sale de la función. `INVOKER` a propósito: el disparo exige `current_user = 'authenticated'`, y con `DEFINER` el `UPDATE` correría como el dueño de la función y no dispararía nada. Cualquier otro error (RLS, el CHECK `obras_perdida_con_motivo`) sube tal cual. Para la UI de Fase E, antes de guardar un cambio de estado.
+
 ## obras_empresas
 
 Sin campo `cuit` (decisión del usuario). La detección de duplicados va por razón social y nombre comercial difusos.

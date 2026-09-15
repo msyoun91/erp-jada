@@ -119,3 +119,10 @@ Base de "compartir al asignar" (`decisiones/obras/visibilidad.md` → *La visibi
 - **`compartir_registros(p_selecciones jsonb)`**, `SECURITY INVOKER`, **GRANT authenticated** — de `[{usuario_id, ente, registro_id}]`, agrupa por usuario y por `entes.modulo` y llama a la función de compartir del módulo (hoy `obras_compartir_registros`, ver `db_schema/obras.md`).
 
 Test: `sql/tests/acceso_registros.sql`.
+
+### Registro de exclusiones de la transacción (`sql/063`)
+
+Base de *Quien no puede abrir lo relacionado no queda asignado* (`decisiones/tareas/visibilidad.md`). Un GUC local (`tareas.sin_acceso`) acumula qué pares `{tarea_id, usuario_id, ente, registro_id}` `queda_afuera` de verdad durante la transacción — nadie más lo escribe.
+
+- **`sin_acceso_registrado()`** — `SECURITY INVOKER STABLE`, **GRANT authenticated**: `COALESCE(NULLIF(current_setting('tareas.sin_acceso', true), ''), '[]')::jsonb`.
+- **`registrar_sin_acceso(p_tarea_id uuid, p_usuarios uuid[], p_vinculos jsonb)`** — `SECURITY INVOKER`, **GRANT authenticated**: suma `{tarea_id, usuario_id, ente, registro_id}` por cada usuario × vínculo al registro. La usan `crear_tarea` y `sincronizar_asignados` (`db_schema/tareas.md`) para lo que excluyeron; `disparar_plantillas` compara su longitud antes/después de cada `usar_plantilla` para saber si esa plantilla dejó a alguien afuera, y `obras_ensayar_estado` (`db_schema/obras.md`) lo lee justo antes de forzar su propio rollback.
