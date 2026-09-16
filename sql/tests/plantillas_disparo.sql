@@ -9,7 +9,8 @@
 -- obras_ver/crear/editar, y sin tareas_asignar, tareas_proyectos_crear ni
 -- tareas_plantillas_sistema. ADMIN tiene todo.
 --
--- Volver a correrlo entero después de tocar sql/055 o sql/056.
+-- Volver a correrlo entero después de tocar sql/055, sql/056 o el filtro de
+-- acceso de sql/063.
 --
 -- Último resultado: 34/34.
 
@@ -211,8 +212,12 @@ BEGIN
   v_aviso := guardar_plantilla(NULL, 'ZZ Avisar', NULL, 'privada', 'tarea', 'privado', '{}', '[]'::jsonb,
     format('[{"titulo":"Avisar {nombre}","asignados":["%s"],"incluir_ejecutor":false,"responsable_id":"%s"}]', v_tester, v_tester)::jsonb,
     'obra', 'idea');
-  INSERT INTO obras (nombre, tipo, responsable_id) VALUES ('ZZ Disparo admin 7730', 'casa', v_admin)
+  -- Desde sql/063 un asignado que no puede abrir la obra queda afuera: se le
+  -- comparte antes de que entre al estado que dispara.
+  INSERT INTO obras (nombre, tipo, estado, responsable_id) VALUES ('ZZ Disparo admin 7730', 'casa', 'en_cotizacion', v_admin)
   RETURNING id INTO v_obra_a;
+  PERFORM obras_compartir_registros(v_tester, jsonb_build_array(jsonb_build_object('ente', 'obra', 'registro_id', v_obra_a)));
+  UPDATE obras SET estado = 'idea' WHERE id = v_obra_a;
   UPDATE obras SET estado = 'en_ejecucion' WHERE id = v_obra_a;
   PERFORM set_config('role', 'none', true);
 
