@@ -18,6 +18,7 @@ MODEL A (todo privado por dueño), compartir con checklist y cascada, grants her
 - Compartir con checklist y cascada de revocación (`sql/047`)
 - El receptor de una obra compartida vincula sus contactos (`sql/051`)
 - El grant heredado de una obra ve el contacto, no lo reparte (`sql/052`)
+- La empresa de una persona en la obra la ve quien ve la empresa (`sql/070`)
 - Lo compartido entra al listado; editar sigue siendo del dueño (sin SQL)
 - La obra es privada de su responsable
 - Las personas tienen alcance; las empresas no

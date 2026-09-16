@@ -215,6 +215,23 @@ Test: `sql/tests/obras_052.sql`, 5/5.
 
 ---
 
+## La empresa de una persona en la obra la ve quien ve la empresa (`sql/070`)
+
+**`obras_vinculos_de_obra` devuelve `detalle` (la razón social de `obras_obra_persona.empresa_id`)
+solo al responsable, a `obras_transferir` o a quien ve la empresa (`obras_puede_ver_empresa`).**
+El subselect de la DEFINER no filtraba: el receptor al que le tildaron la persona y no su empresa
+leía el nombre, que la ficha de la persona ya le ocultaba vía RLS. Mismo dato, dos respuestas.
+
+**`empresa_id` sigue saliendo.** El receptor que vinculó su persona con una empresa tildada puede
+editar el vínculo después de que el dueño la destilde; con el id en NULL, `VincularPersonaPanel`
+arrancaría en "Sin especificar" y al guardar borraría la empresa. Un uuid suelto no vale nada
+(misma exposición aceptada en `sql/062`).
+
+Test: `sql/tests/obras_070.sql`, 4/4. Aplicado como `070` + `070b` (el primero ocultaba también
+el id); el archivo tiene el estado final.
+
+---
+
 ## Lo compartido entra al listado; editar sigue siendo del dueño (sin SQL)
 
 **`getPersonas` / `getEmpresas` muestran lo propio + lo compartido conmigo, igual que `getObras`.**
