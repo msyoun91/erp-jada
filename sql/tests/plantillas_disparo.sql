@@ -9,8 +9,8 @@
 -- obras_ver/crear/editar, y sin tareas_asignar, tareas_proyectos_crear ni
 -- tareas_plantillas_sistema. ADMIN tiene todo.
 --
--- Volver a correrlo entero después de tocar sql/055, sql/056 o el filtro de
--- acceso de sql/063.
+-- Volver a correrlo entero después de tocar sql/055, sql/056, el filtro de
+-- acceso de sql/063 o el disparo desde `eventos` (sql/068).
 --
 -- Último resultado: 34/34.
 
