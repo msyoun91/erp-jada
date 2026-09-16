@@ -1,5 +1,5 @@
 -- Verificación de sql/063 (la regla al asignar, relacionar y disparar —
--- PLAN_TAREAS_VINCULOS.md, Fase D).
+-- PLAN_TAREAS_VINCULOS.md, Fase D) y de sql/064 (casos 13–16).
 -- NO es una migración: corre dentro de un DO que termina en RAISE EXCEPTION,
 -- así que la transacción entera se revierte. Los resultados salen en el
 -- mensaje del error. Mismo andamiaje que plantillas_disparo.sql y
@@ -14,7 +14,7 @@
 -- tareas_plantillas, obras_ver, obras_crear: sin tareas_asignar ni
 -- tareas_gestionar_ajenas, y sin ver la obra privada de ADMIN.
 --
--- Correrlo entero después de tocar sql/063.
+-- Correrlo entero después de tocar sql/063 o sql/064.
 
 DO $test$
 DECLARE
@@ -23,6 +23,8 @@ DECLARE
   v_obra_a     uuid;  -- privada de ADMIN, TESTER no la ve
   v_persona_t  uuid;  -- privada de TESTER, ADMIN la ve por "todas" hasta que se la sacamos
   v_persona_x  uuid;  -- privada de TESTER
+  v_obra_b     uuid;  -- de ADMIN, para 15 y 16
+  v_empresa    uuid;  -- de ADMIN, vinculada a v_obra_b en 16
   v_t          uuid;
   v_pl         uuid;
   v_n          int;
@@ -336,6 +338,125 @@ BEGIN
    WHERE t.titulo = 'ZZD ensayo real ZZD Obra Privada Norte 4471' AND a.usuario_id = v_tester AND a.activo;
   r := r || E'\n12 tras compartir la obra, el cambio de estado real deja a TESTER asignado: ' ||
     CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+
+  -- ============================================================
+  -- 13 — sql/064: sacar a uno no le re-avisa «te asignaron» al que se queda
+  -- ============================================================
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+  v_t := crear_tarea('ZZD13', NULL, NULL, NULL, NULL, 'privado', v_admin, ARRAY[v_admin, v_tester],
+                     NULL, 50, NULL, NULL, 'manual', NULL, NULL, NULL, '[]'::jsonb);
+  PERFORM reasignar_tarea(v_t, v_tester, ARRAY[v_tester]);
+  PERFORM set_config('role', 'none', true);
+
+  SELECT count(*) INTO v_n FROM usuario_notificaciones
+   WHERE usuario_id = v_tester AND tipo = 'tarea_asignada' AND entidad_id = v_t;
+  SELECT array_agg(usuario_id) INTO v_asignados FROM tareas_asignados WHERE tarea_id = v_t AND activo;
+  SELECT responsable_id INTO v_resp FROM tareas WHERE id = v_t;
+  r := r || E'\n13 ADMIN se saca: TESTER queda de responsable con un solo aviso: ' ||
+    CASE WHEN v_n = 1 AND v_asignados = ARRAY[v_tester] AND v_resp = v_tester THEN 'OK'
+         ELSE 'FALLO (avisos ' || v_n || ', asignados ' || coalesce(array_to_string(v_asignados, ','), '-') || ')' END;
+
+  -- ============================================================
+  -- 14 — sql/064: traspasar con tareas_asignar y sin tareas_gestionar_ajenas
+  -- (sql/063 escribía el responsable antes que los asignados: 42501)
+  -- ============================================================
+  INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+    SELECT v_tester, id FROM submodulos WHERE activo AND codigo = 'tareas_asignar'
+    ON CONFLICT (usuario_id, submodulo_id) DO UPDATE SET activo = true;
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_tester, 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+  v_t := crear_tarea('ZZD14a', NULL, NULL, NULL, NULL, 'privado', v_tester, ARRAY[v_tester],
+                     NULL, 50, NULL, NULL, 'manual', NULL, NULL, NULL, '[]'::jsonb);
+  BEGIN
+    PERFORM reasignar_tarea(v_t, v_admin, ARRAY[v_admin]);
+    -- TESTER ya no la ve: se cuenta sin RLS.
+    PERFORM set_config('role', 'none', true);
+    SELECT array_agg(usuario_id) INTO v_asignados FROM tareas_asignados WHERE tarea_id = v_t AND activo;
+    SELECT responsable_id INTO v_resp FROM tareas WHERE id = v_t;
+    r := r || E'\n14a TESTER le pasa la tarea entera a ADMIN: ' ||
+      CASE WHEN v_asignados = ARRAY[v_admin] AND v_resp = v_admin THEN 'OK' ELSE 'FALLO (quedó mal)' END;
+  EXCEPTION WHEN OTHERS THEN
+    r := r || E'\n14a TESTER le pasa la tarea entera a ADMIN: FALLO ' || SQLSTATE;
+  END;
+  PERFORM set_config('role', 'authenticated', true);
+
+  v_t := crear_tarea('ZZD14b', NULL, NULL, NULL, NULL, 'privado', v_tester, ARRAY[v_tester],
+                     NULL, 50, NULL, NULL, 'manual', NULL, NULL, NULL, '[]'::jsonb);
+  BEGIN
+    PERFORM editar_tarea(v_t, 'ZZD14b', NULL, NULL, 'privado', v_admin, ARRAY[v_tester, v_admin],
+                         NULL, 50, NULL, NULL, NULL);
+    SELECT responsable_id INTO v_resp FROM tareas WHERE id = v_t;
+    SELECT count(*) INTO v_n FROM tareas_asignados WHERE tarea_id = v_t AND activo;
+    r := r || E'\n14b TESTER edita: suma a ADMIN como responsable y se queda: ' ||
+      CASE WHEN v_n = 2 AND v_resp = v_admin THEN 'OK' ELSE 'FALLO (quedó mal)' END;
+  EXCEPTION WHEN OTHERS THEN
+    r := r || E'\n14b TESTER edita: suma a ADMIN como responsable y se queda: FALLO ' || SQLSTATE;
+  END;
+  PERFORM set_config('role', 'none', true);
+
+  UPDATE usuario_submodulos SET activo = false
+   WHERE usuario_id = v_tester AND submodulo_id IN (SELECT id FROM submodulos WHERE codigo = 'tareas_asignar');
+
+  -- ============================================================
+  -- 15 — sql/064: sin_acceso_tarea pregunta también por el vínculo que
+  -- quien edita no ve (vinculos_de_tareas, de donde lee la UI, lo recorta)
+  -- ============================================================
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+  INSERT INTO obras (nombre, tipo, responsable_id) VALUES ('ZZD Galpón Quebracho 5820', 'casa', v_admin)
+  RETURNING id INTO v_obra_b;
+  INSERT INTO obras_empresas (razon_social, creado_por) VALUES ('ZZD Hormigones Tacuarí 3317', v_admin)
+  RETURNING id INTO v_empresa;
+  v_t := crear_tarea('ZZD15', NULL, NULL, NULL, NULL, 'privado', v_admin, ARRAY[v_admin],
+                     NULL, 50, NULL, NULL, 'manual', NULL, NULL, NULL,
+                     jsonb_build_array(jsonb_build_object('ente', 'obra', 'registro_id', v_obra_b)));
+  PERFORM set_config('role', 'none', true);
+
+  IF EXISTS (
+    SELECT 1 FROM obras WHERE id = v_obra_b AND pendiente
+    UNION ALL SELECT 1 FROM obras_empresas WHERE id = v_empresa AND pendiente
+  ) THEN
+    RAISE EXCEPTION 'setup 15: alguna entidad de control entró pendiente (nombre demasiado parecido)';
+  END IF;
+
+  UPDATE usuario_submodulos SET activo = false
+   WHERE usuario_id = v_admin AND submodulo_id IN (SELECT id FROM submodulos WHERE codigo = 'obras_ver');
+
+  PERFORM set_config('role', 'authenticated', true);
+  SELECT count(*) INTO v_n FROM vinculos_de_tareas() WHERE tarea_id = v_t;
+  -- Sin `compartible`: ADMIN sigue siendo el responsable, y compartir exige
+  -- ser dueño, no obras_ver.
+  SELECT count(*), bool_and(etiqueta IS NULL)
+    INTO v_m, v_etiqueta
+    FROM sin_acceso_tarea(v_t, ARRAY[v_tester]);
+  PERFORM set_config('role', 'none', true);
+
+  r := r || E'\n15 ADMIN sin obras_ver: la UI no ve el vínculo, sin_acceso_tarea lo pregunta sin nombre: ' ||
+    CASE WHEN v_n = 0 AND v_m = 1 AND v_etiqueta = 'true' THEN 'OK'
+         ELSE 'FALLO (visibles ' || v_n || ', filas ' || v_m || ', sin nombre ' || coalesce(v_etiqueta, '-') || ')' END;
+
+  UPDATE usuario_submodulos SET activo = true
+   WHERE usuario_id = v_admin AND submodulo_id IN (SELECT id FROM submodulos WHERE codigo = 'obras_ver');
+
+  -- ============================================================
+  -- 16 — sql/064: compartir empresa antes que la obra en el array igual
+  -- deja la cascada con origen en la obra
+  -- ============================================================
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+  INSERT INTO obras_obra_empresa (obra_id, empresa_id, roles) VALUES (v_obra_b, v_empresa, '{constructora}');
+  PERFORM obras_compartir_registros(v_tester, jsonb_build_array(
+    jsonb_build_object('ente', 'empresa', 'registro_id', v_empresa),
+    jsonb_build_object('ente', 'obra', 'registro_id', v_obra_b)
+  ));
+  PERFORM set_config('role', 'none', true);
+
+  SELECT count(*) INTO v_n FROM obras_empresa_compartida
+   WHERE empresa_id = v_empresa AND usuario_id = v_tester AND activo AND origen_obra_id = v_obra_b;
+  r := r || E'\n16 empresa antes que obra en el array: el grant de la empresa sale de la obra: ' ||
+    CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO' END;
 
   RAISE EXCEPTION 'RESULTADO:%', r;
 END
