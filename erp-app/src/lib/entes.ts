@@ -69,4 +69,5 @@ export const ENTES: Record<
   },
   empresa: { nombre: "Empresa", un: "una empresa", el: "la empresa", datos: {} },
   persona: { nombre: "Persona", un: "una persona", el: "la persona", datos: {} },
+  tarea: { nombre: "Tarea", un: "una tarea", el: "la tarea", datos: {} },
 };

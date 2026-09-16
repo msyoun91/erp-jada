@@ -34,15 +34,12 @@ export function TareasListaView({
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
-  // Deep link desde una notificación (`?tarea=`), leído una sola vez: el efecto
-  // más abajo lo saca de la URL apenas se lee.
+  // Deep link (`?tarea=`): el efecto más abajo lo saca de la URL apenas se lee.
   const tareaIdParam = sp.get("tarea");
   const tareaObjetivo = tareaIdParam ? tareas.find((t) => t.id === tareaIdParam) : undefined;
   const [texto, setTexto] = useState("");
   // Arranca filtrado en uno mismo: la vista es "lo mío" por defecto, pero el
   // panorama del equipo queda a un click (no es una restricción, es un default).
-  // El deep link (`?tarea=`) siempre cae del lado propio: solo lo dispara la
-  // notificación "te asignaron X", que avisa únicamente al asignado.
   const [asignadoId, setAsignadoId] = useState(usuarioActualId ?? "");
   // Segundo eje, independiente del anterior: el select dice de qué usuario, este
   // dice qué relación. `crearTareaSchema` obliga responsable ∈ asignados, así
@@ -51,16 +48,30 @@ export function TareasListaView({
   // Lo terminado se acumula para siempre: la Lista arranca mostrando trabajo,
   // no historial. Adentro de un hilo no se filtra nada — los pasos hechos son
   // el contexto que explica en qué anda la cadena.
-  // Si el deep link apunta a una tarea ya terminada, arranca destildado: si no,
-  // el filtro por defecto la esconde y el panel nunca llega a abrirse.
-  const [ocultarTerminadas, setOcultarTerminadas] = useState(
-    () => !(tareaObjetivo && esTerminada(tareaObjetivo)),
-  );
+  const [ocultarTerminadas, setOcultarTerminadas] = useState(true);
   const [creandoTarea, setCreandoTarea] = useState(false);
   const [creandoHilo, setCreandoHilo] = useState(false);
   const { ordenar, comparar, onTemperaturaChange } = useOrdenTemperatura();
   // Hilo recién creado al convertir una tarea: se abre su panel solo.
   const [hiloConvertido, setHiloConvertido] = useState<string | null>(null);
+
+  // El deep link llega de la notificación "te asignaron X" o del chip de una
+  // tarea relacionada, que puede no ser tuya, estar terminada o en un hilo
+  // cerrado. Los filtros se abren lo justo para que su card exista y se abra,
+  // al montar o navegando sin salir de la Lista (durante el render, como
+  // HiloCard: no en un efecto).
+  const [objetivoBase, setObjetivoBase] = useState<string | null>(null);
+  if (tareaIdParam !== objetivoBase) {
+    setObjetivoBase(tareaIdParam);
+    if (tareaObjetivo) {
+      const relacion = asignadoId ? relacionTarea(tareaObjetivo, asignadoId) : null;
+      if (asignadoId && relacion === null) setAsignadoId("");
+      else if (rol && relacion !== rol) setRol("");
+      setTexto("");
+      const hilo = hilos.find((h) => h.id === tareaObjetivo.hilo_id);
+      if (esTerminada(tareaObjetivo) || hilo?.estado === "cerrado") setOcultarTerminadas(false);
+    }
+  }
 
   useEffect(() => {
     if (!tareaIdParam) return;
@@ -68,9 +79,9 @@ export function TareasListaView({
     p.delete("tarea");
     const qs = p.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    // Se lee una sola vez, al montar con el parámetro puesto.
+    // Cada vez que llega uno: recargar no vuelve a abrir el panel.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tareaIdParam]);
 
   const q = texto.trim().toLowerCase();
 

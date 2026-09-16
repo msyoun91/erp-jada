@@ -55,13 +55,20 @@ export function TareaCard({
   relacionCon?: string | null;
   // Misión muestra una sola tarea: la isla se despliega en vez de comprimirse.
   grande?: boolean;
-  // Deep link desde una notificación: la card nace con el panel ya abierto.
+  // Deep link (`?tarea=`), desde una notificación o el chip de otra tarea.
   autoAbrir?: boolean;
   onTemperaturaChange?: (id: string, temperatura: number) => void;
   onConvertida?: (hiloId: string) => void;
 }) {
   const { usuarios, usuarioActualId } = useTareasContexto();
   const [detalleAbierto, setDetalleAbierto] = useState(autoAbrir ?? false);
+  // El chip de una tarea relacionada navega a `?tarea=` sin salir de la Lista:
+  // la card ya está montada y se abre por el cambio de prop, como HiloCard.
+  const [autoAbrirBase, setAutoAbrirBase] = useState(autoAbrir);
+  if (autoAbrir !== autoAbrirBase) {
+    setAutoAbrirBase(autoAbrir);
+    if (autoAbrir) setDetalleAbierto(true);
+  }
   const { estado, temperatura, cambiarEstado, cambiarTemperatura } = useTareaOptimista(
     tarea,
     onTemperaturaChange,

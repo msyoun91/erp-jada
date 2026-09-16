@@ -48,17 +48,6 @@ clickeable, alturas de toolbar, el modal que no atenuaba el panel). El resto, en
 Resultado de leer Tareas con la guía (`decisiones/global/entes.md` → *Tareas leída con la guía*). El
 usuario pidió la guía y la prueba, no la modificación: nada de esto se construye hasta que lo pida.
 
-- **`tarea` entra a `entes`**: submódulo `tareas_lista`, `estado_tarea`, datos `{titulo}`, ruta
-  `/tareas?tarea={id}` (cumple el CHECK de ruta interna). Con `tareas_etiqueta`,
-  `tareas_puede_ver_tarea_de(id, usuario)` (el cuerpo de `tareas_select` parametrizado) y rama en
-  `etiqueta_registro` / `puede_abrir_registro` / `buscar_registros`. **Una tarea no se comparte**
-  (decidido el 2026-09-16): sin rama en `puede_compartir_registro` ni en `compartir_registros`, así
-  que el panel la muestra como *"No lo podés compartir"* y el acceso se da por el camino de Tareas
-  (asignar, proyecto, visibilidad). Descartado que compartir asigne: el panel promete lectura
-  revocable y asignar da trabajo (aviso, Misión, editar y completar), exige membresía del proyecto
-  y deshacerlo pide `tareas_asignar`. Una tabla `tareas_tarea_compartida` de lectura abriría otra
-  puerta a la visibilidad que `sql/013` cerró; solo con un caso que la pida.
-  Sin caso de uso todavía: se construye cuando haga falta relacionar o mencionar una tarea, o el bus.
 - **Bus de eventos**: `eventos` + `emitir_evento` + `tipo_evento` (`GUIDE_ENTES.md` §2.8). Obras emite
   `alta`/`baja`/`reactivacion`/`estado` desde un trigger sobre `obras` y `relacion_*` desde los dos
   puentes; `disparar_plantillas` se muda a `AFTER INSERT ON eventos`; `tareas_plantillas.disparo_evento`,

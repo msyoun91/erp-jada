@@ -2528,6 +2528,10 @@ export type Database = {
         Returns: boolean
       }
       puede_ver_hilo: { Args: { p_hilo_id: string }; Returns: boolean }
+      puede_ver_hilo_de: {
+        Args: { p_hilo_id: string; p_usuario: string }
+        Returns: boolean
+      }
       queda_afuera: {
         Args: { p_ente: string; p_id: string; p_usuario: string }
         Returns: boolean
@@ -2588,6 +2592,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      tareas_buscar: {
+        Args: { p_texto: string }
+        Returns: {
+          id: string
+          subtitulo: string
+          tipo: string
+          titulo: string
+        }[]
+      }
       tareas_de_registro: {
         Args: { p_ente: string; p_registro_id: string }
         Returns: {
@@ -2599,6 +2612,33 @@ export type Database = {
           responsable: string
           titulo: string
         }[]
+      }
+      tareas_etiqueta: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: string
+      }
+      tareas_puede_abrir: {
+        Args: { p_id: string; p_tipo: string; p_usuario: string }
+        Returns: boolean
+      }
+      tareas_puede_ver_tarea: {
+        Args: {
+          p_hilo_id: string
+          p_id: string
+          p_proyecto_id: string
+          p_visibilidad: Database["public"]["Enums"]["visibilidad"]
+        }
+        Returns: boolean
+      }
+      tareas_puede_ver_tarea_de: {
+        Args: {
+          p_hilo_id: string
+          p_id: string
+          p_proyecto_id: string
+          p_usuario: string
+          p_visibilidad: Database["public"]["Enums"]["visibilidad"]
+        }
+        Returns: boolean
       }
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
       usar_plantilla: {

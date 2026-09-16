@@ -83,6 +83,10 @@ Unidad mínima de trabajo. `proyecto_id` solo se usa cuando la tarea está suelt
 
 **Recurrencia sin `pg_cron`:** la próxima instancia se genera al completar la actual (trigger `generar_recurrencia`), no por fecha de calendario — copia asignados y `nota_siguiente` → `nota_anterior` de la nueva.
 
+**Quién la ve — `tareas_puede_ver_tarea_de(id, hilo_id, visibilidad, proyecto_id, usuario)` (`sql/067`).** `SECURITY DEFINER STABLE`, sin GRANT: `tareas_gestionar_ajenas`, o asignación activa, o con hilo `puede_ver_hilo_de`, o suelta pública sin proyecto / en proyecto público / siendo miembro. Recibe las columnas y no solo el id porque en un UPDATE la policy de SELECT se evalúa también sobre la fila nueva, y releer `tareas` por id daría la vieja. La policy `tareas_select` es `tareas_puede_ver_tarea(id, hilo_id, visibilidad, proyecto_id)`, el envoltorio con `auth.uid()` (DEFINER, **GRANT authenticated**).
+
+**`tarea` es un ente (`sql/067`, ver `core.md`).** Ramas del módulo en las genéricas: `tareas_etiqueta(tipo, id)` (INVOKER, **GRANT authenticated**: el título si la ve y está activa), `tareas_puede_abrir(tipo, id, usuario)` (DEFINER, sin GRANT: activa y `tareas_puede_ver_tarea_de`) y `tareas_buscar(texto)` (INVOKER, **GRANT authenticated**: `(tipo, id, titulo, subtitulo)`, subtítulo = hilo o proyecto; normaliza con `obras_normalizar`, mínimo dos letras, lo pendiente primero, 10 filas). Sin rama para compartir: una tarea no se comparte, se asigna.
+
 ## tareas_asignados
 
 Multi-asignado — cualquiera puede completar la tarea.
@@ -167,7 +171,7 @@ Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados o, desde `sql/057`, en 
 
 La de sistema arranca apagada (sin fila); la privada, prendida: `guardar_plantilla` inserta la fila del dueño cuando tiene disparador, con `ON CONFLICT DO NOTHING` para no pisar un apagado. RLS: SELECT la propia; INSERT/UPDATE la propia, y además ver la plantilla y que tenga disparador. `GRANT SELECT, INSERT, UPDATE`.
 
-| tareas_vinculos (`sql/055`, `sql/059`, `sql/066`) | tipo | notas |
+| tareas_vinculos (`sql/055`, `sql/059`, `sql/066`, `sql/067`) | tipo | notas |
 |---|---|---|
 | id | uuid PK | |
 | tarea_id | uuid FK → tareas | |
@@ -178,7 +182,7 @@ La de sistema arranca apagada (sin fila); la privada, prendida: `guardar_plantil
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
-Con qué registros de otros módulos se relaciona cada tarea, y qué tareas salieron de cada (plantilla, registro). Unique parcial `idx_tareas_vinculos_activo_unico (tarea_id, ente, registro_id) WHERE activo` (`sql/059`).
+Con qué registros se relaciona cada tarea —de otros módulos o, desde `sql/067`, otra tarea—, y qué tareas salieron de cada (plantilla, registro). Unique parcial `idx_tareas_vinculos_activo_unico (tarea_id, ente, registro_id) WHERE activo` (`sql/059`). CHECK `tareas_vinculos_no_a_si_misma`: `ente <> 'tarea' OR registro_id <> tarea_id` (`sql/067`).
 
 RLS: SELECT si la tarea es visible. INSERT (`sql/059`), dos caminos: con `plantilla_id`, solo con `pg_trigger_depth() > 0` —lo escribe `usar_plantilla` adentro del disparo, y uno insertado por el cliente bloquearía el disparo real para todos—; sin `plantilla_id`, la tarea visible o en siembra (`es_siembra_tarea`) y el registro visible (`etiqueta_registro` no NULL, ver `core.md`). UPDATE solo de `activo` y solo sin plantilla: apagar el de un disparo lo dejaría volver a disparar. `GRANT SELECT, INSERT, UPDATE (activo)`.
 
@@ -186,7 +190,7 @@ Lecturas (`sql/059`, las tres `SECURITY INVOKER STABLE`, EXECUTE para `authentic
 
 - `vinculos_de_tareas()` — los vínculos activos de las tareas activas visibles, con `etiqueta`, `href` (la `ruta` del ente con el id), `de_plantilla` y `roles` (`sql/066`, DROP + CREATE). Sin fila si el registro no se ve. La precarga `getListaTareas`.
 - `tareas_de_registro(ente, registro_id)` — ids y orden de las tareas activas visibles vinculadas a un registro de Obras (lo terminado al final). Vacío si el registro no se ve. Desde Fase B (`PLAN_TAREAS_VINCULOS.md`) `getTareasDeRegistro` (`modules/tareas/queries.ts`) solo usa ids y orden: la fila completa (asignados, notas) sale de una segunda consulta con el mismo select que `getListaTareas`, para que la sección Tareas de una ficha monte `TareaCard` real en vez de una fila resumida.
-- `buscar_registros(modulo, texto)` (`sql/061`) — "Relacionar": el módulo se elige antes (toggle en la UI). Hoy solo `obras` → `obras_buscar` sin lo ajeno enmascarado y solo entes cuyo submódulo tiene quien busca, con `href`. Un módulo que registre entes suma su rama (`plpgsql`, `IF p_modulo = '…'`).
+- `buscar_registros(modulo, texto)` (`sql/061`) — "Relacionar": el módulo se elige antes (toggle en la UI). `obras` → `obras_buscar` sin lo ajeno enmascarado, y `tareas` → `tareas_buscar` (`sql/067`); solo entes cuyo submódulo tiene quien busca, con `href`. Un módulo que registre entes suma su rama (`plpgsql`, `ELSIF p_modulo = '…'`).
 - `vincular_tarea(p_tarea_id, p_ente, p_registro_id)` (`sql/063`), **GRANT authenticated** — reemplaza el INSERT directo de la action `vincularTarea`: inserta el vínculo y, si la tarea tiene asignados activos, corre `sincronizar_asignados` sobre ellos con el responsable actual (misma regla de acceso que crear/editar, ver más abajo). Sin asignados no se llama: si no, relacionar asignaría a quien relaciona.
 - `sin_acceso_tarea(p_tarea_id, p_usuarios uuid[], p_vinculos jsonb DEFAULT '[]')` (`sql/064`), `SECURITY INVOKER STABLE`, **GRANT authenticated** — la pregunta de la UI antes de editar, reasignar o relacionar: `sin_acceso` (`core.md`) sobre `p_usuarios` × los vínculos activos de la tarea más `p_vinculos` (el que se está por relacionar). Lee `tareas_vinculos` con la RLS de quien pregunta, que muestra todos los vínculos de una tarea visible; `vinculos_de_tareas` en cambio descarta los que no ve, y armar la pregunta con eso dejaba afuera justo los que la base iba a aplicar igual.
 
@@ -211,7 +215,7 @@ Auditoría append-only. **Excepción a "nunca DELETE, siempre `activo`": sin col
 
 ## Función `puede_ver_hilo(uuid)`
 
-`SECURITY DEFINER`, `STABLE` — resuelve visibilidad en cascada de un hilo (responsable/asignado a alguna de sus tareas/permiso `tareas_gestionar_ajenas`/cascada proyecto público-o-miembro). **Sin `creado_por` desde `sql/013`.** Usada en RLS de `tareas_hilos` y `tareas`. `EXECUTE` revocado de `PUBLIC`, otorgado solo a `authenticated` (`sql/006`).
+`SECURITY DEFINER`, `STABLE` — resuelve visibilidad en cascada de un hilo (responsable/asignado a alguna de sus tareas/permiso `tareas_gestionar_ajenas`/cascada proyecto público-o-miembro). **Sin `creado_por` desde `sql/013`.** Usada en RLS de `tareas_hilos`. `EXECUTE` revocado de `PUBLIC`, otorgado solo a `authenticated` (`sql/006`). Desde `sql/067` es el envoltorio de `puede_ver_hilo_de(hilo, usuario)` (mismo cuerpo por usuario explícito, sin GRANT), que usa `tareas_puede_ver_tarea_de`.
 
 ## Funciones `es_creador_proyecto(uuid)` / `es_responsable_tarea(uuid)` / `es_asignado_tarea(uuid)` / `proyecto_tiene_miembros(uuid)`
 

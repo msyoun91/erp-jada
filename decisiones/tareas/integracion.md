@@ -49,25 +49,20 @@ ya es dinámica por los datos de sesión, mismo patrón que `AlcanceToggle`) y l
 saca de la URL en el mismo efecto — refrescar la página no debe reabrir el
 panel que el usuario ya cerró.
 
-**Mismo mecanismo que `hiloConvertido`, sin la reactividad que ese caso
-necesitaba.** `TareaCard` gana `autoAbrir?: boolean` (inicializa
-`detalleAbierto`, no lo sincroniza después — el valor no cambia una vez
-montado). `hiloConvertido` sí necesita reaccionar a un cambio de prop en vivo
-porque el hilo puede nacer antes o después de que el padre pida abrirlo; acá
-la tarea ya existe en los datos que trajo el server, así que no hay carrera
-que resolver.
+**~~Mismo mecanismo que `hiloConvertido`, sin la reactividad que ese caso
+necesitaba.~~** → *Tarea en entes* (`sql/067`): el chip de una tarea navega a
+`?tarea=` sin salir de la Lista, así que `autoAbrir` reacciona al cambio.
 
 **La tarea puede ser suelta o un paso de hilo — dos caminos para el mismo id.**
 `TareasListaView` pasa `autoAbrir` directo a la `TareaCard` de nivel superior
 si el id matchea una suelta, y `autoAbrirTareaId` a `HiloCard` si matchea un
-paso; `HiloCard` lo reenvía a la `TareaCard` anidada correcta. Como
+paso; `HiloCard` lo reenvía a la `TareaCard` anidada correcta. ~~Como
 `notificar_tarea_asignada` solo avisa al asignado, el paso cae siempre del
-lado `esPropia` — nunca hace falta expandir los ajenos para encontrarlo.
+lado `esPropia`~~ → *Tarea en entes* (`sql/067`).
 
-**Si la tarea objetivo ya está terminada, `ocultarTerminadas` arranca
-destildado.** Si no, el filtro por defecto la esconde y el deep link no
-abriría nada — mismo espíritu que "no se ofrece un camino que termina en
-error".
+**~~Si la tarea objetivo ya está terminada, `ocultarTerminadas` arranca
+destildado.~~** → *Tarea en entes* (`sql/067`): los filtros se abren para
+cualquier tarea objetivo, terminada o no.
 
 **Si la tarea no aparece en los datos que trajo el server** (RLS la ocultó,
 el id no existe más), no pasa nada: la URL se limpia igual y el usuario queda
@@ -137,7 +132,7 @@ Pedido del usuario el 2026-09-14 (fase B de `PLAN_TAREAS_VINCULOS.md`): "Nueva t
 
 **`refresh()` (Next 16) se suma a `revalidatePath("/tareas")` en todas las actions del módulo.** `revalidatePath` solo repinta si el cliente está parado en esa ruta; llamadas desde la ficha (completar una tarea, reasignar) necesitan refrescar la ficha, no `/tareas`. `revalidarTareas()` (helper privado de `actions.ts`) hace las dos cosas y reemplaza los `revalidatePath("/tareas")` sueltos — las llamadas que además revalidan otra ruta (`/tareas/proyectos`, `/tareas/plantillas`) se quedan como estaban.
 
-**`?nueva=` se retira; `?tarea=` se queda, pero ya no necesita el caso "ajeno".** Con el form y el panel abriéndose sobre la ficha, nadie arma `/tareas?nueva=obra:{id}` ni pide `getRegistro` para eso. `?tarea=` lo sigue usando la campanita ("te asignaron X"), y como esa notificación solo avisa al asignado, la tarea objetivo siempre cae del lado propio del filtro — se saca el caso especial que arrancaba `TareasListaView` sin el recorte por usuario (existía únicamente para el link, ya retirado, que salía de una ficha).
+**`?nueva=` se retira; ~~`?tarea=` se queda, pero ya no necesita el caso "ajeno".~~** Con el form y el panel abriéndose sobre la ficha, nadie arma `/tareas?nueva=obra:{id}` ni pide `getRegistro` para eso. ~~`?tarea=` lo sigue usando la campanita ("te asignaron X"), y como esa notificación solo avisa al asignado, la tarea objetivo siempre cae del lado propio del filtro — se saca el caso especial que arrancaba `TareasListaView` sin el recorte por usuario.~~ → el caso "ajeno" vuelve con el chip de una tarea relacionada: *Tarea en entes* (`sql/067`).
 
 **Las etiquetas de estado de tarea vuelven a `tareaLabels.ts`.** Vivían en `lib/tareas.ts` (`LABEL_ESTADO_TAREA`/`BADGE_ESTADO_TAREA`) porque Obras las usaba directamente en `TareasRelacionadas`. Esa dependencia desaparece con la sección vieja — `lib/tareas.ts` se borra y las etiquetas quedan en `modules/tareas/components/tareaLabels.ts` (`ESTADO_LABEL`/`ESTADO_BADGE`), donde ya vivía el resto.
 
@@ -158,3 +153,27 @@ Construido el 2026-09-16 desde `BACKLOG.md` → *Tareas sobre el modelo de entes
 **Tests:** `plantillas_roles.sql` 15/15 (suma 14 y 15), `vinculos_tareas.sql` 15/15, `plantillas_disparo.sql` 34/34.
 
 Archivos: `sql/066`, `lib/entes.ts`, `VinculosChips.tsx`, `TareaDetailPanel.tsx`, `types.ts`, `database.types.ts`, `sql/tests/plantillas_roles.sql`.
+
+## Tarea en entes (`sql/067`)
+
+Construido el 2026-09-16 desde `BACKLOG.md` → *Tareas sobre el modelo de entes*. Hasta acá una tarea podía apuntar a una obra, pero nada podía apuntar a una tarea: no tenía etiqueta, ni "quién la puede abrir", ni buscador. Ahora "Relacionar" ofrece el módulo Tareas y una tarea se relaciona con otra.
+
+**Una tarea no se comparte.** Decidido por el usuario antes de construir: sin rama en `puede_compartir_registro` ni en `compartir_registros`. El panel de `useConfirmarAcceso` la muestra como *"No lo podés compartir"* y el acceso se da por el camino de Tareas (asignar, proyecto, visibilidad). Compartir que asigne se descartó: el panel promete lectura revocable y asignar da trabajo (aviso, Misión, editar y completar), exige membresía del proyecto y deshacerlo pide `tareas_asignar`.
+
+**La visibilidad se escribe una vez y la policy la llama.** `tareas_puede_ver_tarea_de` es el cuerpo que tenía `tareas_select`, por usuario explícito; la policy pasa a ser el envoltorio con `auth.uid()`, y `puede_ver_hilo` queda como envoltorio de `puede_ver_hilo_de`. Verificado con una foto antes y después de aplicar: los dos usuarios ven exactamente las mismas tareas e hilos (conteo y hash de ids).
+
+**La función recibe las columnas, no solo el id — a diferencia de Obras.** En un UPDATE la policy de SELECT también se evalúa sobre la fila nueva; releer `tareas` por id devolvería la vieja y dejaría, por ejemplo, que el responsable sin asignar vuelva privada una tarea pública que después no ve. `tareas_puede_abrir` sí lee la fila por id y le pasa sus columnas.
+
+**`estados` NULL aunque la tarea tenga `estado_tarea`.** No hay trigger de disparo sobre `tareas`: con el enum, `guardar_plantilla` aceptaría un disparador que nunca corre. Datos `{}` por lo mismo: solo los usa un disparo.
+
+- **Desactivada no existe:** sin etiqueta, sin chip, no se abre ni se busca.
+- **Una tarea no se relaciona consigo misma:** CHECK `tareas_vinculos_no_a_si_misma`; en la UI, el panel la pasa en `yaElegidos` y el buscador no la ofrece.
+- **`tareas_buscar` normaliza con `obras_normalizar`:** "Relacionar" encuentra con el mismo criterio en los dos módulos (sin tildes, sin puntuación, mínimo dos letras). Lo pendiente primero; 10 filas.
+
+**El chip abre `/tareas?tarea={id}`, que ahora abre cualquier tarea visible.** El deep link solo lo usaba la notificación "te asignaron X", que siempre cae del lado propio. El chip puede apuntar a una tarea ajena, terminada o en un hilo cerrado, y navegar sin salir de la Lista. `TareasListaView` suelta lo justo, durante el render y como `HiloCard`: el recorte por usuario si la tarea no es de quien filtra, la relación, el texto y "Ocultar terminadas". `TareaCard` reacciona al cambio de `autoAbrir`, y la URL se limpia cada vez que llega un `?tarea=`. El panel de la tarea de origen queda debajo: al cerrar la nueva se vuelve a ella (`<dialog>` en el top layer).
+
+No se hizo la vista inversa (en la tarea B, las tareas que la relacionan): no la pidió nadie.
+
+**Tests:** `tarea_ente.sql` 16/16 (nuevo). Sin regresiones en `vinculos_tareas.sql` (15/15), `asignar_con_acceso.sql` (todo OK), y los casos de `tareas`/`tareas_hilos` de `rls_visibilidad_tareas.sql` (01–06, 09, 10).
+
+Archivos: `sql/067`, `lib/entes.ts`, `TareasListaView.tsx`, `TareaCard.tsx`, `HiloCard.tsx`, `TareaDetailPanel.tsx`, `database.types.ts`, `sql/tests/tarea_ente.sql`.

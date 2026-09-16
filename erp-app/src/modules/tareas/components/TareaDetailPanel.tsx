@@ -387,7 +387,10 @@ export function TareaDetailPanel({
               }))}
               onQuitar={desvincular}
             />
-            <RelacionarRegistro yaElegidos={vinculos} onElegir={relacionar} />
+            <RelacionarRegistro
+              yaElegidos={[...vinculos, { ente: "tarea", registro_id: tarea.id }]}
+              onElegir={relacionar}
+            />
           </div>
 
           {activa && esAsignado && (

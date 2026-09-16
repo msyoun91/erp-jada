@@ -46,9 +46,9 @@ Asignación usuario ↔ submódulo.
 | submodulo_id | uuid FK → submodulos | |
 | activo | boolean | UNIQUE normal (usuario_id, submodulo_id) — no parcial, por upsert (excepción GUIDE_DB) |
 
-## entes (`sql/055`, `sql/059`)
+## entes (`sql/055`, `sql/059`, `sql/067`)
 
-Catálogo de registros de otros módulos que se relacionan con tareas; los que tienen estado, además, disparan plantillas. Infra cross-módulo como `submodulos`: cada módulo agrega su fila en su migración, más un trigger de una línea sobre su columna de estado — `disparar_plantillas('<ente>', '<columna>')`, ver `tareas.md`. Desde la app no se escribe.
+Catálogo de registros que otro módulo puede nombrar, abrir, buscar y relacionar; los que tienen estado, además, disparan plantillas. Infra cross-módulo como `submodulos`: cada módulo agrega su fila en su migración, más un trigger de una línea sobre su columna de estado — `disparar_plantillas('<ente>', '<columna>')`, ver `tareas.md`. Desde la app no se escribe.
 
 | columna | tipo | notas |
 |---|---|---|
@@ -62,13 +62,13 @@ Catálogo de registros de otros módulos que se relacionan con tareas; los que t
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
-Filas: `obra` — módulo `obras`, submódulo `obras_ver`, `estado_obra`, datos `{nombre}`, ruta `/obras/{id}`. `empresa` — `obras_empresas`, sin estado, ruta `/obras/empresas/{id}`; `persona` — `obras_personas`, sin estado, ruta `/obras/personas/{id}` (las dos, `sql/059`).
+Filas: `obra` — módulo `obras`, submódulo `obras_ver`, `estado_obra`, datos `{nombre}`, ruta `/obras/{id}`. `empresa` — `obras_empresas`, sin estado, ruta `/obras/empresas/{id}`; `persona` — `obras_personas`, sin estado, ruta `/obras/personas/{id}` (las dos, `sql/059`). `tarea` — módulo `tareas`, `tareas_lista`, sin estado aunque tiene `estado_tarea` (no hay trigger de disparo sobre `tareas`, y con el enum `guardar_plantilla` aceptaría uno que nunca corre), datos `{}`, ruta `/tareas?tarea={id}` (`sql/067`).
 
 **RLS:** SELECT `activo AND tiene_permiso(submodulo)` — lo que no podés usar no existe para vos, y las policies de `tareas_plantillas` se apoyan en eso. Sin escritura para `authenticated`.
 
 Cómo se nombra cada ente y sus estados vive en `lib/entes.ts` (`ENTES`): la base no sabe cómo se dicen. Solo uno con `estados` se ofrece como disparador en el editor.
 
-**`etiqueta_registro(ente, id)` (`sql/059`)** — `SECURITY INVOKER STABLE`, EXECUTE para `authenticated`: el nombre de un registro para quien pregunta, NULL si no lo ve. Es también la regla de "lo ve": la RLS de `entes` pide el submódulo y la del módulo dueño decide la fila. Un `CASE` por `entes.modulo` (hoy `obras` → `obras_etiqueta`); un módulo que registre entes suma su rama.
+**`etiqueta_registro(ente, id)` (`sql/059`)** — `SECURITY INVOKER STABLE`, EXECUTE para `authenticated`: el nombre de un registro para quien pregunta, NULL si no lo ve. Es también la regla de "lo ve": la RLS de `entes` pide el submódulo y la del módulo dueño decide la fila. Un `CASE` por `entes.modulo` (`obras` → `obras_etiqueta`, `tareas` → `tareas_etiqueta`, `sql/067`); un módulo que registre entes suma su rama.
 
 **`relacionados_de_registro(ente, id)` (`sql/060`)** — `SECURITY INVOKER STABLE`: `(ente, registro_id, rol)` de lo relacionado con un registro, para quien pregunta. Hoy solo `obra` → `obras_relacionados_obra`. Lo usan los roles de las plantillas de tareas.
 
@@ -111,9 +111,9 @@ Exige `usuarios.activo` además de `usuario_submodulos.activo` y `submodulos.act
 
 Base de "compartir al asignar" (`decisiones/obras/visibilidad.md` → *La visibilidad se pregunta por usuario*). Todas `SECURITY DEFINER STABLE`, sin GRANT salvo que se diga.
 
-- **`puede_abrir_registro(p_ente text, p_id uuid, p_usuario uuid)`** — la misma puerta que la ruta de la ficha: `entes.activo AND usuario_tiene_permiso(usuario, entes.submodulo) AND <CASE por entes.modulo>` (hoy `obras` → `obras_puede_abrir`, sin la rama de grant contextual de persona). Un módulo que registre entes suma su rama, como `etiqueta_registro`.
+- **`puede_abrir_registro(p_ente text, p_id uuid, p_usuario uuid)`** — la misma puerta que la ruta de la ficha: `entes.activo AND usuario_tiene_permiso(usuario, entes.submodulo) AND <CASE por entes.modulo>` (`obras` → `obras_puede_abrir`, sin la rama de grant contextual de persona; `tareas` → `tareas_puede_abrir`, `sql/067`). Un módulo que registre entes suma su rama, como `etiqueta_registro`.
 - **`queda_afuera(p_usuario uuid, p_ente text, p_id uuid)`** — único predicado de la regla "quien no puede abrirlo no queda asignado": `p_usuario IS DISTINCT FROM auth.uid() AND NOT puede_abrir_registro(...)`.
-- **`puede_compartir_registro(p_ente text, p_id uuid, p_usuario uuid)`** — si el registro es compartible a `p_usuario` por quien llama: usuario activo, submódulo del ente, y `<CASE por modulo>` (`obras` → `obras_puede_compartir`, que exige ser dueño).
+- **`puede_compartir_registro(p_ente text, p_id uuid, p_usuario uuid)`** — si el registro es compartible a `p_usuario` por quien llama: usuario activo, submódulo del ente, y `<CASE por modulo>` (`obras` → `obras_puede_compartir`, que exige ser dueño). Sin rama para `tareas`: una tarea no se comparte, da false (`sql/067`).
 - **`asignados_con_acceso(p_asignados uuid[], p_vinculos jsonb) RETURNS uuid[]`**, **GRANT authenticated** — `p_asignados` sin los que `queda_afuera` de algún vínculo, en el mismo orden.
 - **`sin_acceso(p_pares jsonb) RETURNS TABLE(usuario_id, usuario, ente, registro_id, etiqueta, compartible)`**, **GRANT authenticated** — de `[{usuario_id, ente, registro_id}]`, los pares donde `queda_afuera`. `etiqueta` es NULL salvo que **quien llama** (no el usuario preguntado) pueda abrir el registro — si no, expondría el nombre de lo que no ve. Exposición aceptada: deja preguntar si un usuario puede abrir un id conocido, nunca el nombre de lo que quien pregunta no ve.
 - **`compartir_registros(p_selecciones jsonb)`**, `SECURITY INVOKER`, **GRANT authenticated** — de `[{usuario_id, ente, registro_id}]`, agrupa por usuario y por `entes.modulo` y llama a la función de compartir del módulo (hoy `obras_compartir_registros`, ver `db_schema/obras.md`).

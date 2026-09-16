@@ -100,7 +100,10 @@ Cada una ramifica por `entes.modulo` (`CASE` / `IF`) y delega en una función de
 
 La visibilidad por usuario explícito se escribe una vez: `{modulo}_puede_ver_{ente}_de(id, usuario)` es
 el cuerpo; `{modulo}_puede_ver_{ente}(id)` es un envoltorio de una línea con `auth.uid()` que usan
-las policies (`sql/062`). Las del módulo van sin GRANT: solo las llama core.
+las policies (`sql/062`). Las del módulo van sin GRANT: solo las llama core. Si la regla depende de
+columnas de la propia fila (Tareas: hilo, visibilidad, proyecto), la `_de` recibe esas columnas y no el
+id: en un UPDATE la policy de SELECT se evalúa sobre la fila nueva, y releer la tabla daría la vieja
+(`tareas_puede_ver_tarea_de`, `sql/067`).
 
 ### 2.4 Privacidad y compartir
 

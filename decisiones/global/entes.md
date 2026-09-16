@@ -93,7 +93,7 @@ modificarlo. Resultado: la guía se aplica y deja una lista concreta; lo que fal
 ```
 Módulo: tareas
 Entes
-├── tarea    — dueño: los asignados (sql/013), no el creador · estado estado_tarea · ruta /tareas?tarea={id} · submódulo tareas_lista
+├── tarea    — dueño: los asignados (sql/013), no el creador · estado estado_tarea (no dispara) · ruta /tareas?tarea={id} · submódulo tareas_lista · en entes desde sql/067, no se comparte
 ├── hilo     — dueño responsable_id · estado estado_hilo · sin ficha propia (panel en la Lista)
 └── proyecto — dueño: los miembros · sin estado · sin ficha propia
 Relaciones
@@ -115,8 +115,8 @@ consumo de entes ajenos por composición en `app/` (`TareasDeRegistro` en las fi
 `useConfirmarAcceso` y `lib/accesos.ts` ya reutilizables; visibilidad que se amplía solo por acto
 explícito (asignar), con el dueño definido por el módulo.
 
-**No cumple:** `tarea` no está en `entes` — ningún módulo puede relacionarse con una tarea, preguntar
-`puede_abrir_registro('tarea', …)` ni buscarla; emite un solo evento y sin bus; el vínculo con un
+**No cumple:** ~~`tarea` no está en `entes` — ningún módulo puede relacionarse con una tarea, preguntar
+`puede_abrir_registro('tarea', …)` ni buscarla~~ (entró en `sql/067`, `decisiones/tareas/integracion.md`); emite un solo evento y sin bus; el vínculo con un
 registro no guarda rol (la plantilla elige el registro por `ente:rol`, pero `tareas_vinculos` no sabe
 si esa persona es "el arquitecto de" la tarea); la descripción es texto plano; los chips son clic.
 `hilo` y `proyecto` no se registran hasta que un módulo los necesite. `sql/064` se cerró el mismo día,
