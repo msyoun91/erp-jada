@@ -43,6 +43,34 @@ Los cuatro app-wide reales están cerrados ahí (ThemeToggle flotante, `.card:ho
 clickeable, alturas de toolbar, el modal que no atenuaba el panel). El resto, en
 `decisiones/obras/ui.md`.
 
+## Tareas sobre el modelo de entes (`GUIDE_ENTES.md`, 2026-09-16)
+
+Resultado de leer Tareas con la guía (`decisiones/global/entes.md` → *Tareas leída con la guía*). El
+usuario pidió la guía y la prueba, no la modificación: nada de esto se construye hasta que lo pida.
+
+- **`tarea` entra a `entes`**: submódulo `tareas_lista`, `estado_tarea`, datos `{titulo}`, ruta
+  `/tareas?tarea={id}` (cumple el CHECK de ruta interna). Con `tareas_etiqueta`,
+  `tareas_puede_ver_tarea_de(id, usuario)` (el cuerpo de `tareas_select` parametrizado) y rama en
+  `etiqueta_registro` / `puede_abrir_registro` / `buscar_registros`. Compartir una tarea es asignar:
+  o `puede_compartir_registro` devuelve false para `tarea` y la UI ofrece asignar, o
+  `tareas_compartir_registros` llama a `sincronizar_asignados` — decidir cuál.
+- **Bus de eventos**: `eventos` + `emitir_evento` + `tipo_evento` (`GUIDE_ENTES.md` §2.8). Obras emite
+  `alta`/`baja`/`reactivacion`/`estado` desde un trigger sobre `obras` y `relacion_*` desde los dos
+  puentes; `disparar_plantillas` se muda a `AFTER INSERT ON eventos`; `tareas_plantillas.disparo_evento`,
+  con `disparo_estado` solo cuando `evento = 'estado'`; el editor pasa de "ente + estado" a
+  "módulo → evento → estado". `tareas_eventos` → `eventos` con `ente = 'tarea'` (la vista Auditoría
+  lee de ahí).
+- **`tareas_vinculos.rol`** (text nullable, `ente:rol` como `adjuntos`): el vínculo que arma un disparo
+  por rol guarda el rol; "Relacionar" a mano lo deja NULL. Así la relación tarea↔registro es una
+  propiedad relacional y el chip puede decir "Arquitecto · Juan Pérez".
+- **Descripción con referencias `{ente:uuid}`** resueltas al mostrar (`etiqueta_registro`) → chip/link
+  o nada. El editor de texto es librería nueva: consultar antes.
+- **Chips arrastrables**: librería de dnd con soporte touch — consultar antes.
+- **`VinculosChips` y `RelacionarRegistro` suben a `components/ui/`** cuando el segundo módulo los use
+  (Obras ya los monta, pero vía `app/`).
+- **`sql/064` sin commit ni aplicar** (`sincronizar_asignados` sigue con dos argumentos en la base):
+  cerrar o descartar antes de tocar `usar_plantilla`.
+
 ## Sugerencia de tareas — sin caso real todavía
 
 Pedida junto con las notificaciones y no construida (ver `decisiones/global/infra.md`). "¿Qué hago ahora?" ya lo contestan Misión y el orden de `useOrdenTemperatura`; lo que falta es "¿qué tarea debería existir y no existe?" — la obra sin movimiento hace 60 días.

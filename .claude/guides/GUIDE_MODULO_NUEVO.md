@@ -2,7 +2,7 @@
 
 Siempre este orden, sin saltar pasos. Cada paso carga su guía; no cargarlas todas de entrada.
 
-0. **Listar vistas y funciones por vista y confirmarlas con el usuario antes de escribir código.** Formato:
+0. **Listar la ficha del módulo y las vistas y funciones por vista, y confirmarlas con el usuario antes de escribir código.** La ficha —entes, estados, relaciones, acciones, eventos que emite y consume— sigue el formato de `GUIDE_ENTES.md` §1. Las vistas:
    ```
    Módulo: Nombre
    ├── modulo_vista1 (vista)
@@ -10,8 +10,8 @@ Siempre este orden, sin saltar pasos. Cada paso carga su guía; no cargarlas tod
    │   └── modulo_accion2 (funcion)
    └── modulo_vista2 (vista, sin funciones)
    ```
-   Toda vista arranca con mayúscula. Todo módulo tiene al menos 1 vista. Una vista puede no tener funciones. No avanzar a SQL sin esta lista aprobada.
-1. SQL y tipos de base de datos (`GUIDE_DB.md`)
+   Toda vista arranca con mayúscula. Todo módulo tiene al menos 1 vista. Una vista puede no tener funciones. Un módulo puede no tener entes; la ficha lo declara. No avanzar a SQL sin la ficha y la lista aprobadas.
+1. SQL y tipos de base de datos (`GUIDE_DB.md`), con el contrato de cada ente (`GUIDE_ENTES.md` §2)
 2. `types.ts` — schema Zod + tipos TypeScript (`GUIDE_TYPESCRIPT.md`)
 3. `permissions.ts` — verificación de acceso (`GUIDE_PERMISSIONS.md`)
 4. `queries.ts` + `actions.ts`
@@ -21,7 +21,8 @@ Siempre este orden, sin saltar pasos. Cada paso carga su guía; no cargarlas tod
 
 ## Checklist
 
-- [ ] Vistas y funciones por vista listadas y aprobadas
+- [ ] Ficha del módulo (entes, estados, relaciones, acciones, eventos) y vistas y funciones por vista, aprobadas
+- [ ] Checklist por ente de `GUIDE_ENTES.md` cumplido, incluida la rama en las seis funciones de core
 - [ ] SQL creado, con RLS, `GRANT` a `authenticated` y trigger `updated_at`
 - [ ] Submódulos sembrados en la migración
 - [ ] `types.ts`, `permissions.ts`, `queries.ts`, `actions.ts`

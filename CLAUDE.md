@@ -72,7 +72,7 @@ La regla más alta prevalece.
 - No crear roles. No crear permisos por módulo. Toda autorización nueva se implementa mediante submódulos, incluso si el permiso parece más fino que un submódulo (ej: por fila o por campo) — si un caso real no puede resolverse así, se registra en `decisiones/global/permisos.md` como excepción explícita antes de romper la regla, no se decide ad-hoc
 - **Regla de negocio → Postgres, no `actions.ts`.** Toda invariante (validación cruzada, cascada, derivación, orquestación multi-tabla) vive en constraint, trigger o función `SECURITY INVOKER` llamada con `.rpc()`. `actions.ts` queda como glue: `safeParse` → llamar → `revalidatePath`. Si una regla no puede expresarse en SQL, registrarla en `decisiones/<modulo>` como excepción explícita antes de escribirla en TypeScript
 - **`obsoletos/` no se lee.** Es el cementerio: docs cerradas, boilerplate, código retirado y backups. Entrar solo para restaurar algo, nunca como contexto de una tarea. Un puntero a `obsoletos/` desde `decisiones/` o `BACKLOG.md` es histórico — la decisión está escrita en el archivo que apunta
-- **Módulo nuevo → leer `.claude/guides/GUIDE_MODULO_NUEVO.md` antes de escribir nada.** Arranca con la lista de vistas y funciones aprobada por el usuario; sin esa lista no hay SQL.
+- **Módulo nuevo → leer `.claude/guides/GUIDE_MODULO_NUEVO.md` antes de escribir nada.** Arranca con la ficha del módulo (`GUIDE_ENTES.md`: entes, estados, relaciones, acciones, eventos) y la lista de vistas y funciones, aprobadas por el usuario; sin eso no hay SQL.
 
 ---
 
@@ -135,6 +135,7 @@ erp-app/src/
 | `.claude/guides/GUIDE_DESIGN.md` | UI, UX, mobile, layout de módulo, diseño visual, feedback |
 | `.claude/guides/GUIDE_DASHBOARD.md` | widgets, dashboard, KPIs |
 | `.claude/guides/GUIDE_MODULO_NUEVO.md` | crear un módulo |
+| `.claude/guides/GUIDE_ENTES.md` | entes, estados, relaciones entre módulos, compartir, eventos y disparadores, chips y fichas ajenas |
 | `.claude/guides/GUIDE_SYNC.md` | sincronización erp-app ↔ erp-cliente |
 | `decisiones/<modulo>/README.md` | modificar `tareas` u `obras` — el índice dice qué archivo del tema abrir |
 | `decisiones/<modulo>.md` | modificar `usuarios` o `auth` |

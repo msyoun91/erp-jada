@@ -22,6 +22,16 @@ Tocar permisos: función ligada a su vista (`vista_id`), vista y función se aut
 - `funcion` ligada a su `vista` puntual (`vista_id`), no solo a `modulo`
 - Vista y función se autorizan por separado (`PermisosModal`)
 
+## `entes.md`
+
+Tocar `entes`, `lib/entes.ts`, las funciones cross-módulo de core, disparadores, compartir al asignar, o crear un módulo: el modelo de entes y eventos, y Tareas leída con la guía.
+
+- Un módulo se describe en entes, estados, propiedades, relaciones, acciones y eventos (2026-09-16)
+- Los eventos van a una tabla `eventos`, no a un trigger por consumidor (decidido, no construido)
+- "No existe" antes que "sin permiso"
+- Un ente en un texto es una referencia, no un nombre (decidido, no construido)
+- Tareas leída con la guía (2026-09-16)
+
 ## `infra.md`
 
 Tocar infraestructura: proxy, dashboard, sidebar, notificaciones, regla de negocio en Postgres, `argsRpc()`, advisors, organización de la documentación.
