@@ -1,5 +1,6 @@
 -- Verificación de sql/060 (roles de la obra en los pasos de una plantilla) y
--- sql/065 (condición negada y texto que depende de un rol).
+-- sql/065 (condición negada y texto que depende de un rol) y sql/066 (el
+-- vínculo guarda el rol).
 -- NO es una migración: corre dentro de un DO que termina en RAISE EXCEPTION,
 -- así que la transacción entera se revierte. Los resultados salen en el
 -- mensaje del error. Mismo andamiaje que plantillas_disparo.sql.
@@ -8,9 +9,9 @@
 -- sesión (sin RLS y sin disparo); el cambio de estado lo hace ADMIN como
 -- `authenticated`, que es lo que dispara.
 --
--- Volver a correrlo entero después de tocar sql/060 o sql/065.
+-- Volver a correrlo entero después de tocar sql/060, sql/065 o sql/066.
 --
--- Último resultado: 13/13.
+-- Último resultado: 15/15.
 
 DO $test$
 DECLARE
@@ -97,6 +98,21 @@ BEGIN
   SELECT count(*) INTO v_n FROM tareas_vinculos WHERE tarea_id = v_p3 AND activo;
   r := r || E'\n04 adjuntos: la obra, la constructora y la persona una vez aunque tenga dos roles adjuntos: ' ||
     CASE WHEN v_n = 3 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+
+  SELECT string_agg(ente || '=' || array_to_string(roles, ','), ' ' ORDER BY ente) INTO v_txt
+    FROM tareas_vinculos WHERE tarea_id = v_p3 AND activo;
+  r := r || E'
+14 cada vínculo guarda sus roles, por código; la obra ninguno: ' ||
+    CASE WHEN v_txt = 'empresa=constructora obra= persona=arquitecto,decisor' THEN 'OK' ELSE 'FALLO (' || COALESCE(v_txt, 'NULL') || ')' END;
+
+  BEGIN
+    INSERT INTO tareas_vinculos (tarea_id, ente, registro_id, roles) VALUES (v_p1, 'empresa', v_emp, '{constructora}');
+    r := r || E'
+15 un vínculo a mano no lleva roles: FALLO (insertó)';
+  EXCEPTION WHEN OTHERS THEN
+    r := r || E'
+15 un vínculo a mano no lleva roles: ' || CASE WHEN SQLSTATE = '23514' THEN 'OK' ELSE 'FALLO ' || SQLSTATE END;
+  END;
 
   SELECT id INTO v_p4 FROM tareas WHERE titulo LIKE 'RP sin inmobiliaria%' AND activo;
   r := r || E'\n08 «solo si no hay» crea el paso cuando el rol falta, y encadena: ' ||
