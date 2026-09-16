@@ -1,5 +1,6 @@
 -- Verificación de sql/068 (el bus de eventos: emisores, RLS, tareas_eventos
--- mudada y plantillas que escuchan un evento).
+-- mudada y plantillas que escuchan un evento) y sql/069 (quién ve un evento
+-- de relación).
 -- NO es una migración: corre dentro de un DO que termina en RAISE EXCEPTION,
 -- así que la transacción entera se revierte. Los resultados salen en el
 -- mensaje del error. Mismo andamiaje que plantillas_disparo.sql.
@@ -7,9 +8,9 @@
 -- ADMIN actúa como `authenticated` (tiene todo). TESTER queda sin
 -- obras_transferir, que le dejaría ver todas las obras.
 --
--- Volver a correrlo entero después de tocar sql/068.
+-- Volver a correrlo entero después de tocar sql/068 o sql/069.
 --
--- Último resultado: 25/25.
+-- Último resultado: 28/28.
 
 DO $test$
 DECLARE
@@ -25,6 +26,7 @@ DECLARE
   v_alta   uuid;
   v_n      int;
   v_m      int;
+  v_k      int;
   v_txt    text;
   r        text := '';
 BEGIN
@@ -223,6 +225,36 @@ BEGIN
   PERFORM obras_ensayar_estado(v_obra_b, 'en_cotizacion', NULL, NULL);
   SELECT count(*) INTO v_m FROM eventos WHERE registro_id = v_obra_b;
   r := r || E'\n25 ensayar un estado no deja eventos: ' || CASE WHEN v_n = v_m THEN 'OK' ELSE 'FALLO (' || v_n || '→' || v_m || ')' END;
+
+  -- ============================================================
+  -- Quién ve una relación (sql/069)
+  -- ============================================================
+  -- La obra B tiene dos personas; al receptor se le tilda solo la segunda.
+  PERFORM set_config('role', 'none', true);
+  INSERT INTO obras_obra_compartida (obra_id, usuario_id, otorgada_por) VALUES (v_obra_b, v_tester, v_admin);
+  INSERT INTO obras_persona_compartida (persona_id, usuario_id, otorgada_por, origen_obra_id)
+  VALUES (v_per2, v_tester, v_admin, v_obra_b);
+  PERFORM set_config('role', 'authenticated', true);
+
+  SELECT count(*) FILTER (WHERE evento IN ('relacion_alta', 'relacion_baja')),
+         count(*) FILTER (WHERE evento NOT IN ('relacion_alta', 'relacion_baja'))
+    INTO v_n, v_k FROM eventos WHERE registro_id = v_obra_b;
+  r := r || E'\n26 el responsable ve las relaciones de su obra con las dos personas: ' ||
+    CASE WHEN v_n = 3 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_tester, 'role', 'authenticated')::text, true);
+
+  SELECT string_agg(DISTINCT detalle->>'registro_id', ',') INTO v_txt
+    FROM eventos WHERE registro_id = v_obra_b AND evento IN ('relacion_alta', 'relacion_baja');
+  r := r || E'\n27 el receptor ve la relación con lo que le tildaron, no con lo que no: ' ||
+    CASE WHEN v_txt = v_per2::text THEN 'OK' ELSE 'FALLO (' || COALESCE(v_txt, 'NULL') || ')' END;
+
+  SELECT count(*) INTO v_m FROM eventos
+   WHERE registro_id = v_obra_b AND evento NOT IN ('relacion_alta', 'relacion_baja');
+  r := r || E'\n28 el receptor ve el resto de los eventos de la obra: ' ||
+    CASE WHEN v_m = v_k AND v_k > 0 THEN 'OK' ELSE 'FALLO (' || v_m || '/' || v_k || ')' END;
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
 
   RAISE EXCEPTION 'RESULTADO:%', r;
 END
