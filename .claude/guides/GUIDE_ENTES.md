@@ -37,18 +37,23 @@ Entes
 Relaciones
 ├── obra ↔ empresa    — rol_empresa[]            (obras_obra_empresa)
 ├── obra ↔ persona    — rol_persona[] + empresa  (obras_obra_persona)
-└── persona ↔ empresa — cargo                    (obras_persona_empresa)
+├── persona ↔ empresa — cargo                    (obras_persona_empresa)
+└── obra ↔ persona    — referente + comisión     (obras_obra_referente)
 Acciones
-├── obra: crear · editar · cambiar estado · vincular · transferir · compartir · desactivar · aprobar alta
-└── persona: crear · editar · compartir · transferir · ver contacto (registra el acceso)
-Eventos que emite
-└── obra: alta · baja · reactivacion · estado · relacion_alta · relacion_baja (sql/068) · transferencia · compartido · revocado
+├── obra: crear · editar · cambiar estado · vincular · marcar referente · transferir · compartir · desactivar · reactivar · aprobar alta
+├── empresa: crear · editar · vincular · transferir · compartir · desactivar · aprobar alta
+└── persona: crear · editar · vincular · transferir · compartir · desactivar · aprobar alta · ver contacto (registra el acceso)
+Eventos que emite (sql/068)
+├── obra: alta · estado · relacion_alta · relacion_baja (empresa, persona) — disparan
+├── obra: baja · reactivacion — solo log: pasan por obras_set_activo (DEFINER)
+└── empresa, persona: ninguno
 Eventos que consume
 └── ninguno
 ```
 
 Un módulo puede emitir y consumir (Tareas), emitir sin consumir (Obras), o no tener entes ni
-eventos.
+eventos. `transferencia`, `compartido` y `revocado` todavía no los emite nadie: Obras los registra en
+`obras_transferencias` y en las tablas `*_compartida`, y entran al enum con su primer emisor (§2.8).
 
 ## 2. Contrato de un ente
 
