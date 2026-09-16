@@ -23,22 +23,6 @@ Las apps no se importan entre sí, así que los tokens del design system son la 
 repo ya aceptó (`GUIDE_SYNC.md` cubre schemas y tipos, no CSS). Lo que falta no es una abstracción:
 es acordarse de sincronizar cuando el segundo app exista.
 
-## ~~Obras — auditoría visual de la UI~~ — cerrada
-
-29 hallazgos relevados el 2026-09-08: `obsoletos/AUDITORIA_OBRAS_UI.md`. 28 implementados y **B3 cerrado
-sin tocar código: no reproduce.**
-
-La segunda pasada de navegador midió el footer del sidebar con el usuario real (`nombre` =
-`Admin`): el nombre ocupa 40.6px en una caja de 81.2px en escritorio y de 71.2px en el drawer
-mobile, y el avatar 18.7px en 28px. Ni truncado ni solape en ninguno de los dos anchos. Lo que
-se había leído como `A…dmin` era el puntero del mouse que dibuja la herramienta de captura,
-apoyado sobre el avatar; en la segunda pasada el mismo círculo cayó sobre el logo y lo dejó en
-`S⬤DA`. No hay nada que decidir, así que no va a `decisiones/global/`.
-
-Los cuatro app-wide reales están cerrados ahí (ThemeToggle flotante, `.card:hover` en lo no
-clickeable, alturas de toolbar, el modal que no atenuaba el panel). El resto, en
-`decisiones/obras/ui.md`.
-
 ## Tareas sobre el modelo de entes (`GUIDE_ENTES.md`, 2026-09-16)
 
 Resultado de leer Tareas con la guía (`decisiones/global/entes.md` → *Tareas leída con la guía*). El

@@ -319,8 +319,8 @@ Archivos: `lib/accesos.ts` (nuevo), `components/ui/CompartirAccesoPanel.tsx` (nu
 `modules/obras/actions.ts` (`ensayarEstadoObra`), `modules/obras/types.ts`
 (`ensayarEstadoObraSchema`).
 
-**Pendiente:** pruebas manuales en el navegador con ADMIN y TESTER (checklist en
-`PLAN_TAREAS_VINCULOS.md` antes de borrarlo) — no se corrieron en esta sesión.
+~~**Pendiente: pruebas manuales.**~~ — corridas con ADMIN y TESTER, OK (commit `b0cba1e`). El
+checklist quedó en `obsoletos/`.
 
 ## Asignados por diferencia, la pregunta completa y compartir en orden (`sql/064`)
 

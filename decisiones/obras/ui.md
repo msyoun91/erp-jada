@@ -104,8 +104,8 @@ Las filas sin acciones —personas y obras en las fichas de empresa y persona—
 forma de dos renglones aunque no lleven menú: si no, dentro del mismo módulo conviven dos
 maneras de escribir la misma fila.
 
-**Queda pendiente A6:** "Quitar" sigue desvinculando sin `ConfirmModal` y sin bloquear el doble
-click. Es corrección de comportamiento, no de estilo, y va en su propia pasada.
+~~**Queda pendiente A6.**~~ — resuelto: ver *Desvincular pregunta antes, y con eso deja de
+dispararse dos veces*, más abajo.
 
 ---
 
