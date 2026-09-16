@@ -22,7 +22,7 @@ Siempre este orden, sin saltar pasos. Cada paso carga su guía; no cargarlas tod
 ## Checklist
 
 - [ ] Ficha del módulo (entes, estados, relaciones, acciones, eventos) y vistas y funciones por vista, aprobadas
-- [ ] Checklist por ente de `GUIDE_ENTES.md` cumplido, incluida la rama en las seis funciones de core
+- [ ] Checklist por ente de `GUIDE_ENTES.md` cumplido, incluida la rama en las siete funciones de core
 - [ ] SQL creado, con RLS, `GRANT` a `authenticated` y trigger `updated_at`
 - [ ] Submódulos sembrados en la migración
 - [ ] `types.ts`, `permissions.ts`, `queries.ts`, `actions.ts`

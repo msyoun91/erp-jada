@@ -86,7 +86,7 @@ Lo que le pasó a un ente, cross-módulo: el log de auditoría y el punto donde 
 
 Índices `(ente, registro_id, created_at)` y `(actor_id)`.
 
-**RLS:** SELECT `etiqueta_registro(ente, registro_id) IS NOT NULL` — lo que no ves, no pasó (una tarea archivada ya no tiene etiqueta, y sus eventos dejan de verse). INSERT `pg_trigger_depth() > 0`, como los vínculos de un disparo: un evento inventado por el cliente dispararía plantillas. `GRANT SELECT, INSERT`.
+**RLS:** SELECT `etiqueta_registro(ente, registro_id) IS NOT NULL` — lo que no ves, no pasó (una tarea archivada ya no tiene etiqueta, y sus eventos dejan de verse). Para `relacion_alta`/`relacion_baja`, además `puede_ver_relacion(ente, registro_id, detalle->>'ente', detalle->>'registro_id')` (`sql/069`), dentro de un `CASE` para que el resto no pague el EXISTS: el receptor de una obra compartida ve la obra pero no todos sus vínculos. INSERT `pg_trigger_depth() > 0`, como los vínculos de un disparo: un evento inventado por el cliente dispararía plantillas. `GRANT SELECT, INSERT`.
 
 **`emitir_evento(ente, registro_id, evento, detalle DEFAULT '{}')`** — `SECURITY INVOKER`, **GRANT authenticated** (la llaman triggers INVOKER). Único INSERT. INVOKER a propósito: con DEFINER los consumidores correrían como `postgres` y el disparo no correría nunca.
 
@@ -97,11 +97,13 @@ Lo que le pasó a un ente, cross-módulo: el log de auditoría y el punto donde 
 
 **Consumidores:** `disparar_plantillas` (`AFTER INSERT ON eventos`, ver `tareas.md`).
 
-Verificación: `sql/tests/eventos.sql` (25/25).
+Verificación: `sql/tests/eventos.sql` (28/28, con `sql/069`).
 
 **`etiqueta_registro(ente, id)` (`sql/059`)** — `SECURITY INVOKER STABLE`, EXECUTE para `authenticated`: el nombre de un registro para quien pregunta, NULL si no lo ve. Es también la regla de "lo ve": la RLS de `entes` pide el submódulo y la del módulo dueño decide la fila. Un `CASE` por `entes.modulo` (`obras` → `obras_etiqueta`, `tareas` → `tareas_etiqueta`, `sql/067`); un módulo que registre entes suma su rama.
 
 **`relacionados_de_registro(ente, id)` (`sql/060`)** — `SECURITY INVOKER STABLE`: `(ente, registro_id, rol)` de lo relacionado con un registro, para quien pregunta. Hoy solo `obra` → `obras_relacionados_obra`. Lo usan los roles de las plantillas de tareas.
+
+**`puede_ver_relacion(ente, id, ente_rel, id_rel)` (`sql/069`)** — `SECURITY INVOKER STABLE`, EXECUTE para `authenticated`: si quien pregunta ve algún vínculo, activo o no, entre los dos registros. Un `CASE` por `entes.modulo` (`obras` → `obras_puede_ver_relacion`); sin rama, `false`. Por par y no por fila: `detalle` no guarda qué fila emitió. La usa la RLS de `eventos`.
 
 ## usuario_tutorial
 

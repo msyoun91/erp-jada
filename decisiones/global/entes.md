@@ -89,6 +89,23 @@ Lo que se decidió al construirlo, verificado contra el código:
 
 Archivos: `sql/068_eventos.sql`, `sql/tests/eventos.sql`, `db_schema/core.md`.
 
+## Un evento de relación lo ve quien ve el vínculo (`sql/069`)
+
+**Para ver un `relacion_alta`/`relacion_baja` no alcanza con ver el ente: hay que ver algún vínculo del
+par.** La RLS de `sql/068` pedía solo ver la obra, y el receptor de una obra compartida —que ve la obra
+pero de sus vínculos solo los suyos y lo tildado (`sql/051`)— leía el id y el rol de cada contacto que
+no le compartieron. `puede_ver_relacion` hace un EXISTS sobre la puente con su propia RLS: la regla
+sigue en las policies de vínculo, sin copia.
+
+Descartado: pedir que se vean los dos entes. Es una segunda regla y erra para los dos lados: el
+responsable dejaría de ver lo que sumó un receptor con un contacto privado, y el receptor vería un
+vínculo que la policy le oculta (su persona, vinculada por el responsable). Es por par y no por fila
+porque `detalle` no guarda qué fila emitió; guardarla obligaba a completar a mano los eventos que ya
+había.
+
+Archivos: `sql/069_eventos_relacion_visible.sql`, `sql/tests/eventos.sql` (26–28), `db_schema/core.md`,
+`db_schema/obras.md`, `.claude/guides/GUIDE_ENTES.md` §2.3 y §2.8.
+
 ## "No existe" antes que "sin permiso"
 
 Ya era la regla del sidebar (`GUIDE_DESIGN.md`) y de `etiqueta_registro` NULL (`sql/059`); se eleva a

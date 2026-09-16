@@ -27,7 +27,8 @@ Tocar permisos: función ligada a su vista (`vista_id`), vista y función se aut
 Tocar `entes`, `lib/entes.ts`, las funciones cross-módulo de core, disparadores, compartir al asignar, o crear un módulo: el modelo de entes y eventos, y Tareas leída con la guía.
 
 - Un módulo se describe en entes, estados, propiedades, relaciones, acciones y eventos (2026-09-16)
-- Los eventos van a una tabla `eventos`, no a un trigger por consumidor (decidido, no construido)
+- Los eventos van a una tabla `eventos`, no a un trigger por consumidor (`sql/068`)
+- Un evento de relación lo ve quien ve el vínculo (`sql/069`)
 - "No existe" antes que "sin permiso"
 - Un ente en un texto es una referencia, no un nombre (decidido, no construido)
 - Tareas leída con la guía (2026-09-16)

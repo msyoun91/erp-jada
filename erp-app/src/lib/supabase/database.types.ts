@@ -2388,6 +2388,15 @@ export type Database = {
         Args: { p_persona_id: string; p_usuario: string }
         Returns: boolean
       }
+      obras_puede_ver_relacion: {
+        Args: {
+          p_ente_rel: string
+          p_id: string
+          p_id_rel: string
+          p_tipo: string
+        }
+        Returns: boolean
+      }
       obras_relacionados_obra: {
         Args: { p_obra_id: string }
         Returns: {
@@ -2556,6 +2565,15 @@ export type Database = {
       puede_ver_hilo: { Args: { p_hilo_id: string }; Returns: boolean }
       puede_ver_hilo_de: {
         Args: { p_hilo_id: string; p_usuario: string }
+        Returns: boolean
+      }
+      puede_ver_relacion: {
+        Args: {
+          p_ente: string
+          p_ente_rel: string
+          p_id: string
+          p_id_rel: string
+        }
         Returns: boolean
       }
       queda_afuera: {

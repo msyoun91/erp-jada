@@ -94,7 +94,7 @@ Y en `ENTES` (`lib/entes.ts`): `nombre`, `un`, `el`, labels de `estados` y `role
 ejemplo. La base sabe qué entes hay; la UI sabe cómo se dicen. El módulo re-exporta los labels
 (`LABEL_ESTADO` en `modules/obras/types.ts`), nunca tiene un segundo mapa.
 
-### 2.3 Las seis funciones cross-módulo — sumar la rama, no tocar las demás
+### 2.3 Las siete funciones cross-módulo — sumar la rama, no tocar las demás
 
 Cada una ramifica por `entes.modulo` (`CASE` / `IF`) y delega en una función del módulo:
 
@@ -106,10 +106,12 @@ Cada una ramifica por `entes.modulo` (`CASE` / `IF`) y delega en una función de
 | `compartir_registros(selecciones)` — INVOKER | `{modulo}_compartir_registros(usuario, registros)` | Comparte. **Aditivo**: nunca revoca ni reordena cascadas |
 | `buscar_registros(modulo, texto)` — INVOKER | `{modulo}_buscar(texto)` | Lo que quien busca puede abrir, con `href` |
 | `relacionados_de_registro(ente, id)` — INVOKER | `{modulo}_relacionados_{ente}(id)` | `(ente, registro_id, rol)`: las propiedades relacionales |
+| `puede_ver_relacion(ente, id, ente_rel, id_rel)` — INVOKER | `{modulo}_puede_ver_relacion(tipo, id, ente_rel, id_rel)` | Si quien pregunta ve algún vínculo del par, activo o no: un EXISTS sobre la puente, que decide su RLS. Lo pide la RLS de `eventos` |
 
 La visibilidad por usuario explícito se escribe una vez: `{modulo}_puede_ver_{ente}_de(id, usuario)` es
 el cuerpo; `{modulo}_puede_ver_{ente}(id)` es un envoltorio de una línea con `auth.uid()` que usan
-las policies (`sql/062`). Las del módulo van sin GRANT: solo las llama core. Si la regla depende de
+las policies (`sql/062`). Las del módulo que llama una genérica DEFINER van sin GRANT; las que llama una
+INVOKER (`etiqueta_registro`, `relacionados_de_registro`, `puede_ver_relacion`) lo necesitan. Si la regla depende de
 columnas de la propia fila (Tareas: hilo, visibilidad, proyecto), la `_de` recibe esas columnas y no el
 id: en un UPDATE la policy de SELECT se evalúa sobre la fila nueva, y releer la tabla daría la vieja
 (`tareas_puede_ver_tarea_de`, `sql/067`).
@@ -187,7 +189,8 @@ Construido en `sql/068` (`db_schema/core.md`):
 
 - Tabla cross-módulo `eventos (ente, registro_id, evento tipo_evento, detalle jsonb, actor_id,
   created_at)`, append-only y sin `activo` (una auditoría no oculta sus filas). RLS SELECT:
-  `etiqueta_registro(ente, registro_id) IS NOT NULL`. INSERT solo por
+  `etiqueta_registro(ente, registro_id) IS NOT NULL`, y para `relacion_*` además `puede_ver_relacion`
+  (`sql/069`): ver la obra no es ver todos sus vínculos. INSERT solo por
   `emitir_evento(ente, registro_id, evento, detalle)`, **INVOKER** con policy `pg_trigger_depth() > 0`
   (el truco de `tareas_vinculos`): con DEFINER los consumidores correrían como `postgres` y
   `disparar_plantillas` no dispararía.
@@ -222,7 +225,8 @@ Construido en `sql/068` (`db_schema/core.md`):
 - [ ] Tabla con dueño fuera del `GRANT UPDATE`; RLS por dueño probada como columna
 - [ ] Fila en `entes` + entrada en `ENTES` con labels de estados y roles
 - [ ] Rama en `etiqueta_registro`, `puede_abrir_registro`, `puede_compartir_registro`,
-      `compartir_registros`, `buscar_registros` y, con relaciones, `relacionados_de_registro`
+      `compartir_registros`, `buscar_registros` y, con relaciones, `relacionados_de_registro` y
+      `puede_ver_relacion`
 - [ ] `{modulo}_puede_ver_{ente}_de(id, usuario)` + envoltorio con `auth.uid()`
 - [ ] Tabla `_compartida` con `origen_*`, funciones compartir / revocar, checklist de cascada
 - [ ] Estado: enum, CHECKs de transición
