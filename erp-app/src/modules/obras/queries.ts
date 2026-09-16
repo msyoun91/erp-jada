@@ -58,7 +58,7 @@ export async function getObras(filtros: FiltrosObras = {}): Promise<ObraListado[
     if (!me) return [];
     // Por default el listado muestra lo propio + lo que me compartieron (la RLS
     // ya deja ver ambas; esto es solo el recorte de UI).
-    const compartidas = await obraIdsCompartidasConmigo(me);
+    const compartidas = await idsCompartidosConmigo("obra", me);
     query = compartidas.length
       ? query.or(`responsable_id.eq.${me},id.in.(${compartidas.join(",")})`)
       : query.eq("responsable_id", me);
@@ -123,15 +123,21 @@ async function obraIdsPorRelacion(filtros: FiltrosObras): Promise<string[] | nul
   return listas.reduce((a, b) => a.filter((id) => b.includes(id)));
 }
 
-async function obraIdsCompartidasConmigo(me: string): Promise<string[]> {
+// Grant completo activo, directo o por cascada. El contextual no entra: abre la
+// persona solo dentro de su ficha, no la suma a la agenda.
+async function idsCompartidosConmigo(
+  tipo: "obra" | "empresa" | "persona",
+  me: string,
+): Promise<string[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("obras_obra_compartida")
-    .select("obra_id")
-    .eq("usuario_id", me)
-    .eq("activo", true);
+  const { data, error } =
+    tipo === "obra"
+      ? await supabase.from("obras_obra_compartida").select("id:obra_id").eq("usuario_id", me).eq("activo", true)
+      : tipo === "empresa"
+        ? await supabase.from("obras_empresa_compartida").select("id:empresa_id").eq("usuario_id", me).eq("activo", true)
+        : await supabase.from("obras_persona_compartida").select("id:persona_id").eq("usuario_id", me).eq("activo", true);
   if (error) throw error;
-  return (data ?? []).map((r) => r.obra_id);
+  return (data ?? []).map((r) => r.id);
 }
 
 export async function getObra(id: string) {
@@ -201,7 +207,11 @@ export async function getEmpresas(busqueda?: string, alcance?: Alcance): Promise
   if (!verTodos) {
     const me = await getUsuarioActualId();
     if (!me) return [];
-    query = query.eq("creado_por", me);
+    // Lo propio + lo que me compartieron, igual que getObras.
+    const compartidas = await idsCompartidosConmigo("empresa", me);
+    query = compartidas.length
+      ? query.or(`creado_por.eq.${me},id.in.(${compartidas.join(",")})`)
+      : query.eq("creado_por", me);
   }
 
   if (busqueda) query = query.ilike("razon_social", `%${busqueda}%`);
@@ -250,7 +260,13 @@ export async function getPersonas(busqueda?: string, alcance?: Alcance): Promise
   if (!verTodos) {
     const me = await getUsuarioActualId();
     if (!me) return [];
-    query = query.eq("creado_por", me);
+    // Lo propio + lo que me compartieron, igual que getObras. La RLS además
+    // deja pasar el grant contextual, que no es agenda: por eso no alcanza con
+    // sacar el filtro.
+    const compartidas = await idsCompartidosConmigo("persona", me);
+    query = compartidas.length
+      ? query.or(`creado_por.eq.${me},id.in.(${compartidas.join(",")})`)
+      : query.eq("creado_por", me);
   }
 
   if (busqueda) query = query.ilike("nombre_norm", `%${busqueda.toLowerCase()}%`);

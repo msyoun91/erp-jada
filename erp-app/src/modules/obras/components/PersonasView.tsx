@@ -60,7 +60,7 @@ export function PersonasView({
           </p>
           <p className="t-body-m mt-1">
             {personas.length === 0
-              ? "Vas a ver las que cargues vos y las de tus obras."
+              ? "Vas a ver las que cargues vos y las que te compartan."
               : "Probá con otro término de búsqueda."}
           </p>
         </div>

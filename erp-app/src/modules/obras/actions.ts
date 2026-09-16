@@ -862,14 +862,16 @@ export async function buscarGlobal(texto: string): Promise<ResultadoBusqueda[]> 
 // Los tres devuelven la misma forma para que los coma el mismo <Buscador />, y
 // son actions porque los llama un componente cliente.
 
-// Solo mi agenda: vincular a una obra —propia o compartida— es sumar un
-// contacto MÍO. El buscador de identidad mínima cross-owner quedó para el
-// aviso de duplicados del alta, no para vincular (ver decisiones/obras/duplicados-aprobaciones.md).
+// Solo lo que cargué yo: vincular a una obra —propia o compartida— es sumar un
+// contacto MÍO. El listado suma lo que me compartieron; acá se recorta, porque
+// la RLS de vínculo rechaza el grant heredado de una obra (sql/052). El
+// buscador de identidad mínima cross-owner quedó para el aviso de duplicados
+// del alta, no para vincular (ver decisiones/obras/duplicados-aprobaciones.md).
 export async function buscarPersonasParaVincular(texto: string) {
-  const personas = await getPersonas(texto.trim() || undefined);
+  const [personas, me] = await Promise.all([getPersonas(texto.trim() || undefined), usuarioActualId()]);
 
   return personas
-    .filter((p) => !p.pendiente)
+    .filter((p) => p.creado_por === me && !p.pendiente)
     .slice(0, 20)
     .map((p) => ({
       id: p.id,
@@ -879,11 +881,11 @@ export async function buscarPersonasParaVincular(texto: string) {
 }
 
 export async function buscarEmpresasParaVincular(texto: string) {
-  const empresas = await getEmpresas(texto.trim() || undefined);
+  const [empresas, me] = await Promise.all([getEmpresas(texto.trim() || undefined), usuarioActualId()]);
 
   // La empresa congelada no se ofrece: vincularla termina en OB012.
   return empresas
-    .filter((e) => !e.pendiente)
+    .filter((e) => e.creado_por === me && !e.pendiente)
     .slice(0, 20)
     .map((e) => ({
       id: e.id,

@@ -135,14 +135,17 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
         ) : null
       }
       permisos={{
-        editar,
+        // Ver no es editar: obras_update y obras_set_activo exigen ser el
+        // responsable. Sin `esMio`, el receptor con el permiso ve botones que
+        // la base rechaza.
+        editar: editar && esMio,
         vincular,
         // El receptor de una obra compartida no ve comisiones (RLS de
         // obras_obra_referente): sin esto el botón "Marcar referente" queda
         // muerto en su ficha.
         referentes: referentesPerm && esMio,
         transferir,
-        desactivar,
+        desactivar: desactivar && esMio,
         crearEmpresa,
         crearPersona,
       }}

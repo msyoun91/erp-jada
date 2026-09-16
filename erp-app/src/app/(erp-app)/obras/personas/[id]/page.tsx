@@ -107,6 +107,8 @@ export default async function PersonaPage({
   ]);
 
   const comisionPorObra = new Map(referencias.map((r) => [r.obra_id, r.porcentaje_comision]));
+  // `esMio` también acota editar y desactivar: la RLS de update exige ser el
+  // dueño (sql/039), así que sin esto el receptor ve botones que no andan.
   const esMio = !!miId && persona.creado_por === miId;
   // Colgar la persona de una obra propia pide que sea mía: dueño, grant directo
   // (no el heredado del checklist de una obra) o obras_personas_todas. Espeja la
@@ -151,7 +153,7 @@ export default async function PersonaPage({
           />
         ) : null
       }
-      permisos={{ editar, vincularEmpresa, vincularObra }}
+      permisos={{ editar: editar && esMio, vincularEmpresa, vincularObra }}
       esMio={esMio}
       veTodas={veTodas}
       compartidos={compartidos}

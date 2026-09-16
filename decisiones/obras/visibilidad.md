@@ -25,7 +25,7 @@ Un grant recibido **no se re-comparte**: las funciones exigen `creado_por`. **Ve
 
 **El buscador enmascara, no esconde (`sql/042`).** El match crudo cross-owner (global y aviso de duplicados) devuelve la entidad ajena en **identidad mínima + nombre del dueño**, sin link, sin ficha. `obras_buscar` reparte tres funciones DEFINER que devuelven `es_ajeno` + `duenio`. `obras_buscar_duplicados_obra` ahora sí muestra el nombre de la obra ajena (sin dirección ni localidad); `obras_buscar_duplicados_empresa` pasó a DEFINER y enmascara igual.
 
-**Filtro de alcance + badge.** `_todas` / `obras_transferir` habilitan un toggle `Míos | Todos` (URL `?alcance=`, default `propios`). Filas ajenas → badge "Ajena". El `getObras`/`getEmpresas`/`getPersonas` filtra server-side por dueño salvo que `alcance=todos` **y** el permiso lo respalde.
+**Filtro de alcance + badge.** `_todas` / `obras_transferir` habilitan un toggle `Míos | Todos` (URL `?alcance=`, default `propios`). Filas ajenas → badge "Ajena". El `getObras`/`getEmpresas`/`getPersonas` filtra server-side por dueño salvo que `alcance=todos` **y** el permiso lo respalde. (El filtro por dueño suma lo compartido conmigo: ver *Lo compartido entra al listado*, más abajo.)
 
 **Corte limpio, sin backfill.** Al aplicar: 0 vínculos cross-owner, 0 pendientes. Quien veía por vínculo pierde acceso y se re-comparte a mano.
 
@@ -212,6 +212,28 @@ DEFINER por lo mismo — un EXISTS inline en la policy podría recursar contra l
 `obras_*_compartida`.
 
 Test: `sql/tests/obras_052.sql`, 5/5.
+
+---
+
+## Lo compartido entra al listado; editar sigue siendo del dueño (sin SQL)
+
+**`getPersonas` / `getEmpresas` muestran lo propio + lo compartido conmigo, igual que `getObras`.**
+Filtraban `creado_por = me` y la persona o empresa compartida —directa o por el checklist de una
+obra— solo se alcanzaba desde la ficha de la obra o el buscador global, aunque el texto del listado
+decía "las que te compartieron". El grant contextual no entra: abre solo dentro de su ficha.
+`idsCompartidosConmigo(tipo, me)` sirve a los tres listados.
+
+**Los buscadores de vincular se recortan a `creado_por = me`** después de pedir el listado: el
+sql/051 los dejó "acotados a mi agenda" y la RLS de vínculo rechaza el grant heredado (sql/052).
+
+**Editar y desactivar en las tres fichas piden `esMio`.** La page pasaba el permiso a secas y el
+receptor con `obras_editar` / `obras_desactivar` / `*_editar` veía botones que `obras_update`,
+`obras_set_activo` y las RLS de update de persona/empresa rechazan. Espeja la base; la barrera sigue
+ahí.
+
+Archivos: `modules/obras/queries.ts`, `modules/obras/actions.ts`
+(`buscarPersonasParaVincular` / `buscarEmpresasParaVincular`), `app/(erp-app)/obras/[id]/page.tsx`,
+`obras/personas/[id]/page.tsx`, `obras/empresas/[id]/page.tsx`, `PersonasView.tsx`.
 
 ---
 

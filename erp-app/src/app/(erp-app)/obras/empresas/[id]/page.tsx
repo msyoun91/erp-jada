@@ -55,6 +55,8 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
   ]);
 
   const { obras_persona_empresa, obras_obra_empresa, ...datos } = empresa;
+  // `esMio` también acota editar y desactivar: la RLS de update exige ser el
+  // dueño (sql/039), así que sin esto el receptor ve botones que no andan.
   const esMio = !!miId && empresa.creado_por === miId;
   // Colgar la empresa de una obra propia pide que sea mía: dueño, grant directo
   // o obras_empresas_todas. Espeja la RLS de obras_obra_empresa_insert (sql/052).
@@ -92,7 +94,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
           />
         ) : null
       }
-      permisos={{ editar, vincularPersona, vincularObra }}
+      permisos={{ editar: editar && esMio, vincularPersona, vincularObra }}
       esMio={esMio}
       veTodas={veTodas}
       compartidos={compartidos}
