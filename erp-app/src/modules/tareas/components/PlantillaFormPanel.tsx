@@ -55,6 +55,17 @@ const AYUDA_TIPO: Record<TipoPlantilla, string> = {
 
 type ModoVence = "sin" | "creacion" | "tras_previo";
 
+// `{si hay ente:rol}…{fin}` y `{si no hay ente:rol}…{fin}`, mismo patrón que
+// `rellenar_datos` (sql/065): sin anidar, así que el cuerpo no contiene `{fin}`
+// ni otro `{si `.
+const BLOQUE = /\{si (no )?hay ([a-z_]+:[a-z_]+)\}((?:[^{]|\{(?!fin\}|si ))*)\{fin\}/g;
+
+function resolverBloques(texto: string, roles: string[]) {
+  return texto.replace(BLOQUE, (_, no: string | undefined, rol: string, cuerpo: string) =>
+    roles.includes(rol) === !no ? cuerpo : "",
+  );
+}
+
 // Errores de campos anidados (`hilos.1.pasos.0.titulo`): `get` devuelve lo
 // que haya en el camino, sin tipo. El error de una lista entera cae en
 // `.root` cuando la lista ya tiene campos montados (así lo anida el resolver).
@@ -344,7 +355,7 @@ export function PlantillaFormPanel({
               {...register("titulo_creado")}
             />
             {errors.titulo_creado && <p className="input-error-text">{errors.titulo_creado.message}</p>}
-            <DatosChips control={control} setValue={setValue} nombre="titulo_creado" datos={datos} />
+            <DatosChips control={control} setValue={setValue} nombre="titulo_creado" datos={datos} roles={roles} />
             <p className="t-caption mt-1">Vacío = el nombre de la plantilla.</p>
           </div>
         )}
@@ -462,37 +473,65 @@ type Comunes = {
 // Un chip por dato: tocarlo inserta `{dato}` donde quedó el cursor del campo.
 // Clic y no arrastre: no hay librería de dnd y el arrastre nativo no anda en
 // touch. El chip va afuera del campo porque adentro pediría un editor
-// enriquecido; en la base el texto sigue siendo `{dato}`.
+// enriquecido; en la base el texto sigue siendo `{dato}`. Con roles, "Texto
+// solo si…" envuelve lo seleccionado en un bloque (sql/065).
 function DatosChips({
   control,
   setValue,
   nombre,
   datos,
-}: Pick<Comunes, "control" | "setValue" | "datos"> & { nombre: CampoConDatos }) {
+  roles,
+}: Pick<Comunes, "control" | "setValue" | "datos" | "roles"> & { nombre: CampoConDatos }) {
   const texto = (useWatch({ control, name: nombre }) as string | undefined) ?? "";
-  if (datos.length === 0) return null;
+  if (datos.length === 0 && roles.length === 0) return null;
 
-  // El campo es de RHF (sin ref propia): se lo busca en el form del botón.
-  function insertar(boton: HTMLButtonElement, codigo: string) {
-    const campo = boton.form?.elements.namedItem(nombre);
+  // El campo es de RHF (sin ref propia): se lo busca en el form del control
+  // que se tocó. `cambio` recibe el valor y la selección, y devuelve el valor
+  // nuevo y dónde queda el cursor.
+  function editar(
+    elemento: HTMLButtonElement | HTMLSelectElement,
+    cambio: (valor: string, inicio: number, fin: number) => [string, number],
+  ) {
+    const campo = elemento.form?.elements.namedItem(nombre);
     if (!(campo instanceof HTMLInputElement || campo instanceof HTMLTextAreaElement)) return;
-    const dato = `{${codigo}}`;
     const inicio = campo.selectionStart ?? campo.value.length;
-    const fin = campo.selectionEnd ?? inicio;
-    setValue(nombre, campo.value.slice(0, inicio) + dato + campo.value.slice(fin), {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
+    const [valor, cursor] = cambio(campo.value, inicio, campo.selectionEnd ?? inicio);
+    setValue(nombre, valor, { shouldDirty: true, shouldValidate: true });
     campo.focus();
-    campo.setSelectionRange(inicio + dato.length, inicio + dato.length);
+    campo.setSelectionRange(cursor, cursor);
   }
 
-  // Mismo reemplazo que `rellenar_datos` (sql/055), con el ejemplo de cada dato.
-  const ejemplo = datos.reduce((t, d) => t.replaceAll(`{${d.codigo}}`, d.ejemplo), texto);
+  function insertar(boton: HTMLButtonElement, codigo: string) {
+    const dato = `{${codigo}}`;
+    editar(boton, (v, i, f) => [v.slice(0, i) + dato + v.slice(f), i + dato.length]);
+  }
+
+  // `!ente:rol` es "si no hay". Sin selección, el cursor queda adentro del bloque.
+  function envolver(select: HTMLSelectElement, rol: string) {
+    const abre = `{si ${rol.startsWith("!") ? "no " : ""}hay ${rol.replace(/^!/, "")}}`;
+    const cierra = "{fin}";
+    editar(select, (v, i, f) => [
+      v.slice(0, i) + abre + v.slice(i, f) + cierra + v.slice(f),
+      i === f ? i + abre.length : f + abre.length + cierra.length,
+    ]);
+  }
+
+  // Mismo reemplazo que `rellenar_datos`, con el ejemplo de cada dato. Con
+  // bloques, los dos extremos: con todos los roles que nombra y sin ninguno.
+  const conDatos = (t: string) => datos.reduce((acc, d) => acc.replaceAll(`{${d.codigo}}`, d.ejemplo), t);
+  const nombrados = [...new Set(Array.from(texto.matchAll(BLOQUE), (m) => m[2]))];
+  const nombres = nombrados.map((rol) => (roles.find((r) => r.valor === rol)?.label ?? rol).toLowerCase());
+  const ejemplos =
+    nombrados.length === 0
+      ? [{ caso: "", texto: conDatos(texto) }]
+      : [
+          { caso: `Con ${new Intl.ListFormat("es").format(nombres)}: `, texto: conDatos(resolverBloques(texto, nombrados)) },
+          { caso: `Sin ${nombres.length === 1 ? nombres[0] : "ninguno"}: `, texto: conDatos(resolverBloques(texto, [])) },
+        ];
 
   return (
     <div className="mt-1">
-      <div className="flex flex-wrap gap-x-1.5">
+      <div className="flex flex-wrap items-center gap-x-1.5">
         {datos.map((d) => (
           <button
             key={d.codigo}
@@ -507,13 +546,53 @@ function DatosChips({
             </span>
           </button>
         ))}
+        {roles.length > 0 && (
+          <select
+            aria-label="Texto solo si…"
+            className="input my-1 w-auto"
+            value=""
+            onChange={(e) => e.target.value && envolver(e.currentTarget, e.target.value)}
+          >
+            <option value="">Texto solo si…</option>
+            <OpcionesRol roles={roles} />
+          </select>
+        )}
       </div>
-      {ejemplo !== texto && (
-        <p className="t-caption">
-          Así se va a ver: <span className="text-text-primary">{ejemplo}</span>
-        </p>
+      {(nombrados.length > 0 || ejemplos[0].texto !== texto) && (
+        <div className="t-caption">
+          Así se va a ver:{" "}
+          {ejemplos.map((e) => (
+            <p key={e.caso} className={nombrados.length > 0 ? "ml-3" : "inline"}>
+              {e.caso}
+              <span className="text-text-primary">{e.texto}</span>
+            </p>
+          ))}
+        </div>
       )}
     </div>
+  );
+}
+
+// Los roles del ente que dispara, en dos grupos: "hay" (`ente:rol`) y "no hay"
+// (`!ente:rol`). Lo usan la condición del paso y los bloques de texto.
+function OpcionesRol({ roles }: { roles: RolOpcion[] }) {
+  const entes = [...new Set(roles.map((r) => r.ente))];
+  return (
+    <>
+      {[false, true].flatMap((no) =>
+        entes.map((ente) => (
+          <optgroup key={`${no}${ente}`} label={`Si la obra ${no ? "no tiene" : "tiene"} ${ENTES[ente]?.un ?? ente} con rol…`}>
+            {roles
+              .filter((r) => r.ente === ente)
+              .map((r) => (
+                <option key={r.valor} value={no ? `!${r.valor}` : r.valor}>
+                  {r.label}
+                </option>
+              ))}
+          </optgroup>
+        )),
+      )}
+    </>
   );
 }
 
@@ -549,7 +628,7 @@ function HilosEditor({ control, register, setValue, datos, roles, miembros }: Co
               {mensajeDe(errors, `hilos.${h}.titulo`) && (
                 <p className="input-error-text">{mensajeDe(errors, `hilos.${h}.titulo`)}</p>
               )}
-              <DatosChips control={control} setValue={setValue} nombre={`hilos.${h}.titulo`} datos={datos} />
+              <DatosChips control={control} setValue={setValue} nombre={`hilos.${h}.titulo`} datos={datos} roles={roles} />
             </div>
             <ModoCadena
               valor={hilos?.[h]?.encadenada ?? true}
@@ -669,7 +748,7 @@ function ModoCadena({ valor, onChange }: { valor: boolean; onChange: (encadenada
 
 // Los roles del registro en un paso (sql/060). Adjuntar suma a la tarea un chip
 // que abre la ficha de quien tenga ese rol; la condición saltea el paso si,
-// cuando la plantilla corre, nadie lo tiene.
+// cuando la plantilla corre, nadie lo tiene (o, negada, si alguien lo tiene).
 function RolesPaso({
   control,
   setValue,
@@ -729,17 +808,7 @@ function RolesPaso({
           onChange={(e) => setValue(`${nombre}.condicion`, e.target.value || null, { shouldDirty: true })}
         >
           <option value="">Siempre</option>
-          {entes.map((ente) => (
-            <optgroup key={ente} label={`Solo si la obra tiene ${ENTES[ente]?.un ?? ente} con rol…`}>
-              {roles
-                .filter((r) => r.ente === ente)
-                .map((r) => (
-                  <option key={r.valor} value={r.valor}>
-                    {r.label}
-                  </option>
-                ))}
-            </optgroup>
-          ))}
+          <OpcionesRol roles={roles} />
         </select>
         {condicion && (
           <p className="t-caption mt-1">Si se saltea, el paso siguiente espera al anterior que sí se creó.</p>
@@ -841,7 +910,10 @@ function PasoEditor({
       ? "Sin vencimiento"
       : `Vence a ${paso.vence_dias} d ${modo === "tras_previo" ? "del paso anterior" : "de creada"}`,
     temperaturaRango(temperatura).label,
-    paso?.condicion && `Solo si hay ${(roles.find((r) => r.valor === paso.condicion)?.label ?? paso.condicion).toLowerCase()}`,
+    paso?.condicion &&
+      `Solo si ${paso.condicion.startsWith("!") ? "no " : ""}hay ${(
+        roles.find((r) => r.valor === paso.condicion?.replace(/^!/, ""))?.label ?? paso.condicion
+      ).toLowerCase()}`,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -868,7 +940,7 @@ function PasoEditor({
         {orden}
       </div>
       {errorTitulo && <p className="input-error-text">{errorTitulo}</p>}
-      <DatosChips control={control} setValue={setValue} nombre={`${nombre}.titulo`} datos={datos} />
+      <DatosChips control={control} setValue={setValue} nombre={`${nombre}.titulo`} datos={datos} roles={roles} />
 
       <button
         type="button"
@@ -885,7 +957,7 @@ function PasoEditor({
           <div>
             <label className="t-label mb-1 block">Descripción</label>
             <textarea rows={2} className="input" {...register(`${nombre}.descripcion`)} />
-            <DatosChips control={control} setValue={setValue} nombre={`${nombre}.descripcion`} datos={datos} />
+            <DatosChips control={control} setValue={setValue} nombre={`${nombre}.descripcion`} datos={datos} roles={roles} />
           </div>
 
           <AsignadosPicker

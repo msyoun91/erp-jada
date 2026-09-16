@@ -121,4 +121,4 @@ registro no guarda rol (la plantilla elige el registro por `ente:rol`, pero `tar
 si esa persona es "el arquitecto de" la tarea); la descripción es texto plano; los chips son clic.
 `hilo` y `proyecto` no se registran hasta que un módulo los necesite. `sql/064` se cerró el mismo día,
 solo con los bugs de asignar y compartir (`decisiones/tareas/visibilidad.md`). El texto condicional de
-las plantillas que traía pasó a `BACKLOG.md` sin construir.
+las plantillas que traía se construyó después en `sql/065` (`decisiones/tareas/plantillas.md`).

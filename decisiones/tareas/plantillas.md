@@ -124,3 +124,22 @@ Pedido del usuario el 2026-09-14: "¿por qué no se muestran más entes cuando c
 **Tests:** `sql/tests/plantillas_roles.sql` 7/7 (nuevo). `plantillas_disparo.sql` 34/34 y `plantillas.sql` 27/27 sin tocar.
 
 Archivos: `sql/060`, `lib/entes.ts`, `lib/utils.ts` (`TA015`), `PlantillaFormPanel.tsx`, `types.ts`, `actions.ts`.
+
+## Texto y pasos que dependen de un rol (`sql/065`)
+
+Venía en el borrador de `sql/064` sin UI ni decisión; se construyó el 2026-09-16 desde `BACKLOG.md`.
+
+**Bloques `{si hay ente:rol}…{fin}` y `{si no hay ente:rol}…{fin}` en todo texto que acepta datos.** `rellenar_datos` los resuelve antes que los `{dato}` (así un dato adentro también se completa) y `usar_plantilla` le pasa los roles del registro, calculados una sola vez. Se aplica en el nombre de lo que crea y en los títulos de hilo además de título y descripción del paso: es la misma función, y restringirlo pedía una regla más.
+
+- Sin anidar: el cuerpo no puede contener `{fin}` ni otro `{si `. Una cabecera que no se entiende o un bloque sin `{fin}` quedan como texto: mejor mostrar de más que borrar una frase.
+- Sin registro no hay ningún rol: a mano, `si no hay` se muestra y `si hay` no.
+
+**Condición negada: `!ente:rol` crea el paso solo si nadie tiene ese rol.** El CHECK pasa a `^!?[a-z_]+:[a-z_]+$`; en `adjuntos` no vale (Zod: `condicionSchema` separado de `rolSchema`).
+
+**UI (elegida por el usuario):** un select "Texto solo si…" junto a los chips de datos, con los roles en dos grupos (tiene / no tiene), que envuelve la selección o inserta el bloque vacío con el cursor adentro. Mismo patrón de clic que los chips: escribir las llaves a mano es lo que se descartó para `{nombre}`. La vista previa, si el texto tiene bloques, muestra los dos extremos: con todos los roles que nombra y sin ninguno. Con un rol, que es lo común, son los dos resultados posibles. El select de condición del paso usa las mismas opciones (`OpcionesRol`) y el resumen plegado dice "Solo si no hay …".
+
+**El regex vive dos veces** (`rellenar_datos` y `BLOQUE` en el editor): la vista previa es presentación, como el reemplazo de `{dato}` de `sql/056`. Se verificó que resuelven igual con los casos del test 13.
+
+**Tests:** `plantillas_roles.sql` 13/13 (7 de antes + 6). `plantillas.sql` 27/27 sin tocar. `plantillas_disparo.sql` 34/34: los casos 23, 25 y 26 fallaban desde `sql/063` (ADMIN disparaba sobre una obra que TESTER, el asignado, no podía abrir, así que quedaba afuera). Ahora la obra se le comparte antes del disparo.
+
+Archivos: `sql/065`, `PlantillaFormPanel.tsx`, `types.ts`, `database.types.ts`, `sql/tests/plantillas_roles.sql`, `sql/tests/plantillas_disparo.sql`.

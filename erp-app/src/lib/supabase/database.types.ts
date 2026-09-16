@@ -2551,7 +2551,7 @@ export type Database = {
         }[]
       }
       rellenar_datos: {
-        Args: { p_datos: Json; p_texto: string }
+        Args: { p_datos: Json; p_roles: string[]; p_texto: string }
         Returns: string
       }
       sin_acceso: {

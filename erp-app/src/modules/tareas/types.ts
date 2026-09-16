@@ -251,7 +251,9 @@ export const EJECUTOR = "ejecutor";
 const asignableSchema = z.union([z.string().uuid(), z.literal(EJECUTOR)]);
 
 // Un rol del registro que dispara: `ente:rol` (`persona:arquitecto`, sql/060).
+// La condición también acepta `!ente:rol`, "solo si no hay" (sql/065).
 const rolSchema = z.string().regex(/^[a-z_]+:[a-z_]+$/, "Rol inválido");
+const condicionSchema = z.string().regex(/^!?[a-z_]+:[a-z_]+$/, "Rol inválido");
 
 const pasoPlantillaSchema = z
   .object({
@@ -263,7 +265,7 @@ const pasoPlantillaSchema = z
     vence_tras_previo: z.boolean().default(false),
     temperatura: z.coerce.number().int().min(1).max(100).default(50),
     adjuntos: z.array(rolSchema).default([]),
-    condicion: rolSchema.nullable().default(null),
+    condicion: condicionSchema.nullable().default(null),
   })
   .refine((p) => p.asignados.includes(p.responsable_id), {
     message: "El responsable debe estar entre los asignados",
