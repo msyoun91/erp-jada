@@ -20,6 +20,8 @@ import {
 import { RightPanel } from "@/components/ui/RightPanel";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { useConfirmarAcceso } from "@/components/ui/CompartirAccesoPanel";
+import { sinAcceso } from "@/lib/accesos";
 import {
   asociarTareaHilo,
   convertirTareaEnHilo,
@@ -89,6 +91,13 @@ export function TareaDetailPanel({
   const [desactivando, setDesactivando] = useState(false);
   const [cancelando, setCancelando] = useState(false);
   const vinculos = tarea.vinculos ?? [];
+  // Relacionar deja a alguien afuera de la misma forma que asignar (sql/063).
+  // Con `tareas_asignar` cerrar el panel es no compartir; sin ella, sacar a
+  // alguien no es posible y cerrar cancela la relación entera.
+  const { confirmarAcceso, panelAcceso } = useConfirmarAcceso({
+    verbo: "relacionar",
+    puedeDejarAfuera: puedeAsignar,
+  });
 
   // El trigger `validar_paso_previo` (sql/017) rechaza pasar a en_progreso o
   // completada mientras el paso previo no esté completado. Cancelar sí se
@@ -162,12 +171,30 @@ export function TareaDetailPanel({
   }
 
   async function relacionar(r: RegistroElegido) {
-    const result = await vincularTarea({ tarea_id: tarea.id, ente: r.ente, registro_id: r.registro_id });
+    async function vincular(aviso: string | null) {
+      const result = await vincularTarea({ tarea_id: tarea.id, ente: r.ente, registro_id: r.registro_id });
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      if (aviso) toast.warning(aviso);
+      toast.success(`Relacionada con «${r.etiqueta}»`);
+    }
+
+    const asignadosDestino = asignadosActivos
+      .map((a) => a.usuario_id)
+      .filter((id) => id !== usuarioActualId);
+    if (asignadosDestino.length === 0) {
+      await vincular(null);
+      return;
+    }
+    const pares = asignadosDestino.map((usuario_id) => ({ usuario_id, ente: r.ente, registro_id: r.registro_id }));
+    const result = await sinAcceso(pares);
     if (!result.success) {
       toast.error(result.error);
       return;
     }
-    toast.success(`Relacionada con «${r.etiqueta}»`);
+    await confirmarAcceso(result.filas, vincular);
   }
 
   async function desvincular(id: string) {
@@ -186,6 +213,7 @@ export function TareaDetailPanel({
   }
 
   return (
+    <>
     <RightPanel title={tarea.titulo} subtitle={proyectoNombre} onClose={onClose}>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {(esAsignado || puedeGestionar) && (
@@ -468,6 +496,7 @@ export function TareaDetailPanel({
           asignadosActuales={asignadosActivos.map((a) => a.usuario_id)}
           responsableActual={tarea.responsable_id}
           miembros={miembros}
+          vinculos={vinculos.map((v) => ({ ente: v.ente, registro_id: v.registro_id }))}
           onClose={() => setReasignando(false)}
         />
       )}
@@ -493,5 +522,7 @@ export function TareaDetailPanel({
         />
       )}
     </RightPanel>
+    {panelAcceso}
+    </>
   );
 }

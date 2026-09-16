@@ -37,6 +37,16 @@ backdrop tapa al anterior. Sin z-index ni clase nueva.
 
 **El toaster también entra al top layer: `components/feedback/TopLayerToaster.tsx` nuevo.** El `<ol>` de sonner es un nodo normal, así que cualquier `toast` disparado con un `RightPanel`/`Modal` abierto quedaba tapado por el `<dialog>` — invisible tanto el error como el "Guardado". `TopLayerToaster` envuelve a `<Toaster>`, le pone `popover="manual"` al `[data-sonner-toaster]` y lo re-promueve (`hidePopover()`+`showPopover()`) con un `MutationObserver` cada vez que aparece un toast, para que quede sobre el último `<dialog>`. sonner ya deja el `<ol>` con `pointer-events:none` (solo el toast en sí es clickeable), así que estar arriba no bloquea el panel. Una regla sin `@layer` en `globals.css` (`[data-sonner-toaster][popover]`) anula el borde/fondo/padding/`inset` que las UA popover styles le pintarían al `<ol>`; `top`/`right` los sigue poniendo sonner.
 
+### `CompartirAccesoPanel` / `useConfirmarAcceso`
+
+**Antes de guardar o relacionar, si alguien va a quedar afuera por no poder abrir lo relacionado
+(`sql/062`/`063`), un panel pregunta.** `useConfirmarAcceso({ verbo, puedeDejarAfuera })` en
+`components/ui/CompartirAccesoPanel.tsx` es el hook que arma la pregunta: agrupa por usuario, deja
+tildar lo compartible (por defecto tildado), deshabilita lo que no se puede compartir, y cerrar
+equivale a "sin compartir" salvo que `puedeDejarAfuera` sea `false` — ahí no hay panel, un toast con
+el texto de `TA016` alcanza. Detalle completo, con las tres superficies de Tareas y el ensayo de
+Obras que lo usan, en `decisiones/tareas/visibilidad.md` → *Compartir al asignar: la pregunta*.
+
 ### `ConfirmModal`
 
 **`ConfirmModal` acepta `cancelLabel`.** Con la acción confirmada llamándose "Cancelar la tarea", un botón de salida que dice "Cancelar" no se puede leer. Acá dice "Volver"; el default sigue siendo "Cancelar" para el resto.

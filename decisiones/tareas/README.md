@@ -21,6 +21,7 @@ Quién ve y quién toca: los tres ejes (`tareas_gestionar_ajenas`, membresía de
 - Nombrar responsable de un hilo = `tareas_asignar` (`sql/015`)
 - No se ofrece crear trabajo donde no podés trabajar
 - Quien no puede abrir lo relacionado no queda asignado (`sql/063`)
+- Compartir al asignar: la pregunta (Fase E, sin SQL)
 
 ## `hilos-pasos.md`
 

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { argsRpc } from "@/lib/supabase/rpc";
 import { mensajeError } from "@/lib/utils";
+import type { FilaSinAcceso } from "@/lib/accesos";
 import {
   getEmpresas,
   getPersonas,
@@ -15,6 +16,7 @@ import {
 import {
   crearObraSchema,
   editarObraSchema,
+  ensayarEstadoObraSchema,
   crearEmpresaSchema,
   editarEmpresaSchema,
   crearPersonaSchema,
@@ -32,6 +34,7 @@ import {
   resolverPendienteSchema,
   type CrearObraForm,
   type EditarObraForm,
+  type EnsayarEstadoObraForm,
   type CrearEmpresaForm,
   type EditarEmpresaForm,
   type CrearPersonaForm,
@@ -125,6 +128,30 @@ export async function editarObra(input: EditarObraForm) {
 
   revalidarObras(id);
   return { success: true as const };
+}
+
+// Hace el cambio de estado de verdad —así el trigger dispara sus plantillas
+// de verdad, con vínculos y asignados reales— y lo revierte (sql/063): deja
+// ver quién va a quedar afuera de lo que dispare, antes de guardar.
+export async function ensayarEstadoObra(input: EnsayarEstadoObraForm) {
+  const parsed = ensayarEstadoObraSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(
+    "obras_ensayar_estado",
+    argsRpc<"obras_ensayar_estado">({
+      p_obra_id: parsed.data.id,
+      p_estado: parsed.data.estado,
+      p_motivo_perdida: parsed.data.motivo_perdida,
+      p_detalle_perdida: parsed.data.detalle_perdida,
+    }),
+  );
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+  return { success: true as const, filas: data as FilaSinAcceso[] };
 }
 
 // `activo` no tiene GRANT de UPDATE: desactivar es un permiso propio y pasa por

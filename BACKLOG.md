@@ -6,19 +6,14 @@ y la entrada se borra de este archivo.
 
 ---
 
-## Tareas ↔ entes — vínculos, chips, condiciones y compartir
+## Tareas ↔ entes — compartir al asignar, falta la prueba manual
 
-Decidido con el usuario el 2026-09-14. Queda compartir al asignar (lo demás está en `decisiones/tareas/`).
-
-- **Compartir al asignar.** Si un asignado no puede abrir lo vinculado, se pregunta con el checklist de compartir de Obras (solo se ofrece lo que es de quien asigna). Regla única, a mano y en el disparo: quien no puede abrirlo no queda asignado; si no queda nadie, la tarea va a quien asigna, con nota. En el disparo se pregunta al guardar el cambio de estado, y cerrar el panel es no compartir. Relacionar un registro con una tarea que ya existe también saca al asignado que no lo abre; una obra creada ya en un estado que dispara aplica la regla y avisa.
-
-  **Plan de implementación: `PLAN_TAREAS_VINCULOS.md`** (fases C, D y E). El relevamiento que estaba acá se verificó contra el código y se corrigió ahí: `CompartirPanel` no se mueve (importa las actions de Obras; va un panel nuevo en `components/ui/`), compartir para una tarea tiene que ser aditivo (`obras_compartir_obra` es "estado deseado" desde `sql/049`), los vínculos del disparo entran por `crear_tarea`, y la pregunta del disparo sale de un ensayo con rollback.
-
-## Tareas — la ficha (Fase B del plan)
-
-Decidido con el usuario el 2026-09-14. Plan en `PLAN_TAREAS_VINCULOS.md`. Fase A (buscador de "Relacionar" por módulo) cerrada — decisión en `decisiones/tareas/integracion.md`.
-
-- **Fase B:** "Nueva tarea" y el panel de cada tarea se abren sobre la ficha de obra, empresa o persona, sin ir a Tareas.
+Decidido con el usuario el 2026-09-14. Fases A, B, C y D de `PLAN_TAREAS_VINCULOS.md` cerradas, con
+decisión final en `decisiones/tareas/integracion.md` y `decisiones/tareas/visibilidad.md`. Fase E
+(la pregunta en la UI de Tareas y Obras) tiene el código hecho — sección *Compartir al asignar: la
+pregunta* en `decisiones/tareas/visibilidad.md` — pero **falta correr las pruebas manuales en el
+navegador con ADMIN y TESTER** (checklist en `PLAN_TAREAS_VINCULOS.md`). Cuando pasen, se borra el
+plan y esta entrada.
 
 ## Tareas — verificar `Content-Range` en el PATCH
 

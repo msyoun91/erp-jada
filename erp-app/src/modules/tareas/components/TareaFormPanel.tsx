@@ -5,6 +5,8 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
+import { useConfirmarAcceso } from "@/components/ui/CompartirAccesoPanel";
+import { sinAcceso } from "@/lib/accesos";
 import { crearTarea, editarTarea } from "../actions";
 import { crearTareaSchema, type CrearTareaForm } from "../types";
 import type { RegistroElegido, TareaConAsignados } from "../types";
@@ -50,6 +52,10 @@ export function TareaFormPanel({
   const [tieneRecurrencia, setTieneRecurrencia] = useState(tarea?.recurrencia_cantidad != null);
   const [venceTrasPrevio, setVenceTrasPrevio] = useState(tarea?.vence_dias_tras_previo != null);
   const [vinculos, setVinculos] = useState<RegistroElegido[]>(vinculosIniciales ?? []);
+  // Poner a otro ya exige `tareas_asignar` (sql/014): sin permiso para sacar a
+  // nadie de la tarea, "guardar sin compartir" no es una salida (sql/063).
+  const { confirmarAcceso, panelAcceso } = useConfirmarAcceso({ verbo: "guardar", puedeDejarAfuera: true });
+  const asignadosIniciales = tarea?.tareas_asignados.filter((a) => a.activo).map((a) => a.usuario_id) ?? [];
   const proyectosDisponibles = proyectos.filter((p) =>
     puedeTrabajarEnProyecto(miembrosPorProyecto[p.id] ?? [], usuarioActualId, puedeAsignar)
   );
@@ -135,7 +141,7 @@ export function TareaFormPanel({
     );
   }
 
-  async function onSubmit(data: CrearTareaForm) {
+  async function guardar(data: CrearTareaForm, aviso: string | null) {
     setEnviando(true);
     const result = tarea ? await editarTarea({ ...data, id: tarea.id }) : await crearTarea(data);
     setEnviando(false);
@@ -144,11 +150,50 @@ export function TareaFormPanel({
       toast.error(result.error);
       return;
     }
+    if (aviso) toast.warning(aviso);
     toast.success(tarea ? "Tarea actualizada" : pasoAnteriorId ? "Paso creado" : "Tarea creada");
     onClose();
   }
 
+  // Sin pares que chequear, guarda directo. Al editar, el chequeo solo corre
+  // si el conjunto de asignados pedido cambió — mismo criterio que el early
+  // return de `sincronizar_asignados` (sql/063): si el resultado final no
+  // cambia, no hay nada que descubrir.
+  function mismoConjunto(a: string[], b: string[]) {
+    if (a.length !== b.length) return false;
+    const sa = [...a].sort();
+    const sb = [...b].sort();
+    return sa.every((v, i) => v === sb[i]);
+  }
+
+  async function onSubmit(data: CrearTareaForm) {
+    const asignadosDestino = (data.asignados ?? []).filter((id) => id !== usuarioActualId);
+    const vinculosAChequear = tarea
+      ? mismoConjunto(data.asignados ?? [], asignadosIniciales)
+        ? []
+        : (tarea.vinculos ?? []).map((v) => ({ ente: v.ente, registro_id: v.registro_id }))
+      : vinculos.map((v) => ({ ente: v.ente, registro_id: v.registro_id }));
+    const pares = asignadosDestino.flatMap((usuario_id) =>
+      vinculosAChequear.map((v) => ({ usuario_id, ...v })),
+    );
+
+    if (pares.length === 0) {
+      await guardar(data, null);
+      return;
+    }
+
+    setEnviando(true);
+    const result = await sinAcceso(pares);
+    setEnviando(false);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    await confirmarAcceso(result.filas, (aviso) => guardar(data, aviso));
+  }
+
   return (
+    <>
     <RightPanel
       title={tarea ? "Editar tarea" : pasoAnteriorId ? "Nuevo paso" : "Nueva tarea"}
       onClose={onClose}
@@ -375,5 +420,7 @@ export function TareaFormPanel({
         )}
       </form>
     </RightPanel>
+    {panelAcceso}
+    </>
   );
 }

@@ -5,24 +5,31 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
+import { useConfirmarAcceso } from "@/components/ui/CompartirAccesoPanel";
+import { sinAcceso } from "@/lib/accesos";
 import { reasignarTarea } from "../actions";
 import { reasignarTareaSchema, type ReasignarTareaForm } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
+import { useTareasContexto } from "./tareasContexto";
 
 export function ReasignarPanel({
   tareaId,
   asignadosActuales,
   responsableActual,
   miembros,
+  vinculos,
   onClose,
 }: {
   tareaId: string;
   asignadosActuales: string[];
   responsableActual: string;
   miembros: string[] | null;
+  vinculos: { ente: string; registro_id: string }[];
   onClose: () => void;
 }) {
+  const { usuarioActualId } = useTareasContexto();
   const [enviando, setEnviando] = useState(false);
+  const { confirmarAcceso, panelAcceso } = useConfirmarAcceso({ verbo: "guardar", puedeDejarAfuera: true });
   const {
     handleSubmit,
     control,
@@ -36,7 +43,7 @@ export function ReasignarPanel({
     },
   });
 
-  async function onSubmit(data: ReasignarTareaForm) {
+  async function guardar(data: ReasignarTareaForm, aviso: string | null) {
     setEnviando(true);
     const result = await reasignarTarea(data);
     setEnviando(false);
@@ -45,11 +52,32 @@ export function ReasignarPanel({
       toast.error(result.error);
       return;
     }
+    if (aviso) toast.warning(aviso);
     toast.success("Tarea reasignada");
     onClose();
   }
 
+  async function onSubmit(data: ReasignarTareaForm) {
+    const asignadosDestino = data.asignados.filter((id) => id !== usuarioActualId);
+    const pares = asignadosDestino.flatMap((usuario_id) => vinculos.map((v) => ({ usuario_id, ...v })));
+
+    if (pares.length === 0) {
+      await guardar(data, null);
+      return;
+    }
+
+    setEnviando(true);
+    const result = await sinAcceso(pares);
+    setEnviando(false);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    await confirmarAcceso(result.filas, (aviso) => guardar(data, aviso));
+  }
+
   return (
+    <>
     <RightPanel
       title="Reasignar tarea"
       onClose={onClose}
@@ -75,5 +103,7 @@ export function ReasignarPanel({
         <AsignadosPicker control={control} miembros={miembros} />
       </form>
     </RightPanel>
+    {panelAcceso}
+    </>
   );
 }

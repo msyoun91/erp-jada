@@ -253,3 +253,71 @@ vínculo con `plantilla_id` fuera de un trigger sigue fallando (`sql/059`); sin
 operación entera con `TA016`; el ensayo devuelve el par excluido sin dejar
 nada (0 tareas, 0 avisos, estado sin cambiar) y, tras compartir el registro,
 el cambio de estado real sí deja al asignado.
+
+## Compartir al asignar: la pregunta (Fase E de `PLAN_TAREAS_VINCULOS.md`, sin SQL)
+
+Sobre `sql/062`/`sql/063` (arriba). La base ya decide quién queda afuera; falta que la UI
+pregunte **antes** de guardar, en vez de guardar y enterarse por la nota.
+
+**`lib/accesos.ts`** (`"use server"`, primera action que usan dos módulos) envuelve las dos
+RPC de `sql/062`: `sinAcceso(pares)` → `sin_acceso`, `compartirRegistros(selecciones)` →
+`compartir_registros`. Vive en `lib/` y no en `modules/tareas` porque Obras también lo llama
+(`ObraFormPanel`), y los módulos no se importan entre sí.
+
+**`components/ui/CompartirAccesoPanel.tsx`** exporta el hook `useConfirmarAcceso({ verbo,
+puedeDejarAfuera })` → `{ confirmarAcceso(filas, seguir), panelAcceso }`. Sin filas, `seguir(null)`
+directo — no hay panel de por medio. Con `!puedeDejarAfuera` y alguna fila no compartible,
+`toast.error` con el texto de `TA016` (`mensajeError({ code: "TA016" })`, no un string repetido) y
+sin panel: no hay nada que ofrecer, la operación entera se cae en la base igual. Si no, abre un
+`RightPanel` agrupado por usuario con un checkbox por fila compartible (tildado por defecto) y las
+no compartibles deshabilitadas (*"No lo podés compartir"* o *"Algo relacionado que no podés ver"*
+si `etiqueta` es NULL — la RLS de quien pregunta, no la de a quien se refiere la fila).
+
+**Un panel nuevo en `components/ui/`, no `CompartirPanel` movido.** `CompartirPanel`
+(`modules/obras/components/`) importa las actions de Obras y hace algo distinto: elige destino y
+revoca, con checklist de qué más compartir. Lo que Tareas y el ensayo de Obras necesitan es más
+chico — solo mostrar y tildar quién ya está identificado como destino — así que moverlo habría
+sido cargarle a Obras una responsabilidad que no es suya.
+
+**Cerrar (X, Escape, backdrop) es "sin compartir" solo con `puedeDejarAfuera`.** Sin él, cerrar
+cancela la operación entera — no hay guardado parcial ni relación a medias. `RightPanel` recibe
+`hayCambios={false}`: la pregunta de "¿descartar cambios?" no aplica acá, cerrar ya es una
+decisión explícita.
+
+**Tres superficies, mismo patrón** (armar pares `usuario_id × {ente, registro_id}`, filtrar a
+quien actúa, `sinAcceso`, y si hay filas `confirmarAcceso`):
+
+- `TareaFormPanel` (crear y editar): al crear, los pares salen de `vinculos` (el estado del
+  toggle "Relacionada con"). Al editar, solo si el conjunto de asignados pedido cambió —mismo
+  criterio que el early return de `sincronizar_asignados`— y ahí los vínculos son los de
+  `tarea.vinculos`, no los del form (la sección de vínculos está oculta al editar). `verbo:
+  "guardar"`, `puedeDejarAfuera: true` (poner a otro ya exige `tareas_asignar` antes de llegar
+  acá).
+- `ReasignarPanel`: nuevo prop `vinculos` (se lo pasa `TareaDetailPanel` con `tarea.vinculos`).
+  Mismo patrón que el form.
+- `TareaDetailPanel.relacionar`: pares = asignados activos (menos quien actúa) × el registro
+  elegido. `puedeDejarAfuera: puedeAsignar` — sin la función, relacionar algo que deja a alguien
+  afuera no tiene salida "sin compartir": cae en el toast de `TA016` sin abrir panel, porque la
+  base va a revertir la operación igual.
+
+**`ObraFormPanel`: el ensayo solo corre al editar un estado existente, nunca al crear.** Decisión
+3 del usuario: una obra que nace ya en un estado que dispara no se puede preguntar antes —no
+existe todavía— así que se aplica la regla y avisa por notificación (`plantilla_sin_acceso`, ya
+resuelto en `sql/063`). Al editar, si `data.estado !== obra.estado`, `ensayarEstadoObra` (nueva
+action, RPC `obras_ensayar_estado`) hace el cambio de verdad —dispara la plantilla real, con
+vínculos y asignados reales— y lo revierte. Si el ensayo devuelve filas, `confirmarAcceso` antes de
+`editarObra`. **Si el ensayo falla, se guarda igual:** `editarObra` va a mostrar el error real (RLS,
+el CHECK de pérdida) — el ensayo es una consulta, no una segunda barrera.
+
+**`ensayarEstadoObraSchema`** (`modules/obras/types.ts`) es `obraEditableSchema.pick({ estado,
+motivo_perdida, detalle_perdida })` + `id`, con los mismos dos `.refine` que `editarObraSchema`:
+motivo y detalle viajan porque el CHECK `obras_perdida_con_motivo` rechazaría el ensayo de
+"Perdida" sin motivo, igual que rechazaría el guardado real.
+
+Archivos: `lib/accesos.ts` (nuevo), `components/ui/CompartirAccesoPanel.tsx` (nuevo),
+`TareaFormPanel.tsx`, `ReasignarPanel.tsx`, `TareaDetailPanel.tsx`, `ObraFormPanel.tsx`,
+`modules/obras/actions.ts` (`ensayarEstadoObra`), `modules/obras/types.ts`
+(`ensayarEstadoObraSchema`).
+
+**Pendiente:** pruebas manuales en el navegador con ADMIN y TESTER (checklist en
+`PLAN_TAREAS_VINCULOS.md` antes de borrarlo) — no se corrieron en esta sesión.

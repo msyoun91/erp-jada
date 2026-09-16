@@ -251,6 +251,23 @@ export const editarObraSchema = obraEditableSchema
 
 export type EditarObraForm = z.input<typeof editarObraSchema>;
 
+// Ensayar un cambio de estado (sql/063, Fase E): mismos validadores que
+// editarObraSchema — el CHECK `obras_perdida_con_motivo` rechazaría el ensayo
+// de "Perdida" sin motivo igual que rechazaría el guardado real.
+export const ensayarEstadoObraSchema = obraEditableSchema
+  .pick({ estado: true, motivo_perdida: true, detalle_perdida: true })
+  .extend({ id: z.string().uuid() })
+  .refine(perdidaConMotivo, {
+    message: "Una obra perdida necesita un motivo",
+    path: ["motivo_perdida"],
+  })
+  .refine(motivoOtroConDetalle, {
+    message: "El motivo 'Otro' necesita un detalle",
+    path: ["detalle_perdida"],
+  });
+
+export type EnsayarEstadoObraForm = z.input<typeof ensayarEstadoObraSchema>;
+
 const empresaEditableSchema = z.object({
   razon_social: z.string().trim().min(1, "La razón social es obligatoria").max(200),
   nombre_comercial: textoOpcional(200),

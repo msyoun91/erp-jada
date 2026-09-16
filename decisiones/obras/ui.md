@@ -359,3 +359,14 @@ que la búsqueda se puede afinar.
 Obra, empresa y persona muestran sus tareas relacionadas. El porqué y la regla de visibilidad están en `decisiones/tareas/integracion.md` → *Tareas relacionadas con obras, empresas y personas*; la forma actual (el panel se abre sobre la ficha, sin ir a la Lista) está en la misma carpeta → *Las tareas de una ficha se abren sobre la ficha (sin SQL)*.
 
 Acá, solo la forma visual: mismo lugar que antes — al final de la ficha, antes del historial de responsables — mismo encabezado (h3 "Tareas", botón secundario "Nueva tarea"). `ObraDetalle`/`EmpresaDetalle`/`PersonaDetalle` reciben la sección entera como `seccionTareas: ReactNode` (la arma `TareasDeRegistro`, de `modules/tareas`) y solo la renderizan — no conocen su contenido. Obras sigue sin importar Tareas: quien compone es la page.
+
+---
+
+## El ensayo antes de guardar el estado (sin SQL)
+
+Fase E de `PLAN_TAREAS_VINCULOS.md`, sobre `obras_ensayar_estado` (`sql/063`). En `ObraFormPanel`,
+cambiar el estado de una obra **existente** dispara el ensayo antes de guardar de verdad: si el
+cambio haría disparar una plantilla que deja a alguien sin poder abrir lo relacionado,
+`CompartirAccesoPanel` pregunta primero (catálogo en `decisiones/global/ui.md`). Detalle completo
+—por qué solo al editar y no al crear, por qué "si el ensayo falla se guarda igual"— en
+`decisiones/tareas/visibilidad.md` → *Compartir al asignar: la pregunta*.

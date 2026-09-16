@@ -5,7 +5,8 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { buscarDuplicadosObra, crearObra, editarObra } from "../actions";
+import { useConfirmarAcceso } from "@/components/ui/CompartirAccesoPanel";
+import { buscarDuplicadosObra, crearObra, editarObra, ensayarEstadoObra } from "../actions";
 import {
   crearObraSchema,
   ESTADOS_OBRA,
@@ -27,6 +28,10 @@ import { AvisoDuplicadosObra } from "./AvisoDuplicados";
 export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => void }) {
   const [enviando, setEnviando] = useState(false);
   const [duplicados, setDuplicados] = useState<DuplicadoObra[]>([]);
+  // Al crear no se pregunta (decisión del usuario): la plantilla dispara y
+  // avisa con la notificación `plantilla_sin_acceso`. Solo un cambio de
+  // estado sobre una obra existente pasa por el ensayo (sql/063).
+  const { confirmarAcceso, panelAcceso } = useConfirmarAcceso({ verbo: "guardar", puedeDejarAfuera: true });
 
   const {
     register,
@@ -75,7 +80,7 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
     );
   }
 
-  async function onSubmit(data: CrearObraForm) {
+  async function guardar(data: CrearObraForm, aviso: string | null) {
     setEnviando(true);
     const result = obra ? await editarObra({ ...data, id: obra.id }) : await crearObra(data);
     setEnviando(false);
@@ -84,6 +89,7 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
       toast.error(result.error);
       return;
     }
+    if (aviso) toast.warning(aviso);
     // El aviso de duplicados advierte; el trigger de la base decide. Si la
     // obra quedó congelada hay que decirlo acá, porque hasta que la aprueben
     // no se le puede vincular nada.
@@ -95,7 +101,29 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
     onClose();
   }
 
+  async function onSubmit(data: CrearObraForm) {
+    if (obra && data.estado !== obra.estado) {
+      setEnviando(true);
+      const ensayo = await ensayarEstadoObra({
+        id: obra.id,
+        estado: data.estado,
+        motivo_perdida: data.motivo_perdida,
+        detalle_perdida: data.detalle_perdida,
+      });
+      setEnviando(false);
+
+      // Si el ensayo falla, se guarda igual: editarObra va a mostrar el
+      // error real (RLS, el CHECK de pérdida).
+      if (ensayo.success && ensayo.filas.length > 0) {
+        await confirmarAcceso(ensayo.filas, (aviso) => guardar(data, aviso));
+        return;
+      }
+    }
+    await guardar(data, null);
+  }
+
   return (
+    <>
     <RightPanel
       title={obra ? "Modificar obra" : "Nueva obra"}
       subtitle={obra?.nombre}
@@ -229,5 +257,7 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
         </div>
       </form>
     </RightPanel>
+    {panelAcceso}
+    </>
   );
 }

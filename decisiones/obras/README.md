@@ -88,3 +88,5 @@ Listados, fichas, filtros por chips, acciones en `OverflowMenu`, breadcrumb, bus
 - `Dato` y `Observaciones` son del módulo, no de `components/ui/`
 - El breadcrumb reemplaza al botón "← Personas"
 - La barra va en la línea del título, no adentro de una tab
+- La sección Tareas de las fichas
+- El ensayo antes de guardar el estado (sin SQL)

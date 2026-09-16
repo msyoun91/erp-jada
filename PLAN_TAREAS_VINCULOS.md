@@ -506,6 +506,10 @@ Volver a correr `vinculos_tareas`, `plantillas`, `plantillas_disparo`, `plantill
 
 ## Fase E — La pregunta en la UI: Tareas y Obras
 
+**Código hecho (2026-09-16); decisión final en `decisiones/tareas/visibilidad.md` → *Compartir al
+asignar: la pregunta*. Falta correr las pruebas manuales de más abajo con ADMIN y TESTER — recién
+ahí se tacha esta fase y se borra el archivo.**
+
 **Objetivo:** antes de guardar, si alguien va a quedar afuera, un panel ofrece compartir lo que es tuyo.
 Cerrarlo es no compartir.
 
