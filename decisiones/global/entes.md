@@ -100,7 +100,7 @@ Relaciones
 ├── tarea ↔ usuario        — asignado / responsable  (tareas_asignados, tareas.responsable_id)
 ├── tarea → tarea          — paso anterior           (tareas.paso_anterior_id)
 ├── tarea ↔ hilo ↔ proyecto                          (columnas)
-└── tarea ↔ cualquier ente — sin rol                 (tareas_vinculos: ente + registro_id + plantilla_id)
+└── tarea ↔ cualquier ente — rol solo si lo vinculó un disparo (tareas_vinculos: ente + registro_id + plantilla_id + roles, sql/066)
 Acciones — todas ya en Postgres con clase TA: crear · editar · completar · reasignar · convertir en hilo ·
            posponer · relacionar · usar y activar plantilla · cerrar hilo · archivar proyecto
 Eventos que emite
@@ -121,4 +121,5 @@ registro no guarda rol (la plantilla elige el registro por `ente:rol`, pero `tar
 si esa persona es "el arquitecto de" la tarea); la descripción es texto plano; los chips son clic.
 `hilo` y `proyecto` no se registran hasta que un módulo los necesite. `sql/064` se cerró el mismo día,
 solo con los bugs de asignar y compartir (`decisiones/tareas/visibilidad.md`). El texto condicional de
-las plantillas que traía se construyó después en `sql/065` (`decisiones/tareas/plantillas.md`).
+las plantillas que traía se construyó después en `sql/065` (`decisiones/tareas/plantillas.md`), y el rol
+del vínculo en `sql/066` (`decisiones/tareas/integracion.md`).

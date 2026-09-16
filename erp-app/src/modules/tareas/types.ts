@@ -25,7 +25,8 @@ export type PlantillaCompleta = TareaPlantilla & {
 export type Ente = Pick<Tables<"entes">, "codigo" | "datos">;
 
 // Un registro de otro módulo con el que se relaciona una tarea (sql/059), con
-// su nombre y su ruta. El que puso un disparo no se desvincula.
+// su nombre y su ruta. El que puso un disparo no se desvincula, y guarda los
+// roles por los que lo vinculó (sql/066).
 export type VinculoTarea = {
   id: string;
   tarea_id: string;
@@ -34,6 +35,7 @@ export type VinculoTarea = {
   etiqueta: string;
   href: string;
   de_plantilla: boolean;
+  roles: string[];
 };
 
 // Lo que devuelve "Relacionar", antes de guardar.

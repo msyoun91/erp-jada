@@ -383,6 +383,7 @@ export function TareaDetailPanel({
                 etiqueta: v.etiqueta,
                 href: v.href,
                 quitable: !v.de_plantilla,
+                roles: v.roles,
               }))}
               onQuitar={desvincular}
             />

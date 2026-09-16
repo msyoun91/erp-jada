@@ -35,6 +35,13 @@ export const LABEL_ROL_PERSONA: Record<Enums<"rol_persona">, string> = {
   otro: "Otro",
 };
 
+// Por ente relacionado. Los enums de rol son uno por ente, no por relación:
+// el chip de una tarea nombra el rol sin saber qué registro disparó (sql/066).
+export const LABEL_ROL: Record<string, Record<string, string>> = {
+  empresa: LABEL_ROL_EMPRESA,
+  persona: LABEL_ROL_PERSONA,
+};
+
 // Cómo se nombra cada ente del catálogo `entes` (sql/055). La base sabe qué
 // entes hay, qué datos ofrecen y qué permiso piden; no cómo se dicen. Solo el
 // que tiene `estados` se ofrece como disparador en el editor de plantillas;
@@ -57,7 +64,7 @@ export const ENTES: Record<
     un: "una obra",
     el: "la obra",
     estados: LABEL_ESTADO_OBRA,
-    roles: { empresa: LABEL_ROL_EMPRESA, persona: LABEL_ROL_PERSONA },
+    roles: LABEL_ROL,
     datos: { nombre: { label: "Nombre de la obra", ejemplo: "Edificio Cabildo" } },
   },
   empresa: { nombre: "Empresa", un: "una empresa", el: "la empresa", datos: {} },

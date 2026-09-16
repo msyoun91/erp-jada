@@ -60,9 +60,6 @@ usuario pidió la guía y la prueba, no la modificación: nada de esto se constr
   con `disparo_estado` solo cuando `evento = 'estado'`; el editor pasa de "ente + estado" a
   "módulo → evento → estado". `tareas_eventos` → `eventos` con `ente = 'tarea'` (la vista Auditoría
   lee de ahí).
-- **`tareas_vinculos.rol`** (text nullable, `ente:rol` como `adjuntos`): el vínculo que arma un disparo
-  por rol guarda el rol; "Relacionar" a mano lo deja NULL. Así la relación tarea↔registro es una
-  propiedad relacional y el chip puede decir "Arquitecto · Juan Pérez".
 - **Descripción con referencias `{ente:uuid}`** resueltas al mostrar (`etiqueta_registro`) → chip/link
   o nada. El editor de texto es librería nueva: consultar antes.
 - **Chips arrastrables**: librería de dnd con soporte touch — consultar antes.

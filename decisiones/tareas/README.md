@@ -58,12 +58,15 @@ Escrituras y ediciones multi-tabla como funciones SQL (`sql/023`–`024`) y la c
 
 ## `integracion.md`
 
-Tareas generadas por otros módulos (`origen_app` / `origen_punto`), deep link desde la notificación, link heredado dentro del hilo (`sql/058`) y tareas relacionadas con obras, empresas y personas (`sql/059`).
+Tareas generadas por otros módulos (`origen_app` / `origen_punto`), deep link desde la notificación, link heredado dentro del hilo (`sql/058`), tareas relacionadas con obras, empresas y personas (`sql/059`) y el rol del vínculo (`sql/066`).
 
 - Tareas generadas por otro módulo = `origen_app` + `origen_punto` (sin SQL)
 - Deep link a una tarea desde la notificación (sin SQL)
 - El link de origen se hereda dentro del hilo (`sql/058`)
 - Tareas relacionadas con obras, empresas y personas (`sql/059`)
+- El buscador de Relacionar elige módulo primero (`sql/061`)
+- Las tareas de una ficha se abren sobre la ficha (sin SQL)
+- El vínculo guarda el rol (`sql/066`)
 
 ## `vista-lista.md`
 

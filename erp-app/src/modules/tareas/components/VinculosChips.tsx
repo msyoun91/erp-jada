@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { X } from "lucide-react";
-import { ENTES } from "@/lib/entes";
+import { ENTES, LABEL_ROL } from "@/lib/entes";
 
 // Los registros con los que se relaciona una tarea: con `href`, el chip abre
-// la ficha; con `quitable` y `onQuitar`, lleva ×.
+// la ficha; con `quitable` y `onQuitar`, lleva ×. Con `roles`, el chip dice el
+// rol en vez del ente: "Arquitecto Juan Pérez".
 export function VinculosChips({
   vinculos,
   onQuitar,
 }: {
-  vinculos: { key: string; ente: string; etiqueta: string; href?: string; quitable?: boolean }[];
+  vinculos: { key: string; ente: string; etiqueta: string; href?: string; quitable?: boolean; roles?: string[] }[];
   onQuitar?: (key: string) => void;
 }) {
   if (vinculos.length === 0) return null;
@@ -17,9 +18,12 @@ export function VinculosChips({
     <ul className="flex min-w-0 flex-wrap gap-1.5">
       {vinculos.map((v) => {
         const conX = Boolean(onQuitar && v.quitable);
+        const tipo = v.roles?.length
+          ? v.roles.map((rol) => LABEL_ROL[v.ente]?.[rol] ?? rol).join(", ")
+          : (ENTES[v.ente]?.nombre ?? v.ente);
         const texto = (
           <>
-            <span className="font-normal opacity-75">{ENTES[v.ente]?.nombre ?? v.ente}</span> {v.etiqueta}
+            <span className="font-normal opacity-75">{tipo}</span> {v.etiqueta}
           </>
         );
         return (

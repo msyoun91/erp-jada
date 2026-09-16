@@ -167,13 +167,14 @@ Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados o, desde `sql/057`, en 
 
 La de sistema arranca apagada (sin fila); la privada, prendida: `guardar_plantilla` inserta la fila del dueño cuando tiene disparador, con `ON CONFLICT DO NOTHING` para no pisar un apagado. RLS: SELECT la propia; INSERT/UPDATE la propia, y además ver la plantilla y que tenga disparador. `GRANT SELECT, INSERT, UPDATE`.
 
-| tareas_vinculos (`sql/055`, `sql/059`) | tipo | notas |
+| tareas_vinculos (`sql/055`, `sql/059`, `sql/066`) | tipo | notas |
 |---|---|---|
 | id | uuid PK | |
 | tarea_id | uuid FK → tareas | |
 | ente | text FK → entes(codigo) | misma forma que `usuario_notificaciones.entidad` |
 | registro_id | uuid | sin FK — apunta a la tabla del ente |
 | plantilla_id | uuid FK → tareas_plantillas, nullable | `sql/059`: NULL = vinculada a mano (al crear o con «Relacionar»); con valor, la vinculó un disparo |
+| roles | text[] | default `{}`, `sql/066` — los roles del registro por los que lo adjuntó el paso (`adjuntos`), sin prefijo de ente, por código. CHECK `tareas_vinculos_roles_de_disparo`: solo con `plantilla_id` |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
@@ -183,7 +184,7 @@ RLS: SELECT si la tarea es visible. INSERT (`sql/059`), dos caminos: con `planti
 
 Lecturas (`sql/059`, las tres `SECURITY INVOKER STABLE`, EXECUTE para `authenticated`):
 
-- `vinculos_de_tareas()` — los vínculos activos de las tareas activas visibles, con `etiqueta`, `href` (la `ruta` del ente con el id) y `de_plantilla`. Sin fila si el registro no se ve. La precarga `getListaTareas`.
+- `vinculos_de_tareas()` — los vínculos activos de las tareas activas visibles, con `etiqueta`, `href` (la `ruta` del ente con el id), `de_plantilla` y `roles` (`sql/066`, DROP + CREATE). Sin fila si el registro no se ve. La precarga `getListaTareas`.
 - `tareas_de_registro(ente, registro_id)` — ids y orden de las tareas activas visibles vinculadas a un registro de Obras (lo terminado al final). Vacío si el registro no se ve. Desde Fase B (`PLAN_TAREAS_VINCULOS.md`) `getTareasDeRegistro` (`modules/tareas/queries.ts`) solo usa ids y orden: la fila completa (asignados, notas) sale de una segunda consulta con el mismo select que `getListaTareas`, para que la sección Tareas de una ficha monte `TareaCard` real en vez de una fila resumida.
 - `buscar_registros(modulo, texto)` (`sql/061`) — "Relacionar": el módulo se elige antes (toggle en la UI). Hoy solo `obras` → `obras_buscar` sin lo ajeno enmascarado y solo entes cuyo submódulo tiene quien busca, con `href`. Un módulo que registre entes suma su rama (`plpgsql`, `IF p_modulo = '…'`).
 - `vincular_tarea(p_tarea_id, p_ente, p_registro_id)` (`sql/063`), **GRANT authenticated** — reemplaza el INSERT directo de la action `vincularTarea`: inserta el vínculo y, si la tarea tiene asignados activos, corre `sincronizar_asignados` sobre ellos con el responsable actual (misma regla de acceso que crear/editar, ver más abajo). Sin asignados no se llama: si no, relacionar asignaría a quien relaciona.
@@ -193,7 +194,7 @@ Lecturas (`sql/059`, las tres `SECURITY INVOKER STABLE`, EXECUTE para `authentic
 
 - `plantilla_disparada(uuid, text, uuid)` — `SECURITY DEFINER STABLE`: hay alguna tarea **activa** vinculada a (plantilla, ente, registro). Completadas y canceladas cuentan; archivadas no. EXECUTE para `authenticated` (la llama el disparo), y fuera de un trigger devuelve false.
 - `rellenar_datos(text, jsonb, text[])` — en título y descripción de cada paso, título de hilo y nombre de lo que crea. Primero los bloques `{si hay ente:rol}…{fin}` / `{si no hay ente:rol}…{fin}` contra los roles del tercer parámetro (`sql/065`; sin anidar, una cabecera que no se entiende queda como texto, NULL = ningún rol), después `{clave}` → valor. `IMMUTABLE`. EXECUTE solo `authenticated`.
-- Roles (`sql/060`, `sql/065`): `usar_plantilla` calcula una vez los roles del registro con `relacionados_de_registro` (ver `core.md`), saltea el paso cuya `condicion` no se cumple (`ente:rol` que nadie tiene, `!ente:rol` que alguien tiene) —la cadena sigue del último creado y un hilo de proyecto sin pasos no se abre—, le pasa los roles a `rellenar_datos` y vincula a cada tarea los registros con alguno de sus `adjuntos`. Sin ningún paso creado, `TA014`.
+- Roles (`sql/060`, `sql/065`): `usar_plantilla` calcula una vez los roles del registro con `relacionados_de_registro` (ver `core.md`), saltea el paso cuya `condicion` no se cumple (`ente:rol` que nadie tiene, `!ente:rol` que alguien tiene) —la cadena sigue del último creado y un hilo de proyecto sin pasos no se abre—, le pasa los roles a `rellenar_datos` y vincula a cada tarea los registros con alguno de sus `adjuntos`, uno por registro con esos roles en `roles` (`sql/066`). Sin ningún paso creado, `TA014`.
 
 ## tareas_eventos
 

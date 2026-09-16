@@ -142,3 +142,19 @@ Pedido del usuario el 2026-09-14 (fase B de `PLAN_TAREAS_VINCULOS.md`): "Nueva t
 **Las etiquetas de estado de tarea vuelven a `tareaLabels.ts`.** Vivían en `lib/tareas.ts` (`LABEL_ESTADO_TAREA`/`BADGE_ESTADO_TAREA`) porque Obras las usaba directamente en `TareasRelacionadas`. Esa dependencia desaparece con la sección vieja — `lib/tareas.ts` se borra y las etiquetas quedan en `modules/tareas/components/tareaLabels.ts` (`ESTADO_LABEL`/`ESTADO_BADGE`), donde ya vivía el resto.
 
 Archivos: `modules/tareas/components/TareasDeRegistro.tsx` (nuevo), `modules/tareas/queries.ts` (`getTareasContexto`, `getTareasDeRegistro`, `SELECT_TAREAS`), `modules/tareas/actions.ts` (`revalidarTareas`), `modules/tareas/components/tareaLabels.ts`, `TareasListaView.tsx`, `HiloCard.tsx`, las cuatro pages de Tareas, las tres pages de ficha de Obras, `ObraDetalle.tsx`/`EmpresaDetalle.tsx`/`PersonaDetalle.tsx`. Borrados: `modules/obras/components/TareasRelacionadas.tsx`, `lib/tareas.ts`, `getTareasDeRegistro`/`puedeVerTareas` de `modules/obras`.
+
+## El vínculo guarda el rol (`sql/066`)
+
+Construido el 2026-09-16 desde `BACKLOG.md` → *Tareas sobre el modelo de entes*. La plantilla elige a quién adjuntar por `ente:rol` (`sql/060`), pero el vínculo solo guardaba el registro: el chip decía "Persona Juan Pérez" y no "Arquitecto Juan Pérez".
+
+**`tareas_vinculos.roles text[]`, no un `rol text` como decía el backlog.** En Obras una persona tiene varios roles en la misma obra (`obras_obra_persona.roles` es un arreglo), un paso puede adjuntar dos de ellos, y el vínculo es uno por (tarea, ente, registro). Los roles van sin el prefijo del ente: el ente ya está en la fila. Guarda los que pidió el paso, no todos los que la persona tiene en la obra, y en orden de código, porque `adjuntos` no conserva el orden en que se eligieron (`guardar_plantilla` hace `DISTINCT`).
+
+**Solo un disparo pone roles: CHECK `plantilla_id IS NOT NULL OR cardinality(roles) = 0`.** A mano nadie verifica que la persona tenga ese rol, y el vínculo con plantilla ya exige estar dentro de un trigger. "Relacionar" queda sin roles.
+
+**Es una foto del disparo.** Si la persona deja de ser arquitecta de la obra, el chip lo sigue diciendo: la tarea se creó por ese rol. Los vínculos de disparos anteriores a `sql/066` quedan sin roles; no se completaron, porque la tarea no guarda de qué paso de la plantilla salió.
+
+**`LABEL_ROL` en `lib/entes.ts`, por ente relacionado.** El chip nombra el rol sin saber qué registro disparó; los enums de rol son uno por ente (`rol_persona`, `rol_empresa`), así que la etiqueta solo depende del ente del vínculo. `ENTES.obra.roles` apunta al mismo objeto. Con roles, el chip muestra el rol donde antes iba el nombre del ente.
+
+**Tests:** `plantillas_roles.sql` 15/15 (suma 14 y 15), `vinculos_tareas.sql` 15/15, `plantillas_disparo.sql` 34/34.
+
+Archivos: `sql/066`, `lib/entes.ts`, `VinculosChips.tsx`, `TareaDetailPanel.tsx`, `types.ts`, `database.types.ts`, `sql/tests/plantillas_roles.sql`.

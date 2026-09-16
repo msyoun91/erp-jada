@@ -1638,6 +1638,7 @@ export type Database = {
           id: string
           plantilla_id: string | null
           registro_id: string
+          roles: string[]
           tarea_id: string
           updated_at: string
         }
@@ -1648,6 +1649,7 @@ export type Database = {
           id?: string
           plantilla_id?: string | null
           registro_id: string
+          roles?: string[]
           tarea_id: string
           updated_at?: string
         }
@@ -1658,6 +1660,7 @@ export type Database = {
           id?: string
           plantilla_id?: string | null
           registro_id?: string
+          roles?: string[]
           tarea_id?: string
           updated_at?: string
         }
@@ -2627,6 +2630,7 @@ export type Database = {
           href: string
           id: string
           registro_id: string
+          roles: string[]
           tarea_id: string
         }[]
       }
