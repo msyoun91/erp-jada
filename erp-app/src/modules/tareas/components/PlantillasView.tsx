@@ -8,21 +8,32 @@ import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
-import { ENTES } from "@/lib/entes";
+import { ENTES, LABEL_ROL } from "@/lib/entes";
 import { activarPlantilla, desactivarPlantilla } from "../actions";
-import type { Ente, PlantillaCompleta, TipoPlantilla } from "../types";
+import type { Ente, PlantillaCompleta, TipoEvento, TipoPlantilla } from "../types";
 import { PlantillaFormPanel } from "./PlantillaFormPanel";
 import { UsarPlantillaPanel } from "./UsarPlantillaPanel";
 import { useTareasContexto } from "./tareasContexto";
 
 const TIPO_LABEL: Record<TipoPlantilla, string> = { tarea: "Tarea", hilo: "Hilo", proyecto: "Proyecto" };
 
-// Corre para quien cambia el estado (sql/055), así que la frase le habla a
+// Corre para quien hace el cambio (sql/055), así que la frase le habla a
 // quien la lee.
 function cuandoCorre(p: PlantillaCompleta) {
   const ente = p.disparo_ente ? ENTES[p.disparo_ente] : undefined;
+  const un = ente?.un ?? "un registro";
   const estado = p.disparo_estado ? (ente?.estados?.[p.disparo_estado] ?? p.disparo_estado) : "";
-  return `Corre sola cuando pasás ${ente?.un ?? "un registro"} a «${estado}», si la tenés activada.`;
+  const [enteRol = "", rol = ""] = (p.disparo_rol ?? "").split(":");
+  const nombreRol = LABEL_ROL[enteRol]?.[rol] ?? rol;
+  const cuando: Record<TipoEvento, string> = {
+    alta: `creás ${un}`,
+    estado: `pasás ${un} a «${estado}»`,
+    relacion_alta: `a ${un} le sumás el rol «${nombreRol}»`,
+    relacion_baja: `a ${un} le sacás el rol «${nombreRol}»`,
+    baja: `das de baja ${un}`,
+    reactivacion: `reactivás ${un}`,
+  };
+  return `Corre sola cuando ${cuando[p.disparo_evento ?? "estado"]}, si la tenés activada.`;
 }
 
 export function PlantillasView({

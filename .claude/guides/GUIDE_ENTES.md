@@ -17,7 +17,7 @@ genéricas viven en `db_schema/core.md` (`sql/059`–`062`).
 | **Propiedad** | Un dato del ente. Escalar (columna) o relacional: otro ente con un rol ("la obra tiene desarrollador") | Columna · fila en la tabla puente con `roles` |
 | **Relación** | Vínculo entre dos entes, con rol, sin autoridad propia | Tabla puente `{modulo}_{ente_a}_{ente_b}` con `roles enum[]`, `creado_por`, `activo` |
 | **Acción** | Lo que un usuario hace sobre un ente | Submódulo-función + policy o función SQL (`GUIDE_PERMISSIONS.md`) |
-| **Evento** | Algo que le pasó a un ente y otro módulo puede escuchar | Hoy: trigger `disparar_plantillas` sobre `estado`. Contrato completo en §2.8 |
+| **Evento** | Algo que le pasó a un ente y otro módulo puede escuchar | Fila en `eventos`, emitida por los triggers del módulo (§2.8) |
 
 No son entes: configuración (plantillas), logs, tablas puente, preferencias (`usuario_*`). Un ente
 tiene ficha, dueño, y puede aparecer como chip en otro módulo.
@@ -42,12 +42,12 @@ Acciones
 ├── obra: crear · editar · cambiar estado · vincular · transferir · compartir · desactivar · aprobar alta
 └── persona: crear · editar · compartir · transferir · ver contacto (registra el acceso)
 Eventos que emite
-└── obra: estado (hoy) · alta · baja · relacion_alta · relacion_baja · transferencia · compartido · revocado
+└── obra: alta · baja · reactivacion · estado · relacion_alta · relacion_baja (sql/068) · transferencia · compartido · revocado
 Eventos que consume
 └── ninguno
 ```
 
-Un módulo puede consumir sin emitir (Tareas), emitir sin consumir (Obras), o no tener entes ni
+Un módulo puede emitir y consumir (Tareas), emitir sin consumir (Obras), o no tener entes ni
 eventos.
 
 ## 2. Contrato de un ente
@@ -71,14 +71,18 @@ Además de las columnas de `GUIDE_DB.md` (`id`, `activo`, `created_at`, `updated
 ### 2.2 Registro en `entes`
 
 ```sql
-INSERT INTO entes (codigo, modulo, submodulo, estados, datos, ruta)
-VALUES ('presupuesto', 'presupuestos', 'presupuestos_ver', 'estado_presupuesto', '{numero}', '/presupuestos/{id}')
+INSERT INTO entes (codigo, modulo, submodulo, estados, datos, ruta, tabla, disparos)
+VALUES ('presupuesto', 'presupuestos', 'presupuestos_ver', 'estado_presupuesto', '{numero}', '/presupuestos/{id}',
+        'presupuestos', '{alta,estado}')
 ON CONFLICT (codigo) DO NOTHING;
 ```
 
 - `codigo` singular, sin prefijo de módulo, único para siempre: es destino de FK.
 - `submodulo`: la vista que abre la ficha. Sin ella el ente no existe para ese usuario (RLS de `entes`).
-- `estados` NULL si no dispara. `datos`: columnas citables como `{columna}` desde otro módulo — nunca contacto.
+- `estados` NULL si no tiene. `datos`: columnas citables como `{columna}` desde otro módulo — nunca contacto.
+- `tabla`: de donde un consumidor lee la fila. `disparos`: los eventos que pueden disparar una plantilla —
+  solo los que ocurren como quien actúa (uno que pasa por una función DEFINER no dispara), y ninguno si
+  una plantilla disparada por el ente crearía otro igual (la tarea).
 - `ruta`: la ficha, con `{id}`. Tiene que abrir sin más contexto que el id.
 
 Y en `ENTES` (`lib/entes.ts`): `nombre`, `un`, `el`, labels de `estados` y `roles`, `datos` con label y
@@ -129,8 +133,8 @@ id: en un UPDATE la policy de SELECT se evalúa sobre la fila nueva, y releer la
   (`obras_perdida_con_motivo`), no en TypeScript.
 - Cambiar de estado es una acción (policy de UPDATE o función) y siempre queda auditada: quién, qué,
   cuándo, valor anterior (§2.8).
-- El módulo avisa con un trigger de una línea sobre la columna y no decide nada más:
-  `AFTER INSERT OR UPDATE OF estado … EXECUTE FUNCTION disparar_plantillas('<ente>', 'estado')`.
+- El módulo avisa con un trigger de una línea sobre la tabla y no decide nada más:
+  `AFTER INSERT OR UPDATE OF activo, estado … EXECUTE FUNCTION emitir_eventos_registro('<ente>')`.
   Qué pasa lo decide quien escucha.
 - Ensayar un cambio antes de guardarlo (`obras_ensayar_estado`): UPDATE real dentro de un bloque que se
   revierte solo, INVOKER. Solo si la UI necesita preguntar antes.
@@ -145,6 +149,8 @@ id: en un UPDATE la policy de SELECT se evalúa sobre la fila nueva, y releer la
   `tareas_vinculos`, y la policy de INSERT exige `etiqueta_registro(ente, registro_id) IS NOT NULL`.
 - La relación se expone por `{modulo}_relacionados_{ente}` para que otro módulo pida "el arquitecto de
   esta obra" sin conocer la tabla.
+- Y avisa con otro trigger de una línea sobre el puente: `AFTER INSERT OR UPDATE OF activo, roles …
+  EXECUTE FUNCTION emitir_eventos_relacion('<ente>', '<columna>', '<ente relacionado>', '<columna>')`.
 
 ### 2.7 Acciones
 
@@ -165,31 +171,30 @@ Vocabulario, enum `tipo_evento`:
 | `alta` | INSERT de un ente activo | — |
 | `baja` / `reactivacion` | `activo` true → false / false → true | — |
 | `estado` | la columna de estado cambia de verdad, o nace con valor | `{estado, anterior}` |
-| `relacion_alta` / `relacion_baja` | se vincula / desvincula otro ente | `{ente, registro_id, rol}` |
+| `relacion_alta` / `relacion_baja` | otro ente se vincula / desvincula con un rol (uno por rol) | `{ente, registro_id, rol}` |
 | `transferencia` | cambia el dueño | `{de, a}` |
 | `compartido` / `revocado` | grant otorgado / apagado | `{usuario_id}` |
 
 Editar una columna escalar no es evento: sin consumidor es ruido y `updated_at` ya lo dice. Si aparece
 un caso, se suma `dato` con `{columna}`.
 
-**Hoy** el único emisor es Obras (`obra`, solo `estado`) y el único consumidor son las plantillas de
-Tareas (`disparar_plantillas`, trigger directo sobre `obras`, `disparo_ente` + `disparo_estado`).
-
-**Cuando haga falta el segundo evento o el segundo consumidor** (decidido en
-`decisiones/global/entes.md`, no construido):
+Construido en `sql/068` (`db_schema/core.md`):
 
 - Tabla cross-módulo `eventos (ente, registro_id, evento tipo_evento, detalle jsonb, actor_id,
-  created_at)`, append-only y sin `activo` (una auditoría no oculta sus filas — `tareas_eventos`). RLS
-  SELECT: `etiqueta_registro(ente, registro_id) IS NOT NULL`. INSERT solo por
+  created_at)`, append-only y sin `activo` (una auditoría no oculta sus filas). RLS SELECT:
+  `etiqueta_registro(ente, registro_id) IS NOT NULL`. INSERT solo por
   `emitir_evento(ente, registro_id, evento, detalle)`, **INVOKER** con policy `pg_trigger_depth() > 0`
   (el truco de `tareas_vinculos`): con DEFINER los consumidores correrían como `postgres` y
   `disparar_plantillas` no dispararía.
-- Cada módulo emite desde **sus** triggers, que conocen sus tablas: uno sobre el ente (alta, baja,
-  reactivación, estado) y uno por tabla puente (relación). Nunca desde `actions.ts`.
-- Los consumidores cuelgan de `AFTER INSERT ON eventos` y filtran por `(ente, evento)`.
-  `disparar_plantillas` se muda ahí y la plantilla gana `disparo_evento`.
-- Es también la auditoría que `GUIDE_DB.md` exige. Un log propio que ya existe (`obras_transferencias`)
-  sigue valiendo: no se escribe en los dos.
+- Cada módulo emite desde **sus** triggers, con las dos funciones genéricas: `emitir_eventos_registro`
+  sobre el ente (alta, baja, reactivación, estado) y `emitir_eventos_relacion` por tabla puente (un
+  evento por rol que aparece o se va, del lado del primer ente). Nunca desde `actions.ts`.
+- Los consumidores cuelgan de `AFTER INSERT ON eventos` y filtran por `(ente, evento)`. Hoy uno:
+  `disparar_plantillas`, con `disparo_evento` (y `disparo_estado` o `disparo_rol`) en la plantilla;
+  lee la fila de `entes.tabla` con la RLS de quien actuó.
+- Es también la auditoría que `GUIDE_DB.md` exige (`tareas_eventos` se mudó ahí). Un log propio que ya
+  existe (`obras_transferencias`) sigue valiendo: no se escribe en los dos. `transferencia`,
+  `compartido` y `revocado` se suman al enum con su primer emisor.
 
 ## 3. UI de un ente
 
@@ -215,7 +220,9 @@ Tareas (`disparar_plantillas`, trigger directo sobre `obras`, `disparo_ente` + `
       `compartir_registros`, `buscar_registros` y, con relaciones, `relacionados_de_registro`
 - [ ] `{modulo}_puede_ver_{ente}_de(id, usuario)` + envoltorio con `auth.uid()`
 - [ ] Tabla `_compartida` con `origen_*`, funciones compartir / revocar, checklist de cascada
-- [ ] Estado: enum, CHECKs de transición, trigger de eventos de una línea
+- [ ] Estado: enum, CHECKs de transición
+- [ ] Eventos: `emitir_eventos_registro` sobre la tabla, `emitir_eventos_relacion` por puente, `tabla` y
+      `disparos` en `entes`
 - [ ] Relaciones: puente con `roles[]`, `creado_por` por trigger, `{modulo}_relacionados_{ente}`
 - [ ] Eventos que emite y que consume, listados en la ficha del módulo
 - [ ] Ficha en `entes.ruta`; chips y buscador reutilizados, no copiados

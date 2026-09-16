@@ -39,7 +39,7 @@ Hilos, pasos encadenados (`sql/017`), isla compartida, panel de proyecto y edici
 
 ## `plantillas.md`
 
-Plantillas de sistema y privadas, tres tipos (`sql/053`), disparadas por el estado de un registro de otro módulo (`sql/055`), con datos por chips y aviso a quien la dispara (`sql/056`), nombre de lo que crea e hilos en paralelo (`sql/057`), roles de la obra en cada paso (`sql/060`), texto y pasos que dependen de un rol (`sql/065`).
+Plantillas de sistema y privadas, tres tipos (`sql/053`), disparadas por el estado de un registro de otro módulo (`sql/055`), con datos por chips y aviso a quien la dispara (`sql/056`), nombre de lo que crea e hilos en paralelo (`sql/057`), roles de la obra en cada paso (`sql/060`), texto y pasos que dependen de un rol (`sql/065`), disparadas por un evento: alta, estado o un rol que se suma o se saca (`sql/068`).
 
 - Plantillas de sistema y privadas, tres tipos (`sql/053`)
 - Plantillas disparadas por estado (`sql/055`)
@@ -47,6 +47,7 @@ Plantillas de sistema y privadas, tres tipos (`sql/053`), disparadas por el esta
 - Nombre de lo que crea e hilos en paralelo (`sql/057`)
 - Roles de la obra en la plantilla (`sql/060`)
 - Texto y pasos que dependen de un rol (`sql/065`)
+- Plantillas disparadas por un evento (`sql/068`)
 
 ## `escrituras-postgres.md`
 

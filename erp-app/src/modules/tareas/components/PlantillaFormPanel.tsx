@@ -25,6 +25,7 @@ import {
   type PasoPlantillaForm,
   type PlantillaCompleta,
   type TareaPlantillaItem,
+  type TipoEvento,
   type TipoPlantilla,
 } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
@@ -51,6 +52,17 @@ const AYUDA_TIPO: Record<TipoPlantilla, string> = {
   tarea: "Crea una tarea.",
   hilo: "Crea un hilo con sus pasos, encadenados o en paralelo.",
   proyecto: "Crea un proyecto con sus miembros, sus hilos y sus tareas sueltas.",
+};
+
+// Atada al enum aunque hoy ningún ente dispare con baja ni reactivación: los
+// ofrece `entes.disparos` (sql/068), no esta lista.
+const DISPARO: Record<TipoEvento, (un: string) => string> = {
+  alta: (un) => `Sola, cuando se crea ${un}`,
+  estado: (un) => `Sola, cuando ${un} cambia de estado`,
+  relacion_alta: (un) => `Sola, cuando a ${un} se le suma un rol`,
+  relacion_baja: (un) => `Sola, cuando a ${un} se le saca un rol`,
+  baja: (un) => `Sola, cuando se da de baja ${un}`,
+  reactivacion: (un) => `Sola, cuando se reactiva ${un}`,
 };
 
 type ModoVence = "sin" | "creacion" | "tras_previo";
@@ -116,7 +128,9 @@ function valoresIniciales(p?: PlantillaCompleta): Form {
       hilos: [],
       pasos: [pasoVacio()],
       disparo_ente: null,
+      disparo_evento: null,
       disparo_estado: null,
+      disparo_rol: null,
     };
   }
   return {
@@ -136,7 +150,9 @@ function valoresIniciales(p?: PlantillaCompleta): Form {
     })),
     pasos: p.items.filter((i) => !i.hilo_id).map(pasoDesdeItem),
     disparo_ente: p.disparo_ente,
+    disparo_evento: p.disparo_evento,
     disparo_estado: p.disparo_estado,
+    disparo_rol: p.disparo_rol,
   };
 }
 
@@ -173,8 +189,18 @@ export function PlantillaFormPanel({
   const alcance = useWatch({ control, name: "alcance" }) ?? "privada";
   const miembros = useWatch({ control, name: "miembros" }) ?? [];
   const disparoEnte = useWatch({ control, name: "disparo_ente" }) ?? null;
-  // Los que la RLS dejó ver (`getEntes`) y tienen estados que la disparen.
-  const entesDisponibles = entes.filter((e) => ENTES[e.codigo]?.estados);
+  const disparoEvento = useWatch({ control, name: "disparo_evento" }) ?? null;
+  // Los que la RLS dejó ver (`getEntes`), un renglón por evento que dispara.
+  const disparos = entes.flatMap((e) =>
+    ENTES[e.codigo]
+      ? e.disparos.map((evento) => ({
+          valor: `${e.codigo}:${evento}`,
+          ente: e.codigo,
+          evento,
+          label: DISPARO[evento](ENTES[e.codigo].un),
+        }))
+      : [],
+  );
   const enteElegido = disparoEnte ? ENTES[disparoEnte] : undefined;
   const datosDelEnte = entes.find((e) => e.codigo === disparoEnte)?.datos ?? [];
   // Los que la base ofrece (`entes.datos`) y la UI sabe nombrar.
@@ -293,42 +319,69 @@ export function PlantillaFormPanel({
           <p className="t-caption">{AYUDA_TIPO[tipo]}</p>
         </div>
 
-        {(entesDisponibles.length > 0 || enteElegido) && (
+        {(disparos.length > 0 || enteElegido) && (
           <div>
             <label className="t-label mb-1 block">Cuándo se usa</label>
             <select
               aria-label="Cuándo se usa"
               className="input"
-              value={disparoEnte ?? ""}
+              value={disparoEnte && disparoEvento ? `${disparoEnte}:${disparoEvento}` : ""}
               onChange={(e) => {
-                setValue("disparo_ente", e.target.value || null, { shouldDirty: true });
-                setValue("disparo_estado", null, { shouldDirty: true });
+                const elegido = disparos.find((d) => d.valor === e.target.value);
+                const opciones = { shouldDirty: true };
+                setValue("disparo_ente", elegido?.ente ?? null, opciones);
+                setValue("disparo_evento", elegido?.evento ?? null, opciones);
+                setValue("disparo_estado", null, opciones);
+                setValue("disparo_rol", null, opciones);
               }}
             >
               <option value="">A mano, desde esta vista</option>
-              {entesDisponibles.map((e) => (
-                <option key={e.codigo} value={e.codigo}>
-                  Sola, cuando {ENTES[e.codigo].un} cambia de estado
+              {disparos.map((d) => (
+                <option key={d.valor} value={d.valor}>
+                  {d.label}
                 </option>
               ))}
             </select>
             {enteElegido && (
               <>
-                <select
-                  aria-label="Estado que la dispara"
-                  className={`input mt-2 ${errors.disparo_estado ? "input-error" : ""}`}
-                  {...register("disparo_estado", { setValueAs: (v) => v || null })}
-                >
-                  <option value="">Elegí el estado…</option>
-                  {Object.entries(enteElegido.estados ?? {}).map(([valor, label]) => (
-                    <option key={valor} value={valor}>
-                      Cuando pasa a «{label}»
-                    </option>
-                  ))}
-                </select>
+                {disparoEvento === "estado" && (
+                  <select
+                    aria-label="Estado que la dispara"
+                    className={`input mt-2 ${errors.disparo_estado ? "input-error" : ""}`}
+                    {...register("disparo_estado", { setValueAs: (v) => v || null })}
+                  >
+                    <option value="">Elegí el estado…</option>
+                    {Object.entries(enteElegido.estados ?? {}).map(([valor, label]) => (
+                      <option key={valor} value={valor}>
+                        Cuando pasa a «{label}»
+                      </option>
+                    ))}
+                  </select>
+                )}
                 {errors.disparo_estado && <p className="input-error-text">{errors.disparo_estado.message}</p>}
+                {(disparoEvento === "relacion_alta" || disparoEvento === "relacion_baja") && (
+                  <select
+                    aria-label="Rol que la dispara"
+                    className={`input mt-2 ${errors.disparo_rol ? "input-error" : ""}`}
+                    {...register("disparo_rol", { setValueAs: (v) => v || null })}
+                  >
+                    <option value="">Elegí el rol…</option>
+                    {[...new Set(roles.map((r) => r.ente))].map((ente) => (
+                      <optgroup key={ente} label={`${ENTES[ente]?.nombre ?? ente} con rol…`}>
+                        {roles
+                          .filter((r) => r.ente === ente)
+                          .map((r) => (
+                            <option key={r.valor} value={r.valor}>
+                              {r.label}
+                            </option>
+                          ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                )}
+                {errors.disparo_rol && <p className="input-error-text">{errors.disparo_rol.message}</p>}
                 <p className="t-caption mt-1">
-                  Corre para quien cambia el estado, con sus permisos, y solo si la tiene activada:{" "}
+                  Corre para quien hace el cambio, con sus permisos, y solo si la tiene activada:{" "}
                   {alcance === "sistema"
                     ? "cada uno la activa para sí desde Plantillas."
                     : "vos la tenés activada desde que la guardás."}

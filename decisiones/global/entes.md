@@ -31,7 +31,7 @@ desarrollador") es una fila de la tabla puente con ese rol. No hace falta un mod
 `relacionados_de_registro` ya expone las relacionales con su rol, y `entes.datos` las escalares
 citables.
 
-## Los eventos van a una tabla `eventos`, no a un trigger por consumidor (decidido, no construido)
+## Los eventos van a una tabla `eventos`, no a un trigger por consumidor (`sql/068`)
 
 Hoy el único evento es "entró a un estado", el único emisor es `obras` y el único consumidor
 `disparar_plantillas`, un trigger directo sobre la tabla de obras (`sql/055`). El usuario pide que un
@@ -59,12 +59,35 @@ eventos`. Sin `activo`: una auditoría no oculta sus filas, como `tareas_eventos
   `reactivacion` (el inverso de `baja` en un sistema sin DELETE), `transferencia` y
   `compartido`/`revocado` — los actos de MODEL A que Obras ya loguea por separado. Sin evento por
   columna escalar: sin consumidor es ruido y `updated_at` ya lo dice.
-- **Se construye con el primer consumidor que necesite más que `estado`**: el selector "módulo +
-  evento" de las plantillas (`BACKLOG.md` → *Tareas sobre el modelo de entes*). Ahí
-  `disparar_plantillas` se muda a `eventos`, la plantilla gana `disparo_evento`, y `tareas_eventos`
-  pasa a ser filas de `eventos` con `ente = 'tarea'`. Los logs que ya existen
-  (`obras_transferencias`, `obras_aprobaciones`, `obras_accesos_persona`) no se duplican mientras
-  vivan.
+- **Se construyó con el primer consumidor que necesita más que `estado`** (2026-09-16): el selector de
+  evento de las plantillas (`decisiones/tareas/plantillas.md` → *Plantillas disparadas por un evento*).
+  `disparar_plantillas` se mudó a `eventos` y `tareas_eventos` pasó a ser filas de `eventos` con
+  `ente = 'tarea'`. Los logs que ya existen (`obras_transferencias`, `obras_aprobaciones`,
+  `obras_accesos_persona`) no se duplican mientras vivan.
+
+Lo que se decidió al construirlo, verificado contra el código:
+
+- **Mudar `tareas_eventos` cambia quién ve la Auditoría, y el usuario lo aceptó.** Su policy era
+  `usuario_id = auth.uid() OR tareas_auditoria`; la de `eventos` es `etiqueta_registro`, que para una
+  tarea pide verla y que esté activa. Un manager deja de ver lo completado en tareas archivadas o que no
+  puede abrir. Alternativa ofrecida y descartada: dejar `tareas_eventos` hasta que un consumidor
+  necesite eventos de tareas.
+- **`entes` gana `tabla` y `disparos`.** El disparo, colgado de `eventos`, ya no tiene la fila en
+  `NEW`: la lee de `entes.tabla` con la RLS de quien actuó (una lectura, no una séptima función
+  cross-módulo). `disparos` separa "emite" de "puede disparar": `estados` NULL ya no alcanza para decirlo.
+- **Baja y reactivación de una obra no disparan.** Pasan por `obras_set_activo`, DEFINER, y la guarda
+  de `current_user` las deja afuera: ofrecerlas sería guardar una plantilla que nunca corre. Quedan en el
+  log. Lo mismo vale para lo que cambie `obras_revocar_obra`.
+- **Una tarea emite pero no dispara**: una plantilla colgada del alta de una tarea crearía otra que la
+  volvería a disparar. `disparos` vacío, y las policies de INSERT/UPDATE de `tareas_plantillas` lo
+  exigen además de `guardar_plantilla`.
+- **Un evento de relación por rol**, del lado del primer ente de la tabla puente (la obra), con
+  `{ente, registro_id, rol}` como decía la guía. Sumarle un rol a un vínculo que ya existe es un alta;
+  sacarle uno, una baja. Así una plantilla elige "cuando la obra suma un arquitecto" sin mirar arrays.
+- **El enum lleva solo lo que alguien emite.** `transferencia`, `compartido` y `revocado` se suman con
+  su primer emisor: agregar un valor es una línea, y hasta entonces un editor no puede ofrecerlos.
+
+Archivos: `sql/068_eventos.sql`, `sql/tests/eventos.sql`, `db_schema/core.md`.
 
 ## "No existe" antes que "sin permiso"
 
@@ -93,7 +116,7 @@ modificarlo. Resultado: la guía se aplica y deja una lista concreta; lo que fal
 ```
 Módulo: tareas
 Entes
-├── tarea    — dueño: los asignados (sql/013), no el creador · estado estado_tarea (no dispara) · ruta /tareas?tarea={id} · submódulo tareas_lista · en entes desde sql/067, no se comparte
+├── tarea    — dueño: los asignados (sql/013), no el creador · estado estado_tarea · ruta /tareas?tarea={id} · submódulo tareas_lista · en entes desde sql/067, no se comparte, no dispara
 ├── hilo     — dueño responsable_id · estado estado_hilo · sin ficha propia (panel en la Lista)
 └── proyecto — dueño: los miembros · sin estado · sin ficha propia
 Relaciones
@@ -104,10 +127,10 @@ Relaciones
 Acciones — todas ya en Postgres con clase TA: crear · editar · completar · reasignar · convertir en hilo ·
            posponer · relacionar · usar y activar plantilla · cerrar hilo · archivar proyecto
 Eventos que emite
-├── tarea: estado → tareas_eventos (solo audita; nadie lo consume)
+├── tarea: alta · baja · reactivacion · estado → eventos (sql/068; audita, nadie lo consume)
 └── tarea: relacion_alta usuario → notificación tarea_asignada (un consumidor fijo, sin evento)
 Eventos que consume
-└── obra.estado → disparar_plantillas (ente + estado; no módulo + evento)
+└── obra: alta · estado · relacion_alta · relacion_baja → disparar_plantillas (sql/068)
 ```
 
 **Cumple:** acciones en Postgres; "no existe" (`vinculos_de_tareas` descarta el chip sin etiqueta);
@@ -116,9 +139,8 @@ consumo de entes ajenos por composición en `app/` (`TareasDeRegistro` en las fi
 explícito (asignar), con el dueño definido por el módulo.
 
 **No cumple:** ~~`tarea` no está en `entes` — ningún módulo puede relacionarse con una tarea, preguntar
-`puede_abrir_registro('tarea', …)` ni buscarla~~ (entró en `sql/067`, `decisiones/tareas/integracion.md`); emite un solo evento y sin bus; el vínculo con un
-registro no guarda rol (la plantilla elige el registro por `ente:rol`, pero `tareas_vinculos` no sabe
-si esa persona es "el arquitecto de" la tarea); la descripción es texto plano; los chips son clic.
+`puede_abrir_registro('tarea', …)` ni buscarla~~ (entró en `sql/067`, `decisiones/tareas/integracion.md`); ~~emite un solo evento y sin bus~~ (`sql/068`, abajo); ~~el vínculo con un
+registro no guarda rol~~ (`sql/066`); la descripción es texto plano; los chips son clic.
 `hilo` y `proyecto` no se registran hasta que un módulo los necesite. `sql/064` se cerró el mismo día,
 solo con los bugs de asignar y compartir (`decisiones/tareas/visibilidad.md`). El texto condicional de
 las plantillas que traía se construyó después en `sql/065` (`decisiones/tareas/plantillas.md`), y el rol

@@ -215,7 +215,7 @@ export async function getPlantillas(): Promise<PlantillaCompleta[]> {
 // `entes` deja solo los de submódulos que tiene.
 export async function getEntes(): Promise<Ente[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("entes").select("codigo, datos").order("codigo");
+  const { data, error } = await supabase.from("entes").select("codigo, datos, disparos").order("codigo");
 
   if (error) throw error;
   return data ?? [];
@@ -231,12 +231,6 @@ export async function getModulosRelacionables(): Promise<string[]> {
   return [...new Set((data ?? []).map((e) => e.modulo))];
 }
 
-// Auditoría: solo cambios a 'completada' — "qué se realizó", no cada
-// transición de estado (el trigger loguea todas, la vista filtra acá).
-// fecha_asignacion se resuelve aparte: no hay FK directa entre
-// tareas_eventos y tareas_asignados, así que se arma un mapa
-// (tarea_id, usuario_id) -> primera vez que ese usuario quedó asignado
-// (incluye filas inactivas — reasignado no debe perder el dato histórico).
 // El registro desde el que se pidió "Nueva tarea" (`/tareas?nueva=obra:{id}`),
 // si quien llega lo puede abrir.
 export async function getRegistro(ente: string, id: string): Promise<RegistroElegido | null> {
@@ -249,6 +243,12 @@ export async function getRegistro(ente: string, id: string): Promise<RegistroEle
   return { ente, registro_id: id, etiqueta, detalle: null, href: e.ruta.replace("{id}", id) };
 }
 
+// Auditoría: solo los pasos a 'completada' — "qué se realizó", no cada
+// transición (`eventos` guarda todas, sql/068; la vista filtra acá).
+// `eventos.registro_id` no tiene FK, así que la tarea no se embebe: título y
+// creación salen de una segunda consulta, junto con fecha_asignacion
+// (tarea_id, usuario_id) -> primera vez que ese usuario quedó asignado
+// (incluye filas inactivas — reasignado no debe perder el dato histórico).
 export async function getAuditoria(
   desde: string,
   hasta: string,
@@ -256,15 +256,17 @@ export async function getAuditoria(
 ): Promise<EventoAuditoria[]> {
   const supabase = await createClient();
   let query = supabase
-    .from("tareas_eventos")
-    .select("id, tarea_id, usuario_id, created_at, tareas(titulo, created_at), usuarios(nombre)")
-    .eq("estado_nuevo", "completada")
+    .from("eventos")
+    .select("id, registro_id, actor_id, created_at, usuarios(nombre)")
+    .eq("ente", "tarea")
+    .eq("evento", "estado")
+    .eq("detalle->>estado", "completada")
     .gte("created_at", inicioDiaAR(desde))
     .lt("created_at", inicioDiaAR(sumarDiasISO(hasta, 1)))
     .order("created_at", { ascending: false });
 
   if (usuarioId) {
-    query = query.eq("usuario_id", usuarioId);
+    query = query.eq("actor_id", usuarioId);
   }
 
   const { data, error } = await query;
@@ -272,14 +274,16 @@ export async function getAuditoria(
   const eventos = data ?? [];
   if (eventos.length === 0) return [];
 
-  const tareaIds = [...new Set(eventos.map((e) => e.tarea_id))];
-  const { data: asignaciones, error: errorAsignaciones } = await supabase
-    .from("tareas_asignados")
-    .select("tarea_id, usuario_id, created_at")
-    .in("tarea_id", tareaIds);
+  const tareaIds = [...new Set(eventos.map((e) => e.registro_id))];
+  const [{ data: tareas, error: errorTareas }, { data: asignaciones, error: errorAsignaciones }] = await Promise.all([
+    supabase.from("tareas").select("id, titulo, created_at").in("id", tareaIds),
+    supabase.from("tareas_asignados").select("tarea_id, usuario_id, created_at").in("tarea_id", tareaIds),
+  ]);
 
+  if (errorTareas) throw errorTareas;
   if (errorAsignaciones) throw errorAsignaciones;
 
+  const tareaPorId = new Map((tareas ?? []).map((t) => [t.id, { titulo: t.titulo, created_at: t.created_at }]));
   const fechaAsignacion = new Map<string, string>();
   for (const a of asignaciones ?? []) {
     const key = `${a.tarea_id}:${a.usuario_id}`;
@@ -288,8 +292,13 @@ export async function getAuditoria(
   }
 
   return eventos.map((e) => ({
-    ...e,
-    fecha_asignacion: e.usuario_id ? (fechaAsignacion.get(`${e.tarea_id}:${e.usuario_id}`) ?? null) : null,
+    id: e.id,
+    tarea_id: e.registro_id,
+    usuario_id: e.actor_id,
+    created_at: e.created_at,
+    tareas: tareaPorId.get(e.registro_id) ?? null,
+    usuarios: e.usuarios,
+    fecha_asignacion: e.actor_id ? (fechaAsignacion.get(`${e.registro_id}:${e.actor_id}`) ?? null) : null,
   }));
 }
 

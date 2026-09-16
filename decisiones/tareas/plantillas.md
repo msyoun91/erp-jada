@@ -42,7 +42,7 @@ Pedido de usuario, en dos fases acordadas: esta (plantillas completas, usadas a 
 
 Fase 2 de la anterior, decidida con el usuario el 2026-09-14. Un solo ente para probar la idea: la obra (su ejemplo: pasa a en ejecución → "Cobrar obra X").
 
-**El disparador es genérico: un registro entra a un estado.** La plantilla elige ente y estado destino (`disparo_ente`, `disparo_estado`), sin estado de origen: de `idea` directo a `en_ejecucion` también hay que cobrarla, y crear la obra ya en ese estado cuenta como entrar. Cada módulo registra su ente en `entes` (módulo, submódulo que pide, enum de estados, datos citables, ruta) y cuelga un trigger de una línea sobre su columna de estado. Obras no suma funciones ni botones.
+**El disparador es genérico: un registro entra a un estado.** La plantilla elige ente y estado destino (`disparo_ente`, `disparo_estado`), sin estado de origen: de `idea` directo a `en_ejecucion` también hay que cobrarla, y crear la obra ya en ese estado cuenta como entrar. Cada módulo registra su ente en `entes` (módulo, submódulo que pide, enum de estados, datos citables, ruta) ~~y cuelga un trigger de una línea sobre su columna de estado~~ (desde `sql/068` emite a `eventos` y el disparo escucha ahí: *Plantillas disparadas por un evento*). Obras no suma funciones ni botones.
 
 **Corre como quien cambia el estado, si la tiene activada.** `disparar_plantillas()` es `INVOKER` y llama a `usar_plantilla`, igual que usarla a mano: las tareas nacen con su RLS. Por eso no hay excepción de autorización, y la activación es por usuario (`tareas_plantillas_activaciones`): la de sistema arranca apagada, la privada prendida para su dueño. Descartado: "la autoridad pasa a ser la plantilla", con `SECURITY DEFINER` revalidando.
 
@@ -143,3 +143,19 @@ Venía en el borrador de `sql/064` sin UI ni decisión; se construyó el 2026-09
 **Tests:** `plantillas_roles.sql` 13/13 (7 de antes + 6). `plantillas.sql` 27/27 sin tocar. `plantillas_disparo.sql` 34/34: los casos 23, 25 y 26 fallaban desde `sql/063` (ADMIN disparaba sobre una obra que TESTER, el asignado, no podía abrir, así que quedaba afuera). Ahora la obra se le comparte antes del disparo.
 
 Archivos: `sql/065`, `PlantillaFormPanel.tsx`, `types.ts`, `database.types.ts`, `sql/tests/plantillas_roles.sql`, `sql/tests/plantillas_disparo.sql`.
+
+## Plantillas disparadas por un evento (`sql/068`)
+
+Pedido del usuario (`BACKLOG.md` → *Tareas sobre el modelo de entes*), construido el 2026-09-16 junto con el bus de eventos (`decisiones/global/entes.md`).
+
+**La plantilla elige ente, evento y, según el evento, estado o rol.** `disparo_evento` se suma a `disparo_ente`; `disparo_estado` queda para `estado` y `disparo_rol` (`ente:rol`, el formato de `adjuntos`) para `relacion_alta`/`relacion_baja`. Un CHECK exige la combinación. Las que ya disparaban quedaron con `estado`, y `guardar_plantilla` sin `p_disparo_evento` entiende `estado`, así que las llamadas de antes siguen valiendo.
+
+**Una relación dispara por rol, no por vínculo** (elegido por el usuario frente a "cualquier vínculo" y "que las relaciones no disparen todavía"). Con "cualquier vínculo" y una vez por obra, la plantilla corría con el primer contacto que se cargara y nunca más. Con rol, "cuando a una obra se le suma un arquitecto" corre con el vínculo nuevo o con el rol sumado a uno existente. Sigue siendo **una vez por (plantilla, obra)**: un segundo arquitecto no la repite (`plantilla_disparada` no cambió).
+
+**El editor ofrece lo que dice `entes.disparos`, un renglón por evento** ("Sola, cuando se crea una obra", "…cambia de estado", "…se le suma un rol", "…se le saca un rol"). Módulo y ente son un solo select porque hoy cada módulo tiene un solo ente que dispara; el segundo select es el estado o el rol, agrupado por ente relacionado. Las etiquetas (`DISPARO` en el editor, `cuandoCorre` en la vista) están atadas al enum entero, también a `baja` y `reactivacion`, que hoy no se ofrecen.
+
+**No se ofrece la baja ni la reactivación de una obra**: pasan por `obras_set_activo` (DEFINER) y el disparo no corre fuera de `authenticated`. Una tarea tampoco dispara: se crearía otra en cadena.
+
+**Tests:** `eventos.sql` 25/25 (nuevo). `plantillas_disparo.sql` 34/34, `plantillas_roles.sql` 15/15, `plantillas.sql` 27/27 y `asignar_con_acceso.sql` 24/24 sin tocar: el disparo por estado se comporta igual colgado de `eventos`.
+
+Archivos: `sql/068`, `PlantillaFormPanel.tsx`, `PlantillasView.tsx`, `types.ts`, `actions.ts`, `queries.ts` (`getEntes`, `getAuditoria`), `lib/entes.ts`, `database.types.ts`.

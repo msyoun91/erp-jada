@@ -10,7 +10,6 @@ export type TareaProyectoMiembro = Tables<"tareas_proyectos_miembros">;
 export type TareaPlantilla = Tables<"tareas_plantillas">;
 export type TareaPlantillaHilo = Tables<"tareas_plantillas_hilos">;
 export type TareaPlantillaItem = Tables<"tareas_plantillas_items">;
-export type TareaEvento = Tables<"tareas_eventos">;
 
 // La plantilla con sus hilos y pasos activos, ya ordenados, y si quien la mira
 // la tiene activada — getPlantillas la arma en una sola query.
@@ -21,8 +20,9 @@ export type PlantillaCompleta = TareaPlantilla & {
 };
 
 // Un ente que quien arma la plantilla puede usar de disparador: la RLS de
-// `entes` ya dejó afuera los que no tiene autorizados.
-export type Ente = Pick<Tables<"entes">, "codigo" | "datos">;
+// `entes` ya dejó afuera los que no tiene autorizados, y `disparos` dice con
+// qué eventos (sql/068).
+export type Ente = Pick<Tables<"entes">, "codigo" | "datos" | "disparos">;
 
 // Un registro de otro módulo con el que se relaciona una tarea (sql/059), con
 // su nombre y su ruta. El que puso un disparo no se desvincula, y guarda los
@@ -50,6 +50,7 @@ export type RegistroElegido = {
 export type EstadoTarea = Enums<"estado_tarea">;
 export type RecurrenciaUnidad = Enums<"recurrencia_unidad">;
 export type TipoPlantilla = Enums<"tipo_plantilla">;
+export type TipoEvento = Enums<"tipo_evento">;
 
 export type Usuario = { id: string; nombre: string };
 type UsuarioNombre = { nombre: string };
@@ -305,12 +306,21 @@ export const guardarPlantillaSchema = z
     hilos: z.array(hiloPlantillaSchema).default([]),
     pasos: z.array(pasoPlantillaSchema).default([]),
     disparo_ente: z.string().nullable().default(null),
+    disparo_evento: z
+      .enum(["alta", "baja", "reactivacion", "estado", "relacion_alta", "relacion_baja"])
+      .nullable()
+      .default(null),
     disparo_estado: z.string().nullable().default(null),
+    disparo_rol: rolSchema.nullable().default(null),
   })
   .superRefine((d, ctx) => {
-    // `guardar_plantilla` lo vuelve a exigir contra el enum (TA012).
-    if (d.disparo_ente && !(d.disparo_estado && d.disparo_estado in (ENTES[d.disparo_ente]?.estados ?? {}))) {
+    // `guardar_plantilla` lo vuelve a exigir contra `entes.disparos` y el enum (TA012).
+    const estados = d.disparo_ente ? (ENTES[d.disparo_ente]?.estados ?? {}) : {};
+    if (d.disparo_ente && d.disparo_evento === "estado" && !(d.disparo_estado && d.disparo_estado in estados)) {
       ctx.addIssue({ code: "custom", path: ["disparo_estado"], message: "Elegí a qué estado tiene que pasar" });
+    }
+    if (d.disparo_ente && d.disparo_evento?.startsWith("relacion_") && !d.disparo_rol) {
+      ctx.addIssue({ code: "custom", path: ["disparo_rol"], message: "Elegí qué rol" });
     }
     if (d.tipo === "tarea" && d.pasos.length !== 1) {
       ctx.addIssue({ code: "custom", path: ["pasos"], message: "Una plantilla de tarea tiene un solo paso" });

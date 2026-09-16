@@ -20,11 +20,13 @@ export type Database = {
           codigo: string
           created_at: string
           datos: string[]
+          disparos: Database["public"]["Enums"]["tipo_evento"][]
           estados: unknown
           id: string
           modulo: string
           ruta: string
           submodulo: string
+          tabla: unknown
           updated_at: string
         }
         Insert: {
@@ -32,11 +34,13 @@ export type Database = {
           codigo: string
           created_at?: string
           datos?: string[]
+          disparos?: Database["public"]["Enums"]["tipo_evento"][]
           estados?: unknown
           id?: string
           modulo: string
           ruta: string
           submodulo: string
+          tabla: unknown
           updated_at?: string
         }
         Update: {
@@ -44,14 +48,61 @@ export type Database = {
           codigo?: string
           created_at?: string
           datos?: string[]
+          disparos?: Database["public"]["Enums"]["tipo_evento"][]
           estados?: unknown
           id?: string
           modulo?: string
           ruta?: string
           submodulo?: string
+          tabla?: unknown
           updated_at?: string
         }
         Relationships: []
+      }
+      eventos: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          detalle: Json
+          ente: string
+          evento: Database["public"]["Enums"]["tipo_evento"]
+          id: string
+          registro_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          detalle?: Json
+          ente: string
+          evento: Database["public"]["Enums"]["tipo_evento"]
+          id?: string
+          registro_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          detalle?: Json
+          ente?: string
+          evento?: Database["public"]["Enums"]["tipo_evento"]
+          id?: string
+          registro_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventos_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eventos_ente_fkey"
+            columns: ["ente"]
+            isOneToOne: false
+            referencedRelation: "entes"
+            referencedColumns: ["codigo"]
+          },
+        ]
       }
       obras: {
         Row: {
@@ -1123,48 +1174,6 @@ export type Database = {
           },
         ]
       }
-      tareas_eventos: {
-        Row: {
-          created_at: string
-          estado_anterior: Database["public"]["Enums"]["estado_tarea"] | null
-          estado_nuevo: Database["public"]["Enums"]["estado_tarea"]
-          id: string
-          tarea_id: string
-          usuario_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          estado_anterior?: Database["public"]["Enums"]["estado_tarea"] | null
-          estado_nuevo: Database["public"]["Enums"]["estado_tarea"]
-          id?: string
-          tarea_id: string
-          usuario_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          estado_anterior?: Database["public"]["Enums"]["estado_tarea"] | null
-          estado_nuevo?: Database["public"]["Enums"]["estado_tarea"]
-          id?: string
-          tarea_id?: string
-          usuario_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tareas_eventos_tarea_id_fkey"
-            columns: ["tarea_id"]
-            isOneToOne: false
-            referencedRelation: "tareas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tareas_eventos_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       tareas_hilos: {
         Row: {
           activo: boolean
@@ -1328,6 +1337,8 @@ export type Database = {
           descripcion: string | null
           disparo_ente: string | null
           disparo_estado: string | null
+          disparo_evento: Database["public"]["Enums"]["tipo_evento"] | null
+          disparo_rol: string | null
           encadenada: boolean
           id: string
           miembros: string[]
@@ -1345,6 +1356,8 @@ export type Database = {
           descripcion?: string | null
           disparo_ente?: string | null
           disparo_estado?: string | null
+          disparo_evento?: Database["public"]["Enums"]["tipo_evento"] | null
+          disparo_rol?: string | null
           encadenada?: boolean
           id?: string
           miembros?: string[]
@@ -1362,6 +1375,8 @@ export type Database = {
           descripcion?: string | null
           disparo_ente?: string | null
           disparo_estado?: string | null
+          disparo_evento?: Database["public"]["Enums"]["tipo_evento"] | null
+          disparo_rol?: string | null
           encadenada?: boolean
           id?: string
           miembros?: string[]
@@ -1962,6 +1977,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      emitir_evento: {
+        Args: {
+          p_detalle?: Json
+          p_ente: string
+          p_evento: Database["public"]["Enums"]["tipo_evento"]
+          p_registro_id: string
+        }
+        Returns: undefined
+      }
       es_asignado_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
       es_creador_proyecto: { Args: { p_proyecto_id: string }; Returns: boolean }
       es_miembro_proyecto: {
@@ -1984,6 +2008,8 @@ export type Database = {
           p_descripcion: string
           p_disparo_ente?: string
           p_disparo_estado?: string
+          p_disparo_evento?: Database["public"]["Enums"]["tipo_evento"]
+          p_disparo_rol?: string
           p_encadenada?: boolean
           p_hilos: Json
           p_id: string
@@ -2748,6 +2774,13 @@ export type Database = {
         | "influenciador"
         | "contacto_comercial"
         | "otro"
+      tipo_evento:
+        | "alta"
+        | "baja"
+        | "reactivacion"
+        | "estado"
+        | "relacion_alta"
+        | "relacion_baja"
       tipo_notificacion:
         | "alta_aprobada"
         | "alta_rechazada"
@@ -2974,6 +3007,14 @@ export const Constants = {
         "influenciador",
         "contacto_comercial",
         "otro",
+      ],
+      tipo_evento: [
+        "alta",
+        "baja",
+        "reactivacion",
+        "estado",
+        "relacion_alta",
+        "relacion_baja",
       ],
       tipo_notificacion: [
         "alta_aprobada",

@@ -44,12 +44,6 @@ clickeable, alturas de toolbar, el modal que no atenuaba el panel). El resto, en
 Resultado de leer Tareas con la guía (`decisiones/global/entes.md` → *Tareas leída con la guía*). El
 usuario pidió la guía y la prueba, no la modificación: nada de esto se construye hasta que lo pida.
 
-- **Bus de eventos**: `eventos` + `emitir_evento` + `tipo_evento` (`GUIDE_ENTES.md` §2.8). Obras emite
-  `alta`/`baja`/`reactivacion`/`estado` desde un trigger sobre `obras` y `relacion_*` desde los dos
-  puentes; `disparar_plantillas` se muda a `AFTER INSERT ON eventos`; `tareas_plantillas.disparo_evento`,
-  con `disparo_estado` solo cuando `evento = 'estado'`; el editor pasa de "ente + estado" a
-  "módulo → evento → estado". `tareas_eventos` → `eventos` con `ente = 'tarea'` (la vista Auditoría
-  lee de ahí).
 - **Descripción con referencias `{ente:uuid}`** resueltas al mostrar (`etiqueta_registro`) → chip/link
   o nada. El editor de texto es librería nueva: consultar antes.
 - **Chips arrastrables**: librería de dnd con soporte touch — consultar antes.

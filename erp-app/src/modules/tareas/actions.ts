@@ -342,7 +342,9 @@ export async function guardarPlantilla(input: GuardarPlantillaForm) {
     })),
     p_pasos: d.pasos.map((p) => pasoPlantillaDb(p, conRoles)),
     p_disparo_ente: d.disparo_ente,
+    p_disparo_evento: d.disparo_evento,
     p_disparo_estado: d.disparo_estado,
+    p_disparo_rol: d.disparo_rol,
     p_titulo_creado: d.titulo_creado || null,
     p_encadenada: d.encadenada,
   }));

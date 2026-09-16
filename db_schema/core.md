@@ -46,9 +46,9 @@ Asignación usuario ↔ submódulo.
 | submodulo_id | uuid FK → submodulos | |
 | activo | boolean | UNIQUE normal (usuario_id, submodulo_id) — no parcial, por upsert (excepción GUIDE_DB) |
 
-## entes (`sql/055`, `sql/059`, `sql/067`)
+## entes (`sql/055`, `sql/059`, `sql/067`, `sql/068`)
 
-Catálogo de registros que otro módulo puede nombrar, abrir, buscar y relacionar; los que tienen estado, además, disparan plantillas. Infra cross-módulo como `submodulos`: cada módulo agrega su fila en su migración, más un trigger de una línea sobre su columna de estado — `disparar_plantillas('<ente>', '<columna>')`, ver `tareas.md`. Desde la app no se escribe.
+Catálogo de registros que otro módulo puede nombrar, abrir, buscar y relacionar; los que tienen `disparos`, además, disparan plantillas. Infra cross-módulo como `submodulos`: cada módulo agrega su fila en su migración, más los triggers que emiten sus eventos (ver `eventos` abajo). Desde la app no se escribe.
 
 | columna | tipo | notas |
 |---|---|---|
@@ -56,17 +56,48 @@ Catálogo de registros que otro módulo puede nombrar, abrir, buscar y relaciona
 | codigo | text | UNIQUE simple, no parcial: es destino de FK (`tareas_plantillas.disparo_ente`, `tareas_vinculos.ente`) y un ente no se reutiliza para otra cosa |
 | modulo | text | `origen_app` de las tareas que genera |
 | submodulo | text | el que pide: sin él, la plantilla no se ve ni se arma. Texto y no FK — `submodulos.codigo` es único parcial |
-| estados | regtype, nullable | el enum de la columna de estado; `guardar_plantilla` valida contra él (`TA012`). NULL (`sql/059`) = se vincula pero no dispara |
+| estados | regtype, nullable | el enum de la columna de estado; `guardar_plantilla` valida contra él (`TA012`). NULL = no dispara por estado |
 | datos | text[] | columnas que la plantilla puede citar como `{columna}`. Nunca contacto: el texto se copia en la tarea y lo lee quien la recibe, vea o no el registro |
 | ruta | text | `origen_punto` de las tareas, con `{id}`. CHECK `^/[^/]` — ruta interna, el mismo corte que `origen_punto` |
+| tabla | regclass | `sql/068` — la tabla del ente. De ahí lee `disparar_plantillas` la fila (datos y `activo`), con la RLS de quien actúa |
+| disparos | `tipo_evento[]` | default `{}`, `sql/068` — los eventos con los que una plantilla puede dispararse. Vacío = no dispara. Solo los que ocurren como quien actúa: uno emitido desde una función DEFINER nunca dispara (la guarda de `current_user`), y ofrecerlo sería guardar una plantilla que no corre |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
-Filas: `obra` — módulo `obras`, submódulo `obras_ver`, `estado_obra`, datos `{nombre}`, ruta `/obras/{id}`. `empresa` — `obras_empresas`, sin estado, ruta `/obras/empresas/{id}`; `persona` — `obras_personas`, sin estado, ruta `/obras/personas/{id}` (las dos, `sql/059`). `tarea` — módulo `tareas`, `tareas_lista`, sin estado aunque tiene `estado_tarea` (no hay trigger de disparo sobre `tareas`, y con el enum `guardar_plantilla` aceptaría uno que nunca corre), datos `{}`, ruta `/tareas?tarea={id}` (`sql/067`).
+Filas: `obra` — módulo `obras`, submódulo `obras_ver`, `estado_obra`, datos `{nombre}`, ruta `/obras/{id}`, disparos `{alta,estado,relacion_alta,relacion_baja}` (sin `baja`/`reactivacion`: pasan por `obras_set_activo`, DEFINER). `empresa` — `obras_empresas`, sin estado, ruta `/obras/empresas/{id}`; `persona` — `obras_personas`, sin estado, ruta `/obras/personas/{id}` (las dos, `sql/059`; sin disparos). `tarea` — módulo `tareas`, `tareas_lista`, sin estado aunque tiene `estado_tarea` (con el enum `guardar_plantilla` aceptaría uno que no dispara), datos `{}`, ruta `/tareas?tarea={id}` (`sql/067`), sin disparos: emite, pero una plantilla disparada por el alta de una tarea crearía otra que la volvería a disparar.
 
 **RLS:** SELECT `activo AND tiene_permiso(submodulo)` — lo que no podés usar no existe para vos, y las policies de `tareas_plantillas` se apoyan en eso. Sin escritura para `authenticated`.
 
-Cómo se nombra cada ente y sus estados vive en `lib/entes.ts` (`ENTES`): la base no sabe cómo se dicen. Solo uno con `estados` se ofrece como disparador en el editor.
+Cómo se nombra cada ente, sus estados y cada evento vive en la UI (`ENTES` en `lib/entes.ts`, `DISPARO` en el editor): la base no sabe cómo se dicen. El editor ofrece un renglón por cada `disparos`.
+
+## eventos (`sql/068`)
+
+Lo que le pasó a un ente, cross-módulo: el log de auditoría y el punto donde escuchan los consumidores. Append-only, **sin `activo` ni `updated_at`** (una auditoría no oculta ni reescribe sus filas). Reemplaza a `tareas_eventos`, cuyas filas se copiaron como `estado`.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| ente | text FK → entes(codigo) | |
+| registro_id | uuid | sin FK — apunta a `entes.tabla` |
+| evento | enum `tipo_evento` (`alta`\|`baja`\|`reactivacion`\|`estado`\|`relacion_alta`\|`relacion_baja`) | `transferencia`, `compartido` y `revocado` (GUIDE_ENTES §2.8) se suman cuando alguien los emita |
+| detalle | jsonb | default `{}`. `estado`: `{estado, anterior}` (`anterior` null al nacer). `relacion_*`: `{ente, registro_id, rol}`, un evento por rol |
+| actor_id | uuid FK → usuarios, nullable | `auth.uid()` al emitir; lo tiene también lo que corre bajo una DEFINER |
+| created_at | timestamptz | default `clock_timestamp()`: una sentencia emite varios y el orden importa |
+
+Índices `(ente, registro_id, created_at)` y `(actor_id)`.
+
+**RLS:** SELECT `etiqueta_registro(ente, registro_id) IS NOT NULL` — lo que no ves, no pasó (una tarea archivada ya no tiene etiqueta, y sus eventos dejan de verse). INSERT `pg_trigger_depth() > 0`, como los vínculos de un disparo: un evento inventado por el cliente dispararía plantillas. `GRANT SELECT, INSERT`.
+
+**`emitir_evento(ente, registro_id, evento, detalle DEFAULT '{}')`** — `SECURITY INVOKER`, **GRANT authenticated** (la llaman triggers INVOKER). Único INSERT. INVOKER a propósito: con DEFINER los consumidores correrían como `postgres` y el disparo no correría nunca.
+
+**Emisores genéricos** (trigger functions INVOKER, sin EXECUTE para `PUBLIC`) — cada módulo los cuelga de sus tablas, una línea por tabla:
+
+- `emitir_eventos_registro('<ente>')` — `AFTER INSERT OR UPDATE OF activo, estado` sobre la tabla del ente. INSERT activo → `alta`; `activo` false→true → `reactivacion`; la columna `estado` distinta (o al nacer) → `estado`; true→false → `baja`. En ese orden: quien escucha el estado encuentra el registro como quedó. Sin columna `estado`, solo los otros tres. Hoy sobre `obras` y `tareas`.
+- `emitir_eventos_relacion('<ente>', '<columna>', '<ente relacionado>', '<columna>')` — `AFTER INSERT OR UPDATE OF activo, roles` sobre una tabla puente con `roles[]`. Compara los roles activos antes y después: un `relacion_alta` por rol que aparece, un `relacion_baja` por rol que se va (desactivar el vínculo es la baja de todos). El evento es del primer ente. Hoy sobre `obras_obra_empresa` y `obras_obra_persona`, del lado de `obra`.
+
+**Consumidores:** `disparar_plantillas` (`AFTER INSERT ON eventos`, ver `tareas.md`).
+
+Verificación: `sql/tests/eventos.sql` (25/25).
 
 **`etiqueta_registro(ente, id)` (`sql/059`)** — `SECURITY INVOKER STABLE`, EXECUTE para `authenticated`: el nombre de un registro para quien pregunta, NULL si no lo ve. Es también la regla de "lo ve": la RLS de `entes` pide el submódulo y la del módulo dueño decide la fila. Un `CASE` por `entes.modulo` (`obras` → `obras_etiqueta`, `tareas` → `tareas_etiqueta`, `sql/067`); un módulo que registre entes suma su rama.
 

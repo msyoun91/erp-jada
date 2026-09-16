@@ -43,9 +43,9 @@ export const LABEL_ROL: Record<string, Record<string, string>> = {
 };
 
 // Cómo se nombra cada ente del catálogo `entes` (sql/055). La base sabe qué
-// entes hay, qué datos ofrecen y qué permiso piden; no cómo se dicen. Solo el
-// que tiene `estados` se ofrece como disparador en el editor de plantillas;
-// los demás se relacionan con tareas (sql/059). Un dato sin entrada en `datos`
+// entes hay, qué datos ofrecen, qué permiso piden y con qué eventos disparan
+// plantillas (`disparos`, sql/068); no cómo se dicen. Los que no disparan se
+// relacionan con tareas (sql/059). Un dato sin entrada en `datos`
 // no tiene chip. `ejemplo` es el de la vista previa. `roles`: por ente
 // relacionado, los roles que una plantilla puede adjuntar o pedir (sql/060).
 export const ENTES: Record<
