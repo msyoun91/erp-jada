@@ -6,15 +6,6 @@ y la entrada se borra de este archivo.
 
 ---
 
-## Tareas ↔ entes — compartir al asignar, falta la prueba manual
-
-Decidido con el usuario el 2026-09-14. Fases A, B, C y D de `PLAN_TAREAS_VINCULOS.md` cerradas, con
-decisión final en `decisiones/tareas/integracion.md` y `decisiones/tareas/visibilidad.md`. Fase E
-(la pregunta en la UI de Tareas y Obras) tiene el código hecho — sección *Compartir al asignar: la
-pregunta* en `decisiones/tareas/visibilidad.md` — pero **falta correr las pruebas manuales en el
-navegador con ADMIN y TESTER** (checklist en `PLAN_TAREAS_VINCULOS.md`). Cuando pasen, se borra el
-plan y esta entrada.
-
 ## Tareas — verificar `Content-Range` en el PATCH
 
 **Pendiente de verificar en el navegador** (alcance reducido tras `sql/023`: solo aplica a las actions de una sola tabla, que siguen usando `errorDeUpdate`)**:** que PostgREST devuelva `Content-Range` en un PATCH con `Prefer: return=minimal,count=exact`. No se pudo probar desde acá — ni `anon` ni `service_role` tienen `GRANT` sobre `tareas` (decisión "RLS no alcanza sin GRANT"), así que hace falta una sesión autenticada real. Si no lo devolviera, `count` llega `null` y `errorDeUpdate` no dispara: el fix quedaría inerte, nunca en falso positivo.
