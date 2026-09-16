@@ -29,6 +29,7 @@ import {
   asociarTareaHiloSchema,
   temperaturaSchema,
   vincularTareaSchema,
+  sinAccesoTareaSchema,
   buscarRegistrosSchema,
   type CrearTareaForm,
   type EditarTareaForm,
@@ -49,8 +50,10 @@ import {
   type TareaNota,
   type HiloNota,
   type VincularTareaForm,
+  type SinAccesoTareaInput,
   type RegistroElegido,
 } from "./types";
+import type { FilaSinAcceso } from "@/lib/accesos";
 
 // Sin chequeo de permisos acá: estas actions usan el cliente normal (no
 // service_role), así que RLS ya autoriza cada operación a nivel fila —
@@ -758,6 +761,25 @@ export async function vincularTarea(input: VincularTareaForm) {
 
   revalidarTareas();
   return { success: true as const };
+}
+
+// La pregunta antes de guardar sobre una tarea que ya existe: los vínculos
+// salen de la base, no de `tarea.vinculos`, que ya viene recortado a lo que
+// quien edita ve (sql/064).
+export async function sinAccesoTarea(input: SinAccesoTareaInput) {
+  const parsed = sinAccesoTareaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("sin_acceso_tarea", argsRpc<"sin_acceso_tarea">({
+    p_tarea_id: parsed.data.tarea_id,
+    p_usuarios: parsed.data.usuarios,
+    p_vinculos: parsed.data.vinculos ?? [],
+  }));
+  if (error) return { success: false as const, error: mensajeError(error) };
+  return { success: true as const, filas: data as FilaSinAcceso[] };
 }
 
 export async function desvincularTarea(id: string) {

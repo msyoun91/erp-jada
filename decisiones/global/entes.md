@@ -119,6 +119,6 @@ explícito (asignar), con el dueño definido por el módulo.
 `puede_abrir_registro('tarea', …)` ni buscarla; emite un solo evento y sin bus; el vínculo con un
 registro no guarda rol (la plantilla elige el registro por `ente:rol`, pero `tareas_vinculos` no sabe
 si esa persona es "el arquitecto de" la tarea); la descripción es texto plano; los chips son clic.
-`hilo` y `proyecto` no se registran hasta que un módulo los necesite. `sql/064` (`sincronizar_asignados`
-por diff, texto condicional) está en el árbol sin commit y sin aplicar — se cierra o se descarta antes
-de tocar `usar_plantilla`.
+`hilo` y `proyecto` no se registran hasta que un módulo los necesite. `sql/064` se cerró el mismo día,
+solo con los bugs de asignar y compartir (`decisiones/tareas/visibilidad.md`). El texto condicional de
+las plantillas que traía pasó a `BACKLOG.md` sin construir.

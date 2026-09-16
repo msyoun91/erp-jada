@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { useConfirmarAcceso } from "@/components/ui/CompartirAccesoPanel";
 import { sinAcceso } from "@/lib/accesos";
-import { crearTarea, editarTarea } from "../actions";
+import { crearTarea, editarTarea, sinAccesoTarea } from "../actions";
 import { crearTareaSchema, type CrearTareaForm } from "../types";
 import type { RegistroElegido, TareaConAsignados } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
@@ -155,10 +155,11 @@ export function TareaFormPanel({
     onClose();
   }
 
-  // Sin pares que chequear, guarda directo. Al editar, el chequeo solo corre
+  // Sin nada que chequear, guarda directo. Al editar, el chequeo solo corre
   // si el conjunto de asignados pedido cambió — mismo criterio que el early
   // return de `sincronizar_asignados` (sql/063): si el resultado final no
-  // cambia, no hay nada que descubrir.
+  // cambia, no hay nada que descubrir. Y le pregunta a la base por la tarea
+  // (sql/064): `tarea.vinculos` no trae lo que quien edita no ve.
   function mismoConjunto(a: string[], b: string[]) {
     if (a.length !== b.length) return false;
     const sa = [...a].sort();
@@ -168,22 +169,23 @@ export function TareaFormPanel({
 
   async function onSubmit(data: CrearTareaForm) {
     const asignadosDestino = (data.asignados ?? []).filter((id) => id !== usuarioActualId);
-    const vinculosAChequear = tarea
-      ? mismoConjunto(data.asignados ?? [], asignadosIniciales)
-        ? []
-        : (tarea.vinculos ?? []).map((v) => ({ ente: v.ente, registro_id: v.registro_id }))
-      : vinculos.map((v) => ({ ente: v.ente, registro_id: v.registro_id }));
-    const pares = asignadosDestino.flatMap((usuario_id) =>
-      vinculosAChequear.map((v) => ({ usuario_id, ...v })),
-    );
+    const sinChequeo =
+      asignadosDestino.length === 0 ||
+      (tarea ? mismoConjunto(data.asignados ?? [], asignadosIniciales) : vinculos.length === 0);
 
-    if (pares.length === 0) {
+    if (sinChequeo) {
       await guardar(data, null);
       return;
     }
 
     setEnviando(true);
-    const result = await sinAcceso(pares);
+    const result = tarea
+      ? await sinAccesoTarea({ tarea_id: tarea.id, usuarios: asignadosDestino })
+      : await sinAcceso(
+          asignadosDestino.flatMap((usuario_id) =>
+            vinculos.map((v) => ({ usuario_id, ente: v.ente, registro_id: v.registro_id })),
+          ),
+        );
     setEnviando(false);
     if (!result.success) {
       toast.error(result.error);

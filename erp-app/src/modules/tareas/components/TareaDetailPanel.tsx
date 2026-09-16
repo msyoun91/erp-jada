@@ -21,13 +21,13 @@ import { RightPanel } from "@/components/ui/RightPanel";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { useConfirmarAcceso } from "@/components/ui/CompartirAccesoPanel";
-import { sinAcceso } from "@/lib/accesos";
 import {
   asociarTareaHilo,
   convertirTareaEnHilo,
   desactivarTarea,
   desasociarTareaHilo,
   desvincularTarea,
+  sinAccesoTarea,
   vincularTarea,
 } from "../actions";
 import type { EstadoTarea, TareaConAsignados, TareaHilo } from "../types";
@@ -188,8 +188,11 @@ export function TareaDetailPanel({
       await vincular(null);
       return;
     }
-    const pares = asignadosDestino.map((usuario_id) => ({ usuario_id, ente: r.ente, registro_id: r.registro_id }));
-    const result = await sinAcceso(pares);
+    const result = await sinAccesoTarea({
+      tarea_id: tarea.id,
+      usuarios: asignadosDestino,
+      vinculos: [{ ente: r.ente, registro_id: r.registro_id }],
+    });
     if (!result.success) {
       toast.error(result.error);
       return;
@@ -496,7 +499,6 @@ export function TareaDetailPanel({
           asignadosActuales={asignadosActivos.map((a) => a.usuario_id)}
           responsableActual={tarea.responsable_id}
           miembros={miembros}
-          vinculos={vinculos.map((v) => ({ ente: v.ente, registro_id: v.registro_id }))}
           onClose={() => setReasignando(false)}
         />
       )}

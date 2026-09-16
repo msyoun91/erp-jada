@@ -466,6 +466,14 @@ export const vincularTareaSchema = z.object({
 
 export type VincularTareaForm = z.input<typeof vincularTareaSchema>;
 
+export const sinAccesoTareaSchema = z.object({
+  tarea_id: uuidSchema,
+  usuarios: z.array(uuidSchema).max(200),
+  vinculos: z.array(vincularTareaSchema.omit({ tarea_id: true })).max(50).optional(),
+});
+
+export type SinAccesoTareaInput = z.input<typeof sinAccesoTareaSchema>;
+
 export const buscarRegistrosSchema = z.object({
   modulo: z.string().min(1).max(50),
   texto: z.string().trim().min(2).max(100),

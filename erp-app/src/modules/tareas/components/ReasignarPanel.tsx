@@ -6,8 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { useConfirmarAcceso } from "@/components/ui/CompartirAccesoPanel";
-import { sinAcceso } from "@/lib/accesos";
-import { reasignarTarea } from "../actions";
+import { reasignarTarea, sinAccesoTarea } from "../actions";
 import { reasignarTareaSchema, type ReasignarTareaForm } from "../types";
 import { AsignadosPicker } from "./AsignadosPicker";
 import { useTareasContexto } from "./tareasContexto";
@@ -17,14 +16,12 @@ export function ReasignarPanel({
   asignadosActuales,
   responsableActual,
   miembros,
-  vinculos,
   onClose,
 }: {
   tareaId: string;
   asignadosActuales: string[];
   responsableActual: string;
   miembros: string[] | null;
-  vinculos: { ente: string; registro_id: string }[];
   onClose: () => void;
 }) {
   const { usuarioActualId } = useTareasContexto();
@@ -59,15 +56,14 @@ export function ReasignarPanel({
 
   async function onSubmit(data: ReasignarTareaForm) {
     const asignadosDestino = data.asignados.filter((id) => id !== usuarioActualId);
-    const pares = asignadosDestino.flatMap((usuario_id) => vinculos.map((v) => ({ usuario_id, ...v })));
 
-    if (pares.length === 0) {
+    if (asignadosDestino.length === 0) {
       await guardar(data, null);
       return;
     }
 
     setEnviando(true);
-    const result = await sinAcceso(pares);
+    const result = await sinAccesoTarea({ tarea_id: tareaId, usuarios: asignadosDestino });
     setEnviando(false);
     if (!result.success) {
       toast.error(result.error);

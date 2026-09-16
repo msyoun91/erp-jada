@@ -68,8 +68,23 @@ usuario pidió la guía y la prueba, no la modificación: nada de esto se constr
 - **Chips arrastrables**: librería de dnd con soporte touch — consultar antes.
 - **`VinculosChips` y `RelacionarRegistro` suben a `components/ui/`** cuando el segundo módulo los use
   (Obras ya los monta, pero vía `app/`).
-- **`sql/064` sin commit ni aplicar** (`sincronizar_asignados` sigue con dos argumentos en la base):
-  cerrar o descartar antes de tocar `usar_plantilla`.
+
+## Plantillas: texto y pasos condicionados por rol (2026-09-16, sin construir)
+
+Venía en el borrador de `sql/064` sin UI y sin decisión escrita. Al cerrar 064 se separó: la base sola
+no alcanza, porque Zod (`rolSchema`) rechaza `!` y la vista previa del editor (`PlantillaFormPanel`,
+el reemplazo de `{dato}`) no resuelve bloques.
+
+- **Bloques en título y descripción:** `{si hay ente:rol}…{fin}` y `{si no hay ente:rol}…{fin}`. Sin
+  anidar. Se resuelven antes que los `{dato}`, así un dato adentro de un bloque también se completa.
+  Una cabecera que no se entiende deja el texto (mejor mostrar de más que borrar una frase). Sin
+  registro, no hay ningún rol. `rellenar_datos` suma `p_roles text[]` y sigue `IMMUTABLE`;
+  `usar_plantilla` calcula los roles una sola vez con `relacionados_de_registro` y se los pasa.
+- **Condición negada:** `!ente:rol` crea el paso solo si **no** hay ese rol. Hay que ampliar el CHECK
+  `tareas_plantillas_items_condicion_formato` a `^!?[a-z_]+:[a-z_]+$`.
+- **UI:** el selector de condición del paso ofrece "solo si no hay"; `rolSchema` acepta `!` solo en
+  `condicion` (en `adjuntos` no); la vista previa resuelve los bloques con los roles de ejemplo; el
+  resumen del paso dice "Solo si no hay …".
 
 ## Sugerencia de tareas — sin caso real todavía
 

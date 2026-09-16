@@ -2566,8 +2566,23 @@ export type Database = {
         }[]
       }
       sin_acceso_registrado: { Args: never; Returns: Json }
+      sin_acceso_tarea: {
+        Args: { p_tarea_id: string; p_usuarios: string[]; p_vinculos?: Json }
+        Returns: {
+          compartible: boolean
+          ente: string
+          etiqueta: string
+          registro_id: string
+          usuario: string
+          usuario_id: string
+        }[]
+      }
       sincronizar_asignados: {
-        Args: { p_asignados: string[]; p_tarea_id: string }
+        Args: {
+          p_asignados: string[]
+          p_responsable_id: string
+          p_tarea_id: string
+        }
         Returns: undefined
       }
       tareas_de_registro: {

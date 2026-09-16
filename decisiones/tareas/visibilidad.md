@@ -289,14 +289,14 @@ quien actúa, `sinAcceso`, y si hay filas `confirmarAcceso`):
 
 - `TareaFormPanel` (crear y editar): al crear, los pares salen de `vinculos` (el estado del
   toggle "Relacionada con"). Al editar, solo si el conjunto de asignados pedido cambió —mismo
-  criterio que el early return de `sincronizar_asignados`— y ahí los vínculos son los de
-  `tarea.vinculos`, no los del form (la sección de vínculos está oculta al editar). `verbo:
-  "guardar"`, `puedeDejarAfuera: true` (poner a otro ya exige `tareas_asignar` antes de llegar
-  acá).
-- `ReasignarPanel`: nuevo prop `vinculos` (se lo pasa `TareaDetailPanel` con `tarea.vinculos`).
-  Mismo patrón que el form.
-- `TareaDetailPanel.relacionar`: pares = asignados activos (menos quien actúa) × el registro
-  elegido. `puedeDejarAfuera: puedeAsignar` — sin la función, relacionar algo que deja a alguien
+  criterio que el early return de `sincronizar_asignados`— ~~y ahí los vínculos son los de
+  `tarea.vinculos`~~ → los pone la base, ver *Asignados por diferencia, la pregunta completa y
+  compartir en orden* (`sql/064`). `verbo: "guardar"`, `puedeDejarAfuera: true` (poner a otro ya
+  exige `tareas_asignar` antes de llegar acá).
+- `ReasignarPanel`: ~~nuevo prop `vinculos`~~ → `sinAccesoTarea` (`sql/064`). Mismo patrón que el
+  form.
+- `TareaDetailPanel.relacionar`: asignados activos (menos quien actúa) × el registro elegido, más
+  los vínculos que la tarea ya tiene (`sql/064`). `puedeDejarAfuera: puedeAsignar` — sin la función, relacionar algo que deja a alguien
   afuera no tiene salida "sin compartir": cae en el toast de `TA016` sin abrir panel, porque la
   base va a revertir la operación igual.
 
@@ -321,3 +321,32 @@ Archivos: `lib/accesos.ts` (nuevo), `components/ui/CompartirAccesoPanel.tsx` (nu
 
 **Pendiente:** pruebas manuales en el navegador con ADMIN y TESTER (checklist en
 `PLAN_TAREAS_VINCULOS.md` antes de borrarlo) — no se corrieron en esta sesión.
+
+## Asignados por diferencia, la pregunta completa y compartir en orden (`sql/064`)
+
+Auditoría del 2026-09-16 sobre `sql/063` y la Fase E. Los tres bugs se reprodujeron contra la base antes
+de tocar nada (`sql/tests/asignar_con_acceso.sql`, casos 13, 14 y 16).
+
+**`sincronizar_asignados` escribe por diferencia y recibe el responsable.** Antes desactivaba todo y
+reinsertaba todo, así que a quien se quedaba le llegaba otro «te asignaron». Además, `editar_tarea` y
+`reasignar_tarea` escribían `responsable_id` antes que los asignados. Quien tiene `tareas_asignar` sin
+`tareas_gestionar_ajenas` perdía, en ese primer UPDATE, la condición de responsable que el INSERT
+siguiente le exige, y pasarle la tarea entera a otro fallaba con 42501. El orden ahora lo dictan las
+policies: altas, bajas ajenas, responsable y baja propia al final.
+
+**La pregunta sobre una tarea que ya existe la arma la base (`sin_acceso_tarea`).** La UI armaba los
+pares con `tarea.vinculos`, pero `vinculos_de_tareas` descarta lo que quien edita no ve. Así, un vínculo
+invisible no entraba en la pregunta y la base igual sacaba al asignado, sin panel. Ahora
+`TareaFormPanel` (al editar), `ReasignarPanel` y `TareaDetailPanel.relacionar` llaman a la action
+`sinAccesoTarea`; `ReasignarPanel` ya no recibe `vinculos`. Al crear sigue `sinAcceso`, porque todavía
+no hay tarea y los vínculos son los del form. Una fila sin nombre sale como *"Algo relacionado que no
+podés ver"*.
+
+**`obras_compartir_registros` procesa obra → empresa → persona.** El origen de la cascada busca una
+obra ya compartida en la misma llamada, y eso solo andaba si la obra venía primero en el array.
+`sin_acceso` ordena por etiqueta, así que la empresa podía quedar como grant directo, sin origen, y
+revocar la obra no se la llevaba.
+
+Archivos: `sql/064_asignados_diff_y_compartir_en_orden.sql`, `sql/tests/asignar_con_acceso.sql`
+(13–16), `modules/tareas/actions.ts` (`sinAccesoTarea`), `modules/tareas/types.ts`
+(`sinAccesoTareaSchema`), `TareaFormPanel.tsx`, `ReasignarPanel.tsx`, `TareaDetailPanel.tsx`.
