@@ -340,9 +340,14 @@ pasaba con personas desde `sql/082`.
 mostrando las cuatro columnas. Hay que revocar el de tabla y otorgar la lista, como ya hacía
 `sql/039` §4. Lo cazó verificar contra la base después de aplicar, no el `tsc`.
 
-Error nuevo: `OB030` (`obras_ficha_empresa`, sin acceso). Sin tests SQL todavía.
+Error nuevo: `OB030` (`obras_ficha_empresa`, sin acceso). Test: `sql/tests/obras_085.sql`, 12/12 —
+el caso L es el que motivó la migración, y el A fija la trampa del revoke.
 
-Archivos: `sql/085_empresa_contextual.sql`, `db_schema/obras.md`,
+**Segunda trampa, esta al escribir el test:** las dos empresas se llamaban parecido y el detector de
+duplicados difuso congeló la segunda (`pendiente`), así que el caso que esperaba `OB029` moría con
+`OB020`. Las entidades de un test no pueden compartir tokens entre sí.
+
+Archivos: `sql/085_empresa_contextual.sql`, `sql/tests/obras_085.sql`, `db_schema/obras.md`,
 `modules/obras/queries.ts` · `types.ts` · `components/EmpresaDetalle.tsx` · `EmpresaFormPanel.tsx` ·
 `EmpresasView.tsx` · `ObraDetalle.tsx`, `app/(erp-app)/obras/empresas/[id]/page.tsx`.
 
