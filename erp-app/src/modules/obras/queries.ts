@@ -14,6 +14,7 @@ import type {
   EmpresaListado,
   FiltrosObras,
   HistorialAprobacion,
+  MigrarResumen,
   Obra,
   ObraListado,
   Pendiente,
@@ -445,6 +446,18 @@ export async function getAuditoriaTransferencias(dias: number) {
   const { data, error } = await supabase.rpc("obras_auditoria_transferencias", { p_dias: dias });
   if (error) throw error;
   return (data ?? []) as TransferenciaAuditoria[];
+}
+
+// Qué hay en la agenda del saliente. Conteos y no listados: no hay nada que
+// tildar, así que la lista de 400 contactos no cambia ninguna decisión.
+export async function getMigrarResumen(deUsuarioId: string): Promise<MigrarResumen | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_migrar_resumen", {
+    p_de_usuario: deUsuarioId,
+  });
+  if (error) throw error;
+  return (data?.[0] as MigrarResumen | undefined) ?? null;
 }
 
 // La cola de autorizaciones y su historial. Van por función por lo mismo que

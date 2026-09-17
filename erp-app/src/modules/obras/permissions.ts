@@ -90,6 +90,13 @@ export function puedeVerCompartido() {
   return tienePermiso("obras_compartido");
 }
 
+// Vista Migrar agenda: vaciar la agenda de alguien que se fue. Aparte de
+// `obras_transferir` y de los dos `_todas` a propósito — quien reasigna una obra
+// suelta no es necesariamente quien liquida la agenda entera de otro.
+export function puedeMigrarAgenda() {
+  return tienePermiso("obras_migrar");
+}
+
 // Es el "administrador" de los pedidos del usuario: el sistema no tiene roles,
 // así que autorizar altas y vínculos es un submódulo más.
 export function puedeAprobar() {

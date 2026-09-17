@@ -2009,8 +2009,9 @@ export type Database = {
           created_at: string
           de_usuario: string
           ejecutada_por: string
-          obra: string
-          obra_id: string
+          entidad: string
+          entidad_id: string
+          tipo: string
           transferencia_id: string
         }[]
       }
@@ -2217,6 +2218,21 @@ export type Database = {
           etiqueta: string
           motivo: string
           tipo: string
+        }[]
+      }
+      obras_migrar_agenda: {
+        Args: { p_a_usuario: string; p_de_usuario: string }
+        Returns: undefined
+      }
+      obras_migrar_resumen: {
+        Args: { p_de_usuario: string }
+        Returns: {
+          empresas: number
+          obras: number
+          otorgados: number
+          personas: number
+          recibidos: number
+          vinculos_ajenos: number
         }[]
       }
       obras_normalizar: { Args: { t: string }; Returns: string }

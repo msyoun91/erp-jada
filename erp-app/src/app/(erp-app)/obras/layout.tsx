@@ -3,6 +3,7 @@ import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ModuleTabs } from "@/components/layout/ModuleTabs";
 import { BuscadorGlobal } from "@/modules/obras/components/BuscadorGlobal";
 import {
+  puedeMigrarAgenda,
   puedeVerAuditoria,
   puedeVerCompartido,
   puedeVerEmpresas,
@@ -12,14 +13,16 @@ import {
 } from "@/modules/obras/permissions";
 
 export default async function ObrasLayout({ children }: { children: React.ReactNode }) {
-  const [obras, empresas, personas, pendientes, auditoria, compartido] = await Promise.all([
-    puedeVerObras(),
-    puedeVerEmpresas(),
-    puedeVerPersonas(),
-    puedeVerPendientes(),
-    puedeVerAuditoria(),
-    puedeVerCompartido(),
-  ]);
+  const [obras, empresas, personas, pendientes, auditoria, compartido, migrar] =
+    await Promise.all([
+      puedeVerObras(),
+      puedeVerEmpresas(),
+      puedeVerPersonas(),
+      puedeVerPendientes(),
+      puedeVerAuditoria(),
+      puedeVerCompartido(),
+      puedeMigrarAgenda(),
+    ]);
 
   const tabs = [
     obras && { codigo: "obras_ver", label: "Obras", href: "/obras" },
@@ -28,6 +31,7 @@ export default async function ObrasLayout({ children }: { children: React.ReactN
     pendientes && { codigo: "obras_pendientes", label: "Pendientes", href: "/obras/pendientes" },
     auditoria && { codigo: "obras_auditoria", label: "Auditoría", href: "/obras/auditoria" },
     compartido && { codigo: "obras_compartido", label: "Compartido", href: "/obras/compartido" },
+    migrar && { codigo: "obras_migrar", label: "Migrar agenda", href: "/obras/migrar" },
   ].filter((t): t is { codigo: string; label: string; href: string } => Boolean(t));
 
   return (

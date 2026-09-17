@@ -9,6 +9,7 @@ import {
   getEmpresas,
   getPersonas,
   getCandidatosTransferencia,
+  getMigrarResumen,
   getRelacionesCompartiblesObra,
 } from "./queries";
 import {
@@ -26,6 +27,7 @@ import {
   transferirObraSchema,
   transferirPersonaSchema,
   transferirEmpresaSchema,
+  migrarAgendaSchema,
   compartirObraSchema,
   resolverPendienteSchema,
   type CrearObraForm,
@@ -42,6 +44,7 @@ import {
   type TransferirObraForm,
   type TransferirPersonaForm,
   type TransferirEmpresaForm,
+  type MigrarAgendaForm,
   type CompartirObraForm,
   type ResolverPendienteForm,
   type PersonaDeEmpresa,
@@ -235,6 +238,28 @@ export async function transferirEmpresa(input: TransferirEmpresaForm) {
   return { success: true as const };
 }
 
+// Migrar la agenda entera: cascada total, sin checklist (sql/088). Revalida el
+// módulo completo porque no queda una ficha puntual que haya cambiado — cambió
+// el dueño de todo.
+export async function migrarAgenda(input: MigrarAgendaForm) {
+  const parsed = migrarAgendaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("obras_migrar_agenda", {
+    p_de_usuario: parsed.data.de_usuario_id,
+    p_a_usuario: parsed.data.a_usuario_id,
+  });
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath("/obras", "layout");
+  return { success: true as const };
+}
+
 // ── Compartir / revocar la obra (sql/086: el único acto de compartir) ──
 
 export async function compartirObra(input: CompartirObraForm) {
@@ -314,6 +339,10 @@ export async function candidatosTransferencia(
   id: string,
 ) {
   return getCandidatosTransferencia(tipo, id);
+}
+
+export async function resumenMigracion(deUsuarioId: string) {
+  return getMigrarResumen(deUsuarioId);
 }
 
 export async function relacionesCompartiblesObra(obraId: string, usuarioId: string) {

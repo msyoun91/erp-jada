@@ -169,6 +169,17 @@ El 2 es el default: es el no destructivo. `p_sacar` es el subconjunto de `p_migr
 
 Test: `sql/tests/obras_087.sql`, 10/10.
 
+**`sql/088` — migrar la agenda entera.** El caso masivo: alguien se va de la empresa. Sin checklist —`obras_transferir` pregunta tres cosas por contacto porque el saliente sigue trabajando acá y algo suyo queda; en una migración no queda nadie, y 400 contactos no se tildan fila por fila.
+
+- **`obras_migrar_agenda(de, a)`** (DEFINER, gate `obras_migrar`) — cascada total. Mueve `obras.responsable_id`, `obras_personas.creado_por`, `obras_empresas.creado_por` y `obras_obra_persona/obra_empresa.creado_por`; después reacomoda los grants. Valida destino con `obras_ver` (`OB006`), mismo usuario (`OB005`) y saliente existente (`OB034`). El saliente puede estar ya desactivado: migrar primero y desactivar después es el orden sano, pero el inverso funciona igual.
+- **`obras_migrar_resumen(de)`** (DEFINER, gate `obras_migrar`, STABLE) — conteos para la pantalla previa: obras, empresas, personas, `vinculos_ajenos`, `otorgados`, `recibidos`. Conteos y no listados: no hay nada que tildar.
+- **Los vínculos en obras de terceros sí se mueven**, al revés que en `obras_transferir`. Si no, quedan con el `creado_por` de alguien que ya no está y `obras_vinculo_guard_edicion` (`OB028`) los congela. Verificado contra el cuerpo del guard: dispara solo si `obras_obra_compartida_con(obra, creado_por)`, así que mover el creador mejora las dos ramas — con la obra compartida la edita el entrante; sin ella el guard deja de disparar y la recupera el dueño de la obra.
+- **Lo que el saliente recibió pasa al entrante** (`usuario_id`), no solo lo que otorgó. Decisión del usuario: el reemplazo ocupa el lugar del que se fue, también para mirar. `otorgada_por` sigue siendo el tercero, que lo ve en su vista Compartido y puede revocarlo — ese es su recurso. Las colisiones se resuelven en tres pasos por tabla: se revive la fila que el entrante ya tenía para esa llave, se apaga la del saliente que no puede moverse (llave ocupada, u otorgante = entrante), y el resto cambia de mano. El EXISTS no filtra por `activo` porque el UNIQUE tampoco.
+- **Se mueve todo, activo o no; el log registra solo lo activo.** Un contacto desactivado que quedara con el `creado_por` del saliente vuelve a la vida sin dueño el día que alguien lo reactive. El log es la auditoría de lo que opera, no un inventario del cementerio.
+- **Una fila de `obras_transferencias` por entidad**, ninguna por vínculo (`tipo` admite tres valores y un vínculo no es una entidad). Los avisos salen solo por obra: `trg_notificar_transferencia_obra` filtra `WHEN (NEW.tipo = 'obra')` desde `sql/041` — no es el corte por `obra_id` NULL de `notificar()`, que es un segundo cinturón. 30 obras = 30 avisos, uno por cosa real. No se agrupan.
+
+Test: `sql/tests/obras_088.sql`, 12/12. Crea dos usuarios en `auth.users` dentro de la transacción revertida: con los dos de la base el otorgante siempre es el entrante y la rama "lo recibido pasa al entrante" no se ejercita.
+
 ## obras_obra_compartida / obras_persona_grant_contextual / obras_empresa_grant_contextual
 
 Grants que otorga el dueño. **Desde `sql/086` hay un solo acto de compartir: la obra.** `obras_persona_compartida` y `obras_empresa_compartida` (share directo desde la ficha del contacto, acceso completo + agenda) se dropearon con todas sus funciones — ver la entrada de `sql/086` abajo.
@@ -265,13 +276,15 @@ Los dos logs se leen por función, no por `select` directo:
 | función | devuelve |
 |---|---|
 | `obras_auditoria_accesos(p_dias)` | cada apertura de ficha: fecha, usuario y **nombre** de la persona. Nunca teléfono, whatsapp ni email |
-| `obras_auditoria_transferencias(p_dias)` | fecha, obra, de quién, a quién y quién la movió |
+| `obras_auditoria_transferencias(p_dias)` | fecha, `tipo`, `entidad_id`, nombre de la entidad, de quién, a quién y quién la movió |
 
 La apertura de una ficha de **empresa** no se registra: `obras_ficha_empresa` (`sql/085`) no escribe log. El teléfono de una constructora no es dato personal — ver el recuadro de `obras_empresas`.
 
 Las dos son `SECURITY DEFINER` con guard propio (`tiene_permiso('obras_auditoria')`) y tope de 500 filas. Por función y no por policy porque quien audita necesita ver los accesos de todos y el nombre de la persona para que la fila signifique algo, pero no tiene por qué tener permiso sobre la agenda ni sobre las obras ajenas: con un `select` + embed, un auditor sin `obras_personas` recibiría el log entero con la persona en NULL.
 
 La policy de `obras_accesos_persona` no cambia — sigue siendo `obras_personas_todas` para el acceso directo a la tabla.
+
+**`sql/088` — la auditoría veía una de cada tres.** `obras_auditoria_transferencias` hacía `JOIN obras o ON o.id = t.obra_id`, un INNER. Las filas de persona y empresa tienen `obra_id` NULL por el CHECK `transferencia_tipo_ancla`, así que desde `sql/041` se escribían y nunca se leyeron. Ahora devuelve `tipo` + `entidad_id` + `entidad`, y el nombre sale de `obras_etiqueta(tipo, id)` (`sql/033`), que ya resolvía las tres — no se escribió un CASE nuevo. El tope de 500 filas no cambia: una migración de agenda grande puede llenarlo sola dentro del período elegido, y el filtro de días es lo que hay para acotar.
 
 ## Códigos de error `OB` (`sql/032`)
 
@@ -304,6 +317,8 @@ Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían c
 | `OB030` | `obras_ficha_empresa` (`sql/085`) | sin acceso a esta empresa — no distingue "no existe" de "no la ves" |
 | `OB031` | `obras_transferir_candidatos` (`sql/087`) | tipo inválido: solo `obra`, `empresa`, `persona` |
 | `OB032` | `obras_transferir` · `obras_transferir_empresa` (`sql/087`) | `p_sacar` trae algo que no está en `p_migran`: sacar de la agenda sin transferir es otra acción |
+| `OB033` | `obras_migrar_resumen` · `obras_migrar_agenda` (`sql/088`) | sin permiso para migrar agendas |
+| `OB034` | `obras_migrar_agenda` (`sql/088`) | el usuario saliente no existe |
 
 `mensajeError()` devuelve el texto de la base cuando el código matchea `/^OB\d{3}$/`, y cae en el mapa o en el genérico para todo lo demás. No se copió el mapa código → texto de `tareas` porque `OB001` y `OB002` llevan un conteo que un texto fijo perdería. La lista blanca es por código, no por confiar en el mensaje: un `P0001` nuevo sigue cayendo en el genérico. Ver `decisiones/obras/modelo.md`.
 
@@ -393,6 +408,7 @@ Verificado: `has_function_privilege('anon', ...)` da `false` en las 18.
 | obras_auditoria | vista | — | los dos logs. Aparte de `obras_personas_todas`: ese permiso es ver la agenda completa, este es ver quién la estuvo mirando |
 | obras_pendientes | vista | — | la cola de autorizaciones y su historial (`sql/033`) |
 | obras_compartido | vista | — | `sql/047` — lo que uno compartió, con revocar. Solo datos propios, bajo riesgo; sigue el patrón tab = submódulo. Compartir/revocar no tienen gate propio: son acto del responsable de la obra |
+| obras_migrar | vista | — | `sql/088` — migrar la agenda entera de un usuario a otro. Sin función abajo: la pantalla hace una sola cosa. Aparte de `obras_transferir` y de los dos `_todas` a propósito — quien liquida la agenda de alguien que se fue no es necesariamente quien reasigna una obra suelta |
 | obras_crear | funcion | obras_ver | |
 | obras_editar | funcion | obras_ver | solo sobre obras propias |
 | obras_vincular | funcion | obras_ver | obra↔empresa y obra↔persona, con sus roles |

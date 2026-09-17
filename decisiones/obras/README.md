@@ -14,6 +14,7 @@ una decisión de visibilidad o alcance.
 
 MODEL A (todo privado por dueño), compartir con checklist y cascada, grants heredados, alcance de personas, buscador global, `obras_aprobar`.
 
+- **Migrar la agenda entera es otra acción (`sql/088`)** — cascada total sin checklist, submódulo `obras_migrar`, y la auditoría pasa a ver las tres clases
 - **Transferir pregunta tres cosas, no dos (`sql/087`)** — migra / contextual / lo saco, por contacto; se retira "exclusivo"
 - **La obra es el único acto de compartir (`sql/086`)** — se cierra el share directo de persona y empresa
 - **La empresa también es contextual (`sql/085`)** — lo que llega arrastrado por una obra no entra a la agenda

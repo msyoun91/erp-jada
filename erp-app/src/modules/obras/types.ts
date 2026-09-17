@@ -406,6 +406,26 @@ export const transferirEmpresaSchema = z.object({
 
 export type TransferirEmpresaForm = z.input<typeof transferirEmpresaSchema>;
 
+// Migrar la agenda entera (sql/088): sin checklist, porque no queda nadie del
+// otro lado a quien preguntarle qué conserva. La confirmación es escribir el
+// nombre del saliente, y eso se valida en el cliente: el servidor no tiene por
+// qué saber qué texto tipeó nadie.
+export const migrarAgendaSchema = z.object({
+  de_usuario_id: z.string().uuid(),
+  a_usuario_id: z.string().uuid(),
+});
+
+export type MigrarAgendaForm = z.input<typeof migrarAgendaSchema>;
+
+export type MigrarResumen = {
+  obras: number;
+  empresas: number;
+  personas: number;
+  vinculos_ajenos: number;
+  otorgados: number;
+  recibidos: number;
+};
+
 // Compartir la obra con otro usuario: el único acto de compartir (sql/086). Lo
 // inicia el responsable; la verificación real está en obras_compartir_obra. Lo
 // tildado en el checklist se ve dentro de esa obra, no entra a la agenda.
@@ -568,11 +588,15 @@ export type AccesoAuditoria = {
   contexto: string | null;
 };
 
+// `tipo` y `entidad_id` reemplazan a `obra_id` desde sql/088: el INNER JOIN con
+// `obras` escondía las transferencias de persona y de empresa, que tienen
+// `obra_id` NULL. `entidad` es el nombre que resuelve `obras_etiqueta`.
 export type TransferenciaAuditoria = {
   transferencia_id: string;
   created_at: string;
-  obra_id: string;
-  obra: string;
+  tipo: "obra" | "persona" | "empresa";
+  entidad_id: string;
+  entidad: string | null;
   de_usuario: string;
   a_usuario: string;
   ejecutada_por: string;

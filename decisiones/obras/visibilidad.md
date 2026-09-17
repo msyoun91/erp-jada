@@ -1,5 +1,54 @@
 # Obras — Visibilidad y compartir
 
+## Migrar la agenda entera es otra acción, no una transferencia grande (`sql/088`)
+
+Pedido del usuario junto con `sql/087`: *"una nueva función de transferir toda la agenda de un
+usuario a otro (...) sería una función y vista aparte donde el usuario que tiene permiso selecciona
+un usuario y decide migrar todos sus datos"*. El caso es que alguien se va de la empresa.
+
+**Sin checklist: cascada total.** `obras_transferir` pregunta tres cosas por contacto porque el
+saliente sigue trabajando acá y algo suyo queda del otro lado. Acá no queda nadie. Una agenda de 400
+contactos no se tilda fila por fila y no hay decisión razonable que tomar 400 veces.
+
+**Submódulo nuevo de tipo `vista`, sin función abajo.** No se reutilizan `obras_transferir` /
+`obras_personas_todas` / `obras_empresas_todas`: quien liquida la agenda de alguien que se fue no es
+necesariamente quien reasigna una obra suelta. Y no lleva submódulo-función porque la pantalla hace
+una sola cosa — una función que cubre exactamente su vista es ceremonia (`GUIDE_PERMISSIONS`: una
+vista puede no tener funciones).
+
+**Los vínculos en obras de terceros sí se mueven**, al revés que en `sql/087`. Era el punto no obvio
+del BACKLOG y el código lo mejoró: `obras_vinculo_guard_edicion` (`OB028`) dispara solo si
+`obras_obra_compartida_con(obra, creado_por)`, así que mover el creador gana en las dos ramas — con
+la obra compartida la edita el entrante, sin ella el guard deja de disparar y la edición vuelve al
+dueño de la obra. Dejarlos con el `creado_por` de alguien que ya no está los congela para todos.
+
+**Lo que el saliente recibió pasa al entrante, no solo lo que otorgó.** Decisión del usuario: el
+reemplazo ocupa el lugar del que se fue, también para mirar. Es el punto donde MODEL A se estira —
+un tercero termina compartiendo con alguien que no eligió—, y el recurso es que `otorgada_por` sigue
+siendo el tercero: lo ve en su vista Compartido y puede revocarlo de una. Las alternativas eran
+apagarlos (irreversible, y el acceso real ya muere al desactivar el usuario) o dejarlos (el saliente
+conserva vista de obras ajenas).
+
+**La confirmación es escribir el nombre del saliente, en la página y no en un `RightPanel`.** El
+BACKLOG anticipaba panel; abrir un panel encima de una página que hace una sola cosa es un paso de
+más. El bloque destructivo vive en la misma pantalla, debajo del resumen. Sin componente nuevo.
+
+**Dos premisas del BACKLOG eran falsas y valen escritas**, las dos por mirar `database.types.ts` o el
+texto de la decisión en vez de la base:
+
+1. *"`notificar_transferencia_obra` no filtra `tipo`, pero `notificar()` corta por `obra_id` NULL"* —
+   el trigger filtra: `sql/041` lo creó con `WHEN (NEW.tipo = 'obra')`. Mismo resultado, otro
+   mecanismo; el corte de `notificar()` es un segundo cinturón.
+2. *"La pregunta la contesta `obras_auditoria_transferencias`"* — no la contestaba. Hacía INNER JOIN
+   con `obras`, así que las filas de persona y empresa (`obra_id` NULL) nunca se leyeron desde
+   `sql/041`. Sin arreglarlo, el log por entidad de esta migración se escribía invisible y la
+   decisión "log por entidad" no compraba nada. Arreglado en el mismo `sql/088` con
+   `obras_etiqueta(tipo, id)`, que ya resolvía las tres clases.
+
+Archivos: `sql/088_migrar_agenda.sql`, `sql/tests/obras_088.sql` (12/12), `db_schema/obras.md`,
+`modules/obras/` (vista `MigrarAgendaView`, `permissions.ts`, `queries.ts`, `actions.ts`, `types.ts`,
+`AuditoriaView`), `app/(erp-app)/obras/migrar/page.tsx`, `app/(erp-app)/obras/layout.tsx`.
+
 ## Transferir pregunta tres cosas, no dos (`sql/087`)
 
 Pedido del usuario: *"cuando decido transferir una persona de una obra X mía, de la obra Y mía queda

@@ -7,6 +7,14 @@ import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { formatFechaHora } from "@/lib/utils";
 import type { AccesoAuditoria, TransferenciaAuditoria } from "../types";
 
+// Desde sql/088 el log muestra las tres clases: hasta ahí el INNER JOIN con
+// `obras` escondía las de persona y empresa, que tienen `obra_id` NULL.
+const ETIQUETA_TIPO = {
+  obra: "Obra",
+  empresa: "Empresa",
+  persona: "Persona",
+} as const;
+
 // El log solo sirve si alguien puede ver la forma que tiene. Una fila suelta
 // no dice nada; "Fulano abrió 340 fichas en dos días" sí, y eso es un conteo
 // por usuario, no una lista cronológica.
@@ -116,17 +124,17 @@ export function AuditoriaView({
       <section className="card p-4">
         <h2 className="t-h3 mb-1 flex items-center gap-2">
           <UserRoundCog size={18} strokeWidth={1.75} className="text-brand-500 shrink-0" />
-          Obras transferidas
+          Cambios de dueño
         </h2>
         <p className="t-body-m mb-3 max-w-prose">
-          Quién le pasó qué obra a quién. Como la obra la ve su responsable, esto es lo que responde
-          por qué una obra dejó de aparecer en una cartera.
+          Quién le pasó qué a quién: obras, empresas y contactos. Como cada cosa la ve su dueño,
+          esto es lo que responde por qué algo dejó de aparecer en una cartera.
         </p>
 
         {transferencias.length === 0 ? (
           <div className="empty-state">
             <p className="t-h3">Sin transferencias</p>
-            <p className="t-body-m mt-1">Ninguna obra cambió de responsable en este período.</p>
+            <p className="t-body-m mt-1">Nada cambió de dueño en este período.</p>
           </div>
         ) : (
           <ul className="flex flex-col">
@@ -137,8 +145,10 @@ export function AuditoriaView({
               >
                 <span className="t-caption shrink-0">{formatFechaHora(t.created_at)}</span>
                 <span>
-                  <span className="font-semibold">{t.obra}</span> de {t.de_usuario} a {t.a_usuario}
-                  {t.ejecutada_por !== t.de_usuario && ` — la movió ${t.ejecutada_por}`}
+                  <span className="t-caption">{ETIQUETA_TIPO[t.tipo]}</span>{" "}
+                  <span className="font-semibold">{t.entidad ?? "—"}</span> de {t.de_usuario} a{" "}
+                  {t.a_usuario}
+                  {t.ejecutada_por !== t.de_usuario && ` — lo movió ${t.ejecutada_por}`}
                 </span>
               </li>
             ))}
