@@ -6,34 +6,23 @@ import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { RightPanel } from "@/components/ui/RightPanel";
 import {
-  compartirEmpresa,
   compartirObra,
-  compartirPersona,
-  contarVinculosEmpresaReceptor,
-  contarVinculosPersonaReceptor,
   contarVinculosReceptor,
-  relacionesCompartiblesEmpresa,
   relacionesCompartiblesObra,
-  revocarEmpresa,
   revocarObra,
-  revocarPersona,
 } from "../actions";
 import type { Compartido, RelacionCompartible, Usuario } from "../types";
 
-type Tipo = "obra" | "empresa" | "persona";
-
-// Compartir es acto del dueño: da lectura de la ficha, revocable, no se
-// re-comparte. Obra y empresa además ofrecen un checklist de lo vinculado que
-// es mío para compartirlo en el mismo acto; persona va sola.
+// Compartir la obra es el único acto de compartir (sql/086). Da lectura de la
+// obra, y el checklist elige qué empresas y personas vinculadas ve ese usuario
+// —dentro de esta obra, nunca en su agenda—. Revocable, no se re-comparte.
 export function CompartirPanel({
-  tipo,
   id,
   nombre,
   compartidos,
   usuarios,
   onClose,
 }: {
-  tipo: Tipo;
   id: string;
   nombre: string;
   compartidos: Compartido[];
@@ -51,19 +40,14 @@ export function CompartirPanel({
 
   const yaCompartida = new Set(compartidos.map((c) => c.usuario_id));
   const editando = yaCompartida.has(destino);
-  const conChecklist = tipo === "obra" || tipo === "empresa";
 
   // El checklist depende del destino: marca lo que ese usuario ya tiene. Sin
   // reset síncrono — si no hay destino el bloque no se renderiza igual, y el
   // `cancelado` evita que una respuesta vieja pise a la nueva.
   useEffect(() => {
-    if (!conChecklist || !destino) return;
+    if (!destino) return;
     let cancelado = false;
-    const cargar =
-      tipo === "obra"
-        ? relacionesCompartiblesObra(id, destino)
-        : relacionesCompartiblesEmpresa(id, destino);
-    cargar.then((r) => {
+    relacionesCompartiblesObra(id, destino).then((r) => {
       if (cancelado) return;
       setRelaciones(r);
       setTildadas(new Set(r.filter((x) => x.ya_compartida).map((x) => x.id)));
@@ -71,7 +55,7 @@ export function CompartirPanel({
     return () => {
       cancelado = true;
     };
-  }, [conChecklist, tipo, id, destino]);
+  }, [id, destino]);
 
   function toggle(relId: string) {
     setTildadas((prev) => {
@@ -87,20 +71,12 @@ export function CompartirPanel({
     setError(undefined);
     setEnviando(true);
 
-    const seleccion = [...tildadas];
-    let result;
-    if (tipo === "obra") {
-      result = await compartirObra({
-        id,
-        usuario_id: destino,
-        empresas: relaciones.filter((r) => r.tipo === "empresa" && tildadas.has(r.id)).map((r) => r.id),
-        personas: relaciones.filter((r) => r.tipo === "persona" && tildadas.has(r.id)).map((r) => r.id),
-      });
-    } else if (tipo === "empresa") {
-      result = await compartirEmpresa({ id, usuario_id: destino, personas: seleccion });
-    } else {
-      result = await compartirPersona({ id, usuario_id: destino });
-    }
+    const result = await compartirObra({
+      id,
+      usuario_id: destino,
+      empresas: relaciones.filter((r) => r.tipo === "empresa" && tildadas.has(r.id)).map((r) => r.id),
+      personas: relaciones.filter((r) => r.tipo === "persona" && tildadas.has(r.id)).map((r) => r.id),
+    });
 
     setEnviando(false);
     if (!result.success) return setError(result.error);
@@ -108,26 +84,15 @@ export function CompartirPanel({
   }
 
   // Al revocar, los vínculos que el receptor armó con contactos suyos se
-  // desactivan (obras_revocar_obra para obra; obras_revocar_persona / _empresa
-  // para un share directo, sql/052). Se avisa antes si hay alguno.
+  // desactivan (obras_revocar_obra). Se avisa antes si hay alguno.
   async function pedirRevocar(usuarioId: string, usuario: string) {
-    const n =
-      tipo === "obra"
-        ? await contarVinculosReceptor(id, usuarioId)
-        : tipo === "persona"
-          ? await contarVinculosPersonaReceptor(id, usuarioId)
-          : await contarVinculosEmpresaReceptor(id, usuarioId);
+    const n = await contarVinculosReceptor(id, usuarioId);
     if (n > 0) setRevocando({ usuarioId, usuario, n });
     else revocar(usuarioId);
   }
 
   async function revocar(usuarioId: string) {
-    const result =
-      tipo === "obra"
-        ? await revocarObra(id, usuarioId)
-        : tipo === "empresa"
-          ? await revocarEmpresa(id, usuarioId)
-          : await revocarPersona(id, usuarioId);
+    const result = await revocarObra(id, usuarioId);
     setRevocando(null);
     if (!result.success) return toast.error(result.error);
     toast.success("Acceso revocado");
@@ -136,7 +101,7 @@ export function CompartirPanel({
   return (
     <>
     <RightPanel
-      title={`Compartir ${tipo}`}
+      title="Compartir obra"
       subtitle={nombre}
       onClose={onClose}
       hayCambios={false}
@@ -180,14 +145,12 @@ export function CompartirPanel({
           {error && <p className="input-error-text">{error}</p>}
         </div>
 
-        {conChecklist && destino && relaciones.length > 0 && (
+        {destino && relaciones.length > 0 && (
           <div>
             <p className="t-label mb-1">Dar acceso al contacto</p>
             <p className="t-caption mb-2">
-              Lo vinculado a {tipo === "obra" ? "esta obra" : "esta empresa"} que cargaste vos. Una
-              persona tildada se abre solo desde {tipo === "obra" ? "esta obra" : "esta empresa"}: no
-              entra a la agenda ni al buscador del otro. Todo cae junto con{" "}
-              {tipo === "obra" ? "la obra" : "la empresa"}.
+              Lo vinculado a esta obra que cargaste vos. Lo tildado se abre solo desde esta obra: no
+              entra a la agenda ni al buscador del otro. Todo cae junto con la obra.
             </p>
             <ul className="flex flex-col gap-1">
               {relaciones.map((r) => (
@@ -215,17 +178,13 @@ export function CompartirPanel({
                   key={c.usuario_id}
                   className="flex items-center justify-between rounded-md border border-border px-3 py-2"
                 >
-                  {conChecklist ? (
-                    <button
-                      type="button"
-                      className="t-body-m min-w-0 flex-1 truncate text-left hover:underline"
-                      onClick={() => setDestino(c.usuario_id)}
-                    >
-                      {c.usuario}
-                    </button>
-                  ) : (
-                    <span className="t-body-m truncate">{c.usuario}</span>
-                  )}
+                  <button
+                    type="button"
+                    className="t-body-m min-w-0 flex-1 truncate text-left hover:underline"
+                    onClick={() => setDestino(c.usuario_id)}
+                  >
+                    {c.usuario}
+                  </button>
                   <button
                     type="button"
                     className="btn-ghost text-tertiary tap-target"
@@ -241,8 +200,9 @@ export function CompartirPanel({
         )}
 
         <p className="t-caption">
-          Quien recibe la ficha la ve completa —contacto incluido, y cada vista queda registrada—.
-          No puede editarla ni re-compartirla. Podés revocar el acceso cuando quieras.
+          Quien recibe la obra la ve completa, sin editarla ni re-compartirla. De sus contactos solo
+          ve los que tildes, y solo desde esta obra —cada vista de una persona queda registrada—.
+          Podés revocar el acceso cuando quieras.
         </p>
       </div>
     </RightPanel>
@@ -252,9 +212,7 @@ export function CompartirPanel({
         title="Revocar acceso"
         mensaje={`«${revocando.usuario}» agregó ${revocando.n} ${
           revocando.n === 1 ? "vínculo" : "vínculos"
-        } ${
-          tipo === "obra" ? "a esta obra con contactos suyos" : `a sus obras con esta ${tipo}`
-        }. Al revocar, esos vínculos se desactivan.`}
+        } a esta obra con contactos suyos. Al revocar, esos vínculos se desactivan.`}
         confirmLabel="Revocar"
         onConfirm={async () => {
           await revocar(revocando.usuarioId);

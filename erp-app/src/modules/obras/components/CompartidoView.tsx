@@ -6,7 +6,7 @@ import { Building2, HardHat, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { formatFecha } from "@/lib/utils";
-import { revocarEmpresa, revocarObra, revocarPersona } from "../actions";
+import { revocarContextual, revocarObra } from "../actions";
 import type { CompartidoRow } from "../types";
 
 const ICONO = {
@@ -21,10 +21,12 @@ const HREF = {
   persona: (id: string) => `/obras/personas/${id}`,
 } as const;
 
+// Toda fila que no es una obra cuelga de una obra: revocarla es destildarla del
+// checklist, desde el otro lado (sql/086).
 function revocar(fila: CompartidoRow) {
   if (fila.tipo === "obra") return revocarObra(fila.entidad_id, fila.usuario_id);
-  if (fila.tipo === "empresa") return revocarEmpresa(fila.entidad_id, fila.usuario_id);
-  return revocarPersona(fila.entidad_id, fila.usuario_id);
+  if (!fila.origen_id) return Promise.resolve({ success: false as const, error: "Sin origen" });
+  return revocarContextual(fila.tipo, fila.entidad_id, fila.usuario_id, fila.origen_id);
 }
 
 const filaKey = (f: CompartidoRow) => `${f.tipo}:${f.entidad_id}:${f.usuario_id}`;
@@ -45,7 +47,7 @@ export function CompartidoView({ filas }: { filas: CompartidoRow[] }) {
       <div className="empty-state">
         <p className="t-h3">No compartiste nada</p>
         <p className="t-body-m mt-1">
-          Compartí una obra, empresa o persona desde su ficha y va a aparecer acá.
+          Compartí una obra desde su ficha y va a aparecer acá.
         </p>
       </div>
     );
@@ -116,10 +118,9 @@ export function CompartidoView({ filas }: { filas: CompartidoRow[] }) {
   return (
     <div className="flex flex-col gap-2">
       <p className="t-body-m mb-2 max-w-prose">
-        Todo lo que compartiste, con quién y de qué origen. Lo que diste dentro de una obra o
-        empresa aparece anidado debajo de ella: esa persona se abre solo ahí, no entra a la agenda
-        del otro. Quien recibe no puede editar ni re-compartir. Revocar una obra o empresa también
-        saca lo que se dio junto con ella.
+        Todo lo que compartiste y con quién. Las empresas y personas que tildaste aparecen
+        anidadas bajo su obra: se abren solo desde ahí, no entran a la agenda del otro. Quien
+        recibe no puede editar ni re-compartir. Revocar la obra saca todo lo que la acompaña.
       </p>
 
       <ul className="flex flex-col gap-2">
@@ -133,10 +134,8 @@ export function CompartidoView({ filas }: { filas: CompartidoRow[] }) {
           title="Revocar acceso"
           mensaje={`${confirmando.usuario_nombre} deja de ver «${confirmando.entidad_nombre}».${
             confirmando.tipo === "obra"
-              ? " Lo que se compartió junto con esta obra también se revoca."
-              : confirmando.tipo === "empresa"
-                ? " Lo que se compartió junto con esta empresa se revoca, y los vínculos que haya armado con ella en sus obras se desactivan."
-                : " Los vínculos que haya armado con esta persona en sus obras se desactivan."
+              ? " Lo que se compartió junto con esta obra también se revoca, y los vínculos que haya armado con contactos suyos se desactivan."
+              : " Deja de abrirse desde esa obra."
           }`}
           confirmLabel="Revocar"
           onConfirm={() => correr(confirmando)}

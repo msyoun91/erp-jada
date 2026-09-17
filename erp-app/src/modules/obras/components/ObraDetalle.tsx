@@ -492,7 +492,6 @@ export function ObraDetalle({
 
       {compartiendo && (
         <CompartirPanel
-          tipo="obra"
           id={obra.id}
           nombre={obra.nombre}
           compartidos={compartidos}

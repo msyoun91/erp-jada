@@ -7,12 +7,10 @@ import {
   puedeVincularPersonaEmpresa,
 } from "@/modules/obras/permissions";
 import {
-  getCompartidosEmpresa,
   getFichaEmpresa,
   getRelacionesEmpresa,
   getUsuariosParaTransferir,
   getUsuarioActualId,
-  tieneGrantDirectoEmpresa,
 } from "@/modules/obras/queries";
 import { puedeVerLista } from "@/modules/tareas/permissions";
 import { getRegistro, getTareasContexto, getTareasDeRegistro } from "@/modules/tareas/queries";
@@ -44,10 +42,8 @@ export default async function EmpresaPage({
     vincularPersona,
     vincular,
     veTodas,
-    compartidos,
     usuarios,
     miId,
-    grantDirecto,
     verTareas,
   ] = await Promise.all([
     getFichaEmpresa(id, ctxObraId).catch(() => null),
@@ -56,10 +52,8 @@ export default async function EmpresaPage({
     puedeVincularPersonaEmpresa(),
     puedeVincular(),
     puedeVerTodasLasEmpresas(),
-    getCompartidosEmpresa(id),
     getUsuariosParaTransferir(),
     getUsuarioActualId(),
-    tieneGrantDirectoEmpresa(id),
     puedeVerLista(),
   ]);
   if (!ficha || !relaciones) notFound();
@@ -82,9 +76,9 @@ export default async function EmpresaPage({
   // `esMio` también acota editar y desactivar: la RLS de update exige ser el
   // dueño (sql/039), así que sin esto el receptor ve botones que no andan.
   const esMio = !!miId && empresa.creado_por === miId;
-  // Colgar la empresa de una obra propia pide que sea mía: dueño, grant directo
-  // o obras_empresas_todas. Espeja la RLS de obras_obra_empresa_insert (sql/052).
-  const vincularObra = vincular && (esMio || grantDirecto || veTodas);
+  // Colgar la empresa de una obra propia pide que sea mía o obras_empresas_todas.
+  // Espeja la RLS de obras_obra_empresa_insert (sql/086).
+  const vincularObra = vincular && (esMio || veTodas);
 
   return (
     <EmpresaDetalle
@@ -121,7 +115,6 @@ export default async function EmpresaPage({
       permisos={{ editar: editar && esMio, vincularPersona, vincularObra }}
       esMio={esMio}
       veTodas={veTodas}
-      compartidos={compartidos}
       usuarios={usuarios.filter((u) => u.id !== miId)}
     />
   );

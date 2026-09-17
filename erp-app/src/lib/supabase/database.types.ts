@@ -261,58 +261,6 @@ export type Database = {
           },
         ]
       }
-      obras_empresa_compartida: {
-        Row: {
-          activo: boolean
-          created_at: string
-          empresa_id: string
-          id: string
-          otorgada_por: string
-          updated_at: string
-          usuario_id: string
-        }
-        Insert: {
-          activo?: boolean
-          created_at?: string
-          empresa_id: string
-          id?: string
-          otorgada_por: string
-          updated_at?: string
-          usuario_id: string
-        }
-        Update: {
-          activo?: boolean
-          created_at?: string
-          empresa_id?: string
-          id?: string
-          otorgada_por?: string
-          updated_at?: string
-          usuario_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "obras_empresa_compartida_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "obras_empresas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "obras_empresa_compartida_otorgada_por_fkey"
-            columns: ["otorgada_por"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "obras_empresa_compartida_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       obras_empresa_grant_contextual: {
         Row: {
           activo: boolean
@@ -668,58 +616,6 @@ export type Database = {
             columns: ["persona_id"]
             isOneToOne: false
             referencedRelation: "obras_personas"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      obras_persona_compartida: {
-        Row: {
-          activo: boolean
-          created_at: string
-          id: string
-          otorgada_por: string
-          persona_id: string
-          updated_at: string
-          usuario_id: string
-        }
-        Insert: {
-          activo?: boolean
-          created_at?: string
-          id?: string
-          otorgada_por: string
-          persona_id: string
-          updated_at?: string
-          usuario_id: string
-        }
-        Update: {
-          activo?: boolean
-          created_at?: string
-          id?: string
-          otorgada_por?: string
-          persona_id?: string
-          updated_at?: string
-          usuario_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "obras_persona_compartida_otorgada_por_fkey"
-            columns: ["otorgada_por"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "obras_persona_compartida_persona_id_fkey"
-            columns: ["persona_id"]
-            isOneToOne: false
-            referencedRelation: "obras_personas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "obras_persona_compartida_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -2223,14 +2119,6 @@ export type Database = {
           usuario_nombre: string
         }[]
       }
-      obras_compartir_empresa: {
-        Args: {
-          p_empresa_id: string
-          p_personas?: string[]
-          p_usuario_id: string
-        }
-        Returns: undefined
-      }
       obras_compartir_obra: {
         Args: {
           p_empresas?: string[]
@@ -2238,10 +2126,6 @@ export type Database = {
           p_personas?: string[]
           p_usuario_id: string
         }
-        Returns: undefined
-      }
-      obras_compartir_persona: {
-        Args: { p_persona_id: string; p_usuario_id: string }
         Returns: undefined
       }
       obras_compartir_registros: {
@@ -2266,31 +2150,15 @@ export type Database = {
           tipo: string
         }[]
       }
-      obras_contar_vinculos_empresa_receptor: {
-        Args: { p_empresa_id: string; p_usuario_id: string }
-        Returns: number
-      }
-      obras_contar_vinculos_persona_receptor: {
-        Args: { p_persona_id: string; p_usuario_id: string }
-        Returns: number
-      }
       obras_contar_vinculos_receptor: {
         Args: { p_obra_id: string; p_usuario_id: string }
         Returns: number
-      }
-      obras_empresa_compartida_conmigo: {
-        Args: { p_empresa_id: string }
-        Returns: boolean
       }
       obras_empresa_grant_ctx_obra_conmigo: {
         Args: { p_empresa_id: string; p_obra_id: string }
         Returns: boolean
       }
       obras_empresa_grant_ctx_vigente: {
-        Args: { p_empresa_id: string }
-        Returns: boolean
-      }
-      obras_empresa_grant_directo: {
         Args: { p_empresa_id: string }
         Returns: boolean
       }
@@ -2397,10 +2265,6 @@ export type Database = {
           tipo: string
         }[]
       }
-      obras_persona_compartida_conmigo: {
-        Args: { p_persona_id: string }
-        Returns: boolean
-      }
       obras_persona_grant_ctx_empresa_conmigo: {
         Args: { p_empresa_id: string; p_persona_id: string }
         Returns: boolean
@@ -2410,10 +2274,6 @@ export type Database = {
         Returns: boolean
       }
       obras_persona_grant_ctx_vigente: {
-        Args: { p_persona_id: string }
-        Returns: boolean
-      }
-      obras_persona_grant_directo: {
         Args: { p_persona_id: string }
         Returns: boolean
       }
@@ -2479,16 +2339,6 @@ export type Database = {
           rol: string
         }[]
       }
-      obras_relaciones_compartibles_empresa: {
-        Args: { p_empresa_id: string; p_usuario_id: string }
-        Returns: {
-          detalle: string
-          etiqueta: string
-          id: string
-          tipo: string
-          ya_compartida: boolean
-        }[]
-      }
       obras_relaciones_compartibles_obra: {
         Args: { p_obra_id: string; p_usuario_id: string }
         Returns: {
@@ -2508,16 +2358,17 @@ export type Database = {
         }
         Returns: undefined
       }
-      obras_revocar_empresa: {
-        Args: { p_empresa_id: string; p_usuario_id: string }
+      obras_revocar_contextual: {
+        Args: {
+          p_entidad_id: string
+          p_obra_id: string
+          p_tipo: string
+          p_usuario_id: string
+        }
         Returns: undefined
       }
       obras_revocar_obra: {
         Args: { p_obra_id: string; p_usuario_id: string }
-        Returns: undefined
-      }
-      obras_revocar_persona: {
-        Args: { p_persona_id: string; p_usuario_id: string }
         Returns: undefined
       }
       obras_set_activo: {

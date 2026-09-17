@@ -58,7 +58,7 @@ export async function getObras(filtros: FiltrosObras = {}): Promise<ObraListado[
     if (!me) return [];
     // Por default el listado muestra lo propio + lo que me compartieron (la RLS
     // ya deja ver ambas; esto es solo el recorte de UI).
-    const compartidas = await idsCompartidosConmigo("obra", me);
+    const compartidas = await obrasCompartidasConmigo(me);
     query = compartidas.length
       ? query.or(`responsable_id.eq.${me},id.in.(${compartidas.join(",")})`)
       : query.eq("responsable_id", me);
@@ -123,19 +123,16 @@ async function obraIdsPorRelacion(filtros: FiltrosObras): Promise<string[] | nul
   return listas.reduce((a, b) => a.filter((id) => b.includes(id)));
 }
 
-// Grant completo activo, directo o por cascada. El contextual no entra: abre la
-// persona solo dentro de su ficha, no la suma a la agenda.
-async function idsCompartidosConmigo(
-  tipo: "obra" | "empresa" | "persona",
-  me: string,
-): Promise<string[]> {
+// Las obras que me compartieron. Es lo único que entra a una agenda ajena
+// (sql/086): las empresas y personas de esa obra se abren desde ella, con grant
+// contextual, y nunca se suman al listado.
+async function obrasCompartidasConmigo(me: string): Promise<string[]> {
   const supabase = await createClient();
-  const { data, error } =
-    tipo === "obra"
-      ? await supabase.from("obras_obra_compartida").select("id:obra_id").eq("usuario_id", me).eq("activo", true)
-      : tipo === "empresa"
-        ? await supabase.from("obras_empresa_compartida").select("id:empresa_id").eq("usuario_id", me).eq("activo", true)
-        : await supabase.from("obras_persona_compartida").select("id:persona_id").eq("usuario_id", me).eq("activo", true);
+  const { data, error } = await supabase
+    .from("obras_obra_compartida")
+    .select("id:obra_id")
+    .eq("usuario_id", me)
+    .eq("activo", true);
   if (error) throw error;
   return (data ?? []).map((r) => r.id);
 }
@@ -213,11 +210,9 @@ export async function getEmpresas(busqueda?: string, alcance?: Alcance): Promise
   if (!verTodos) {
     const me = await getUsuarioActualId();
     if (!me) return [];
-    // Lo propio + lo que me compartieron, igual que getObras.
-    const compartidas = await idsCompartidosConmigo("empresa", me);
-    query = compartidas.length
-      ? query.or(`creado_por.eq.${me},id.in.(${compartidas.join(",")})`)
-      : query.eq("creado_por", me);
+    // Solo lo mío: una empresa ajena se abre desde la obra que la trajo, con
+    // grant contextual, y no entra a la agenda (sql/086).
+    query = query.eq("creado_por", me);
   }
 
   if (busqueda) query = query.ilike("razon_social", `%${busqueda}%`);
@@ -281,13 +276,9 @@ export async function getPersonas(busqueda?: string, alcance?: Alcance): Promise
   if (!verTodos) {
     const me = await getUsuarioActualId();
     if (!me) return [];
-    // Lo propio + lo que me compartieron, igual que getObras. La RLS además
-    // deja pasar el grant contextual, que no es agenda: por eso no alcanza con
-    // sacar el filtro.
-    const compartidas = await idsCompartidosConmigo("persona", me);
-    query = compartidas.length
-      ? query.or(`creado_por.eq.${me},id.in.(${compartidas.join(",")})`)
-      : query.eq("creado_por", me);
+    // Solo lo mío. La RLS deja pasar el grant contextual, que no es agenda: por
+    // eso el filtro hace falta igual (sql/086).
+    query = query.eq("creado_por", me);
   }
 
   if (busqueda) query = query.ilike("nombre_norm", `%${busqueda.toLowerCase()}%`);
@@ -371,60 +362,8 @@ export async function getReferenciasDePersona(personaId: string) {
   return data ?? [];
 }
 
-// ¿El usuario tiene un grant DIRECTO sobre este contacto (no heredado del
-// checklist de una obra)? Decide si la ficha ofrece "Vincular obra" — la
-// barrera real es la RLS de obras_obra_persona / _empresa (sql/052); esto solo
-// evita un botón que el servidor va a rechazar.
-export async function tieneGrantDirectoPersona(personaId: string): Promise<boolean> {
-  const supabase = await createClient();
-  const { data } = await supabase.rpc("obras_persona_grant_directo", { p_persona_id: personaId });
-  return data ?? false;
-}
-
-export async function tieneGrantDirectoEmpresa(empresaId: string): Promise<boolean> {
-  const supabase = await createClient();
-  const { data } = await supabase.rpc("obras_empresa_grant_directo", { p_empresa_id: empresaId });
-  return data ?? false;
-}
-
-// Con quién está compartida una ficha. Solo lo ve el dueño (RLS de
-// obras_persona_compartida / _empresa).
-export async function getCompartidosPersona(personaId: string): Promise<Compartido[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("obras_persona_compartida")
-    .select("usuario_id, created_at, usuario:usuario_id(nombre)")
-    .eq("persona_id", personaId)
-    .eq("activo", true)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return (data ?? []).map((r) => ({
-    usuario_id: r.usuario_id,
-    usuario: (r.usuario as { nombre: string } | null)?.nombre ?? "—",
-    created_at: r.created_at,
-  }));
-}
-
-export async function getCompartidosEmpresa(empresaId: string): Promise<Compartido[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from("obras_empresa_compartida")
-    .select("usuario_id, created_at, usuario:usuario_id(nombre)")
-    .eq("empresa_id", empresaId)
-    .eq("activo", true)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return (data ?? []).map((r) => ({
-    usuario_id: r.usuario_id,
-    usuario: (r.usuario as { nombre: string } | null)?.nombre ?? "—",
-    created_at: r.created_at,
-  }));
-}
-
+// Con quién está compartida una obra. Solo lo ve el responsable (RLS de
+// obras_obra_compartida).
 export async function getCompartidosObra(obraId: string): Promise<Compartido[]> {
   const supabase = await createClient();
 
@@ -487,20 +426,6 @@ export async function getRelacionesCompartiblesObra(
 
   const { data, error } = await supabase.rpc("obras_relaciones_compartibles_obra", {
     p_obra_id: obraId,
-    p_usuario_id: usuarioId,
-  });
-  if (error) throw error;
-  return (data ?? []) as RelacionCompartible[];
-}
-
-export async function getRelacionesCompartiblesEmpresa(
-  empresaId: string,
-  usuarioId: string,
-): Promise<RelacionCompartible[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.rpc("obras_relaciones_compartibles_empresa", {
-    p_empresa_id: empresaId,
     p_usuario_id: usuarioId,
   });
   if (error) throw error;

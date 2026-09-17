@@ -11,7 +11,6 @@ import {
   getContactosExclusivosObra,
   getContactosExclusivosEmpresa,
   getRelacionesCompartiblesObra,
-  getRelacionesCompartiblesEmpresa,
 } from "./queries";
 import {
   crearObraSchema,
@@ -28,9 +27,7 @@ import {
   transferirObraSchema,
   transferirPersonaSchema,
   transferirEmpresaSchema,
-  compartirSchema,
   compartirObraSchema,
-  compartirEmpresaSchema,
   resolverPendienteSchema,
   type CrearObraForm,
   type EditarObraForm,
@@ -46,9 +43,7 @@ import {
   type TransferirObraForm,
   type TransferirPersonaForm,
   type TransferirEmpresaForm,
-  type CompartirForm,
   type CompartirObraForm,
-  type CompartirEmpresaForm,
   type ResolverPendienteForm,
   type PersonaDeEmpresa,
   type SimilarPendiente,
@@ -237,74 +232,7 @@ export async function transferirEmpresa(input: TransferirEmpresaForm) {
   return { success: true as const };
 }
 
-// ── Compartir / revocar (dueño desde la ficha) ───────────────
-
-export async function compartirPersona(input: CompartirForm) {
-  const parsed = compartirSchema.safeParse(input);
-  if (!parsed.success) {
-    return { success: false as const, error: parsed.error.issues[0].message };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("obras_compartir_persona", {
-    p_persona_id: parsed.data.id,
-    p_usuario_id: parsed.data.usuario_id,
-  });
-
-  if (error) return { success: false as const, error: mensajeError(error) };
-
-  revalidatePath(`/obras/personas/${parsed.data.id}`);
-  revalidatePath("/obras/compartido");
-  return { success: true as const };
-}
-
-export async function revocarPersona(personaId: string, usuarioId: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("obras_revocar_persona", {
-    p_persona_id: personaId,
-    p_usuario_id: usuarioId,
-  });
-
-  if (error) return { success: false as const, error: mensajeError(error) };
-
-  revalidatePath(`/obras/personas/${personaId}`);
-  revalidatePath("/obras/compartido");
-  return { success: true as const };
-}
-
-export async function compartirEmpresa(input: CompartirEmpresaForm) {
-  const parsed = compartirEmpresaSchema.safeParse(input);
-  if (!parsed.success) {
-    return { success: false as const, error: parsed.error.issues[0].message };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("obras_compartir_empresa", {
-    p_empresa_id: parsed.data.id,
-    p_usuario_id: parsed.data.usuario_id,
-    p_personas: parsed.data.personas,
-  });
-
-  if (error) return { success: false as const, error: mensajeError(error) };
-
-  revalidatePath(`/obras/empresas/${parsed.data.id}`);
-  revalidatePath("/obras/compartido");
-  return { success: true as const };
-}
-
-export async function revocarEmpresa(empresaId: string, usuarioId: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("obras_revocar_empresa", {
-    p_empresa_id: empresaId,
-    p_usuario_id: usuarioId,
-  });
-
-  if (error) return { success: false as const, error: mensajeError(error) };
-
-  revalidatePath(`/obras/empresas/${empresaId}`);
-  revalidatePath("/obras/compartido");
-  return { success: true as const };
-}
+// ── Compartir / revocar la obra (sql/086: el único acto de compartir) ──
 
 export async function compartirObra(input: CompartirObraForm) {
   const parsed = compartirObraSchema.safeParse(input);
@@ -341,40 +269,35 @@ export async function revocarObra(obraId: string, usuarioId: string) {
   return { success: true as const };
 }
 
+// Destildar del checklist desde la vista Compartido: apaga el grant contextual
+// de esa entidad en esa obra (sql/086).
+export async function revocarContextual(
+  tipo: "empresa" | "persona",
+  entidadId: string,
+  usuarioId: string,
+  obraId: string,
+) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("obras_revocar_contextual", {
+    p_tipo: tipo,
+    p_entidad_id: entidadId,
+    p_usuario_id: usuarioId,
+    p_obra_id: obraId,
+  });
+
+  if (error) return { success: false as const, error: mensajeError(error) };
+
+  revalidatePath(`/obras/${obraId}`);
+  revalidatePath("/obras/compartido");
+  return { success: true as const };
+}
+
 // Cuántos vínculos agregó el receptor a esta obra. Se caen al revocar
 // (obras_revocar_obra), así que el panel avisa antes.
 export async function contarVinculosReceptor(obraId: string, usuarioId: string): Promise<number> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("obras_contar_vinculos_receptor", {
     p_obra_id: obraId,
-    p_usuario_id: usuarioId,
-  });
-  if (error) return 0;
-  return data ?? 0;
-}
-
-// Cuántos vínculos armó el receptor con este contacto en sus obras. Se caen al
-// revocar el share directo (obras_revocar_persona / _empresa, sql/052).
-export async function contarVinculosPersonaReceptor(
-  personaId: string,
-  usuarioId: string,
-): Promise<number> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("obras_contar_vinculos_persona_receptor", {
-    p_persona_id: personaId,
-    p_usuario_id: usuarioId,
-  });
-  if (error) return 0;
-  return data ?? 0;
-}
-
-export async function contarVinculosEmpresaReceptor(
-  empresaId: string,
-  usuarioId: string,
-): Promise<number> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("obras_contar_vinculos_empresa_receptor", {
-    p_empresa_id: empresaId,
     p_usuario_id: usuarioId,
   });
   if (error) return 0;
@@ -395,9 +318,6 @@ export async function relacionesCompartiblesObra(obraId: string, usuarioId: stri
   return getRelacionesCompartiblesObra(obraId, usuarioId);
 }
 
-export async function relacionesCompartiblesEmpresa(empresaId: string, usuarioId: string) {
-  return getRelacionesCompartiblesEmpresa(empresaId, usuarioId);
-}
 
 export async function crearEmpresa(input: CrearEmpresaForm) {
   const parsed = crearEmpresaSchema.safeParse(input);

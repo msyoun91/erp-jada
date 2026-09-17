@@ -1,5 +1,48 @@
 # Obras — Visibilidad y compartir
 
+## La obra es el único acto de compartir (`sql/086`)
+
+Pedido del usuario: *"yo no quiero compartir empresas, yo solo quiero mostrar los que están
+involucrados en la obra mediante contexto, y antes de compartir pasa por un proceso de checklist de
+quiénes voy a mostrar a cada usuario que comparto"*.
+
+**Eso ya era `obras_compartir_obra` desde `sql/082` + `sql/085`.** Checklist por usuario, lo tildado
+a grant contextual anclado a esa obra, lo destildado apagado (estado deseado, `sql/049`). Lo que
+faltaba era cerrar la **segunda puerta**: compartir una persona o una empresa desde su propia ficha,
+que daba acceso completo y la metía en la agenda del receptor.
+
+**Se dropean `obras_persona_compartida` y `obras_empresa_compartida`**, con `obras_compartir_persona`
+/ `_empresa`, `obras_revocar_persona` / `_empresa`, `obras_relaciones_compartibles_empresa`,
+`obras_*_grant_directo` (`sql/052`) y `obras_*_compartida_conmigo` (`sql/051`). Corte limpio sin
+backfill: 0 grants directos activos al escribir la migración. La agenda de cada uno vuelve a ser
+estrictamente lo suyo, y lo ajeno se ve dentro de la ficha que lo trajo. Supera *Lo compartido entra
+al listado* (abajo): lo único que entra a una agenda ajena es la obra.
+
+**Lo que se pierde, asumido:** colgar un contacto ajeno de una obra propia. Era la rama
+`grant_directo` de `sql/052`; el contextual nunca lo habilitó. Dos usuarios con el mismo arquitecto
+cargan cada uno el suyo —el detector difuso lo congela en `obras_aprobar`— o usan
+`obras_personas_todas` / `obras_empresas_todas`, o se transfieren el contacto.
+
+**Un hueco que se tapó de paso.** `obras_obra_persona_select` exigía grant **completo** para el
+receptor: `sql/082` le puso la rama contextual anclada a la policy de empresa y no a la de persona.
+La ficha igual mostraba la fila (sale por `obras_vinculos_de_obra`, DEFINER), así que no se notaba.
+Ahora las dos policies tienen la misma forma.
+
+**`obras_revocar_contextual(tipo, entidad, usuario, obra)`** (DEFINER, gate responsable) reemplaza a
+`obras_revocar_persona` / `_empresa` en la X por fila de la vista Compartido. Es destildar del
+checklist, desde el otro lado.
+
+**Tareas.** La rama persona de `obras_compartir_registros` pierde el fallback "empresa compartida
+directo" y ancla siempre en una obra compartida con ese usuario; sin ancla, `OB029`. Sigue a medio
+camino por lo de siempre (el chip no lleva `?ctx=`): reparación en `BACKLOG.md`.
+
+Archivos: `sql/086_solo_la_obra_comparte.sql`, `sql/tests/obras_086.sql`, `db_schema/obras.md`,
+`modules/obras/` (`actions.ts` · `queries.ts` · `types.ts` · `CompartirPanel.tsx` ·
+`CompartidoView.tsx` · `PersonaDetalle.tsx` · `EmpresaDetalle.tsx` · `ObraDetalle.tsx`),
+`app/(erp-app)/obras/personas/[id]/page.tsx` · `empresas/[id]/page.tsx`.
+
+---
+
 ## MODEL A — obras, empresas y personas son privadas por dueño (`sql/039`–`044`)
 
 Pedido del usuario, y reescribe varias decisiones de los otros archivos de esta carpeta. **Nada se comparte salvo acto explícito del dueño.** Las empresas dejan de ser globales.
@@ -370,9 +413,14 @@ el id); el archivo tiene el estado final.
 
 ---
 
-## Lo compartido entra al listado; editar sigue siendo del dueño (sin SQL)
+## ~~Lo compartido entra al listado~~; editar sigue siendo del dueño (sin SQL)
 
-> **Recortado por `sql/082`.** Lo que entra al listado es el share **directo**. La persona tildada
+> **Superado por *La obra es el único acto de compartir* (`sql/086`, arriba)** en su primera mitad:
+> sin share directo, lo único que entra a un listado ajeno es la obra. `getPersonas` / `getEmpresas`
+> filtran `creado_por = me` a secas. La segunda mitad —editar y desactivar piden `esMio`— sigue en
+> pie.
+>
+> **Recortado antes por `sql/082`.** Lo que entra al listado es el share **directo**. La persona tildada
 > en el checklist de una obra/empresa ya no: su grant es contextual y se abre solo desde esa ficha.
 > `idsCompartidosConmigo` no cambió — lee `obras_persona_compartida`, que ahora solo tiene directos.
 

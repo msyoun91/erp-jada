@@ -399,28 +399,17 @@ export const transferirEmpresaSchema = z.object({
 
 export type TransferirEmpresaForm = z.input<typeof transferirEmpresaSchema>;
 
-// Compartir con otro usuario. Lo inicia el dueño; la verificación real está en
-// obras_compartir_*. Persona va sola; obra y empresa arrastran las relaciones
-// mías que se tilden en el checklist.
-export const compartirSchema = z.object({
+// Compartir la obra con otro usuario: el único acto de compartir (sql/086). Lo
+// inicia el responsable; la verificación real está en obras_compartir_obra. Lo
+// tildado en el checklist se ve dentro de esa obra, no entra a la agenda.
+export const compartirObraSchema = z.object({
   id: z.string().uuid(),
   usuario_id: z.string().uuid(),
-});
-
-export type CompartirForm = z.input<typeof compartirSchema>;
-
-export const compartirObraSchema = compartirSchema.extend({
   empresas: z.array(z.string().uuid()).default([]),
   personas: z.array(z.string().uuid()).default([]),
 });
 
 export type CompartirObraForm = z.input<typeof compartirObraSchema>;
-
-export const compartirEmpresaSchema = compartirSchema.extend({
-  personas: z.array(z.string().uuid()).default([]),
-});
-
-export type CompartirEmpresaForm = z.input<typeof compartirEmpresaSchema>;
 
 // Lo que devuelve `obras_contactos_exclusivos_de_*`: identidad mínima de lo
 // vinculado solo a esa obra/empresa, para el checklist de confirmación.

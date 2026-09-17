@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Archive, Link2, Pencil, Plus, Share2, UserRoundCog } from "lucide-react";
+import { Archive, Link2, Pencil, Plus, UserRoundCog } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
@@ -12,14 +12,12 @@ import {
   LABEL_ESTADO,
   LABEL_PROVINCIA,
   LABEL_ROL_EMPRESA,
-  type Compartido,
   type EmpresaFicha,
   type EstadoObra,
   type RolEmpresa,
   type Usuario,
 } from "../types";
 import { Breadcrumb } from "./Breadcrumb";
-import { CompartirPanel } from "./CompartirPanel";
 import { Dato, Observaciones } from "./Dato";
 import { EmpresaFormPanel } from "./EmpresaFormPanel";
 import { EstadoPendiente } from "./EstadoPendiente";
@@ -34,7 +32,6 @@ export function EmpresaDetalle({
   permisos,
   esMio,
   veTodas,
-  compartidos,
   usuarios,
   seccionTareas,
 }: {
@@ -55,14 +52,12 @@ export function EmpresaDetalle({
   seccionTareas: React.ReactNode;
   esMio: boolean;
   veTodas: boolean;
-  compartidos: Compartido[];
   usuarios: Usuario[];
 }) {
   const [editando, setEditando] = useState(false);
   const [desactivando, setDesactivando] = useState(false);
   const [vinculandoPersona, setVinculandoPersona] = useState(false);
   const [vinculandoObra, setVinculandoObra] = useState(false);
-  const [compartiendo, setCompartiendo] = useState(false);
   const [transfiriendo, setTransfiriendo] = useState(false);
 
   const congelada = empresa.pendiente;
@@ -90,15 +85,6 @@ export function EmpresaDetalle({
                 icon: <Link2 size={14} strokeWidth={1.75} />,
                 onClick: () => copiarEnlace(`/obras/empresas/${empresa.id}`),
               },
-              ...(esMio
-                ? [
-                    {
-                      label: "Compartir",
-                      icon: <Share2 size={14} strokeWidth={1.75} />,
-                      onClick: () => setCompartiendo(true),
-                    },
-                  ]
-                : []),
               ...(veTodas
                 ? [
                     {
@@ -225,17 +211,6 @@ export function EmpresaDetalle({
       {seccionTareas}
 
       {editando && <EmpresaFormPanel empresa={empresa} onClose={() => setEditando(false)} />}
-
-      {compartiendo && (
-        <CompartirPanel
-          tipo="empresa"
-          id={empresa.id}
-          nombre={empresa.razon_social}
-          compartidos={compartidos}
-          usuarios={usuarios}
-          onClose={() => setCompartiendo(false)}
-        />
-      )}
 
       {transfiriendo && (
         <TransferirEntidadPanel

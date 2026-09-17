@@ -7,14 +7,12 @@ import {
   puedeVincularPersonaEmpresa,
 } from "@/modules/obras/permissions";
 import {
-  getCompartidosPersona,
   getEstadoPersona,
   getFichaPersona,
   getReferenciasDePersona,
   getUsuariosParaTransferir,
   getUsuarioActualId,
   getVinculosPersona,
-  tieneGrantDirectoPersona,
 } from "@/modules/obras/queries";
 import { puedeVerLista } from "@/modules/tareas/permissions";
 import { getRegistro, getTareasContexto, getTareasDeRegistro } from "@/modules/tareas/queries";
@@ -81,10 +79,8 @@ export default async function PersonaPage({
     vincularEmpresa,
     vincular,
     veTodas,
-    compartidos,
     usuarios,
     miId,
-    grantDirecto,
     verTareas,
   ] = await Promise.all([
     getVinculosPersona(id),
@@ -93,10 +89,8 @@ export default async function PersonaPage({
     puedeVincularPersonaEmpresa(),
     puedeVincular(),
     puedeVerTodasLasPersonas(),
-    getCompartidosPersona(id),
     getUsuariosParaTransferir(),
     getUsuarioActualId(),
-    tieneGrantDirectoPersona(id),
     puedeVerLista(),
   ]);
 
@@ -110,10 +104,9 @@ export default async function PersonaPage({
   // `esMio` también acota editar y desactivar: la RLS de update exige ser el
   // dueño (sql/039), así que sin esto el receptor ve botones que no andan.
   const esMio = !!miId && persona.creado_por === miId;
-  // Colgar la persona de una obra propia pide que sea mía: dueño, grant directo
-  // (no el heredado del checklist de una obra) o obras_personas_todas. Espeja la
-  // RLS de obras_obra_persona_insert (sql/052).
-  const vincularObra = vincular && (esMio || grantDirecto || veTodas);
+  // Colgar la persona de una obra propia pide que sea mía o obras_personas_todas.
+  // Espeja la RLS de obras_obra_persona_insert (sql/086).
+  const vincularObra = vincular && (esMio || veTodas);
 
   return (
     <PersonaDetalle
@@ -156,7 +149,6 @@ export default async function PersonaPage({
       permisos={{ editar: editar && esMio, vincularEmpresa, vincularObra }}
       esMio={esMio}
       veTodas={veTodas}
-      compartidos={compartidos}
       usuarios={usuarios.filter((u) => u.id !== miId)}
     />
   );
