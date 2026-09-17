@@ -207,9 +207,9 @@ export const editarTareaSchema = tareaEditableSchema
 export type EditarTareaForm = z.input<typeof editarTareaSchema>;
 
 // Mover un hilo de proyecto no está permitido: la membresía de sus tareas se
-// hereda del proyecto y ningún trigger la revalida sobre tareas_hilos (sql/009
-// valida UPDATE OF proyecto_id sobre `tareas`, no sobre el hilo). La
-// visibilidad sí se edita — no toca la membresía, solo quién ve el hilo.
+// hereda del proyecto y ningún trigger la revalida sobre tareas_hilos. La base
+// lo cierra sacando `proyecto_id` del GRANT UPDATE (sql/076). La visibilidad
+// sí se edita — no toca la membresía, solo quién ve el hilo.
 const hiloEditableSchema = z.object({
   titulo: z.string().min(1, "El título es obligatorio").max(200),
   descripcion: z.string().max(2000).optional(),

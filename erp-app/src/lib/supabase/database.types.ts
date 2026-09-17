@@ -2665,6 +2665,10 @@ export type Database = {
         Args: { p_id: string; p_tipo: string; p_usuario: string }
         Returns: boolean
       }
+      tareas_proyecto_destino_valido: {
+        Args: { p_proyecto_id: string; p_usuario: string }
+        Returns: boolean
+      }
       tareas_puede_ver_tarea: {
         Args: {
           p_hilo_id: string
@@ -2683,6 +2687,10 @@ export type Database = {
           p_visibilidad: Database["public"]["Enums"]["visibilidad"]
         }
         Returns: boolean
+      }
+      tareas_sumar_miembros_admin: {
+        Args: { p_tarea_id: string; p_usuarios: string[] }
+        Returns: undefined
       }
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
       usar_plantilla: {

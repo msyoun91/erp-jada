@@ -193,13 +193,26 @@ BEGIN
     '{"sub":"48b90421-a639-4637-b361-501fa7e1a1a0","role":"authenticated"}', true);
   PERFORM set_config('role', 'authenticated', true);
 
+  -- Desde sql/076 la función alcanza solo a proyectos donde es miembro: PV lo
+  -- creó pero no es miembro, así que no puede sumarse. En el que sembró (03) sí
+  -- suma a otro. En cualquier proyecto, solo tareas_gestionar_ajenas.
   BEGIN
     INSERT INTO tareas_proyectos_miembros (proyecto_id, usuario_id)
     VALUES ('eeee0000-0000-4000-8000-000000000001', '48b90421-a639-4637-b361-501fa7e1a1a0');
-    INSERT INTO r VALUES ('16 agregar miembro con la función', 'OK', 'OK', true);
+    INSERT INTO r VALUES ('16 con la función, sumarse a un proyecto donde no es miembro', 'RECHAZO', 'paso', false);
   EXCEPTION WHEN OTHERS THEN
     GET STACKED DIAGNOSTICS v_err = MESSAGE_TEXT;
-    INSERT INTO r VALUES ('16 agregar miembro con la función', 'OK', SQLSTATE || ' ' || v_err, false);
+    INSERT INTO r VALUES ('16 con la función, sumarse a un proyecto donde no es miembro', 'RECHAZO',
+      SQLSTATE || ' ' || v_err, SQLSTATE = '42501');
+  END;
+
+  BEGIN
+    INSERT INTO tareas_proyectos_miembros (proyecto_id, usuario_id)
+    VALUES ('eeee0000-0000-4000-8000-000000000003', '015fa985-fe21-4434-b3c5-7ac78732d765');
+    INSERT INTO r VALUES ('17 con la función, sumar a otro donde es miembro', 'OK', 'OK', true);
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS v_err = MESSAGE_TEXT;
+    INSERT INTO r VALUES ('17 con la función, sumar a otro donde es miembro', 'OK', SQLSTATE || ' ' || v_err, false);
   END;
 END $$;
 

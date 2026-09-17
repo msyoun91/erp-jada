@@ -1,6 +1,6 @@
 # Módulo tareas
 
-Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`061`, `063` (más las que cita cada sección) — corridas en Supabase vía MCP.
+Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`061`, `063`, `076` (más las que cita cada sección) — corridas en Supabase vía MCP.
 
 **Regla de visibilidad (`sql/013`): se ve lo asignado y lo público, nada más** — `creado_por` no autoriza. Excepciones: `tareas_gestionar_ajenas` y `tareas_hilos.responsable_id`. Los UPDATE están alineados con los SELECT. El porqué, en `decisiones/tareas/visibilidad.md`.
 
@@ -22,7 +22,7 @@ Contenedor organizacional. Pone el techo de visibilidad para sus hilos/tareas.
 
 Lista explícita de membresía: **quién puede recibir tareas del proyecto** (`sql/009`). Ortogonal a `visibilidad`, que decide quién lo ve — aunque desde `sql/013` la membresía también da acceso a los proyectos privados, porque el creador dejó de tenerlo por serlo. Todo proyecto — público o privado — necesita al menos un miembro.
 
-Alta y baja de miembros exigen la función `tareas_proyectos_miembros` (o `tareas_gestionar_ajenas`). Única excepción: la siembra inicial, acotada por `proyecto_tiene_miembros()` — sin ella `tareas_proyectos_crear` no alcanzaría para crear nada, ya que el proyecto exige al menos un miembro. **El SELECT de la tabla no mira esa función**: leer la membresía sigue siendo de miembros y managers (agregarla filtraba los miembros de proyectos que el usuario ni ve — lo detectó el caso 02 de `sql/tests/rls_miembros_asignables.sql`).
+Alta y baja de miembros exigen `tareas_gestionar_ajenas` (cualquier proyecto) o la función `tareas_proyectos_miembros` **en un proyecto donde quien la usa es miembro** (`sql/076`: antes valía en cualquiera, y uno se sumaba a un privado ajeno). Única excepción: la siembra inicial, acotada por `proyecto_tiene_miembros()` — sin ella `tareas_proyectos_crear` no alcanzaría para crear nada, ya que el proyecto exige al menos un miembro. **El SELECT de la tabla no mira esa función**: leer la membresía sigue siendo de miembros y managers (agregarla filtraba los miembros de proyectos que el usuario ni ve — lo detectó el caso 02 de `sql/tests/rls_miembros_asignables.sql`).
 
 El SELECT sí exige que el proyecto siga **activo** (`sql/016`): archivar un proyecto le saca la fila de la lista, pero sus membresías seguían visibles y `getMiembrosPorProyecto` armaba entradas de mapa para proyectos que ya no existen para el usuario. El `EXISTS` directo sobre `tareas_proyectos` no recursa — el lado de vuelta llega a esta tabla por `es_miembro_proyecto` (`SECURITY DEFINER`), así que el ciclo ya está roto.
 
@@ -37,6 +37,8 @@ El SELECT sí exige que el proyecto siga **activo** (`sql/016`): archivar un pro
 ## tareas_hilos
 
 Agrupador de tareas relacionadas. Sin vencimiento propio (se deriva de sus tareas en `queries.ts`).
+
+`GRANT UPDATE` por columna (`sql/076`): `titulo`, `descripcion`, `visibilidad`, `estado`, `responsable_id`, `posponer_desde`, `posponer_hasta`, `activo`. Sin `proyecto_id` (un hilo no se mueve de proyecto), `creado_por`, `id` ni `created_at`. `tareas_hilos_insert` exige además `proyecto_id IS NULL OR tareas_proyecto_destino_valido(proyecto_id, auth.uid())`.
 
 | columna | tipo | notas |
 |---|---|---|
@@ -218,16 +220,25 @@ Borrada con su trigger `log_evento_tarea`: sus filas pasaron a `eventos` (`core.
 
 ## Funciones `es_miembro_proyecto(uuid, uuid)` / `es_miembro_proyecto_de_tarea(uuid, uuid)` (`sql/009`)
 
-`SECURITY DEFINER`, `STABLE` — mismo criterio anti-recursión que `es_creador_proyecto`. La segunda resuelve el proyecto **efectivo** de una tarea (`COALESCE(tareas.proyecto_id, tareas_hilos.proyecto_id)`) y devuelve `true` si la tarea no tiene proyecto. Usadas por `tareas_asignados_insert`/`update` (`AND (NOT activo OR es_miembro_proyecto_de_tarea(tarea_id, usuario_id))` — la regla se exige solo sobre filas activas, para no bloquear la desactivación al reasignar) y por `tareas_proyectos_miembros_select`, extendida para que un miembro vea a los demás miembros (sin eso el picker de asignados queda vacío para quien no es creador del proyecto). Ni `tareas_gestionar_ajenas` saltea la regla: es regla de negocio, no nivel de permiso.
+`SECURITY DEFINER`, `STABLE` — mismo criterio anti-recursión que `es_creador_proyecto`. La segunda resuelve el proyecto **efectivo** de una tarea (`COALESCE(tareas.proyecto_id, tareas_hilos.proyecto_id)`) y devuelve `true` si la tarea no tiene proyecto. Usadas por `tareas_asignados_insert`/`update` (`AND (NOT activo OR es_miembro_proyecto_de_tarea(tarea_id, usuario_id))` — la regla se exige solo sobre filas activas, para no bloquear la desactivación al reasignar) y por `tareas_proyectos_miembros_select`, extendida para que un miembro vea a los demás miembros (sin eso el picker de asignados queda vacío para quien no es creador del proyecto). Desde `sql/076`, `tareas_gestionar_ajenas` —la función que administra— tampoco la saltea en la policy, pero `crear_tarea` y `sincronizar_asignados` llaman antes a `tareas_sumar_miembros_admin(tarea, usuarios)` (INVOKER, GRANT authenticated): si quien llama tiene la función, suma al proyecto efectivo a los que no son miembros. Sin la función no hace nada.
 
 ## Triggers `validar_proyecto_tarea` / `validar_quitar_miembro` (`sql/009`)
 
 Las policies cubren "cambian los asignados"; estos dos triggers cubren las otras dos caras de la misma regla:
 
-- `validar_proyecto_tarea` — `BEFORE UPDATE OF proyecto_id, hilo_id ON tareas`: mover una tarea a un proyecto donde algún asignado activo no es miembro falla con `ERRCODE = 'TA002'`.
+- `validar_proyecto_tarea` — `BEFORE UPDATE OF proyecto_id, hilo_id ON tareas`: mover una tarea a un proyecto donde algún asignado activo no es miembro falla con `ERRCODE = 'TA002'`; con `tareas_gestionar_ajenas` los suma al proyecto (`sql/076`).
 - `validar_quitar_miembro` — `BEFORE UPDATE ON tareas_proyectos_miembros WHEN (OLD.activo AND NOT NEW.activo)`: quitar un miembro con tareas `pendiente`/`en_progreso` en el proyecto falla con `ERRCODE = 'TA001'`, en vez de desactivar sus asignaciones por detrás.
 
 Ambos SQLSTATE están mapeados a mensaje en `MENSAJES_ERROR` (`lib/utils.ts`). Por eso `editarProyecto` guarda un diff (quitados/agregados) en vez de desactivar todo y reinsertar: lo segundo dispararía `TA001` sobre los miembros que se quedan.
+
+## Destino de una tarea — trigger `validar_destino_tarea` (`sql/076`)
+
+`BEFORE INSERT OR UPDATE OF hilo_id, proyecto_id ON tareas`, `SECURITY DEFINER`. Sin `auth.uid()` (postgres, service_role) no valida. Solo mira el valor que cambia:
+
+- **Hilo:** activo y `puede_ver_hilo_de(hilo, auth.uid())`, o creado por quien escribe y sin otras tareas activas (`convertir_tarea_en_hilo` crea el hilo con el responsable de la tarea y mueve la tarea después). Antes, con el id de un hilo ajeno, uno se colaba adentro, se asignaba y leía el hilo entero.
+- **Proyecto:** `tareas_proyecto_destino_valido(proyecto, usuario)` (`SECURITY DEFINER STABLE`, GRANT authenticated, fuente única con `tareas_hilos_insert`): activo y público, o miembro, o `tareas_gestionar_ajenas`.
+
+Falla con `ERRCODE = 'TA017'`.
 
 ## Pasos de tarea — triggers (`sql/017`)
 
@@ -286,7 +297,7 @@ Toda action que escribía dos o más tablas es ahora **una** función, invocada 
 
 Los ids se generan con `gen_random_uuid()` en una variable en vez de pedir `RETURNING`: en ese punto la fila todavía no pasa la policy de SELECT (la tarea no tiene asignados, el proyecto no tiene miembros, `puede_ver_hilo` relee su propia tabla).
 
-SQLSTATE mapeados en `MENSAJES_ERROR` (`lib/utils.ts`): **`TA008`** — un UPDATE afectó 0 filas, que es como RLS rechaza (reemplaza al `errorDeUpdate()` de TypeScript); **`TA009`** — la plantilla no tiene pasos; **`TA010`** (`sql/053`) — la plantilla no corresponde a su tipo; **`TA011`** (`sql/053`) — una plantilla de proyecto usada con destino; **`TA012`** (`sql/055`) — el disparador no es válido (estado fuera del enum del ente, o ente sin su submódulo); **`TA013`** (`sql/055`) — una plantilla con disparador usada a mano, o una sin disparador disparada; **`TA016`** (`sql/063`) — sacar a alguien sin acceso de una tarea sin tener `tareas_asignar`. `EXECUTE` revocado de `PUBLIC` y otorgado a `authenticated`, mismo criterio que `sql/006`.
+SQLSTATE mapeados en `MENSAJES_ERROR` (`lib/utils.ts`): **`TA008`** — un UPDATE afectó 0 filas, que es como RLS rechaza (reemplaza al `errorDeUpdate()` de TypeScript); **`TA009`** — la plantilla no tiene pasos; **`TA010`** (`sql/053`) — la plantilla no corresponde a su tipo; **`TA011`** (`sql/053`) — una plantilla de proyecto usada con destino; **`TA012`** (`sql/055`) — el disparador no es válido (estado fuera del enum del ente, o ente sin su submódulo); **`TA013`** (`sql/055`) — una plantilla con disparador usada a mano, o una sin disparador disparada; **`TA016`** (`sql/063`) — sacar a alguien sin acceso de una tarea sin tener `tareas_asignar`; **`TA017`** (`sql/076`) — el hilo o proyecto destino no existe, no está activo o no se ve. `EXECUTE` revocado de `PUBLIC` y otorgado a `authenticated`, mismo criterio que `sql/006`.
 
 Verificación: `sql/tests/atomicidad_tareas.sql` (15/15).
 
@@ -307,7 +318,7 @@ Desde `sql/063` filtra por acceso (`asignados_con_acceso` contra los vínculos a
 
 Desde `sql/064` escribe por diferencia y en el orden que piden las policies: altas, bajas ajenas, el responsable (tercer argumento; si no quedó asignado, quien llama o el primero que quedó), y la baja propia al final. Quien se queda no recibe otro «te asignaron», y quien tiene `tareas_asignar` sin `tareas_gestionar_ajenas` puede pasar la tarea entera a otro. `editar_tarea` y `reasignar_tarea` ya no escriben `responsable_id`: lo dejan en manos de esta función. Ver *Asignados por diferencia, la pregunta completa y compartir en orden* en `decisiones/tareas/visibilidad.md`.
 
-En `editar_tarea` el orden es fila-primero-asignados-después, como era en TypeScript: `validar_proyecto_tarea` valida el cambio de `proyecto_id` contra los asignados de ese momento. En `editar_proyecto` la membresía se resuelve por diff — barrer y reinsertar dispararía `validar_quitar_miembro` (TA001) sobre los miembros que se quedan.
+En `editar_tarea` el orden es fila-primero-asignados-después, como era en TypeScript: `validar_proyecto_tarea` valida el cambio de `proyecto_id` contra los asignados de ese momento. En `editar_proyecto` la membresía se resuelve por diff — barrer y reinsertar dispararía `validar_quitar_miembro` (TA001) sobre los miembros que se quedan. Desde `sql/076` inserta antes de quitar: quien se saca a sí mismo en el mismo guardado todavía es miembro cuando la policy mira las altas.
 
 Verificación: `sql/tests/atomicidad_edicion_tareas.sql`.
 

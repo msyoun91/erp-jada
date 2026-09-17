@@ -23,6 +23,7 @@ Quién ve y quién toca: los tres ejes (`tareas_gestionar_ajenas`, membresía de
 - Quien no puede abrir lo relacionado no queda asignado (`sql/063`)
 - Compartir al asignar: la pregunta (Fase E, sin SQL)
 - Asignados por diferencia, la pregunta completa y compartir en orden (`sql/064`)
+- Dónde se puede escribir, y la función que administra (`sql/076`)
 
 ## `hilos-pasos.md`
 

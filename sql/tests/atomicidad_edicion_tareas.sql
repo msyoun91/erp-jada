@@ -15,9 +15,10 @@
 --
 -- Volver a correrlo entero después de tocar sql/024.
 --
--- Último resultado: 18/18. Los casos 03 y 09 rechazan con 42501 — es la
--- policy de tareas_asignados cortando el INSERT del asignado no miembro; lo
--- que se verifica es lo de al lado, que nada quedó a medio guardar.
+-- Último resultado: 18/18. Los casos 03 y 09 rechazan con 23503 — un asignado
+-- que no existe corta el INSERT; lo que se verifica es lo de al lado, que nada
+-- quedó a medio guardar. Hasta sql/076 el rechazo lo daba un asignado no
+-- miembro, pero ADMIN tiene tareas_gestionar_ajenas y ahora lo suma al proyecto.
 
 DO $test$
 DECLARE
@@ -92,12 +93,12 @@ BEGIN
   PERFORM set_config('role', 'authenticated', true);
   BEGIN
     PERFORM editar_tarea(v_tarea, 'T a medias', NULL, v_proy_b, 'publico',
-                         v_admin, ARRAY[v_admin, v_tester], NULL, 70, NULL, NULL, NULL);
+                         v_admin, ARRAY[v_admin, v_fantasma], NULL, 70, NULL, NULL, NULL);
     PERFORM set_config('role', 'none', true);
-    r := r || E'\n03 editar_tarea con asignado no miembro: FALLO (no rechazo)';
+    r := r || E'\n03 editar_tarea con asignado inexistente: FALLO (no rechazo)';
   EXCEPTION WHEN OTHERS THEN
     PERFORM set_config('role', 'none', true);
-    r := r || E'\n03 editar_tarea con asignado no miembro: rechazo ' || SQLSTATE;
+    r := r || E'\n03 editar_tarea con asignado inexistente: rechazo ' || SQLSTATE;
   END;
 
   SELECT titulo INTO v_txt FROM tareas WHERE id = v_tarea;
@@ -144,12 +145,12 @@ BEGIN
   -- responsable pasa, el INSERT no. Ninguno debe sobrevivir.
   PERFORM set_config('role', 'authenticated', true);
   BEGIN
-    PERFORM reasignar_tarea(v_tarea, v_admin, ARRAY[v_admin, v_tester]);
+    PERFORM reasignar_tarea(v_tarea, v_admin, ARRAY[v_admin, v_fantasma]);
     PERFORM set_config('role', 'none', true);
-    r := r || E'\n09 reasignar con asignado no miembro: FALLO (no rechazo)';
+    r := r || E'\n09 reasignar con asignado inexistente: FALLO (no rechazo)';
   EXCEPTION WHEN OTHERS THEN
     PERFORM set_config('role', 'none', true);
-    r := r || E'\n09 reasignar con asignado no miembro: rechazo ' || SQLSTATE;
+    r := r || E'\n09 reasignar con asignado inexistente: rechazo ' || SQLSTATE;
   END;
 
   SELECT count(*) INTO v_n FROM tareas_asignados WHERE tarea_id = v_tarea AND activo;

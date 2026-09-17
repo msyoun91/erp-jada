@@ -1,8 +1,10 @@
 # Modelo: visibilidad y autorización
 
-Tres ejes ortogonales, ninguno saltea a otro:
+Tres ejes ortogonales:
 `tareas_gestionar_ajenas` = autoridad sobre lo ajeno · la membresía del proyecto = quién
-puede trabajar · `tareas_asignar` = quién reparte.
+puede trabajar · `tareas_asignar` = quién reparte. `tareas_gestionar_ajenas` es además la función
+que administra el módulo (`decisiones/global/permisos.md`): desde `sql/076`, cuando asigna a un no
+miembro lo suma al proyecto. Sigue sin saltear `tareas_asignar`.
 
 ## Ser creador deja de dar visibilidad (`sql/013`)
 
@@ -350,3 +352,33 @@ revocar la obra no se la llevaba.
 Archivos: `sql/064_asignados_diff_y_compartir_en_orden.sql`, `sql/tests/asignar_con_acceso.sql`
 (13–16), `modules/tareas/actions.ts` (`sinAccesoTarea`), `modules/tareas/types.ts`
 (`sinAccesoTareaSchema`), `TareaFormPanel.tsx`, `ReasignarPanel.tsx`, `TareaDetailPanel.tsx`.
+
+## Dónde se puede escribir, y la función que administra (`sql/076`)
+
+Auditoría del 2026-09-17 (`PLAN_AUDITORIA_TAREAS.md`, fase 1). Los tres huecos se reprodujeron contra la
+base antes de tocar nada (`sql/tests/auditoria_tareas.sql`, bloque F1).
+
+**El hilo y el proyecto destino tienen que estar activos y ser visibles.** `tareas_insert` no miraba
+`hilo_id`. Con el id de un hilo ajeno, uno creaba una tarea adentro, se la asignaba por siembra y
+`puede_ver_hilo` le abría el hilo entero, con tareas y notas. Lo mismo pasaba moviendo una tarea propia
+(`asociarTareaHilo`). Tampoco se miraba `proyecto_id`, ni en tareas ni en hilos. Ahora lo valida el trigger
+`validar_destino_tarea` (cubre INSERT, UPDATE y las funciones) y `tareas_hilos_insert`, con
+`tareas_proyecto_destino_valido` como fuente única. Hay una excepción: un hilo propio todavía vacío,
+porque `convertir_tarea_en_hilo` crea el hilo con el responsable de la tarea y recién después mueve la
+tarea. Esa rama no reabre el hueco de `sql/013`, porque `tareas_hilos` perdió el UPDATE de `creado_por`.
+
+**`tareas_proyectos_miembros` alcanza solo a proyectos donde se es miembro.** Con la función, uno se
+sumaba a un proyecto privado ajeno. `tareas_gestionar_ajenas` sigue alcanzando a cualquiera.
+`editar_proyecto` inserta antes de quitar: si no, quien se saca a sí mismo en el mismo guardado ya no
+podría sumar a los otros.
+
+**La función que administra asigna a un no miembro sumándolo al proyecto** (decisión del usuario: siempre
+hay una función que deja actuar como administrador). `tareas_sumar_miembros_admin` corre en `crear_tarea` y
+`sincronizar_asignados` antes del INSERT de asignados. Va en su propia sentencia porque la policy lee la
+membresía con una función STABLE, que no ve lo insertado en la misma sentencia. Al mover una tarea,
+`validar_proyecto_tarea_miembros` suma en vez de dar `TA002`. Un INSERT directo a `tareas_asignados` sigue
+rechazando al no miembro: el camino del administrador son las funciones.
+
+Archivos: `sql/076_tareas_destino_y_admin.sql`, `sql/tests/auditoria_tareas.sql`, `atomicidad_tareas.sql`
+(02–03), `atomicidad_edicion_tareas.sql` (03, 09), `rls_visibilidad_tareas.sql` (16–17), `lib/utils.ts`
+(`TA017`), `modules/tareas/types.ts`.

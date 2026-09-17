@@ -34,3 +34,16 @@ Datos existentes verificados sin huérfanos antes del cambio (el modelo viejo lo
 ## `usuario_tiene_permiso(usuario, codigo)` — preguntar el permiso de otro (`sql/062`)
 
 Pedido por PLAN_TAREAS_VINCULOS.md Fase C (base de "compartir al asignar", `decisiones/obras/visibilidad.md`). `tiene_permiso(codigo)` solo podía preguntar por `auth.uid()`; para decidir si un asignado puede abrir un vínculo hace falta preguntar por **otro** usuario. `usuario_tiene_permiso(p_usuario, p_codigo)` es el cuerpo de siempre parametrizado; `tiene_permiso(codigo)` pasa a `SELECT usuario_tiene_permiso(auth.uid(), codigo)` — misma firma, mismos grants, ninguna policy existente se toca. Sin `GRANT`: solo la llaman otras `DEFINER` (`puede_abrir_registro`, `puede_compartir_registro`), nunca el cliente.
+
+## Siempre hay una función que administra el módulo
+
+**Todo módulo tiene una función que deja actuar como administrador: ver todo y hacer todo** (por ejemplo,
+sumar a cualquier miembro a cualquier proyecto). Decisión del usuario (2026-09-17), durante la auditoría de
+tareas.
+
+Endurecer una policy no puede dejar un módulo sin quien lo administre. Toda restricción nueva (policy,
+trigger o función) conserva la rama de esa función. Si una regla vieja la excluye a propósito, se revisa
+con el usuario, no se hereda en silencio. Funciona como cualquier otro submódulo: no es un rol.
+
+En tareas es `tareas_gestionar_ajenas` (`decisiones/tareas/visibilidad.md`). No absorbe `tareas_asignar`:
+repartir trabajo sigue siendo una función aparte.

@@ -22,7 +22,7 @@
 --
 -- Volver a correrlo entero después de tocar sql/023.
 --
--- Último resultado: 15/15.
+-- Último resultado: 15/15 (sql/076: el 02 pasa de rechazo a sumar al no miembro).
 
 DO $test$
 DECLARE
@@ -30,6 +30,7 @@ DECLARE
   v_tester  uuid := '48b90421-a639-4637-b361-501fa7e1a1a0';  -- TESTER, no miembro
   v_fantasma uuid := '00000000-0000-4000-8000-0000000000ff'; -- no existe en usuarios
   v_proy    uuid;
+  v_proy_a  uuid;   -- ADMIN asigna a TESTER, no miembro (sql/076)
   v_plant   uuid;
   v_plant2  uuid;   -- asigna a ADMIN y a TESTER, que no es miembro
   v_plant_t uuid;   -- de TESTER: el paso 2 cae en él y no es miembro
@@ -50,6 +51,9 @@ BEGIN
   INSERT INTO tareas_proyectos (nombre, visibilidad, creado_por)
     VALUES ('P atomicidad', 'privado', v_admin) RETURNING id INTO v_proy;
   INSERT INTO tareas_proyectos_miembros (proyecto_id, usuario_id) VALUES (v_proy, v_admin);
+  INSERT INTO tareas_proyectos (nombre, visibilidad, creado_por)
+    VALUES ('P admin suma', 'privado', v_admin) RETURNING id INTO v_proy_a;
+  INSERT INTO tareas_proyectos_miembros (proyecto_id, usuario_id) VALUES (v_proy_a, v_admin);
 
   INSERT INTO tareas_plantillas (nombre, creado_por)
     VALUES ('PL atomicidad', v_admin) RETURNING id INTO v_plant;
@@ -125,22 +129,26 @@ BEGIN
   r := r || E'\n01 crear_tarea: tarea + 1 asignado: ' ||
     CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ' asignados)' END;
 
-  -- TESTER no es miembro del proyecto: el INSERT de asignados lo rechaza
-  -- (es_miembro_proyecto_de_tarea). La tarea no puede sobrevivir a eso.
+  -- TESTER no es miembro del proyecto. Desde sql/076 ADMIN tiene
+  -- tareas_gestionar_ajenas, la función que administra: en vez de rechazar,
+  -- crear_tarea lo suma al proyecto. Proyecto aparte para no volver miembro a
+  -- TESTER de v_proy, que el caso 12 necesita sin él.
   PERFORM set_config('role', 'authenticated', true);
   BEGIN
-    v_id := crear_tarea('T huerfana', NULL, NULL, v_proy, NULL, 'privado', v_admin,
+    v_id := crear_tarea('T admin suma', NULL, NULL, v_proy_a, NULL, 'privado', v_admin,
                         ARRAY[v_admin, v_tester], NULL, 50, NULL, NULL, 'manual', NULL, NULL, NULL);
     PERFORM set_config('role', 'none', true);
-    r := r || E'\n02 crear_tarea con asignado no miembro: FALLO (no rechazo)';
+    r := r || E'\n02 admin crea con asignado no miembro: ' ||
+      CASE WHEN es_miembro_proyecto(v_proy_a, v_tester) THEN 'OK' ELSE 'FALLO (no lo sumó)' END;
   EXCEPTION WHEN OTHERS THEN
     PERFORM set_config('role', 'none', true);
-    r := r || E'\n02 crear_tarea con asignado no miembro: rechazo ' || SQLSTATE;
+    r := r || E'\n02 admin crea con asignado no miembro: FALLO (' || SQLSTATE || ')';
   END;
 
-  SELECT count(*) INTO v_n FROM tareas WHERE titulo = 'T huerfana';
-  r := r || E'\n03 la tarea rechazada no quedó huérfana: ' ||
-    CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO (' || v_n || ' filas invisibles)' END;
+  SELECT count(*) INTO v_n FROM tareas_asignados a JOIN tareas t ON t.id = a.tarea_id
+   WHERE t.titulo = 'T admin suma' AND a.activo;
+  r := r || E'\n03 la tarea quedó con los dos asignados: ' ||
+    CASE WHEN v_n = 2 THEN 'OK' ELSE 'FALLO (' || v_n || ' asignados)' END;
 
   -- ============================================================
   -- crear_proyecto
