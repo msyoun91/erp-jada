@@ -349,3 +349,78 @@ BEGIN
 
   RAISE EXCEPTION 'F2: %/% %', ok, total, r;
 END $t$;
+
+-- ─── F3 (sql/078): deshacer con pasos, fecha de Argentina, largos ────────────
+-- deshacer_conversion_hilo, SET timezone de las funciones con fechas, CHECK de
+-- largos. El 06 confirma que asignados NULL ya caían en quien crea (el punto 16
+-- de la auditoría no era bug).
+-- Último resultado: 6/6.
+DO $t$
+DECLARE
+  a uuid := '015fa985-fe21-4434-b3c5-7ac78732d765';
+  h uuid := gen_random_uuid(); p1 uuid := gen_random_uuid(); p2 uuid := gen_random_uuid(); p3 uuid := gen_random_uuid();
+  v uuid; n int; ok int := 0; total int := 0; r text := '';
+BEGIN
+  SET CONSTRAINTS ALL IMMEDIATE;
+  INSERT INTO tareas_hilos (id, titulo, responsable_id, creado_por) VALUES (h, 'Cadena a deshacer', a, a);
+  INSERT INTO tareas (id, hilo_id, titulo, responsable_id, creado_por, created_at) VALUES (p1, h, 'p1', a, a, now() - interval '2 min');
+  INSERT INTO tareas (id, hilo_id, titulo, responsable_id, creado_por, paso_anterior_id, created_at) VALUES (p2, h, 'p2', a, a, p1, now() - interval '1 min');
+  INSERT INTO tareas (id, hilo_id, titulo, responsable_id, creado_por, paso_anterior_id) VALUES (p3, h, 'p3', a, a, p2);
+  INSERT INTO tareas_asignados (tarea_id, usuario_id) VALUES (p1, a), (p2, a), (p3, a);
+
+  total := total + 1;
+  SELECT count(*) INTO n FROM pg_proc
+   WHERE proname IN ('reactivar_posponer_vencidos', 'fijar_vencimiento_tras_previo', 'arrancar_vencimiento_siguiente',
+                     'generar_recurrencia', 'usar_plantilla', 'notificaciones_avisos')
+     AND 'TimeZone=America/Argentina/Buenos_Aires' = ANY(proconfig);
+  IF n = 6 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 02 funciones con zona AR: ' || n || ' de 6'; END IF;
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+
+  total := total + 1;
+  BEGIN
+    PERFORM deshacer_conversion_hilo(h);
+    PERFORM set_config('role', 'none', true);
+    SELECT count(*) INTO n FROM tareas WHERE id = p1 AND hilo_id IS NULL AND activo;
+    SELECT n + count(*) INTO n FROM tareas WHERE id IN (p2, p3) AND NOT activo;
+    IF n = 3 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 01 deshacer con pasos: ' || n || ' de 3'; END IF;
+    PERFORM set_config('role', 'authenticated', true);
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 01 deshacer con pasos: ' || SQLSTATE || ' ' || SQLERRM;
+  END;
+
+  total := total + 1;
+  BEGIN
+    PERFORM crear_tarea(repeat('x', 501), NULL, NULL, NULL, NULL, 'privado', a, ARRAY[a], NULL, 50, NULL, NULL, 'manual', NULL, NULL, NULL);
+    r := r || E'\nFALLO 03 título de 501: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '23514' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 03: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    PERFORM crear_tarea('origen afuera', NULL, NULL, NULL, NULL, 'privado', a, ARRAY[a], NULL, 50, NULL, NULL, 'manual', 'x', '//evil.example', NULL);
+    r := r || E'\nFALLO 04 origen_punto externo: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '23514' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 04: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    INSERT INTO tareas_notas (tarea_id, usuario_id, nota) VALUES (p1, a, repeat('x', 5001));
+    r := r || E'\nFALLO 05 nota de 5001: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '23514' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 05: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    v := crear_tarea('sin asignados', NULL, NULL, NULL, NULL, 'privado', a, NULL, NULL, 50, NULL, NULL, 'manual', NULL, NULL, NULL);
+    PERFORM set_config('role', 'none', true);
+    SELECT count(*) INTO n FROM tareas_asignados WHERE tarea_id = v AND usuario_id = a AND activo;
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 06 asignados NULL: ' || n || ' asignados'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 06 asignados NULL: ' || SQLSTATE || ' ' || SQLERRM;
+  END;
+
+  RAISE EXCEPTION 'F3: %/% %', ok, total, r;
+END $t$;

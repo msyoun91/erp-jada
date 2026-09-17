@@ -12,7 +12,7 @@
 --
 -- Volver a correrlo entero después de tocar sql/053 o sql/057.
 --
--- Último resultado: 27/27.
+-- Último resultado: 27/27. Las fechas se comparan en hora de Argentina (sql/078).
 
 DO $test$
 DECLARE
@@ -184,7 +184,7 @@ BEGIN
 
   SELECT fecha_vencimiento INTO v_d FROM tareas WHERE id = v_t1;
   r := r || E'\n13 paso 1 vence a 2 días de hoy: ' ||
-    CASE WHEN v_d = current_date + 2 THEN 'OK' ELSE 'FALLO (' || COALESCE(v_d::text, 'null') || ')' END;
+    CASE WHEN v_d = (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date + 2 THEN 'OK' ELSE 'FALLO (' || COALESCE(v_d::text, 'null') || ')' END;
 
   SELECT count(*) INTO v_n FROM tareas
    WHERE id = v_t2 AND fecha_vencimiento IS NULL AND vence_dias_tras_previo = 3;
@@ -196,7 +196,7 @@ BEGIN
   PERFORM set_config('role', 'none', true);
   SELECT fecha_vencimiento INTO v_d FROM tareas WHERE id = v_t2;
   r := r || E'\n15 completar el paso 1 arranca el plazo del 2: ' ||
-    CASE WHEN v_d = current_date + 3 THEN 'OK' ELSE 'FALLO (' || COALESCE(v_d::text, 'null') || ')' END;
+    CASE WHEN v_d = (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date + 3 THEN 'OK' ELSE 'FALLO (' || COALESCE(v_d::text, 'null') || ')' END;
 
   -- Editar el paso 2 con el mismo plazo: la fecha que manda el form se ignora.
   PERFORM set_config('role', 'authenticated', true);
@@ -205,7 +205,7 @@ BEGIN
   PERFORM set_config('role', 'none', true);
   SELECT fecha_vencimiento INTO v_d FROM tareas WHERE id = v_t2;
   r := r || E'\n15b editar con plazo tras el previo no pisa la fecha derivada: ' ||
-    CASE WHEN v_d = current_date + 3 THEN 'OK' ELSE 'FALLO (' || COALESCE(v_d::text, 'null') || ')' END;
+    CASE WHEN v_d = (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date + 3 THEN 'OK' ELSE 'FALLO (' || COALESCE(v_d::text, 'null') || ')' END;
 
   PERFORM set_config('role', 'authenticated', true);
   UPDATE tareas SET estado = 'pendiente' WHERE id = v_t1;
@@ -282,7 +282,7 @@ BEGIN
 
   SELECT count(*) INTO v_n FROM tareas t JOIN tareas_hilos h ON h.id = t.hilo_id
    WHERE h.titulo = 'Hilo paralelo creado' AND t.titulo = 'P-b'
-     AND t.fecha_vencimiento = current_date + 2 AND t.vence_dias_tras_previo IS NULL;
+     AND t.fecha_vencimiento = (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date + 2 AND t.vence_dias_tras_previo IS NULL;
   r := r || E'\n22 sin cadena, "tras el anterior" vence desde la creación: ' ||
     CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO' END;
 
