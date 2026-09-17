@@ -45,3 +45,27 @@ Venía del `BACKLOG.md`: `desactivarProyecto` desactivaba solo la fila del proye
 **El modal dice cuánto se lleva.** No hay reactivar de proyecto en la UI, así que la confirmación pasó a nombrar los hilos y las tareas que se van. Cuenta lo visible en el panel, que es de lo que el usuario puede hacerse una idea — la cascada, por debajo, se lleva también lo que su RLS no le muestra.
 
 Verificación: `sql/tests/cascada_proyecto.sql` (10/10).
+
+## Deshacer con pasos, fecha de Argentina y largos (`sql/078`)
+
+Fase 3 de la auditoría del 2026-09-17 (`sql/tests/auditoria_tareas.sql`, bloque F3).
+
+**`deshacer_conversion_hilo` desactiva el resto antes de mover la primera.** Con pasos encadenados, sacar del
+hilo a la tarea más antigua mientras su siguiente seguía activo daba siempre `TA006`, así que la conversión no
+se podía deshacer.
+
+**La zona horaria va en cada función, no en la base.** La base corre en UTC, y entre las 21 y las 24 de
+Argentina `current_date` ya es el día siguiente: un pospuesto volvía un día antes y un plazo "tras el anterior"
+sumaba uno de más. `ALTER DATABASE ... SET timezone` lo arreglaba en una línea, pero cambia el formato de todos
+los `timestamptz` que lee la app y el `current_date` de Obras. `SET timezone` en las seis funciones que calculan
+fechas de tareas acota el cambio a lo que estaba mal.
+
+**Los largos también en la base, más holgados que Zod.** Por la API entraban textos de megas. El tope no puede
+ser el de Zod porque `rellenar_datos` expande `{dato}` después de validar el form: un título de 200 con el
+nombre de una obra adentro lo superaría.
+
+El punto 16 de la auditoría (asignados `NULL` en `crear_tarea`) no era un bug: `asignados_con_acceso` devuelve
+un array vacío y la tarea queda para quien la crea. Lo confirma el caso 06.
+
+Archivos: `sql/078_tareas_bugs_fecha_y_largos.sql`, `sql/tests/auditoria_tareas.sql`, `sql/tests/plantillas.sql`
+(fechas comparadas en hora AR).

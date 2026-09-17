@@ -34,11 +34,13 @@ Resultado: `auditoria_tareas` F2 14/14. Tests existentes revisados: ninguno escr
 
 ## Fase 3 — Bugs de base (`sql/078`)
 
-- [ ] 13 · `deshacer_conversion_hilo` con pasos encadenados (TA006).
-- [ ] 14 · Fecha de Argentina en `reactivar_posponer_vencidos`, `fijar_vencimiento_tras_previo`, `arrancar_vencimiento_siguiente`, `generar_recurrencia`; índice parcial sobre `posponer_hasta` (20).
-- [ ] 11 · CHECK de largo en títulos, descripciones y notas (mismos máximos que Zod).
-- [ ] 16 · `crear_tarea` / `sincronizar_asignados` con asignados NULL.
-- [ ] Test (bloque F3) + `pasos_tarea`, `atomicidad_*`.
+- [x] 13 · `deshacer_conversion_hilo` con pasos encadenados (TA006).
+- [x] 14 · Fecha de Argentina en `reactivar_posponer_vencidos`, `fijar_vencimiento_tras_previo`, `arrancar_vencimiento_siguiente`, `generar_recurrencia`; índice parcial sobre `posponer_hasta` (20).
+- [x] 11 · CHECK de largo en títulos, descripciones y notas (más holgados que Zod: `{dato}` se expande después).
+- [x] 16 · `crear_tarea` / `sincronizar_asignados` con asignados NULL — verificado: no era bug (caso F3-06).
+- [x] Test (bloque F3) + `pasos_tarea`, `atomicidad_*`.
+
+Resultado: `auditoria_tareas` F3 6/6 · `plantillas` 27/27.
 
 **Commitear.**
 

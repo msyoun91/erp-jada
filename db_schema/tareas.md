@@ -1,6 +1,6 @@
 # Módulo tareas
 
-Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`061`, `063`, `076`, `077` (más las que cita cada sección) — corridas en Supabase vía MCP.
+Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`061`, `063`, `076`–`078` (más las que cita cada sección) — corridas en Supabase vía MCP.
 
 **Regla de visibilidad (`sql/013`): se ve lo asignado y lo público, nada más** — `creado_por` no autoriza. Excepciones: `tareas_gestionar_ajenas` y `tareas_hilos.responsable_id`. Los UPDATE están alineados con los SELECT. El porqué, en `decisiones/tareas/visibilidad.md`.
 
@@ -84,6 +84,10 @@ Unidad mínima de trabajo. `proyecto_id` solo se usa cuando la tarea está suelt
 **`GRANT UPDATE` por columna (`sql/077`):** `titulo`, `descripcion`, `hilo_id`, `proyecto_id`, `visibilidad`, `estado`, `temperatura`, `responsable_id`, `fecha_vencimiento`, `vence_dias_tras_previo`, `posponer_desde`, `posponer_hasta`, `recurrencia_cantidad`, `recurrencia_unidad`, `nota_siguiente`, `activo`. Quedan afuera `id`, `creado_por`, `created_at`, `modo_completado` (un asignado completaba una `hibrido` pasándola a `manual` en la misma sentencia), `origen_*`, `paso_anterior_id` y `nota_anterior`. Mismo criterio en `tareas_proyectos` (`nombre`, `descripcion`, `visibilidad`, `activo`) y en `tareas_proyectos_miembros`, `tareas_asignados`, `tareas_notas` y `tareas_hilos_notas` (solo `activo`).
 
 **Reactivar es del administrador (`sql/077`).** Trigger `validar_reactivar_tarea` (`SECURITY DEFINER`) en `tareas` y `tareas_hilos`, `BEFORE UPDATE OF activo WHEN (NOT OLD.activo AND NEW.activo)`: sin `tareas_gestionar_ajenas`, `TA018`. Antes un asignado revivía lo que archivó un manager o la cascada del proyecto.
+
+**Largos (`sql/078`).** CHECK `tareas_largos`: `titulo` ≤ 500, `descripcion`, `nota_siguiente` y `nota_anterior` ≤ 5000, `origen_app` ≤ 100, `origen_punto` ≤ 500. CHECK `tareas_origen_punto_interno`: `origen_punto ~ '^/(?!/)'`. Los mismos topes en hilos y proyectos (título o nombre ≤ 500, `descripcion` ≤ 5000), notas (≤ 5000) y plantillas, hilos e items de plantilla. Son más holgados que Zod (200 y 2000) porque `rellenar_datos` expande `{dato}` después de validar el form.
+
+**Fechas en hora de Argentina (`sql/078`).** La base corre en UTC. Las funciones que calculan fechas de tareas llevan `SET timezone = 'America/Argentina/Buenos_Aires'`, así que su `current_date` es la fecha AR: `reactivar_posponer_vencidos`, `fijar_vencimiento_tras_previo`, `arrancar_vencimiento_siguiente`, `generar_recurrencia`, `usar_plantilla` y `notificaciones_avisos`. El `SET` vale también para los triggers que se disparan adentro. Índices parciales `idx_tareas_posponer_hasta` e `idx_tareas_hilos_posponer_hasta` (`WHERE posponer_hasta IS NOT NULL`).
 
 **Vencimiento tras el paso anterior (`sql/053`).** Dos triggers `SECURITY DEFINER`, única fuente de la fecha derivada: `trg_fijar_vencimiento_tras_previo` (`BEFORE INSERT OR UPDATE OF vence_dias_tras_previo`, solo cuando el plazo cambia) la pone en `current_date + N` si el previo ya está completado y en NULL si no; `trg_arrancar_vencimiento_siguiente` (`AFTER UPDATE OF estado`, al entrar o salir de `completada`) la arranca en el paso siguiente al completar y la vuelve a NULL al reabrir. DEFINER porque quien completa un paso puede no tener UPDATE sobre el siguiente.
 
@@ -291,7 +295,7 @@ Toda action que escribía dos o más tablas es ahora **una** función, invocada 
 | `crear_tarea(...)` → uuid | `crearTarea` | `tareas` + `tareas_vinculos` (`sql/059`) + `tareas_asignados` |
 | `crear_proyecto(...)` → uuid | `crearProyecto` | `tareas_proyectos` + `tareas_proyectos_miembros` |
 | `convertir_tarea_en_hilo(uuid)` → uuid | `convertirTareaEnHilo` | `tareas_hilos` + `tareas` |
-| `deshacer_conversion_hilo(uuid)` | `deshacerConversionHilo` | `tareas` + `tareas_hilos` |
+| `deshacer_conversion_hilo(uuid)` | `deshacerConversionHilo` | `tareas` + `tareas_hilos` — desde `sql/078` desactiva el resto antes de mover la primera (con pasos encadenados fallaba siempre con `TA006`) |
 | `desactivar_hilo(uuid)` | `desactivarHilo` | `tareas` + `tareas_hilos` |
 | ~~`agregar_tareas_desde_plantilla(...)`~~ | ~~`agregarTareasDesdePlantilla`~~ | borrada en `sql/053` → `usar_plantilla` |
 | `usar_plantilla(uuid, text, uuid, uuid, text, uuid, jsonb)` → int (`sql/053`; `sql/055` suma `p_ente`, `p_registro_id`, `p_datos` con DEFAULT NULL) | `usarPlantilla` y el disparo | `tareas_proyectos` + miembros + `tareas_hilos` + `tareas` + `tareas_asignados` + `tareas_notas` + `tareas_vinculos` |

@@ -58,6 +58,7 @@ Escrituras y ediciones multi-tabla como funciones SQL (`sql/023`–`024`) y la c
 - Las escrituras multi-tabla bajan a Postgres
 - Las ediciones multi-tabla siguen el mismo camino (`sql/024`)
 - Archivar un proyecto se lleva lo que hay adentro (`sql/025`)
+- Deshacer con pasos, fecha de Argentina y largos (`sql/078`)
 
 ## `integracion.md`
 

@@ -55,6 +55,8 @@ El badge cuenta las no leídas **de esta lista**, no de la tabla: si contara fil
 
 ## Función `notificaciones_avisos()`
 
+Desde `sql/078` corre con `SET timezone = 'America/Argentina/Buenos_Aires'`: "vence hoy" y "vencida" se cuentan con la fecha de Argentina, no la de UTC.
+
 `SECURITY INVOKER`, devuelve `(vencidas, vencen_hoy)` de las tareas asignadas al que pregunta. Lo que es estado y no evento no genera filas: sin cron que las cree a medianoche ni pasada que las limpie al completar. Mismo criterio que `reactivar_posponer_vencidos()` — se calcula al leer. El filtro por asignado va explícito porque la RLS de `tareas` deja ver bastante más que lo propio.
 
 ## Cambios sobre el módulo obras
