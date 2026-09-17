@@ -46,9 +46,11 @@ Resultado: `auditoria_tareas` F3 6/6 · `plantillas` 27/27.
 
 ## Fase 4 — Plantillas (`sql/079`)
 
-- [ ] C · `tareas_plantillas_select` (y la de hijos por cascada): el administrador ve las privadas; editar sigue siendo del dueño.
-- [ ] 18 · `tareas_plantillas_items_update` suma la regla de `tareas_asignar` que ya tiene el insert.
-- [ ] Test (bloque F4) + `plantillas*`.
+- [x] C · `tareas_plantillas_select` (y la de hijos por cascada): el administrador ve las privadas; editar sigue siendo del dueño.
+- [x] 18 · `tareas_plantillas_items_update` suma la regla de `tareas_asignar` que ya tiene el insert.
+- [x] Test (bloque F4) + `plantillas*`.
+
+Resultado: `auditoria_tareas` F4 7/7. En `plantillas.sql` el caso 06 pasa a esperar que el admin la vea; lo mismo que prueba F4-01, sin volver a correr el archivo.
 
 **Commitear.**
 

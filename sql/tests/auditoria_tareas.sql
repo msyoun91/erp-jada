@@ -424,3 +424,77 @@ BEGIN
 
   RAISE EXCEPTION 'F3: %/% %', ok, total, r;
 END $t$;
+
+-- ─── F4 (sql/079): plantillas ────────────────────────────────────────────────
+-- tareas_plantillas_select, tareas_plantillas_activaciones_insert/update,
+-- tareas_plantillas_items_update.
+-- Último resultado: 7/7.
+DO $t$
+DECLARE
+  a uuid := '015fa985-fe21-4434-b3c5-7ac78732d765';
+  t uuid := '48b90421-a639-4637-b361-501fa7e1a1a0';
+  pl_t uuid := gen_random_uuid(); pl_a uuid := gen_random_uuid(); it uuid := gen_random_uuid();
+  n int; ok int := 0; total int := 0; r text := '';
+BEGIN
+  INSERT INTO tareas_plantillas (id, nombre, creado_por, alcance, tipo, disparo_ente, disparo_evento)
+    VALUES (pl_t, 'Privada de TESTER', t, 'privada', 'tarea', 'obra', 'alta');
+  INSERT INTO tareas_plantillas_items (id, plantilla_id, titulo, asignados, incluir_ejecutor, responsable_id)
+    VALUES (it, pl_t, 'Paso para ADMIN', ARRAY[a], false, a);
+  INSERT INTO tareas_plantillas (id, nombre, creado_por, alcance, tipo) VALUES (pl_a, 'Privada de ADMIN', a, 'privada', 'tarea');
+
+  UPDATE usuario_submodulos us SET activo = (s.codigo IN ('tareas_lista', 'tareas_plantillas'))
+    FROM submodulos s WHERE s.id = us.submodulo_id AND us.usuario_id = t AND s.modulo = 'tareas';
+  INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+  SELECT t, s.id FROM submodulos s WHERE s.codigo IN ('tareas_lista', 'tareas_plantillas')
+     AND NOT EXISTS (SELECT 1 FROM usuario_submodulos us WHERE us.usuario_id = t AND us.submodulo_id = s.id);
+
+  -- ── ADMIN ──
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+
+  total := total + 1;
+  SELECT count(*) INTO n FROM tareas_plantillas WHERE id = pl_t;
+  IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 01 admin ve la privada ajena'; END IF;
+
+  total := total + 1;
+  SELECT count(*) INTO n FROM tareas_plantillas_items WHERE plantilla_id = pl_t;
+  IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 02 admin ve sus pasos'; END IF;
+
+  total := total + 1;
+  UPDATE tareas_plantillas SET nombre = 'pisada' WHERE id = pl_t;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  IF n = 0 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 03 admin edita la privada ajena: ' || n || ' filas'; END IF;
+
+  total := total + 1;
+  BEGIN
+    INSERT INTO tareas_plantillas_activaciones (plantilla_id, usuario_id) VALUES (pl_t, a);
+    r := r || E'\nFALLO 04 admin activa el disparador de una privada ajena: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 04: ' || SQLSTATE; END IF;
+  END;
+
+  -- ── TESTER, dueño, sin tareas_asignar ──
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', t, 'role', 'authenticated')::text, true);
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas_plantillas_items SET titulo = 'retocado' WHERE id = it;
+    r := r || E'\nFALLO 05 sin asignar, dejar un paso activo con asignado ajeno: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 05: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas_plantillas_items SET activo = false WHERE id = it;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 06 apagar el paso: ' || n || ' filas'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 06 apagar el paso: ' || SQLSTATE;
+  END;
+
+  total := total + 1;
+  SELECT count(*) INTO n FROM tareas_plantillas WHERE id = pl_a;
+  IF n = 0 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 07 sin la función ve una privada ajena'; END IF;
+
+  RAISE EXCEPTION 'F4: %/% %', ok, total, r;
+END $t$;

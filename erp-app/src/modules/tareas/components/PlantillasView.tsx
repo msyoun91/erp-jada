@@ -135,15 +135,19 @@ export function PlantillasView({
                   {/* Con disparador no se usa a mano (TA013): sus textos citan
                       datos del registro que la dispara. */}
                   {p.disparo_ente ? (
-                    <label className="tap-target flex shrink-0 items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={p.activada}
-                        disabled={activando}
-                        onChange={(e) => onActivar(p, e.target.checked)}
-                      />
-                      <span className="t-body-m">Activada</span>
-                    </label>
+                    // Una privada ajena (la ve quien administra) no se activa:
+                    // correría con sus cambios (sql/079).
+                    (p.alcance === "sistema" || p.creado_por === usuarioActualId) && (
+                      <label className="tap-target flex shrink-0 items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={p.activada}
+                          disabled={activando}
+                          onChange={(e) => onActivar(p, e.target.checked)}
+                        />
+                        <span className="t-body-m">Activada</span>
+                      </label>
+                    )
                   ) : (
                     <button
                       className="btn btn-secondary btn-sm shrink-0"

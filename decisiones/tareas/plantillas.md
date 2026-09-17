@@ -159,3 +159,23 @@ Pedido del usuario (`BACKLOG.md` → *Tareas sobre el modelo de entes*), constru
 **Tests:** `eventos.sql` 25/25 (nuevo). `plantillas_disparo.sql` 34/34, `plantillas_roles.sql` 15/15, `plantillas.sql` 27/27 y `asignar_con_acceso.sql` 24/24 sin tocar: el disparo por estado se comporta igual colgado de `eventos`.
 
 Archivos: `sql/068`, `PlantillaFormPanel.tsx`, `PlantillasView.tsx`, `types.ts`, `actions.ts`, `queries.ts` (`getEntes`, `getAuditoria`), `lib/entes.ts`, `database.types.ts`.
+
+## Quien administra ve las privadas; los pasos respetan asignar (`sql/079`)
+
+Fase 4 de la auditoría del 2026-09-17 (`sql/tests/auditoria_tareas.sql`, bloque F4).
+
+**`tareas_gestionar_ajenas` ve y usa las plantillas privadas ajenas, pero no las edita.** Es la regla de que
+siempre hay una función que administra (`decisiones/global/permisos.md`), en la versión que eligió el usuario:
+lectura, no edición. `puede_gestionar_plantilla` no cambia, y `PlantillasView` sigue sin mostrar Modificar ni
+Desactivar sobre una privada ajena.
+
+**Activar sigue siendo de lo propio o de sistema.** Prender el disparador de una privada ajena la haría correr
+con los cambios de quien administra. Lo exige la policy de `tareas_plantillas_activaciones`, y la vista no muestra
+el interruptor en ese caso.
+
+**El UPDATE de pasos pide `tareas_asignar`, como el INSERT.** Sin eso, un PATCH directo dejaba guardado un paso
+asignado a alguien que el dueño no podía elegir. Apagar un paso queda libre: `guardar_plantilla` desactiva los
+viejos, y pueden tener asignados que puso otro.
+
+Archivos: `sql/079_tareas_plantillas_admin.sql`, `sql/tests/auditoria_tareas.sql`, `sql/tests/plantillas.sql`
+(06), `components/PlantillasView.tsx`.

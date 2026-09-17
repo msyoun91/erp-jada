@@ -50,6 +50,7 @@ Plantillas de sistema y privadas, tres tipos (`sql/053`), disparadas por el esta
 - Roles de la obra en la plantilla (`sql/060`)
 - Texto y pasos que dependen de un rol (`sql/065`)
 - Plantillas disparadas por un evento (`sql/068`)
+- Quien administra ve las privadas; los pasos respetan asignar (`sql/079`)
 
 ## `escrituras-postgres.md`
 

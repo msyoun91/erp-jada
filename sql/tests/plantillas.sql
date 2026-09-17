@@ -111,8 +111,10 @@ BEGIN
     '[]'::jsonb, format('[{"titulo":"S1","asignados":["%s"],"incluir_ejecutor":false,"responsable_id":"%s"}]', v_admin, v_admin)::jsonb);
 
   SELECT count(*) INTO v_n FROM tareas_plantillas WHERE id = v_pl;
-  r := r || E'\n06 ADMIN no ve la privada de TESTER: ' ||
-    CASE WHEN v_n = 0 THEN 'OK' ELSE 'FALLO' END;
+  -- Desde sql/079 ADMIN la ve: tiene tareas_gestionar_ajenas, la función que
+  -- administra. Verla no es editarla (caso 03 del bloque F4 de auditoria_tareas.sql).
+  r := r || E'\n06 ADMIN (administra) ve la privada de TESTER: ' ||
+    CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO' END;
   PERFORM set_config('role', 'none', true);
 
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_tester, 'role', 'authenticated')::text, true);

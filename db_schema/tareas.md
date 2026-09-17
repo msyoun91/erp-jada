@@ -1,6 +1,6 @@
 # Módulo tareas
 
-Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`061`, `063`, `076`–`078` (más las que cita cada sección) — corridas en Supabase vía MCP.
+Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`061`, `063`, `076`–`079` (más las que cita cada sección) — corridas en Supabase vía MCP.
 
 **Regla de visibilidad (`sql/013`): se ve lo asignado y lo público, nada más** — `creado_por` no autoriza. Excepciones: `tareas_gestionar_ajenas` y `tareas_hilos.responsable_id`. Los UPDATE están alineados con los SELECT. El porqué, en `decisiones/tareas/visibilidad.md`.
 
@@ -167,7 +167,7 @@ Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados o, desde `sql/057`, en 
 | activo | boolean | |
 | created_at | timestamptz | |
 
-**RLS.** `tareas_plantillas_select`: vista `tareas_plantillas` y (`alcance = 'sistema'` o dueño). INSERT: dueño + vista, y `alcance = 'privada'` o la función. UPDATE (tabla y los dos hijos): `puede_gestionar_plantilla(id)` — función `SECURITY INVOKER STABLE` (la de sistema, con la función; la privada, su dueño); no recursa porque las policies de `tareas_plantillas` no miran a los hijos. SELECT de los hijos: `EXISTS` sobre `tareas_plantillas` (su RLS decide). INSERT/UPDATE de items suma la regla de `sql/014`: asignados o responsable ajenos exigen `tareas_asignar`.
+**RLS.** `tareas_plantillas_select`: vista `tareas_plantillas` y (`alcance = 'sistema'`, dueño o `tareas_gestionar_ajenas`). La última rama es de `sql/079`: la función que administra ve y usa las privadas ajenas, pero no las edita. INSERT: dueño + vista, y `alcance = 'privada'` o la función. UPDATE (tabla y los dos hijos): `puede_gestionar_plantilla(id)` — función `SECURITY INVOKER STABLE` (la de sistema, con la función; la privada, su dueño); no recursa porque las policies de `tareas_plantillas` no miran a los hijos. SELECT de los hijos: `EXISTS` sobre `tareas_plantillas` (su RLS decide). INSERT/UPDATE de items suma la regla de `sql/014`: asignados o responsable ajenos exigen `tareas_asignar`. En el UPDATE está desde `sql/079` (antes faltaba) y no se aplica a apagar un paso, porque `guardar_plantilla` desactiva los viejos antes de insertar.
 
 **Escritura por función.** `guardar_plantilla(p_id, p_nombre, p_descripcion, p_alcance, p_tipo, p_visibilidad, p_miembros, p_hilos jsonb, p_pasos jsonb, p_disparo_ente, p_disparo_estado, p_titulo_creado, p_encadenada, p_disparo_evento, p_disparo_rol) → uuid` (cada hilo de `p_hilos` lleva su `encadenada`) crea o edita (`p_id` NULL = crear; `p_alcance` solo se lee al crear). Guardar **reemplaza**: desactiva los hilos y pasos activos e inserta los nuevos — nada referencia a un paso de plantilla. Valida la forma según el tipo (`TA010`) y que haya pasos (`TA009`); sin disparador, rechaza pasos con roles (`TA015`, `sql/060`). `usar_plantilla(p_plantilla_id, p_titulo, p_proyecto_id, p_hilo_id) → int` — ver la tabla de escrituras multi-tabla. Lo que crea se llama `p_titulo`, si no `titulo_creado`, si no `nombre`; los pasos se encadenan según `encadenada` de la plantilla (tipo `hilo`) o de su hilo (tipo `proyecto`), y sin cadena «vence tras el anterior» corre desde la creación (`sql/057`).
 
@@ -181,7 +181,7 @@ Tres tipos: `tarea` (un paso), `hilo` (pasos encadenados o, desde `sql/057`, en 
 | activo | boolean | el interruptor. UNIQUE normal (plantilla_id, usuario_id), por upsert |
 | created_at / updated_at | timestamptz | |
 
-La de sistema arranca apagada (sin fila); la privada, prendida: `guardar_plantilla` inserta la fila del dueño cuando tiene disparador, con `ON CONFLICT DO NOTHING` para no pisar un apagado. RLS: SELECT la propia; INSERT/UPDATE la propia, y además ver la plantilla y que tenga disparador. `GRANT SELECT, INSERT, UPDATE`.
+La de sistema arranca apagada (sin fila); la privada, prendida: `guardar_plantilla` inserta la fila del dueño cuando tiene disparador, con `ON CONFLICT DO NOTHING` para no pisar un apagado. RLS: SELECT la propia; INSERT/UPDATE la propia, y además que la plantilla tenga disparador y sea de sistema o propia. Desde `sql/079` "verla" no alcanza: quien administra ve las privadas ajenas, y activarlas las haría correr con sus cambios. `GRANT SELECT, INSERT, UPDATE`.
 
 | tareas_vinculos (`sql/055`, `sql/059`, `sql/066`, `sql/067`) | tipo | notas |
 |---|---|---|
