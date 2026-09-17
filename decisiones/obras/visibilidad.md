@@ -35,6 +35,10 @@ Clases de error nuevas: `OB020`–`OB025` (lista blanca `mensajeError`, texto pa
 
 ## Compartir con checklist y cascada de revocación (`sql/047`)
 
+> **Recortado por *Compartir no reparte contactos* (`sql/082`, abajo).** El checklist de personas
+> otorga grant **contextual**, no completo, y `origen_obra_id`/`origen_empresa_id` de
+> `obras_persona_compartida` ya no existen. La cascada por origen sigue viva solo para empresas.
+
 Pedido del usuario, sobre el modelo de *MODEL A*. Tres cosas:
 
 **1. Compartir obra.** Antes la obra solo se transfería. `obras_obra_compartida` +
@@ -174,6 +178,10 @@ Test: `sql/tests/obras_051.sql`.
 
 ## El grant heredado de una obra ve el contacto, no lo reparte (`sql/052`)
 
+> **Superado en parte por `sql/082` (abajo).** Para personas ya no existe el "grant heredado": el
+> checklist otorga contextual, que nunca habilitó vincular. `obras_persona_grant_directo` quedó en
+> "¿hay grant activo?". La rama de empresas sigue tal cual.
+
 Pedido del usuario, sobre *Compartir con checklist*. Compartir una obra tildando una persona/empresa
 en el checklist le da al receptor un `obras_persona_compartida` / `obras_empresa_compartida`
 **completo** (solo con `origen_obra_id` seteado). `obras_puede_ver_persona` / `_ver_empresa` no
@@ -215,6 +223,77 @@ Test: `sql/tests/obras_052.sql`, 5/5.
 
 ---
 
+## Compartir una obra o empresa no reparte contactos (`sql/082`)
+
+Pedido del usuario: *"cuando comparto obra que sea contextual nada más, no que esté compartiendo la
+persona. Cuando comparto empresa también"*. El motivo: compartir se había vuelto difícil de razonar.
+
+**El checklist escribe `obras_persona_grant_contextual`, no `obras_persona_compartida`.** El grant
+completo del checklist (`sql/047`) ya venía siendo recortado tres veces —`sql/052` (no puede colgar
+el contacto de las obras propias del receptor), `sql/070` (no ve la razón social de su empresa),
+`sql/049` (estado deseado, para poder desarmar la cascada)—. Cada parche lo acercaba a algo que ya
+existía al lado desde `sql/041`: el grant contextual de transferir. Dos mecanismos para una
+intención, y el fuerte convergiendo al débil a golpe de migración.
+
+**Ahora transferir y compartir tienen una sola regla:** el contacto ajeno se ve dentro de la ficha
+que lo trajo, nunca en la agenda. La persona tildada se abre solo con `?ctx=obra:{id}` /
+`?ctx=empresa:{id}`, no entra al listado, al buscador ni a la agenda del receptor, y no habilita
+vincular. El contacto sigue saliendo solo por `obras_ficha_persona(..., ctx)`, que registra en
+`obras_accesos_persona`.
+
+**El ancla es el origen.** `obras_persona_compartida.origen_obra_id` / `origen_empresa_id` se
+dropean: el `obra_id` / `empresa_id` del grant contextual dice de dónde vino y por dónde se abre, en
+una columna. Consecuencia: `obras_persona_compartida` pasa a tener un solo significado —acceso
+completo, acto directo del dueño— y `obras_persona_grant_directo` (sql/052) colapsa a
+"¿hay grant activo?". Destildar, `obras_revocar_obra` y `obras_revocar_empresa` apagan por ancla.
+
+**Dos lecturas había que abrir, o el receptor dejaba de ver la fila.** `obras_vinculos_de_obra`
+(sql/051) mostraba la persona solo con grant **completo**: sin el parche, compartís la obra y el
+receptor no ve ninguna. La policy `obras_persona_empresa_select` (sql/027) es
+`obras_puede_ver_persona`, que no cuenta contextuales: sin el parche, la ficha de la empresa
+compartida queda sin empleados. Las dos ramas nuevas van **ancladas** —`obras_persona_grant_ctx_obra_conmigo` /
+`_empresa_conmigo`, DEFINER con parámetro— para que un grant traído por la obra A no abra la fila en
+la obra B. `obras_personas_select` (sql/039) ya admitía el contextual: el nombre salía por RLS desde
+siempre.
+
+**Las empresas no cambian: grant completo.** Una empresa no tiene dónde esconderse —no hay
+`obras_ficha_empresa()` DEFINER ni columnas revocadas como en persona—, así que "contextual" sería
+solo de UI, y la UI no es barrera. Es además lo que `obras_transferir` ya decidió dos líneas más
+abajo de donde otorga el contextual: *"el resto entra a la agenda del receptor (empresa no es
+sensible)"*. El dato sensible de una empresa es su gente, y esa sí pasa a contextual.
+
+**`obras_revocar_persona` no cambia.** Sigue bajando el grant directo **y** los contextuales de esa
+persona para ese usuario. Es el corte total que dice el botón, y es lo que hace funcionar el revocar
+de la vista Compartido parado sobre una fila de cascada. Efecto lateral aceptado: revocar un share
+directo también saca el acceso que venía por el checklist de una obra; el checklist lo muestra
+destildado y re-tildarlo lo restituye.
+
+**Bug preexistente arreglado acá:** `obras_revocar_empresa` perdió la cascada de personas al
+reescribirse en `sql/052` (quedó la de `obras_obra_empresa` y se cayó la de `origen_empresa_id`).
+Revocar una empresa dejaba vivos los grants de las personas tildadas en su checklist. Ningún test lo
+cazó: `obras_052.sql` probó la cascada de vínculos, no la de grants.
+
+**Compartir al asignar una tarea también va contextual — y queda a medio camino, a propósito.**
+`obras_compartir_registros` (`sql/062`/`064`) otorgaba grant completo con origen. Ahora ancla en la
+misma obra/empresa que ya buscaba para el origen —mía, activa, vinculada a esa persona y ya
+compartida con ese usuario—, así que el vínculo que el grant valida en vivo existe por construcción.
+Sin ancla corta con `OB029`. **Lo que no funciona todavía:** ni con ancla el receptor abre la ficha
+desde la tarea, porque `obras_puede_ver_persona_de` —y por lo tanto `puede_abrir_registro`— no
+cuenta contextuales, y el chip sale de `entes.ruta` sin `?ctx=`. El usuario decidió romperlo ahora y
+repararlo después: la reparación (ancla `tarea_id`, su rama en `obras_ficha_persona`, el chip con
+ctx, `obras_puede_abrir`) está en `BACKLOG.md`.
+
+**Filtro de vista para el responsable (sin SQL).** La ficha de obra suma un check "Ocultar lo que
+agregaron otros", que esconde los vínculos con `agregadoPor` (los que sumó un receptor, `sql/051`).
+Es **filtro de vista, nunca policy**: el responsable es la autoridad de la obra y la base le sigue
+devolviendo todo — si se lo escondiera en RLS dejaría de poder auditar lo que cuelga de su obra, que
+es lo contrario de *MODEL A*. Para sacarlo de verdad ya está "Quitar de la obra".
+
+Archivos: `sql/082_compartir_contextual.sql`, `sql/tests/obras_082.sql`,
+`modules/obras/components/ObraDetalle.tsx` · `CompartirPanel.tsx` · `CompartidoView.tsx`.
+
+---
+
 ## La empresa de una persona en la obra la ve quien ve la empresa (`sql/070`)
 
 **`obras_vinculos_de_obra` devuelve `detalle` (la razón social de `obras_obra_persona.empresa_id`)
@@ -233,6 +312,10 @@ el id); el archivo tiene el estado final.
 ---
 
 ## Lo compartido entra al listado; editar sigue siendo del dueño (sin SQL)
+
+> **Recortado por `sql/082`.** Lo que entra al listado es el share **directo**. La persona tildada
+> en el checklist de una obra/empresa ya no: su grant es contextual y se abre solo desde esa ficha.
+> `idsCompartidosConmigo` no cambió — lee `obras_persona_compartida`, que ahora solo tiene directos.
 
 **`getPersonas` / `getEmpresas` muestran lo propio + lo compartido conmigo, igual que `getObras`.**
 Filtraban `creado_por = me` y la persona o empresa compartida —directa o por el checklist de una

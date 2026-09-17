@@ -63,6 +63,8 @@ const DISPARO: Record<TipoEvento, (un: string) => string> = {
   relacion_baja: (un) => `Sola, cuando a ${un} se le saca un rol`,
   baja: (un) => `Sola, cuando se da de baja ${un}`,
   reactivacion: (un) => `Sola, cuando se reactiva ${un}`,
+  compartido: (un) => `Sola, cuando compartís ${un}`,
+  revocado: (un) => `Sola, cuando revocás ${un}`,
 };
 
 type ModoVence = "sin" | "creacion" | "tras_previo";

@@ -116,10 +116,10 @@ export function CompartidoView({ filas }: { filas: CompartidoRow[] }) {
   return (
     <div className="flex flex-col gap-2">
       <p className="t-body-m mb-2 max-w-prose">
-        Todo lo que compartiste, con quién y de qué origen. Lo que compartiste dentro de una obra o
-        empresa aparece anidado debajo de ella. Quien recibe lo ve completo pero no puede editarlo
-        ni re-compartirlo. Revocar una obra o empresa también saca lo que se compartió junto con
-        ella.
+        Todo lo que compartiste, con quién y de qué origen. Lo que diste dentro de una obra o
+        empresa aparece anidado debajo de ella: esa persona se abre solo ahí, no entra a la agenda
+        del otro. Quien recibe no puede editar ni re-compartir. Revocar una obra o empresa también
+        saca lo que se dio junto con ella.
       </p>
 
       <ul className="flex flex-col gap-2">

@@ -182,10 +182,11 @@ export function CompartirPanel({
 
         {conChecklist && destino && relaciones.length > 0 && (
           <div>
-            <p className="t-label mb-1">Compartir también</p>
+            <p className="t-label mb-1">Dar acceso al contacto</p>
             <p className="t-caption mb-2">
-              Lo vinculado a {tipo === "obra" ? "esta obra" : "esta empresa"} que cargaste vos.
-              Tildado se comparte; destildado se deja de compartir. Todo se revoca junto con{" "}
+              Lo vinculado a {tipo === "obra" ? "esta obra" : "esta empresa"} que cargaste vos. Una
+              persona tildada se abre solo desde {tipo === "obra" ? "esta obra" : "esta empresa"}: no
+              entra a la agenda ni al buscador del otro. Todo cae junto con{" "}
               {tipo === "obra" ? "la obra" : "la empresa"}.
             </p>
             <ul className="flex flex-col gap-1">

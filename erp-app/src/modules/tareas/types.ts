@@ -307,7 +307,16 @@ export const guardarPlantillaSchema = z
     pasos: z.array(pasoPlantillaSchema).default([]),
     disparo_ente: z.string().nullable().default(null),
     disparo_evento: z
-      .enum(["alta", "baja", "reactivacion", "estado", "relacion_alta", "relacion_baja"])
+      .enum([
+        "alta",
+        "baja",
+        "reactivacion",
+        "estado",
+        "relacion_alta",
+        "relacion_baja",
+        "compartido",
+        "revocado",
+      ])
       .nullable()
       .default(null),
     disparo_estado: z.string().nullable().default(null),

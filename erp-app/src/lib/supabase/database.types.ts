@@ -625,8 +625,6 @@ export type Database = {
           activo: boolean
           created_at: string
           id: string
-          origen_empresa_id: string | null
-          origen_obra_id: string | null
           otorgada_por: string
           persona_id: string
           updated_at: string
@@ -636,8 +634,6 @@ export type Database = {
           activo?: boolean
           created_at?: string
           id?: string
-          origen_empresa_id?: string | null
-          origen_obra_id?: string | null
           otorgada_por: string
           persona_id: string
           updated_at?: string
@@ -647,28 +643,12 @@ export type Database = {
           activo?: boolean
           created_at?: string
           id?: string
-          origen_empresa_id?: string | null
-          origen_obra_id?: string | null
           otorgada_por?: string
           persona_id?: string
           updated_at?: string
           usuario_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "obras_persona_compartida_origen_empresa_id_fkey"
-            columns: ["origen_empresa_id"]
-            isOneToOne: false
-            referencedRelation: "obras_empresas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "obras_persona_compartida_origen_obra_id_fkey"
-            columns: ["origen_obra_id"]
-            isOneToOne: false
-            referencedRelation: "obras"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "obras_persona_compartida_otorgada_por_fkey"
             columns: ["otorgada_por"]
@@ -2054,7 +2034,11 @@ export type Database = {
         Returns: undefined
       }
       notificar_disparo: {
-        Args: { p_corrio: boolean; p_plantilla_id: string; p_sin_acceso?: boolean }
+        Args: {
+          p_corrio: boolean
+          p_plantilla_id: string
+          p_sin_acceso?: boolean
+        }
         Returns: undefined
       }
       obras_array_sin_duplicados: { Args: { a: unknown }; Returns: boolean }
@@ -2339,6 +2323,14 @@ export type Database = {
         Args: { p_persona_id: string }
         Returns: boolean
       }
+      obras_persona_grant_ctx_empresa_conmigo: {
+        Args: { p_empresa_id: string; p_persona_id: string }
+        Returns: boolean
+      }
+      obras_persona_grant_ctx_obra_conmigo: {
+        Args: { p_obra_id: string; p_persona_id: string }
+        Returns: boolean
+      }
       obras_persona_grant_ctx_vigente: {
         Args: { p_persona_id: string }
         Returns: boolean
@@ -2365,6 +2357,10 @@ export type Database = {
       }
       obras_puede_compartir: {
         Args: { p_id: string; p_tipo: string }
+        Returns: boolean
+      }
+      obras_puede_ver_compartido: {
+        Args: { p_id: string; p_tipo: string; p_usuario_id: string }
         Returns: boolean
       }
       obras_puede_ver_empresa: {
@@ -2562,6 +2558,10 @@ export type Database = {
         Args: { p_plantilla_id: string }
         Returns: boolean
       }
+      puede_ver_compartido: {
+        Args: { p_ente: string; p_id: string; p_usuario_id: string }
+        Returns: boolean
+      }
       puede_ver_hilo: { Args: { p_hilo_id: string }; Returns: boolean }
       puede_ver_hilo_de: {
         Args: { p_hilo_id: string; p_usuario: string }
@@ -2665,16 +2665,19 @@ export type Database = {
         Args: { p_id: string; p_tipo: string }
         Returns: string
       }
-      tareas_puede_abrir: {
-        Args: { p_id: string; p_tipo: string; p_usuario: string }
-        Returns: boolean
-      }
       tareas_proyecto_destino_valido: {
         Args: { p_proyecto_id: string; p_usuario: string }
         Returns: boolean
       }
+      tareas_puede_abrir: {
+        Args: { p_id: string; p_tipo: string; p_usuario: string }
+        Returns: boolean
+      }
       tareas_puede_escribir: { Args: never; Returns: boolean }
-      tareas_puede_gestionar_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
+      tareas_puede_gestionar_tarea: {
+        Args: { p_tarea_id: string }
+        Returns: boolean
+      }
       tareas_puede_ver_tarea: {
         Args: {
           p_hilo_id: string
@@ -2813,6 +2816,8 @@ export type Database = {
         | "estado"
         | "relacion_alta"
         | "relacion_baja"
+        | "compartido"
+        | "revocado"
       tipo_notificacion:
         | "alta_aprobada"
         | "alta_rechazada"
@@ -3047,6 +3052,8 @@ export const Constants = {
         "estado",
         "relacion_alta",
         "relacion_baja",
+        "compartido",
+        "revocado",
       ],
       tipo_notificacion: [
         "alta_aprobada",

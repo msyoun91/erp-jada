@@ -32,6 +32,8 @@ function cuandoCorre(p: PlantillaCompleta) {
     relacion_baja: `a ${un} le sacás el rol «${nombreRol}»`,
     baja: `das de baja ${un}`,
     reactivacion: `reactivás ${un}`,
+    compartido: `compartís ${un}`,
+    revocado: `revocás ${un}`,
   };
   return `Corre sola cuando ${cuando[p.disparo_evento ?? "estado"]}, si la tenés activada.`;
 }

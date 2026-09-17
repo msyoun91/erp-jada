@@ -130,8 +130,15 @@ export function ObraDetalle({
   const [transfiriendo, setTransfiriendo] = useState(false);
   const [compartiendo, setCompartiendo] = useState(false);
   const [confirmando, setConfirmando] = useState<Confirmacion | null>(null);
+  const [ocultarDeOtros, setOcultarDeOtros] = useState(false);
 
   const comisionPorPersona = new Map(referentes.map((r) => [r.persona_id, r]));
+
+  // Filtro de vista, no de acceso: el responsable sigue siendo la autoridad de
+  // la obra y la base le devuelve todo. Ocultar es comodidad del que mira.
+  const hayDeOtros = empresas.some((e) => e.agregadoPor) || personas.some((p) => p.agregadoPor);
+  const empresasVisibles = ocultarDeOtros ? empresas.filter((e) => !e.agregadoPor) : empresas;
+  const personasVisibles = ocultarDeOtros ? personas.filter((p) => !p.agregadoPor) : personas;
 
   async function correr(accion: () => Promise<{ success: boolean; error?: string }>, ok: string) {
     const result = await accion();
@@ -230,6 +237,17 @@ export function ObraDetalle({
         }}
       />
 
+      {hayDeOtros && (
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={ocultarDeOtros}
+            onChange={() => setOcultarDeOtros((v) => !v)}
+          />
+          <span className="t-caption">Ocultar lo que agregaron otros</span>
+        </label>
+      )}
+
       <section>
         <div className="mb-2 flex items-center gap-2">
           <h3 className="t-h3 flex-1">Empresas</h3>
@@ -240,13 +258,13 @@ export function ObraDetalle({
             </button>
           )}
         </div>
-        {empresas.length === 0 ? (
+        {empresasVisibles.length === 0 ? (
           <div className="empty-state p-8">
             <p className="t-body-m">Ninguna empresa vinculada todavía.</p>
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
-            {empresas.map((e) => {
+            {empresasVisibles.map((e) => {
               // El vínculo que sumó un receptor: el responsable lo quita pero
               // no lo edita (el trigger corta con OB028).
               const acciones = [
@@ -321,13 +339,13 @@ export function ObraDetalle({
             </button>
           )}
         </div>
-        {personas.length === 0 ? (
+        {personasVisibles.length === 0 ? (
           <div className="empty-state p-8">
             <p className="t-body-m">Ninguna persona vinculada todavía.</p>
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
-            {personas.map((p) => {
+            {personasVisibles.map((p) => {
               const ref = comisionPorPersona.get(p.persona_id);
               const acciones = [
                 ...(permisos.referentes

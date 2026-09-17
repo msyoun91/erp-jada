@@ -42,3 +42,40 @@ Pedida junto con las notificaciones y no construida (ver `decisiones/global/infr
 
 Cuando aparezca un caso real, la sugerencia debería abrir el flujo de plantillas que ya existe, no un camino de creación nuevo. Un vínculo que no venga de un disparo pide revisar dos cosas de `sql/055`: `tareas_vinculos.plantilla_id` es NOT NULL, e insertar exige estar adentro de un trigger.
 
+
+## Compartir al asignar una tarea quedó a medio camino (`sql/082`, 2026-09-17)
+
+`obras_compartir_registros` ahora otorga **grant contextual** anclado a la obra/empresa compartida
+con ese usuario, igual que el resto de compartir (`decisiones/obras/visibilidad.md` → *Compartir una
+obra o empresa no reparte contactos*). Pero el receptor **todavía no puede abrir la ficha desde la
+tarea**: `obras_puede_ver_persona_de` —y por lo tanto `puede_abrir_registro` (`sql/062`)— no cuenta
+contextuales, y el chip sale de `entes.ruta` sin `?ctx=`. Consecuencia visible: el flujo sigue
+ofreciendo compartir esa persona aunque ya se le otorgó. Y si no hay obra/empresa en común, corta
+con `OB029`.
+
+Decidido con el usuario: se rompe a propósito ahora y se repara después.
+
+**La reparación, cuando se haga:** ancla `tarea_id` en `obras_persona_grant_contextual` (el CHECK
+pasa a obra XOR empresa XOR tarea), su rama en `obras_ficha_persona` —"la tarea sigue vinculando a
+esta persona y el usuario ve la tarea"—, el chip con `?ctx=tarea:{id}`, y `obras_puede_abrir`
+aprendiendo esa rama. Es un tercer tipo de contexto y mete a Obras a validar contra `tareas`:
+decidir dónde vive esa validación antes de escribirla.
+
+## Deriva base ↔ repo: `compartido` / `revocado` sin archivo SQL (2026-09-17)
+
+Apareció al regenerar `database.types.ts` después de `sql/082`. Está en la base y **no** en `sql/`
+ni en `db_schema/`:
+
+- el enum `tipo_evento` tiene dos valores más: `compartido` y `revocado`
+- existen `obras_puede_ver_compartido(p_tipo, p_id, p_usuario_id)` y
+  `puede_ver_compartido(p_ente, p_id, p_usuario_id)`
+
+No dispara nada hoy: ningún ente los declara en `entes.disparos` (`obra` tiene
+`{alta,estado,relacion_alta,relacion_baja}`, `empresa`/`persona`/`tarea` vacíos). Para que `tsc`
+pasara se sumaron las etiquetas a `PlantillaFormPanel.tsx`, `PlantillasView.tsx` y al `z.enum` de
+`tareas/types.ts` — siguiendo el patrón que el propio archivo ya documenta ("atada al enum aunque
+hoy ningún ente dispare con baja ni reactivación: los ofrece `entes.disparos`, no esta lista").
+
+**Alguien corrió SQL sin dejar el archivo.** Falta averiguar de qué feature son, escribir el archivo
+en `sql/` y sincronizar `db_schema/`. Hasta entonces, cualquier regeneración de tipos las vuelve a
+traer.
