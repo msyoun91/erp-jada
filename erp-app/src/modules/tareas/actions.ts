@@ -56,10 +56,11 @@ import {
 import type { FilaSinAcceso } from "@/lib/accesos";
 
 // Sin chequeo de permisos acá: estas actions usan el cliente normal (no
-// service_role), así que RLS ya autoriza cada operación a nivel fila —
-// duplicar el chequeo en la action no agrega barrera, solo un segundo
-// lugar donde desincronizarse (a diferencia de modules/usuarios/actions.ts,
-// que usa cliente admin y sí necesita el chequeo porque bypasea RLS).
+// service_role), y cualquiera con sesión puede saltearlas y pegarle a la API
+// de Supabase directo. Toda regla de quién puede qué vive en la base (RLS,
+// grants por columna y triggers, sql/076–079); lo que solo está en Zod es
+// ayuda para el formulario, no barrera (a diferencia de
+// modules/usuarios/actions.ts, que usa cliente admin y sí chequea).
 async function usuarioActualId() {
   const supabase = await createClient();
   const {

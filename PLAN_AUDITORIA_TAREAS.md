@@ -56,11 +56,12 @@ Resultado: `auditoria_tareas` F4 7/7. En `plantillas.sql` el caso 06 pasa a espe
 
 ## Fase 5 — App
 
-- [ ] 15 · Auditoría: validar `desde` / `hasta` / `usuario` y no mandar cientos de ids por URL.
-- [ ] 16 · `posponerSchema.hasta` como fecha; `max` en arrays de asignados, miembros y pasos del tutorial (23).
-- [ ] 19 · Comentario de `actions.ts` sobre quién autoriza.
-- [ ] 22 · Borrar `getHiloTareas`, `filtrosTareasSchema`, `FiltrosTareas`.
-- [ ] `npx tsc --noEmit` + tests de `erp-app`.
+- [x] 15 · Auditoría: validar `desde` / `hasta` / `usuario` y no mandar cientos de ids por URL.
+- [x] 16 · `posponerSchema.hasta` como fecha (`z.iso.date`).
+- [ ] ~~23 · `max` en arrays~~ — no hace falta: una server action ya corta el body en 1 MB (default de Next), y la base valida cada elemento.
+- [x] 19 · Comentario de `actions.ts` sobre quién autoriza.
+- [x] 22 · Borrar `getHiloTareas`, `filtrosTareasSchema`, `FiltrosTareas`.
+- [x] `npx tsc --noEmit` + tests de `erp-app` (`node --test`, 20/20) + eslint de lo tocado.
 
 **Commitear.**
 

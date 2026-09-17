@@ -144,19 +144,6 @@ export async function getTareasDeRegistro(
   return { tareas: ordenadas, delHilo: conNotasYVinculos(delHilo ?? [], vinculos ?? []), hilos: hilos ?? [] };
 }
 
-export async function getHiloTareas(hiloId: string): Promise<TareaConAsignados[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tareas")
-    .select("*, tareas_asignados(usuario_id, activo, usuarios(nombre))")
-    .eq("hilo_id", hiloId)
-    .eq("activo", true)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data ?? [];
-}
-
 export async function getProyectos(): Promise<TareaProyecto[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -274,18 +261,32 @@ export async function getAuditoria(
   const eventos = data ?? [];
   if (eventos.length === 0) return [];
 
+  // `.in()` viaja en la URL: con cientos de ids pasa el límite del gateway y la
+  // vista entera falla. De a 100 (~3,7 KB por pedido).
   const tareaIds = [...new Set(eventos.map((e) => e.registro_id))];
-  const [{ data: tareas, error: errorTareas }, { data: asignaciones, error: errorAsignaciones }] = await Promise.all([
-    supabase.from("tareas").select("id, titulo, created_at").in("id", tareaIds),
-    supabase.from("tareas_asignados").select("tarea_id, usuario_id, created_at").in("tarea_id", tareaIds),
-  ]);
+  const lotes: string[][] = [];
+  for (let i = 0; i < tareaIds.length; i += 100) lotes.push(tareaIds.slice(i, i + 100));
+  const respuestas = await Promise.all(
+    lotes.map((ids) =>
+      Promise.all([
+        supabase.from("tareas").select("id, titulo, created_at").in("id", ids),
+        supabase.from("tareas_asignados").select("tarea_id, usuario_id, created_at").in("tarea_id", ids),
+      ]),
+    ),
+  );
 
-  if (errorTareas) throw errorTareas;
-  if (errorAsignaciones) throw errorAsignaciones;
+  const tareas = respuestas.flatMap(([t]) => {
+    if (t.error) throw t.error;
+    return t.data;
+  });
+  const asignaciones = respuestas.flatMap(([, a]) => {
+    if (a.error) throw a.error;
+    return a.data;
+  });
 
-  const tareaPorId = new Map((tareas ?? []).map((t) => [t.id, { titulo: t.titulo, created_at: t.created_at }]));
+  const tareaPorId = new Map(tareas.map((t) => [t.id, { titulo: t.titulo, created_at: t.created_at }]));
   const fechaAsignacion = new Map<string, string>();
-  for (const a of asignaciones ?? []) {
+  for (const a of asignaciones) {
     const key = `${a.tarea_id}:${a.usuario_id}`;
     const actual = fechaAsignacion.get(key);
     if (!actual || a.created_at < actual) fechaAsignacion.set(key, a.created_at);

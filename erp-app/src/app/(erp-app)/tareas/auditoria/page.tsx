@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { z } from "zod";
 import { puedeVerAuditoria } from "@/modules/tareas/permissions";
 import { getAuditoria, getPendientesUsuario, getUsuariosParaAsignar } from "@/modules/tareas/queries";
 import { AuditoriaView } from "@/modules/tareas/components/AuditoriaView";
@@ -11,10 +12,13 @@ export default async function TareasAuditoriaPage({
 }) {
   if (!(await puedeVerAuditoria())) notFound();
 
+  // Un parámetro inválido en la URL rompía la vista entera (Postgres rechaza la
+  // fecha o el uuid): se ignora y vale el default.
   const params = await searchParams;
-  const desde = params.desde ?? sumarDiasISO(hoyISO(), -30);
-  const hasta = params.hasta ?? hoyISO();
-  const usuarioId = params.usuario ?? "";
+  const fecha = (v: string | undefined) => (z.iso.date().safeParse(v).success ? v : undefined);
+  const desde = fecha(params.desde) ?? sumarDiasISO(hoyISO(), -30);
+  const hasta = fecha(params.hasta) ?? hoyISO();
+  const usuarioId = params.usuario && z.uuid().safeParse(params.usuario).success ? params.usuario : "";
 
   const [eventos, usuarios, pendientes] = await Promise.all([
     getAuditoria(desde, hasta, usuarioId || undefined),

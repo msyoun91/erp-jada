@@ -414,7 +414,7 @@ export type ReasignarTareaForm = z.infer<typeof reasignarTareaSchema>;
 
 export const posponerSchema = z.object({
   id: z.string().uuid(),
-  hasta: z.string().min(1, "Elegí una fecha"),
+  hasta: z.iso.date("Elegí una fecha"),
 });
 
 export type PosponerForm = z.infer<typeof posponerSchema>;
@@ -451,13 +451,6 @@ export const agregarNotaHiloSchema = z.object({
 });
 
 export type AgregarNotaHiloForm = z.infer<typeof agregarNotaHiloSchema>;
-
-export const filtrosTareasSchema = z.object({
-  texto: z.string().optional(),
-  asignado_id: z.string().uuid().optional(),
-});
-
-export type FiltrosTareas = z.infer<typeof filtrosTareasSchema>;
 
 export const marcarTutorialSchema = z.object({
   pasos: z.array(z.string().min(1).max(80)).min(1),
