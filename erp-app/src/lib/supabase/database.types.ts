@@ -2636,6 +2636,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      tareas_asignado_puede_abrir: {
+        Args: { p_tarea_id: string; p_usuario: string }
+        Returns: boolean
+      }
       tareas_buscar: {
         Args: { p_texto: string }
         Returns: {
@@ -2669,6 +2673,7 @@ export type Database = {
         Args: { p_proyecto_id: string; p_usuario: string }
         Returns: boolean
       }
+      tareas_puede_gestionar_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
       tareas_puede_ver_tarea: {
         Args: {
           p_hilo_id: string

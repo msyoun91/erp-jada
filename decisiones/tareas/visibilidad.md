@@ -382,3 +382,27 @@ rechazando al no miembro: el camino del administrador son las funciones.
 Archivos: `sql/076_tareas_destino_y_admin.sql`, `sql/tests/auditoria_tareas.sql`, `atomicidad_tareas.sql`
 (02–03), `atomicidad_edicion_tareas.sql` (03, 09), `rls_visibilidad_tareas.sql` (16–17), `lib/utils.ts`
 (`TA017`), `modules/tareas/types.ts`.
+
+## Columnas, reactivar y relacionar (`sql/077`)
+
+Fase 2 de la auditoría del 2026-09-17. Todo se reprodujo por la API (`sql/tests/auditoria_tareas.sql`, bloque F2).
+
+**Cada tabla tiene su lista de columnas actualizables.** El GRANT de tabla entera dejaba a un asignado
+falsear `creado_por`, `created_at` (que ordena los pasos) y `origen_*`, y completar una tarea `hibrido`
+cambiándola a `manual` en la misma sentencia. El autor de una nota podía reescribirla. La lista sale de lo
+que escriben las actions y las funciones INVOKER. En notas, asignados y miembros la única columna es
+`activo`.
+
+**Reactivar una tarea o un hilo es del administrador** (`TA018`). Archivar lo hace quien gestiona, pero
+revivir lo que archivó un manager o la cascada de un proyecto le toca a `tareas_gestionar_ajenas`.
+
+**Relacionar pide poder gestionar la tarea, no solo verla.** Con una tarea pública, cualquiera apagaba o
+sumaba vínculos. `tareas_puede_gestionar_tarea` repite el USING de `tareas_update`. Un vínculo apagado ya
+no se prende por UPDATE: volver a relacionar pasa por `vincular_tarea`, que revisa el registro y a los
+asignados.
+
+**El filtro de acceso de `sql/063` pasa a la policy.** Solo lo aplicaban `crear_tarea` y
+`sincronizar_asignados`, así que un INSERT directo dejaba asignado a quien no puede abrir lo relacionado.
+Vale también para el administrador (decisión D): sacarlo o compartirle sigue siendo de `tareas_asignar`.
+
+Archivos: `sql/077_tareas_columnas_y_vinculos.sql`, `sql/tests/auditoria_tareas.sql`, `lib/utils.ts` (`TA018`).

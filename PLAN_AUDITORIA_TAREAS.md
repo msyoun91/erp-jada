@@ -22,11 +22,13 @@ Resultado: `auditoria_tareas` F1 17/17 · `atomicidad_tareas` 15/15 · `atomicid
 
 ## Fase 2 — Qué columnas se pueden tocar (`sql/077`)
 
-- [ ] 4/5 · Grants de UPDATE por columna en `tareas` (sin `id`, `creado_por`, `created_at`, `modo_completado`, `origen_*`, `paso_anterior_id`, `nota_anterior`), notas / asignados / miembros (solo `activo`), `tareas_proyectos` (sin `id`, `creado_por`, `created_at`), hilos e items de plantillas (sin `plantilla_id`, `id`, `created_at`).
-- [ ] 6 · Reactivar una tarea archivada: solo el administrador.
-- [ ] 7 · `tareas_vinculos` insert/update manual: quien puede gestionar la tarea (responsable, asignado o administrador), no quien solo la ve.
-- [ ] 8 · `tareas_asignados_insert/update`: nadie queda asignado sin poder abrir lo relacionado (misma regla que `sql/063`, ahora en la policy).
-- [ ] Test (bloque F2) + los de F1.
+- [x] 4/5 · Grants de UPDATE por columna en `tareas` (sin `id`, `creado_por`, `created_at`, `modo_completado`, `origen_*`, `paso_anterior_id`, `nota_anterior`), notas / asignados / miembros (solo `activo`), `tareas_proyectos` (sin `id`, `creado_por`, `created_at`), hilos e items de plantillas (sin `plantilla_id`, `id`, `created_at`).
+- [x] 6 · Reactivar una tarea archivada: solo el administrador.
+- [x] 7 · `tareas_vinculos` insert/update manual: quien puede gestionar la tarea (responsable, asignado o administrador), no quien solo la ve.
+- [x] 8 · `tareas_asignados_insert/update`: nadie queda asignado sin poder abrir lo relacionado (misma regla que `sql/063`, ahora en la policy).
+- [x] Test (bloque F2) + los de F1.
+
+Resultado: `auditoria_tareas` F2 14/14. Tests existentes revisados: ninguno escribe columnas sin grant, reactiva por UPDATE ni asigna por fuera de las funciones sobre tareas con vínculos.
 
 **Commitear.**
 

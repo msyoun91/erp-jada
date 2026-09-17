@@ -201,3 +201,151 @@ BEGIN
 
   RAISE EXCEPTION 'F1: %/% %', ok, total, r;
 END $t$;
+
+-- ─── F2 (sql/077): columnas, reactivar, vínculos y acceso de asignados ───────
+-- grants por columna, validar_reactivar_tarea, tareas_puede_gestionar_tarea,
+-- tareas_vinculos_insert/update, tareas_asignado_puede_abrir,
+-- tareas_asignados_insert/update.
+-- Último resultado: 14/14.
+DO $t$
+DECLARE
+  a uuid := '015fa985-fe21-4434-b3c5-7ac78732d765';
+  t uuid := '48b90421-a639-4637-b361-501fa7e1a1a0';
+  t_hib uuid := gen_random_uuid(); t_arch uuid := gen_random_uuid(); t_pub uuid := gen_random_uuid();
+  t_mia uuid := gen_random_uuid(); t_priv uuid := gen_random_uuid(); t_vinc uuid := gen_random_uuid();
+  v_nota uuid := gen_random_uuid();
+  n int; ok int := 0; total int := 0; r text := '';
+BEGIN
+  SET CONSTRAINTS ALL IMMEDIATE;
+
+  INSERT INTO tareas (id, titulo, responsable_id, creado_por, modo_completado) VALUES (t_hib, 'Híbrida de ADMIN', a, a, 'hibrido');
+  INSERT INTO tareas (id, titulo, responsable_id, creado_por, activo) VALUES (t_arch, 'Archivada', a, a, false);
+  INSERT INTO tareas (id, titulo, responsable_id, creado_por, visibilidad) VALUES (t_pub, 'Pública de ADMIN', a, a, 'publico');
+  INSERT INTO tareas (id, titulo, responsable_id, creado_por) VALUES (t_mia, 'De TESTER', t, t);
+  INSERT INTO tareas (id, titulo, responsable_id, creado_por) VALUES (t_priv, 'Privada de ADMIN', a, a);
+  INSERT INTO tareas (id, titulo, responsable_id, creado_por) VALUES (t_vinc, 'Relacionada con la privada', a, a);
+  INSERT INTO tareas_asignados (tarea_id, usuario_id) VALUES
+    (t_hib, t), (t_arch, t), (t_pub, a), (t_mia, t), (t_priv, a), (t_vinc, a);
+  INSERT INTO tareas_notas (id, tarea_id, usuario_id, nota) VALUES (v_nota, t_mia, t, 'original');
+  INSERT INTO tareas_vinculos (tarea_id, ente, registro_id) VALUES
+    (t_pub, 'tarea', t_mia), (t_mia, 'tarea', t_pub), (t_vinc, 'tarea', t_priv);
+
+  UPDATE usuario_submodulos us SET activo = (s.codigo = 'tareas_lista')
+    FROM submodulos s WHERE s.id = us.submodulo_id AND us.usuario_id = t AND s.modulo = 'tareas';
+  INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+  SELECT t, s.id FROM submodulos s WHERE s.codigo = 'tareas_lista'
+     AND NOT EXISTS (SELECT 1 FROM usuario_submodulos us WHERE us.usuario_id = t AND us.submodulo_id = s.id);
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', t, 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET estado = 'completada', modo_completado = 'manual' WHERE id = t_hib;
+    r := r || E'\nFALLO 01 completar híbrida pasándola a manual: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 01: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET creado_por = a WHERE id = t_mia;
+    r := r || E'\nFALLO 02 falsear creado_por: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 02: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET origen_punto = '//fuera' WHERE id = t_mia;
+    r := r || E'\nFALLO 03 cambiar origen_punto: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 03: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas_notas SET nota = 'reescrita' WHERE id = v_nota;
+    r := r || E'\nFALLO 04 reescribir una nota: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 04: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET activo = true WHERE id = t_arch;
+    r := r || E'\nFALLO 05 asignado revive archivada: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = 'TA018' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 05: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  UPDATE tareas_vinculos SET activo = false WHERE tarea_id = t_pub;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  IF n = 0 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 07 quien solo ve apaga un vínculo: ' || n || ' filas'; END IF;
+
+  total := total + 1;
+  UPDATE tareas_vinculos SET activo = false WHERE tarea_id = t_mia;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 08 asignado apaga vínculo propio: ' || n || ' filas'; END IF;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas_vinculos SET activo = true WHERE tarea_id = t_mia;
+    r := r || E'\nFALLO 09 reactivar un vínculo por UPDATE: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 09: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    INSERT INTO tareas_vinculos (tarea_id, ente, registro_id) VALUES (t_pub, 'tarea', t_hib);
+    r := r || E'\nFALLO 10 relacionar en tarea que solo ve: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 10: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET temperatura = 85 WHERE id = t_mia;
+    UPDATE tareas_notas SET activo = false WHERE id = v_nota;
+    ok := ok + 1;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 11 temperatura y ocultar nota propia: ' || SQLSTATE;
+  END;
+
+  -- ── ADMIN ──
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET activo = true WHERE id = t_arch;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 06 admin revive: ' || n || ' filas'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 06 admin revive: ' || SQLSTATE;
+  END;
+
+  total := total + 1;
+  BEGIN
+    INSERT INTO tareas_asignados (tarea_id, usuario_id) VALUES (t_vinc, t);
+    r := r || E'\nFALLO 12 asignado directo sin acceso a lo relacionado: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 12: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    PERFORM reasignar_tarea(t_vinc, a, ARRAY[a, t]);
+    SELECT count(*) INTO n FROM tareas_asignados WHERE tarea_id = t_vinc AND usuario_id = t AND activo;
+    IF n = 0 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 13 reasignar filtra al que no puede abrir: quedó asignado'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 13 reasignar: ' || SQLSTATE || ' ' || SQLERRM;
+  END;
+
+  total := total + 1;
+  BEGIN
+    INSERT INTO tareas_vinculos (tarea_id, ente, registro_id) VALUES (t_pub, 'tarea', t_hib);
+    ok := ok + 1;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 14 admin relaciona en cualquier tarea: ' || SQLSTATE;
+  END;
+
+  RAISE EXCEPTION 'F2: %/% %', ok, total, r;
+END $t$;

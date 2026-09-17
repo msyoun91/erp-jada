@@ -57,6 +57,7 @@ const MENSAJES_ERROR: Record<string, string> = {
   TA015: "Los roles de la obra solo se usan en plantillas que corren solas",
   TA016: "Alguien asignado no puede abrir lo relacionado y no tenés permiso para sacarlo de la tarea: compartíselo o pedile a quien pueda asignar.",
   TA017: "No tenés acceso a ese hilo o proyecto, o ya no está activo",
+  TA018: "Solo quien administra tareas puede reactivar algo archivado",
   email_exists: "Ese email ya está registrado",
   weak_password: "La contraseña es demasiado débil",
   invalid_credentials: "Email o contraseña incorrectos",

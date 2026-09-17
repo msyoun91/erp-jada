@@ -1,6 +1,6 @@
 # Módulo tareas
 
-Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`061`, `063`, `076` (más las que cita cada sección) — corridas en Supabase vía MCP.
+Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`061`, `063`, `076`, `077` (más las que cita cada sección) — corridas en Supabase vía MCP.
 
 **Regla de visibilidad (`sql/013`): se ve lo asignado y lo público, nada más** — `creado_por` no autoriza. Excepciones: `tareas_gestionar_ajenas` y `tareas_hilos.responsable_id`. Los UPDATE están alineados con los SELECT. El porqué, en `decisiones/tareas/visibilidad.md`.
 
@@ -81,6 +81,10 @@ Unidad mínima de trabajo. `proyecto_id` solo se usa cuando la tarea está suelt
 | activo | boolean | |
 | created_at / updated_at | timestamptz | `created_at` default `clock_timestamp()` desde `sql/053` (no `now()`): es el orden de los pasos en la Lista, y `now()` le daba a toda la cadena que crea una función el mismo instante |
 
+**`GRANT UPDATE` por columna (`sql/077`):** `titulo`, `descripcion`, `hilo_id`, `proyecto_id`, `visibilidad`, `estado`, `temperatura`, `responsable_id`, `fecha_vencimiento`, `vence_dias_tras_previo`, `posponer_desde`, `posponer_hasta`, `recurrencia_cantidad`, `recurrencia_unidad`, `nota_siguiente`, `activo`. Quedan afuera `id`, `creado_por`, `created_at`, `modo_completado` (un asignado completaba una `hibrido` pasándola a `manual` en la misma sentencia), `origen_*`, `paso_anterior_id` y `nota_anterior`. Mismo criterio en `tareas_proyectos` (`nombre`, `descripcion`, `visibilidad`, `activo`) y en `tareas_proyectos_miembros`, `tareas_asignados`, `tareas_notas` y `tareas_hilos_notas` (solo `activo`).
+
+**Reactivar es del administrador (`sql/077`).** Trigger `validar_reactivar_tarea` (`SECURITY DEFINER`) en `tareas` y `tareas_hilos`, `BEFORE UPDATE OF activo WHEN (NOT OLD.activo AND NEW.activo)`: sin `tareas_gestionar_ajenas`, `TA018`. Antes un asignado revivía lo que archivó un manager o la cascada del proyecto.
+
 **Vencimiento tras el paso anterior (`sql/053`).** Dos triggers `SECURITY DEFINER`, única fuente de la fecha derivada: `trg_fijar_vencimiento_tras_previo` (`BEFORE INSERT OR UPDATE OF vence_dias_tras_previo`, solo cuando el plazo cambia) la pone en `current_date + N` si el previo ya está completado y en NULL si no; `trg_arrancar_vencimiento_siguiente` (`AFTER UPDATE OF estado`, al entrar o salir de `completada`) la arranca en el paso siguiente al completar y la vuelve a NULL al reabrir. DEFINER porque quien completa un paso puede no tener UPDATE sobre el siguiente.
 
 **Recurrencia sin `pg_cron`:** la próxima instancia se genera al completar la actual (trigger `generar_recurrencia`), no por fecha de calendario — copia asignados y `nota_siguiente` → `nota_anterior` de la nueva.
@@ -103,7 +107,7 @@ Multi-asignado — cualquiera puede completar la tarea.
 
 ## tareas_notas / tareas_hilos_notas (`sql/008`)
 
-Historial de notas — "agregar", no "editar": sin UPDATE de texto, solo `activo` para ocultar una nota propia (nunca DELETE). `tareas_notas.tarea_id` FK → `tareas`; `tareas_hilos_notas.hilo_id` FK → `tareas_hilos`. Ambas con `usuario_id` FK → `usuarios` (autor) y `nota text`.
+Historial de notas — "agregar", no "editar": sin UPDATE de texto, solo `activo` para ocultar una nota propia (nunca DELETE). Desde `sql/077` lo garantiza el `GRANT UPDATE (activo)`; antes el grant era de tabla y el autor reescribía el texto. `tareas_notas.tarea_id` FK → `tareas`; `tareas_hilos_notas.hilo_id` FK → `tareas_hilos`. Ambas con `usuario_id` FK → `usuarios` (autor) y `nota text`.
 
 SELECT vía `EXISTS` directo sobre la tabla padre (`tareas`/`tareas_hilos`) — sin función `SECURITY DEFINER`: la RLS de la tabla padre ya resuelve visibilidad en cascada para el rol que consulta, y no hay recursión porque esa policy no mira hacia las tablas de notas. INSERT: mismo actor que puede gestionar la fila padre (`tareas_notas` reusa `es_responsable_tarea`/`es_asignado_tarea`; `tareas_hilos_notas` usa `responsable_id` del hilo), más `tareas_gestionar_ajenas`. UPDATE (solo `activo=false`): autor o ajenas.
 
@@ -188,7 +192,9 @@ La de sistema arranca apagada (sin fila); la privada, prendida: `guardar_plantil
 
 Con qué registros se relaciona cada tarea —de otros módulos o, desde `sql/067`, otra tarea—, y qué tareas salieron de cada (plantilla, registro). Unique parcial `idx_tareas_vinculos_activo_unico (tarea_id, ente, registro_id) WHERE activo` (`sql/059`). CHECK `tareas_vinculos_no_a_si_misma`: `ente <> 'tarea' OR registro_id <> tarea_id` (`sql/067`).
 
-RLS: SELECT si la tarea es visible. INSERT (`sql/059`), dos caminos: con `plantilla_id`, solo con `pg_trigger_depth() > 0` —lo escribe `usar_plantilla` adentro del disparo, y uno insertado por el cliente bloquearía el disparo real para todos—; sin `plantilla_id`, la tarea visible o en siembra (`es_siembra_tarea`) y el registro visible (`etiqueta_registro` no NULL, ver `core.md`). UPDATE solo de `activo` y solo sin plantilla: apagar el de un disparo lo dejaría volver a disparar. `GRANT SELECT, INSERT, UPDATE (activo)`.
+RLS: SELECT si la tarea es visible. INSERT (`sql/059`), dos caminos: con `plantilla_id`, solo con `pg_trigger_depth() > 0` —lo escribe `usar_plantilla` adentro del disparo, y uno insertado por el cliente bloquearía el disparo real para todos—; sin `plantilla_id`, poder gestionar la tarea (`tareas_puede_gestionar_tarea`, `sql/077`: antes alcanzaba con verla) o estar en siembra (`es_siembra_tarea`), y el registro visible (`etiqueta_registro` no NULL, ver `core.md`). UPDATE solo de `activo`, solo sin plantilla, solo quien gestiona la tarea y **solo para apagar** (`sql/077`): volver a relacionar es `vincular_tarea`, que revisa el registro y a los asignados. Apagar el de un disparo lo dejaría volver a disparar.
+
+`tareas_puede_gestionar_tarea(tarea)` (`sql/077`, `SECURITY DEFINER STABLE`, GRANT authenticated): la misma regla que el USING de `tareas_update` — `tareas_gestionar_ajenas`, responsable, asignado activo o responsable del hilo. `GRANT SELECT, INSERT, UPDATE (activo)`.
 
 Lecturas (`sql/059`, las tres `SECURITY INVOKER STABLE`, EXECUTE para `authenticated`):
 
@@ -297,7 +303,7 @@ Toda action que escribía dos o más tablas es ahora **una** función, invocada 
 
 Los ids se generan con `gen_random_uuid()` en una variable en vez de pedir `RETURNING`: en ese punto la fila todavía no pasa la policy de SELECT (la tarea no tiene asignados, el proyecto no tiene miembros, `puede_ver_hilo` relee su propia tabla).
 
-SQLSTATE mapeados en `MENSAJES_ERROR` (`lib/utils.ts`): **`TA008`** — un UPDATE afectó 0 filas, que es como RLS rechaza (reemplaza al `errorDeUpdate()` de TypeScript); **`TA009`** — la plantilla no tiene pasos; **`TA010`** (`sql/053`) — la plantilla no corresponde a su tipo; **`TA011`** (`sql/053`) — una plantilla de proyecto usada con destino; **`TA012`** (`sql/055`) — el disparador no es válido (estado fuera del enum del ente, o ente sin su submódulo); **`TA013`** (`sql/055`) — una plantilla con disparador usada a mano, o una sin disparador disparada; **`TA016`** (`sql/063`) — sacar a alguien sin acceso de una tarea sin tener `tareas_asignar`; **`TA017`** (`sql/076`) — el hilo o proyecto destino no existe, no está activo o no se ve. `EXECUTE` revocado de `PUBLIC` y otorgado a `authenticated`, mismo criterio que `sql/006`.
+SQLSTATE mapeados en `MENSAJES_ERROR` (`lib/utils.ts`): **`TA008`** — un UPDATE afectó 0 filas, que es como RLS rechaza (reemplaza al `errorDeUpdate()` de TypeScript); **`TA009`** — la plantilla no tiene pasos; **`TA010`** (`sql/053`) — la plantilla no corresponde a su tipo; **`TA011`** (`sql/053`) — una plantilla de proyecto usada con destino; **`TA012`** (`sql/055`) — el disparador no es válido (estado fuera del enum del ente, o ente sin su submódulo); **`TA013`** (`sql/055`) — una plantilla con disparador usada a mano, o una sin disparador disparada; **`TA016`** (`sql/063`) — sacar a alguien sin acceso de una tarea sin tener `tareas_asignar`; **`TA017`** (`sql/076`) — el hilo o proyecto destino no existe, no está activo o no se ve; **`TA018`** (`sql/077`) — reactivar una tarea o un hilo sin `tareas_gestionar_ajenas`. `EXECUTE` revocado de `PUBLIC` y otorgado a `authenticated`, mismo criterio que `sql/006`.
 
 Verificación: `sql/tests/atomicidad_tareas.sql` (15/15).
 
@@ -314,7 +320,7 @@ Cola de la tanda anterior, con otro modo de falla: estas no dejaban una fila inv
 
 `sincronizar_asignados` es el único escritor de `tareas_asignados` y de `responsable_id` sobre una tarea que ya existe — la comparten `editar_tarea`, `reasignar_tarea` y `vincular_tarea`, y si ni el conjunto ni el responsable cambiaron no toca nada. Lleva `GRANT` a `authenticated` porque una función `SECURITY INVOKER` llamada desde otra exige `EXECUTE` al rol que invoca; quedar expuesta por PostgREST no abre nada nuevo (la tabla ya acepta INSERT/UPDATE directo bajo las mismas policies).
 
-Desde `sql/063` filtra por acceso (`asignados_con_acceso` contra los vínculos activos de la tarea) antes de comparar: el early return mira el conjunto *ya filtrado* contra lo que hay, no lo que pidió el cliente. Si el filtro deja a alguien afuera y quien llama no tiene `tareas_asignar`, revierte entero con `TA016` — ver `decisiones/tareas/visibilidad.md` → *Quien no puede abrir lo relacionado no queda asignado*.
+Desde `sql/077` la regla también está en `tareas_asignados_insert/update`: una fila activa exige `tareas_asignado_puede_abrir(tarea, usuario)` (`SECURITY DEFINER STABLE`, GRANT authenticated: ningún vínculo activo de la tarea deja afuera a ese usuario; quien actúa está eximido). Antes un INSERT directo se salteaba el filtro. Desde `sql/063` filtra por acceso (`asignados_con_acceso` contra los vínculos activos de la tarea) antes de comparar: el early return mira el conjunto *ya filtrado* contra lo que hay, no lo que pidió el cliente. Si el filtro deja a alguien afuera y quien llama no tiene `tareas_asignar`, revierte entero con `TA016` — ver `decisiones/tareas/visibilidad.md` → *Quien no puede abrir lo relacionado no queda asignado*.
 
 Desde `sql/064` escribe por diferencia y en el orden que piden las policies: altas, bajas ajenas, el responsable (tercer argumento; si no quedó asignado, quien llama o el primero que quedó), y la baja propia al final. Quien se queda no recibe otro «te asignaron», y quien tiene `tareas_asignar` sin `tareas_gestionar_ajenas` puede pasar la tarea entera a otro. `editar_tarea` y `reasignar_tarea` ya no escriben `responsable_id`: lo dejan en manos de esta función. Ver *Asignados por diferencia, la pregunta completa y compartir en orden* en `decisiones/tareas/visibilidad.md`.
 
