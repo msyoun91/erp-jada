@@ -85,6 +85,7 @@ La vista Lista: de quién es el trabajo, filtros, arrastre, temperatura en tres 
 - Cierre de la auditoría de UI (Lista, plantillas, Misión)
 - Temperatura — De slider a tres niveles (sin SQL)
 - Descripción y plazo en la isla (del prototipo `obras-tareas.html`, sin SQL)
+- Paginar la Lista para quien administra: no se hace todavía (sin SQL)
 
 ## `vista-mision.md`
 

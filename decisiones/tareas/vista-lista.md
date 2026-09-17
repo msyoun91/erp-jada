@@ -109,3 +109,20 @@ ninguna decisión.
 **Lo que no se trajo del prototipo:** el tick de completada a la izquierda del título —el badge
 de estado ya lo dice, y un círculo no distingue `en_progreso` de `cancelada`— y los chips de
 persona/obra vinculada, que necesitan columnas nuevas en `tareas`.
+
+---
+
+## Paginar la Lista para quien administra (auditoría 21, sin SQL)
+
+**No se pagina. Se mide primero.** `getListaTareas` (`queries.ts`) trae todas las tareas activas
+sin `limit`: con `tareas_gestionar_ajenas` eso es la tabla entera. Hoy son 8 activas sobre 46
+totales y dos usuarios — paginar ahora es arquitectura para un problema que no existe.
+
+El costo no es el `.range()`: el orden de la Lista vive en `useOrdenTemperatura`, en el cliente,
+sobre el set completo y con overrides en vivo al cambiar de nivel. Paginar obliga a bajar ese
+orden (peso de estado → temperatura → vencimiento → `created_at`) a SQL y a perder el reordenado
+inmediato, o a aceptar que la página 1 no sea la más caliente. Es un rediseño de la vista, no un
+parámetro.
+
+**Disparador:** cuando `select count(*) from tareas where activo` pase de ~500, o la Lista tarde
+en montar. Ahí el orden baja a la query y el `.range()` viene solo.
