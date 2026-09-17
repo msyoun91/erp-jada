@@ -79,14 +79,19 @@ Lo que le pasó a un ente, cross-módulo: el log de auditoría y el punto donde 
 | id | uuid PK | |
 | ente | text FK → entes(codigo) | |
 | registro_id | uuid | sin FK — apunta a `entes.tabla` |
-| evento | enum `tipo_evento` (`alta`\|`baja`\|`reactivacion`\|`estado`\|`relacion_alta`\|`relacion_baja`) | `transferencia`, `compartido` y `revocado` (GUIDE_ENTES §2.8) se suman cuando alguien los emita |
-| detalle | jsonb | default `{}`. `estado`: `{estado, anterior}` (`anterior` null al nacer). `relacion_*`: `{ente, registro_id, rol}`, un evento por rol |
+| evento | enum `tipo_evento` (`alta`\|`baja`\|`reactivacion`\|`estado`\|`relacion_alta`\|`relacion_baja`\|`compartido`\|`revocado`) | los dos últimos, `sql/083`. `transferencia` (GUIDE_ENTES §2.8) se suma cuando alguien lo emita |
+| detalle | jsonb | default `{}`. `estado`: `{estado, anterior}` (`anterior` null al nacer). `relacion_*`: `{ente, registro_id, rol}`, un evento por rol. `compartido`/`revocado`: `{usuario_id, otorgada_por, origen_obra_id, origen_empresa_id}`, sin las claves nulas |
 | actor_id | uuid FK → usuarios, nullable | `auth.uid()` al emitir; lo tiene también lo que corre bajo una DEFINER |
 | created_at | timestamptz | default `clock_timestamp()`: una sentencia emite varios y el orden importa |
 
 Índices `(ente, registro_id, created_at)` y `(actor_id)`.
 
-**RLS:** SELECT `etiqueta_registro(ente, registro_id) IS NOT NULL` — lo que no ves, no pasó (una tarea archivada ya no tiene etiqueta, y sus eventos dejan de verse). Para `relacion_alta`/`relacion_baja`, además `puede_ver_relacion(ente, registro_id, detalle->>'ente', detalle->>'registro_id')` (`sql/069`), dentro de un `CASE` para que el resto no pague el EXISTS: el receptor de una obra compartida ve la obra pero no todos sus vínculos. INSERT `pg_trigger_depth() > 0`, como los vínculos de un disparo: un evento inventado por el cliente dispararía plantillas. `GRANT SELECT, INSERT`.
+**RLS:** SELECT `etiqueta_registro(ente, registro_id) IS NOT NULL` — lo que no ves, no pasó (una tarea archivada ya no tiene etiqueta, y sus eventos dejan de verse). Un `CASE` suma una condición por familia, para que el resto no pague el EXISTS:
+
+- `relacion_alta`/`relacion_baja` → `puede_ver_relacion(ente, registro_id, detalle->>'ente', detalle->>'registro_id')` (`sql/069`): el receptor de una obra compartida ve la obra pero no todos sus vínculos.
+- `compartido`/`revocado` → `puede_ver_compartido(ente, registro_id, detalle->>'usuario_id')` (`sql/083`): ves el evento si ves la fila de grant que lo generó.
+
+INSERT `pg_trigger_depth() > 0`, como los vínculos de un disparo: un evento inventado por el cliente dispararía plantillas. `GRANT SELECT, INSERT`.
 
 **`emitir_evento(ente, registro_id, evento, detalle DEFAULT '{}')`** — `SECURITY INVOKER`, **GRANT authenticated** (la llaman triggers INVOKER). Único INSERT. INVOKER a propósito: con DEFINER los consumidores correrían como `postgres` y el disparo no correría nunca.
 
@@ -94,6 +99,8 @@ Lo que le pasó a un ente, cross-módulo: el log de auditoría y el punto donde 
 
 - `emitir_eventos_registro('<ente>')` — `AFTER INSERT OR UPDATE OF activo, estado` sobre la tabla del ente. INSERT activo → `alta`; `activo` false→true → `reactivacion`; la columna `estado` distinta (o al nacer) → `estado`; true→false → `baja`. En ese orden: quien escucha el estado encuentra el registro como quedó. Sin columna `estado`, solo los otros tres. Hoy sobre `obras` y `tareas`.
 - `emitir_eventos_relacion('<ente>', '<columna>', '<ente relacionado>', '<columna>')` — `AFTER INSERT OR UPDATE OF activo, roles` sobre una tabla puente con `roles[]`. Compara los roles activos antes y después: un `relacion_alta` por rol que aparece, un `relacion_baja` por rol que se va (desactivar el vínculo es la baja de todos). El evento es del primer ente. Hoy sobre `obras_obra_empresa` y `obras_obra_persona`, del lado de `obra`.
+
+Obras suma el suyo, que no es genérico todavía: `obras_emitir_eventos_grant('<ente>', '<columna>')` (`sql/083`) — `AFTER INSERT OR UPDATE OF activo` sobre las tres tablas de grant directo. `activo` false→true → `compartido`, true→false → `revocado`; sin cambio de `activo`, nada (recompartir lo ya compartido reescribe `otorgada_por` y eso no movió el acceso). Ver `obras.md`.
 
 **Consumidores:** `disparar_plantillas` (`AFTER INSERT ON eventos`, ver `tareas.md`).
 
@@ -104,6 +111,8 @@ Verificación: `sql/tests/eventos.sql` (28/28, con `sql/069`).
 **`relacionados_de_registro(ente, id)` (`sql/060`)** — `SECURITY INVOKER STABLE`: `(ente, registro_id, rol)` de lo relacionado con un registro, para quien pregunta. Hoy solo `obra` → `obras_relacionados_obra`. Lo usan los roles de las plantillas de tareas.
 
 **`puede_ver_relacion(ente, id, ente_rel, id_rel)` (`sql/069`)** — `SECURITY INVOKER STABLE`, EXECUTE para `authenticated`: si quien pregunta ve algún vínculo, activo o no, entre los dos registros. Un `CASE` por `entes.modulo` (`obras` → `obras_puede_ver_relacion`); sin rama, `false`. Por par y no por fila: `detalle` no guarda qué fila emitió. La usa la RLS de `eventos`.
+
+**`puede_ver_compartido(ente, id, usuario_id)` (`sql/083`)** — `SECURITY INVOKER STABLE`, EXECUTE para `authenticated`: si quien pregunta ve el grant de ese usuario sobre ese registro. Un `CASE` por `entes.modulo` (`obras` → `obras_puede_ver_compartido`); sin rama, `false`. El EXISTS corre bajo la RLS de quien lee: la regla sigue siendo la de las policies de grant, sin copia. No filtra `activo` — si lo filtrara, el evento `revocado` desaparecería junto con lo que informa. La usa la RLS de `eventos`.
 
 ## usuario_tutorial
 

@@ -131,6 +131,14 @@ Log de cambios de dueño: `tipo` (`obra`\|`persona`\|`empresa`, `sql/041`), `obr
 
 Sin `activo`: es un log, la fila significa "esto pasó". El trigger de notificación solo dispara para `tipo = 'obra'`.
 
+**`sql/084` — transferir arrastra lo compartido.** Las exclusivas que cambian de dueño se capturan con `RETURNING` (antes se movían a ciegas) porque hay que tocar sus grants:
+
+- **`obras_transferir`**: lo que el receptor ya recibía sobre lo que ahora es suyo se apaga primero (nadie se comparte consigo mismo; el CHECK `usuario_id <> otorgada_por` lo rechazaría). Lo compartido con terceros sigue vivo pero pasa a colgar del nuevo dueño (`otorgada_por`): quien recibe la obra es quien ahora puede revocar — si quedara apuntando al saliente, el acceso viviría sin nadie que pueda apagarlo. Los contactos del saliente vinculados a la obra y **no** tildados como exclusivos entran al receptor como grant contextual anclado a la obra (`sql/082`): los ve en la ficha, no en su agenda. Empresas sí van a la agenda completa — una empresa no es un contacto sensible.
+- **`obras_transferir_empresa`**: acá lo compartido **se apaga** en vez de pasar de mano. Compartir una empresa es una decisión sobre la agenda propia, no sobre la obra: el nuevo dueño decide de cero a quién se la comparte.
+- **`obras_transferir_persona`** no cambió: una persona sola no arrastra nada.
+
+Las dos ramas `IF p_a_usuario_id <> auth.uid()` cubren al admin que transfiere a sí mismo.
+
 ## obras_obra_compartida / obras_persona_compartida / obras_empresa_compartida / obras_persona_grant_contextual
 
 Grants que otorga el dueño. Las tres "compartida": `(obra_id|persona_id|empresa_id, usuario_id, otorgada_por, activo)`, UNIQUE **entero** por par (re-compartir revive la fila, no inserta otra), CHECK `usuario_id <> otorgada_por`. Dan lectura de la ficha completa (contacto incluido, vía `obras_ficha_persona`), sin editar, revocable.
@@ -142,6 +150,8 @@ Grants que otorga el dueño. Las tres "compartida": `(obra_id|persona_id|empresa
 `obras_persona_grant_contextual`: `(persona_id, usuario_id, obra_id XOR empresa_id, otorgada_por, activo)`, unique parcial por ancla. El contacto se ve solo desde esa ficha (`obras_ficha_persona(p_persona_id, 'obra'|'empresa', ctx_id)`); muere con el vínculo, validado en vivo por `obras_persona_grant_ctx_vigente`. Desde `sql/082` es **la única vía por la que compartir reparte contactos**: la escriben el checklist de `obras_compartir_obra` / `_empresa` y la cascada de `obras_transferir`. Helpers anclados: `obras_persona_grant_ctx_obra_conmigo(persona, obra)` / `_empresa_conmigo(persona, empresa)` (DEFINER) — `_vigente` contesta "hay alguno" y sirve a la policy de `obras_personas`; los anclados cortan por padre, para que un grant traído por la obra A no abra la fila en la obra B.
 
 RLS: solo SELECT para `authenticated` (dueño o receptor). La escritura pasa por `obras_compartir_*` / `obras_revocar_*` / `obras_transferir*` (DEFINER, exigen `creado_por` / `responsable_id`).
+
+**Emiten eventos (`sql/083`).** Las tres "compartida" llevan trigger `emitir_eventos` AFTER INSERT OR UPDATE OF activo → `obras_emitir_eventos_grant('obra'|'empresa'|'persona', '<columna>')`: `activo` false→true → `compartido`, true→false → `revocado`, en `eventos` con `detalle = {usuario_id, otorgada_por, origen_obra_id, origen_empresa_id}` sin las claves nulas. Sin cambio de `activo` no emite — recompartir lo ya compartido solo reescribe `otorgada_por`, y el acceso no se movió. `obras_persona_grant_contextual` **no** emite: no es un acto propio, es el reflejo de la obra o empresa que sí emitió el suyo. Los ve quien ve la fila de grant (`obras_puede_ver_compartido`, ver `core.md`). Ninguno dispara plantillas: `obras_compartir_*` / `obras_revocar_*` son DEFINER y el disparo solo corre como quien actúa.
 
 Checklists y vista: `obras_relaciones_compartibles_obra/_empresa(entidad, usuario)` → identidad mínima de lo mío vinculado + `ya_compartida`. `obras_compartidos_por_mi()` (DEFINER, gate `obras_compartido`) → todo lo que compartí, con quién y de qué origen, tope 500.
 

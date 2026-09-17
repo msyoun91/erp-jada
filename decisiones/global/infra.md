@@ -174,3 +174,27 @@ documentación (`decisiones/tareas.md` 112 KB + `db_schema.md` 77 KB) para usar 
   (`GUIDE_DESIGN`, `GUIDE_PERMISSIONS`, `GUIDE_MODULO_NUEVO`).
 
 Backup de todo lo anterior: `obsoletos/backup-docs-2026-09-11/`.
+
+---
+
+## La base es la fuente de verdad del esquema; `sql/` es un reflejo que puede atrasar (2026-09-17)
+
+Al cerrar la deriva de `compartido`/`revocado` (BACKLOG, entrada cerrada ese día) aparecieron cinco
+funciones aplicadas en la base sin archivo en `sql/`: tres de eventos de compartir y dos de
+transferencia. Reconstruidas en `sql/083` y `sql/084`.
+
+- **El diff que sirve es por cuerpo, no por nombre.** Comparar nombres de función encontraba 3 de
+  las 5; `obras_transferir` y `obras_transferir_empresa` existían en `sql/041` con otra lógica
+  adentro. El barrido bueno: `pg_proc.prosrc` de cada función contra el texto de `sql/*.sql`,
+  normalizando espacios y descartando comentarios.
+- **Los comentarios no viajan a la base.** De 14 funciones que no matchearon, 11 eran solo eso:
+  alguien aplicó una versión despojada. El repo es la copia rica; el diff tiene que ignorarlos o da
+  11 falsos positivos.
+- **Un archivo faltante se reconstruye con el número siguiente, no con el que dice el comentario.**
+  El cuerpo vivo de `obras_transferir` cita un `sql/071` que nunca existió. Los números 071–075
+  quedan libres para siempre. Renumerar reescribiría historia y no compra nada: lo único que importa
+  es que reconstruir desde cero corra en orden válido, y 083/084 lo hacen (084 va después de 082
+  porque usa su índice parcial).
+- **`database.types.ts` no alcanza como detector.** No lista trigger functions, así que
+  `obras_emitir_eventos_grant` —el emisor de los dos eventos— quedó invisible, y de ahí salió la
+  premisa falsa de que los eventos no se emitían.

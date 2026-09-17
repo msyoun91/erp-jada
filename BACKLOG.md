@@ -61,21 +61,27 @@ esta persona y el usuario ve la tarea"—, el chip con `?ctx=tarea:{id}`, y `obr
 aprendiendo esa rama. Es un tercer tipo de contexto y mete a Obras a validar contra `tareas`:
 decidir dónde vive esa validación antes de escribirla.
 
-## Deriva base ↔ repo: `compartido` / `revocado` sin archivo SQL (2026-09-17)
+## ~~Deriva base ↔ repo: `compartido` / `revocado` sin archivo SQL (2026-09-17)~~ — cerrada
 
-Apareció al regenerar `database.types.ts` después de `sql/082`. Está en la base y **no** en `sql/`
-ni en `db_schema/`:
+Resuelta el 2026-09-17 con `sql/083_eventos_compartir.sql` y `sql/084_transferir_arrastra_compartido.sql`,
+los dos reconstruidos desde la base, más `db_schema/core.md` y `db_schema/obras.md` sincronizados.
 
-- el enum `tipo_evento` tiene dos valores más: `compartido` y `revocado`
-- existen `obras_puede_ver_compartido(p_tipo, p_id, p_usuario_id)` y
-  `puede_ver_compartido(p_ente, p_id, p_usuario_id)`
+**Dos premisas de la entrada original eran falsas**, y vale dejarlas escritas porque las dos venían
+de mirar `database.types.ts` en vez de la base:
 
-No dispara nada hoy: ningún ente los declara en `entes.disparos` (`obra` tiene
-`{alta,estado,relacion_alta,relacion_baja}`, `empresa`/`persona`/`tarea` vacíos). Para que `tsc`
-pasara se sumaron las etiquetas a `PlantillaFormPanel.tsx`, `PlantillasView.tsx` y al `z.enum` de
-`tareas/types.ts` — siguiendo el patrón que el propio archivo ya documenta ("atada al enum aunque
-hoy ningún ente dispare con baja ni reactivación: los ofrece `entes.disparos`, no esta lista").
+1. *"No dispara nada hoy: ningún ente los declara en `entes.disparos`"* — `entes.disparos` gobierna
+   qué **dispara plantillas**, no qué se **emite**. Los eventos se emitían desde el primer día:
+   `obras_emitir_eventos_grant` colgado de las tres tablas de grant. Y `puede_ver_compartido` estaba
+   viva dentro de la policy `eventos_select`. Nada de esto era código muerto.
+2. *"el enum + dos funciones"* — eran tres funciones (faltaba `obras_emitir_eventos_grant`, que no
+   aparece en `database.types.ts` por ser trigger function), tres triggers y la policy reescrita.
 
-**Alguien corrió SQL sin dejar el archivo.** Falta averiguar de qué feature son, escribir el archivo
-en `sql/` y sincronizar `db_schema/`. Hasta entonces, cualquier regeneración de tipos las vuelve a
-traer.
+Y había una segunda deriva que la entrada no veía: **`obras_transferir` y `obras_transferir_empresa`
+viven en la base con lógica que `sql/041` no tiene** (arrastre de lo compartido). El cuerpo vivo cita
+un `sql/071` que nunca existió en el repo. Los números 071–075 quedan libres: renumerar reescribiría
+historia por nada, y 083/084 reconstruyen en orden válido igual.
+
+**Cómo se encontró, por si vuelve a pasar:** diff de los cuerpos (`pg_proc.prosrc`) contra el texto
+de `sql/*.sql`, normalizando espacios. De 161 funciones, 14 no matchearon y 11 de esas eran solo
+comentarios que la base no tiene — alguien aplicó una versión despojada. Un diff por **nombre** solo
+habría encontrado 3 de las 5 reales.
