@@ -25,6 +25,7 @@ Quién ve y quién toca: los tres ejes (`tareas_gestionar_ajenas`, membresía de
 - Asignados por diferencia, la pregunta completa y compartir en orden (`sql/064`)
 - Dónde se puede escribir, y la función que administra (`sql/076`)
 - Columnas, reactivar y relacionar (`sql/077`)
+- Escribir pide una vista; posponer, archivar y mover de hilo son del responsable (`sql/080`)
 
 ## `hilos-pasos.md`
 

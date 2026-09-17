@@ -2673,6 +2673,7 @@ export type Database = {
         Args: { p_proyecto_id: string; p_usuario: string }
         Returns: boolean
       }
+      tareas_puede_escribir: { Args: never; Returns: boolean }
       tareas_puede_gestionar_tarea: { Args: { p_tarea_id: string }; Returns: boolean }
       tareas_puede_ver_tarea: {
         Args: {

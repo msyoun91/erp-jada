@@ -498,3 +498,199 @@ BEGIN
 
   RAISE EXCEPTION 'F4: %/% %', ok, total, r;
 END $t$;
+
+-- ─── F6 (sql/080): escribir pide una vista; posponer, archivar y mover de hilo ─
+-- tareas_puede_escribir, tareas_insert, tareas_hilos_insert, tareas_notas_insert,
+-- tareas_hilos_notas_insert, validar_gestionar_tarea.
+-- Último resultado: 16/16.
+DO $t$
+DECLARE
+  a uuid := '015fa985-fe21-4434-b3c5-7ac78732d765';
+  t uuid := '48b90421-a639-4637-b361-501fa7e1a1a0';
+  h_t uuid := gen_random_uuid(); h_t2 uuid := gen_random_uuid(); p_t uuid := gen_random_uuid();
+  t_t uuid := gen_random_uuid(); t_a uuid := gen_random_uuid(); t_h uuid := gen_random_uuid();
+  t_h2 uuid := gen_random_uuid(); t_p uuid := gen_random_uuid(); t_venc uuid := gen_random_uuid();
+  n int; ok int := 0; total int := 0; r text := '';
+BEGIN
+  INSERT INTO tareas_hilos (id, titulo, responsable_id, creado_por) VALUES
+    (h_t, 'Hilo de TESTER', t, t), (h_t2, 'Convertido por TESTER', t, t);
+  INSERT INTO tareas_proyectos (id, nombre, creado_por, visibilidad) VALUES (p_t, 'Proyecto de TESTER', t, 'privado');
+  INSERT INTO tareas_proyectos_miembros (proyecto_id, usuario_id) VALUES (p_t, t), (p_t, a);
+  INSERT INTO tareas (id, titulo, responsable_id, creado_por) VALUES
+    (t_t, 'Suelta de TESTER', t, t), (t_a, 'De ADMIN, TESTER asignado', a, a);
+  INSERT INTO tareas (id, titulo, responsable_id, creado_por, hilo_id) VALUES
+    (t_h, 'De ADMIN en hilo de TESTER', a, a, h_t), (t_h2, 'De TESTER en hilo a deshacer', t, t, h_t2);
+  INSERT INTO tareas (id, titulo, responsable_id, creado_por, proyecto_id) VALUES (t_p, 'De ADMIN en proyecto de TESTER', a, a, p_t);
+  INSERT INTO tareas (id, titulo, responsable_id, creado_por, posponer_desde, posponer_hasta) VALUES
+    (t_venc, 'De ADMIN pospuesta vencida', a, a, current_date - 5, current_date - 1);
+  INSERT INTO tareas_asignados (tarea_id, usuario_id) VALUES
+    (t_t, t), (t_a, t), (t_a, a), (t_h, a), (t_h2, t), (t_p, a), (t_venc, a);
+
+  -- ── TESTER solo con Auditoría ──
+  UPDATE usuario_submodulos us SET activo = (s.codigo = 'tareas_auditoria')
+    FROM submodulos s WHERE s.id = us.submodulo_id AND us.usuario_id = t AND s.modulo = 'tareas';
+  INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+  SELECT t, s.id FROM submodulos s WHERE s.codigo = 'tareas_auditoria'
+     AND NOT EXISTS (SELECT 1 FROM usuario_submodulos us WHERE us.usuario_id = t AND us.submodulo_id = s.id);
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', t, 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+
+  total := total + 1;
+  BEGIN
+    INSERT INTO tareas (titulo, responsable_id, creado_por) VALUES ('sin vista', t, t);
+    r := r || E'\nFALLO 01 crear tarea sin vista: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 01: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    INSERT INTO tareas_hilos (titulo, responsable_id, creado_por) VALUES ('sin vista', t, t);
+    r := r || E'\nFALLO 02 crear hilo sin vista: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 02: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    INSERT INTO tareas_notas (tarea_id, usuario_id, nota) VALUES (t_t, t, 'sin vista');
+    r := r || E'\nFALLO 03 nota de tarea sin vista: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 03: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    INSERT INTO tareas_hilos_notas (hilo_id, usuario_id, nota) VALUES (h_t, t, 'sin vista');
+    r := r || E'\nFALLO 04 nota de hilo sin vista: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = '42501' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 04: ' || SQLSTATE; END IF;
+  END;
+
+  -- ── TESTER solo con Misión ──
+  EXECUTE 'RESET ROLE';
+  UPDATE usuario_submodulos us SET activo = (s.codigo = 'tareas_mision')
+    FROM submodulos s WHERE s.id = us.submodulo_id AND us.usuario_id = t AND s.modulo = 'tareas';
+  INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+  SELECT t, s.id FROM submodulos s WHERE s.codigo = 'tareas_mision'
+     AND NOT EXISTS (SELECT 1 FROM usuario_submodulos us WHERE us.usuario_id = t AND us.submodulo_id = s.id);
+  PERFORM set_config('role', 'authenticated', true);
+
+  total := total + 1;
+  BEGIN
+    INSERT INTO tareas (titulo, responsable_id, creado_por) VALUES ('desde Misión', t, t);
+    ok := ok + 1;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 05 con Misión crea: ' || SQLSTATE;
+  END;
+
+  -- ── TESTER con Lista y Proyectos ──
+  EXECUTE 'RESET ROLE';
+  UPDATE usuario_submodulos us SET activo = (s.codigo IN ('tareas_lista', 'tareas_proyectos'))
+    FROM submodulos s WHERE s.id = us.submodulo_id AND us.usuario_id = t AND s.modulo = 'tareas';
+  INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+  SELECT t, s.id FROM submodulos s WHERE s.codigo IN ('tareas_lista', 'tareas_proyectos')
+     AND NOT EXISTS (SELECT 1 FROM usuario_submodulos us WHERE us.usuario_id = t AND us.submodulo_id = s.id);
+  PERFORM set_config('role', 'authenticated', true);
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET posponer_desde = current_date, posponer_hasta = current_date + 3 WHERE id = t_a;
+    r := r || E'\nFALLO 06 asignado pospone: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = 'TA019' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 06: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET activo = false WHERE id = t_a;
+    r := r || E'\nFALLO 07 asignado archiva: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = 'TA019' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 07: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET hilo_id = h_t WHERE id = t_a;
+    r := r || E'\nFALLO 08 asignado mueve a un hilo: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = 'TA019' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 08: ' || SQLSTATE; END IF;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET titulo = 'retocada por asignado', estado = 'en_progreso' WHERE id = t_a;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 09 asignado edita: ' || n || ' filas'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 09 asignado edita: ' || SQLSTATE;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET posponer_desde = current_date, posponer_hasta = current_date + 3 WHERE id = t_t;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 10 responsable pospone: ' || n || ' filas'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 10 responsable pospone: ' || SQLSTATE;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET posponer_desde = current_date, posponer_hasta = current_date + 3 WHERE id = t_h;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 11 responsable del hilo pospone: ' || n || ' filas'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 11 responsable del hilo pospone: ' || SQLSTATE;
+  END;
+
+  total := total + 1;
+  BEGIN
+    PERFORM deshacer_conversion_hilo(h_t2);
+    EXECUTE 'RESET ROLE';
+    SELECT count(*) INTO n FROM tareas WHERE id = t_h2 AND hilo_id IS NULL;
+    PERFORM set_config('role', 'authenticated', true);
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 12 quien convirtió deshace: la tarea no quedó suelta'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 12 quien convirtió deshace: ' || SQLSTATE;
+  END;
+
+  total := total + 1;
+  BEGIN
+    PERFORM desactivar_hilo(h_t);
+    EXECUTE 'RESET ROLE';
+    SELECT count(*) INTO n FROM tareas WHERE id = t_h AND NOT activo;
+    PERFORM set_config('role', 'authenticated', true);
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 13 responsable del hilo lo archiva: la tarea sigue activa'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 13 responsable del hilo lo archiva: ' || SQLSTATE;
+  END;
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas_proyectos SET activo = false WHERE id = p_t;
+    EXECUTE 'RESET ROLE';
+    SELECT count(*) INTO n FROM tareas WHERE id = t_p AND NOT activo;
+    PERFORM set_config('role', 'authenticated', true);
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 14 la cascada del proyecto archiva tareas ajenas: sigue activa'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 14 cascada del proyecto: ' || SQLSTATE;
+  END;
+
+  total := total + 1;
+  BEGIN
+    PERFORM reactivar_posponer_vencidos();
+    EXECUTE 'RESET ROLE';
+    SELECT count(*) INTO n FROM tareas WHERE id = t_venc AND posponer_hasta IS NULL;
+    PERFORM set_config('role', 'authenticated', true);
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 15 reactivar pospuestas ajenas: sigue pospuesta'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 15 reactivar pospuestas: ' || SQLSTATE;
+  END;
+
+  -- ── ADMIN sobre la de TESTER ──
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+
+  total := total + 1;
+  BEGIN
+    UPDATE tareas SET activo = false WHERE id = t_t;
+    GET DIAGNOSTICS n = ROW_COUNT;
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 16 admin archiva ajena: ' || n || ' filas'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 16 admin archiva ajena: ' || SQLSTATE;
+  END;
+
+  RAISE EXCEPTION 'F6: %/% %', ok, total, r;
+END $t$;

@@ -406,3 +406,23 @@ asignados.
 Vale también para el administrador (decisión D): sacarlo o compartirle sigue siendo de `tareas_asignar`.
 
 Archivos: `sql/077_tareas_columnas_y_vinculos.sql`, `sql/tests/auditoria_tareas.sql`, `lib/utils.ts` (`TA018`).
+
+## Escribir pide una vista; posponer, archivar y mover de hilo son del responsable (`sql/080`)
+
+Fase 6 de la auditoría del 2026-09-17 (`sql/tests/auditoria_tareas.sql`, bloque F6).
+
+**Crear tareas, hilos y notas pide alguna vista de tareas que crea** (`tareas_puede_escribir`: Lista,
+Misión, Proyectos o Plantillas). Antes alguien con solo `obras_ver` insertaba por la API. El plan decía
+`tareas_lista`, pero el código lo contradice: Misión crea el siguiente paso, Proyectos crea hilos y
+tareas, Plantillas las usa, y un disparo crea con la identidad de quien actuó. Auditoría queda afuera
+porque es solo lectura.
+
+**Posponer, archivar y mover o quitar de hilo: responsable de la tarea, responsable del hilo o
+administrador** (`TA019`). La UI ya lo limitaba al responsable y `tareas_update` se lo dejaba a
+cualquier asignado. El responsable del hilo entra porque `desactivar_hilo` y `deshacer_conversion_hilo`
+tocan tareas ajenas de su hilo. Es un trigger y no una policy porque tiene que comparar OLD con NEW.
+Corre solo con `current_user = 'authenticated'`: la cascada del proyecto y `reactivar_posponer_vencidos`
+son DEFINER y tocan esas columnas por todos. `proyecto_id` no entra, porque "Modificar tarea" lo edita y
+eso sigue siendo del asignado.
+
+Archivos: `sql/080_tareas_vista_y_gestionar.sql`, `sql/tests/auditoria_tareas.sql`, `lib/utils.ts` (`TA019`).

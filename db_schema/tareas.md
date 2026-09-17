@@ -1,6 +1,6 @@
 # Módulo tareas
 
-Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`061`, `063`, `076`–`079` (más las que cita cada sección) — corridas en Supabase vía MCP.
+Migraciones: `sql/005`–`009`, `013`–`017`, `023`, `053`, `055`–`061`, `063`, `076`–`080` (más las que cita cada sección) — corridas en Supabase vía MCP.
 
 **Regla de visibilidad (`sql/013`): se ve lo asignado y lo público, nada más** — `creado_por` no autoriza. Excepciones: `tareas_gestionar_ajenas` y `tareas_hilos.responsable_id`. Los UPDATE están alineados con los SELECT. El porqué, en `decisiones/tareas/visibilidad.md`.
 
@@ -113,7 +113,7 @@ Multi-asignado — cualquiera puede completar la tarea.
 
 Historial de notas — "agregar", no "editar": sin UPDATE de texto, solo `activo` para ocultar una nota propia (nunca DELETE). Desde `sql/077` lo garantiza el `GRANT UPDATE (activo)`; antes el grant era de tabla y el autor reescribía el texto. `tareas_notas.tarea_id` FK → `tareas`; `tareas_hilos_notas.hilo_id` FK → `tareas_hilos`. Ambas con `usuario_id` FK → `usuarios` (autor) y `nota text`.
 
-SELECT vía `EXISTS` directo sobre la tabla padre (`tareas`/`tareas_hilos`) — sin función `SECURITY DEFINER`: la RLS de la tabla padre ya resuelve visibilidad en cascada para el rol que consulta, y no hay recursión porque esa policy no mira hacia las tablas de notas. INSERT: mismo actor que puede gestionar la fila padre (`tareas_notas` reusa `es_responsable_tarea`/`es_asignado_tarea`; `tareas_hilos_notas` usa `responsable_id` del hilo), más `tareas_gestionar_ajenas`. UPDATE (solo `activo=false`): autor o ajenas.
+SELECT vía `EXISTS` directo sobre la tabla padre (`tareas`/`tareas_hilos`) — sin función `SECURITY DEFINER`: la RLS de la tabla padre ya resuelve visibilidad en cascada para el rol que consulta, y no hay recursión porque esa policy no mira hacia las tablas de notas. INSERT: mismo actor que puede gestionar la fila padre (`tareas_notas` reusa `es_responsable_tarea`/`es_asignado_tarea`; `tareas_hilos_notas` usa `responsable_id` del hilo), más `tareas_gestionar_ajenas`, y desde `sql/080` `tareas_puede_escribir()`. UPDATE (solo `activo=false`): autor o ajenas.
 
 ## tareas_plantillas / tareas_plantillas_hilos / tareas_plantillas_items (`sql/053`)
 
@@ -250,6 +250,12 @@ Ambos SQLSTATE están mapeados a mensaje en `MENSAJES_ERROR` (`lib/utils.ts`). P
 
 Falla con `ERRCODE = 'TA017'`.
 
+## Escribir y gestionar — `tareas_puede_escribir` / trigger `validar_gestionar_tarea` (`sql/080`)
+
+`tareas_puede_escribir()` (`SECURITY INVOKER STABLE`, GRANT authenticated): alguna vista de tareas que crea — `tareas_lista`, `tareas_mision`, `tareas_proyectos` o `tareas_plantillas`. Auditoría no. La exigen las policies de INSERT de `tareas`, `tareas_hilos`, `tareas_notas` y `tareas_hilos_notas`.
+
+`validar_gestionar_tarea` — `BEFORE UPDATE OF hilo_id, posponer_desde, posponer_hasta, activo ON tareas`, cuando alguno cambia (`activo` solo al apagar), `SECURITY INVOKER`. Pide responsable de la tarea, responsable del hilo donde está (OLD) o `tareas_gestionar_ajenas`; si no, `TA019`. Solo con `current_user = 'authenticated'`: bajo una DEFINER (cascada del proyecto, `reactivar_posponer_vencidos`) no valida. `proyecto_id` no entra: `editar_tarea` lo escribe y editar es del asignado.
+
 ## Pasos de tarea — triggers (`sql/017`)
 
 `paso_anterior_id` es el eje ortogonal al hilo: el hilo **agrupa** tareas paralelas, la cadena de pasos las **ordena**. La cadena vive entera dentro de un hilo, y de ahí sale su visibilidad — `tareas_select` ya cascadea por `puede_ver_hilo`, así que ver los pasos previos no necesitó ninguna regla nueva.
@@ -271,7 +277,7 @@ Falla con `ERRCODE = 'TA017'`.
 Tercer eje, independiente de `tareas_gestionar_ajenas` (autoridad sobre tareas ajenas) y de la membresía (quién puede trabajar): **quién puede repartir trabajo**. Sin la función, uno se asigna a sí mismo y nada más. Tres piezas, una por cara:
 
 - `tareas_asignados_insert`/`update` — `AND (usuario_id = auth.uid() OR tiene_permiso('tareas_asignar'))`, sumado a las condiciones que ya tenían. Cubre agregar a otro y, por el mismo conjunto, sacarlo (reasignar = desactivar + reinsertar).
-- `tareas_insert` — `responsable_id = auth.uid() OR tiene_permiso('tareas_asignar')`. **Reemplaza** la rama `tareas_gestionar_ajenas` que tenía desde `sql/005`: nombrar responsable a otro es asignar, no es gestionar lo ajeno.
+- `tareas_insert` — `responsable_id = auth.uid() OR tiene_permiso('tareas_asignar')`. **Reemplaza** la rama `tareas_gestionar_ajenas` que tenía desde `sql/005`: nombrar responsable a otro es asignar, no es gestionar lo ajeno. Desde `sql/080` suma `tareas_puede_escribir()`.
 - Trigger `validar_responsable_tarea` — `BEFORE UPDATE OF responsable_id ON tareas WHEN (NEW.responsable_id IS DISTINCT FROM OLD.responsable_id)`: traspasar el responsable a otro sin la función falla con `ERRCODE = 'TA003'`. Va en trigger porque un `WITH CHECK` solo ve la fila nueva y no puede distinguir "cambió el responsable" de "el UPDATE tocó otra columna".
 
 `tareas_gestionar_ajenas` **no** saltea la regla; el backfill de `sql/014` le dio `tareas_asignar` a quien ya la tenía, para no romper equipos en curso.
@@ -282,7 +288,7 @@ Tercer eje, independiente de `tareas_gestionar_ajenas` (autoridad sobre tareas a
 
 `tareas_hilos` no tiene tabla de asignados — el responsable es una columna — así que el eje se aplica en las dos caras de esa columna:
 
-- `tareas_hilos_insert` — `creado_por = auth.uid() AND (responsable_id = auth.uid() OR tiene_permiso('tareas_asignar'))`. **Reemplaza** la rama `tareas_gestionar_ajenas`, igual que `sql/014` hizo con `tareas_insert`.
+- `tareas_hilos_insert` — `creado_por = auth.uid() AND (responsable_id = auth.uid() OR tiene_permiso('tareas_asignar'))`. **Reemplaza** la rama `tareas_gestionar_ajenas`, igual que `sql/014` hizo con `tareas_insert`. Desde `sql/076` suma el proyecto destino y desde `sql/080` `tareas_puede_escribir()`.
 - `tareas_hilos_update` — el `WITH CHECK` suma `OR tiene_permiso('tareas_asignar')`. Sin eso el traspaso era imposible incluso con la función: la fila nueva tiene `responsable_id` ajeno y el `WITH CHECK` solo aceptaba `responsable_id = auth.uid()`. En `tareas` el problema no aparece porque ahí el `WITH CHECK` tiene además la rama del asignado activo (`sql/013`). Quién puede **tocar** el hilo lo sigue decidiendo el `USING`; quién puede quedar **a cargo** es del trigger.
 - Trigger `validar_responsable_hilo` — `BEFORE UPDATE OF responsable_id ON tareas_hilos WHEN (NEW.responsable_id IS DISTINCT FROM OLD.responsable_id)`: mismo `ERRCODE = 'TA003'` y mismo motivo que `validar_responsable_tarea`.
 

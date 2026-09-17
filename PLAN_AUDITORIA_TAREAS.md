@@ -67,8 +67,9 @@ Resultado: `auditoria_tareas` F4 7/7. En `plantillas.sql` el caso 06 pasa a espe
 
 ## Fase 6 — Pendiente de decisión
 
-- [ ] 10 · Crear tareas/hilos/notas sin la vista `tareas_lista` (hoy la base no la pide).
-- [ ] 17 · Posponer / desactivar / convertir: la UI lo limita al responsable, la base se lo deja a cualquier asignado.
+- [x] 10 · Crear tareas/hilos/notas pide una vista de tareas que crea (`sql/080`). No solo `tareas_lista`: Misión, Proyectos y Plantillas también crean.
+- [x] 17 · Posponer / archivar / mover de hilo: responsable, responsable del hilo o administrador (`sql/080`, `TA019`).
+- [ ] 24 · Nuevo (F6-12): el responsable de un hilo que no es responsable de la tarea no puede `deshacer_conversion_hilo` — `42501`, previo a `sql/080`. El WITH CHECK de `tareas_update` mira el hilo nuevo, y deshacer lo deja en NULL. Pasa solo si la tarea cambió de responsable después de convertir.
 - [ ] 9 · Oráculos de acceso (`sin_acceso`, `es_miembro_proyecto`): se aceptan o se rediseñan.
 - [ ] 21 · Paginado de la Lista para el administrador.
 
