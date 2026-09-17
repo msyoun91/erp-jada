@@ -426,3 +426,20 @@ son DEFINER y tocan esas columnas por todos. `proyecto_id` no entra, porque "Mod
 eso sigue siendo del asignado.
 
 Archivos: `sql/080_tareas_vista_y_gestionar.sql`, `sql/tests/auditoria_tareas.sql`, `lib/utils.ts` (`TA019`).
+
+## Deshacer la conversión en hilo es del responsable del hilo (`sql/081`)
+
+Ítem 24 de la auditoría del 2026-09-17 (`sql/tests/auditoria_tareas.sql`, bloque F7).
+
+**`deshacer_conversion_hilo` pasa a `SECURITY DEFINER` con guarda propia: responsable del hilo o
+`tareas_gestionar_ajenas`, si no `TA008`.** El responsable de un hilo que no era responsable ni asignado
+de la tarea más antigua chocaba con `42501` — el WITH CHECK de `tareas_update` mira el hilo de la fila
+nueva y deshacer lo deja en NULL, así que una policy, que no ve OLD, no puede distinguirlo. La
+alternativa INVOKER era abrir el WITH CHECK a cualquier tarea suelta, mucho más que el caso. La guarda
+es la misma autorización que ya decidía el último paso (el UPDATE de `tareas_hilos`), y el responsable
+del hilo ya entraba en `validar_gestionar_tarea` (`sql/080`), que como DEFINER no corre.
+
+Con RLS fuera de juego, los `IF NOT FOUND` de `sql/023` sobre las tres escrituras salieron: cubrían el
+UPDATE que RLS dejaba en 0 filas, y ahora las filas son las que la propia función acaba de leer.
+
+Archivos: `sql/081_tareas_deshacer_hilo_definer.sql`, `sql/tests/auditoria_tareas.sql`.

@@ -301,7 +301,7 @@ Toda action que escribía dos o más tablas es ahora **una** función, invocada 
 | `crear_tarea(...)` → uuid | `crearTarea` | `tareas` + `tareas_vinculos` (`sql/059`) + `tareas_asignados` |
 | `crear_proyecto(...)` → uuid | `crearProyecto` | `tareas_proyectos` + `tareas_proyectos_miembros` |
 | `convertir_tarea_en_hilo(uuid)` → uuid | `convertirTareaEnHilo` | `tareas_hilos` + `tareas` |
-| `deshacer_conversion_hilo(uuid)` | `deshacerConversionHilo` | `tareas` + `tareas_hilos` — desde `sql/078` desactiva el resto antes de mover la primera (con pasos encadenados fallaba siempre con `TA006`) |
+| `deshacer_conversion_hilo(uuid)` | `deshacerConversionHilo` | `tareas` + `tareas_hilos` — desde `sql/078` desactiva el resto antes de mover la primera (con pasos encadenados fallaba siempre con `TA006`); desde `sql/081` es `SECURITY DEFINER` con guarda propia (responsable del hilo o `tareas_gestionar_ajenas`, si no `TA008`) |
 | `desactivar_hilo(uuid)` | `desactivarHilo` | `tareas` + `tareas_hilos` |
 | ~~`agregar_tareas_desde_plantilla(...)`~~ | ~~`agregarTareasDesdePlantilla`~~ | borrada en `sql/053` → `usar_plantilla` |
 | `usar_plantilla(uuid, text, uuid, uuid, text, uuid, jsonb)` → int (`sql/053`; `sql/055` suma `p_ente`, `p_registro_id`, `p_datos` con DEFAULT NULL) | `usarPlantilla` y el disparo | `tareas_proyectos` + miembros + `tareas_hilos` + `tareas` + `tareas_asignados` + `tareas_notas` + `tareas_vinculos` |

@@ -694,3 +694,63 @@ BEGIN
 
   RAISE EXCEPTION 'F6: %/% %', ok, total, r;
 END $t$;
+
+-- ─── F7 (sql/081): deshacer la conversión en hilo ────────────────────────────
+-- deshacer_conversion_hilo.
+-- Último resultado: 3/3.
+DO $t$
+DECLARE
+  a uuid := '015fa985-fe21-4434-b3c5-7ac78732d765';
+  t uuid := '48b90421-a639-4637-b361-501fa7e1a1a0';
+  h_t uuid := gen_random_uuid(); h_a uuid := gen_random_uuid(); h_a2 uuid := gen_random_uuid();
+  t_h uuid := gen_random_uuid(); t_a uuid := gen_random_uuid(); t_a2 uuid := gen_random_uuid();
+  n int; ok int := 0; total int := 0; r text := '';
+BEGIN
+  INSERT INTO tareas_hilos (id, titulo, responsable_id, creado_por) VALUES
+    (h_t, 'Hilo de TESTER', t, t), (h_a, 'Hilo de ADMIN', a, a), (h_a2, 'Otro hilo de ADMIN', a, a);
+  INSERT INTO tareas (id, titulo, responsable_id, creado_por, hilo_id) VALUES
+    (t_h, 'De ADMIN en hilo de TESTER', a, a, h_t),
+    (t_a, 'De TESTER en hilo de ADMIN', t, t, h_a),
+    (t_a2, 'De ADMIN en su otro hilo', a, a, h_a2);
+  INSERT INTO tareas_asignados (tarea_id, usuario_id) VALUES (t_h, a), (t_a, t), (t_a2, a);
+
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', t, 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+
+  -- 24: el responsable del hilo deshace aunque la tarea sea ajena
+  total := total + 1;
+  BEGIN
+    PERFORM deshacer_conversion_hilo(h_t);
+    EXECUTE 'RESET ROLE';
+    SELECT count(*) INTO n FROM tareas WHERE id = t_h AND hilo_id IS NULL AND activo;
+    PERFORM set_config('role', 'authenticated', true);
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 01 responsable del hilo deshace con tarea ajena: la tarea no quedó suelta'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 01 responsable del hilo deshace con tarea ajena: ' || SQLSTATE;
+  END;
+
+  -- Ser responsable de la tarea no alcanza: el hilo es de ADMIN
+  total := total + 1;
+  BEGIN
+    PERFORM deshacer_conversion_hilo(h_a);
+    r := r || E'\nFALLO 02 responsable de la tarea deshace un hilo ajeno: no rechazó';
+  EXCEPTION WHEN OTHERS THEN
+    IF SQLSTATE = 'TA008' THEN ok := ok + 1; ELSE r := r || E'\nFALLO 02: ' || SQLSTATE; END IF;
+  END;
+
+  -- ── ADMIN sobre su hilo ──
+  EXECUTE 'RESET ROLE';
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true);
+  PERFORM set_config('role', 'authenticated', true);
+
+  total := total + 1;
+  BEGIN
+    PERFORM deshacer_conversion_hilo(h_a2);
+    EXECUTE 'RESET ROLE';
+    SELECT count(*) INTO n FROM tareas_hilos WHERE id = h_a2 AND NOT activo;
+    PERFORM set_config('role', 'authenticated', true);
+    IF n = 1 THEN ok := ok + 1; ELSE r := r || E'\nFALLO 03 admin deshace su hilo: el hilo sigue activo'; END IF;
+  EXCEPTION WHEN OTHERS THEN r := r || E'\nFALLO 03 admin deshace su hilo: ' || SQLSTATE;
+  END;
+
+  RAISE EXCEPTION 'F7: %/% %', ok, total, r;
+END $t$;
