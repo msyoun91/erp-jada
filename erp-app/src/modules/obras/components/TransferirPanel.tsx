@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { contactosExclusivosObra, transferirObra } from "../actions";
-import type { ContactoExclusivo, Usuario } from "../types";
+import { candidatosTransferencia, transferirObra } from "../actions";
+import type { CandidatoTransferencia, EstadoTransferencia, Usuario } from "../types";
+import { ChecklistTransferencia, estadosIniciales } from "./ChecklistTransferencia";
 
 // Transferir cambia quién ve la obra, no solo una etiqueta: el responsable es
-// el eje de la RLS. Los contactos que están solo en esta obra pueden moverse de
-// dueño con ella — el checklist lo pregunta; el resto queda con grant contextual.
+// el eje de la RLS. Y por cada contacto vinculado hay tres destinos posibles
+// (sql/087), así que el panel pregunta uno por uno en vez de asumir.
 export function TransferirPanel({
   obraId,
   obraNombre,
@@ -25,24 +26,15 @@ export function TransferirPanel({
   const [destino, setDestino] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string>();
-  const [exclusivos, setExclusivos] = useState<ContactoExclusivo[]>([]);
-  const [tildados, setTildados] = useState<Set<string>>(new Set());
+  const [candidatos, setCandidatos] = useState<CandidatoTransferencia[]>([]);
+  const [estados, setEstados] = useState<Map<string, EstadoTransferencia>>(new Map());
 
   useEffect(() => {
-    contactosExclusivosObra(obraId).then((r) => {
-      setExclusivos(r);
-      setTildados(new Set(r.map((c) => c.id)));
+    candidatosTransferencia("obra", obraId).then((r) => {
+      setCandidatos(r);
+      setEstados(estadosIniciales(r));
     });
   }, [obraId]);
-
-  function toggle(id: string) {
-    setTildados((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
 
   async function transferir() {
     if (!destino) return setError("Elegí a quién transferirla");
@@ -52,7 +44,8 @@ export function TransferirPanel({
     const result = await transferirObra({
       obra_id: obraId,
       a_usuario_id: destino,
-      contactos_exclusivos: [...tildados],
+      migran: candidatos.filter((c) => estados.get(c.id) !== "queda").map((c) => c.id),
+      sacar: candidatos.filter((c) => estados.get(c.id) === "saco").map((c) => c.id),
     });
     setEnviando(false);
 
@@ -103,30 +96,17 @@ export function TransferirPanel({
           {error && <p className="input-error-text">{error}</p>}
         </div>
 
-        {exclusivos.length > 0 && (
+        {candidatos.length > 0 && (
           <div>
-            <p className="t-label mb-1">Estos contactos están solo en esta obra</p>
+            <p className="t-label mb-1">Qué pasa con cada contacto de esta obra</p>
             <p className="t-caption mb-2">
-              Las tildadas cambian de dueño con la obra. Las que destildes le quedan disponibles al
-              nuevo responsable solo desde esta ficha.
+              Elegí uno por uno. Lo que está en fichas de otros usuarios no se toca.
             </p>
-            <ul className="flex flex-col gap-1">
-              {exclusivos.map((c) => (
-                <li key={c.id}>
-                  <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
-                    <input
-                      type="checkbox"
-                      checked={tildados.has(c.id)}
-                      onChange={() => toggle(c.id)}
-                    />
-                    <span className="t-body-m truncate">
-                      {c.etiqueta}
-                      <span className="t-caption"> · {c.tipo === "persona" ? "persona" : "empresa"}</span>
-                    </span>
-                  </label>
-                </li>
-              ))}
-            </ul>
+            <ChecklistTransferencia
+              candidatos={candidatos}
+              estados={estados}
+              onCambio={setEstados}
+            />
           </div>
         )}
 

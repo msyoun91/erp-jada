@@ -10,7 +10,7 @@ import type {
   Alcance,
   Compartido,
   CompartidoRow,
-  ContactoExclusivo,
+  CandidatoTransferencia,
   EmpresaListado,
   FiltrosObras,
   HistorialAprobacion,
@@ -394,26 +394,20 @@ export async function getCompartidosPorMi(): Promise<CompartidoRow[]> {
 
 // Lo vinculado solo a esta obra/empresa que el dueño saliente posee: el
 // checklist de confirmación de la transferencia.
-export async function getContactosExclusivosObra(obraId: string): Promise<ContactoExclusivo[]> {
+// Una fila por candidato a migrar, con sus vínculos adentro: el panel necesita
+// las dos cosas a la vez (sql/087).
+export async function getCandidatosTransferencia(
+  tipo: "obra" | "empresa" | "persona",
+  id: string,
+): Promise<CandidatoTransferencia[]> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase.rpc("obras_contactos_exclusivos_de_obra", {
-    p_obra_id: obraId,
+  const { data, error } = await supabase.rpc("obras_transferir_candidatos", {
+    p_tipo: tipo,
+    p_id: id,
   });
   if (error) throw error;
-  return (data ?? []) as ContactoExclusivo[];
-}
-
-export async function getContactosExclusivosEmpresa(
-  empresaId: string,
-): Promise<ContactoExclusivo[]> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase.rpc("obras_contactos_exclusivos_de_empresa", {
-    p_empresa_id: empresaId,
-  });
-  if (error) throw error;
-  return (data ?? []) as ContactoExclusivo[];
+  return (data ?? []) as CandidatoTransferencia[];
 }
 
 // Lo vinculado que es mío y puedo compartir junto con la obra/empresa. Depende

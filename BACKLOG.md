@@ -6,6 +6,43 @@ y la entrada se borra de este archivo.
 
 ---
 
+## Transferir toda la agenda de un usuario (2026-09-17)
+
+Pedido del usuario junto con `sql/087`: *"una nueva función de transferir toda la agenda de un
+usuario a otro (...) sería una función y vista aparte donde el usuario que tiene permiso selecciona
+un usuario y decide migrar todos sus datos"*. Los tres estados por contacto ya están (`sql/087`);
+esto es el caso masivo, para cuando alguien se va de la empresa.
+
+**Sin checklist**: cascada total. Una agenda de 400 contactos no se tilda fila por fila, y no hay
+decisión razonable que tomar 400 veces. Todo `creado_por = saliente` pasa al entrante, más
+`responsable_id` de sus obras.
+
+**Decidido:**
+- **Vista aparte → submódulo nuevo de tipo `vista`.** Cada vista es un submódulo; no se reutilizan
+  los tres de función (`obras_transferir` / `obras_personas_todas` / `obras_empresas_todas`) porque
+  quien migra agendas ajenas no es necesariamente quien transfiere una obra suelta.
+- **Log por entidad**, una fila en `obras_transferencias` por cosa movida. Es la auditoría que
+  alguien va a querer leer. `notificar_transferencia_obra` no filtra `tipo`, pero las filas de
+  persona/empresa tienen `obra_id` NULL y `notificar()` corta ahí: sale **un aviso por obra**, no uno
+  por contacto. 30 obras = 30 avisos, ruidoso pero cada uno navega a algo real. No agrupar.
+- **Sin tipos de notificación nuevos.** Avisar lo que se pierde es imposible por construcción
+  (`notificaciones_listar` hace INNER JOIN con la RLS del lector) — ver `decisiones/obras/visibilidad.md`.
+  La pregunta la contesta `obras_auditoria_transferencias`.
+- **Confirmación escribiendo el nombre del saliente.** Es irreversible de verdad: transferir de
+  vuelta no deshace los grants contextuales creados en el camino. `RightPanel` + bloque destructivo,
+  sin componente nuevo.
+
+**El detalle que no es obvio:** los vínculos que el saliente creó en obras de **otros** (`sql/051`,
+`obras_obra_persona.creado_por`). Si no se mueven, quedan con el `creado_por` de alguien sin agenda y
+`obras_vinculo_guard_edicion` (`OB028`) dice que solo su creador los edita → congelados para siempre.
+El dueño de esa obra puede quitarlos pero no corregirlos. En `obras_transferir` no se tocan a
+propósito (decisión: *"queda a decisión del nuevo dueño"*), pero migrar una agenda entera es el caso
+contrario: ahí el saliente desaparece y hay que moverlos.
+
+Toca: `sql/088`, submódulo nuevo, `modules/obras/` (vista + panel), `db_schema/obras.md` y `core.md`.
+
+---
+
 ## erp-cliente — su `globals.css` quedó en la versión vieja de los tokens
 
 Encontrado al cerrar `.input-error-text` en erp-app, el 2026-09-09. `erp-cliente/src/app/globals.css`

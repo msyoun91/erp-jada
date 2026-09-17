@@ -3,12 +3,17 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { contactosExclusivosEmpresa, transferirEmpresa, transferirPersona } from "../actions";
-import type { ContactoExclusivo, Usuario } from "../types";
+import { candidatosTransferencia, transferirEmpresa, transferirPersona } from "../actions";
+import type { CandidatoTransferencia, EstadoTransferencia, Usuario } from "../types";
+import {
+  ChecklistTransferencia,
+  estadosIniciales,
+  tieneVinculosPropios,
+} from "./ChecklistTransferencia";
 
-// Transferir cambia el dueño (`creado_por`). Para empresa, la gente que trabaja
-// solo en ella puede moverse también — el checklist lo pregunta. El resto queda
-// con grant contextual. Persona no tiene cascada.
+// Transferir cambia el dueño (`creado_por`). La empresa pregunta por su gente;
+// la persona no tiene nada colgando debajo, pero sí la misma elección sobre sí
+// misma: si la saco, se desvincula de mis obras y mis empresas (sql/087).
 export function TransferirEntidadPanel({
   tipo,
   id,
@@ -27,25 +32,20 @@ export function TransferirEntidadPanel({
   const [destino, setDestino] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string>();
-  const [exclusivos, setExclusivos] = useState<ContactoExclusivo[]>([]);
-  const [tildados, setTildados] = useState<Set<string>>(new Set());
+  const [candidatos, setCandidatos] = useState<CandidatoTransferencia[]>([]);
+  const [estados, setEstados] = useState<Map<string, EstadoTransferencia>>(new Map());
 
   useEffect(() => {
-    if (tipo !== "empresa") return;
-    contactosExclusivosEmpresa(id).then((r) => {
-      setExclusivos(r);
-      setTildados(new Set(r.map((c) => c.id)));
+    candidatosTransferencia(tipo, id).then((r) => {
+      setCandidatos(r);
+      setEstados(estadosIniciales(r));
     });
   }, [tipo, id]);
 
-  function toggle(cid: string) {
-    setTildados((prev) => {
-      const next = new Set(prev);
-      if (next.has(cid)) next.delete(cid);
-      else next.add(cid);
-      return next;
-    });
-  }
+  // La persona se transfiere a sí misma: su fila es la única del checklist y
+  // decide si el saliente la sigue viendo o la suelta.
+  const propia = candidatos.find((c) => c.id === id);
+  const otros = candidatos.filter((c) => c.id !== id);
 
   async function transferir() {
     if (!destino) return setError("Elegí a quién transferirla");
@@ -53,11 +53,17 @@ export function TransferirEntidadPanel({
     setEnviando(true);
     const result =
       tipo === "persona"
-        ? await transferirPersona({ persona_id: id, a_usuario_id: destino })
+        ? await transferirPersona({
+            persona_id: id,
+            a_usuario_id: destino,
+            sacar: estados.get(id) === "saco",
+          })
         : await transferirEmpresa({
             empresa_id: id,
             a_usuario_id: destino,
-            personas_exclusivas: [...tildados],
+            migran: otros.filter((c) => estados.get(c.id) !== "queda").map((c) => c.id),
+            sacar: otros.filter((c) => estados.get(c.id) === "saco").map((c) => c.id),
+            sacar_empresa: estados.get(id) === "saco",
           });
     setEnviando(false);
     if (!result.success) return setError(result.error);
@@ -109,35 +115,30 @@ export function TransferirEntidadPanel({
           {error && <p className="input-error-text">{error}</p>}
         </div>
 
-        {tipo === "empresa" && exclusivos.length > 0 && (
+        {propia && tieneVinculosPropios(propia) && (
           <div>
-            <p className="t-label mb-1">Estas personas están solo en esta empresa</p>
+            <p className="t-label mb-1">Qué pasa con tus vínculos</p>
+            <ChecklistTransferencia
+              candidatos={[propia]}
+              estados={estados}
+              onCambio={setEstados}
+            />
+          </div>
+        )}
+
+        {otros.length > 0 && (
+          <div>
+            <p className="t-label mb-1">Qué pasa con la gente de esta empresa</p>
             <p className="t-caption mb-2">
-              Las tildadas cambian de dueño con la empresa. Las que destildes quedan como están.
+              Elegí una por una. Lo que está en fichas de otros usuarios no se toca.
             </p>
-            <ul className="flex flex-col gap-1">
-              {exclusivos.map((c) => (
-                <li key={c.id}>
-                  <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
-                    <input
-                      type="checkbox"
-                      checked={tildados.has(c.id)}
-                      onChange={() => toggle(c.id)}
-                    />
-                    <span className="t-body-m truncate">
-                      {c.etiqueta}
-                      {c.detalle && <span className="t-caption"> · {c.detalle}</span>}
-                    </span>
-                  </label>
-                </li>
-              ))}
-            </ul>
+            <ChecklistTransferencia candidatos={otros} estados={estados} onCambio={setEstados} />
           </div>
         )}
 
         <p className="t-caption">
-          El dueño ve la ficha y la edita. Al transferirla, los accesos que vos habías compartido se
-          revocan; el nuevo dueño re-comparte si quiere. Queda registrado.
+          El dueño ve la ficha y la edita. Los accesos que compartiste pasan al nuevo dueño, que es
+          quien ahora puede revocarlos. Queda registrado.
         </p>
       </div>
     </RightPanel>

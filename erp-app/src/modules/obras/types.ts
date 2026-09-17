@@ -372,21 +372,26 @@ export const referenteSchema = z.object({
 
 export type ReferenteForm = z.input<typeof referenteSchema>;
 
+// Tres estados por contacto (sql/087): lo que no está en `migran` queda del
+// saliente y el receptor lo ve contextual en esta obra; lo que está en `migran`
+// cambia de dueño, y de eso, lo que además está en `sacar` se desvincula de las
+// obras y empresas del saliente. `sacar` ⊆ `migran` — la base corta con OB032.
 export const transferirObraSchema = z.object({
   obra_id: z.string().uuid(),
   a_usuario_id: z.string().uuid(),
-  // Contactos vinculados SOLO a esta obra que el checklist de confirmación
-  // tildó para mover de dueño con ella. El resto queda como grant contextual.
-  contactos_exclusivos: z.array(z.string().uuid()).default([]),
+  migran: z.array(z.string().uuid()).default([]),
+  sacar: z.array(z.string().uuid()).default([]),
 });
 
 export type TransferirObraForm = z.input<typeof transferirObraSchema>;
 
 // Transferir personas y empresas es su propia función (gate obras_personas_todas
-// / obras_empresas_todas). La empresa arrastra a su gente exclusiva tildada.
+// / obras_empresas_todas). Sin candidatos debajo de una persona, `sacar` es un
+// booleano: false deja al saliente viéndola donde ya la tenía.
 export const transferirPersonaSchema = z.object({
   persona_id: z.string().uuid(),
   a_usuario_id: z.string().uuid(),
+  sacar: z.boolean().default(false),
 });
 
 export type TransferirPersonaForm = z.input<typeof transferirPersonaSchema>;
@@ -394,7 +399,9 @@ export type TransferirPersonaForm = z.input<typeof transferirPersonaSchema>;
 export const transferirEmpresaSchema = z.object({
   empresa_id: z.string().uuid(),
   a_usuario_id: z.string().uuid(),
-  personas_exclusivas: z.array(z.string().uuid()).default([]),
+  migran: z.array(z.string().uuid()).default([]),
+  sacar: z.array(z.string().uuid()).default([]),
+  sacar_empresa: z.boolean().default(false),
 });
 
 export type TransferirEmpresaForm = z.input<typeof transferirEmpresaSchema>;
@@ -411,13 +418,29 @@ export const compartirObraSchema = z.object({
 
 export type CompartirObraForm = z.input<typeof compartirObraSchema>;
 
-// Lo que devuelve `obras_contactos_exclusivos_de_*`: identidad mínima de lo
-// vinculado solo a esa obra/empresa, para el checklist de confirmación.
-export type ContactoExclusivo = {
+// Lo que devuelve `obras_transferir_candidatos`: una fila por candidato con sus
+// vínculos adentro, para el checklist y el resumen de consecuencias. `origen`
+// distingue al que llega por pertenecer a una empresa de la obra. `mio` de cada
+// vínculo dice si el estado "lo saco" lo toca: lo de terceros no se toca.
+export type VinculoResumen = {
+  tipo: "obra" | "empresa";
+  id: string;
+  etiqueta: string;
+  mio: boolean;
+};
+
+// Los tres estados que el panel elige por contacto (sql/087). `va` es el
+// default: cambia de dueño y el saliente conserva grant donde ya lo tenía.
+export type EstadoTransferencia = "queda" | "va" | "saco";
+
+export type CandidatoTransferencia = {
   tipo: "persona" | "empresa";
   id: string;
   etiqueta: string;
   detalle: string | null;
+  origen: "directo" | "via_empresa" | "si_mismo";
+  via_empresa_id: string | null;
+  vinculos: VinculoResumen[];
 };
 
 // `obras_relaciones_compartibles_*`: identidad mínima de lo vinculado que es

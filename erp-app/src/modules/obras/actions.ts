@@ -8,8 +8,7 @@ import type { FilaSinAcceso } from "@/lib/accesos";
 import {
   getEmpresas,
   getPersonas,
-  getContactosExclusivosObra,
-  getContactosExclusivosEmpresa,
+  getCandidatosTransferencia,
   getRelacionesCompartiblesObra,
 } from "./queries";
 import {
@@ -179,7 +178,8 @@ export async function transferirObra(input: TransferirObraForm) {
   const { error } = await supabase.rpc("obras_transferir", {
     p_obra_id: parsed.data.obra_id,
     p_a_usuario_id: parsed.data.a_usuario_id,
-    p_contactos_exclusivos: parsed.data.contactos_exclusivos,
+    p_migran: parsed.data.migran,
+    p_sacar: parsed.data.sacar,
   });
 
   if (error) return { success: false as const, error: mensajeError(error) };
@@ -201,6 +201,7 @@ export async function transferirPersona(input: TransferirPersonaForm) {
   const { error } = await supabase.rpc("obras_transferir_persona", {
     p_persona_id: parsed.data.persona_id,
     p_a_usuario_id: parsed.data.a_usuario_id,
+    p_sacar: parsed.data.sacar,
   });
 
   if (error) return { success: false as const, error: mensajeError(error) };
@@ -221,7 +222,9 @@ export async function transferirEmpresa(input: TransferirEmpresaForm) {
   const { error } = await supabase.rpc("obras_transferir_empresa", {
     p_empresa_id: parsed.data.empresa_id,
     p_a_usuario_id: parsed.data.a_usuario_id,
-    p_personas_exclusivas: parsed.data.personas_exclusivas,
+    p_migran: parsed.data.migran,
+    p_sacar: parsed.data.sacar,
+    p_sacar_empresa: parsed.data.sacar_empresa,
   });
 
   if (error) return { success: false as const, error: mensajeError(error) };
@@ -306,12 +309,11 @@ export async function contarVinculosReceptor(obraId: string, usuarioId: string):
 
 // Lecturas que un componente cliente necesita antes de transferir o compartir:
 // los checklists. Van como actions porque las llama el panel.
-export async function contactosExclusivosObra(obraId: string) {
-  return getContactosExclusivosObra(obraId);
-}
-
-export async function contactosExclusivosEmpresa(empresaId: string) {
-  return getContactosExclusivosEmpresa(empresaId);
+export async function candidatosTransferencia(
+  tipo: "obra" | "empresa" | "persona",
+  id: string,
+) {
+  return getCandidatosTransferencia(tipo, id);
 }
 
 export async function relacionesCompartiblesObra(obraId: string, usuarioId: string) {

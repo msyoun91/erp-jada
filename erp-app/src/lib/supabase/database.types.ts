@@ -2132,24 +2132,6 @@ export type Database = {
         Args: { p_registros: Json; p_usuario: string }
         Returns: undefined
       }
-      obras_contactos_exclusivos_de_empresa: {
-        Args: { p_empresa_id: string }
-        Returns: {
-          detalle: string
-          etiqueta: string
-          id: string
-          tipo: string
-        }[]
-      }
-      obras_contactos_exclusivos_de_obra: {
-        Args: { p_obra_id: string }
-        Returns: {
-          detalle: string
-          etiqueta: string
-          id: string
-          tipo: string
-        }[]
-      }
       obras_contar_vinculos_receptor: {
         Args: { p_obra_id: string; p_usuario_id: string }
         Returns: number
@@ -2419,21 +2401,51 @@ export type Database = {
       obras_transferir: {
         Args: {
           p_a_usuario_id: string
-          p_contactos_exclusivos?: string[]
+          p_migran?: string[]
           p_obra_id: string
+          p_sacar?: string[]
         }
         Returns: undefined
+      }
+      obras_transferir_candidatos: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: {
+          detalle: string
+          etiqueta: string
+          id: string
+          origen: string
+          tipo: string
+          via_empresa_id: string
+          vinculos: Json
+        }[]
       }
       obras_transferir_empresa: {
         Args: {
           p_a_usuario_id: string
           p_empresa_id: string
-          p_personas_exclusivas?: string[]
+          p_migran?: string[]
+          p_sacar?: string[]
+          p_sacar_empresa?: boolean
         }
         Returns: undefined
       }
       obras_transferir_persona: {
-        Args: { p_a_usuario_id: string; p_persona_id: string }
+        Args: {
+          p_a_usuario_id: string
+          p_persona_id: string
+          p_sacar?: boolean
+        }
+        Returns: undefined
+      }
+      obras_transferir_resolver_vinculos: {
+        Args: {
+          p_a_usuario: string
+          p_de_usuario: string
+          p_empresas: string[]
+          p_excepto_obra?: string
+          p_personas: string[]
+          p_sacar: string[]
+        }
         Returns: undefined
       }
       obras_vincular_empresa: {

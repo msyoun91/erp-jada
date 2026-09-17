@@ -150,6 +150,25 @@ Sin `activo`: es un log, la fila significa "esto pasó". El trigger de notificac
 
 Las dos ramas `IF p_a_usuario_id <> auth.uid()` cubren al admin que transfiere a sí mismo.
 
+**`sql/087` — tres estados por contacto.** El checklist tenía dos estados (tildado = cambia de dueño, destildado = queda mío y el receptor lo ve contextual) y no contestaba la otra mitad: qué pasa con **mis otros vínculos** al contacto que sí se va. Ahora la pregunta es explícita y por contacto:
+
+| estado | qué hace |
+|---|---|
+| 1 · no se va | queda del saliente; grant contextual al receptor anclado a esa obra (lo de siempre) |
+| 2 · se va, contextual | cambia de dueño **y** el saliente conserva grant anclado a cada obra y empresa suya que lo tiene |
+| 3 · se va, y lo saco | cambia de dueño **y** se desactivan los vínculos del saliente: sus obras Y sus empresas |
+
+El 2 es el default: es el no destructivo. `p_sacar` es el subconjunto de `p_migran` que eligió el 3; sacar algo que no migra es `OB032`.
+
+- **`obras_transferir(obra, destino, p_migran[], p_sacar[])`** — `p_contactos_exclusivos` se renombró: mentía desde que el checklist dejó de listar solo exclusivos. El alcance de lo que puede migrar se ensancha a las personas que llegan **por una empresa vinculada a la obra** sin estar vinculadas a la obra ellas mismas. El vínculo con la obra que se transfiere nunca se desactiva, aunque el contacto esté en `p_sacar`: se fue con ella.
+- **`obras_transferir_persona(persona, destino, p_sacar boolean)`** — misma elección, sin lista: no hay nada colgando debajo de una persona. Arregla dos cosas de `sql/086`: apagaba **todos** los grants de la persona (incluidos los de terceros, que no participaban de la transferencia) y no creaba ninguno, así que el saliente quedaba con un fantasma — la rama `obras_es_mi_obra` de `obras_vinculos_de_obra` le seguía mostrando el nombre en su propia obra mientras `obras_ficha_persona` se lo negaba. Fila visible, ficha cerrada.
+- **`obras_transferir_empresa(empresa, destino, p_migran[], p_sacar[], p_sacar_empresa boolean)`** — `p_sacar_empresa` es el estado 3 para la empresa misma.
+- **`obras_transferir_resolver_vinculos(...)`** (DEFINER, sin GRANT) — el motor de los estados 2 y 3, compartido por las tres. El grant recíproco es el mismo statement que `sql/084` ya hacía hacia el receptor, con los usuarios al revés y el ancla del otro lado.
+- **Los vínculos que el saliente creó en obras de terceros** (`sql/051`) no se tocan **ni en el estado 3**: matarlos vaciaría la obra de alguien que no participó. Siguen vivos y su `otorgada_por` pasa al receptor. Decisión del usuario: *"no lo saques, queda a decisión del nuevo dueño"*.
+- **Techo asumido:** `obras_empresa_grant_contextual` ancla solo obra. Si al saliente le quedan personas en una empresa que migró y no comparten ninguna obra, ve la razón social sin poder abrir la ficha — mismo techo que `sql/070` para terceros. No se agrega ancla persona por esto.
+
+Test: `sql/tests/obras_087.sql`, 10/10.
+
 ## obras_obra_compartida / obras_persona_grant_contextual / obras_empresa_grant_contextual
 
 Grants que otorga el dueño. **Desde `sql/086` hay un solo acto de compartir: la obra.** `obras_persona_compartida` y `obras_empresa_compartida` (share directo desde la ficha del contacto, acceso completo + agenda) se dropearon con todas sus funciones — ver la entrada de `sql/086` abajo.
@@ -283,6 +302,8 @@ Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían c
 | `OB026` | `obras_compartir_obra` · `obras_revocar_obra` · `obras_revocar_contextual` · `obras_relaciones_compartibles_obra` (`sql/047`, `sql/086`) | solo el responsable de la obra comparte o revoca |
 | `OB027` | `obras_compartidos_por_mi` (`sql/047`) | sin acceso a la vista Compartido |
 | `OB030` | `obras_ficha_empresa` (`sql/085`) | sin acceso a esta empresa — no distingue "no existe" de "no la ves" |
+| `OB031` | `obras_transferir_candidatos` (`sql/087`) | tipo inválido: solo `obra`, `empresa`, `persona` |
+| `OB032` | `obras_transferir` · `obras_transferir_empresa` (`sql/087`) | `p_sacar` trae algo que no está en `p_migran`: sacar de la agenda sin transferir es otra acción |
 
 `mensajeError()` devuelve el texto de la base cuando el código matchea `/^OB\d{3}$/`, y cae en el mapa o en el genérico para todo lo demás. No se copió el mapa código → texto de `tareas` porque `OB001` y `OB002` llevan un conteo que un texto fijo perdería. La lista blanca es por código, no por confiar en el mensaje: un `P0001` nuevo sigue cayendo en el genérico. Ver `decisiones/obras/modelo.md`.
 

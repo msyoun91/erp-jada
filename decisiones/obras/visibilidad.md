@@ -1,5 +1,47 @@
 # Obras — Visibilidad y compartir
 
+## Transferir pregunta tres cosas, no dos (`sql/087`)
+
+Pedido del usuario: *"cuando decido transferir una persona de una obra X mía, de la obra Y mía queda
+desvinculado o contextual (...) puedo elegir entre desvincular de todas mis obras o dejarlo como
+compartido contextual"*.
+
+**El checklist contestaba media pregunta.** Tildado = cambia de dueño; destildado = queda mío y el
+receptor lo ve contextual. Lo que nadie decidía era qué pasa con **mis otros vínculos** al contacto
+que sí se va. El default silencioso era el peor de los tres resultados: la persona cambiaba de dueño,
+mis vínculos quedaban vivos, y yo perdía el grant. La rama `obras_es_mi_obra` de
+`obras_vinculos_de_obra` me seguía mostrando su nombre en mi propia obra mientras
+`obras_ficha_persona` me lo negaba — fila visible, ficha cerrada, sin explicación.
+
+**Ahora son tres estados por contacto**, en los tres paneles (obra, empresa, persona): *no se va* /
+*se va, contextual* / *se va, y lo saco*. El 2 es el default por no destructivo. El grant recíproco
+del estado 2 es el mismo statement que `sql/084` ya hacía hacia el receptor, con los usuarios al
+revés y el ancla del otro lado — no hizo falta tabla ni columna nueva, `obras_persona_grant_contextual`
+ya tenía las dos anclas.
+
+**"Exclusivo" se retira.** `obras_contactos_exclusivos_de_*` ofrecía solo lo vinculado a una única
+obra e **ignoraba `obras_persona_empresa` a propósito** (comentario de `sql/041`). Sobre la base: de
+15 personas, 8 estaban en una sola obra **pero con empresa**, y se ofrecían como exclusivas sin
+serlo. Migrar una de esas dejaba la arista persona↔empresa colgando y el contacto desaparecía de la
+ficha de la empresa de su propio dueño. La regla verdadera no es "está en una sola obra" sino: *mover
+un nodo deja aristas del lado del saliente, y cada una necesita un grant de vuelta o el vínculo se
+corta*. `obras_transferir_candidatos(tipo, id)` lista todo con su resumen de vínculos y `mio` por
+fila; el panel muestra las consecuencias en vez de esconder las opciones.
+
+**Lo que el estado 3 no toca:** los vínculos que el saliente creó en obras de terceros (`sql/051`).
+Decisión del usuario — *"no lo saques, queda a decisión del nuevo dueño"*. Matarlos vaciaría la obra
+de alguien que no participó de la transferencia.
+
+**Desvincular no puede notificar, y no es una decisión.** `notificaciones_listar` hace INNER JOIN
+contra la tabla apuntada con la RLS del que lee, para no guardar el texto: una notificación sobre
+algo que ya no ves existe como fila y nunca renderiza. Avisar un desvínculo exigiría copiar la
+etiqueta, que es exactamente lo que la doctrina de `usuario_notificaciones` prohíbe (*"al que le
+sacaron la obra no se le avisa"*). Lo entregable es el estado 2, donde el contacto sigue visible.
+Cero tipos nuevos: la agenda migrada la contesta `obras_auditoria_transferencias`.
+
+Archivos: `sql/087_transferir_tres_estados.sql`, `sql/tests/obras_087.sql` (10/10),
+`db_schema/obras.md`.
+
 ## La obra es el único acto de compartir (`sql/086`)
 
 Pedido del usuario: *"yo no quiero compartir empresas, yo solo quiero mostrar los que están
@@ -62,7 +104,7 @@ Un grant recibido **no se re-comparte**: las funciones exigen `creado_por`. **Ve
 - `obras_transferir_persona(persona, a)` — gate `obras_personas_todas`. Reasigna `creado_por`, revoca los grants del dueño saliente.
 - `obras_transferir_empresa(empresa, a, personas_exclusivas[])` — gate `obras_empresas_todas` (submódulo nuevo).
 
-**Cascada con confirmación.** `obras_contactos_exclusivos_de_obra` / `_de_empresa` listan lo vinculado **solo** a esa obra/empresa que el dueño saliente posee. El checklist del panel: tildado → cambia de dueño con ella; destildado → grant contextual (personas) o `obras_empresa_compartida` (empresas, no son sensibles). Lo compartido-al-saliente no cascadea.
+~~**Cascada con confirmación.**~~ Superado por **Transferir pregunta tres cosas, no dos** (arriba, `sql/087`): el checklist ya no lista "lo exclusivo" sino todo lo del saliente, y cada fila elige entre tres estados.
 
 **La cola de aprobación se recorta a las altas.** Bajo model A no se puede vincular lo que no se ve, así que el estado "vínculo a entidad ajena, congelado" desaparece: se dropeó `pendiente`/`motivo_rechazo` de `obras_obra_empresa` / `obras_obra_persona`, y `obras_guard_congelado` entera. Queda solo el alta parecida de obra/empresa/persona → congelada → `obras_aprobar`. `obras_marcar_pendiente` perdió las ramas de vínculo; la regla "marcar referente exige ver a la persona" pasó al WITH CHECK de `obras_obra_referente_insert`.
 
