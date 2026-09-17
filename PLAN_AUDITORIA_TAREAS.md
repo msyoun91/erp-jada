@@ -70,7 +70,7 @@ Resultado: `auditoria_tareas` F4 7/7. En `plantillas.sql` el caso 06 pasa a espe
 - [x] 10 · Crear tareas/hilos/notas pide una vista de tareas que crea (`sql/080`). No solo `tareas_lista`: Misión, Proyectos y Plantillas también crean.
 - [x] 17 · Posponer / archivar / mover de hilo: responsable, responsable del hilo o administrador (`sql/080`, `TA019`).
 - [x] 24 · El responsable del hilo deshace la conversión aunque la tarea más antigua sea ajena (`sql/081`): la función pasa a DEFINER con guarda propia. Una policy no ve OLD, y el WITH CHECK de `tareas_update` mira el hilo nuevo, que deshacer deja en NULL.
-- [ ] 9 · Oráculos de acceso (`sin_acceso`, `es_miembro_proyecto`): se aceptan o se rediseñan.
+- [x] 9 · Oráculos de acceso (`sin_acceso`, `es_miembro_proyecto`): **se aceptan**. El GRANT a `authenticated` es estructural — una policy evalúa sus funciones con los privilegios de quien consulta y sin él falla con `42501` (verificado contra la base). Sin SQL; ver `decisiones/tareas/visibilidad.md`.
 - [ ] 21 · Paginado de la Lista para el administrador.
 
 **Commitear.**

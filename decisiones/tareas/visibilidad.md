@@ -443,3 +443,29 @@ Con RLS fuera de juego, los `IF NOT FOUND` de `sql/023` sobre las tres escritura
 UPDATE que RLS dejaba en 0 filas, y ahora las filas son las que la propia función acaba de leer.
 
 Archivos: `sql/081_tareas_deshacer_hilo_definer.sql`, `sql/tests/auditoria_tareas.sql`.
+
+## Los oráculos de acceso se aceptan: el GRANT es estructural (sin SQL)
+
+Ítem 9 de la auditoría del 2026-09-17, el último pendiente de decisión.
+
+**`es_miembro_proyecto`, `es_miembro_proyecto_de_tarea` y `sin_acceso` siguen con `GRANT authenticated`,
+aunque contesten por un usuario ajeno.** Una policy evalúa sus funciones con los privilegios de quien
+consulta: sin el GRANT, la policy misma falla con `42501 permission denied for function`. Verificado
+contra la base con una tabla y una policy de prueba. Las tres se llaman desde policies —
+`tareas_proyectos_miembros_*` y `tareas_select` (`sql/009`, `sql/013`) las primeras, y `sin_acceso`
+desde `crear_tarea`/`sincronizar_asignados`, que son INVOKER—, así que revocar el GRANT no endurece
+nada: rompe la visibilidad del módulo.
+
+**Tampoco alcanza un envoltorio de un argumento sobre `auth.uid()`.** `tareas_asignados_insert/update`
+llaman `es_miembro_proyecto_de_tarea(tarea_id, usuario_id)` con la columna de la fila: la pregunta es
+por el asignado, no por quien escribe. La forma de usuario arbitrario es la que la regla necesita.
+
+**Exposición aceptada, la misma ya registrada para `sin_acceso`** (`decisiones/obras/visibilidad.md` →
+*`sin_acceso(pares)` no puede llamar `etiqueta_registro` a ojos cerrados*): dejan confirmar si un
+usuario que ya conocés es miembro de un proyecto cuyo uuid ya tenés, o si puede abrir un registro cuyo
+uuid ya tenés. Sin nombres de lo que no ves (`sin_acceso` tapa la etiqueta) y sin enumerar: un uuid
+suelto no vale nada. Residuo conocido: el `JOIN usuarios` de `sin_acceso` corre sin la RLS de
+`usuarios_select`, así que devuelve el nombre de cualquier uuid de usuario — quien no tenga
+`tareas_lista` ni `usuarios_ver` no puede conseguir esos uuids por otra vía, y no se tocó.
+
+Archivos: ninguno. La decisión es no cambiar `sql/009`, `sql/013` ni `sql/062`.

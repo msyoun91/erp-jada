@@ -27,6 +27,7 @@ Quién ve y quién toca: los tres ejes (`tareas_gestionar_ajenas`, membresía de
 - Columnas, reactivar y relacionar (`sql/077`)
 - Escribir pide una vista; posponer, archivar y mover de hilo son del responsable (`sql/080`)
 - Deshacer la conversion en hilo es del responsable del hilo (`sql/081`)
+- Los oráculos de acceso se aceptan: el GRANT es estructural (sin SQL)
 
 ## `hilos-pasos.md`
 
