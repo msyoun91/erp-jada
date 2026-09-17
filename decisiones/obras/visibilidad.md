@@ -256,11 +256,10 @@ compartida queda sin empleados. Las dos ramas nuevas van **ancladas** —`obras_
 la obra B. `obras_personas_select` (sql/039) ya admitía el contextual: el nombre salía por RLS desde
 siempre.
 
-**Las empresas no cambian: grant completo.** Una empresa no tiene dónde esconderse —no hay
-`obras_ficha_empresa()` DEFINER ni columnas revocadas como en persona—, así que "contextual" sería
-solo de UI, y la UI no es barrera. Es además lo que `obras_transferir` ya decidió dos líneas más
-abajo de donde otorga el contextual: *"el resto entra a la agenda del receptor (empresa no es
-sensible)"*. El dato sensible de una empresa es su gente, y esa sí pasa a contextual.
+~~**Las empresas no cambian: grant completo.**~~ **Superado por *La empresa también es contextual*
+(`sql/085`), abajo.** El argumento era correcto —sin `obras_ficha_empresa()` ni columnas revocadas,
+"contextual" era solo de UI— y la respuesta terminó siendo construir esas dos piezas, no bajar el
+estándar.
 
 **`obras_revocar_persona` no cambia.** Sigue bajando el grant directo **y** los contextuales de esa
 persona para ese usuario. Es el corte total que dice el botón, y es lo que hace funcionar el revocar
@@ -291,6 +290,61 @@ es lo contrario de *MODEL A*. Para sacarlo de verdad ya está "Quitar de la obra
 
 Archivos: `sql/082_compartir_contextual.sql`, `sql/tests/obras_082.sql`,
 `modules/obras/components/ObraDetalle.tsx` · `CompartirPanel.tsx` · `CompartidoView.tsx`.
+
+---
+
+## La empresa también es contextual (`sql/085`)
+
+Pedido del usuario: *"es para no ensuciar la agenda y que quede el mismo acercamiento que las
+personas"*. Llegó investigando otra cosa: al transferir una obra sin tildar nada, el receptor igual
+veía las empresas y personas vinculadas.
+
+**Contextual son dos capas, no una, y empresa solo tenía la de arriba.** RLS es por fila, no por
+(fila, contexto): no sabe en qué página estás. En persona el ancla no la impone la policy sino
+`obras_ficha_persona(persona, ctx_tipo, ctx_id)`, que recibe el contexto como parámetro — y eso
+funciona como barrera solo porque el dato sensible está detrás de esa puerta, con las columnas
+fuera del `GRANT SELECT`. Empresa no tenía ni la puerta ni el revoke, y por eso `sql/082` la dejó
+en grant completo. Se construyeron las dos: `obras_ficha_empresa(empresa, ctx_obra)` y el revoke de
+`website`/`telefono`/`email`/`direccion`.
+
+**El ancla de una empresa solo puede ser una obra.** Una empresa no cuelga de otra empresa, así que
+`obras_empresa_grant_contextual` no repite el XOR ni los índices parciales de su gemela: UNIQUE
+entero sobre `(empresa_id, usuario_id, obra_id)`, que además es lo que `ON CONFLICT` quiere sin
+cláusula WHERE.
+
+**Sin `obras_accesos_empresa`.** El log de persona existe porque el celular de alguien es dato
+personal y hay que poder auditar quién lo miró. El teléfono de una constructora no. Se suma si
+alguien lo pide.
+
+**Compartir una empresa desde su ficha no cambia:** sigue siendo grant completo. Es acto directo
+del dueño sobre su agenda, no cascada de una obra. Lo que pasó a contextual es lo que llega
+*arrastrado por una obra* — el checklist de `obras_compartir_obra`, la cascada de
+`obras_transferir` y la rama empresa de `obras_compartir_registros`.
+
+**Tres lecturas había que abrir**, o el receptor dejaba de ver la fila: `obras_empresas_select`,
+la policy `obras_obra_empresa_select` y `obras_vinculos_de_obra` (rama empresa, y el `detalle` de
+la rama persona que `sql/070` gatea por `obras_puede_ver_empresa`). Las tres últimas, ancladas.
+
+**Tareas se tocó aunque el usuario dijo que podía romperse.** Dropear `origen_obra_id` dejaba a
+`obras_compartir_registros` escribiendo una columna inexistente: eso no es degradarse, es crashear
+al asignar cualquier tarea que arrastre una empresa. La rama recibió la misma forma que `sql/082`
+le dio a la de persona — ancla en la obra y `OB029` si no hay ninguna. Sigue a medio camino por el
+mismo motivo que persona (el chip no lleva `?ctx=`); la reparación conjunta está en `BACKLOG.md`.
+
+**Consecuencia asumida:** el checklist de una obra dejó de emitir `compartido`/`revocado` para
+empresas, porque las tablas de grant contextual no llevan el trigger de `sql/083`. Es lo que ya
+pasaba con personas desde `sql/082`.
+
+**Trampa de Postgres que costó una pasada.** El primer intento usó `REVOKE SELECT (columna)`, que
+**no recorta** un `GRANT SELECT` de tabla entera: queda sin efecto y `column_privileges` sigue
+mostrando las cuatro columnas. Hay que revocar el de tabla y otorgar la lista, como ya hacía
+`sql/039` §4. Lo cazó verificar contra la base después de aplicar, no el `tsc`.
+
+Error nuevo: `OB030` (`obras_ficha_empresa`, sin acceso). Sin tests SQL todavía.
+
+Archivos: `sql/085_empresa_contextual.sql`, `db_schema/obras.md`,
+`modules/obras/queries.ts` · `types.ts` · `components/EmpresaDetalle.tsx` · `EmpresaFormPanel.tsx` ·
+`EmpresasView.tsx` · `ObraDetalle.tsx`, `app/(erp-app)/obras/empresas/[id]/page.tsx`.
 
 ---
 

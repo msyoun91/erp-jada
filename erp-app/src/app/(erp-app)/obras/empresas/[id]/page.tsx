@@ -8,7 +8,8 @@ import {
 } from "@/modules/obras/permissions";
 import {
   getCompartidosEmpresa,
-  getEmpresa,
+  getFichaEmpresa,
+  getRelacionesEmpresa,
   getUsuariosParaTransferir,
   getUsuarioActualId,
   tieneGrantDirectoEmpresa,
@@ -17,14 +18,28 @@ import { puedeVerLista } from "@/modules/tareas/permissions";
 import { getRegistro, getTareasContexto, getTareasDeRegistro } from "@/modules/tareas/queries";
 import { EmpresaDetalle } from "@/modules/obras/components/EmpresaDetalle";
 import { TareasDeRegistro } from "@/modules/tareas/components/TareasDeRegistro";
-import type { Empresa, EstadoObra, RolEmpresa } from "@/modules/obras/types";
+import type { EmpresaFicha, EstadoObra, RolEmpresa } from "@/modules/obras/types";
 
-export default async function EmpresaPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EmpresaPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ ctx?: string }>;
+}) {
   if (!(await puedeVerEmpresas())) notFound();
 
   const { id } = await params;
+
+  // `?ctx=obra:<id>`: enlace desde una ficha de obra donde el usuario tiene
+  // grant contextual sobre esta empresa (sql/085). Sin eso el contacto solo lo
+  // abre el dueño / grant directo / obras_empresas_todas.
+  const { ctx: ctxParam } = await searchParams;
+  const ctxObraId = ctxParam?.match(/^obra:([0-9a-f-]{36})$/)?.[1];
+
   const [
-    empresa,
+    ficha,
+    relaciones,
     editar,
     vincularPersona,
     vincular,
@@ -35,7 +50,8 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
     grantDirecto,
     verTareas,
   ] = await Promise.all([
-    getEmpresa(id),
+    getFichaEmpresa(id, ctxObraId).catch(() => null),
+    getRelacionesEmpresa(id),
     puedeEditarEmpresa(),
     puedeVincularPersonaEmpresa(),
     puedeVincular(),
@@ -46,7 +62,15 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
     tieneGrantDirectoEmpresa(id),
     puedeVerLista(),
   ]);
-  if (!empresa) notFound();
+  if (!ficha || !relaciones) notFound();
+
+  // El estado no entra en la firma de `obras_ficha_empresa`: viene del select
+  // de relaciones, igual que `getEstadoPersona` al lado de `getFichaPersona`.
+  const empresa: EmpresaFicha = {
+    ...ficha,
+    pendiente: relaciones.pendiente,
+    motivo_rechazo: relaciones.motivo_rechazo,
+  };
 
   const [tareasContexto, tareasDeRegistro, registro] = await Promise.all([
     verTareas ? getTareasContexto() : Promise.resolve(null),
@@ -54,7 +78,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
     verTareas ? getRegistro("empresa", id) : Promise.resolve(null),
   ]);
 
-  const { obras_persona_empresa, obras_obra_empresa, ...datos } = empresa;
+  const { obras_persona_empresa, obras_obra_empresa } = relaciones;
   // `esMio` también acota editar y desactivar: la RLS de update exige ser el
   // dueño (sql/039), así que sin esto el receptor ve botones que no andan.
   const esMio = !!miId && empresa.creado_por === miId;
@@ -64,7 +88,7 @@ export default async function EmpresaPage({ params }: { params: Promise<{ id: st
 
   return (
     <EmpresaDetalle
-      empresa={datos as Empresa}
+      empresa={empresa}
       personas={obras_persona_empresa.map((v) => ({
         id: v.id,
         persona_id: v.obras_personas?.id ?? "",

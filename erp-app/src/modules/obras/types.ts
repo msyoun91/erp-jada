@@ -579,6 +579,15 @@ export type PersonaListado = Omit<
   "telefono" | "whatsapp" | "email" | "telefono_norm" | "whatsapp_norm" | "email_norm"
 >;
 
+// Lo mismo para empresas desde sql/085: el contacto sale por `getFichaEmpresa`.
+// `localidad`/`provincia` se quedan — no son contacto y las usa el buscador.
+export type EmpresaListado = Omit<Empresa, "telefono" | "email" | "direccion" | "website">;
+
+// Lo que devuelve `obras_ficha_empresa` más el estado, que la función no trae
+// (igual que `getFichaPersona` + `getEstadoPersona`). Es el prop de la ficha y
+// del form de edición: las `_norm` no las lee nadie en el cliente.
+export type EmpresaFicha = Omit<Empresa, "razon_social_norm" | "nombre_comercial_norm" | "activo">;
+
 // ── Autorizaciones pendientes (sql/033, recortadas en sql/040) ──────
 //
 // Solo las tres altas quedan en la cola: el vínculo a entidad ajena ya no se

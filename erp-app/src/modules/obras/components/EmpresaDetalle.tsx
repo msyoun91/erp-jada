@@ -13,7 +13,7 @@ import {
   LABEL_PROVINCIA,
   LABEL_ROL_EMPRESA,
   type Compartido,
-  type Empresa,
+  type EmpresaFicha,
   type EstadoObra,
   type RolEmpresa,
   type Usuario,
@@ -38,7 +38,7 @@ export function EmpresaDetalle({
   usuarios,
   seccionTareas,
 }: {
-  empresa: Empresa;
+  empresa: EmpresaFicha;
   personas: { id: string; persona_id: string; nombre: string; cargo: string | null; es_principal: boolean }[];
   obras: {
     id: string;

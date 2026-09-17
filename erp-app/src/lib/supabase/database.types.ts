@@ -267,7 +267,6 @@ export type Database = {
           created_at: string
           empresa_id: string
           id: string
-          origen_obra_id: string | null
           otorgada_por: string
           updated_at: string
           usuario_id: string
@@ -277,7 +276,6 @@ export type Database = {
           created_at?: string
           empresa_id: string
           id?: string
-          origen_obra_id?: string | null
           otorgada_por: string
           updated_at?: string
           usuario_id: string
@@ -287,7 +285,6 @@ export type Database = {
           created_at?: string
           empresa_id?: string
           id?: string
-          origen_obra_id?: string | null
           otorgada_por?: string
           updated_at?: string
           usuario_id?: string
@@ -301,13 +298,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "obras_empresa_compartida_origen_obra_id_fkey"
-            columns: ["origen_obra_id"]
-            isOneToOne: false
-            referencedRelation: "obras"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "obras_empresa_compartida_otorgada_por_fkey"
             columns: ["otorgada_por"]
             isOneToOne: false
@@ -316,6 +306,68 @@ export type Database = {
           },
           {
             foreignKeyName: "obras_empresa_compartida_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obras_empresa_grant_contextual: {
+        Row: {
+          activo: boolean
+          created_at: string
+          empresa_id: string
+          id: string
+          obra_id: string
+          otorgada_por: string
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          empresa_id: string
+          id?: string
+          obra_id: string
+          otorgada_por: string
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          obra_id?: string
+          otorgada_por?: string
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obras_empresa_grant_contextual_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "obras_empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_empresa_grant_contextual_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_empresa_grant_contextual_otorgada_por_fkey"
+            columns: ["otorgada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_empresa_grant_contextual_usuario_id_fkey"
             columns: ["usuario_id"]
             isOneToOne: false
             referencedRelation: "usuarios"
@@ -2230,6 +2282,14 @@ export type Database = {
         Args: { p_empresa_id: string }
         Returns: boolean
       }
+      obras_empresa_grant_ctx_obra_conmigo: {
+        Args: { p_empresa_id: string; p_obra_id: string }
+        Returns: boolean
+      }
+      obras_empresa_grant_ctx_vigente: {
+        Args: { p_empresa_id: string }
+        Returns: boolean
+      }
       obras_empresa_grant_directo: {
         Args: { p_empresa_id: string }
         Returns: boolean
@@ -2254,6 +2314,24 @@ export type Database = {
       obras_etiqueta: {
         Args: { p_id: string; p_tipo: string }
         Returns: string
+      }
+      obras_ficha_empresa: {
+        Args: { p_ctx_obra_id?: string; p_empresa_id: string }
+        Returns: {
+          creado_por: string
+          created_at: string
+          direccion: string
+          email: string
+          id: string
+          localidad: string
+          nombre_comercial: string
+          observaciones: string
+          provincia: Database["public"]["Enums"]["provincia"]
+          razon_social: string
+          telefono: string
+          updated_at: string
+          website: string
+        }[]
       }
       obras_ficha_persona: {
         Args: { p_ctx_id?: string; p_ctx_tipo?: string; p_persona_id: string }

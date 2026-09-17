@@ -11,7 +11,7 @@ import type {
   Compartido,
   CompartidoRow,
   ContactoExclusivo,
-  Empresa,
+  EmpresaListado,
   FiltrosObras,
   HistorialAprobacion,
   Obra,
@@ -194,12 +194,18 @@ export async function getTransferencias(obraId: string) {
   return data ?? [];
 }
 
-export async function getEmpresas(busqueda?: string, alcance?: Alcance): Promise<Empresa[]> {
+// El listado nunca trae contacto — desde sql/085 `telefono`/`email`/`direccion`/
+// `website` no tienen GRANT SELECT y un `select("*")` daría 403. El contacto
+// sale solo por `getFichaEmpresa`. La RLS además deja pasar el grant contextual,
+// que no es agenda: por eso no alcanza con sacar el filtro.
+export async function getEmpresas(busqueda?: string, alcance?: Alcance): Promise<EmpresaListado[]> {
   const supabase = await createClient();
 
   let query = supabase
     .from("obras_empresas")
-    .select("*")
+    .select(
+      "id, razon_social, nombre_comercial, razon_social_norm, nombre_comercial_norm, localidad, provincia, observaciones, creado_por, activo, pendiente, motivo_rechazo, created_at, updated_at",
+    )
     .eq("activo", true)
     .order("razon_social");
 
@@ -221,13 +227,28 @@ export async function getEmpresas(busqueda?: string, alcance?: Alcance): Promise
   return data ?? [];
 }
 
-export async function getEmpresa(id: string) {
+// Única puerta al contacto de la empresa (sql/085). Tira si está fuera del
+// alcance del usuario; `ctxObraId` la abre por grant contextual de esa obra.
+export async function getFichaEmpresa(id: string, ctxObraId?: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("obras_ficha_empresa", {
+    p_empresa_id: id,
+    ...(ctxObraId ? { p_ctx_obra_id: ctxObraId } : {}),
+  });
+  if (error) throw error;
+  return data?.[0] ?? null;
+}
+
+// Las relaciones van aparte de la ficha: `obras_ficha_empresa` devuelve contacto
+// y nada más. Mismo corte que persona.
+export async function getRelacionesEmpresa(id: string) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("obras_empresas")
     .select(
-      `*,
+      `id, pendiente, motivo_rechazo, activo,
        obras_persona_empresa(id, cargo, es_principal, obras_personas(id, nombre, apellido)),
        obras_obra_empresa(id, roles, obras(id, nombre, estado, localidad))`,
     )

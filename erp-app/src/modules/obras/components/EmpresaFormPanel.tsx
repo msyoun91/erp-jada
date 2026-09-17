@@ -12,7 +12,7 @@ import {
   PROVINCIAS,
   type CrearEmpresaForm,
   type DuplicadoEmpresa,
-  type Empresa,
+  type EmpresaFicha,
 } from "../types";
 import { AvisoDuplicadosEmpresa } from "./AvisoDuplicados";
 
@@ -21,7 +21,7 @@ export function EmpresaFormPanel({
   onClose,
   onCreada,
 }: {
-  empresa?: Empresa;
+  empresa?: EmpresaFicha;
   onClose: () => void;
   // Alta desde una obra o desde una persona: el que abrió el panel se queda
   // con el id para armar el vínculo sin buscarla de nuevo. `pendiente` viaja

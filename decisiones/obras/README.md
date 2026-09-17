@@ -14,6 +14,7 @@ una decisión de visibilidad o alcance.
 
 MODEL A (todo privado por dueño), compartir con checklist y cascada, grants heredados, alcance de personas, buscador global, `obras_aprobar`.
 
+- **La empresa también es contextual (`sql/085`)** — lo que llega arrastrado por una obra no entra a la agenda
 - **Compartir una obra o empresa no reparte contactos (`sql/082`)** — el checklist otorga grant contextual
 - MODEL A — obras, empresas y personas son privadas por dueño (`sql/039`–`044`)
 - Compartir con checklist y cascada de revocación (`sql/047`)

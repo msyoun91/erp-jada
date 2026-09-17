@@ -43,7 +43,7 @@ Pedida junto con las notificaciones y no construida (ver `decisiones/global/infr
 Cuando aparezca un caso real, la sugerencia debería abrir el flujo de plantillas que ya existe, no un camino de creación nuevo. Un vínculo que no venga de un disparo pide revisar dos cosas de `sql/055`: `tareas_vinculos.plantilla_id` es NOT NULL, e insertar exige estar adentro de un trigger.
 
 
-## Compartir al asignar una tarea quedó a medio camino (`sql/082`, 2026-09-17)
+## Compartir al asignar una tarea quedó a medio camino (`sql/082` + `sql/085`, 2026-09-17)
 
 `obras_compartir_registros` ahora otorga **grant contextual** anclado a la obra/empresa compartida
 con ese usuario, igual que el resto de compartir (`decisiones/obras/visibilidad.md` → *Compartir una
@@ -55,10 +55,17 @@ con `OB029`.
 
 Decidido con el usuario: se rompe a propósito ahora y se repara después.
 
+**`sql/085` sumó la empresa al mismo problema.** Su rama en `obras_compartir_registros` pasó de
+grant completo a contextual anclado a la obra, y corta con `OB029` si no hay ninguna compartida.
+Hubo que tocarla igual aunque el usuario aceptó que Tareas se rompiera: seguía escribiendo
+`origen_obra_id`, que esa migración dropea, así que no se degradaba — crasheaba al asignar
+cualquier tarea con una empresa. Misma reparación pendiente, un ente más.
+
 **La reparación, cuando se haga:** ancla `tarea_id` en `obras_persona_grant_contextual` (el CHECK
-pasa a obra XOR empresa XOR tarea), su rama en `obras_ficha_persona` —"la tarea sigue vinculando a
-esta persona y el usuario ve la tarea"—, el chip con `?ctx=tarea:{id}`, y `obras_puede_abrir`
-aprendiendo esa rama. Es un tercer tipo de contexto y mete a Obras a validar contra `tareas`:
+pasa a obra XOR empresa XOR tarea) **y en `obras_empresa_grant_contextual`** (que hoy tiene
+`obra_id NOT NULL`: el ancla pasa a ser obra XOR tarea), su rama en `obras_ficha_persona` /
+`obras_ficha_empresa` —"la tarea sigue vinculando a esta entidad y el usuario ve la tarea"—, el
+chip con `?ctx=tarea:{id}`, y `obras_puede_abrir` aprendiendo esa rama. Es un tercer tipo de contexto y mete a Obras a validar contra `tareas`:
 decidir dónde vive esa validación antes de escribirla.
 
 ## ~~Deriva base ↔ repo: `compartido` / `revocado` sin archivo SQL (2026-09-17)~~ — cerrada

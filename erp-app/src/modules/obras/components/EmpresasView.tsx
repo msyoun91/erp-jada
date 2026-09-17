@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Briefcase, Plus } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
-import type { Empresa } from "../types";
+import { LABEL_PROVINCIA, type EmpresaListado } from "../types";
 import { AlcanceToggle } from "./AlcanceToggle";
 import { EmpresaFormPanel } from "./EmpresaFormPanel";
 
@@ -18,7 +18,7 @@ export function EmpresasView({
   puedeCrear,
   veTodas,
 }: {
-  empresas: Empresa[];
+  empresas: EmpresaListado[];
   puedeCrear: boolean;
   veTodas: boolean;
 }) {
@@ -85,7 +85,11 @@ export function EmpresasView({
                   <span className={e.localidad ? "truncate" : "hidden md:block"}>
                     {e.localidad}
                   </span>
-                  <span className={e.telefono ? "truncate" : "hidden md:block"}>{e.telefono}</span>
+                  {/* Era el teléfono; desde sql/085 no tiene GRANT SELECT y solo
+                      sale por la ficha. La provincia ya viaja en el listado. */}
+                  <span className={e.provincia ? "truncate" : "hidden md:block"}>
+                    {e.provincia && LABEL_PROVINCIA[e.provincia]}
+                  </span>
                 </span>
               </Link>
             </li>

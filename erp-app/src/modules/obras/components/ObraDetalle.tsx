@@ -299,7 +299,7 @@ export function ObraDetalle({
                 <li key={e.id} className="card flex items-center gap-3 p-3">
                   <div className="min-w-0 flex-1">
                     <Link
-                      href={`/obras/empresas/${e.empresa_id}`}
+                      href={`/obras/empresas/${e.empresa_id}?ctx=obra:${obra.id}`}
                       className="t-body-m block truncate font-semibold hover:underline"
                     >
                       {e.razon_social}
