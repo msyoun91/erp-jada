@@ -10,6 +10,7 @@ escrita en el archivo que apunta, no acá.
 |---|---|---|---|
 | `AUDITORIA_OBRAS_UI.md` | Relevamiento visual del módulo obras, 2026-09-08 | Cerrada: 28 arreglos implementados, B3 falso positivo. Los hallazgos quedaron en `decisiones/obras/` | `git mv obsoletos/AUDITORIA_OBRAS_UI.md .` |
 | `PLAN_ARQUITECTURA_TAREAS.md` | Auditoría de arquitectura del módulo tareas | Cerrada: 7 puntos hechos, 1 descartado. Lo único vivo está en `BACKLOG.md` | `git mv obsoletos/PLAN_ARQUITECTURA_TAREAS.md .` |
+| `PLAN_AUDITORIA_TAREAS.md` | Plan de cierre de la auditoría del módulo tareas, 2026-09-17 | Cerrado: las 6 fases hechas (`sql/076`–`081`), 21 y 23 descartados con motivo. Las decisiones quedaron en `decisiones/tareas/` | `git mv obsoletos/PLAN_AUDITORIA_TAREAS.md .` |
 | `erp-app-README.md`, `erp-cliente-README.md` | Boilerplate de `create-next-app`, idénticos entre sí | Cero contenido del proyecto | `git mv obsoletos/erp-app-README.md erp-app/README.md` |
 | `sync-contracts/` | Workspace `@erp/sync-contracts`, schemas compartidos | `src/index.ts` era `export {}`. Cero imports en ambas apps | Mover a `packages/sync-contracts`, reponer la entrada en `workspaces` de `package.json` raíz, `npm install` |
 | `fonts-barlow-jakarta/` | Los 8 `.woff2` de Barlow Semi Condensed + Plus Jakarta Sans | La empresa cambió la tipografía del sitio: el sistema pasó a DM Sans — ver `decisiones/global/ui.md` | `git mv obsoletos/fonts-barlow-jakarta/*.woff2 erp-app/public/fonts/` y revertir el `@font-face` de `globals.css` |
