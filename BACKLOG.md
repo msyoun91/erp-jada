@@ -213,3 +213,49 @@ la forma de que la clase entera no vuelva.
   `obras_obra_compartida` directo; sacar el UPDATE sin tocar la policy dejaba al nuevo responsable de
   una obra transferida con el panel "compartida con" vacío y el tercero adentro. Lo encontró leer el
   comentario de la query, que decía "solo lo ve el responsable" cuando la policy decía otra cosa.
+
+## Segunda pasada de la auditoría de compartir/transferir (2026-09-18)
+
+Todo verificado contra la base en transacción revertida; exposición real al escribirla, 0 filas. Lo
+de más peso —el dueño anterior de una obra transferida y el receptor revocado seguían controlando sus
+vínculos— se cerró en `sql/095` (`decisiones/obras/visibilidad.md` → *El vínculo se va con la obra*).
+
+**Decidido, sin implementar:**
+
+- **`p_sacar` no se recorta a lo que migró.** `OB032` chequea `p_sacar ⊆ p_migran`, pero `p_migran` se
+  filtra en silencio (solo migra lo del saliente vinculado a la obra) y el resolver recibe `p_sacar`
+  crudo. Quien tiene `obras_transferir` global, pasando por PostgREST el id de un contacto que no está
+  en la obra, desactiva sus vínculos en todas las demás obras del saliente —también los que sumó un
+  tercero—; "quien transfiere mira y reasigna, no edita" deja de ser cierto. Igual en
+  `obras_transferir_empresa`. Fix: después de migrar, `p_sacar` ∩ (`v_personas` ∪ `v_empresas`).
+- **`obras_persona_empresa` tiene `GRANT UPDATE` de tabla entera** —`persona_id`, `empresa_id`, `id`,
+  `created_at`— y la policy UPDATE solo mira la persona: el INSERT rechaza una empresa ajena (`42501`)
+  y el UPDATE deja cambiar `empresa_id` a esa misma. Integridad, no fuga. Fix: `REVOKE UPDATE` +
+  `GRANT UPDATE (activo, cargo, es_principal, observaciones)`, la receta de `sql/085`; la UI solo
+  escribe `activo`.
+- **`sql/tests/obras_033.sql` está muerto desde `sql/040`**: lee `obras_obra_persona.pendiente`, que
+  esa migración dropeó. Lo encontró la regresión de `sql/095`; no se corrió.
+
+**Para decidir (chocan con decisiones escritas):**
+
+- **Re-vincular resucita el grant.** A comparte la obra con C tildando a P; saca a P de la obra (C deja
+  de verlo, `OB009`); lo vuelve a vincular y C recupera el teléfono sin que nadie haya tildado nada.
+  Es la consecuencia de "validado en vivo, sin trigger de limpieza" (MODEL A, `sql/082`). La salida
+  sería un trigger como `obras_cascada_desactivar` que apague los grants anclados al desactivar el
+  vínculo — y el filtro `obras_ctx_vinculo_vivo` de la vista Compartido (`sql/094`) sobraría.
+- **Desactivar una obra no corta lo compartido.** `obras_set_activo` no cascadea y la rama de
+  compartida de `obras_puede_ver_obra_de` / `obras_select` no mira `obras.activo`: el receptor la abre
+  por URL (`getObra` no filtra) y sigue viendo teléfonos con `?ctx=`. Al revés, el responsable queda
+  con la ficha llena de botones que la base rechaza (vincular, y desde `sql/095` también editar y
+  quitar vínculos) mientras el receptor todavía puede agregar. Pregunta: ¿desactivar es archivar para
+  todos? La regla está escrita dos veces (función y policy inline): el fix toca las dos.
+
+**Problemas de diseño, sin agujero:**
+
+- **Contacto que ya nadie puede compartir.** Obra transferida sin migrar a P: el dueño nuevo no puede
+  tildarlo al compartir (no es suyo) y el dueño de P no puede compartir una obra que no es suya.
+- **La vista Compartido nombra obras ajenas.** Transferida la persona P, su dueño nuevo ve "P → C, vía
+  *obra de A*" —nombre de una obra privada que no puede abrir— y puede cortar ese acceso adentro de
+  la obra de A. Es la regla de `sql/093` ("manda el dueño del contacto"); lo que se filtra es el nombre.
+- **`obras_transferir` no bloquea la fila** (`FOR UPDATE`): dos transferencias simultáneas de la misma
+  obra dejan el log mal y los contactos migrados repartidos entre dos destinos. Improbable.

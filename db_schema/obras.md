@@ -120,6 +120,8 @@ Las dos tablas puente con la obra. `roles` es un **array de enum**, no filas sep
 
 Las dos llevan `creado_por` (uuid FK → usuarios, NOT NULL, `sql/051`): quién agregó el vínculo. Lo pone el trigger `set_creado_por` (BEFORE INSERT, no editable por el cliente); backfill = `obras.responsable_id`. Separa "vínculo del responsable" de "vínculo que sumó un receptor de la obra compartida con un contacto suyo": el responsable ve los dos, pero solo el creador reescribe roles/observaciones del segundo (trigger `obras_vinculo_guard_edicion`), y revocar la obra al receptor los arrastra. Ver `sql/051` en la sección de compartir.
 
+**Ser el creador vale mientras seas parte de la obra (`sql/095`).** SELECT: `obras_es_mi_obra(obra_id) OR obras_transferir OR (obras_obra_compartida_conmigo(obra_id) AND (creado_por = auth.uid() OR obras_ctx_vigente(...)))`. UPDATE: `obras_vincular AND (obras_es_mi_obra(obra_id) OR (creado_por = auth.uid() AND obras_obra_compartida_conmigo(obra_id)))` — la misma condición que la rama de receptor del INSERT. Hasta ahí la rama `creado_por` iba sola: el receptor revocado reponía sus vínculos con `UPDATE activo = true`, y el dueño anterior de una obra transferida seguía leyendo y editando los que había cargado. Una obra desactivada queda sin edición de vínculos también para su responsable (`obras_es_mi_obra` exige `activo`).
+
 ~~Las dos llevan además `pendiente` y `motivo_rechazo` (`sql/033`)~~ — **`sql/040` las dropeó.** Bajo MODEL A no se vincula lo que no se ve (WITH CHECK de INSERT exige `obras_puede_ver_persona` / `_empresa`), así que el estado "vínculo pendiente" no existe.
 
 CHECK en ambas: `cardinality(roles) > 0` y `obras_array_sin_duplicados(roles)`. Unique parcial por par `WHERE activo`.
@@ -197,6 +199,8 @@ Test: `sql/tests/obras_089.sql`, 7/7.
 - **El gate `OB006` pasa a `usuario_tiene_permiso(destino, 'obras_ver')`** en las tres funciones — era el mismo EXISTS sobre `usuario_submodulos` escrito cuatro veces. ~~`obras_migrar_agenda` conserva la copia.~~ — `sql/091` se llevó la cuarta.
 
 Test: `sql/tests/obras_090.sql`, 7/7.
+
+**`sql/095` — el vínculo se va con la obra.** `obras_transferir` pasa al entrante el `creado_por` de los `obras_obra_persona` / `obras_obra_empresa` de esa obra que había cargado el saliente, activos o no — lo que `obras_migrar_agenda` ya hacía desde `sql/088`. En los tres estados del checklist el vínculo con la obra transferida "se va con ella", pero quedaba a nombre del anterior: la rama `creado_por` de las policies le dejaba leerlo, editarlo y reponerlo sin ver la obra, y si el dueño nuevo le compartía la obra, `OB028` trababa al dueño nuevo y revocar desactivaba esos vínculos. Lo que sumó un receptor sigue siendo suyo. Va junto con el recorte de las policies de vínculo (sección de arriba). Test: `sql/tests/obras_095.sql`, 6/6.
 
 ## obras_obra_compartida / obras_persona_grant_contextual / obras_empresa_grant_contextual
 

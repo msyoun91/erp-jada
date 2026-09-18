@@ -1,5 +1,38 @@
 # Obras — Visibilidad y compartir
 
+## El vínculo se va con la obra (`sql/095`)
+
+**`obras_transferir` pasa al entrante los vínculos que el saliente cargó en la obra, y la rama
+`creado_por` de las policies SELECT/UPDATE de `obras_obra_persona` / `obras_obra_empresa` exige que
+la obra siga compartida conmigo.** `creado_por` dice quién agregó el vínculo y tres reglas lo leen
+como autoridad —las policies, `OB028` y la cascada de `obras_revocar_obra`—, pero transferir movía la
+obra y no sus vínculos, y la policy no preguntaba si el creador seguía siendo parte.
+
+**El checklist de tres estados no lo cubría, y no por descuido.** Decide sobre el contacto (de quién
+es, quién lo sigue viendo); el vínculo con la obra que se transfiere "se va con ella" en los tres
+estados, así que ningún estado lo tocaba. Probado contra la base con el estado 2 y el 3: la obra y el
+contacto quedaban del dueño nuevo y la fila que los une, a nombre del anterior. El anterior leía las
+notas del dueño nuevo, editaba roles y reponía lo que el dueño nuevo quitaba; si el dueño nuevo le
+compartía la obra, `OB028` le trababa editar sus propios contactos y revocarlo los desactivaba. Y el
+receptor revocado reponía sus vínculos con un `UPDATE activo = true`.
+
+**No cambia el diseño de `sql/051`:** lo que suma un receptor sigue siendo suyo mientras la obra siga
+compartida, y el dueño lo quita, no lo reescribe. `obras_migrar_agenda` ya movía estos `creado_por`
+(`sql/088`); le faltaba a `obras_transferir`. Hacen falta las dos piezas: la policy sola dejaba que el
+anterior recuperara el poder el día que le compartieran la obra; el traspaso solo dejaba abierto al
+receptor revocado.
+
+**Consecuencia asumida:** `obras_es_mi_obra` exige `activo`, así que en una obra desactivada el
+responsable tampoco edita por UPDATE los vínculos que cargó él. Agregar y editar los de un receptor ya
+estaba cerrado; queda con la decisión abierta sobre qué es desactivar una obra compartida
+(`BACKLOG.md`).
+
+Exposición al aplicarla: 0 filas. Sin backfill.
+
+Archivos: `sql/095_el_vinculo_se_va_con_la_obra.sql`, `sql/tests/obras_095.sql` (6/6),
+`sql/tests/obras_051.sql` (el caso H lee sin RLS: el receptor revocado ya no ve lo suyo),
+`db_schema/obras.md`.
+
 ## Un código por regla, y la vista Compartido no miente (`sql/094`)
 
 **`obras_ficha_persona` vuelve a levantar `OB009`, la vista Compartido deja de listar grants sin

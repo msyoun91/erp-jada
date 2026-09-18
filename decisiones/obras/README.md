@@ -14,6 +14,8 @@ una decisión de visibilidad o alcance.
 
 MODEL A (todo privado por dueño), compartir con checklist y cascada, grants heredados, alcance de personas, buscador global, `obras_aprobar`.
 
+- **El vínculo se va con la obra (`sql/095`)** — transferir pasa al entrante los vínculos que cargó
+  el saliente, y "tu vínculo" vale mientras la obra siga compartida con vos
 - **Un código por regla, y la vista Compartido no miente (`sql/094`)** — revive `OB009`, saca de la
   vista los grants sin vínculo vivo y devuelve `puedo_abrir`; más `safeParse` en revocar
 - **`otorgada_por` es historia, no autoridad (`sql/093`)** — ver, revocar y leer la fila son una
