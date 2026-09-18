@@ -19,7 +19,7 @@
 --   G  obras_contar_vinculos_receptor cuenta lo que agregó el receptor
 --   H  revocar la obra desactiva esos vínculos
 --
--- Último resultado: 8/8.
+-- Último resultado: 8/8 (2026-09-18, H leído sin RLS desde sql/095).
 
 DO $test$
 DECLARE
@@ -140,15 +140,18 @@ BEGIN
   IF v_n <> 3 THEN RAISE EXCEPTION 'G FALLA: contar_vinculos_receptor dio % (esperaba 3)', v_n; END IF;
   r := r || E'\nG OK  obras_contar_vinculos_receptor = 3';
 
-  -- H
+  -- H — se lee sin RLS: desde sql/095 el receptor revocado ya no ve sus
+  -- vínculos, así que leerlos como él contaba cero por no verlos, no por
+  -- estar desactivados.
   PERFORM obras_revocar_obra(v_obra, v_tester);
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_tester)::text, true);
+  PERFORM set_config('role', 'none', true);
   SELECT count(*) INTO v_n FROM obras_obra_empresa
    WHERE obra_id = v_obra AND creado_por = v_tester AND activo;
   IF v_n <> 0 THEN RAISE EXCEPTION 'H FALLA: quedaron vínculos activos del receptor tras revocar'; END IF;
   SELECT count(*) INTO v_n FROM obras_obra_persona
    WHERE obra_id = v_obra AND creado_por = v_tester AND NOT activo;
   IF v_n <> 2 THEN RAISE EXCEPTION 'H FALLA: las personas del receptor no se desactivaron (%)', v_n; END IF;
+  PERFORM set_config('role', 'authenticated', true);
   r := r || E'\nH OK  revocar la obra arrastra los vínculos del receptor';
 
   RAISE EXCEPTION E'--- obras_051: 8/8 ---%', r;
