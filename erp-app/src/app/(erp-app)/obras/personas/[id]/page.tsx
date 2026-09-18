@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import {
   puedeEditarPersona,
   puedeVerPersonas,
+  puedeTransferirMisPersonas,
   puedeVerTodasLasPersonas,
   puedeVincular,
   puedeVincularPersonaEmpresa,
@@ -79,6 +80,7 @@ export default async function PersonaPage({
     vincularEmpresa,
     vincular,
     veTodas,
+    transferirPropias,
     usuarios,
     miId,
     verTareas,
@@ -89,6 +91,7 @@ export default async function PersonaPage({
     puedeVincularPersonaEmpresa(),
     puedeVincular(),
     puedeVerTodasLasPersonas(),
+    puedeTransferirMisPersonas(),
     getUsuariosParaTransferir(),
     getUsuarioActualId(),
     puedeVerLista(),
@@ -148,7 +151,7 @@ export default async function PersonaPage({
       }
       permisos={{ editar: editar && esMio, vincularEmpresa, vincularObra }}
       esMio={esMio}
-      veTodas={veTodas}
+      puedeTransferir={veTodas || (transferirPropias && esMio)}
       usuarios={usuarios.filter((u) => u.id !== miId)}
     />
   );

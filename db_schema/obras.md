@@ -10,7 +10,7 @@ Tres alcances distintos, y conviene tenerlos claros antes de leer las tablas:
 
 | entidad | quién la ve |
 |---|---|
-| obra | solo su `responsable_id`. Más quien tenga `obras_transferir`, que las ve todas porque no puede reasignar lo que no ve |
+| obra | solo su `responsable_id`. Más quien tenga `obras_transferir`, que las ve todas porque no puede reasignar lo que no ve. El permiso personal de `sql/089` (`obras_transferir_propias`) **no** ensancha esta columna: mueve lo propio y nada más |
 | empresa | solo su `creado_por`, quien la tenga compartida (grant directo) y `obras_empresas_todas`. Con grant contextual se ve solo dentro de la obra que lo trajo (`sql/085`) |
 | persona | solo quien la creó o la tiene vinculada a una obra propia. `obras_personas_todas` levanta el límite |
 
@@ -179,6 +179,17 @@ Test: `sql/tests/obras_087.sql`, 10/10.
 - **Una fila de `obras_transferencias` por entidad**, ninguna por vínculo (`tipo` admite tres valores y un vínculo no es una entidad). Los avisos salen solo por obra: `trg_notificar_transferencia_obra` filtra `WHEN (NEW.tipo = 'obra')` desde `sql/041` — no es el corte por `obra_id` NULL de `notificar()`, que es un segundo cinturón. 30 obras = 30 avisos, uno por cosa real. No se agrupan.
 
 Test: `sql/tests/obras_088.sql`, 12/12. Crea dos usuarios en `auth.users` dentro de la transacción revertida: con los dos de la base el otorgante siempre es el entrante y la rama "lo recibido pasa al entrante" no se ejercita.
+
+**`sql/089` — transferir lo propio.** Cada transferencia tiene ahora dos puertas, no dos funciones: la global de siempre (`obras_transferir` / `obras_personas_todas` / `obras_empresas_todas`, que además de transferir **ven todo**) y una personal nueva, que mueve lo propio sin abrir la vista de lo ajeno.
+
+- **`obras_transferir_propias` · `obras_personas_transferir_propias` · `obras_empresas_transferir_propias`** (submódulos `funcion`, colgados de `obras_ver` / `obras_personas` / `obras_empresas`).
+- **`obras_puede_transferir(tipo, id)`** (INVOKER, sin GRANT, STABLE) — la regla, una sola vez: permiso global, o permiso personal **y** ser el dueño de esa fila. Busca el dueño ella misma para que el guard de cada función sea una línea. La llaman `obras_transferir`, `_persona`, `_empresa` y `obras_transferir_candidatos`, todas DEFINER, así que ve la fila sea de quien sea.
+- **Los códigos globales no se tocaron**: `obras_transferir` está incrustado como "ve todas las obras" en ~15 policies y funciones. El código nuevo es el personal, y **la RLS no cambia**: quien solo transfiere lo suyo ve lo suyo, que ya era el default.
+- **`usuarios_select` suma los tres** — es la lista de destinos posibles; sin eso el selector sale vacío.
+- Los guards se parchearon con `pg_get_functiondef` + `regexp_replace` dentro de un `DO`, en vez de repegar ~450 líneas de `sql/087`: el `RAISE` aborta la transacción si el patrón no aparece.
+- **Migrar agenda no lleva par personal**: la pantalla es sobre la agenda de otro por definición.
+
+Test: `sql/tests/obras_089.sql`, 7/7.
 
 ## obras_obra_compartida / obras_persona_grant_contextual / obras_empresa_grant_contextual
 

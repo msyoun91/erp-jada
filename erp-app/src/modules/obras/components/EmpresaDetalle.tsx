@@ -31,7 +31,7 @@ export function EmpresaDetalle({
   obras,
   permisos,
   esMio,
-  veTodas,
+  puedeTransferir,
   usuarios,
   seccionTareas,
 }: {
@@ -51,7 +51,7 @@ export function EmpresaDetalle({
   // null = sin la vista de Tareas: la sección no se muestra.
   seccionTareas: React.ReactNode;
   esMio: boolean;
-  veTodas: boolean;
+  puedeTransferir: boolean;
   usuarios: Usuario[];
 }) {
   const [editando, setEditando] = useState(false);
@@ -85,7 +85,7 @@ export function EmpresaDetalle({
                 icon: <Link2 size={14} strokeWidth={1.75} />,
                 onClick: () => copiarEnlace(`/obras/empresas/${empresa.id}`),
               },
-              ...(veTodas
+              ...(puedeTransferir
                 ? [
                     {
                       label: "Transferir",

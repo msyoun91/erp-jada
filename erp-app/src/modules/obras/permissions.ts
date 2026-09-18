@@ -28,6 +28,22 @@ export function puedeTransferir() {
   return tienePermiso("obras_transferir");
 }
 
+// La mitad personal de transferir (sql/089): mover lo mío sin ver lo ajeno. Las
+// tres van siempre acompañadas de `esMio` — el permiso solo dice "podés
+// transferir lo tuyo", no cuál es. La base vuelve a chequear las dos mitades en
+// `obras_puede_transferir`.
+export function puedeTransferirMisObras() {
+  return tienePermiso("obras_transferir_propias");
+}
+
+export function puedeTransferirMisPersonas() {
+  return tienePermiso("obras_personas_transferir_propias");
+}
+
+export function puedeTransferirMisEmpresas() {
+  return tienePermiso("obras_empresas_transferir_propias");
+}
+
 export function puedeDesactivarObra() {
   return tienePermiso("obras_desactivar");
 }

@@ -40,7 +40,7 @@ export function PersonaDetalle({
   obras,
   permisos,
   esMio,
-  veTodas,
+  puedeTransferir,
   usuarios,
   seccionTareas,
 }: {
@@ -61,9 +61,10 @@ export function PersonaDetalle({
   permisos: { editar: boolean; vincularEmpresa: boolean; vincularObra: boolean };
   // null = sin la vista de Tareas: la sección no se muestra.
   seccionTareas: React.ReactNode;
-  // Compartir es solo del dueño; transferir, de quien tiene obras_personas_todas.
+  // Compartir es solo del dueño; transferir, de quien tiene la persona con el
+  // permiso personal o de quien tiene obras_personas_todas (sql/089).
   esMio: boolean;
-  veTodas: boolean;
+  puedeTransferir: boolean;
   usuarios: Usuario[];
 }) {
   const [editando, setEditando] = useState(false);
@@ -103,7 +104,7 @@ export function PersonaDetalle({
                 icon: <Link2 size={14} strokeWidth={1.75} />,
                 onClick: () => copiarEnlace(`/obras/personas/${persona.id}`),
               },
-              ...(veTodas
+              ...(puedeTransferir
                 ? [
                     {
                       label: "Transferir",

@@ -5,6 +5,7 @@ import {
   puedeDesactivarObra,
   puedeEditarObra,
   puedeTransferir,
+  puedeTransferirMisObras,
   puedeVerObras,
   puedeVerReferentes,
   puedeVincular,
@@ -31,12 +32,23 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
   const obra = await getObra(id);
   if (!obra) notFound();
 
-  const [editar, vincular, referentesPerm, transferir, desactivar, crearEmpresa, crearPersona, verTareas] =
+  const [
+    editar,
+    vincular,
+    referentesPerm,
+    transferir,
+    transferirPropias,
+    desactivar,
+    crearEmpresa,
+    crearPersona,
+    verTareas,
+  ] =
     await Promise.all([
       puedeEditarObra(),
       puedeVincular(),
       puedeVerReferentes(),
       puedeTransferir(),
+      puedeTransferirMisObras(),
       puedeDesactivarObra(),
       puedeCrearEmpresa(),
       puedeCrearPersona(),
@@ -144,7 +156,9 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
         // obras_obra_referente): sin esto el botón "Marcar referente" queda
         // muerto en su ficha.
         referentes: referentesPerm && esMio,
-        transferir,
+        // Dos puertas a la misma acción (sql/089): la global transfiere
+        // cualquier obra, la personal solo la propia.
+        transferir: transferir || (transferirPropias && esMio),
         desactivar: desactivar && esMio,
         crearEmpresa,
         crearPersona,

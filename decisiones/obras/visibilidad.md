@@ -1,5 +1,35 @@
 # Obras — Visibilidad y compartir
 
+## Transferir lo propio no es ver lo ajeno (`sql/089`)
+
+**Cada transferencia tiene dos puertas, no dos funciones.** La global de siempre transfiere
+cualquier fila y además ve todo; la personal nueva mueve lo propio sin abrir la vista de lo ajeno.
+La regla vive una sola vez, en `obras_puede_transferir(tipo, id)`: permiso global, o permiso
+personal **y** ser el dueño de esa fila.
+
+Pedido del usuario: *"la funsión transferir obras, transferir empresas y transferir personas pueden
+crearse 2 de cada? Uno personal y otro que puede ver la lista de todos y hacer transferencia aunque
+sean ajenas"*. Duplicar la función habría duplicado la regla; lo que el sistema sabe repartir es el
+submódulo, así que se duplica la puerta.
+
+**El código nuevo es el personal, no el global.** `obras_transferir`, `obras_personas_todas` y
+`obras_empresas_todas` están incrustados como "ve todo" en ~15 policies y funciones: renombrarlos
+para que el código nuevo fuera el global obligaba a reescribir la RLS entera para no cambiar nada.
+Con el corte al revés, la RLS no se toca — quien solo transfiere lo suyo ve lo suyo, que ya es el
+default de MODEL A. La única excepción es `usuarios_select`, la lista de destinos posibles: sin
+sumarle los tres personales, el selector sale vacío.
+
+El agujero que cierra: hasta acá, mover una obra **propia** exigía `obras_transferir`, que muestra
+las obras de todos.
+
+**Migrar agenda (`obras_migrar`) no lleva par personal**: la pantalla es sobre la agenda de otro por
+definición.
+
+Archivos: `sql/089_transferir_lo_propio.sql`, `sql/tests/obras_089.sql`, `db_schema/obras.md`,
+`erp-app/src/modules/obras/permissions.ts`, las tres fichas (`obras/[id]`, `obras/personas/[id]`,
+`obras/empresas/[id]`) y `PersonaDetalle` / `EmpresaDetalle` (el prop `veTodas` pasa a
+`puedeTransferir`: gateaba solo ese botón).
+
 ## Migrar la agenda entera es otra acción, no una transferencia grande (`sql/088`)
 
 Pedido del usuario junto con `sql/087`: *"una nueva función de transferir toda la agenda de un
