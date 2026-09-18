@@ -23,7 +23,13 @@
 -- capturan `WHEN others` e imprimen SQLERRM. Lo que afirma cada código es
 -- obras_032.sql.
 --
--- Último resultado: 29/29.
+-- Último resultado: 29/29 (2026-09-18).
+--
+-- El caso 10 estuvo en `*** FALLA` desde `sql/042` sin que hubiera regresión:
+-- afirmaba que el aviso ciego de obras devolvía el nombre en NULL, y `sql/042`
+-- lo hizo devolver el nombre a propósito. Corregido al correrlo entero durante
+-- `sql/092`. Un caso que falla por desfase y no por regresión envenena el
+-- tablero: se lee como ruido y tapa el próximo que falle de verdad.
 --
 -- El caso 01 no es decorativo: la primera corrida falló ahí con 42501. La
 -- policy de SELECT resolvía todo por `obras_puede_ver_persona(id)`, que relee
@@ -159,11 +165,16 @@ BEGIN
             THEN 'OK' ELSE '*** FALLA — ' || v_txt END;
 
   -- ---------- Aviso ciego de duplicados de obra ----------
+  -- El aviso muestra el NOMBRE de la obra ajena desde sql/042 — sin eso, aprobar
+  -- o decidir si es la misma obra era a ciegas. Lo que sigue enmascarado es el
+  -- `obra_id` (no hay link), la dirección y la localidad. Este caso afirmaba
+  -- `nombre IS NULL` y quedó desfasado en sql/042: daba 0 y `*** FALLA` sin que
+  -- hubiera regresión.
   SELECT count(*) INTO v_n
   FROM obras_buscar_duplicados_obra('Edificio Libertador 2450', NULL, 'CABA')
-  WHERE es_mia = false AND obra_id IS NULL AND nombre IS NULL
+  WHERE es_mia = false AND obra_id IS NULL AND nombre = 'Edificio Libertador 2450'
     AND direccion IS NULL AND localidad IS NULL AND responsable = 'Admin';
-  r := r || E'\n10 aviso ciego (avisa, no muestra): ' || v_n ||
+  r := r || E'\n10 aviso ciego (nombre si, resto no): ' || v_n ||
        CASE WHEN v_n = 1 THEN ' OK' ELSE ' *** FALLA' END;
 
   -- ---------- La ficha de persona exige acceso ----------
