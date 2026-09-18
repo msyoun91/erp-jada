@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { TopLayerToaster } from "@/components/feedback/TopLayerToaster";
 import "./globals.css";
 
@@ -22,11 +21,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className="h-full antialiased" suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
-        <Script
-          id="theme-init"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
-        />
+        {/* <script> plano y no <Script beforeInteractive>: esa estrategia encola en self.__next_s
+            y la vacía un chunk async, o sea después del primer paint — flash de tema claro. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {children}
         {/* En mobile el toaster ocupa el ancho completo y el topbar mide 56px: sin offset lo tapa.
             Vive en el top layer (ver TopLayerToaster) para verse sobre los <dialog> de RightPanel/Modal. */}

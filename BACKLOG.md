@@ -18,9 +18,16 @@ cosas más, entre ellas `.icon-btn` nombrada en el media query de 44px sin estar
 destapó esta entrada. Eso no cambia el fix (era copiar entero de todos modos), pero sí el motivo:
 la unidad de sincronización es el archivo, no el token.
 
-**Y no vio que la rama dark sigue inalcanzable ahí**: `erp-cliente/src/app/layout.tsx` no tiene el
-script inline que escribe `data-theme` en el `<html>`. Los tokens ahora son correctos; el app todavía
-no puede entrar en dark. Va con el layout, cuando el portal arranque.
+~~**Y no vio que la rama dark sigue inalcanzable ahí**: `erp-cliente/src/app/layout.tsx` no tiene el
+script inline que escribe `data-theme` en el `<html>`.~~ — cerrado el 2026-09-18
+(`decisiones/global/ui.md` → *El script de tema va en `<script>` plano*). El portal ya entra en dark
+por preferencia del sistema.
+
+**El patrón que se iba a copiar estaba roto en el origen.** `<Script strategy="beforeInteractive">`
+no emite un `<script>` ejecutable: encola en `self.__next_s` y lo vacía un chunk `async`, así que
+corre antes de hidratar pero **después del primer paint** — flash de tema claro, que erp-app tenía
+también. Se corrigió en las dos apps con un `<script>` plano, que es además menos código. Queda sin
+construir el `ThemeToggle`: vive en `SidebarNav` y el portal no tiene sidebar todavía.
 
 ## Tareas sobre el modelo de entes (`GUIDE_ENTES.md`, 2026-09-16)
 

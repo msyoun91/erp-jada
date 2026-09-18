@@ -154,10 +154,33 @@ El bloque `[data-sonner-toaster][popover]` viaja aunque erp-cliente no tenga `so
 ningún elemento, y cuando el portal sume toasts ya está resuelto. Ese es el costo aceptado de copiar
 entero.
 
-**La rama dark queda correcta pero todavía inalcanzable en erp-cliente**: su `layout.tsx` no tiene el
+~~**La rama dark queda correcta pero todavía inalcanzable en erp-cliente**: su `layout.tsx` no tiene el
 script inline que en erp-app lee `localStorage["jada-theme"]` y escribe `data-theme` en el `<html>`,
 ni hay `ThemeToggle`. Eso va cuando el portal arranque de verdad, junto con el resto del layout — no
-es un token.
+es un token.~~ — cerrada el 2026-09-18, ver abajo.
+
+### El script de tema va en `<script>` plano, no en `<Script beforeInteractive>`
+
+**`beforeInteractive` no corre antes del primer paint.** El build de producción no emite el cuerpo
+como `<script>` ejecutable: lo encola en `(self.__next_s=self.__next_s||[]).push([...])`, y esa cola
+la vacía el runtime de Next, que llega en chunks `async`. O sea corre antes de hidratar pero después
+de pintar: en un dispositivo con preferencia dark había flash de tema claro en cada carga completa.
+Un `<script dangerouslySetInnerHTML>` plano sale inline al tope del `<body>` y el browser lo ejecuta
+durante el parse, antes del paint. De paso es menos código: se fue el import de `next/script`, el
+`id` y el `strategy` — y con eso `next/script` no se usa más en ninguna de las dos apps.
+
+Se corrigió en las dos a la vez, no solo en el portal: erp-app es la autoridad, y dejar al consumidor
+más correcto que la fuente es la misma deriva que la entrada de arriba acaba de cerrar.
+
+Ahí se resolvió también lo que esta entrada dejaba abierto: **erp-cliente ya alcanza la rama dark**,
+por preferencia del sistema — el script cae a `matchMedia("(prefers-color-scheme: dark)")` cuando no
+hay `localStorage["jada-theme"]`. Con él viaja el `suppressHydrationWarning` del `<html>`, que es lo
+que tolera el atributo escrito antes de hidratar. **`ThemeToggle` sigue sin ir**: vive en
+`SidebarNav` y el portal todavía no tiene sidebar. Eso sí espera al resto del layout.
+
+**Cómo se verificó, por si vuelve a discutirse:** `next build` y `grep` sobre el HTML prerenderizado
+de `.next/server/app/`. En dev no se ve — ahí el script aparece solo dentro del payload RSC y el
+diagnóstico sale al revés.
 
 ---
 
