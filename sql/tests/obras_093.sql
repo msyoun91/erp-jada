@@ -26,7 +26,7 @@
 --   F sin ninguna de las dos autoridades, OB026 — y revocar dos veces con
 --     autoridad es idempotente, no OB026 (el gate salió del WHERE)
 --
--- Último resultado: 6/6 (2026-09-18, revalidado tras sql/094).
+-- Último resultado: 6/6 (2026-09-18, revalidado tras sql/095).
 
 DO $test$
 DECLARE

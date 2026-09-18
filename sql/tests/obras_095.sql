@@ -18,7 +18,7 @@
 --   F el receptor vigente conserva lo suyo: repone y edita su vínculo, y el
 --     responsable sigue sin poder reescribirlo (OB028) pero sí quitarlo
 --
--- Último resultado: 6/6 (2026-09-18).
+-- Último resultado: 6/6 (2026-09-18, revalidado tras sql/096).
 
 DO $test$
 DECLARE
