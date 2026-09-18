@@ -6,22 +6,21 @@ y la entrada se borra de este archivo.
 
 ---
 
-## erp-cliente — su `globals.css` quedó en la versión vieja de los tokens
+## ~~erp-cliente — su `globals.css` quedó en la versión vieja de los tokens~~ — cerrada
 
-Encontrado al cerrar `.input-error-text` en erp-app, el 2026-09-09. `erp-cliente/src/app/globals.css`
-tiene `--color-error-bg`/`--color-error-text` (y las otras tres familias) como hex fijos en `@theme`,
-que es de donde erp-app salió cuando se hizo el bloque dark-aware de `:root` / `[data-theme="dark"]`.
-El `@custom-variant dark` sí está, así que el defecto viaja igual: `text-error` sobre superficie
-oscura da 3.8:1, y `text-error-text` (#5C0A0A) sobre esa misma superficie sería peor.
+Resuelta el 2026-09-18 copiando entero el `globals.css` de erp-app, que es lo que esta misma entrada
+decidía. Queda escrito en `decisiones/global/ui.md` → *`erp-cliente/src/app/globals.css` es una copia
+literal*.
 
-No se arregló ahora porque ahí el fix no es un token: hay que portar el bloque entero de las cuatro
-familias, y el app tiene tres archivos —`layout.tsx`, `page.tsx`, `globals.css`— sin un solo
-formulario que muestre el defecto. Cuando erp-cliente arranque de verdad, el `globals.css` se trae
-de erp-app y no se edita el que está.
+**La entrada subestimaba la deriva.** Nombraba las cuatro familias semánticas; faltaban además nueve
+cosas más, entre ellas `.icon-btn` nombrada en el media query de 44px sin estar definida y
+`.input-error-text` todavía con `text-error` — el mismo defecto de contraste cuyo cierre en erp-app
+destapó esta entrada. Eso no cambia el fix (era copiar entero de todos modos), pero sí el motivo:
+la unidad de sincronización es el archivo, no el token.
 
-Las apps no se importan entre sí, así que los tokens del design system son la duplicación que el
-repo ya aceptó (`GUIDE_SYNC.md` cubre schemas y tipos, no CSS). Lo que falta no es una abstracción:
-es acordarse de sincronizar cuando el segundo app exista.
+**Y no vio que la rama dark sigue inalcanzable ahí**: `erp-cliente/src/app/layout.tsx` no tiene el
+script inline que escribe `data-theme` en el `<html>`. Los tokens ahora son correctos; el app todavía
+no puede entrar en dark. Va con el layout, cuando el portal arranque.
 
 ## Tareas sobre el modelo de entes (`GUIDE_ENTES.md`, 2026-09-16)
 

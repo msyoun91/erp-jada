@@ -135,6 +135,30 @@ Sobreviven dos, en `TareaDetailPanel.tsx:179` y `:267`: ahí no es una toolbar s
 inline con su propio `text-[13px]`, y no está al lado de ningún `.btn` con el que desalinearse.
 Con dos usos no se justifica una `.input-sm`; si aparece un tercero, sí.
 
+**`erp-cliente/src/app/globals.css` es una copia literal del de erp-app: se sincroniza el archivo
+entero, no token por token.** `GUIDE_SYNC.md` ya dice erp-app = autoridad y unidireccional; lo que
+faltaba era decir que en el CSS la unidad de copia es el archivo. Copiar entero hace que la próxima
+sincronización sea un `cp` con diff vacío, en vez de un diff con excepciones — que es exactamente lo
+que dejó nacer esta deriva.
+
+La deriva era bastante más grande que las cuatro familias semánticas que el backlog nombraba. Además
+de esas, faltaban `--brand-50`/`--brand-700`/`--neutral-100` dark-aware, `.t-label-req`, `.row`,
+`.tap-target`, `.card-link:hover` (tenía `.card:hover`, la promesa de click sobre cards estáticas),
+la regla global de `:focus-visible`, el filtro dark de `.logo`, `--background-image-gradient-brand`,
+`.input-error:focus` (el fix de especificidad) y `.input-error-text` seguía con `text-error` — el
+mismo defecto de contraste cuyo cierre en erp-app destapó esta entrada. Y `.icon-btn` estaba nombrada
+en el media query de 44px sin estar definida, el bug idéntico al que ui.md ya documenta para erp-app.
+Portar familia por familia habría dejado las otras nueve.
+
+El bloque `[data-sonner-toaster][popover]` viaja aunque erp-cliente no tenga `sonner`: no matchea
+ningún elemento, y cuando el portal sume toasts ya está resuelto. Ese es el costo aceptado de copiar
+entero.
+
+**La rama dark queda correcta pero todavía inalcanzable en erp-cliente**: su `layout.tsx` no tiene el
+script inline que en erp-app lee `localStorage["jada-theme"]` y escribe `data-theme` en el `<html>`,
+ni hay `ThemeToggle`. Eso va cuando el portal arranque de verdad, junto con el resto del layout — no
+es un token.
+
 ---
 
 ## Auditorías de UI app-wide

@@ -12,40 +12,46 @@
   --bg-page: #F5F7FB; --bg-surface: #FFFFFF; --bg-subtle: #EBF0F8; --bg-nav: #FFFFFF;
   --text-primary: #0D1220; --text-secondary: #2B3352; --text-tertiary: #566B92; --text-brand: #1A6DC8;
   --border-default: rgba(13,18,32,.12); --border-strong: rgba(13,18,32,.22);
+  --brand-50: #EBF2FD; --brand-700: #064379; --neutral-100: #EBF0F8;
+  --success-bg: #DCFCE7; --success-text: #0A3B1F; --warning-bg: #FEF3C7; --warning-text: #5C3200;
+  --error-bg: #FEE2E2; --error-text: #5C0A0A; --info-bg: #DBEAFE; --info-text: #0C2461;
 }
 [data-theme="dark"] {
   --bg-page: #070B14; --bg-surface: #0E1525; --bg-subtle: #131C30; --bg-nav: #0B1322;
   --text-primary: #EDF2FF; --text-secondary: #9DB2D8; --text-tertiary: #6F86AE; --text-brand: #5FA3E0;
   --border-default: rgba(255,255,255,.09); --border-strong: rgba(255,255,255,.18);
+  --brand-50: #0D2040; --brand-700: #5FA3E0; --neutral-100: #1A2B45;
+  --success-bg: #052E16; --success-text: #BBF7D0; --warning-bg: #451A03; --warning-text: #FDE68A;
+  --error-bg: #450A0A; --error-text: #FECACA; --info-bg: #172554; --info-text: #BFDBFE;
 }
 
 @theme inline {
-  --color-brand-50: #EBF2FD;
+  --color-brand-50: var(--brand-50);
   --color-brand-100: #C8DEFA;
   --color-brand-300: #5FA3E0;
   --color-brand-500: #1A6DC8;
-  --color-brand-700: #064379;
+  --color-brand-700: var(--brand-700);
   --color-brand-900: #011F51;
 
   --color-neutral-50: #F5F7FB;
-  --color-neutral-100: #EBF0F8;
+  --color-neutral-100: var(--neutral-100);
   --color-neutral-300: #A5B6D0;
   --color-neutral-500: #566B92;
   --color-neutral-700: #2B3352;
   --color-neutral-900: #0D1220;
 
   --color-success: #16A34A;
-  --color-success-bg: #DCFCE7;
-  --color-success-text: #0A3B1F;
+  --color-success-bg: var(--success-bg);
+  --color-success-text: var(--success-text);
   --color-warning: #D97706;
-  --color-warning-bg: #FEF3C7;
-  --color-warning-text: #5C3200;
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-text: var(--warning-text);
   --color-error: #DC2626;
-  --color-error-bg: #FEE2E2;
-  --color-error-text: #5C0A0A;
+  --color-error-bg: var(--error-bg);
+  --color-error-text: var(--error-text);
   --color-info: #2563EB;
-  --color-info-bg: #DBEAFE;
-  --color-info-text: #0C2461;
+  --color-info-bg: var(--info-bg);
+  --color-info-text: var(--info-text);
 
   --color-bg-page: var(--bg-page);
   --color-bg-surface: var(--bg-surface);
@@ -103,12 +109,20 @@
   --shadow-sm: 0 1px 3px rgba(13,18,32,.08);
   --shadow-md: 0 4px 12px rgba(13,18,32,.10);
   --shadow-lg: 0 12px 32px rgba(13,18,32,.12);
+
+  --background-image-gradient-brand: linear-gradient(140deg, #011F51, #064379, #1A6DC8);
 }
 
 @layer base {
   body { @apply bg-bg-page text-text-primary font-sans; -webkit-font-smoothing: antialiased; }
   a { @apply text-text-brand; }
   a:hover { @apply text-brand-500; }
+  [data-theme="dark"] .logo { filter: brightness(0) invert(1); }
+  /* Un solo foco visible para todo lo interactivo: .input tiene el suyo
+     propio abajo, y estos selectores no lo pisan. */
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
 }
 
 @layer components {
@@ -122,6 +136,11 @@
   .t-label { @apply text-label uppercase text-text-tertiary; }
   .t-caption { @apply text-caption text-text-tertiary; }
 
+  /* Campo obligatorio marcado antes de intentar guardar (GUIDE_DESIGN), no
+     después del primer error. El asterisco es decorativo: la semántica la
+     lleva `aria-required` en el control. */
+  .t-label-req::after { content: " *"; @apply text-error; }
+
   .btn { @apply inline-flex items-center gap-[7px] whitespace-nowrap rounded-md border text-sm font-medium px-5 py-[9px] transition-colors; }
   .btn-sm { @apply px-[15px] py-[7px] text-[13px] rounded-sm; }
   .btn-lg { @apply px-7 py-[13px]; }
@@ -133,11 +152,14 @@
 
   .input { @apply w-full text-sm rounded-md border-[1.5px] border-border-strong bg-bg-surface text-text-primary px-3 py-[9px] outline-none; }
   .input:focus { @apply border-brand-500 ring-[3px] ring-[rgba(26,109,200,.12)]; }
-  .input-error { @apply border-error ring-[3px] ring-[rgba(220,38,38,.12)]; }
-  .input-error-text { @apply text-error text-xs mt-1; }
+  /* `:focus` gana por especificidad (0,2,0 vs 0,1,0), no por orden: sin
+     repetir el selector con `:focus`, el campo que RHF enfoca al fallar
+     pierde el rojo y se pinta azul de marca. */
+  .input-error, .input-error:focus { @apply border-error ring-[3px] ring-[rgba(220,38,38,.12)]; }
+  .input-error-text { @apply text-error-text text-xs mt-1; }
 
   .badge { @apply font-semibold text-[11px] rounded-full px-[9px] py-[3px]; }
-  .badge-brand { @apply bg-brand-50 text-brand-900; }
+  .badge-brand { @apply bg-brand-50 text-text-brand; }
   .badge-success { @apply bg-success-bg text-success-text; }
   .badge-warning { @apply bg-warning-bg text-warning-text; }
   .badge-error { @apply bg-error-bg text-error-text; }
@@ -145,16 +167,48 @@
   .badge-neutral { @apply bg-bg-subtle text-text-tertiary; }
 
   .card { @apply relative bg-bg-surface border border-border rounded-lg p-[22px] transition-shadow; }
-  .card:hover { @apply shadow-md; }
+  /* La sombra al hover es promesa de click: solo la card que ES un link o un
+     botón la levanta. Sobre las cards estáticas de una ficha prometía algo que
+     no pasaba. */
+  .card-link:hover { @apply shadow-md; }
   .card-featured { @apply border-brand-300; }
 
   .empty-state { @apply bg-bg-surface border border-dashed border-border-strong rounded-lg p-[60px] text-center text-text-tertiary; }
 
-  .nav-item { @apply flex items-center gap-[9px] rounded-sm px-[10px] py-2 text-[11.5px] font-medium text-text-tertiary cursor-pointer; }
+  /* Fila de listado o bloque de panel: 13px 20px es el token de row del design
+     system (§8), no un valor arbitrario. Estaba escrito a mano como
+     `p-[13px] px-5` en 19 lugares. */
+  .row { @apply px-5 py-[13px]; }
+
+  /* Botón de solo ícono (cerrar panel/modal). El media query de 44px ya lo
+     nombraba, pero la clase no existía: los botones se quedaban en el tamaño
+     del ícono. */
+  .icon-btn { @apply inline-flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-md border border-transparent transition-colors; }
+  .icon-btn:hover { @apply bg-bg-subtle; }
+
+  .nav-item { @apply flex items-center gap-[9px] rounded-sm px-[10px] py-2 text-[15px] font-medium text-text-tertiary cursor-pointer; }
   .nav-item:hover { @apply bg-bg-subtle text-text-secondary; }
   .nav-item-active { @apply bg-brand-50 text-brand-700; }
 
   @media (max-width: 767px) {
     .btn, .input, .nav-item, .icon-btn { min-height: 44px; }
+    .icon-btn { min-width: 44px; }
+    /* Lo tocable que no es un botón del sistema: filas clickeables, toggles
+       inline, items de menú. El look no cambia en desktop — solo crece el
+       área de toque abajo de 768px. */
+    .tap-target { min-height: 44px; }
   }
+}
+
+/* El <ol> de sonner se abre como popover (ver TopLayerToaster) para vivir en
+   el top layer. Sin layer, para ganarle a las UA popover styles que si no
+   pintan borde/fondo/padding y un inset:0 que estira el <ol>. El top/right
+   los sigue poniendo sonner. */
+[data-sonner-toaster][popover] {
+  inset: auto;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  overflow: visible;
 }
