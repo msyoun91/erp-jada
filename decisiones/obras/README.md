@@ -14,6 +14,8 @@ una decisión de visibilidad o alcance.
 
 MODEL A (todo privado por dueño), compartir con checklist y cascada, grants heredados, alcance de personas, buscador global, `obras_aprobar`.
 
+- **Sacar es de lo que se fue, y persona↔empresa no cambia de punta (`sql/096`)** — `OB032` contra lo
+  que migró, no contra lo pedido; `GRANT UPDATE` por columna en `obras_persona_empresa`
 - **El vínculo se va con la obra (`sql/095`)** — transferir pasa al entrante los vínculos que cargó
   el saliente, y "tu vínculo" vale mientras la obra siga compartida con vos
 - **Un código por regla, y la vista Compartido no miente (`sql/094`)** — revive `OB009`, saca de la

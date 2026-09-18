@@ -1,5 +1,28 @@
 # Obras — Visibilidad y compartir
 
+## Sacar es de lo que se fue, y persona↔empresa no cambia de punta (`sql/096`)
+
+**`OB032` se pregunta después de migrar y contra lo que efectivamente migró, no al entrar contra
+`p_migran`.** `p_migran` se filtra en silencio —solo migra lo del saliente vinculado a la obra o a la
+empresa— y el resolver recibía `p_sacar` entero. Con el permiso global, pasar por PostgREST el id de
+alguien que no estaba en la obra lo dejaba donde estaba y le desactivaba los vínculos en todas las
+demás obras del saliente, también los que había sumado un tercero: quien transfiere "mira y reasigna,
+no edita", y esto era editar. **Se reemplaza el chequeo, no se le suma otro**: lo migrado es
+subconjunto de lo pedido, así que el nuevo implica el viejo. Se eligió fallar y no recortar en
+silencio porque por la UI nunca pasa —`obras_transferir_candidatos` ofrece exactamente lo migrable—,
+así que lo único que llega a este `RAISE` es un pedido armado a mano o algo que dejó de ser migrable
+entre abrir el panel y confirmar; en los dos casos, sacar sin transferir es lo que `OB032` ya decía
+que no se hace.
+
+**`obras_persona_empresa` pasa a `GRANT UPDATE (activo, cargo, es_principal, observaciones)`.** Tenía
+el de tabla entera desde `sql/027` y la policy UPDATE solo mira la persona: el INSERT rechaza una
+empresa que no ves y el UPDATE dejaba mover `empresa_id` a esa misma. Integridad, no fuga. Cambiar de
+persona o de empresa es otra fila, y pasa por el INSERT con su chequeo — la forma que ya tenían las
+otras dos puentes.
+
+Archivos: `sql/096_sacar_es_de_lo_que_se_fue.sql`, `sql/tests/obras_096.sql` (5/5),
+`db_schema/obras.md`.
+
 ## El vínculo se va con la obra (`sql/095`)
 
 **`obras_transferir` pasa al entrante los vínculos que el saliente cargó en la obra, y la rama

@@ -107,6 +107,8 @@ El cargo **no** determina el rol en obra. No se infiere uno del otro.
 
 RLS SELECT (`sql/082`, reescrita por `sql/092`): `obras_puede_ver_persona(persona_id) OR obras_ctx_vigente('persona', persona_id, 'empresa', empresa_id)`. La segunda rama es para el receptor de una empresa compartida con personas tildadas: sin ella la ficha queda sin empleados. Acotada al ancla — la fila sale dentro de la empresa que la otorgó, no en cualquier otra donde esa persona figure.
 
+**`GRANT UPDATE` por columna (`sql/096`): `activo`, `cargo`, `es_principal`, `observaciones`.** Hasta ahí era de tabla entera (`sql/027`) y la policy UPDATE solo mira la persona, así que el UPDATE dejaba mover `empresa_id` a una empresa que el INSERT rechaza (`42501`). Cambiar de persona o de empresa es otra fila. La app solo escribe `activo` por UPDATE.
+
 ## obras_obra_empresa / obras_obra_persona
 
 Las dos tablas puente con la obra. `roles` es un **array de enum**, no filas separadas: una empresa que es constructora y desarrolladora de la misma obra es una relación con dos roles, no dos relaciones.
@@ -160,7 +162,7 @@ Las dos ramas `IF p_a_usuario_id <> auth.uid()` cubren al admin que transfiere a
 | 2 · se va, contextual | cambia de dueño **y** el saliente conserva grant anclado a cada obra y empresa suya que lo tiene |
 | 3 · se va, y lo saco | cambia de dueño **y** se desactivan los vínculos del saliente: sus obras Y sus empresas |
 
-El 2 es el default: es el no destructivo. `p_sacar` es el subconjunto de `p_migran` que eligió el 3; sacar algo que no migra es `OB032`.
+El 2 es el default: es el no destructivo. `p_sacar` es el subconjunto de `p_migran` que eligió el 3; sacar algo que no migra es `OB032` — desde `sql/096` contra lo que **efectivamente** migró, no contra lo pedido (ver abajo).
 
 - **`obras_transferir(obra, destino, p_migran[], p_sacar[])`** — `p_contactos_exclusivos` se renombró: mentía desde que el checklist dejó de listar solo exclusivos. El alcance de lo que puede migrar se ensancha a las personas que llegan **por una empresa vinculada a la obra** sin estar vinculadas a la obra ellas mismas. El vínculo con la obra que se transfiere nunca se desactiva, aunque el contacto esté en `p_sacar`: se fue con ella.
 - **`obras_transferir_persona(persona, destino, p_sacar boolean)`** — misma elección, sin lista: no hay nada colgando debajo de una persona. Arregla dos cosas de `sql/086`: apagaba **todos** los grants de la persona (incluidos los de terceros, que no participaban de la transferencia) y no creaba ninguno, así que el saliente quedaba con un fantasma — la rama `obras_es_mi_obra` de `obras_vinculos_de_obra` le seguía mostrando el nombre en su propia obra mientras `obras_ficha_persona` se lo negaba. Fila visible, ficha cerrada.
@@ -201,6 +203,8 @@ Test: `sql/tests/obras_089.sql`, 7/7.
 Test: `sql/tests/obras_090.sql`, 7/7.
 
 **`sql/095` — el vínculo se va con la obra.** `obras_transferir` pasa al entrante el `creado_por` de los `obras_obra_persona` / `obras_obra_empresa` de esa obra que había cargado el saliente, activos o no — lo que `obras_migrar_agenda` ya hacía desde `sql/088`. En los tres estados del checklist el vínculo con la obra transferida "se va con ella", pero quedaba a nombre del anterior: la rama `creado_por` de las policies le dejaba leerlo, editarlo y reponerlo sin ver la obra, y si el dueño nuevo le compartía la obra, `OB028` trababa al dueño nuevo y revocar desactivaba esos vínculos. Lo que sumó un receptor sigue siendo suyo. Va junto con el recorte de las policies de vínculo (sección de arriba). Test: `sql/tests/obras_095.sql`, 6/6.
+
+**`sql/096` — sacar es de lo que se fue.** `OB032` en `obras_transferir` y `obras_transferir_empresa` se pregunta **después** de migrar, contra `v_personas` / `v_empresas`, y no al entrar contra `p_migran`. `p_migran` se filtra en silencio (solo migra lo del saliente vinculado a la obra o a la empresa) y el resolver recibía `p_sacar` entero: con el permiso global, un id de alguien que no estaba en la obra lo dejaba donde estaba y le desactivaba los vínculos en todas las demás obras del saliente, incluso los que había sumado un tercero. Reemplaza al chequeo viejo: lo migrado es subconjunto de lo pedido. La UI no cambia — `obras_transferir_candidatos` ofrece exactamente lo migrable — y el `RAISE` revierte lo que la función ya había movido. Test: `sql/tests/obras_096.sql`, 5/5.
 
 ## obras_obra_compartida / obras_persona_grant_contextual / obras_empresa_grant_contextual
 
@@ -389,7 +393,7 @@ Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían c
 | `OB029` | `obras_compartir_registros` (`sql/082`, `sql/085`, `sql/086`) | esa persona o empresa no cuelga de ninguna obra compartida con ese usuario: no hay ancla posible |
 | `OB030` | `obras_ficha_empresa` (`sql/085`) | sin acceso a esta empresa — no distingue "no existe" de "no la ves" |
 | `OB031` | `obras_transferir_candidatos` (`sql/087`) · `obras_revocar_contextual` (`sql/090`) | tipo inválido: solo `obra`, `empresa`, `persona`. En revocar, además: ancla que no es `obra`/`empresa`, o una empresa anclada en empresa |
-| `OB032` | `obras_transferir` · `obras_transferir_empresa` (`sql/087`) | `p_sacar` trae algo que no está en `p_migran`: sacar de la agenda sin transferir es otra acción |
+| `OB032` | `obras_transferir` · `obras_transferir_empresa` (`sql/087`, `sql/096`) | `p_sacar` trae algo que no se transfirió: sacar de la agenda sin transferir es otra acción. Desde `sql/096` se compara contra lo que efectivamente migró, no contra `p_migran` |
 | `OB033` | `obras_migrar_resumen` · `obras_migrar_agenda` (`sql/088`) | sin permiso para migrar agendas |
 | `OB034` | `obras_migrar_agenda` (`sql/088`) | el usuario saliente no existe |
 

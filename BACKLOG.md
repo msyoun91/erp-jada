@@ -222,17 +222,13 @@ vínculos— se cerró en `sql/095` (`decisiones/obras/visibilidad.md` → *El v
 
 **Decidido, sin implementar:**
 
-- **`p_sacar` no se recorta a lo que migró.** `OB032` chequea `p_sacar ⊆ p_migran`, pero `p_migran` se
-  filtra en silencio (solo migra lo del saliente vinculado a la obra) y el resolver recibe `p_sacar`
-  crudo. Quien tiene `obras_transferir` global, pasando por PostgREST el id de un contacto que no está
-  en la obra, desactiva sus vínculos en todas las demás obras del saliente —también los que sumó un
-  tercero—; "quien transfiere mira y reasigna, no edita" deja de ser cierto. Igual en
-  `obras_transferir_empresa`. Fix: después de migrar, `p_sacar` ∩ (`v_personas` ∪ `v_empresas`).
-- **`obras_persona_empresa` tiene `GRANT UPDATE` de tabla entera** —`persona_id`, `empresa_id`, `id`,
-  `created_at`— y la policy UPDATE solo mira la persona: el INSERT rechaza una empresa ajena (`42501`)
-  y el UPDATE deja cambiar `empresa_id` a esa misma. Integridad, no fuga. Fix: `REVOKE UPDATE` +
-  `GRANT UPDATE (activo, cargo, es_principal, observaciones)`, la receta de `sql/085`; la UI solo
-  escribe `activo`.
+- ~~**`p_sacar` no se recorta a lo que migró.**~~ — cerrada por `sql/096`
+  (`decisiones/obras/visibilidad.md` → *Sacar es de lo que se fue*). **La entrada proponía recortar y
+  se eligió fallar**: por la UI `p_sacar` nunca trae algo que no migre (`obras_transferir_candidatos`
+  ofrece exactamente lo migrable), así que recortar en silencio solo habría escondido un pedido armado
+  a mano. `OB032` pasa a preguntarse después de migrar, contra lo migrado.
+- ~~**`obras_persona_empresa` tiene `GRANT UPDATE` de tabla entera**~~ — cerrada por `sql/096`, con la
+  receta que la entrada proponía.
 - **`sql/tests/obras_033.sql` está muerto desde `sql/040`**: lee `obras_obra_persona.pendiente`, que
   esa migración dropeó. Lo encontró la regresión de `sql/095`; no se corrió.
 
