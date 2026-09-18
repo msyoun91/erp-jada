@@ -23,7 +23,7 @@
 -- capturan `WHEN others` e imprimen SQLERRM. Lo que afirma cada código es
 -- obras_032.sql.
 --
--- Último resultado: 29/29 (2026-09-18).
+-- Último resultado: 29/29 (2026-09-18, revalidado tras sql/099).
 --
 -- El caso 10 estuvo en `*** FALLA` desde `sql/042` sin que hubiera regresión:
 -- afirmaba que el aviso ciego de obras devolvía el nombre en NULL, y `sql/042`

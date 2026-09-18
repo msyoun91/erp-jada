@@ -16,7 +16,7 @@
 --   D el estado 3 legítimo de una empresa sigue andando
 --   E persona↔empresa: cambiar empresa_id → 42501; activo y cargo, sí
 --
--- Último resultado: 5/5 (2026-09-18).
+-- Último resultado: 5/5 (2026-09-18, revalidado tras sql/099).
 
 DO $test$
 DECLARE

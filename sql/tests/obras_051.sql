@@ -19,7 +19,7 @@
 --   G  obras_contar_vinculos_receptor cuenta lo que agregó el receptor
 --   H  revocar la obra desactiva esos vínculos
 --
--- Último resultado: 8/8 (2026-09-18, H leído sin RLS desde sql/095; revalidado tras sql/098).
+-- Último resultado: 8/8 (2026-09-18, H leído sin RLS desde sql/095; revalidado tras sql/099).
 
 DO $test$
 DECLARE

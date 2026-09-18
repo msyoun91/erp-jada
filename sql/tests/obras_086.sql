@@ -14,7 +14,7 @@
 --   H revocar la obra apaga todo lo que la acompaña
 --   I obras_compartir_registros: persona sin obra compartida → OB029
 --
--- Último resultado: 9/9 (2026-09-18, revalidado tras sql/094).
+-- Último resultado: 9/9 (2026-09-18, revalidado tras sql/099).
 
 DO $test$
 DECLARE

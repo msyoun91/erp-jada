@@ -14,7 +14,7 @@
 -- dropeó: pasó al grant contextual anclado en la obra, que es lo que hoy
 -- produce tildar en el checklist.
 --
--- Último resultado: 28/28 (2026-09-18).
+-- Último resultado: 28/28 (2026-09-18, revalidado tras sql/099).
 
 DO $test$
 DECLARE

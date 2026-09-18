@@ -18,7 +18,7 @@
 -- y de `obras_*_compartida`, que `sql/086` dropeó. El 05 esperaba lo contrario
 -- de lo que la base contesta desde `sql/082` — ver su comentario.
 --
--- Último resultado: 19/19 (2026-09-18).
+-- Último resultado: 19/19 (2026-09-18, revalidado tras sql/099).
 
 DO $test$
 DECLARE

@@ -23,7 +23,7 @@
 -- El caso A es el que motivó la migración: `obras_contactos_exclusivos_de_obra`
 -- ignoraba `obras_persona_empresa` a propósito y esa persona no se ofrecía.
 --
--- Último resultado: 11/11 (2026-09-18, revalidado tras sql/096).
+-- Último resultado: 11/11 (2026-09-18, revalidado tras sql/099).
 
 DO $test$
 DECLARE

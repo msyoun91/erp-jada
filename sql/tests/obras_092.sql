@@ -27,7 +27,7 @@
 --     cuando el vínculo obra↔persona se apaga
 --   F un vínculo obra↔persona desactivado deja de leerse por grant contextual
 --
--- Último resultado: 6/6 (2026-09-18, revalidado tras sql/094).
+-- Último resultado: 6/6 (2026-09-18, revalidado tras sql/099).
 
 DO $test$
 DECLARE
@@ -134,9 +134,9 @@ BEGIN
   r := r || E'\nE OK  las dos fichas abren con su ancla viva';
 
   -- ── B · el agujero: muere el ancla ───────────────────────────────────────
-  -- A apaga el vínculo O↔E. El grant de E sobre B sigue `activo = true` —eso es
-  -- la entrada "grants activos que ya no abren nada" del BACKLOG— pero deja de
-  -- estar vigente, y con él tiene que caerse el grant de P que colgaba de E.
+  -- A apaga el vínculo O↔E. Desde sql/099 eso apaga también el grant de E
+  -- sobre B; lo que el caso mide es la vigencia, que no depende de esa
+  -- limpieza: con E caída tiene que caerse el grant de P que colgaba de E.
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_a)::text, true);
   UPDATE obras_obra_empresa SET activo = false
   WHERE obra_id = v_o AND empresa_id = v_e;

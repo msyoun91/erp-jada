@@ -25,7 +25,7 @@
 --   G el admin que se transfiere una obra a sí mismo recibe los grants
 --     contextuales de los contactos que no migran (V4)
 --
--- Último resultado: 7/7 (2026-09-18, revalidado tras sql/094).
+-- Último resultado: 7/7 (2026-09-18, revalidado tras sql/099).
 
 DO $test$
 DECLARE

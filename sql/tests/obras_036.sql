@@ -17,7 +17,7 @@
 -- tenía test. Los agrega esta migración porque su `ELSE` implícito pasó a dos
 -- ramas explícitas. Corren sin RLS: son triggers, no dependen de permisos.
 --
--- Último resultado: 8/8.
+-- Último resultado: 8/8 (2026-09-18, revalidado tras sql/099).
 
 DO $test$
 DECLARE

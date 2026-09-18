@@ -14,7 +14,7 @@
 --   C solo lectura: A no edita ni quita el vínculo de su contacto
 --   D dura lo que dura el compartir: revocado, A no ve nada
 --
--- Último resultado: 4/4 (2026-09-18).
+-- Último resultado: 4/4 (2026-09-18, revalidado tras sql/099).
 
 DO $test$
 DECLARE

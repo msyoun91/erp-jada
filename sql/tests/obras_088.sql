@@ -31,7 +31,7 @@
 --   L la auditoría muestra las tres clases de transferencia (el fix de §4:
 --     el INNER JOIN con `obras` escondía persona y empresa desde sql/041)
 --
--- Último resultado: 12/12 (2026-09-18, caso E reescrito por sql/093; revalidado tras sql/095).
+-- Último resultado: 12/12 (2026-09-18, caso E reescrito por sql/093; revalidado tras sql/099).
 
 DO $test$
 DECLARE
