@@ -13,7 +13,7 @@
 --      sumó el receptor (lo de sql/051 sigue)
 --   D  el receptor ve la empresa de su propia persona (es suya)
 --
--- Último resultado: 4/4.
+-- Último resultado: 4/4 (2026-09-18, revalidado tras sql/098).
 
 DO $test$
 DECLARE
