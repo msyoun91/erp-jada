@@ -148,3 +148,25 @@ detrás. Ordenadas por lo que cuesta dejarlas.
   y `obras_empresa_grant_directo`, dropeadas por `sql/086`. Falla con `42P01` y no por regresión. Los
   casos que siguen valiendo (A: el contacto sin `GRANT SELECT`; L: la empresa destildada no entra a la
   agenda) están cubiertos por `obras_086` y `obras_087`: probablemente se borre en vez de portarse.
+
+**Y dos cambios estructurales que `sql/090` dejó a mitad**, de la misma auditoría. No son bugs: son
+la forma de que la clase entera no vuelva.
+
+- **La vigencia del grant sigue escrita seis veces.** `sql/090` la hizo correcta en los seis lugares
+  —`obras_persona_grant_ctx_vigente`, `obras_empresa_grant_ctx_vigente`, los dos `_ctx_obra_conmigo`,
+  y la rama contextual de `obras_ficha_persona` / `obras_ficha_empresa`— pero sigue siendo la misma
+  regla repetida, con tres variantes según qué verifica cada una (con vínculo, sin vínculo, sin
+  ancla). De esa dispersión salieron V1 y V2. Un solo
+  `obras_ctx_vigente(tipo, entidad, ancla_tipo, ancla_id)` —grant activo + vínculo vivo + sigo viendo
+  el ancla— y que lo llamen las fichas, las policies y los helpers. Ojo con la recursión: hoy
+  `_persona_vigente` llama a `_empresa_vigente`, que llama a `obras_puede_ver_obra`; la cadena no
+  cicla, pero una función genérica que despache por tipo puede cerrarla sin que se note.
+
+- **`otorgada_por` todavía es autoridad, no solo historia.** Es lo que hace que una transferencia
+  mal apuntada mueva *quién puede revocar*, que es el mecanismo exacto de V1. `sql/090` lo acotó
+  —`obras_revocar_obra` ya no lo mira, y `obras_revocar_contextual` acepta dueño-del-ancla **o**
+  otorgante— pero no lo retiró: la vista Compartido sigue listando por `otorgada_por = auth.uid()`,
+  así que quién ve la fila y quién puede revocarla siguen siendo dos respuestas distintas. Lo
+  correcto es derivar las dos del ancla (responsable de la obra / dueño de la empresa) y dejar
+  `otorgada_por` como dato de log, que es lo que un log debería ser. Toca `obras_compartidos_por_mi`
+  y el CHECK `usuario_id <> otorgada_por` deja de proteger nada — revisarlo antes de sacarlo.
