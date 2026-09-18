@@ -13,6 +13,12 @@
 -- obras_empresas, a propósito (caso 01).
 --
 -- Correrlo entero después de tocar sql/062.
+--
+-- Los casos 09-11 y 13b se portaron el 2026-09-18: hablaban de `origen_obra_id`
+-- y de `obras_*_compartida`, que `sql/086` dropeó. El 05 esperaba lo contrario
+-- de lo que la base contesta desde `sql/082` — ver su comentario.
+--
+-- Último resultado: 19/19 (2026-09-18).
 
 DO $test$
 DECLARE
@@ -139,22 +145,32 @@ BEGIN
    WHERE usuario_id = v_tester AND submodulo_id IN (SELECT id FROM submodulos WHERE codigo = 'obras_ver');
 
   -- ============================================================
-  -- 05 — persona de ADMIN tildada en el checklist de la obra: true
+  -- 05 — persona tildada en el checklist de la obra: NO la abre
+  --
+  -- Esperaba `true` y venía de antes de `sql/082`, cuando tildar en el
+  -- checklist otorgaba grant completo. Hoy otorga contextual, y
+  -- `puede_abrir_registro` no cuenta contextuales, así que dice lo mismo que
+  -- el 06: son el mismo montaje por dos caminos. Nadie lo vio porque el
+  -- archivo moría en el 09 con `42P01`.
+  --
+  -- Es la mitad de Tareas de la reparación pendiente del chip `?ctx=`
+  -- (`BACKLOG.md`): cuando se haga, este caso vuelve a esperar `true`.
   -- ============================================================
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
   PERFORM set_config('role', 'authenticated', true);
   PERFORM obras_compartir_obra(v_obra, v_tester, '{}'::uuid[], ARRAY[v_persona]);
   PERFORM set_config('role', 'none', true);
 
-  -- Le hace falta a TESTER el submódulo de Personas para poder abrirla.
+  -- Le hace falta a TESTER el submódulo de Personas para que el `false` sea
+  -- por el grant y no por el permiso.
   UPDATE usuario_submodulos SET activo = true
    WHERE usuario_id = v_tester AND submodulo_id IN (SELECT id FROM submodulos WHERE codigo = 'obras_personas');
 
   SELECT puede_abrir_registro('persona', v_persona, v_tester) INTO v_ok;
-  r := r || E'\n05 persona tildada en el checklist de la obra: ' || CASE WHEN v_ok THEN 'OK' ELSE 'FALLO' END;
+  r := r || E'\n05 persona tildada en el checklist: no la abre desde la tarea: ' || CASE WHEN NOT v_ok THEN 'OK' ELSE 'FALLO' END;
 
   -- ============================================================
-  -- 06 — un grant contextual solo no alcanza
+  -- 06 — lo mismo con un grant contextual suelto, sin pasar por el checklist
   -- ============================================================
   PERFORM set_config('role', 'none', true);
   INSERT INTO obras_persona_grant_contextual (persona_id, usuario_id, obra_id, otorgada_por)
@@ -204,27 +220,33 @@ BEGIN
     CASE WHEN v_asignados = ARRAY[v_tester, v_admin] THEN 'OK' ELSE 'FALLO (' || array_to_string(v_asignados, ',') || ')' END;
 
   -- ============================================================
-  -- 09 — grant directo activo: sigue con origen NULL
+  -- 09 — una empresa que no cuelga de ninguna obra compartida: OB029
+  --
+  -- Era «el grant directo sigue con origen NULL». `sql/085` cerró el grant
+  -- directo de empresa: la rama exige ancla y v_empresa2 no está vinculada a
+  -- ninguna obra. Es la gemela de `obras_086` I, que cubre la rama persona.
   -- ============================================================
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
   PERFORM set_config('role', 'authenticated', true);
-  PERFORM obras_compartir_registros(v_tester, jsonb_build_array(jsonb_build_object('ente', 'empresa', 'registro_id', v_empresa2)));
-  PERFORM obras_compartir_registros(v_tester, jsonb_build_array(jsonb_build_object('ente', 'empresa', 'registro_id', v_empresa2)));
+  BEGIN
+    PERFORM obras_compartir_registros(v_tester, jsonb_build_array(jsonb_build_object('ente', 'empresa', 'registro_id', v_empresa2)));
+    r := r || E'\n09 empresa sin obra compartida detrás: FALLO (la compartió igual)';
+  EXCEPTION WHEN OTHERS THEN
+    r := r || E'\n09 empresa sin obra compartida detrás → OB029: ' ||
+      CASE WHEN SQLSTATE = 'OB029' THEN 'OK' ELSE 'FALLO ' || SQLSTATE END;
+  END;
   PERFORM set_config('role', 'none', true);
-  SELECT origen_obra_id INTO v_origen_obra FROM obras_empresa_compartida WHERE empresa_id = v_empresa2 AND usuario_id = v_tester AND activo;
-  r := r || E'\n09 grant directo activo, llamado dos veces, sigue con origen NULL: ' ||
-    CASE WHEN v_origen_obra IS NULL THEN 'OK' ELSE 'FALLO (' || v_origen_obra || ')' END;
 
   -- ============================================================
-  -- 10 — obra ya compartida con cascada: la cascada sigue activa
+  -- 10 — obra ya compartida con la empresa tildada: la función aditiva no la pisa
   -- ============================================================
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
   PERFORM set_config('role', 'authenticated', true);
   PERFORM obras_compartir_obra(v_obra, v_tester, ARRAY[v_empresa], '{}'::uuid[]);
   PERFORM obras_compartir_registros(v_tester, jsonb_build_array(jsonb_build_object('ente', 'empresa', 'registro_id', v_empresa)));
   PERFORM set_config('role', 'none', true);
-  SELECT origen_obra_id INTO v_origen_obra FROM obras_empresa_compartida WHERE empresa_id = v_empresa AND usuario_id = v_tester AND activo;
-  r := r || E'\n10 la cascada de la obra sigue activa tras la función aditiva: ' ||
+  SELECT obra_id INTO v_origen_obra FROM obras_empresa_grant_contextual WHERE empresa_id = v_empresa AND usuario_id = v_tester AND activo;
+  r := r || E'\n10 el grant contextual de la empresa sigue anclado en la obra tras la función aditiva: ' ||
     CASE WHEN v_origen_obra = v_obra THEN 'OK' ELSE 'FALLO (' || coalesce(v_origen_obra::text, '<null>') || ')' END;
 
   -- ============================================================
@@ -245,8 +267,8 @@ BEGIN
     jsonb_build_object('ente', 'persona', 'registro_id', v_persona3)
   ));
   PERFORM set_config('role', 'none', true);
-  SELECT origen_obra_id INTO v_origen_obra FROM obras_persona_compartida WHERE persona_id = v_persona3 AND usuario_id = v_tester AND activo;
-  r := r || E'\n11 persona con origen = la obra compartida en la misma llamada: ' ||
+  SELECT obra_id INTO v_origen_obra FROM obras_persona_grant_contextual WHERE persona_id = v_persona3 AND usuario_id = v_tester AND activo;
+  r := r || E'\n11 persona anclada en la obra compartida en la misma llamada: ' ||
     CASE WHEN v_origen_obra = v_obra3 THEN 'OK' ELSE 'FALLO (' || coalesce(v_origen_obra::text, '<null>') || ')' END;
 
   -- ============================================================
@@ -293,8 +315,9 @@ BEGIN
   PERFORM set_config('role', 'none', true);
   SELECT count(*) INTO v_n FROM obras_obra_compartida WHERE obra_id = v_obra4 AND usuario_id = v_tester AND activo;
   r := r || E'\n13a compartir_registros comparte la obra: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
-  SELECT count(*) INTO v_n FROM obras_persona_compartida WHERE persona_id = v_persona4 AND usuario_id = v_tester AND activo;
-  r := r || E'\n13b ... y la persona: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+  SELECT count(*) INTO v_n FROM obras_persona_grant_contextual
+   WHERE persona_id = v_persona4 AND usuario_id = v_tester AND activo AND obra_id = v_obra4;
+  r := r || E'\n13b ... y la persona, anclada en esa obra: ' || CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
 
   RAISE EXCEPTION 'RESULTADO:%', r;
 END

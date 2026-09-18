@@ -145,28 +145,24 @@ detrás. Ordenadas por lo que cuesta dejarlas.
   —`_vigente` exige vínculo vivo—, pero las filas siguen apareciendo en Compartido simulando un
   reparto que no existe. Cosmético; ensucia la lectura de la vista.
 
-- **La suite de tests de Obras está podrida, no solo `obras_085.sql`.** La entrada original nombraba
-  un archivo; el barrido completo al cerrar `sql/092` (2026-09-18) encontró **nueve** que llaman en
-  código ejecutable a objetos que `sql/086` dropeó —`obras_persona_compartida`,
-  `obras_empresa_compartida`, `obras_compartir_persona`/`_empresa`, `obras_revocar_persona`/`_empresa`,
-  `obras_relaciones_compartibles_empresa`, `obras_*_grant_directo`, `obras_*_compartida_conmigo`,
-  las once verificadas inexistentes en la base—: `acceso_registros`, `asignar_con_acceso`, `eventos`,
-  `obras_047`, `obras_049`, `obras_052`, `obras_082`, `obras_085`, `obras_model_a`. Todos mueren con
-  `42P01`/`42883` en el primer caso que las toca, ninguno por regresión. `obras_086` también las
-  nombra pero es legítimo: afirma que **no** existen.
+- ~~**La suite de tests de Obras está podrida, no solo `obras_085.sql`.**~~ — cerrada el 2026-09-18
+  (`decisiones/obras/visibilidad.md` → *La red de regresión de compartir se reconstruye alrededor del
+  acto que quedó*). Los nueve corren: `acceso_registros` 19/19, `asignar_con_acceso` 24/24, `eventos`
+  28/28, `obras_model_a` 6/6 y `obras_compartir` 6/6 (nuevo); `obras_047`, `049`, `052`, `082` y `085`
+  se retiraron a `obsoletos/sql-tests-share-directo/`.
 
-  **Consecuencia que importa más que los archivos:** compartir/transferir no tiene hoy red de
-  regresión fuera de `obras_087`–`obras_092`. Cada auditoría de esta serie encontró agujeros reales
-  en código que "tenía tests".
+  **La entrada acertaba el diagnóstico y subestimaba el trabajo en un sentido y lo sobrestimaba en
+  otro.** Sobrestimaba: "portarlos" no aplicaba a cinco de los nueve — su sujeto era el share directo,
+  que `sql/086` cerró, y lo que seguía valiendo cabía en seis casos. Subestimaba: dos archivos tenían
+  una segunda podredumbre que nada tenía que ver con `sql/086`, y solo apareció al correrlos.
+  `obras_model_a` fallaba en el setup (INSERT de permisos sin `ON CONFLICT` contra el UNIQUE), y
+  `acceso_registros` caso 05 afirmaba lo contrario de lo que la base contesta desde `sql/082` — nadie
+  lo había visto porque el archivo abortaba en el 09. **Ese caso 05 queda ahora como marcador vivo de
+  la reparación del chip `?ctx=`**: hoy espera `false` y, cuando se haga, vuelve a esperar `true`.
 
-  **Y dos desfases más, de la misma clase** (fallan sin regresión): `sql/tests/obras_032.sql` caso 09
-  espera `SQLSTATE = 'OB009'` y `obras_ficha_persona` levanta `OB022` desde `sql/039` — va con la
-  entrada de `OB009` de abajo. ~~`sql/tests/rls_obras.sql` caso 10~~ — corregido al cerrar `sql/092`
-  (afirmaba que el aviso ciego devolvía el nombre en NULL; `sql/042` lo hizo devolver el nombre a
-  propósito). Vuelve a dar 29/29.
-
-  Al portarlos, los casos de `obras_085` que siguen valiendo (A: el contacto sin `GRANT SELECT`;
-  L: la empresa destildada no entra a la agenda) ya están cubiertos por `obras_086` y `obras_087`.
+  **Sigue en pie el desfase que la entrada nombraba aparte**: `sql/tests/obras_032.sql` caso 09 espera
+  `SQLSTATE = 'OB009'` y `obras_ficha_persona` levanta `OB022` desde `sql/039` — va con la entrada de
+  `OB009` de abajo. ~~`sql/tests/rls_obras.sql` caso 10~~ — corregido al cerrar `sql/092`.
 
 **Y dos cambios estructurales que `sql/090` dejó a mitad**, de la misma auditoría. No son bugs: son
 la forma de que la clase entera no vuelva.

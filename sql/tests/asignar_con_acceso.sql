@@ -15,6 +15,12 @@
 -- tareas_gestionar_ajenas, y sin ver la obra privada de ADMIN.
 --
 -- Correrlo entero después de tocar sql/063 o sql/064.
+--
+-- El montaje del caso 03 y la afirmación del 16 se portaron el 2026-09-18:
+-- hablaban de `obras_persona_compartida` y de `origen_obra_id`, que `sql/086`
+-- dropeó.
+--
+-- Último resultado: 24/24 (2026-09-18).
 
 DO $test$
 DECLARE
@@ -110,20 +116,19 @@ BEGIN
   -- 03 — quien crea nunca queda afuera, ni por un vínculo adjunto que él
   -- mismo no puede abrir (rol de la obra, sql/060)
   -- ============================================================
-  -- TESTER (dueño de la persona) se la comparte a ADMIN para que la pueda
-  -- colgar como rol de su obra...
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_tester, 'role', 'authenticated')::text, true);
-  PERFORM set_config('role', 'authenticated', true);
-  PERFORM obras_compartir_registros(v_admin, jsonb_build_array(jsonb_build_object('ente', 'persona', 'registro_id', v_persona_x)));
-  PERFORM set_config('role', 'none', true);
-
+  -- La persona es de TESTER; ADMIN la cuelga de su obra porque tiene
+  -- obras_personas_todas...
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
   PERFORM set_config('role', 'authenticated', true);
   INSERT INTO obras_obra_persona (obra_id, persona_id, roles) VALUES (v_obra_a, v_persona_x, '{arquitecto}');
   PERFORM set_config('role', 'none', true);
 
-  -- ... y después se la revocan: ADMIN ya no puede abrir esa persona.
-  UPDATE obras_persona_compartida SET activo = false WHERE persona_id = v_persona_x AND usuario_id = v_admin;
+  -- ... y después pierde ese permiso: ADMIN ya no puede abrir esa persona
+  -- (`obras_puede_ver_persona_de` es dueño-o-_todas desde sql/086). Antes el
+  -- caso lo montaba con un share directo revocado, que ya no existe.
+  UPDATE usuario_submodulos SET activo = false
+   WHERE usuario_id = v_admin
+     AND submodulo_id IN (SELECT id FROM submodulos WHERE codigo = 'obras_personas_todas');
 
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
   PERFORM set_config('role', 'authenticated', true);
@@ -138,6 +143,10 @@ BEGIN
   SELECT count(*) INTO v_n FROM tareas_asignados WHERE tarea_id = v_t AND usuario_id = v_admin AND activo;
   r := r || E'\n03 quien dispara queda aunque no pueda abrir un adjunto del paso: ' ||
     CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO (' || v_n || ')' END;
+
+  UPDATE usuario_submodulos SET activo = true
+   WHERE usuario_id = v_admin
+     AND submodulo_id IN (SELECT id FROM submodulos WHERE codigo = 'obras_personas_todas');
 
   -- ============================================================
   -- 04 — un vínculo con plantilla_id fuera de un trigger falla
@@ -442,7 +451,7 @@ BEGIN
 
   -- ============================================================
   -- 16 — sql/064: compartir empresa antes que la obra en el array igual
-  -- deja la cascada con origen en la obra
+  -- deja el grant contextual anclado en la obra
   -- ============================================================
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
   PERFORM set_config('role', 'authenticated', true);
@@ -453,9 +462,9 @@ BEGIN
   ));
   PERFORM set_config('role', 'none', true);
 
-  SELECT count(*) INTO v_n FROM obras_empresa_compartida
-   WHERE empresa_id = v_empresa AND usuario_id = v_tester AND activo AND origen_obra_id = v_obra_b;
-  r := r || E'\n16 empresa antes que obra en el array: el grant de la empresa sale de la obra: ' ||
+  SELECT count(*) INTO v_n FROM obras_empresa_grant_contextual
+   WHERE empresa_id = v_empresa AND usuario_id = v_tester AND activo AND obra_id = v_obra_b;
+  r := r || E'\n16 empresa antes que obra en el array: el grant de la empresa se ancla en la obra: ' ||
     CASE WHEN v_n = 1 THEN 'OK' ELSE 'FALLO' END;
 
   RAISE EXCEPTION 'RESULTADO:%', r;

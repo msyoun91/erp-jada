@@ -1,6 +1,5 @@
 -- Verificación de MODEL A (sql/039–044): privacidad por dueño, contacto
--- protegido a nivel columna, grants (completo y contextual), transferencia de
--- personas/empresas, buscador enmascarado.
+-- protegido a nivel columna, buscador enmascarado.
 --
 -- NO es una migración: corre entero dentro de un DO que termina en RAISE
 -- EXCEPTION, así que la transacción se revierte. Mismo andamiaje que
@@ -10,13 +9,20 @@
 -- Afirma:
 --   · el contacto (telefono/whatsapp/email) NO se lee por select directo aunque
 --     se vea la fila — solo por obras_ficha_persona();
---   · una persona/empresa ajena no se ve; obras_compartir_* la abre y
---     obras_revocar_* la vuelve a cerrar;
+--   · una persona/empresa ajena no se ve;
 --   · no se vincula a una obra propia una persona que no se ve (WITH CHECK);
---   · obras_transferir_persona mueve creado_por y revoca los grants viejos;
 --   · obras_buscar devuelve la empresa ajena con es_ajeno = true e id = NULL.
 --
--- Último resultado: 9/9.
+-- Los casos 6-8 originales —compartir/revocar una persona suelta desde su
+-- ficha, y la transferencia que apagaba ese grant— se cayeron con `sql/086`,
+-- que dejó a la obra como único acto de compartir. Lo que sigue valiendo de
+-- ese terreno vive en `obras_compartir.sql` y en `obras_087.sql`.
+--
+-- El setup insertaba los permisos sin `ON CONFLICT` y chocaba con el UNIQUE
+-- (usuario, submodulo): fallaba antes del primer caso, sin relación con
+-- `sql/086`. Corregido al portarlo.
+--
+-- Último resultado: 6/6 (2026-09-18).
 --
 -- Encontró un agujero: `obras_empresas_select` (sql/039) hacía un EXISTS inline
 -- contra `obras_empresa_compartida`, cuya policy a su vez leía `obras_empresas`
@@ -43,15 +49,19 @@ BEGIN
   WHERE usuario_id IN (v_admin, v_tester)
     AND submodulo_id IN (SELECT id FROM submodulos WHERE modulo = 'obras');
 
+  -- ON CONFLICT y no INSERT pelado: los usuarios reales ya tienen filas de
+  -- usuario_submodulos (desactivadas arriba), y hay UNIQUE (usuario, submodulo).
   INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
   SELECT v_admin, id FROM submodulos
   WHERE codigo IN ('obras_ver','obras_crear','obras_personas','obras_personas_crear',
-                   'obras_empresas','obras_empresas_crear','obras_vincular','obras_personas_todas');
+                   'obras_empresas','obras_empresas_crear','obras_vincular','obras_personas_todas')
+  ON CONFLICT (usuario_id, submodulo_id) DO UPDATE SET activo = true;
 
   INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
   SELECT v_tester, id FROM submodulos
   WHERE codigo IN ('obras_ver','obras_crear','obras_personas','obras_personas_crear',
-                   'obras_empresas','obras_empresas_crear','obras_vincular');
+                   'obras_empresas','obras_empresas_crear','obras_vincular')
+  ON CONFLICT (usuario_id, submodulo_id) DO UPDATE SET activo = true;
 
   PERFORM set_config('role', 'authenticated', true);
 
@@ -111,53 +121,14 @@ BEGIN
       r := r || E'\n5 OK  vincular persona invisible → rechazado por WITH CHECK';
   END;
 
-  -- ========== compartir / revocar ==========
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin)::text, true);
-  PERFORM obras_compartir_persona(v_persona, v_tester);
-
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_tester)::text, true);
-  SELECT count(*) INTO v_n FROM obras_personas WHERE id = v_persona;
-  IF v_n <> 1 THEN RAISE EXCEPTION '6 FALLA: tras compartir, tester no ve la persona'; END IF;
-  SELECT telefono INTO v_txt FROM obras_ficha_persona(v_persona);
-  IF v_txt IS DISTINCT FROM '1140000001' THEN
-    RAISE EXCEPTION '6 FALLA: tras compartir, tester no lee el contacto';
-  END IF;
-  r := r || E'\n6 OK  compartir → tester ve la persona y su contacto';
-
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin)::text, true);
-  PERFORM obras_revocar_persona(v_persona, v_tester);
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_tester)::text, true);
-  SELECT count(*) INTO v_n FROM obras_personas WHERE id = v_persona;
-  IF v_n <> 0 THEN RAISE EXCEPTION '7 FALLA: tras revocar, tester sigue viendo la persona'; END IF;
-  r := r || E'\n7 OK  revocar → tester deja de ver la persona';
-
-  -- ========== transferir persona ==========
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin)::text, true);
-  PERFORM obras_compartir_persona(v_persona, v_tester);          -- grant que la transferencia debe revocar
-  PERFORM obras_transferir_persona(v_persona, v_tester);
-
-  PERFORM set_config('role', 'none', true);
-  SELECT creado_por INTO v_txt FROM obras_personas WHERE id = v_persona;
-  IF v_txt <> v_tester::text THEN
-    RAISE EXCEPTION '8 FALLA: transferir_persona no movió creado_por';
-  END IF;
-  SELECT count(*) INTO v_n FROM obras_persona_compartida
-  WHERE persona_id = v_persona AND activo;
-  IF v_n <> 0 THEN
-    RAISE EXCEPTION '8 FALLA: transferir_persona no revocó los grants del dueño viejo (% activos)', v_n;
-  END IF;
-  r := r || E'\n8 OK  transferir_persona movió creado_por y revocó grants';
-
   -- ========== buscador enmascarado ==========
-  PERFORM set_config('role', 'authenticated', true);
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_tester)::text, true);
   -- la empresa 'Zxqwvmnbplk...' sigue siendo de admin
   PERFORM 1 FROM obras_buscar('zxqwvmnbplk') WHERE tipo = 'empresa' AND es_ajeno AND id IS NULL;
   IF NOT FOUND THEN
-    RAISE EXCEPTION '9 FALLA: la empresa ajena no volvió enmascarada (es_ajeno + id NULL)';
+    RAISE EXCEPTION '6 FALLA: la empresa ajena no volvió enmascarada (es_ajeno + id NULL)';
   END IF;
-  r := r || E'\n9 OK  obras_buscar devuelve la empresa ajena enmascarada';
+  r := r || E'\n6 OK  obras_buscar devuelve la empresa ajena enmascarada';
 
-  RAISE EXCEPTION E'--- obras_model_a: 9/9 ---%', r;
+  RAISE EXCEPTION E'--- obras_model_a: 6/6 ---%', r;
 END;
 $test$;

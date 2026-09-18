@@ -1,5 +1,44 @@
 # Obras — Visibilidad y compartir
 
+## La red de regresión de compartir se reconstruye alrededor del acto que quedó (sin SQL)
+
+**Los nueve tests que `sql/086` dejó muertos no se portan uno a uno: cuatro se arreglan en el lugar,
+cinco se retiran, y los casos que sobrevivían a los cinco caben en un archivo nuevo de seis.** Se
+retiran `obras_047`, `049`, `052`, `082` y `085` a `obsoletos/sql-tests-share-directo/`; nace
+`sql/tests/obras_compartir.sql`.
+
+**El criterio no fue "¿se puede reescribir?" sino "¿su sujeto existe?".** Los cinco probaban el share
+directo de persona y empresa: `origen_obra_id`, `obras_compartir_persona`/`_empresa`, "última
+escritura gana", "el grant directo sobrevive al destildado del padre". Eso no es una API que cambió
+de forma, es un acto que se cerró. Reescribirlos contra las tablas de grant contextual habría
+producido tests que repiten lo que `obras_086`, `087` y `092` ya afirman — que es cómo una suite
+llega a tener nueve archivos que nadie corre.
+
+**Lo que sobrevivió son seis casos y ninguno hablaba de compartir contactos**: ver ≠ editar, `OB026`
+al compartir una obra ajena, el checklist del panel con `ya_compartida`, la vista Compartido con el
+contextual colgando de su origen, re-tildar que revive la misma fila, y el contacto que no abre sin
+`?ctx=`. Estaban dispersos en tres archivos cuyo encabezado prometía otra cosa.
+
+**Dos desfases más aparecieron al correrlos, y ninguno era el que el backlog anotaba.** El backlog
+decía que los nueve morían con `42P01`/`42883` y ninguno por regresión; es cierto, pero dos tenían
+además una segunda podredumbre propia:
+
+- `obras_model_a` no llegaba a ningún caso: su setup inserta permisos sin `ON CONFLICT` contra un
+  UNIQUE `(usuario, submodulo)` que el resto de la suite ya esquivaba. Nada que ver con `sql/086`.
+- `acceso_registros` caso 05 afirmaba **lo contrario** de lo que la base contesta desde `sql/082`:
+  esperaba que la persona tildada en el checklist se abriera desde la tarea. Hoy el checklist otorga
+  contextual y `puede_abrir_registro` no cuenta contextuales, así que decía lo mismo que su caso 06
+  vecino. Nadie lo vio porque el archivo abortaba en el 09 antes de llegar. Se corrige la expectativa
+  y el caso queda como **marcador vivo de la reparación pendiente del chip `?ctx=`** (`BACKLOG.md`):
+  cuando se haga, vuelve a esperar `true`.
+
+Un test que acumula `'OK'/'FALLO'` en un string —en vez de `RAISE` en el primer fallo— esconde todo
+lo que venga después del primer objeto inexistente. Los dos hallazgos salieron de correrlos, no de
+leerlos.
+
+Archivos: `sql/tests/obras_compartir.sql` (nuevo), `acceso_registros.sql`, `asignar_con_acceso.sql`,
+`eventos.sql`, `obras_model_a.sql`, `obsoletos/sql-tests-share-directo/`, `obsoletos/README.md`.
+
 ## La vigencia del grant contextual se escribe una sola vez (`sql/092`)
 
 **Un grant contextual vale si se cumplen tres cosas: la fila está activa, el vínculo entidad↔ancla

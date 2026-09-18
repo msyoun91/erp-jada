@@ -10,7 +10,11 @@
 --
 -- Volver a correrlo entero después de tocar sql/068 o sql/069.
 --
--- Último resultado: 28/28.
+-- El montaje del caso 26 usaba `obras_persona_compartida`, que `sql/086`
+-- dropeó: pasó al grant contextual anclado en la obra, que es lo que hoy
+-- produce tildar en el checklist.
+--
+-- Último resultado: 28/28 (2026-09-18).
 
 DO $test$
 DECLARE
@@ -232,7 +236,7 @@ BEGIN
   -- La obra B tiene dos personas; al receptor se le tilda solo la segunda.
   PERFORM set_config('role', 'none', true);
   INSERT INTO obras_obra_compartida (obra_id, usuario_id, otorgada_por) VALUES (v_obra_b, v_tester, v_admin);
-  INSERT INTO obras_persona_compartida (persona_id, usuario_id, otorgada_por, origen_obra_id)
+  INSERT INTO obras_persona_grant_contextual (persona_id, usuario_id, otorgada_por, obra_id)
   VALUES (v_per2, v_tester, v_admin, v_obra_b);
   PERFORM set_config('role', 'authenticated', true);
 
