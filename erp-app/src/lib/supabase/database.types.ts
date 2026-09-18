@@ -2358,8 +2358,9 @@ export type Database = {
       }
       obras_revocar_contextual: {
         Args: {
+          p_ancla_id: string
+          p_ancla_tipo: string
           p_entidad_id: string
-          p_obra_id: string
           p_tipo: string
           p_usuario_id: string
         }

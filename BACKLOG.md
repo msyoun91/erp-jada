@@ -92,3 +92,59 @@ historia por nada, y 083/084 reconstruyen en orden válido igual.
 de `sql/*.sql`, normalizando espacios. De 161 funciones, 14 no matchearon y 11 de esas eran solo
 comentarios que la base no tiene — alguien aplicó una versión despojada. Un diff por **nombre** solo
 habría encontrado 3 de las 5 reales.
+
+## Resto de la auditoría de compartir/transferir (2026-09-18)
+
+Las cuatro vulnerabilidades se cerraron en `sql/090` (`decisiones/obras/visibilidad.md` → *El grant
+contextual muere con el ancla*). Lo que queda son inconsistencias, ninguna con acceso indebido
+detrás. Ordenadas por lo que cuesta dejarlas.
+
+- **`obras_compartir_obra` no valida que el receptor tenga `obras_ver`.** Transferir sí lo hace
+  (`OB006`). Compartir con alguien sin acceso al módulo crea un grant que no abre nada: la obra no le
+  aparece (`obras_select` exige `obras_ver`) y, desde `sql/090`, los contextuales que cuelgan tampoco.
+  Una línea: `usuario_tiene_permiso(p_usuario_id, 'obras_ver')` junto al chequeo de `usuarios.activo`.
+  Decidir primero si el error es `OB006` o uno nuevo — no es "el destino", es "el receptor".
+
+- **`NULL` degrada en silencio en los arrays.** `id = ANY(NULL)` es NULL, no false, y los `DEFAULT
+  '{}'` no aplican si el cliente manda `null` explícito. `obras_compartir_obra` con `p_personas:
+  null` no otorga **ni destilda** — la limpieza `NOT (persona_id = ANY(p_personas))` también da NULL,
+  así que el reparto queda congelado. `obras_transferir` con `p_migran: null` transfiere la obra y
+  deja al receptor sin ningún contacto. Fix: `COALESCE(p_migran, '{}')` al entrar en las cuatro
+  funciones, y `.default([])` en los schemas Zod. Hoy la UI siempre manda array, así que es blindaje.
+
+- **La agenda se recorta en la query, no en la policy.** `obras_personas_select` y
+  `obras_empresas_select` dejan pasar el grant contextual **sin ancla** (`_ctx_vigente`); lo que
+  mantiene al contacto fuera del listado es `.eq("creado_por", me)` en `queries.ts` (`getPersonas`,
+  `getEmpresas`). Un GET directo a PostgREST devuelve igual las filas contextuales. Solo identidad
+  —el contacto está protegido a nivel columna desde `sql/039`/`sql/085`— pero contradice *la interfaz
+  nunca es barrera*. Está comentado en el código como decisión deliberada: o se escribe como tal en
+  `visibilidad.md`, o la policy pasa a pedir ancla y el recorte de la query sobra.
+
+- **`obras_migrar_agenda` conserva la copia del gate `OB006`.** `sql/090` pasó las otras tres a
+  `usuario_tiene_permiso(destino, 'obras_ver')`; esta quedó con el `EXISTS` sobre `usuario_submodulos`
+  porque no se reescribía en esa migración. Misma regla, cuarta copia.
+
+- **`revocarObra` y `revocarContextual` no tienen `safeParse`** (`actions.ts`). La base gatea, pero
+  rompe la regla de validar en dos lugares y un uuid malformado sale como genérico (22P02) en vez de
+  mensaje. **`contarVinculosReceptor`** traga el error y devuelve `0`: el panel anuncia "se van a caer
+  0 vínculos" cuando la consulta falló.
+
+- **El buscador marca `es_ajeno` a quien sí se puede abrir.** `obras_buscar_personas` / `_empresas`
+  resuelven con `obras_puede_ver_*`, que no cuenta contextuales. Correcto para no meterlo en la
+  agenda, pero al receptor le muestra "de Fulano, sin link" a un contacto que abre normal desde la
+  obra. Si se toca, el link va con `?ctx=`, que es la misma reparación del chip de tarea de la
+  entrada de arriba.
+
+- **`OB022` significa dos cosas** —"sin acceso a esta persona" y "sin acceso a esta obra"— y `OB009`
+  quedó como código muerto. Funciona porque `mensajeError()` pasa el texto de la base, así que el
+  costo es que el código dejó de identificar. Anotado en la tabla de `db_schema/obras.md`.
+
+- **Grants activos que ya no abren nada.** El estado 3 (`p_sacar`) desactiva los vínculos pero deja
+  `activo = true` en los grants contextuales de terceros que colgaban de ellos. El acceso muere bien
+  —`_vigente` exige vínculo vivo—, pero las filas siguen apareciendo en Compartido simulando un
+  reparto que no existe. Cosmético; ensucia la lectura de la vista.
+
+- **`sql/tests/obras_085.sql` está obsoleto.** Usa `obras_empresa_compartida`, `obras_compartir_empresa`
+  y `obras_empresa_grant_directo`, dropeadas por `sql/086`. Falla con `42P01` y no por regresión. Los
+  casos que siguen valiendo (A: el contacto sin `GRANT SELECT`; L: la empresa destildada no entra a la
+  agenda) están cubiertos por `obras_086` y `obras_087`: probablemente se borre en vez de portarse.

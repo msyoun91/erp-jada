@@ -298,24 +298,27 @@ export async function revocarObra(obraId: string, usuarioId: string) {
 }
 
 // Destildar del checklist desde la vista Compartido: apaga el grant contextual
-// de esa entidad en esa obra (sql/086).
+// de esa entidad en ese ancla (sql/086, ancla obra o empresa desde sql/090).
 export async function revocarContextual(
   tipo: "empresa" | "persona",
   entidadId: string,
   usuarioId: string,
-  obraId: string,
+  anclaTipo: "obra" | "empresa",
+  anclaId: string,
 ) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("obras_revocar_contextual", {
     p_tipo: tipo,
     p_entidad_id: entidadId,
     p_usuario_id: usuarioId,
-    p_obra_id: obraId,
+    p_ancla_tipo: anclaTipo,
+    p_ancla_id: anclaId,
   });
 
   if (error) return { success: false as const, error: mensajeError(error) };
 
-  revalidatePath(`/obras/${obraId}`);
+  if (anclaTipo === "obra") revalidatePath(`/obras/${anclaId}`);
+  else revalidatePath(`/obras/empresas/${anclaId}`);
   revalidatePath("/obras/compartido");
   return { success: true as const };
 }

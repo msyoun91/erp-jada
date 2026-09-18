@@ -117,7 +117,7 @@ BEGIN
 
   -- F — destildar una fila sin revocar la obra.
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin)::text, true);
-  PERFORM obras_revocar_contextual('empresa', v_e, v_tester, v_obra);
+  PERFORM obras_revocar_contextual('empresa', v_e, v_tester, 'obra', v_obra);
   SELECT count(*) INTO v_n FROM obras_empresa_grant_contextual
    WHERE empresa_id = v_e AND usuario_id = v_tester AND obra_id = v_obra AND activo;
   IF v_n <> 0 THEN RAISE EXCEPTION 'F FALLA: el grant de la empresa sigue activo'; END IF;
@@ -129,7 +129,7 @@ BEGIN
   -- G — no lo hace cualquiera.
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_tester)::text, true);
   BEGIN
-    PERFORM obras_revocar_contextual('persona', v_p, v_tester, v_obra);
+    PERFORM obras_revocar_contextual('persona', v_p, v_tester, 'obra', v_obra);
     RAISE EXCEPTION 'G FALLA: un no-responsable revocó';
   EXCEPTION WHEN sqlstate 'OB026' THEN NULL;
   END;

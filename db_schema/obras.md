@@ -191,6 +191,13 @@ Test: `sql/tests/obras_088.sql`, 12/12. Crea dos usuarios en `auth.users` dentro
 
 Test: `sql/tests/obras_089.sql`, 7/7.
 
+**`sql/090` — `otorgada_por` sigue al dueño del ancla.** Auditoría de compartir/transferir. `obras_transferir_persona` reescribía el otorgante de **todos** los grants contextuales de esa persona, anclados a cualquier obra, participara o no de la transferencia: resto del modelo sin ancla anterior a `sql/082`. El statement se borra. En `obras_transferir` y `_empresa` queda solo lo anclado a lo que cambió de mano — la obra (`obra_id = p_obra_id`) y las empresas que migran, que son ancla de sus personas (`empresa_id = ANY(v_empresas)` / `= p_empresa_id`); se fueron `persona_id = ANY(v_personas)` y el `empresa_id = p_empresa_id` sobre `obras_empresa_grant_contextual`, cuyo ancla es una obra que no se movió. Además:
+
+- **Los contextuales del receptor los otorga el saliente, no quien ejecuta.** `otorgada_por = v_actual` en vez de `auth.uid()`, y el `IF p_a_usuario_id <> auth.uid()` desaparece: estaba para no violar el CHECK `usuario_id <> otorgada_por` y dejaba sin contactos al admin que se transfiere la obra a sí mismo. `OB005` ya garantiza que `v_actual` y el destino son distintos.
+- **El gate `OB006` pasa a `usuario_tiene_permiso(destino, 'obras_ver')`** en las tres funciones — era el mismo EXISTS sobre `usuario_submodulos` escrito cuatro veces. `obras_migrar_agenda` conserva la copia.
+
+Test: `sql/tests/obras_090.sql`, 7/7.
+
 ## obras_obra_compartida / obras_persona_grant_contextual / obras_empresa_grant_contextual
 
 Grants que otorga el dueño. **Desde `sql/086` hay un solo acto de compartir: la obra.** `obras_persona_compartida` y `obras_empresa_compartida` (share directo desde la ficha del contacto, acceso completo + agenda) se dropearon con todas sus funciones — ver la entrada de `sql/086` abajo.
@@ -203,6 +210,13 @@ Grants que otorga el dueño. **Desde `sql/086` hay un solo acto de compartir: la
 `obras_empresa_grant_contextual` (`sql/085`): `(empresa_id, usuario_id, obra_id, otorgada_por, activo)`, UNIQUE entero por el trío — el ancla de una empresa solo puede ser una obra (una empresa no cuelga de otra empresa), así que no hay XOR ni índice parcial. La empresa se abre solo desde esa obra (`obras_ficha_empresa(empresa, ctx_obra)`); muere con el vínculo, validado en vivo por `obras_empresa_grant_ctx_vigente`. La escriben el checklist de `obras_compartir_obra`, la cascada de `obras_transferir` y la rama empresa de `obras_compartir_registros`. Helper anclado `obras_empresa_grant_ctx_obra_conmigo(empresa, obra)`, mismo reparto que en persona: `_vigente` sirve a la policy de `obras_empresas`, el anclado corta por padre. **Compartir una empresa desde su ficha no existe más** (`sql/086`): la única puerta es el checklist de la obra.
 
 RLS: solo SELECT para `authenticated` (dueño o receptor). La escritura pasa por `obras_compartir_obra` / `obras_revocar_obra` / `obras_revocar_contextual` / `obras_compartir_registros` / `obras_transferir*` (DEFINER, exigen `creado_por` / `responsable_id`).
+
+**`sql/090` — el grant vale mientras se vea el ancla.** `obras_persona_grant_ctx_vigente`, `obras_empresa_grant_ctx_vigente` y la rama contextual de `obras_ficha_persona` / `obras_ficha_empresa` piden además `obras_puede_ver_obra(ancla)` — o `obras_puede_ver_empresa(ancla) OR obras_empresa_grant_ctx_vigente(ancla)` para el ancla empresa. Antes solo verificaban que el vínculo entidad↔ancla siguiera vivo, así que un grant que quedaba activo por cualquier motivo seguía abriendo teléfono y email de alguien cuya obra ya no se ve. Consecuencias:
+
+- **`obras_revocar_obra` pierde el filtro `otorgada_por = auth.uid()`** sobre las dos tablas de grant contextual. Un grant anclado a esa obra solo lo pudo otorgar su responsable, que es quien llama: el filtro no protegía nada y dejaba huérfanos cuando `otorgada_por` se movía.
+- **`obras_revocar_contextual(p_tipo, p_entidad_id, p_usuario_id, p_ancla_tipo, p_ancla_id)`** — firma nueva (DROP + CREATE: renombrar un parámetro no se puede con `CREATE OR REPLACE`). El ancla puede ser **empresa**: los grants del estado 2 de `sql/087` lo son, y con la firma vieja —que asumía obra y recibía el `origen_id` de la vista Compartido— devolvían `OB026` siempre. Eran irrevocables. Autoriza **dueño del ancla o quien otorgó**: en el checklist de una obra son el mismo, pero el grant recíproco del estado 2 lo otorga el entrante sobre un ancla del saliente. Tipo o ancla inválidos → `OB031`; cero filas tocadas sin ser dueño del ancla → `OB026` (antes: éxito silencioso).
+
+Test: `sql/tests/obras_090.sql`, 7/7. Exposición real al aplicarla: 0 filas — los cuatro agujeros eran latentes.
 
 **Emite eventos (`sql/083`).** `obras_obra_compartida` lleva trigger `emitir_eventos` AFTER INSERT OR UPDATE OF activo → `obras_emitir_eventos_grant('obra'|'empresa'|'persona', '<columna>')`: `activo` false→true → `compartido`, true→false → `revocado`, en `eventos` con `detalle = {usuario_id, otorgada_por, origen_obra_id, origen_empresa_id}` sin las claves nulas — las dos de origen ya no existen como columna, así que salen siempre nulas y `jsonb_strip_nulls` las borra; el trigger no se tocó porque lee el `to_jsonb(NEW)`. Sin cambio de `activo` no emite — recompartir lo ya compartido solo reescribe `otorgada_por`, y el acceso no se movió. Las dos tablas de grant contextual **no** emiten: no son un acto propio, son el reflejo de la obra o empresa que sí emitió el suyo. Consecuencia de `sql/085`: el checklist de una obra dejó de emitir `compartido`/`revocado` para empresas, igual que ya había dejado de hacerlo para personas en `sql/082`. Los ve quien ve la fila de grant (`obras_puede_ver_compartido`, ver `core.md`). Ninguno dispara plantillas: `obras_compartir_*` / `obras_revocar_*` son DEFINER y el disparo solo corre como quien actúa.
 
@@ -311,7 +325,7 @@ Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían c
 | `OB006` | `obras_transferir` | el destino no tiene acceso a Obras |
 | `OB007` | `obras_set_activo` | sin permiso para desactivar |
 | `OB008` | `obras_set_activo` | la obra no existe o no sos su responsable |
-| `OB009` | `obras_ficha_persona` | sin acceso a esta persona — no distingue "no existe" de "no la ves" |
+| ~~`OB009`~~ | — | código muerto: `obras_ficha_persona` levanta `OB022`, no este. Nadie lo emite |
 | `OB010` | `obras_auditoria_*` | sin permiso para ver la auditoría |
 | `OB011` | `obras_guard_congelado` | la obra está pendiente: no acepta vínculos |
 | `OB012` | `obras_guard_congelado` | la empresa o la persona está pendiente: no se puede vincular |
@@ -322,11 +336,12 @@ Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían c
 | `OB017` | `obras_resolver_pendiente` | ya resuelta o inexistente |
 | `OB018` | `obras_personas_de_empresa` | sin permiso para vincular |
 | `OB019` | `obras_guard_congelado` | marcar referente a alguien que no se ve: el vínculo tiene que existir y estar autorizado |
-| `OB020`–`OB025` | compartir / transferir persona-empresa (`sql/039`, `sql/041`) | dueño, autocompartir, usuario inexistente, sin permiso, entidad inexistente |
-| `OB026` | `obras_compartir_obra` · `obras_revocar_obra` · `obras_revocar_contextual` · `obras_relaciones_compartibles_obra` (`sql/047`, `sql/086`) | solo el responsable de la obra comparte o revoca |
+| `OB020`–`OB025` | compartir / transferir persona-empresa (`sql/039`, `sql/041`) | dueño, autocompartir, usuario inexistente, sin permiso, entidad inexistente. **`OB022` significa dos cosas**: "sin acceso a esta persona" en `obras_ficha_persona` y "sin acceso a esta obra" en `obras_vinculos_de_obra` (`sql/070`). Funciona porque `mensajeError()` pasa el texto de la base, pero el código dejó de identificar |
+| `OB026` | `obras_compartir_obra` · `obras_revocar_obra` · `obras_revocar_contextual` · `obras_relaciones_compartibles_obra` (`sql/047`, `sql/086`, `sql/090`) | solo el responsable de la obra comparte o revoca. Desde `sql/090`, en `obras_revocar_contextual`: ni dueño del ancla ni otorgante |
 | `OB027` | `obras_compartidos_por_mi` (`sql/047`) | sin acceso a la vista Compartido |
+| `OB029` | `obras_compartir_registros` (`sql/082`, `sql/085`, `sql/086`) | esa persona o empresa no cuelga de ninguna obra compartida con ese usuario: no hay ancla posible |
 | `OB030` | `obras_ficha_empresa` (`sql/085`) | sin acceso a esta empresa — no distingue "no existe" de "no la ves" |
-| `OB031` | `obras_transferir_candidatos` (`sql/087`) | tipo inválido: solo `obra`, `empresa`, `persona` |
+| `OB031` | `obras_transferir_candidatos` (`sql/087`) · `obras_revocar_contextual` (`sql/090`) | tipo inválido: solo `obra`, `empresa`, `persona`. En revocar, además: ancla que no es `obra`/`empresa`, o una empresa anclada en empresa |
 | `OB032` | `obras_transferir` · `obras_transferir_empresa` (`sql/087`) | `p_sacar` trae algo que no está en `p_migran`: sacar de la agenda sin transferir es otra acción |
 | `OB033` | `obras_migrar_resumen` · `obras_migrar_agenda` (`sql/088`) | sin permiso para migrar agendas |
 | `OB034` | `obras_migrar_agenda` (`sql/088`) | el usuario saliente no existe |

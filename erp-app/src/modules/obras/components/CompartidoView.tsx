@@ -21,12 +21,23 @@ const HREF = {
   persona: (id: string) => `/obras/personas/${id}`,
 } as const;
 
-// Toda fila que no es una obra cuelga de una obra: revocarla es destildarla del
-// checklist, desde el otro lado (sql/086).
+// Toda fila que no es una obra cuelga de un ancla: revocarla es destildarla del
+// checklist, desde el otro lado (sql/086). El ancla puede ser una obra o —para
+// una persona que llegó por el estado 2 de una transferencia— una empresa, y
+// hay que pasar cuál: la firma vieja asumía obra y esas filas no se podían
+// revocar nunca (sql/090).
 function revocar(fila: CompartidoRow) {
   if (fila.tipo === "obra") return revocarObra(fila.entidad_id, fila.usuario_id);
-  if (!fila.origen_id) return Promise.resolve({ success: false as const, error: "Sin origen" });
-  return revocarContextual(fila.tipo, fila.entidad_id, fila.usuario_id, fila.origen_id);
+  if (!fila.origen_tipo || !fila.origen_id) {
+    return Promise.resolve({ success: false as const, error: "Sin origen" });
+  }
+  return revocarContextual(
+    fila.tipo,
+    fila.entidad_id,
+    fila.usuario_id,
+    fila.origen_tipo,
+    fila.origen_id,
+  );
 }
 
 const filaKey = (f: CompartidoRow) => `${f.tipo}:${f.entidad_id}:${f.usuario_id}`;

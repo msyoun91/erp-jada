@@ -1,5 +1,57 @@
 # Obras — Visibilidad y compartir
 
+## El grant contextual muere con el ancla (`sql/090`)
+
+Auditoría de compartir/transferir (2026-09-18). Cuatro agujeros con una sola causa: el grant
+contextual se comportaba como una capacidad independiente en vez de "ver esta entidad **dentro de**
+esta obra o empresa". Faltaban dos reglas, y las dos se escribieron una sola vez.
+
+**1 · El grant vale mientras quien lo tiene siga viendo el ancla.** Antes solo se verificaba que el
+vínculo entidad↔ancla siguiera vivo, nunca que el receptor siguiera teniendo la obra. Ahora
+`obras_persona_grant_ctx_vigente`, `obras_empresa_grant_ctx_vigente` y la rama contextual de las dos
+fichas piden además `obras_puede_ver_obra(ancla)` (o `obras_puede_ver_empresa`, para el ancla
+empresa). Es la barrera real: un grant que quedó activo por cualquier motivo ya no abre nada.
+
+**2 · `otorgada_por` sigue al dueño del ancla, no al de la entidad.** `obras_transferir_persona`
+reescribía el otorgante de **todos** los grants de esa persona, anclados a cualquier obra, incluidas
+las que no participaban de la transferencia. Era un resto del modelo sin ancla anterior a `sql/082`,
+y producía un grant huérfano: el responsable del ancla dejaba de verlo en Compartido, el nuevo dueño
+de la entidad no podía revocarlo (no es responsable de esa obra), y el receptor seguía abriendo la
+ficha con teléfono y email después de que le revocaran la obra. Se borra en `_persona`; en
+`obras_transferir` y `_empresa` queda solo lo anclado a lo que sí cambió de mano — la obra, y las
+empresas que migran, que son ancla de sus personas.
+
+**Revocar la obra apaga todo lo anclado a ella.** `obras_revocar_obra` filtraba los contextuales por
+`otorgada_por = auth.uid()`. El filtro no protegía nada —un grant anclado a esa obra solo lo pudo
+otorgar su responsable, que es quien llama— y era la otra mitad del huérfano.
+
+**Revocar un contextual tiene dos autoridades, no una.** El ancla puede ser una empresa: el grant
+recíproco del estado 2 (`sql/087`) lo otorga el **entrante** sobre un ancla que quedó del saliente,
+así que el otorgante lo ve en su vista Compartido sin ser dueño de nada. `obras_revocar_contextual`
+pasa a `(p_tipo, p_entidad_id, p_usuario_id, p_ancla_tipo, p_ancla_id)` y acepta dueño del ancla
+**o** otorgante. La firma vieja asumía ancla obra y la vista le pasaba el `origen_id` —para esas
+filas, un `empresa_id`—, así que devolvía `OB026` siempre: eran irrevocables, y las crea el camino
+default de transferir.
+
+**Y no hay más éxito silencioso.** Un `p_tipo` desconocido pasaba el gate, no hacía nada y la acción
+devolvía éxito. Ahora corta con `OB031`, y cero filas tocadas sin ser dueño del ancla es `OB026`.
+
+**De paso, el gate `OB006` deja de estar copiado.** Las tres funciones de transferir tenían el mismo
+`EXISTS` sobre `usuario_submodulos` que `usuario_tiene_permiso(usuario, 'obras_ver')` ya resuelve.
+`obras_migrar_agenda` conserva la copia — no se tocó en esta migración.
+
+**El admin que ejecuta no es parte.** `obras_transferir` otorgaba los contextuales del receptor con
+`otorgada_por = auth.uid()`, y para no violar el CHECK `usuario_id <> otorgada_por` se salteaba el
+bloque entero cuando el destino era quien llamaba: el admin que se transfería una obra a sí mismo
+quedaba viendo los nombres de los contactos y con la ficha cerrada. Con `otorgada_por = v_actual`
+—quien cede es quien otorga— el `IF` sobra y el caso funciona.
+
+Exposición real al momento de escribir esto: 0 filas. Los cuatro eran latentes.
+
+Archivos: `sql/090_grant_contextual_muere_con_el_ancla.sql`, `sql/tests/obras_090.sql` (7/7),
+`erp-app/src/modules/obras/actions.ts`, `components/CompartidoView.tsx`,
+`lib/supabase/database.types.ts`, `db_schema/obras.md`.
+
 ## Transferir lo propio no es ver lo ajeno (`sql/089`)
 
 **Cada transferencia tiene dos puertas, no dos funciones.** La global de siempre transfiere
