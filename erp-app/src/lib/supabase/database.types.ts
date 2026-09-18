@@ -2137,6 +2137,15 @@ export type Database = {
         Args: { p_obra_id: string; p_usuario_id: string }
         Returns: number
       }
+      obras_ctx_autoridad: {
+        Args: {
+          p_ancla_id: string
+          p_ancla_tipo: string
+          p_entidad_id: string
+          p_tipo: string
+        }
+        Returns: boolean
+      }
       obras_ctx_vigente: {
         Args: {
           p_ancla_id?: string

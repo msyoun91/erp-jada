@@ -19,7 +19,7 @@
 --   E `obras_migrar_agenda` sigue cortando con OB006 después de cambiar el
 --     EXISTS copiado por `usuario_tiene_permiso` — la cuarta copia
 --
--- Último resultado: 5/5 (2026-09-18).
+-- Último resultado: 5/5 (2026-09-18, revalidado tras sql/093).
 
 DO $test$
 DECLARE

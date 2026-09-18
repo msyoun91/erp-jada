@@ -14,6 +14,8 @@ una decisión de visibilidad o alcance.
 
 MODEL A (todo privado por dueño), compartir con checklist y cascada, grants heredados, alcance de personas, buscador global, `obras_aprobar`.
 
+- **`otorgada_por` es historia, no autoridad (`sql/093`)** — ver, revocar y leer la fila son una
+  sola pregunta: dueño del contacto o dueño del ancla; se van cinco UPDATE
 - **La red de regresión de compartir se reconstruye alrededor del acto que quedó** — cinco tests retirados, uno nuevo; el criterio es si el sujeto existe (sin SQL)
 - **La vigencia del grant contextual se escribe una sola vez (`sql/092`)** — `obras_ctx_vigente` reemplaza a cinco funciones; en una de ellas la regla estaba mal
 - **El listado de la agenda se recorta en la query, y es deliberado** — la barrera es el contacto por columna, no el listado (sin SQL)

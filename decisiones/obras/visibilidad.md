@@ -1,5 +1,58 @@
 # Obras — Visibilidad y compartir
 
+## `otorgada_por` es historia, no autoridad (`sql/093`)
+
+**Quién ve un grant en la vista Compartido, quién puede revocarlo y quién puede leer su fila son
+ahora la misma pregunta, y la contesta `obras_ctx_autoridad(tipo, entidad, ancla_tipo, ancla)`:
+manda el dueño del contacto —es su teléfono el que se ve— o el dueño del ancla —es su obra la que
+lo muestra—.** `otorgada_por` deja de leerse para decidir y deja de reescribirse: queda como log.
+
+Cierra el segundo cambio estructural que `sql/090` dejó a mitad, hermano de `sql/092`.
+
+**Las dos premisas del `BACKLOG.md` eran falsas.**
+
+1. *"Derivar las dos del ancla"* no se puede: en dos de las cuatro clases de grant contextual el
+   dueño del ancla **es el receptor** —la cascada de `obras_transferir` ancla en la obra que cambió
+   de mano, y el recíproco del estado 2 (`sql/087`) ancla en las obras y empresas del saliente—. Esa
+   regla habría puesto esas filas en la vista Compartido del propio receptor.
+2. *"El CHECK `usuario_id <> otorgada_por` deja de proteger nada"* tampoco: la columna se sigue
+   **escribiendo** con el dueño de la entidad, así que el CHECK sigue siendo el guard de inserción
+   "nadie se comparte consigo mismo". Lo que cambia no es quién la escribe, es que nadie la lee para
+   decidir. Se queda, y `obras_migrar_agenda` 3.4 la usa para no violarlo.
+
+**La columna era la sombra de la propiedad, y `sql/045` lo había escrito.** `otorgada_por` al nacer
+es siempre el dueño de la entidad compartida: lo exigen los cuatro escritores (`obras_compartir_obra`
+y las tres ramas de `obras_compartir_registros` piden `creado_por = auth.uid()`; la cascada de
+transferir otorga con el saliente, que sigue siendo el dueño; el recíproco con el entrante, que pasó
+a serlo). `sql/045` la eligió como **atajo para no recursar** contra `obras_personas` / `obras`, y
+dejó escrito *"quien otorgó es siempre el dueño"*. Cinco UPDATE en transferir y migrar existían solo
+para empujar la columna detrás de la propiedad cuando algo cambiaba de mano: se van los cinco.
+
+**La primera versión de esta migración ató la vista solo al dueño de la entidad, y estaba mal.** Lo
+encontró correr `sql/tests/obras_090.sql`, no leerlo: A comparte su obra O tildando su contacto P y
+después transfiere P a C; con la vista colgada de la entidad, A —responsable de la obra que es el
+vehículo de esa exposición— dejaba de verla, y C la veía colgando de una obra ajena. Además rompía
+el anidado de la vista, que asume que el padre viaja en el mismo resultado que sus hijos. La vista
+lista **lo que puedo revocar**, menos aquello donde yo soy el receptor.
+
+**La policy no era cosmética.** `getCompartidosObra` lee `obras_obra_compartida` directo y su
+comentario decía "solo lo ve el responsable"; la policy decía `otorgada_por`, y coincidían solo
+porque transferir reescribía. Sacar el UPDATE sin tocar la policy dejaba al nuevo responsable con el
+panel "compartida con" **vacío** y el tercero adentro. Las tres policies de grant pasan a decir la
+misma regla; la de empresa (`sql/085`) ya derivaba del dueño de la entidad y le faltaba el ancla.
+
+**Lo que además se arregla:** el dueño de un contacto que no migró deja de perderlo de vista cuando
+la obra cambia de mano; el checklist deja de poder apagar lo que no puede ofrecer (filtraba por
+`otorgada_por`, ahora por dueño de la entidad, que es exactamente lo que la pantalla muestra); y
+revocar dos veces deja de contestar `OB026` a quien sí tiene autoridad —el gate salió del `WHERE`,
+así que cero filas es idempotencia—.
+
+Filas con `otorgada_por` distinto del dueño al aplicarla: 0 de 4 activas. Sin backfill.
+
+Archivos: `sql/093_otorgada_por_es_historia.sql`, `sql/tests/obras_093.sql` (6/6),
+`sql/tests/obras_088.sql` (caso E reescrito), `sql/tests/obras_090.sql` (etiquetas),
+`db_schema/obras.md`, `erp-app/src/lib/supabase/database.types.ts`.
+
 ## La red de regresión de compartir se reconstruye alrededor del acto que quedó (sin SQL)
 
 **Los nueve tests que `sql/086` dejó muertos no se portan uno a uno: cuatro se arreglan en el lugar,

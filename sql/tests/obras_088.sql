@@ -18,7 +18,8 @@
 --   C el vínculo que el saliente creó en la obra del TERCERO cambia de creador
 --     (lo que `obras_transferir` deja a propósito y acá descongela)
 --   D lo desactivado también cambia de dueño, pero NO entra al log
---   E lo que el saliente otorgó cuelga del entrante (`otorgada_por`)
+--   E lo que el saliente otorgó queda bajo la autoridad del entrante — por
+--     propiedad, no por `otorgada_por` (sql/093)
 --   F lo que el saliente recibió del tercero pasa al entrante (`usuario_id`)
 --   G colisión: si el entrante ya tenía la misma llave, se revive la suya y la
 --     del saliente se apaga — el UNIQUE no admite dos
@@ -30,7 +31,7 @@
 --   L la auditoría muestra las tres clases de transferencia (el fix de §4:
 --     el INNER JOIN con `obras` escondía persona y empresa desde sql/041)
 --
--- Último resultado: 12/12 (2026-09-17).
+-- Último resultado: 12/12 (2026-09-18, caso E reescrito por sql/093).
 
 DO $test$
 DECLARE
@@ -192,18 +193,26 @@ BEGIN
   r := r || E'\nD OK  lo desactivado cambia de dueño sin entrar al log';
 
   -- ── E — lo que el saliente otorgó ───────────────────────────────────────
-  -- Compartió su obra con nadie, así que se prueba con el grant que arrastra
-  -- la transferencia: el tercero no recibió nada del saliente. Lo que sí hay
-  -- es el revés (F, G, H). Se verifica que no quedó ningún grant colgando del
-  -- saliente en ninguna de las tres tablas.
-  SELECT (SELECT count(*) FROM obras_obra_compartida WHERE otorgada_por = v_sale)
-       + (SELECT count(*) FROM obras_persona_grant_contextual WHERE otorgada_por = v_sale)
-       + (SELECT count(*) FROM obras_empresa_grant_contextual WHERE otorgada_por = v_sale)
+  -- Desde sql/093 el otorgante NO se reescribe: `otorgada_por` es log. Lo que
+  -- hay que probar es que la autoridad se movió igual, sola — después de 3.1
+  -- todo lo que el saliente había otorgado cuelga de entidades que ahora son
+  -- del entrante, que es quien las ve en Compartido y quien puede revocarlas.
+  -- Antes este caso pedía cero filas con `otorgada_por = v_sale`, que era medir
+  -- la reescritura en vez de la consecuencia.
+  SELECT (SELECT count(*) FROM obras_obra_compartida c
+            JOIN obras o ON o.id = c.obra_id
+           WHERE c.otorgada_por = v_sale AND c.activo AND o.responsable_id <> v_admin)
+       + (SELECT count(*) FROM obras_persona_grant_contextual g
+            JOIN obras_personas p ON p.id = g.persona_id
+           WHERE g.otorgada_por = v_sale AND g.activo AND p.creado_por <> v_admin)
+       + (SELECT count(*) FROM obras_empresa_grant_contextual g
+            JOIN obras_empresas e ON e.id = g.empresa_id
+           WHERE g.otorgada_por = v_sale AND g.activo AND e.creado_por <> v_admin)
     INTO v_n;
   IF v_n <> 0 THEN
-    RAISE EXCEPTION 'E FALLA: quedaron grants colgando del saliente (%)', v_n;
+    RAISE EXCEPTION 'E FALLA: quedó un grant del saliente sin nadie que lo vea ni lo revoque (%)', v_n;
   END IF;
-  r := r || E'\nE OK  no queda ningún grant colgando del saliente';
+  r := r || E'\nE OK  lo que otorgó el saliente queda bajo la autoridad del entrante';
 
   -- ── F — lo recibido del tercero pasa al entrante ────────────────────────
   SELECT count(*) INTO v_n FROM obras_obra_compartida

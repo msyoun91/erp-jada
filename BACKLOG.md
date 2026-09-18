@@ -178,11 +178,25 @@ la forma de que la clase entera no vuelva.
   misma clase que `sql/090` cerró. La recursión que la entrada anticipaba existe y no cicla: se
   verificó antes de escribirla.
 
-- **`otorgada_por` todavía es autoridad, no solo historia.** Es lo que hace que una transferencia
-  mal apuntada mueva *quién puede revocar*, que es el mecanismo exacto de V1. `sql/090` lo acotó
-  —`obras_revocar_obra` ya no lo mira, y `obras_revocar_contextual` acepta dueño-del-ancla **o**
-  otorgante— pero no lo retiró: la vista Compartido sigue listando por `otorgada_por = auth.uid()`,
-  así que quién ve la fila y quién puede revocarla siguen siendo dos respuestas distintas. Lo
-  correcto es derivar las dos del ancla (responsable de la obra / dueño de la empresa) y dejar
-  `otorgada_por` como dato de log, que es lo que un log debería ser. Toca `obras_compartidos_por_mi`
-  y el CHECK `usuario_id <> otorgada_por` deja de proteger nada — revisarlo antes de sacarlo.
+- ~~**`otorgada_por` todavía es autoridad, no solo historia.**~~ — cerrada por `sql/093`
+  (`decisiones/obras/visibilidad.md` → *`otorgada_por` es historia, no autoridad*). Ver, revocar y
+  leer la fila los contesta ahora `obras_ctx_autoridad`: dueño del contacto **o** dueño del ancla.
+  Se fueron los cinco UPDATE de transferir y migrar.
+
+  **Las dos premisas de la entrada eran falsas.** *"Derivar las dos del ancla"* no se puede: en dos
+  de las cuatro clases de grant el dueño del ancla **es el receptor** (la cascada de transferir y el
+  recíproco del estado 2), así que esa regla le habría puesto al receptor filas de algo que él mismo
+  recibió. Y el CHECK **sí** sigue protegiendo: la columna se sigue escribiendo con el dueño de la
+  entidad, así que es el guard de inserción "nadie se comparte consigo mismo" — lo que cambió es que
+  nadie la **lee** para decidir. Se queda.
+
+  **Queda un detalle de UI, sin construir:** el dueño del ancla ahora ve en Compartido filas de
+  contactos que no son suyos, y el nombre linkea a una ficha que no puede abrir (`OB022`). Es el
+  mismo techo que ya tiene la ficha de la obra —ve el nombre del contacto ajeno y no el teléfono,
+  `sql/070` y `sql/087`—, así que no se tocó: si molesta, la salida es que la vista devuelva si la
+  fila es mía y la UI no linkee, no ensanchar el acceso.
+
+  **Y faltaba un tercer lugar que la entrada no nombraba: las policies.** `getCompartidosObra` lee
+  `obras_obra_compartida` directo; sacar el UPDATE sin tocar la policy dejaba al nuevo responsable de
+  una obra transferida con el panel "compartida con" vacío y el tercero adentro. Lo encontró leer el
+  comentario de la query, que decía "solo lo ve el responsable" cuando la policy decía otra cosa.

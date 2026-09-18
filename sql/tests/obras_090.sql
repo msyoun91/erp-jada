@@ -21,11 +21,11 @@
 --   D el grant de persona anclado en una EMPRESA se revoca (V2) — antes la
 --     firma solo aceptaba anclas obra y devolvía OB026 siempre
 --   E tipo o ancla inválidos → OB031 en vez de éxito silencioso (V3)
---   F sin ser dueño del ancla ni otorgante → OB026, tampoco silencio (V3)
+--   F sin ser dueño del ancla ni del contacto → OB026, tampoco silencio (V3)
 --   G el admin que se transfiere una obra a sí mismo recibe los grants
 --     contextuales de los contactos que no migran (V4)
 --
--- Último resultado: 7/7 (2026-09-18).
+-- Último resultado: 7/7 (2026-09-18, revalidado tras sql/093).
 
 DO $test$
 DECLARE
@@ -149,7 +149,9 @@ BEGIN
     RAISE EXCEPTION 'D FALLA: el estado 2 no dejó el grant recíproco (%)', v_n;
   END IF;
 
-  -- Lo revoca C: es el otorgante, no el dueño de la empresa.
+  -- Lo revoca C: es el dueño del contacto —la persona migró a él— y no el de la
+  -- empresa ancla. Hasta sql/093 lo autorizaba como otorgante, que en los flujos
+  -- reales es la misma persona: `otorgada_por` nace siempre con el dueño.
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_c)::text, true);
   PERFORM obras_revocar_contextual('persona', v_p2, v_a, 'empresa', v_emp);
 
@@ -157,7 +159,7 @@ BEGIN
   SELECT activo INTO v_activo FROM obras_persona_grant_contextual
   WHERE persona_id = v_p2 AND usuario_id = v_a AND empresa_id = v_emp;
   IF v_activo THEN RAISE EXCEPTION 'D FALLA: el grant anclado en empresa no se revocó'; END IF;
-  r := r || E'\nD OK  grant anclado en empresa: revocable por el otorgante';
+  r := r || E'\nD OK  grant anclado en empresa: revocable por el dueno del contacto';
 
   -- ── E · tipo o ancla inválidos ───────────────────────────────────────────
   BEGIN
@@ -181,7 +183,7 @@ BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_b)::text, true);
   BEGIN
     PERFORM obras_revocar_contextual('persona', v_p2, v_a, 'empresa', v_emp);
-    RAISE EXCEPTION 'F FALLA: revocó sin ser dueño del ancla ni otorgante';
+    RAISE EXCEPTION 'F FALLA: revocó sin ser dueño del ancla ni del contacto';
   EXCEPTION WHEN SQLSTATE 'OB026' THEN NULL;
   END;
   r := r || E'\nF OK  sin autoridad → OB026';

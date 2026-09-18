@@ -24,7 +24,7 @@
 --   E estado deseado (sql/049): re-tildar reactiva el grant que se destildó
 --   F el contacto tildado no abre sin contexto → OB022
 --
--- Último resultado: 6/6 (2026-09-18).
+-- Último resultado: 6/6 (2026-09-18, revalidado tras sql/093).
 
 DO $test$
 DECLARE
