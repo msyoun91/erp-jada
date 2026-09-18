@@ -1,5 +1,30 @@
 # Obras — Visibilidad y compartir
 
+## Compartir exige lo mismo que transferir (`sql/091`)
+
+Cierre de la auditoría de `sql/090`: lo que quedaba y se arregla en SQL sin decidir nada nuevo.
+
+**Compartir una obra exige `obras_ver` en el receptor, con el mismo `OB006` que transferir.** Un
+grant para alguien sin acceso al módulo no abre nada —`obras_select` exige `obras_ver`, y desde
+`sql/090` los contextuales que cuelgan tampoco—, así que la única diferencia contra fallar era el
+silencio. Se reusa `OB006` en vez de crear un código: es la misma regla, y un código por regla es
+exactamente lo que `OB022` dejó de cumplir. El **texto** sí cambia, porque acá el usuario no es el
+destino de una transferencia sino el receptor de un share, y `mensajeError()` muestra el de la base.
+
+**El array `null` es vacío, y vacío quiere decir vacío.** `id = ANY(NULL)` es NULL, no false: el
+`DEFAULT '{}'` de la firma no aplica a un `null` explícito, así que compartir con `p_personas: null`
+no otorgaba **ni destildaba** y transferir con `p_migran: null` dejaba al receptor sin ningún
+contacto. `COALESCE` al entrar en las tres funciones alcanzables por `authenticated`; la cuarta que
+recibe arrays, `obras_transferir_resolver_vinculos`, no tiene GRANT y blindarla sería código muerto.
+Los schemas Zod ya tenían `.default([])`, así que esto protege el PostgREST directo, no la UI.
+
+**Y la cuarta copia del gate `OB006`.** `obras_migrar_agenda` pasa a `usuario_tiene_permiso`, que
+incluye el `u.activo` del `EXISTS` que reemplaza. Sin cambio de conducta.
+
+Archivos: `sql/091_compartir_y_arrays.sql`, `sql/tests/obras_091.sql`, `db_schema/obras.md`,
+`erp-app/src/modules/obras/queries.ts` (el comentario de `getUsuariosParaTransferir`, que ahora
+también vale para compartir).
+
 ## El grant contextual muere con el ancla (`sql/090`)
 
 Auditoría de compartir/transferir (2026-09-18). Cuatro agujeros con una sola causa: el grant
@@ -38,7 +63,8 @@ devolvía éxito. Ahora corta con `OB031`, y cero filas tocadas sin ser dueño d
 
 **De paso, el gate `OB006` deja de estar copiado.** Las tres funciones de transferir tenían el mismo
 `EXISTS` sobre `usuario_submodulos` que `usuario_tiene_permiso(usuario, 'obras_ver')` ya resuelve.
-`obras_migrar_agenda` conserva la copia — no se tocó en esta migración.
+~~`obras_migrar_agenda` conserva la copia — no se tocó en esta migración.~~ — la cuarta se fue en
+`sql/091`.
 
 **El admin que ejecuta no es parte.** `obras_transferir` otorgaba los contextuales del receptor con
 `otorgada_por = auth.uid()`, y para no violar el CHECK `usuario_id <> otorgada_por` se salteaba el

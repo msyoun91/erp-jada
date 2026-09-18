@@ -99,18 +99,22 @@ Las cuatro vulnerabilidades se cerraron en `sql/090` (`decisiones/obras/visibili
 contextual muere con el ancla*). Lo que queda son inconsistencias, ninguna con acceso indebido
 detrás. Ordenadas por lo que cuesta dejarlas.
 
-- **`obras_compartir_obra` no valida que el receptor tenga `obras_ver`.** Transferir sí lo hace
-  (`OB006`). Compartir con alguien sin acceso al módulo crea un grant que no abre nada: la obra no le
-  aparece (`obras_select` exige `obras_ver`) y, desde `sql/090`, los contextuales que cuelgan tampoco.
-  Una línea: `usuario_tiene_permiso(p_usuario_id, 'obras_ver')` junto al chequeo de `usuarios.activo`.
-  Decidir primero si el error es `OB006` o uno nuevo — no es "el destino", es "el receptor".
+- ~~**`obras_compartir_obra` no valida que el receptor tenga `obras_ver`.**~~ — cerrada por `sql/091`
+  (`decisiones/obras/visibilidad.md` → *Compartir exige lo mismo que transferir*). Se reusó `OB006`
+  con texto propio, no un código nuevo.
 
-- **`NULL` degrada en silencio en los arrays.** `id = ANY(NULL)` es NULL, no false, y los `DEFAULT
-  '{}'` no aplican si el cliente manda `null` explícito. `obras_compartir_obra` con `p_personas:
-  null` no otorga **ni destilda** — la limpieza `NOT (persona_id = ANY(p_personas))` también da NULL,
-  así que el reparto queda congelado. `obras_transferir` con `p_migran: null` transfiere la obra y
-  deja al receptor sin ningún contacto. Fix: `COALESCE(p_migran, '{}')` al entrar en las cuatro
-  funciones, y `.default([])` en los schemas Zod. Hoy la UI siempre manda array, así que es blindaje.
+- ~~**`NULL` degrada en silencio en los arrays.**~~ — cerrada por `sql/091`. Dos premisas de la
+  entrada eran falsas y vale dejarlas escritas: **eran tres funciones, no cuatro** —la cuarta que
+  recibe arrays, `obras_transferir_resolver_vinculos`, no tiene GRANT a `authenticated`, así que
+  blindarla era código muerto—, y **los schemas Zod ya tenían `.default([])`**, con el tipo
+  rechazando `null`: lo que faltaba blindaba el PostgREST directo, no la UI.
+
+- **La misma puerta sigue abierta en `obras_compartir_registros`**, encontrada al cerrar la de arriba:
+  chequea `usuarios.activo` y no `obras_ver`. No se sumó a `sql/091` a propósito. Esa función la llama
+  `core.compartir_registros` al **asignar una tarea**, así que un `RAISE` haría fallar la asignación
+  entera porque el asignado no tiene Obras — que no es lo que quiere el que asigna. Lo más probable
+  es que el receptor sin `obras_ver` tenga que **saltearse** esos registros, no voltear la llamada;
+  eso es una decisión de Tareas, no de Obras, y va con la reparación del chip `?ctx=` de más arriba.
 
 - **La agenda se recorta en la query, no en la policy.** `obras_personas_select` y
   `obras_empresas_select` dejan pasar el grant contextual **sin ancla** (`_ctx_vigente`); lo que
@@ -120,9 +124,7 @@ detrás. Ordenadas por lo que cuesta dejarlas.
   nunca es barrera*. Está comentado en el código como decisión deliberada: o se escribe como tal en
   `visibilidad.md`, o la policy pasa a pedir ancla y el recorte de la query sobra.
 
-- **`obras_migrar_agenda` conserva la copia del gate `OB006`.** `sql/090` pasó las otras tres a
-  `usuario_tiene_permiso(destino, 'obras_ver')`; esta quedó con el `EXISTS` sobre `usuario_submodulos`
-  porque no se reescribía en esa migración. Misma regla, cuarta copia.
+- ~~**`obras_migrar_agenda` conserva la copia del gate `OB006`.**~~ — cerrada por `sql/091`.
 
 - **`revocarObra` y `revocarContextual` no tienen `safeParse`** (`actions.ts`). La base gatea, pero
   rompe la regla de validar en dos lugares y un uuid malformado sale como genérico (22P02) en vez de

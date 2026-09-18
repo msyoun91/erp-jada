@@ -26,9 +26,10 @@ import type {
 
 export { getUsuarioActualId } from "@/lib/usuarios";
 
-// El destino de una transferencia tiene que tener `obras_ver`, pero eso vive en
-// usuario_submodulos y no es legible desde acá. La validación real está en
-// obras_transferir(), que rechaza el destino sin acceso con un mensaje claro.
+// El destino de una transferencia —y, desde sql/091, el receptor de un share—
+// tiene que tener `obras_ver`, pero eso vive en usuario_submodulos y no es
+// legible desde acá. La validación real está en obras_transferir() y
+// obras_compartir_obra(), que rechazan con OB006 y un mensaje claro.
 export function getUsuariosParaTransferir(): Promise<Usuario[]> {
   return getUsuariosActivos();
 }
