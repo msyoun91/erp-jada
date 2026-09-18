@@ -27,7 +27,7 @@
 --     cuando el vínculo obra↔persona se apaga
 --   F un vínculo obra↔persona desactivado deja de leerse por grant contextual
 --
--- Último resultado: 6/6 (2026-09-18).
+-- Último resultado: 6/6 (2026-09-18, revalidado tras sql/094).
 
 DO $test$
 DECLARE
@@ -158,7 +158,7 @@ BEGIN
   BEGIN
     PERFORM * FROM obras_ficha_persona(v_p, 'empresa', v_e);
     RAISE EXCEPTION 'B FALLA: la ficha abrió con el ancla muerta';
-  EXCEPTION WHEN SQLSTATE 'OB022' THEN NULL;
+  EXCEPTION WHEN SQLSTATE 'OB009' THEN NULL;
   END;
   r := r || E'\nB OK  muerto el ancla, la fila persona↔empresa deja de leerse';
 

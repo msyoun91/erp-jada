@@ -27,7 +27,7 @@
 -- Los casos 09 a 11 cazaron un bug que no era de códigos: `obras_ficha_persona`
 -- escribía el log antes de confirmar que la persona existiera. Ver `sql/032`.
 --
--- Último resultado: 12/12.
+-- Último resultado: 12/12 (2026-09-18, tras sql/094: el caso 09 pasa por primera vez desde sql/039).
 
 DO $test$
 DECLARE

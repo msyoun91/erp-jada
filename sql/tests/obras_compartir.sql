@@ -22,9 +22,9 @@
 --     `ya_compartida` marcada en lo tildado y no en lo demás
 --   D obras_compartidos_por_mi lista la obra y el contextual bajo su origen
 --   E estado deseado (sql/049): re-tildar reactiva el grant que se destildó
---   F el contacto tildado no abre sin contexto → OB022
+--   F el contacto tildado no abre sin contexto → OB009
 --
--- Último resultado: 6/6 (2026-09-18, revalidado tras sql/093).
+-- Último resultado: 6/6 (2026-09-18, revalidado tras sql/094).
 
 DO $test$
 DECLARE
@@ -100,7 +100,7 @@ BEGIN
   BEGIN
     PERFORM obras_ficha_persona(v_p);
     RAISE EXCEPTION 'F FALLA: el contacto abrió sin contexto';
-  EXCEPTION WHEN sqlstate 'OB022' THEN NULL;
+  EXCEPTION WHEN sqlstate 'OB009' THEN NULL;
   END;
   r := r || E'\nF OK  el contacto abre con ctx=obra y no sin contexto';
 

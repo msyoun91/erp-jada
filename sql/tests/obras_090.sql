@@ -25,7 +25,7 @@
 --   G el admin que se transfiere una obra a sí mismo recibe los grants
 --     contextuales de los contactos que no migran (V4)
 --
--- Último resultado: 7/7 (2026-09-18, revalidado tras sql/093).
+-- Último resultado: 7/7 (2026-09-18, revalidado tras sql/094).
 
 DO $test$
 DECLARE
@@ -126,7 +126,7 @@ BEGIN
   BEGIN
     PERFORM obras_ficha_persona(v_p, 'obra', v_obra);
     RAISE EXCEPTION 'C FALLA: la ficha se abrió con la obra revocada';
-  EXCEPTION WHEN SQLSTATE 'OB022' THEN NULL;
+  EXCEPTION WHEN SQLSTATE 'OB009' THEN NULL;
   END;
   r := r || E'\nC OK  grant activo sin acceso al ancla no abre la ficha';
 
