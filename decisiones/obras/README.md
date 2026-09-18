@@ -14,6 +14,8 @@ una decisión de visibilidad o alcance.
 
 MODEL A (todo privado por dueño), compartir con checklist y cascada, grants heredados, alcance de personas, buscador global, `obras_aprobar`.
 
+- **El dueño del contacto lo ve en la obra que le comparten (`sql/097`)** — la rama de receptor
+  suma "el contacto es mío", solo lectura
 - **Sacar es de lo que se fue, y persona↔empresa no cambia de punta (`sql/096`)** — `OB032` contra lo
   que migró, no contra lo pedido; `GRANT UPDATE` por columna en `obras_persona_empresa`
 - **El vínculo se va con la obra (`sql/095`)** — transferir pasa al entrante los vínculos que cargó

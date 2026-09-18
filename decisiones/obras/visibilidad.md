@@ -1,5 +1,20 @@
 # Obras — Visibilidad y compartir
 
+## El dueño del contacto lo ve en la obra que le comparten (`sql/097`)
+
+**Quien recibe una obra compartida ve los vínculos cuyo contacto (persona o empresa) es suyo, además
+de los que cargó y los que le tildaron.** Solo lectura, y mientras la obra siga compartida.
+
+Salió de verificar contra la base el flujo completo de compartir y transferir: A transfiere su obra
+a B dejando un contacto suyo ("No se va"), B le devuelve la obra compartida, y A la abre **vacía**
+—con sus propios contactos adentro—. El vínculo pasó a B con la obra (`sql/095`), y la rama de
+receptor solo conocía "lo vinculé yo" y "me lo tildaron". Tampoco había salida por la UI: el
+checklist de B solo ofrece contactos de B. No abre nada nuevo: el contacto ya está en la agenda de
+A y la obra ya se la compartieron; faltaba la fila que los une.
+
+Archivos: `sql/097_el_dueno_del_contacto_lo_ve.sql`, `sql/tests/obras_097.sql` (4/4),
+`db_schema/obras.md`.
+
 ## Sacar es de lo que se fue, y persona↔empresa no cambia de punta (`sql/096`)
 
 **`OB032` se pregunta después de migrar y contra lo que efectivamente migró, no al entrar contra
