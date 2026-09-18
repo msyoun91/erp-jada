@@ -29,6 +29,8 @@ import {
   transferirEmpresaSchema,
   migrarAgendaSchema,
   compartirObraSchema,
+  revocarObraSchema,
+  revocarContextualSchema,
   resolverPendienteSchema,
   type CrearObraForm,
   type EditarObraForm,
@@ -284,6 +286,11 @@ export async function compartirObra(input: CompartirObraForm) {
 }
 
 export async function revocarObra(obraId: string, usuarioId: string) {
+  const parsed = revocarObraSchema.safeParse({ obra_id: obraId, usuario_id: usuarioId });
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.rpc("obras_revocar_obra", {
     p_obra_id: obraId,
@@ -306,6 +313,17 @@ export async function revocarContextual(
   anclaTipo: "obra" | "empresa",
   anclaId: string,
 ) {
+  const parsed = revocarContextualSchema.safeParse({
+    tipo,
+    entidad_id: entidadId,
+    usuario_id: usuarioId,
+    ancla_tipo: anclaTipo,
+    ancla_id: anclaId,
+  });
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.rpc("obras_revocar_contextual", {
     p_tipo: tipo,
@@ -324,15 +342,30 @@ export async function revocarContextual(
 }
 
 // Cuántos vínculos agregó el receptor a esta obra. Se caen al revocar
-// (obras_revocar_obra), así que el panel avisa antes.
-export async function contarVinculosReceptor(obraId: string, usuarioId: string): Promise<number> {
+// (obras_revocar_obra), así que el panel avisa antes. Devolvía `0` cuando la
+// consulta fallaba, y ahí el panel revocaba sin preguntar nada: "no pude
+// contar" y "no hay ninguno" tienen que llegar distintos al que decide.
+export async function contarVinculosReceptor(
+  obraId: string,
+  usuarioId: string,
+): Promise<{ success: true; n: number } | { success: false; error: string }> {
+  const parsed = revocarObraSchema.safeParse({ obra_id: obraId, usuario_id: usuarioId });
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("obras_contar_vinculos_receptor", {
     p_obra_id: obraId,
     p_usuario_id: usuarioId,
   });
-  if (error) return 0;
-  return data ?? 0;
+  if (error) return { success: false as const, error: mensajeError(error) };
+  // La función filtra por `responsable_id = auth.uid()`: para cualquier otro no
+  // devuelve fila, y eso tampoco es un cero.
+  if (data === null) {
+    return { success: false as const, error: "No se pudo contar los vínculos de esta obra" };
+  }
+  return { success: true as const, n: data };
 }
 
 // Lecturas que un componente cliente necesita antes de transferir o compartir:

@@ -34,9 +34,12 @@ export function CompartirPanel({
   const [error, setError] = useState<string>();
   const [relaciones, setRelaciones] = useState<RelacionCompartible[]>([]);
   const [tildadas, setTildadas] = useState<Set<string>>(new Set());
-  const [revocando, setRevocando] = useState<{ usuarioId: string; usuario: string; n: number } | null>(
-    null,
-  );
+  // `n: null` es "no se pudo contar": se pregunta igual, sin inventar el número.
+  const [revocando, setRevocando] = useState<{
+    usuarioId: string;
+    usuario: string;
+    n: number | null;
+  } | null>(null);
 
   const yaCompartida = new Set(compartidos.map((c) => c.usuario_id));
   const editando = yaCompartida.has(destino);
@@ -86,8 +89,9 @@ export function CompartirPanel({
   // Al revocar, los vínculos que el receptor armó con contactos suyos se
   // desactivan (obras_revocar_obra). Se avisa antes si hay alguno.
   async function pedirRevocar(usuarioId: string, usuario: string) {
-    const n = await contarVinculosReceptor(id, usuarioId);
-    if (n > 0) setRevocando({ usuarioId, usuario, n });
+    const conteo = await contarVinculosReceptor(id, usuarioId);
+    if (!conteo.success) return setRevocando({ usuarioId, usuario, n: null });
+    if (conteo.n > 0) setRevocando({ usuarioId, usuario, n: conteo.n });
     else revocar(usuarioId);
   }
 
@@ -210,9 +214,13 @@ export function CompartirPanel({
     {revocando && (
       <ConfirmModal
         title="Revocar acceso"
-        mensaje={`«${revocando.usuario}» agregó ${revocando.n} ${
-          revocando.n === 1 ? "vínculo" : "vínculos"
-        } a esta obra con contactos suyos. Al revocar, esos vínculos se desactivan.`}
+        mensaje={
+          revocando.n === null
+            ? `No se pudo verificar si «${revocando.usuario}» agregó vínculos a esta obra con contactos suyos. Si agregó alguno, al revocar se desactiva.`
+            : `«${revocando.usuario}» agregó ${revocando.n} ${
+                revocando.n === 1 ? "vínculo" : "vínculos"
+              } a esta obra con contactos suyos. Al revocar, esos vínculos se desactivan.`
+        }
         confirmLabel="Revocar"
         onConfirm={async () => {
           await revocar(revocando.usuarioId);

@@ -1,5 +1,48 @@
 # Obras — Visibilidad y compartir
 
+## Un código por regla, y la vista Compartido no miente (`sql/094`)
+
+**`obras_ficha_persona` vuelve a levantar `OB009`, la vista Compartido deja de listar grants sin
+vínculo debajo, y devuelve `puedo_abrir` para que la UI no linkee a una ficha cerrada.** Son las tres
+deudas chicas que quedaban de la auditoría de compartir/transferir: ninguna tenía acceso indebido
+detrás, y ninguna toca autorización.
+
+**El código muerto era la reparación, no el síntoma.** `OB022` significaba "sin acceso a esta
+persona" en `obras_ficha_persona` y "sin acceso a esta obra" en `obras_vinculos_de_obra`, así que
+nadie podía atrapar uno sin atrapar el otro. No hizo falta inventar un código: `OB009` nació en
+`sql/032` con ese significado exacto y el mismo texto, y quedó muerto cuando `sql/039` reescribió la
+función. Revivirlo deja a la persona simétrica con la empresa, que ya tenía el suyo (`OB030`), y
+cierra solo el desfase de `sql/tests/obras_032.sql` caso 09, que llevaba desde `sql/039` esperando
+`OB009` sin que nadie lo corriera hasta el final.
+
+**La vigencia no se podía reusar entera, y por eso se partió.** La vista corre como quien comparte;
+`obras_ctx_vigente` responde por `auth.uid()`, que ahí es el receptor. Pero la mitad que hacía falta
+—¿sigue vivo el vínculo entidad↔ancla?— no depende de quién pregunta: se extrajo a
+`obras_ctx_vinculo_vivo` y la usan las dos. Sin GRANT a `authenticated`: sus dos llamadores son
+DEFINER, y exponerla sería superficie sin llamador — la lección de `sql/091` con
+`obras_transferir_resolver_vinculos`.
+
+**El link roto lo dejó `sql/093` y la salida es informar, no ensanchar.** Desde que la autoridad es
+"dueño del contacto **o** dueño del ancla", el dueño del ancla ve en Compartido filas de contactos
+ajenos cuyo nombre linkeaba a una ficha que contesta `OB009`. La vista devuelve `puedo_abrir`
+(`obras_puede_ver_persona` / `_empresa`; `true` fijo en la rama obra) y `CompartidoView` no linkea
+cuando es `false`. Es el techo que la ficha de la obra ya tiene: muestra el nombre del contacto
+ajeno y no el teléfono (`sql/070`, `sql/087`).
+
+**Y del lado de TypeScript, dos huecos de la misma auditoría.** `revocarObra` y `revocarContextual`
+no tenían `safeParse` —la base gatea, pero un uuid malformado salía como `22P02` genérico—; el schema
+de `revocarContextual` espeja el `OB031` de la base (una empresa no cuelga de otra empresa).
+`contarVinculosReceptor` devolvía `0` cuando la consulta fallaba, y el panel leía ese `0` como "no
+agregó vínculos" y **revocaba sin preguntar nada**: ahora devuelve un resultado discriminado y el
+modal aparece igual, diciendo que no se pudo contar. `obras_contar_vinculos_receptor` además filtra
+por `responsable_id = auth.uid()`, así que para cualquier otro no devuelve fila — un `null` que
+tampoco era un cero.
+
+Archivos: `sql/094_deudas_chicas_compartir.sql`, `sql/tests/obras_090.sql`, `obras_092.sql`,
+`obras_compartir.sql` (el código que atrapan), `db_schema/obras.md`,
+`erp-app/src/lib/supabase/database.types.ts`, `erp-app/src/modules/obras/types.ts`, `actions.ts`,
+`components/CompartidoView.tsx`, `components/CompartirPanel.tsx`.
+
 ## `otorgada_por` es historia, no autoridad (`sql/093`)
 
 **Quién ve un grant en la vista Compartido, quién puede revocarlo y quién puede leer su fila son

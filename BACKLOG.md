@@ -125,10 +125,14 @@ detrás. Ordenadas por lo que cuesta dejarlas.
 
 - ~~**`obras_migrar_agenda` conserva la copia del gate `OB006`.**~~ — cerrada por `sql/091`.
 
-- **`revocarObra` y `revocarContextual` no tienen `safeParse`** (`actions.ts`). La base gatea, pero
-  rompe la regla de validar en dos lugares y un uuid malformado sale como genérico (22P02) en vez de
-  mensaje. **`contarVinculosReceptor`** traga el error y devuelve `0`: el panel anuncia "se van a caer
-  0 vínculos" cuando la consulta falló.
+- ~~**`revocarObra` y `revocarContextual` no tienen `safeParse`**~~ — cerrada el 2026-09-18 junto con
+  `sql/094` (`decisiones/obras/visibilidad.md` → *Un código por regla, y la vista Compartido no
+  miente*). **La entrada subestimaba el defecto de `contarVinculosReceptor`**: el panel no anunciaba
+  "0 vínculos", no anunciaba **nada** —`if (n > 0)` con `n = 0` revoca derecho, sin modal—, así que
+  el error se comía la confirmación entera. Y había un segundo cero falso que la entrada no veía:
+  `obras_contar_vinculos_receptor` filtra por `responsable_id = auth.uid()`, así que para cualquier
+  otro no devuelve fila y llegaba `null`. Ahora el resultado es discriminado y el modal aparece igual,
+  diciendo que no se pudo contar.
 
 - **El buscador marca `es_ajeno` a quien sí se puede abrir.** `obras_buscar_personas` / `_empresas`
   resuelven con `obras_puede_ver_*`, que no cuenta contextuales. Correcto para no meterlo en la
@@ -136,14 +140,17 @@ detrás. Ordenadas por lo que cuesta dejarlas.
   obra. Si se toca, el link va con `?ctx=`, que es la misma reparación del chip de tarea de la
   entrada de arriba.
 
-- **`OB022` significa dos cosas** —"sin acceso a esta persona" y "sin acceso a esta obra"— y `OB009`
-  quedó como código muerto. Funciona porque `mensajeError()` pasa el texto de la base, así que el
-  costo es que el código dejó de identificar. Anotado en la tabla de `db_schema/obras.md`.
+- ~~**`OB022` significa dos cosas**~~ — cerrada por `sql/094`. La reparación era el código muerto:
+  `OB009` nació en `sql/032` con ese significado y ese texto exactos, así que `obras_ficha_persona`
+  vuelve a levantarlo y no hizo falta un código nuevo. **Cerró sola el desfase que esta misma
+  auditoría listaba aparte**: `sql/tests/obras_032.sql` caso 09 esperaba `OB009` desde `sql/039` y
+  ahora pasa (12/12).
 
-- **Grants activos que ya no abren nada.** El estado 3 (`p_sacar`) desactiva los vínculos pero deja
-  `activo = true` en los grants contextuales de terceros que colgaban de ellos. El acceso muere bien
-  —`_vigente` exige vínculo vivo—, pero las filas siguen apareciendo en Compartido simulando un
-  reparto que no existe. Cosmético; ensucia la lectura de la vista.
+- ~~**Grants activos que ya no abren nada.**~~ — cerrada por `sql/094`. **La premisa de reusar
+  `obras_ctx_vigente` no servía**: esa función responde por `auth.uid()`, que en la vista es quien
+  comparte y no quien recibe. Se extrajo la mitad que no depende de quién pregunta
+  (`obras_ctx_vinculo_vivo`) y la usan las dos. Al aplicarla había 0 filas en ese estado: el defecto
+  era estructural, no un dato a limpiar.
 
 - ~~**La suite de tests de Obras está podrida, no solo `obras_085.sql`.**~~ — cerrada el 2026-09-18
   (`decisiones/obras/visibilidad.md` → *La red de regresión de compartir se reconstruye alrededor del
@@ -160,9 +167,9 @@ detrás. Ordenadas por lo que cuesta dejarlas.
   lo había visto porque el archivo abortaba en el 09. **Ese caso 05 queda ahora como marcador vivo de
   la reparación del chip `?ctx=`**: hoy espera `false` y, cuando se haga, vuelve a esperar `true`.
 
-  **Sigue en pie el desfase que la entrada nombraba aparte**: `sql/tests/obras_032.sql` caso 09 espera
-  `SQLSTATE = 'OB009'` y `obras_ficha_persona` levanta `OB022` desde `sql/039` — va con la entrada de
-  `OB009` de abajo. ~~`sql/tests/rls_obras.sql` caso 10~~ — corregido al cerrar `sql/092`.
+  ~~**Sigue en pie el desfase que la entrada nombraba aparte**: `sql/tests/obras_032.sql` caso 09~~ —
+  cerrado por `sql/094`, que le devolvió `OB009` a `obras_ficha_persona` en vez de tocar el test.
+  ~~`sql/tests/rls_obras.sql` caso 10~~ — corregido al cerrar `sql/092`.
 
 **Y dos cambios estructurales que `sql/090` dejó a mitad**, de la misma auditoría. No son bugs: son
 la forma de que la clase entera no vuelva.
@@ -190,11 +197,10 @@ la forma de que la clase entera no vuelva.
   entidad, así que es el guard de inserción "nadie se comparte consigo mismo" — lo que cambió es que
   nadie la **lee** para decidir. Se queda.
 
-  **Queda un detalle de UI, sin construir:** el dueño del ancla ahora ve en Compartido filas de
-  contactos que no son suyos, y el nombre linkea a una ficha que no puede abrir (`OB022`). Es el
-  mismo techo que ya tiene la ficha de la obra —ve el nombre del contacto ajeno y no el teléfono,
-  `sql/070` y `sql/087`—, así que no se tocó: si molesta, la salida es que la vista devuelva si la
-  fila es mía y la UI no linkee, no ensanchar el acceso.
+  ~~**Queda un detalle de UI, sin construir:** el dueño del ancla ahora ve en Compartido filas de
+  contactos que no son suyos, y el nombre linkea a una ficha que no puede abrir.~~ — cerrado por
+  `sql/094` por la salida que la entrada proponía: la vista devuelve `puedo_abrir` y `CompartidoView`
+  no linkea cuando es `false`. El código de esa ficha cerrada, de paso, ya no es `OB022` sino `OB009`.
 
   **Y faltaba un tercer lugar que la entrada no nombraba: las policies.** `getCompartidosObra` lee
   `obras_obra_compartida` directo; sacar el UPDATE sin tocar la policy dejaba al nuevo responsable de

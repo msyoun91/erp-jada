@@ -90,12 +90,20 @@ export function CompartidoView({ filas }: { filas: CompartidoRow[] }) {
         <div className="card flex items-center gap-3 p-3">
           <Icono size={18} strokeWidth={1.75} className="text-brand-500 shrink-0" />
           <div className="min-w-0 flex-1">
-            <Link
-              href={HREF[f.tipo](f.entidad_id)}
-              className="t-body-m block truncate font-semibold hover:underline"
-            >
-              {f.entidad_nombre}
-            </Link>
+            {/* El dueño del ancla ve filas de contactos que no son suyos
+                (sql/093): el nombre sí, la ficha no. Sin link es el mismo techo
+                que ya tiene la ficha de la obra, que muestra el nombre del
+                contacto ajeno y no el teléfono. */}
+            {f.puedo_abrir ? (
+              <Link
+                href={HREF[f.tipo](f.entidad_id)}
+                className="t-body-m block truncate font-semibold hover:underline"
+              >
+                {f.entidad_nombre}
+              </Link>
+            ) : (
+              <p className="t-body-m truncate font-semibold">{f.entidad_nombre}</p>
+            )}
             <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="t-caption">con {f.usuario_nombre}</span>
               <span className="t-caption">· {formatFecha(f.compartida_el)}</span>

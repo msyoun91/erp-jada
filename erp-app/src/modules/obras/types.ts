@@ -438,6 +438,29 @@ export const compartirObraSchema = z.object({
 
 export type CompartirObraForm = z.input<typeof compartirObraSchema>;
 
+// Revocar no tiene formulario: los argumentos salen de la fila que se destilda.
+// El schema corre igual porque la regla es validar en dos lugares, y sin él un
+// uuid malformado vuelve como 22P02 y `mensajeError()` lo muestra genérico.
+// Sirve también para `contarVinculosReceptor`, que recibe el mismo par.
+export const revocarObraSchema = z.object({
+  obra_id: z.string().uuid(),
+  usuario_id: z.string().uuid(),
+});
+
+export const revocarContextualSchema = z
+  .object({
+    tipo: z.enum(["empresa", "persona"]),
+    entidad_id: z.string().uuid(),
+    usuario_id: z.string().uuid(),
+    ancla_tipo: z.enum(["obra", "empresa"]),
+    ancla_id: z.string().uuid(),
+  })
+  // Espeja el OB031 de la base: una empresa no cuelga de otra empresa.
+  .refine((v) => !(v.tipo === "empresa" && v.ancla_tipo === "empresa"), {
+    message: "Una empresa solo se comparte desde una obra",
+    path: ["ancla_tipo"],
+  });
+
 // Lo que devuelve `obras_transferir_candidatos`: una fila por candidato con sus
 // vínculos adentro, para el checklist y el resumen de consecuencias. `origen`
 // distingue al que llega por pertenecer a una empresa de la obra. `mio` de cada
@@ -493,6 +516,9 @@ export type CompartidoRow = {
   origen_id: string | null;
   origen_nombre: string | null;
   compartida_el: string;
+  // Desde sql/093 la fila la lista también el dueño del ancla, que puede no ser
+  // el del contacto: el nombre está, la ficha no abre (sql/094).
+  puedo_abrir: boolean;
 };
 
 // Alcance del listado. Solo surte efecto para quien tiene el permiso `_todas`

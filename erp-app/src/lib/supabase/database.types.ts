@@ -2115,6 +2115,7 @@ export type Database = {
           origen_id: string
           origen_nombre: string
           origen_tipo: string
+          puedo_abrir: boolean
           tipo: string
           usuario_id: string
           usuario_nombre: string
@@ -2150,6 +2151,15 @@ export type Database = {
         Args: {
           p_ancla_id?: string
           p_ancla_tipo?: string
+          p_entidad_id: string
+          p_tipo: string
+        }
+        Returns: boolean
+      }
+      obras_ctx_vinculo_vivo: {
+        Args: {
+          p_ancla_id: string
+          p_ancla_tipo: string
           p_entidad_id: string
           p_tipo: string
         }
