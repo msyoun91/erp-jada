@@ -1,5 +1,65 @@
 # Obras — Visibilidad y compartir
 
+## La vigencia del grant contextual se escribe una sola vez (`sql/092`)
+
+**Un grant contextual vale si se cumplen tres cosas: la fila está activa, el vínculo entidad↔ancla
+sigue vivo, y quien lo recibió sigue viendo el ancla. Esa regla vive ahora en
+`obras_ctx_vigente(tipo, entidad, ancla_tipo, ancla_id)` y en ningún otro lado.** Ancla en NULL
+pregunta "¿hay alguno vigente?"; ancla dada pregunta "¿este?".
+
+**El motivo no es la prolijidad: la regla estaba escrita siete veces y en una estaba mal.** `sql/090`
+agregó la tercera condición en cuatro lugares y el `BACKLOG.md` anotó que quedaba correcta en los
+seis. Eran siete: los tres `obras_*_grant_ctx_*_conmigo` no se tocaron y seguían chequeando solo que
+la fila de grant existiera. Dos se salvaban por el llamador —`obras_obra_persona_select` y
+`obras_obra_empresa_select` los usan detrás de `obras_obra_compartida_conmigo(obra_id)`, y la fila
+que filtran es el vínculo mismo—. El tercero no tenía quién lo cubriera: `obras_persona_empresa_select`
+no verificaba el ancla en ningún lado, así que un grant de persona anclado en una empresa que el
+receptor ya no ve seguía dejando leer `cargo`, `es_principal` y `observaciones` de la fila
+persona↔empresa por PostgREST directo. Identidad, no contacto —el contacto está revocado a nivel
+columna desde `sql/039` y `sql/085`— pero es la misma clase que `sql/090` cerró, y sobrevivió
+justamente por la dispersión.
+
+**Las cinco funciones viejas se dropean en vez de quedar como envoltorios de una línea.** Un
+envoltorio habría dejado el código intacto a cambio de conservar los nombres, y los nombres son
+parte de la causa: `obras_persona_grant_ctx_empresa_conmigo` promete "hay un grant mío anclado ahí",
+que es una de las tres condiciones. Un nombre que dice menos que la regla es por dónde vuelve el bug.
+
+**La función se llama a sí misma, y está bien.** La rama persona-anclada-en-empresa pregunta si se ve
+la empresa ancla, y una respuesta válida es que la empresa esté vigente por su propio grant
+contextual. La cadena termina porque la rama empresa nunca vuelve a persona. Era el riesgo que la
+entrada del backlog anticipaba; se verificó antes de escribirla que Postgres acepta la
+autorreferencia en `LANGUAGE sql` y que el ciclo no existe.
+
+**Tres lecturas se endurecen de yapa**, todas coherentes con `sql/090`: la fila persona↔empresa del
+agujero; un vínculo desactivado deja de leerse por grant contextual (los callers ya filtran `activo`,
+así que no cambia ninguna pantalla); y el `detalle` de una persona en `obras_vinculos_de_obra` —la
+razón social de la empresa que representa en esa obra— deja de salir cuando el grant de esa empresa
+quedó huérfano, que es exactamente el grant que ya no abre su ficha.
+
+Archivos: `sql/092_ctx_vigente_una_sola_vez.sql`, `sql/tests/obras_092.sql`, `db_schema/obras.md`,
+`erp-app/src/lib/supabase/database.types.ts`.
+
+## El listado de la agenda se recorta en la query, y es deliberado
+
+**`getPersonas` y `getEmpresas` filtran por `creado_por` en `queries.ts`; la policy deja pasar el
+grant contextual. No es una barrera puesta en la interfaz: es un recorte de listado sobre datos que
+el receptor tiene derecho a leer.** La barrera está donde importa y está en el servidor — el contacto
+(`telefono`/`whatsapp`/`email`, y en empresa `website`/`direccion`) salió del `GRANT SELECT` en
+`sql/039` y `sql/085`, así que solo lo sirven `obras_ficha_persona` / `obras_ficha_empresa`, con el
+ancla verificada y el acceso registrado. Lo que la policy autoriza es identidad: nombre y apellido.
+
+**La alternativa que parecía obvia no existe.** "Que la policy pida ancla" no es implementable: la
+RLS de `obras_personas` no recibe contexto, y sacarle la rama contextual rompe al receptor legítimo
+—`getEstadoPersona` deja de traer la fila y la ficha con `?ctx=` responde 404 en vez de abrir—. La
+otra salida real sería mover el listado a una función `DEFINER`, y no la vale: dos funciones nuevas y
+perder los filtros de PostgREST para mover un corte de producto, no de autorización.
+
+**Regla para leerlo:** que un contacto ajeno no aparezca en *mi agenda* es una decisión de producto;
+que no pueda ver su teléfono es la de seguridad. La segunda está en la base. La primera puede estar
+en la query.
+
+Archivos: `erp-app/src/modules/obras/queries.ts` (`getPersonas`, `getEmpresas`).
+
 ## Compartir exige lo mismo que transferir (`sql/091`)
 
 Cierre de la auditoría de `sql/090`: lo que quedaba y se arregla en SQL sin decidir nada nuevo.

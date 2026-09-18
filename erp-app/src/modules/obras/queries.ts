@@ -213,7 +213,9 @@ export async function getEmpresas(busqueda?: string, alcance?: Alcance): Promise
     const me = await getUsuarioActualId();
     if (!me) return [];
     // Solo lo mío: una empresa ajena se abre desde la obra que la trajo, con
-    // grant contextual, y no entra a la agenda (sql/086).
+    // grant contextual, y no entra a la agenda (sql/086). El recorte vive acá y
+    // no en la policy a propósito — decisiones/obras/visibilidad.md → "El
+    // listado de la agenda se recorta en la query, y es deliberado".
     query = query.eq("creado_por", me);
   }
 
@@ -279,7 +281,9 @@ export async function getPersonas(busqueda?: string, alcance?: Alcance): Promise
     const me = await getUsuarioActualId();
     if (!me) return [];
     // Solo lo mío. La RLS deja pasar el grant contextual, que no es agenda: por
-    // eso el filtro hace falta igual (sql/086).
+    // eso el filtro hace falta igual (sql/086). Que el recorte viva acá y no en
+    // la policy es decisión escrita — decisiones/obras/visibilidad.md → "El
+    // listado de la agenda se recorta en la query, y es deliberado".
     query = query.eq("creado_por", me);
   }
 

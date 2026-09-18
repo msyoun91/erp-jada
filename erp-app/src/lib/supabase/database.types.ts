@@ -2137,12 +2137,13 @@ export type Database = {
         Args: { p_obra_id: string; p_usuario_id: string }
         Returns: number
       }
-      obras_empresa_grant_ctx_obra_conmigo: {
-        Args: { p_empresa_id: string; p_obra_id: string }
-        Returns: boolean
-      }
-      obras_empresa_grant_ctx_vigente: {
-        Args: { p_empresa_id: string }
+      obras_ctx_vigente: {
+        Args: {
+          p_ancla_id?: string
+          p_ancla_tipo?: string
+          p_entidad_id: string
+          p_tipo: string
+        }
         Returns: boolean
       }
       obras_ensayar_estado: {
@@ -2262,18 +2263,6 @@ export type Database = {
           solicitante: string
           tipo: string
         }[]
-      }
-      obras_persona_grant_ctx_empresa_conmigo: {
-        Args: { p_empresa_id: string; p_persona_id: string }
-        Returns: boolean
-      }
-      obras_persona_grant_ctx_obra_conmigo: {
-        Args: { p_obra_id: string; p_persona_id: string }
-        Returns: boolean
-      }
-      obras_persona_grant_ctx_vigente: {
-        Args: { p_persona_id: string }
-        Returns: boolean
       }
       obras_personas_de_empresa: {
         Args: { p_empresa_id: string; p_obra_id?: string }

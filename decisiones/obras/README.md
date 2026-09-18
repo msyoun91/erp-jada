@@ -14,6 +14,8 @@ una decisión de visibilidad o alcance.
 
 MODEL A (todo privado por dueño), compartir con checklist y cascada, grants heredados, alcance de personas, buscador global, `obras_aprobar`.
 
+- **La vigencia del grant contextual se escribe una sola vez (`sql/092`)** — `obras_ctx_vigente` reemplaza a cinco funciones; en una de ellas la regla estaba mal
+- **El listado de la agenda se recorta en la query, y es deliberado** — la barrera es el contacto por columna, no el listado (sin SQL)
 - **Compartir exige lo mismo que transferir (`sql/091`)** — `obras_ver` en el receptor, y el array `null` deja de significar "no toques nada"
 - **El grant contextual muere con el ancla (`sql/090`)** — vale mientras se vea la obra o empresa que lo trajo, y `otorgada_por` sigue al dueño del ancla, no al de la entidad
 - **Transferir lo propio no es ver lo ajeno (`sql/089`)** — cada transferencia con dos puertas: la global de siempre y una personal que no ensancha la vista

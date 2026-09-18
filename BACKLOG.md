@@ -115,13 +115,13 @@ detrás. Ordenadas por lo que cuesta dejarlas.
   es que el receptor sin `obras_ver` tenga que **saltearse** esos registros, no voltear la llamada;
   eso es una decisión de Tareas, no de Obras, y va con la reparación del chip `?ctx=` de más arriba.
 
-- **La agenda se recorta en la query, no en la policy.** `obras_personas_select` y
-  `obras_empresas_select` dejan pasar el grant contextual **sin ancla** (`_ctx_vigente`); lo que
-  mantiene al contacto fuera del listado es `.eq("creado_por", me)` en `queries.ts` (`getPersonas`,
-  `getEmpresas`). Un GET directo a PostgREST devuelve igual las filas contextuales. Solo identidad
-  —el contacto está protegido a nivel columna desde `sql/039`/`sql/085`— pero contradice *la interfaz
-  nunca es barrera*. Está comentado en el código como decisión deliberada: o se escribe como tal en
-  `visibilidad.md`, o la policy pasa a pedir ancla y el recorte de la query sobra.
+- ~~**La agenda se recorta en la query, no en la policy.**~~ — cerrada el 2026-09-18 escribiéndola
+  como decisión (`decisiones/obras/visibilidad.md` → *El listado de la agenda se recorta en la query,
+  y es deliberado*). **La segunda salida que ofrecía la entrada no existe**: la RLS de
+  `obras_personas` no recibe contexto, así que "la policy pide ancla" no es implementable, y sacarle
+  la rama contextual rompe al receptor legítimo — `getEstadoPersona` deja de traer la fila y la ficha
+  con `?ctx=` responde 404. Lo que la policy autoriza es identidad; el contacto sigue fuera del
+  `GRANT SELECT`. El corte de listado es de producto, no de autorización.
 
 - ~~**`obras_migrar_agenda` conserva la copia del gate `OB006`.**~~ — cerrada por `sql/091`.
 
@@ -145,23 +145,42 @@ detrás. Ordenadas por lo que cuesta dejarlas.
   —`_vigente` exige vínculo vivo—, pero las filas siguen apareciendo en Compartido simulando un
   reparto que no existe. Cosmético; ensucia la lectura de la vista.
 
-- **`sql/tests/obras_085.sql` está obsoleto.** Usa `obras_empresa_compartida`, `obras_compartir_empresa`
-  y `obras_empresa_grant_directo`, dropeadas por `sql/086`. Falla con `42P01` y no por regresión. Los
-  casos que siguen valiendo (A: el contacto sin `GRANT SELECT`; L: la empresa destildada no entra a la
-  agenda) están cubiertos por `obras_086` y `obras_087`: probablemente se borre en vez de portarse.
+- **La suite de tests de Obras está podrida, no solo `obras_085.sql`.** La entrada original nombraba
+  un archivo; el barrido completo al cerrar `sql/092` (2026-09-18) encontró **nueve** que llaman en
+  código ejecutable a objetos que `sql/086` dropeó —`obras_persona_compartida`,
+  `obras_empresa_compartida`, `obras_compartir_persona`/`_empresa`, `obras_revocar_persona`/`_empresa`,
+  `obras_relaciones_compartibles_empresa`, `obras_*_grant_directo`, `obras_*_compartida_conmigo`,
+  las once verificadas inexistentes en la base—: `acceso_registros`, `asignar_con_acceso`, `eventos`,
+  `obras_047`, `obras_049`, `obras_052`, `obras_082`, `obras_085`, `obras_model_a`. Todos mueren con
+  `42P01`/`42883` en el primer caso que las toca, ninguno por regresión. `obras_086` también las
+  nombra pero es legítimo: afirma que **no** existen.
+
+  **Consecuencia que importa más que los archivos:** compartir/transferir no tiene hoy red de
+  regresión fuera de `obras_087`–`obras_092`. Cada auditoría de esta serie encontró agujeros reales
+  en código que "tenía tests".
+
+  **Y dos desfases más, de la misma clase** (fallan sin regresión): `sql/tests/obras_032.sql` caso 09
+  espera `SQLSTATE = 'OB009'` y `obras_ficha_persona` levanta `OB022` desde `sql/039` — va con la
+  entrada de `OB009` de abajo. ~~`sql/tests/rls_obras.sql` caso 10~~ — corregido al cerrar `sql/092`
+  (afirmaba que el aviso ciego devolvía el nombre en NULL; `sql/042` lo hizo devolver el nombre a
+  propósito). Vuelve a dar 29/29.
+
+  Al portarlos, los casos de `obras_085` que siguen valiendo (A: el contacto sin `GRANT SELECT`;
+  L: la empresa destildada no entra a la agenda) ya están cubiertos por `obras_086` y `obras_087`.
 
 **Y dos cambios estructurales que `sql/090` dejó a mitad**, de la misma auditoría. No son bugs: son
 la forma de que la clase entera no vuelva.
 
-- **La vigencia del grant sigue escrita seis veces.** `sql/090` la hizo correcta en los seis lugares
-  —`obras_persona_grant_ctx_vigente`, `obras_empresa_grant_ctx_vigente`, los dos `_ctx_obra_conmigo`,
-  y la rama contextual de `obras_ficha_persona` / `obras_ficha_empresa`— pero sigue siendo la misma
-  regla repetida, con tres variantes según qué verifica cada una (con vínculo, sin vínculo, sin
-  ancla). De esa dispersión salieron V1 y V2. Un solo
-  `obras_ctx_vigente(tipo, entidad, ancla_tipo, ancla_id)` —grant activo + vínculo vivo + sigo viendo
-  el ancla— y que lo llamen las fichas, las policies y los helpers. Ojo con la recursión: hoy
-  `_persona_vigente` llama a `_empresa_vigente`, que llama a `obras_puede_ver_obra`; la cadena no
-  cicla, pero una función genérica que despache por tipo puede cerrarla sin que se note.
+- ~~**La vigencia del grant sigue escrita seis veces.**~~ — cerrada por `sql/092`
+  (`decisiones/obras/visibilidad.md` → *La vigencia del grant contextual se escribe una sola vez*).
+  **Dos premisas de la entrada eran falsas, y de la segunda salió V3.** Eran **siete** lugares, no
+  seis, y `sql/090` la había hecho correcta en **cuatro**, no en los seis: los tres
+  `obras_*_grant_ctx_*_conmigo` no se tocaron. Dos de ellos estaban cubiertos por su llamador, pero
+  `obras_persona_grant_ctx_empresa_conmigo` —en `obras_persona_empresa_select`— no verificaba el
+  ancla en ningún lado: un grant anclado en una empresa que el receptor ya no ve seguía dejando leer
+  `cargo`, `es_principal` y `observaciones` por PostgREST directo. Identidad, no contacto, pero la
+  misma clase que `sql/090` cerró. La recursión que la entrada anticipaba existe y no cicla: se
+  verificó antes de escribirla.
 
 - **`otorgada_por` todavía es autoridad, no solo historia.** Es lo que hace que una transferencia
   mal apuntada mueva *quién puede revocar*, que es el mecanismo exacto de V1. `sql/090` lo acotó
