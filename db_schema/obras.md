@@ -382,15 +382,15 @@ Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían c
 | `OB008` | `obras_set_activo` | la obra no existe o no sos su responsable |
 | `OB009` | `obras_ficha_persona` (`sql/032`, revivido por `sql/094`) | sin acceso a esta persona — no distingue "no existe" de "no la ves". Quedó muerto entre `sql/039` y `sql/094`, cuando la función levantaba `OB022` |
 | `OB010` | `obras_auditoria_*` | sin permiso para ver la auditoría |
-| ~~`OB011`~~ | ~~`obras_guard_congelado`~~ | **muerto**: `sql/040` dropeó la función y sus cuatro triggers. Verificado contra la base 2026-09-18 — ver `BACKLOG.md` → *Congelada dejó de estar congelada* |
-| ~~`OB012`~~ | ~~`obras_guard_congelado`~~ | **muerto**: ídem `OB011` |
+| `OB011` | `obras_guard_congelado` (`sql/033`, repuesto por `sql/098`) | la obra está pendiente: no acepta vínculos. Muerto entre `sql/040` y `sql/098`, que había dropeado la función |
+| `OB012` | `obras_guard_congelado` (ídem) | la empresa o la persona está pendiente: no se puede vincular |
 | `OB013` | `obras_pendientes` · `obras_historial_aprobaciones` | sin permiso para ver la cola |
 | `OB014` | `obras_pendiente_similares` · `obras_resolver_pendiente` | sin permiso para resolver |
 | `OB015` | `obras_resolver_pendiente` | tipo de solicitud desconocido |
 | `OB016` | `obras_resolver_pendiente` | rechazo sin motivo |
 | `OB017` | `obras_resolver_pendiente` | ya resuelta o inexistente |
 | `OB018` | `obras_personas_de_empresa` | sin permiso para vincular |
-| `OB019` | `obras_guard_congelado` | marcar referente a alguien que no se ve: el vínculo tiene que existir y estar autorizado |
+| ~~`OB019`~~ | ~~`obras_guard_congelado`~~ | **muerto desde `sql/040`**: la regla (marcar referente exige ver a la persona) pasó al WITH CHECK de `obras_obra_referente_insert`, así que llega como 42501. `sql/098` repuso el guard sin esa rama |
 | `OB020`–`OB025` | compartir / transferir persona-empresa (`sql/039`, `sql/041`) | dueño, autocompartir, usuario inexistente, sin permiso, entidad inexistente. `OB022` = **"sin acceso a esta obra"**, en `obras_vinculos_de_obra` (`sql/070`) y en las funciones que lo copiaron. Significó dos cosas entre `sql/039` y `sql/094`, cuando la ficha de persona también lo levantaba |
 | `OB026` | `obras_compartir_obra` · `obras_revocar_obra` · `obras_revocar_contextual` · `obras_relaciones_compartibles_obra` (`sql/047`, `sql/086`, `sql/090`) | solo el responsable de la obra comparte o revoca. Desde `sql/090`, en `obras_revocar_contextual`: ni dueño del ancla ni otorgante |
 | `OB027` | `obras_compartidos_por_mi` (`sql/047`) | sin acceso a la vista Compartido |
@@ -407,7 +407,7 @@ Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían c
 
 ## Autorizaciones pendientes (`sql/033`, recortadas por `sql/040`)
 
-> **MODEL A (`sql/040`).** Solo el **alta** parecida se congela. Se dropeó `pendiente`/`motivo_rechazo` de `obras_obra_empresa` y `obras_obra_persona`, la función/triggers `obras_guard_congelado` entera (la regla de referente OB019 pasó al WITH CHECK de `obras_obra_referente_insert`), y `obras_marcar_pendiente` perdió las dos ramas de vínculo. `obras_pendientes` / `obras_pendiente_similares` / `obras_resolver_pendiente` / `obras_solicitante` / `obras_etiqueta` / `obras_aprobaciones.tipo` quedaron con `obra`\|`empresa`\|`persona`. Lo de abajo describe el estado pre-`sql/040`.
+> **MODEL A (`sql/040`).** Solo el **alta** parecida se congela. Se dropeó `pendiente`/`motivo_rechazo` de `obras_obra_empresa` y `obras_obra_persona`, la función/triggers `obras_guard_congelado` entera (la regla de referente OB019 pasó al WITH CHECK de `obras_obra_referente_insert`; el corte de lo congelado se perdió con ella y lo repuso `sql/098`), y `obras_marcar_pendiente` perdió las dos ramas de vínculo. `obras_pendientes` / `obras_pendiente_similares` / `obras_resolver_pendiente` / `obras_solicitante` / `obras_etiqueta` / `obras_aprobaciones.tipo` quedaron con `obra`\|`empresa`\|`persona`. Lo de abajo describe el estado pre-`sql/040`.
 
 Dos pedidos del usuario con una sola mecánica: un alta que se parece a algo ya cargado, y un vínculo con una persona o empresa que cargó otro, no entran a la agenda — entran **congelados**, y alguien con `obras_aprobar` decide.
 
@@ -419,12 +419,7 @@ Dos pedidos del usuario con una sola mecánica: un alta que se parece a algo ya 
 | aprobada | `pendiente = false`, `activo = true` |
 | rechazada | `pendiente = false`, `activo = false`, `motivo_rechazo` con el texto |
 
-~~**Congelada quiere decir congelada.**~~ — **la mitad ya no es cierta.** La fila sigue viéndola
-solo quien la cargó (policy de `obras_empresas`, `obras_puede_ver_persona` para las personas), pero
-`obras_guard_congelado` **no existe**: `sql/040` lo dropeó junto con sus cuatro triggers, y ninguna
-policy de vínculo mira `pendiente`. Hoy el dueño puede vincular su propia fila congelada. Tres
-banners de la UI todavía prometen el bloqueo. Decidir si se repone el guard o se corrige el copy:
-`BACKLOG.md` → *Congelada dejó de estar congelada*.
+**Congelada quiere decir congelada (`sql/098`).** La fila la ve solo quien la cargó (policy de `obras_empresas`, `obras_puede_ver_persona` para las personas) y `obras_guard_congelado` corta cualquier vínculo hacia o desde ella (`OB011` / `OB012`). `sql/040` había dropeado el guard y el corte quedó sin reponer hasta `sql/098`; en ese tiempo el dueño podía vincular su propia fila congelada, y el rechazo quedaba trabado en `OB001` / `OB002`. Test: `sql/tests/obras_098.sql`, 5/5.
 
 **El vínculo pendiente no abre la ficha de contacto.** `obras_puede_ver_persona` exige `NOT op.pendiente`. Es el punto entero del pedido: vincular era lo que daba acceso al teléfono, así que sin esto la autorización no protegería nada.
 
@@ -435,7 +430,7 @@ banners de la UI todavía prometen el bloqueo. Decidir si se repone el guard o s
 | trigger | tablas | qué hace |
 |---|---|---|
 | `marcar_pendiente` (`obras_marcar_pendiente`) | las 5 | BEFORE INSERT. En las tres entidades marca por parecido (`obras_similares_*`); en los dos vínculos, si `creado_por` de lo vinculado no es `auth.uid()`. Pisa `pendiente` y `motivo_rechazo`: el `GRANT INSERT` es por tabla, así que sin esto el cliente mandaría la fila ya aprobada |
-| `guard_congelado` (`obras_guard_congelado`) | `obras_obra_empresa`, `obras_obra_persona`, `obras_persona_empresa`, `obras_obra_referente` | BEFORE INSERT. Corta si la obra, la empresa o la persona está pendiente, y exige que la persona ya sea visible para marcarla referente (`OB019`) — esa fila también da acceso al contacto y no tiene `pendiente`. Los `IF` van **anidados** bajo `TG_TABLE_NAME`, no encadenados con `AND`: plpgsql planea la expresión entera y `NEW.obra_id` explota con 42703 en la tabla que no tiene esa columna |
+| `guard_congelado` (`obras_guard_congelado`) | `obras_obra_empresa`, `obras_obra_persona`, `obras_persona_empresa`, `obras_obra_referente` | BEFORE INSERT, `SECURITY DEFINER`. Corta si la obra (`OB011`), la empresa o la persona (`OB012`) está pendiente. Dropeado por `sql/040`, repuesto por `sql/098` sin la rama de referente (`OB019`), que vive en la policy. Los `IF` van **anidados** bajo `TG_TABLE_NAME`, no encadenados con `AND`: plpgsql planea la expresión entera y `NEW.obra_id` explota con 42703 en la tabla que no tiene esa columna |
 
 `obras_obra_persona.empresa_id` queda fuera del guard a propósito: es contexto informativo, no un vínculo con la empresa.
 

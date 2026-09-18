@@ -69,6 +69,8 @@ Aviso de duplicados, altas congeladas, cola de aprobación y logs por función.
 - La localidad ordena el aviso de duplicados, no lo filtra
 - El chequeo de duplicados también corre al editar
 - Congelada, no marcada
+- **Congelada vuelve a congelar, con trigger y no con policy (`sql/098`)** — `sql/040` se había
+  llevado el corte; vuelven `OB011` / `OB012`
 - El vínculo pendiente no abre la ficha
 - La detección corre en la base, y por eso hubo que partir las tres búsquedas
 - ~~Lo que el rechazo todavía no resuelve~~ — resuelto por `sql/038`
@@ -96,8 +98,8 @@ Nombre, campos, enums y `estado_obra`, desactivar, mensajes `OB`, GRANT por colu
 Listados, fichas, filtros por chips, acciones en `OverflowMenu`, breadcrumb, buscador en la barra del
 título, contraste de los avisos, errores por campo, `hayCambios`.
 
-Las seis últimas salen de la auditoría de UI del módulo (2026-09-18). De la misma pasada quedó una
-decisión de modelo **sin resolver**: `BACKLOG.md` → *Congelada dejó de estar congelada (`sql/040`)*.
+Las seis últimas salen de la auditoría de UI del módulo (2026-09-18). La decisión de modelo que dejó
+la misma pasada se resolvió en `duplicados-aprobaciones.md` → *Congelada vuelve a congelar*.
 
 - Lo que la clase tipográfica pisa: el color de los avisos
 - El error de validación se renderiza donde está el campo

@@ -889,8 +889,8 @@ export async function buscarEmpresasParaVincular(texto: string) {
     }));
 }
 
-// Solo obras propias y no congeladas: son las únicas a las que la RLS deja
-// colgarle un vínculo.
+// Solo obras propias y no congeladas: son las únicas a las que se les puede
+// colgar un vínculo (la RLS corta lo ajeno, `guard_congelado` lo congelado).
 export async function buscarObrasParaVincular(texto: string) {
   const supabase = await createClient();
 

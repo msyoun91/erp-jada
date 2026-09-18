@@ -258,38 +258,14 @@ vínculos— se cerró en `sql/095` (`decisiones/obras/visibilidad.md` → *El v
 
 ---
 
-## Congelada dejó de estar congelada (`sql/040`)
+## ~~Congelada dejó de estar congelada (`sql/040`)~~ — cerrada
 
-Salió de la auditoría de UI de la agenda (2026-09-18). **Es una decisión de modelo, no de UI**, y
-por eso no se tocó en esa pasada.
+Resuelta el 2026-09-18 por la opción 1, reponer el guard: `sql/098`
+(`decisiones/obras/duplicados-aprobaciones.md` → *Congelada vuelve a congelar*). La UI quedó como
+estaba, salvo el gate de Vincular que le faltaba a `ObraDetalle`.
 
-**Lo verificado contra la base**, no contra los docs: `obras_guard_congelado` no existe —`sql/040`
-la dropeó con sus cuatro triggers— y ninguna policy de vínculo mira `pendiente`
-(`obras_obra_empresa_insert`, `obras_obra_persona_insert`, `obras_persona_empresa_insert`,
-`obras_obra_referente_insert`; tampoco `obras_es_mi_obra` ni `obras_puede_ver_*`). O sea: **hoy el
-dueño de una obra, empresa o persona congelada le puede colgar vínculos sin que nada lo corte.**
-
-`sql/040` lo hizo a propósito para la rama de vínculo-pendiente, pero al dropear la función se llevó
-también el bloqueo de las **altas** congeladas, que nadie repuso. La UI quedó del otro lado:
-
-- `EstadoPendiente` promete el bloqueo en las tres fichas ("no se le pueden vincular empresas ni
-  personas" / "no se puede vincular a obras ni a personas hasta que la autoricen")
-- `EmpresaDetalle` y `PersonaDetalle` esconden su botón Vincular con `!congelada` — una restricción
-  que ya no tiene contraparte en servidor
-- `ObraDetalle` **no** lo esconde: las tres fichas se contradicen entre sí
-- `VincularEmpresaPanel` / `VincularPersonaPanel` se niegan a seleccionar la entidad recién creada si
-  quedó pendiente, citando un `OB012` que no existe: el usuario crea la empresa desde el panel y el
-  panel no hace nada
-
-**Decidir una de dos:**
-
-1. **Reponer el guard** — una migración nueva con `NOT EXISTS (… AND pendiente)` en los tres
-   `WITH CHECK` de insert. La UI queda como está salvo el gate que le falta a `ObraDetalle`. Es lo que
-   `db_schema/obras.md` documentaba hasta hoy.
-2. **Aceptar lo implementado** — congelada pasa a significar solo "esperando aprobación y solo la
-   ves vos". Sin SQL: se corrige el copy de los tres banners, se saca el gate de las dos fichas y los
-   paneles seleccionan lo recién creado aunque quede pendiente.
-
-Toca: `EstadoPendiente.tsx`, `EmpresaDetalle.tsx`, `PersonaDetalle.tsx`, `ObraDetalle.tsx`,
-`VincularEmpresaPanel.tsx`, `VincularPersonaPanel.tsx`, `db_schema/obras.md` (ya marcado),
-`decisiones/obras/duplicados-aprobaciones.md` → *Congelada, no marcada*.
+**Tres premisas de la entrada eran falsas.** Proponía reponerlo en los `WITH CHECK` de las policies,
+y se repuso como trigger: una policy que falla llega como 42501 y la UI dice "No tenés permiso".
+La opción 2 no era "sin SQL": un duplicado con vínculos no se puede rechazar, porque
+`guard_desactivar` corta con `OB001` / `OB002`. Y los paneles no "no hacen nada" al crear algo
+congelado: avisan con un toast que no se puede vincular hasta que lo aprueben.

@@ -252,7 +252,7 @@ export function ObraDetalle({
       <section>
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <h3 className="t-h3 min-w-0 flex-1">Empresas</h3>
-          {permisos.vincular && (
+          {permisos.vincular && !obra.pendiente && (
             <button className="btn btn-secondary btn-sm" onClick={() => setVinculandoEmpresa(true)}>
               <Plus size={14} />
               Vincular
@@ -332,14 +332,14 @@ export function ObraDetalle({
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <h3 className="t-h3 min-w-0 flex-1">Personas</h3>
           {/* Referente solo de gente ya vinculada: la fila de referente también
-              da acceso al contacto, y la base la corta con OB019 si la persona
-              no es visible. */}
+              da acceso al contacto, y la policy de insert la rechaza si la
+              persona no es visible. */}
           {permisos.referentes && personas.length > 0 && (
             <button className="btn btn-secondary btn-sm" onClick={() => setEditandoReferente(true)}>
               Marcar referente
             </button>
           )}
-          {permisos.vincular && (
+          {permisos.vincular && !obra.pendiente && (
             <button className="btn btn-secondary btn-sm" onClick={() => setVinculandoPersona(true)}>
               <Plus size={14} />
               Vincular

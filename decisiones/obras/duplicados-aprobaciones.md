@@ -48,7 +48,7 @@ Lo que faltaba para poder correrlo al editar era `p_excluir_id`: sin él la fila
 
 ## Congelada, no marcada
 
-> **Recortado por *MODEL A* / `sql/040`.** Solo el **alta** parecida se congela. El "vínculo con una persona o empresa de otro" ya no existe como estado: bajo model A no se puede vincular lo que no se ve, así que se dropeó `pendiente` de las dos tablas de vínculo y `obras_guard_congelado` entera.
+> **Recortado por *MODEL A* / `sql/040`.** Solo el **alta** parecida se congela. El "vínculo con una persona o empresa de otro" ya no existe como estado: bajo model A no se puede vincular lo que no se ve, así que se dropeó `pendiente` de las dos tablas de vínculo y `obras_guard_congelado` entera. **El guard lo repuso `sql/098`** — ver la sección siguiente.
 
 Pedido del usuario: un alta que se parece a algo ya cargado, y un vínculo con una persona o empresa de otro, esperan autorización. La pregunta que decidía el diseño era qué puede hacer el que cargó mientras espera. **Decidido: nada.** La fila existe, la ve solo quien la creó, y no acepta ni participa de ningún vínculo hasta que se resuelva (`sql/033`).
 
@@ -57,6 +57,18 @@ La alternativa —badge y a otra cosa— dejaba al duplicado propagándose por l
 Sin estado nuevo: `pendiente = true` es la cola, `pendiente = false` con `activo` es el resultado, y rechazada es `activo = false` con `motivo_rechazo`. Los dos booleanos que ya existían alcanzan.
 
 **El rechazo desactiva, no fusiona.** Mudar los vínculos de la fila nueva a la original es una función de migración bastante más grande, y hoy la fila nueva casi nunca tiene vínculos: está congelada justamente. Si aparece el caso, se revisa.
+
+---
+
+## Congelada vuelve a congelar, con trigger y no con policy (`sql/098`)
+
+**`obras_guard_congelado` vuelve como trigger BEFORE INSERT en las cuatro tablas de vínculo, sin la rama de referente.** El usuario eligió reponer el corte antes que aceptar que congelada signifique solo "esperando, y solo la ves vos".
+
+`sql/040` dropeó la función creyendo que su única razón viva era la regla de referente, y con ella se fue el corte de las altas congeladas. Quedaron tres avisos prometiendo un bloqueo que la base no hacía y un agujero peor que el que el pedido quería evitar: si el dueño le colgaba vínculos a su duplicado, rechazarlo desactiva la fila y `guard_desactivar` lo trababa con `OB001` / `OB002`, y quien aprueba no puede quitar vínculos de una obra ajena. Por eso la otra salida no era "sin SQL", como decía el backlog: habría que haber decidido qué hace el rechazo con lo colgado.
+
+**Trigger y no WITH CHECK**, aunque el backlog proponía la policy. Es una regla sobre el estado de la fila, no sobre quién inserta, y una policy que falla llega como 42501: `mensajeError` dice "No tenés permiso", que es falso. Con el trigger vuelven `OB011` / `OB012` con el texto que ya tenían.
+
+Archivos: `sql/098_congelada_quiere_decir_congelada.sql`, `sql/tests/obras_098.sql` (5/5), `ObraDetalle.tsx` (el gate de Vincular que ya tenían las otras dos fichas), `db_schema/obras.md`.
 
 ---
 
