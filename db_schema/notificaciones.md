@@ -1,4 +1,4 @@
-# Notificaciones (`sql/038_notificaciones.sql`, `sql/040`, `sql/055`, `sql/056` — corridas en Supabase vía MCP)
+# Notificaciones (`sql/038_notificaciones.sql`, `sql/040`, `sql/055`, `sql/056`, `sql/099` — corridas en Supabase vía MCP)
 
 Infra cross-módulo como `usuario_widgets` y `usuario_tutorial`: prefijo `usuario_`, RLS directo por `auth.uid()`, **sin submódulo y sin vista propia**. Nadie necesita permiso para recibir avisos de cosas que ya puede ver — el permiso lo puso la entidad apuntada, no la notificación.
 
@@ -10,7 +10,7 @@ Infra cross-módulo como `usuario_widgets` y `usuario_tutorial`: prefijo `usuari
 |---|---|---|
 | id | uuid PK | |
 | usuario_id | uuid FK → usuarios | destinatario |
-| tipo | enum `tipo_notificacion` (`alta_aprobada`\|`alta_rechazada`\|`obra_transferida`\|`tarea_asignada`\|`plantilla_modificada`\|`plantilla_archivada`\|`plantilla_fallida`\|`plantilla_disparada`\|`plantilla_sin_acceso`) | los tres primeros de plantilla, `sql/055`; `plantilla_disparada`, `sql/056`; `plantilla_sin_acceso`, `sql/063` |
+| tipo | enum `tipo_notificacion` (`alta_aprobada`\|`alta_rechazada`\|`obra_transferida`\|`tarea_asignada`\|`plantilla_modificada`\|`plantilla_archivada`\|`plantilla_fallida`\|`plantilla_disparada`\|`plantilla_sin_acceso`\|`obra_desactivada`) | los tres primeros de plantilla, `sql/055`; `plantilla_disparada`, `sql/056`; `plantilla_sin_acceso`, `sql/063`; `obra_desactivada`, `sql/099` |
 | entidad | text | CHECK `obra`\|`empresa`\|`persona`\|`obra_empresa`\|`obra_persona`\|`tarea`\|`plantilla`. Text y no enum: es el discriminador de a qué tabla apunta `entidad_id`, mismo vocabulario y misma forma que `obras_aprobaciones.tipo` |
 | entidad_id | uuid | sin FK — apunta a varias tablas |
 | actor_id | uuid FK → usuarios, nullable | quién lo provocó. Null = evento del sistema |
@@ -31,9 +31,12 @@ Infra cross-módulo como `usuario_widgets` y `usuario_tutorial`: prefijo `usuari
 | `trg_notificar_decision_obra` | `obras_aprobaciones` AFTER INSERT | `obras_solicitante(tipo, registro_id)` — `alta_aprobada` o `alta_rechazada` según `aprobada` |
 | `trg_notificar_transferencia_obra` | `obras_transferencias` AFTER INSERT | `a_usuario_id` |
 | `trg_notificar_tarea_asignada` | `tareas_asignados` AFTER INSERT OR UPDATE OF activo | `usuario_id`, solo cuando la fila pasa a activa |
+| `trg_notificar_obra_desactivada` (`sql/099`) | `obras` AFTER UPDATE OF activo, `WHEN (OLD.activo AND NOT NEW.activo)` | cada `usuario_id` con `obras_obra_compartida` activa sobre esa obra — `obra_desactivada`. Corre también cuando rechazar un alta desactiva una obra que ya estaba compartida |
 | `trg_notificar_cambio_plantilla` (`sql/055`) | `tareas_plantillas` AFTER UPDATE | quienes tienen activada la plantilla — `plantilla_modificada` si sigue activa, `plantilla_archivada` si pasó a `activo = false`. Solo alcance `sistema`: una privada tiene un único activador, que es quien la edita |
 
-**Al que le sacaron la obra no se le avisa.** Ya no la ve (`obras_select` es `obras_puede_ver_obra`): un aviso con el nombre sería la única grieta del módulo y uno sin el nombre no diría nada. Esa pregunta la contesta `obras_auditoria_transferencias`.
+**Al que le sacaron la obra no se le avisa.** Ya no la ve: un aviso con el nombre sería la única grieta del módulo y uno sin el nombre no diría nada. Esa pregunta la contesta `obras_auditoria_transferencias`.
+
+**Al que le desactivaron una obra compartida, sí (`sql/099`).** No es la misma situación: la obra desactivada deja de **abrirse** para el receptor (`obras_puede_ver_obra` exige obra activa en la rama de compartida), pero `obras_select` le sigue dejando **la fila**, que es identidad y que ya conocía. Por eso el aviso se resuelve con la regla de siempre —INNER JOIN bajo su RLS, sin copiar el nombre— y lleva a la ficha, que le muestra la obra como desactivada y nada de adentro.
 
 **`pg_trigger_depth() > 1`** en el de tareas filtra la copia de asignados de `generar_recurrencia`: una tarea diaria mandaría un aviso por día a cada asignado, y ahí nadie asignó a nadie. **Excepción (`sql/055`):** las tareas de un disparo de plantilla también nacen adentro de un trigger, pero ahí sí asignó alguien. `disparar_plantillas()` marca la transacción con `set_config('tareas.disparo', 'on', true)` y el filtro deja pasar esas.
 

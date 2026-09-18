@@ -84,7 +84,7 @@ Nunca DELETE, `activo = false` en las 7 tablas de negocio (los dos logs no tiene
 
 `obras_desactivar` es función aparte de `obras_editar`: cargar y corregir datos no es lo mismo que hacer desaparecer una obra.
 
-Desactivar una obra **no** cascadea sobre sus vínculos — así se puede reactivar tal como estaba.
+Desactivar una obra **no** cascadea sobre sus vínculos — así se puede reactivar tal como estaba. Desde `sql/099` tampoco sobre lo compartido, y es archivar para todos: quien la tenía compartida deja de abrirla (y recibe un aviso) porque "compartida conmigo" exige obra activa, no porque se le apague el grant. La ficha la muestra desactivada y le ofrece "Reactivar" al responsable. Una rechazada no se reactiva (`OB035`). Ver `visibilidad.md` → *Sacar un contacto de la obra corta; desactivar la obra archiva*.
 
 Desactivar una empresa o persona **sí** está bloqueada si participa en alguna obra activa, porque son compartidas y el daño cae sobre obras que quien desactiva ni siquiera puede ver. Cuando sí procede, se llevan sus filas de `obras_persona_empresa` para no dejar un cargo colgado de una entidad inactiva.
 

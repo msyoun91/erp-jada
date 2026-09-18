@@ -21,6 +21,7 @@ import {
 } from "@/modules/obras/queries";
 import { puedeVerLista } from "@/modules/tareas/permissions";
 import { getRegistro, getTareasContexto, getTareasDeRegistro } from "@/modules/tareas/queries";
+import { ObraDesactivada } from "@/modules/obras/components/ObraDesactivada";
 import { ObraDetalle } from "@/modules/obras/components/ObraDetalle";
 import { TareasDeRegistro } from "@/modules/tareas/components/TareasDeRegistro";
 import type { Obra, RolEmpresa, RolPersona, Usuario } from "@/modules/obras/types";
@@ -57,6 +58,22 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
 
   const miId = await getUsuarioActualId();
   const esMio = !!miId && obra.responsable_id === miId;
+  const { responsable, ...datos } = obra;
+
+  // Desactivada no se abre (sql/099): quien la tenía compartida sigue viendo la
+  // fila y nada más —`obras_vinculos_de_obra` le corta con OB022—, así que la
+  // page no pide nada de adentro. Una rechazada también está inactiva, y esa
+  // no se reactiva (OB035).
+  if (!obra.activo) {
+    return (
+      <ObraDesactivada
+        obra={datos as Obra}
+        responsable={responsable as Usuario | null}
+        esMio={esMio}
+        puedeReactivar={desactivar && esMio && !obra.motivo_rechazo}
+      />
+    );
+  }
 
   // Solo se piden si hacen falta: la de usuarios alimenta los paneles de
   // transferencia y de compartir. Las empresas ya no se traen enteras — el
@@ -74,8 +91,6 @@ export default async function ObraPage({ params }: { params: Promise<{ id: strin
         : Promise.resolve({ tareas: [], delHilo: [], hilos: [] }),
       verTareas ? getRegistro("obra", id) : Promise.resolve(null),
     ]);
-
-  const { responsable, ...datos } = obra;
 
   // Quién puede qué sobre cada vínculo:
   //  - `agregadoPor`: nombre de quien lo sumó, si es un receptor y no soy yo

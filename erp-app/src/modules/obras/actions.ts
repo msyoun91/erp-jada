@@ -30,6 +30,7 @@ import {
   migrarAgendaSchema,
   compartirObraSchema,
   revocarObraSchema,
+  setActivoObraSchema,
   revocarContextualSchema,
   resolverPendienteSchema,
   type CrearObraForm,
@@ -156,6 +157,11 @@ export async function ensayarEstadoObra(input: EnsayarEstadoObraForm) {
 // `activo` no tiene GRANT de UPDATE: desactivar es un permiso propio y pasa por
 // función que lo verifica.
 export async function setActivoObra(id: string, activo: boolean) {
+  const parsed = setActivoObraSchema.safeParse({ obra_id: id, activo });
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.rpc("obras_set_activo", {

@@ -14,6 +14,9 @@ una decisión de visibilidad o alcance.
 
 MODEL A (todo privado por dueño), compartir con checklist y cascada, grants heredados, alcance de personas, buscador global, `obras_aprobar`.
 
+- **Sacar un contacto de la obra corta; desactivar la obra archiva (`sql/099`)** — el grant
+  muere en la fila al bajar el vínculo; la obra desactivada no se abre para el receptor, que ve la
+  fila y recibe un aviso; una rechazada no se reactiva
 - **El dueño del contacto lo ve en la obra que le comparten (`sql/097`)** — la rama de receptor
   suma "el contacto es mío", solo lectura
 - **Sacar es de lo que se fue, y persona↔empresa no cambia de punta (`sql/096`)** — `OB032` contra lo

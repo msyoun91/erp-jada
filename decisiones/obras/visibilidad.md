@@ -1,5 +1,57 @@
 # Obras — Visibilidad y compartir
 
+## Sacar un contacto de la obra corta; desactivar la obra archiva (`sql/099`)
+
+**Apagar un vínculo apaga los grants contextuales anclados en él, y una obra desactivada deja de
+abrirse para quien la tenía compartida, que recibe un aviso.** Las dos preguntas que dejó abiertas
+la segunda pasada de la auditoría de compartir/transferir; el usuario eligió las dos salidas.
+
+**El grant muere en la fila, no solo en la lectura.** MODEL A escribió "muere con el vínculo —
+validado en vivo, sin trigger de limpieza", y validado en vivo no muere: duerme. A comparte O con C
+tildando P, saca a P de O (C deja de verlo), lo vuelve a vincular, y C recupera el teléfono sin que
+nadie haya tildado nada. Mientras dormía no se veía en ningún lado —el checklist solo ofrece lo
+vinculado y la vista Compartido lo filtraba desde `sql/094`—, así que nadie lo podía revocar. Ahora
+`obras_cascada_desactivar` lo apaga al bajar el vínculo, y volver a vincular pide volver a tildar.
+`obras_ctx_vinculo_vivo` se queda dentro de `obras_ctx_vigente`: es la barrera de acceso, y la
+limpieza la vuelve redundante, no innecesaria.
+
+**Desactivar pausa, sacar corta, y la asimetría es a propósito.** Sacar un contacto es decidir sobre
+ese contacto. Desactivar la obra es archivarla, y `modelo.md` ya había decidido que se reactiva "tal
+como estaba": por eso lo compartido se valida en vivo —"compartida conmigo" exige obra activa, en
+`obras_obra_compartida_con`— y no se apaga en cascada. Al reactivar vuelve todo, lo tildado incluido.
+
+**El receptor sigue viendo la fila, y eso es lo que hace posible el aviso.** La notificación apunta
+y no copia (`decisiones/global/infra.md`): se resuelve con un JOIN bajo la RLS del lector. Si
+`obras_select` le sacara la fila, el aviso de "te desactivaron esta obra" desaparecería justo cuando
+tiene que llegar. La fila es identidad —nombre y datos generales, que ya conocía—; lo de adentro
+(vínculos, teléfonos, escribir, el chip de la tarea) pasa por `obras_puede_ver_obra_de`, que sí
+exige obra activa. Es la misma separación que personas: la policy autoriza identidad, la ficha es
+otra puerta. La ficha de una obra desactivada se lo dice, y al responsable le ofrece "Reactivar",
+que el modal de desactivar prometía y la UI no tenía.
+
+**Una rechazada no se reactiva (`OB035`).** Rechazar también deja `activo = false`, y
+`obras_set_activo` aceptaba volverla a `true`: el botón nuevo habría salteado la autorización.
+
+**Y la vista Compartido deja de nombrar anclas que quien mira no puede abrir.** El backlog decía
+que el dueño nuevo de un contacto veía "vía *obra de A*" con el nombre de una obra privada. **La
+premisa era a medias**: `CompartidoView` no mostraba `origen_nombre` en ningún lado, pero la columna
+viajaba al navegador con el payload. Ahora sale NULL cuando no se puede abrir el ancla, y la fila
+suelta —que antes no decía de dónde colgaba— muestra el nombre o "una obra que no podés abrir".
+
+Exposición al aplicarla: 0 grants dormidos, 0 obras desactivadas compartidas.
+
+**Consecuencia asumida, no construida: el contacto que ya nadie puede compartir.** Obra transferida
+sin migrar a P: el dueño nuevo de la obra no puede tildarlo (no es suyo) y el dueño de P no puede
+compartir una obra que no es suya. Es el cruce de "la obra es el único acto de compartir"
+(`sql/086`) con "manda el dueño del contacto" (`sql/093`). Sin caso real; la salida existe:
+transferirle P al dueño nuevo de la obra.
+
+Archivos: `sql/099_sacar_corta_y_desactivar_archiva.sql`, `sql/tests/obras_099.sql` (10/10),
+`db_schema/obras.md`, `db_schema/notificaciones.md`, `erp-app/src/lib/supabase/database.types.ts`,
+`modules/obras/components/ObraDesactivada.tsx` · `ObraDetalle.tsx` · `CompartidoView.tsx`,
+`modules/obras/actions.ts` · `types.ts`, `app/(erp-app)/obras/[id]/page.tsx`,
+`modules/notificaciones/components/NotificacionesBell.tsx`.
+
 ## El dueño del contacto lo ve en la obra que le comparten (`sql/097`)
 
 **Quien recibe una obra compartida ve los vínculos cuyo contacto (persona o empresa) es suyo, además
@@ -62,8 +114,8 @@ receptor revocado.
 
 **Consecuencia asumida:** `obras_es_mi_obra` exige `activo`, así que en una obra desactivada el
 responsable tampoco edita por UPDATE los vínculos que cargó él. Agregar y editar los de un receptor ya
-estaba cerrado; queda con la decisión abierta sobre qué es desactivar una obra compartida
-(`BACKLOG.md`).
+estaba cerrado; ~~queda con la decisión abierta sobre qué es desactivar una obra compartida~~ —
+resuelta por `sql/099`: desactivar es archivar para todos, también para el receptor.
 
 Exposición al aplicarla: 0 filas. Sin backfill.
 
@@ -518,7 +570,7 @@ Pedido del usuario, y reescribe varias decisiones de los otros archivos de esta 
 
 **Compartir — dos formas, las dos las inicia `creado_por`:**
 1. **Completa** (`obras_persona_compartida` / `obras_empresa_compartida`, funciones `obras_compartir_*` / `obras_revocar_*`): la entidad entra a la agenda del receptor. Lectura, no edición. Revocable.
-2. **Contextual** (`obras_persona_grant_contextual`, ancla obra XOR empresa): el contacto de la persona se ve **solo dentro de esa ficha** de obra/empresa (`/obras/personas/{id}?ctx=obra:{id}`). No entra a la agenda ni al buscador. Muere con el vínculo —validado en vivo, sin trigger de limpieza—. Nace de transferir una obra/empresa o del checklist de "contactos exclusivos".
+2. **Contextual** (`obras_persona_grant_contextual`, ancla obra XOR empresa): el contacto de la persona se ve **solo dentro de esa ficha** de obra/empresa (`/obras/personas/{id}?ctx=obra:{id}`). No entra a la agenda ni al buscador. Muere con el vínculo ~~—validado en vivo, sin trigger de limpieza—~~ — superado por `sql/099`: la fila se apaga al bajar el vínculo (*Sacar un contacto de la obra corta*). Nace de transferir una obra/empresa o del checklist de "contactos exclusivos".
 
 Un grant recibido **no se re-comparte**: las funciones exigen `creado_por`. **Ver no es editar:** `obras_*_update` exigen `creado_por = auth.uid()`; `_todas` mira y transfiere, no corrige — para editar lo ajeno hay que transferírselo (una puerta, no dos).
 

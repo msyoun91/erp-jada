@@ -73,33 +73,15 @@ reparación vuelve a esperar `true`.
 ## Segunda pasada de la auditoría de compartir/transferir (2026-09-18)
 
 Todo verificado contra la base en transacción revertida; exposición real al escribirla, 0 filas. Lo
-cerrado está en `decisiones/obras/visibilidad.md` (`sql/095`, `sql/096`).
+cerrado está en `decisiones/obras/visibilidad.md` (`sql/095`, `sql/096`, `sql/099`).
 
 **Decidido, sin implementar:**
 
-- **`sql/tests/obras_033.sql` está muerto desde `sql/040`**: lee `obras_obra_persona.pendiente`, que
-  esa migración dropeó. Lo encontró la regresión de `sql/095`; no se corrió.
-
-**Para decidir (chocan con decisiones escritas):**
-
-- **Re-vincular resucita el grant.** A comparte la obra con C tildando a P; saca a P de la obra (C deja
-  de verlo, `OB009`); lo vuelve a vincular y C recupera el teléfono sin que nadie haya tildado nada.
-  Es la consecuencia de "validado en vivo, sin trigger de limpieza" (MODEL A, `sql/082`). La salida
-  sería un trigger como `obras_cascada_desactivar` que apague los grants anclados al desactivar el
-  vínculo — y el filtro `obras_ctx_vinculo_vivo` de la vista Compartido (`sql/094`) sobraría.
-- **Desactivar una obra no corta lo compartido.** `obras_set_activo` no cascadea y la rama de
-  compartida de `obras_puede_ver_obra_de` / `obras_select` no mira `obras.activo`: el receptor la abre
-  por URL (`getObra` no filtra) y sigue viendo teléfonos con `?ctx=`. Al revés, el responsable queda
-  con la ficha llena de botones que la base rechaza (vincular, y desde `sql/095` también editar y
-  quitar vínculos) mientras el receptor todavía puede agregar. Pregunta: ¿desactivar es archivar para
-  todos? La regla está escrita dos veces (función y policy inline): el fix toca las dos.
-
-**Problemas de diseño, sin agujero:**
-
-- **Contacto que ya nadie puede compartir.** Obra transferida sin migrar a P: el dueño nuevo no puede
-  tildarlo al compartir (no es suyo) y el dueño de P no puede compartir una obra que no es suya.
-- **La vista Compartido nombra obras ajenas.** Transferida la persona P, su dueño nuevo ve "P → C, vía
-  *obra de A*" —nombre de una obra privada que no puede abrir— y puede cortar ese acceso adentro de
-  la obra de A. Es la regla de `sql/093` ("manda el dueño del contacto"); lo que se filtra es el nombre.
+- **`sql/tests/obras_033.sql` no corre desde `sql/040`**: lee `obras_obra_persona.pendiente`, que
+  esa migración dropeó. No está muerto entero: solo perdieron su sujeto los casos del vínculo
+  pendiente (04–07 y 24–25; el 15 usa como montaje la fila del 05). Altas pendientes, cola,
+  aprobar/rechazar, el UPDATE bloqueado y el referente ajeno siguen vigentes. Se arregla sacando esos
+  casos y corriéndolo.
 - **`obras_transferir` no bloquea la fila** (`FOR UPDATE`): dos transferencias simultáneas de la misma
-  obra dejan el log mal y los contactos migrados repartidos entre dos destinos. Improbable.
+  obra dejan el log mal y los contactos migrados repartidos entre dos destinos. Improbable. Es una
+  línea, pero obliga a reescribir la función entera: va la próxima vez que se la toque.

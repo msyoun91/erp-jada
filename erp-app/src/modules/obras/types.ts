@@ -447,6 +447,11 @@ export const revocarObraSchema = z.object({
   usuario_id: z.string().uuid(),
 });
 
+export const setActivoObraSchema = z.object({
+  obra_id: z.string().uuid(),
+  activo: z.boolean(),
+});
+
 export const revocarContextualSchema = z
   .object({
     tipo: z.enum(["empresa", "persona"]),

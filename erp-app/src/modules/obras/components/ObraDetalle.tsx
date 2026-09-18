@@ -205,7 +205,7 @@ export function ObraDetalle({
                         setConfirmando({
                           title: "Desactivar obra",
                           mensaje:
-                            "La obra deja de aparecer en el listado. Sus vínculos quedan intactos y se puede reactivar.",
+                            "La obra deja de aparecer en el listado, y quien la tenga compartida deja de verla y recibe un aviso. Sus vínculos quedan intactos: al reactivarla vuelve todo como estaba.",
                           confirmLabel: "Desactivar",
                           accion: () => setActivoObra(obra.id, false),
                           ok: "Obra desactivada",

@@ -41,6 +41,18 @@ function revocar(fila: CompartidoRow) {
   );
 }
 
+// Anidada, el ancla está arriba y alcanza con el tipo. Suelta —el ancla no vino
+// en el resultado— hace falta el nombre, y la base no lo manda si no la puedo
+// abrir (sql/099).
+function via(f: CompartidoRow, anidada: boolean) {
+  const cual = f.origen_tipo === "obra" ? "la obra" : "la empresa";
+  if (anidada) return `vía ${cual}`;
+  if (f.origen_nombre) return `vía ${cual} ${f.origen_nombre}`;
+  return f.origen_tipo === "obra"
+    ? "vía una obra que no podés abrir"
+    : "vía una empresa que no podés abrir";
+}
+
 const filaKey = (f: CompartidoRow) => `${f.tipo}:${f.entidad_id}:${f.usuario_id}`;
 const padreKey = (f: CompartidoRow) =>
   f.origen_tipo && f.origen_id ? `${f.origen_tipo}:${f.origen_id}:${f.usuario_id}` : null;
@@ -167,10 +179,8 @@ function Fila({
           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="t-caption">con {f.usuario_nombre}</span>
             <span className="t-caption">· {formatFecha(f.compartida_el)}</span>
-            {anidada && f.origen_tipo && (
-              <span className="badge badge-neutral">
-                vía {f.origen_tipo === "obra" ? "la obra" : "la empresa"}
-              </span>
+            {f.origen_tipo && (
+              <span className="badge badge-neutral max-w-full truncate">{via(f, anidada)}</span>
             )}
           </div>
         </div>

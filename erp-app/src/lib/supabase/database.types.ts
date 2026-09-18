@@ -2794,6 +2794,7 @@ export type Database = {
         | "plantilla_fallida"
         | "plantilla_disparada"
         | "plantilla_sin_acceso"
+        | "obra_desactivada"
       tipo_obra:
         | "edificio"
         | "casa"
@@ -3031,6 +3032,7 @@ export const Constants = {
         "plantilla_fallida",
         "plantilla_disparada",
         "plantilla_sin_acceso",
+        "obra_desactivada",
       ],
       tipo_obra: [
         "edificio",
