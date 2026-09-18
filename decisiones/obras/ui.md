@@ -370,3 +370,139 @@ cambio haría disparar una plantilla que deja a alguien sin poder abrir lo relac
 `CompartirAccesoPanel` pregunta primero (catálogo en `decisiones/global/ui.md`). Detalle completo
 —por qué solo al editar y no al crear, por qué "si el ensayo falla se guarda igual"— en
 `decisiones/tareas/visibilidad.md` → *Compartir al asignar: la pregunta*.
+
+---
+
+## Lo que la clase tipográfica pisa: el color de los avisos
+
+Auditoría de UI del módulo, 2026-09-18.
+
+`EstadoPendiente` y el `Marco` de `AvisoDuplicados` ponían `text-warning-text` en el contenedor y
+adentro `t-body-m` / `t-caption`. Esas clases **traen su propio color** (`text-text-secondary`,
+`text-text-tertiary`) y le ganan a lo heredado, así que el aviso se pintaba gris sobre fondo de
+warning. En light pasaba raspando; en dark el detalle quedaba en ~4:1 sobre `#451A03` y el de
+rechazo en ~4.3:1 sobre `#450A0A` — abajo de 4.5 para 12px, y el dark es justo el modo pensado para
+sol y obra.
+
+**Decidido:** el color se repite en cada hijo, que es lo que ya hacía `NotificacionesBell`
+(`t-body-m text-warning-text`). No una clase nueva de callout: son tres lugares y el patrón correcto
+ya estaba escrito en el repo.
+
+La regla general que deja: **dentro de un bloque con color semántico, toda clase `t-*` necesita que
+le repitan el color.** Vale para `.btn-ghost` también, que fija `text-text-tertiary`.
+
+---
+
+## El error de validación se renderiza donde está el campo
+
+Los cuatro paneles de vinculación y `ReferentePanel` guardaban un solo `error: string` y lo
+imprimían en un lugar fijo. Efecto: "Elegí una persona" salía abajo de **Comisión (%)** pintándole
+el borde rojo a ese input; "Elegí una empresa" y "Elegí el rol de Juan" salían las dos abajo del
+`RolesPicker`; y `VincularObraPanel`, que pasaba el mismo string al `Buscador` **y** al
+`RolesPicker`, imprimía cada error **dos veces**.
+
+**Decidido:** el estado lleva el campo — `useState<{ campo: "persona" | "roles"; mensaje: string }>()`
+— y cada control pregunta por el suyo. No se subió a un helper: es un ternario por control y el
+union de `campo` es distinto en cada panel, así que compartirlo pedía un genérico para no ahorrar
+nada.
+
+**El error del servidor va a toast, no a un campo.** `VincularPersonaEmpresaPanel` y `ReferentePanel`
+lo metían en el mismo `error` inline, y no es de ningún campo: puede ser RLS, un `OB0xx` o el CHECK
+de comisión. Los otros paneles de vinculación ya lo mandaban a toast — se unificó con ellos.
+
+De paso, `ReferentePanel` **corta la comisión vacía**: `z.coerce.number()` convierte el string vacío
+en `0`, así que el panel guardaba 0% en silencio con el campo marcado obligatorio.
+
+---
+
+## `hayCambios` se compara contra lo que abrió el panel
+
+`RightPanel` pregunta antes de cerrar solo si `hayCambios`. Estaba mal en los dos sentidos:
+
+- **De menos:** `CompartirPanel` lo tenía en `false` fijo. Tildabas medio checklist, cerrabas por
+  backdrop y el reparto se perdía sin preguntar. Ahora compara `tildadas` contra lo que el receptor
+  ya tiene (`ya_compartida`), no contra "hay algo tildado" — abrir un destino ya compartido llega
+  tildado y eso no es un cambio.
+- **De más:** `ReferentePanel`, `VincularEmpresaPanel`, `VincularPersonaPanel` y
+  `VincularPersonaEmpresaPanel` lo derivaban de `!!campo`. Al **modificar**, los campos vienen
+  llenos, así que abrir y cerrar sin tocar nada disparaba "Descartar cambios". Ahora cada uno
+  compara contra el `vinculo` / `referente` / la entidad fija que recibió por props.
+
+Los dos paneles de transferencia suman el checklist: `[...estados.values()].some((e) => e !== "va")`.
+Cambiar el destino de un contacto y cerrar también es perder trabajo.
+
+---
+
+## `Elegido` es uno solo, y las filas de la ficha de empresa tienen su menú
+
+Dos consecuencias de la misma auditoría, las dos por duplicación:
+
+**`Elegido`** —el "ya elegiste esto · Cambiar" que reemplaza al `Buscador`— estaba escrito cuatro
+veces: componente en `VincularPersonaEmpresaPanel` e inline en los otros tres paneles. Dos de las
+copias inline se habían quedado sin `min-w-0 truncate`, así que una razón social larga empujaba el
+botón fuera del panel. Vive en `Buscador.tsx`: es la otra cara del mismo control, no un componente
+suelto.
+
+**La fila de persona de `EmpresaDetalle` ganó su `OverflowMenu`** con "Quitar de la empresa". El
+vínculo `obras_persona_empresa` se arma desde los dos lados —lo dice la decisión de arriba— pero solo
+se podía **quitar** desde la ficha de la persona. `desvincularPersonaEmpresa` ahora recibe también el
+`empresa_id` y revalida las dos fichas: desde cualquiera de los dos lados, la otra quedaba mostrando
+una relación muerta.
+
+~~`EmpresaDetalle` quedó con su `desactivando` booleano~~ — **superado**: con una acción destructiva
+de fila adentro de un `.map()`, la premisa ("es el caso simple, sin acciones de fila") dejó de valer.
+Pasó al mismo objeto `Confirmacion` que ya usan las otras dos fichas.
+
+---
+
+## El vacío tiene que decir cuál de los dos vacíos es
+
+Tres arreglos de la misma familia — un estado vacío que describe la situación equivocada:
+
+**`ObrasView` tenía el copy invertido.** Con permiso de crear decía "Alcanza con el nombre y el
+tipo"; **sin** permiso decía "Creá la primera con Nueva obra", apuntando a un botón que ese usuario
+no tiene renderizado. `EmpresasView` tenía la versión simple: ese texto iba siempre.
+
+**Las secciones de `ObraDetalle` mentían con el filtro puesto.** Con "Ocultar lo que agregaron otros"
+tildado y todos los vínculos ajenos, la sección decía "Ninguna empresa vinculada todavía". Los
+listados ya separan "Sin obras todavía" de "Sin resultados"; las secciones ahora también.
+
+**Los vacíos de Pendientes y Auditoría eran de página, no de sección.** La decisión de *El vacío de
+una sección no se dibuja como el vacío de una página* se había aplicado solo en las tres fichas.
+Los cuatro que viven adentro de una `card` pasaron a `empty-state p-8`. El de Compartido **se queda**
+en `p-[60px]`: es la tab entera, no una sección — y ganó ícono, que es lo que tienen los otros
+vacíos de página.
+
+---
+
+## Lo que faltaba del contrato que las guías ya pedían
+
+Hallazgos chicos de la misma auditoría, todos contra una regla ya escrita:
+
+- **`aria-required` no existía en el módulo.** `GUIDE_DESIGN` pide "`.t-label-req` + `aria-required`"
+  y obras usaba el asterisco ~20 veces sin el atributo ni una sola vez. `tareas` ya lo tenía en 9
+  campos: se copió ese patrón, no se inventó otro.
+- **`AlcanceToggle` sin `aria-pressed`.** Es un toggle de dos botones donde el estado solo existía
+  como color. Los chips de `ObrasView` y el `RolesPicker` ya lo tenían.
+- **Tres clases CSS que no existen**, todas exclusivas de este módulo: `t-body-s` y `text-danger` en
+  `ChecklistTransferencia` —la opción destructiva del checklist nunca se pintó de rojo— y
+  `text-tertiary` (por `text-text-tertiary`) en los dos botones de revocar, que además usaban
+  `btn-ghost` sin `.btn` en vez de `icon-btn`, quedándose sin el mínimo táctil.
+- **Los checkboxes tenían tres formas distintas.** Los de `CompartirPanel` y `ObraDetalle` iban
+  pelados —azul nativo del SO, y en dark un cuadrado claro— contra el `h-4 w-4 accent-brand-700` de
+  los paneles de vinculación. Se unificaron en ese, con la etiqueta en `tap-target`.
+- **`PersonasView` pintaba el nombre en gris secundario**: `t-body-m` sin `text-text-primary`, contra
+  el `text-text-primary` de las filas de Obras y Empresas.
+- **`RolesPicker` era `rounded-lg` y `chipEstado` `rounded-md`**, diciendo los dos ser la misma forma.
+- **Sin contador ni paginado** en la cola de Pendientes, el historial, las transferencias de Auditoría
+  y Compartido, con queries sin `limit`. `Paginacion` ya servía para las dos cosas.
+- **`CompartidoView.Fila` estaba declarada adentro del render**, así que React la trataba como un
+  tipo nuevo en cada render y remontaba el árbol entero al abrir la confirmación. Subió a nivel de
+  módulo, como la `Fila` de `BuscadorGlobal`.
+- **La ficha de empresa no dejaba llamar.** Teléfono, email y website eran texto plano; en la de
+  persona ya eran `tel:` y `mailto:`. Se sumó también `wa.me` al WhatsApp. El website normaliza el
+  esquema: sin `https://` el href quedaba relativo a `/obras`.
+- **`esMio` era una prop muerta** en las fichas de persona y empresa (quedó de cuando se compartían,
+  cerrado por `sql/086`) y `duenioActual` llegaba siempre `null` a `TransferirEntidadPanel`, que por
+  eso mostraba "Dueño actual: —" siempre. Se reemplazaron por un `duenio: string | null` que la page
+  resuelve contra la lista de usuarios.

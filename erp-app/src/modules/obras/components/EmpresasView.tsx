@@ -60,7 +60,9 @@ export function EmpresasView({
           <p className="t-h3">{empresas.length === 0 ? "Sin empresas todavía" : "Sin resultados"}</p>
           <p className="t-body-m mt-1">
             {empresas.length === 0
-              ? 'Creá la primera con "Nueva empresa".'
+              ? puedeCrear
+                ? 'Creá la primera con "Nueva empresa".'
+                : "Vas a ver las que cargues vos y las que te lleguen por una obra compartida."
               : "Probá con otro término de búsqueda."}
           </p>
         </div>

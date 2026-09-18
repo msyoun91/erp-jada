@@ -150,6 +150,7 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
         <div>
           <label className="t-label t-label-req mb-1 block">Nombre</label>
           <input
+            aria-required
             className={`input ${errors.nombre ? "input-error" : ""}`}
             placeholder="Edificio próximo a Cabildo"
             {...register("nombre", { onBlur: chequearDuplicados })}
@@ -161,7 +162,7 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="t-label t-label-req mb-1 block">Tipo</label>
-            <select className="input" {...register("tipo")}>
+            <select aria-required className="input" {...register("tipo")}>
               {TIPOS_OBRA.map((t) => (
                 <option key={t} value={t}>
                   {LABEL_TIPO[t]}
@@ -171,7 +172,7 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
           </div>
           <div>
             <label className="t-label t-label-req mb-1 block">Estado</label>
-            <select className="input" {...register("estado")}>
+            <select aria-required className="input" {...register("estado")}>
               {ESTADOS_OBRA.map((e) => (
                 <option key={e} value={e}>
                   {LABEL_ESTADO[e]}
@@ -185,7 +186,7 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
           <>
             <div>
               <label className="t-label t-label-req mb-1 block">Motivo de pérdida</label>
-              <select className={`input ${errors.motivo_perdida ? "input-error" : ""}`} {...register("motivo_perdida")}>
+              <select aria-required className={`input ${errors.motivo_perdida ? "input-error" : ""}`} {...register("motivo_perdida")}>
                 <option value="">Elegí un motivo…</option>
                 {MOTIVOS_PERDIDA.map((m) => (
                   <option key={m} value={m}>
@@ -203,6 +204,7 @@ export function ObraFormPanel({ obra, onClose }: { obra?: Obra; onClose: () => v
               </label>
               <textarea
                 rows={2}
+                aria-required={motivo === "otro"}
                 className={`input ${errors.detalle_perdida ? "input-error" : ""}`}
                 {...register("detalle_perdida")}
               />

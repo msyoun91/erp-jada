@@ -382,8 +382,8 @@ Las diez `RAISE EXCEPTION` del módulo llevan `USING ERRCODE`. Sin eso salían c
 | `OB008` | `obras_set_activo` | la obra no existe o no sos su responsable |
 | `OB009` | `obras_ficha_persona` (`sql/032`, revivido por `sql/094`) | sin acceso a esta persona — no distingue "no existe" de "no la ves". Quedó muerto entre `sql/039` y `sql/094`, cuando la función levantaba `OB022` |
 | `OB010` | `obras_auditoria_*` | sin permiso para ver la auditoría |
-| `OB011` | `obras_guard_congelado` | la obra está pendiente: no acepta vínculos |
-| `OB012` | `obras_guard_congelado` | la empresa o la persona está pendiente: no se puede vincular |
+| ~~`OB011`~~ | ~~`obras_guard_congelado`~~ | **muerto**: `sql/040` dropeó la función y sus cuatro triggers. Verificado contra la base 2026-09-18 — ver `BACKLOG.md` → *Congelada dejó de estar congelada* |
+| ~~`OB012`~~ | ~~`obras_guard_congelado`~~ | **muerto**: ídem `OB011` |
 | `OB013` | `obras_pendientes` · `obras_historial_aprobaciones` | sin permiso para ver la cola |
 | `OB014` | `obras_pendiente_similares` · `obras_resolver_pendiente` | sin permiso para resolver |
 | `OB015` | `obras_resolver_pendiente` | tipo de solicitud desconocido |
@@ -419,7 +419,12 @@ Dos pedidos del usuario con una sola mecánica: un alta que se parece a algo ya 
 | aprobada | `pendiente = false`, `activo = true` |
 | rechazada | `pendiente = false`, `activo = false`, `motivo_rechazo` con el texto |
 
-**Congelada quiere decir congelada.** La fila la ve solo quien la cargó (policy de `obras_empresas`, `obras_puede_ver_persona` para las personas) y `obras_guard_congelado` corta cualquier vínculo hacia o desde ella (`OB011` / `OB012`). Un `pendiente` que solo pintara un badge dejaría al duplicado propagándose mientras la cola espera.
+~~**Congelada quiere decir congelada.**~~ — **la mitad ya no es cierta.** La fila sigue viéndola
+solo quien la cargó (policy de `obras_empresas`, `obras_puede_ver_persona` para las personas), pero
+`obras_guard_congelado` **no existe**: `sql/040` lo dropeó junto con sus cuatro triggers, y ninguna
+policy de vínculo mira `pendiente`. Hoy el dueño puede vincular su propia fila congelada. Tres
+banners de la UI todavía prometen el bloqueo. Decidir si se repone el guard o se corrige el copy:
+`BACKLOG.md` → *Congelada dejó de estar congelada*.
 
 **El vínculo pendiente no abre la ficha de contacto.** `obras_puede_ver_persona` exige `NOT op.pendiente`. Es el punto entero del pedido: vincular era lo que daba acceso al teléfono, así que sin esto la autorización no protegería nada.
 

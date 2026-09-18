@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { buscarPersonasParaVincular, editarVinculoPersona, vincularPersona } from "../actions";
 import { LABEL_ROL_PERSONA, ROLES_PERSONA, type RolPersona } from "../types";
-import { Buscador } from "./Buscador";
+import { Buscador, Elegido } from "./Buscador";
 import { RolesPicker } from "./RolesPicker";
 import { PersonaFormPanel } from "./PersonaFormPanel";
 
@@ -46,12 +46,21 @@ export function VincularPersonaPanel({
   const [roles, setRoles] = useState<RolPersona[]>(vinculo?.roles ?? []);
   const [observaciones, setObservaciones] = useState(vinculo?.observaciones ?? "");
   const [enviando, setEnviando] = useState(false);
-  const [error, setError] = useState<string>();
+  // El campo viaja con el mensaje: "Elegí una persona" se renderizaba bajo el
+  // RolesPicker, que está tres bloques más abajo del buscador que la pide.
+  const [error, setError] = useState<{ campo: "persona" | "roles"; mensaje: string }>();
   const [creandoPersona, setCreandoPersona] = useState(false);
 
+  const hayCambios =
+    personaId !== (vinculo?.persona_id ?? "") ||
+    empresaId !== (vinculo?.empresa_id ?? "") ||
+    observaciones !== (vinculo?.observaciones ?? "") ||
+    roles.length !== (vinculo?.roles.length ?? 0) ||
+    roles.some((r) => !vinculo?.roles.includes(r));
+
   async function guardar() {
-    if (!personaId) return setError("Elegí una persona");
-    if (roles.length === 0) return setError("Elegí al menos un rol");
+    if (!personaId) return setError({ campo: "persona", mensaje: "Elegí una persona" });
+    if (roles.length === 0) return setError({ campo: "roles", mensaje: "Elegí al menos un rol" });
 
     setError(undefined);
     setEnviando(true);
@@ -88,7 +97,7 @@ export function VincularPersonaPanel({
         title={vinculo ? "Modificar vínculo" : "Vincular persona"}
         subtitle={personaNombre || undefined}
         onClose={onClose}
-        hayCambios={!!personaId || roles.length > 0}
+        hayCambios={hayCambios}
         footer={
           <>
             <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -105,19 +114,13 @@ export function VincularPersonaPanel({
             <div>
               <label className="t-label t-label-req mb-1 block">Persona</label>
               {personaId ? (
-                <div className="flex items-center gap-2">
-                  <span className="t-body-m flex-1 font-semibold">{personaNombre}</span>
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => {
-                      setPersonaId("");
-                      setPersonaNombre("");
-                    }}
-                  >
-                    Cambiar
-                  </button>
-                </div>
+                <Elegido
+                  nombre={personaNombre}
+                  onCambiar={() => {
+                    setPersonaId("");
+                    setPersonaNombre("");
+                  }}
+                />
               ) : (
                 <>
                   {/* Sin carga inicial: la agenda no se lista sola, se busca.
@@ -126,6 +129,7 @@ export function VincularPersonaPanel({
                     placeholder="Nombre o apellido…"
                     buscar={buscarPersonas}
                     cargarAlAbrir={false}
+                    error={error?.campo === "persona" ? error.mensaje : undefined}
                     onElegir={(o) => {
                       setPersonaId(o.id);
                       setPersonaNombre(o.etiqueta);
@@ -167,7 +171,7 @@ export function VincularPersonaPanel({
               labels={LABEL_ROL_PERSONA}
               seleccionados={roles}
               onChange={setRoles}
-              error={error}
+              error={error?.campo === "roles" ? error.mensaje : undefined}
             />
           </div>
 

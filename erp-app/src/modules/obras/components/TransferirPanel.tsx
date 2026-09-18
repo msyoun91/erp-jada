@@ -62,7 +62,7 @@ export function TransferirPanel({
       title="Transferir obra"
       subtitle={obraNombre}
       onClose={onClose}
-      hayCambios={!!destino}
+      hayCambios={!!destino || [...estados.values()].some((e) => e !== "va")}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -82,6 +82,7 @@ export function TransferirPanel({
         <div>
           <label className="t-label t-label-req mb-1 block">Nuevo responsable</label>
           <select
+            aria-required
             className={`input ${error ? "input-error" : ""}`}
             value={destino}
             onChange={(e) => setDestino(e.target.value)}

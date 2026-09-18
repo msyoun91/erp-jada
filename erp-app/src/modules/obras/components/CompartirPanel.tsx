@@ -44,6 +44,14 @@ export function CompartirPanel({
   const yaCompartida = new Set(compartidos.map((c) => c.usuario_id));
   const editando = yaCompartida.has(destino);
 
+  // El checklist es estado sin guardar: tildar y cerrar por backdrop perdía el
+  // reparto en silencio. Se compara contra lo que ya tiene el receptor, no
+  // contra "hay algo tildado" — abrir un destino ya compartido llega tildado.
+  const yaTildadas = new Set(relaciones.filter((r) => r.ya_compartida).map((r) => r.id));
+  const hayCambios =
+    !!destino &&
+    (tildadas.size !== yaTildadas.size || [...tildadas].some((id) => !yaTildadas.has(id)));
+
   // El checklist depende del destino: marca lo que ese usuario ya tiene. Sin
   // reset síncrono — si no hay destino el bloque no se renderiza igual, y el
   // `cancelado` evita que una respuesta vieja pise a la nueva.
@@ -108,7 +116,7 @@ export function CompartirPanel({
       title="Compartir obra"
       subtitle={nombre}
       onClose={onClose}
-      hayCambios={false}
+      hayCambios={hayCambios}
       footer={
         <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
           Cerrar
@@ -159,8 +167,13 @@ export function CompartirPanel({
             <ul className="flex flex-col gap-1">
               {relaciones.map((r) => (
                 <li key={r.id}>
-                  <label className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
-                    <input type="checkbox" checked={tildadas.has(r.id)} onChange={() => toggle(r.id)} />
+                  <label className="tap-target flex cursor-pointer items-center gap-2 rounded-md border border-border px-3 py-2">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 shrink-0 accent-brand-700"
+                      checked={tildadas.has(r.id)}
+                      onChange={() => toggle(r.id)}
+                    />
                     <span className="t-body-m truncate">
                       {r.etiqueta}
                       <span className="t-caption"> · {r.tipo}</span>
@@ -191,7 +204,7 @@ export function CompartirPanel({
                   </button>
                   <button
                     type="button"
-                    className="btn-ghost text-tertiary tap-target"
+                    className="icon-btn text-text-tertiary"
                     aria-label={`Revocar acceso de ${c.usuario}`}
                     onClick={() => pedirRevocar(c.usuario_id, c.usuario)}
                   >

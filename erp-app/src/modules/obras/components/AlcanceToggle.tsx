@@ -20,12 +20,17 @@ export function AlcanceToggle() {
   }
 
   return (
-    <div className="inline-flex overflow-hidden rounded-md border border-border">
+    <div
+      className="inline-flex overflow-hidden rounded-md border border-border"
+      role="group"
+      aria-label="Alcance del listado"
+    >
       {(["propios", "todos"] as const).map((a) => (
         <button
           key={a}
           type="button"
           onClick={() => set(a)}
+          aria-pressed={actual === a}
           className={`tap-target px-3 text-sm ${
             actual === a
               ? "bg-brand-50 font-semibold text-brand-700"

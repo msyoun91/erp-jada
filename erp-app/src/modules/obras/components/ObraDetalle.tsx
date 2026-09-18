@@ -238,9 +238,10 @@ export function ObraDetalle({
       />
 
       {hayDeOtros && (
-        <label className="flex items-center gap-2">
+        <label className="tap-target flex cursor-pointer items-center gap-2">
           <input
             type="checkbox"
+            className="h-4 w-4 shrink-0 accent-brand-700"
             checked={ocultarDeOtros}
             onChange={() => setOcultarDeOtros((v) => !v)}
           />
@@ -249,8 +250,8 @@ export function ObraDetalle({
       )}
 
       <section>
-        <div className="mb-2 flex items-center gap-2">
-          <h3 className="t-h3 flex-1">Empresas</h3>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <h3 className="t-h3 min-w-0 flex-1">Empresas</h3>
           {permisos.vincular && (
             <button className="btn btn-secondary btn-sm" onClick={() => setVinculandoEmpresa(true)}>
               <Plus size={14} />
@@ -259,8 +260,14 @@ export function ObraDetalle({
           )}
         </div>
         {empresasVisibles.length === 0 ? (
+          // El vacío distingue "no hay" de "el filtro las tapó", igual que los
+          // listados separan "Sin obras todavía" de "Sin resultados".
           <div className="empty-state p-8">
-            <p className="t-body-m">Ninguna empresa vinculada todavía.</p>
+            <p className="t-body-m">
+              {empresas.length === 0
+                ? "Ninguna empresa vinculada todavía."
+                : "Las empresas de esta obra las agregaron otros — destildá el filtro para verlas."}
+            </p>
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -322,8 +329,8 @@ export function ObraDetalle({
       </section>
 
       <section>
-        <div className="mb-2 flex items-center gap-2">
-          <h3 className="t-h3 flex-1">Personas</h3>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <h3 className="t-h3 min-w-0 flex-1">Personas</h3>
           {/* Referente solo de gente ya vinculada: la fila de referente también
               da acceso al contacto, y la base la corta con OB019 si la persona
               no es visible. */}
@@ -341,7 +348,11 @@ export function ObraDetalle({
         </div>
         {personasVisibles.length === 0 ? (
           <div className="empty-state p-8">
-            <p className="t-body-m">Ninguna persona vinculada todavía.</p>
+            <p className="t-body-m">
+              {personas.length === 0
+                ? "Ninguna persona vinculada todavía."
+                : "Las personas de esta obra las agregaron otros — destildá el filtro para verlas."}
+            </p>
           </div>
         ) : (
           <ul className="flex flex-col gap-2">

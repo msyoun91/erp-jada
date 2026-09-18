@@ -76,7 +76,7 @@ export function TransferirEntidadPanel({
       title={`Transferir ${tipo}`}
       subtitle={nombre}
       onClose={onClose}
-      hayCambios={!!destino}
+      hayCambios={!!destino || [...estados.values()].some((e) => e !== "va")}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -101,6 +101,7 @@ export function TransferirEntidadPanel({
         <div>
           <label className="t-label t-label-req mb-1 block">Nuevo dueño</label>
           <select
+            aria-required
             className={`input ${error ? "input-error" : ""}`}
             value={destino}
             onChange={(e) => setDestino(e.target.value)}

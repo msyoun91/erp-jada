@@ -133,6 +133,7 @@ export function PersonaFormPanel({
           <div>
             <label className="t-label t-label-req mb-1 block">Nombre</label>
             <input
+              aria-required
               className={`input ${errors.nombre ? "input-error" : ""}`}
               {...register("nombre", { onBlur: chequearDuplicados })}
             />

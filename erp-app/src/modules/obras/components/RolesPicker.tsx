@@ -34,7 +34,7 @@ export function RolesPicker<T extends string>({
               type="button"
               onClick={() => toggle(rol)}
               aria-pressed={activo}
-              className={`tap-target t-caption rounded-lg border px-3 py-1 ${
+              className={`tap-target t-caption rounded-md border px-3 py-1 ${
                 activo
                   ? "border-brand-500 bg-brand-50 font-semibold text-brand-700"
                   : "border-border text-text-tertiary"

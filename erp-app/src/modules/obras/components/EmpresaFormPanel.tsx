@@ -124,6 +124,7 @@ export function EmpresaFormPanel({
         <div>
           <label className="t-label t-label-req mb-1 block">Razón social</label>
           <input
+            aria-required
             className={`input ${errors.razon_social ? "input-error" : ""}`}
             {...register("razon_social", { onBlur: chequearDuplicados })}
           />

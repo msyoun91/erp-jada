@@ -8,7 +8,7 @@ import {
   buscarEmpresasParaVincular,
   vincularPersonaEmpresa,
 } from "../actions";
-import { Buscador } from "./Buscador";
+import { Buscador, Elegido } from "./Buscador";
 
 // El cargo es de la relación persona↔empresa y no determina el rol en ninguna
 // obra: son dos ejes distintos y no se infiere uno del otro.
@@ -44,11 +44,22 @@ export function VincularPersonaEmpresaPanel({
   const [cargo, setCargo] = useState("");
   const [esPrincipal, setEsPrincipal] = useState(false);
   const [enviando, setEnviando] = useState(false);
-  const [error, setError] = useState<string>();
+  // El campo viaja con el mensaje, igual que en los otros paneles de
+  // vinculación. El error del servidor va a toast: no es de un campo.
+  const [error, setError] = useState<{ campo: "persona" | "empresa"; mensaje: string }>();
+
+  // Contra lo que abrió el panel: uno de los dos lados viene fijo desde la
+  // ficha, así que `!!personaId || !!empresaId` era siempre verdadero y
+  // cerrar sin tocar nada preguntaba por cambios inexistentes.
+  const hayCambios =
+    personaId !== (persona?.id ?? "") ||
+    empresaId !== (empresa?.id ?? "") ||
+    !!cargo ||
+    esPrincipal;
 
   async function guardar() {
-    if (!personaId) return setError("Elegí una persona");
-    if (!empresaId) return setError("Elegí una empresa");
+    if (!personaId) return setError({ campo: "persona", mensaje: "Elegí una persona" });
+    if (!empresaId) return setError({ campo: "empresa", mensaje: "Elegí una empresa" });
 
     setError(undefined);
     setEnviando(true);
@@ -62,7 +73,7 @@ export function VincularPersonaEmpresaPanel({
     setEnviando(false);
 
     if (!result.success) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
     toast.success(persona ? "Empresa vinculada" : "Persona vinculada");
@@ -74,7 +85,7 @@ export function VincularPersonaEmpresaPanel({
       title={persona ? "Vincular a una empresa" : "Vincular una persona"}
       subtitle={persona?.nombre ?? empresa?.razon_social}
       onClose={onClose}
-      hayCambios={!!personaId || !!empresaId || !!cargo}
+      hayCambios={hayCambios}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -102,7 +113,7 @@ export function VincularPersonaEmpresaPanel({
               <Buscador
                 placeholder="Buscar empresa…"
                 buscar={buscarEmpresas}
-                error={error}
+                error={error?.campo === "empresa" ? error.mensaje : undefined}
                 onElegir={(o) => {
                   setEmpresaId(o.id);
                   setEmpresaNombre(o.etiqueta);
@@ -130,7 +141,7 @@ export function VincularPersonaEmpresaPanel({
                 placeholder="Nombre o apellido…"
                 buscar={buscarPersonas}
                 cargarAlAbrir={false}
-                error={error}
+                error={error?.campo === "persona" ? error.mensaje : undefined}
                 onElegir={(o) => {
                   setPersonaId(o.id);
                   setPersonaNombre(o.etiqueta);
@@ -162,16 +173,5 @@ export function VincularPersonaEmpresaPanel({
         <p className="t-caption">Solo una empresa puede ser la principal de cada persona.</p>
       </div>
     </RightPanel>
-  );
-}
-
-function Elegido({ nombre, onCambiar }: { nombre: string; onCambiar: () => void }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="t-body-m min-w-0 flex-1 truncate font-semibold">{nombre}</span>
-      <button type="button" className="btn btn-ghost btn-sm" onClick={onCambiar}>
-        Cambiar
-      </button>
-    </div>
   );
 }

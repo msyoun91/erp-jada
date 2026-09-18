@@ -24,10 +24,26 @@ export function ReferentePanel({
   const [comision, setComision] = useState(referente?.porcentaje_comision?.toString() ?? "");
   const [observaciones, setObservaciones] = useState(referente?.observaciones ?? "");
   const [enviando, setEnviando] = useState(false);
-  const [error, setError] = useState<string>();
+  // El campo viaja con el mensaje: un solo string se renderizaba en un lugar
+  // fijo y "Elegí una persona" salía abajo de Comisión, pintándole el borde
+  // rojo al input equivocado.
+  const [error, setError] = useState<{ campo: "persona" | "comision"; mensaje: string }>();
+
+  // Comparado contra lo que abrió el panel, no contra "hay algo puesto": al
+  // modificar un referente los campos vienen llenos y cerrar sin tocar nada
+  // preguntaba por cambios que no existen.
+  const hayCambios =
+    personaId !== (referente?.persona_id ?? personaIdInicial ?? "") ||
+    comision !== (referente?.porcentaje_comision?.toString() ?? "") ||
+    observaciones !== (referente?.observaciones ?? "");
 
   async function guardar() {
-    if (!personaId) return setError("Elegí una persona");
+    if (!personaId) return setError({ campo: "persona", mensaje: "Elegí una persona" });
+    // `z.coerce.number()` convierte "" en 0, así que sin este corte el panel
+    // guardaba 0% en silencio con el campo marcado como obligatorio.
+    if (!comision.trim()) {
+      return setError({ campo: "comision", mensaje: "Poné el porcentaje — puede ser 0" });
+    }
 
     setError(undefined);
     setEnviando(true);
@@ -40,7 +56,7 @@ export function ReferentePanel({
     setEnviando(false);
 
     if (!result.success) {
-      setError(result.error);
+      toast.error(result.error);
       return;
     }
     toast.success("Referente guardado");
@@ -51,7 +67,7 @@ export function ReferentePanel({
     <RightPanel
       title={referente ? "Modificar referente" : "Marcar referente"}
       onClose={onClose}
-      hayCambios={!!personaId || !!comision}
+      hayCambios={hayCambios}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -67,7 +83,8 @@ export function ReferentePanel({
         <div>
           <label className="t-label t-label-req mb-1 block">Persona</label>
           <select
-            className="input"
+            aria-required
+            className={`input ${error?.campo === "persona" ? "input-error" : ""}`}
             value={personaId}
             onChange={(e) => setPersonaId(e.target.value)}
             disabled={!!referente}
@@ -79,6 +96,7 @@ export function ReferentePanel({
               </option>
             ))}
           </select>
+          {error?.campo === "persona" && <p className="input-error-text">{error.mensaje}</p>}
           <p className="t-caption mt-1">
             Solo personas ya vinculadas a esta obra. Vinculala primero si no aparece.
           </p>
@@ -91,11 +109,12 @@ export function ReferentePanel({
             step="0.01"
             min={0}
             max={100}
-            className={`input ${error ? "input-error" : ""}`}
+            aria-required
+            className={`input ${error?.campo === "comision" ? "input-error" : ""}`}
             value={comision}
             onChange={(e) => setComision(e.target.value)}
           />
-          {error && <p className="input-error-text">{error}</p>}
+          {error?.campo === "comision" && <p className="input-error-text">{error.mensaje}</p>}
           <p className="t-caption mt-1">
             Esta fase solo registra la condición: no liquida ni calcula nada.
           </p>

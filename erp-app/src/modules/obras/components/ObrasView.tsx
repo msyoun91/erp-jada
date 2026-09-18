@@ -164,8 +164,8 @@ export function ObrasView({
           <p className="t-body-m mt-1">
             {obras.length === 0
               ? puedeCrear
-                ? "Alcanza con el nombre y el tipo — el resto se completa después."
-                : 'Creá la primera con "Nueva obra".'
+                ? 'Creá la primera con "Nueva obra": alcanza con el nombre y el tipo, el resto se completa después.'
+                : "Vas a ver las obras de las que seas responsable y las que te compartan."
               : "Probá con otro término o con otro filtro."}
           </p>
         </div>

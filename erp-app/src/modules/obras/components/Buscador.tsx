@@ -119,3 +119,17 @@ export function Buscador({
     </div>
   );
 }
+
+// La otra cara del buscador: lo ya elegido, con la salida para cambiarlo. Vive
+// acá y no en cuatro paneles — dos de las copias se habían quedado sin
+// `min-w-0 truncate` y una razón social larga empujaba al botón fuera del panel.
+export function Elegido({ nombre, onCambiar }: { nombre: string; onCambiar: () => void }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="t-body-m min-w-0 flex-1 truncate font-semibold">{nombre}</span>
+      <button type="button" className="btn btn-ghost btn-sm shrink-0" onClick={onCambiar}>
+        Cambiar
+      </button>
+    </div>
+  );
+}

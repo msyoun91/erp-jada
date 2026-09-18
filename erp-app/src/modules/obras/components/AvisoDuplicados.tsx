@@ -4,6 +4,10 @@ import { AlertTriangle } from "lucide-react";
 import type { DuplicadoEmpresa, DuplicadoObra, DuplicadoPersona } from "../types";
 
 // Advertencia, nunca bloqueo: el usuario decide si es la misma o no.
+//
+// Los hijos repiten `text-warning-text`: `.t-body-m` y `.t-caption` traen su
+// propio color y le ganan por especificidad al heredado del marco, que en dark
+// dejaba el detalle en ~4:1 sobre el fondo del aviso.
 function Marco({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex gap-2 rounded-md border border-warning/20 bg-warning-bg px-3 py-2 text-warning-text">
@@ -20,8 +24,8 @@ export function AvisoDuplicadosObra({ duplicados }: { duplicados: DuplicadoObra[
 
   return (
     <Marco>
-      <p className="t-body-m font-semibold">Puede que esta obra ya esté cargada</p>
-      <ul className="t-caption mt-1 flex flex-col gap-1">
+      <p className="t-body-m font-semibold text-warning-text">Puede que esta obra ya esté cargada</p>
+      <ul className="t-caption mt-1 flex flex-col gap-1 text-warning-text">
         {duplicados.map((d, i) => (
           <li key={d.obra_id ?? i}>
             {d.es_mia ? (
@@ -50,8 +54,8 @@ export function AvisoDuplicadosEmpresa({
 
   return (
     <Marco>
-      <p className="t-body-m font-semibold">Empresas parecidas ya cargadas</p>
-      <ul className="t-caption mt-1 flex flex-col gap-1">
+      <p className="t-body-m font-semibold text-warning-text">Empresas parecidas ya cargadas</p>
+      <ul className="t-caption mt-1 flex flex-col gap-1 text-warning-text">
         {duplicados.map((d, i) => (
           <li key={d.empresa_id ?? i} className="flex flex-wrap items-center gap-2">
             {d.es_mia && d.empresa_id ? (
@@ -61,7 +65,7 @@ export function AvisoDuplicadosEmpresa({
                 {onUsar && (
                   <button
                     type="button"
-                    className="btn btn-ghost btn-sm"
+                    className="btn btn-ghost btn-sm text-warning-text"
                     onClick={() => onUsar(d.empresa_id!, d.razon_social)}
                   >
                     Usar esta
@@ -94,8 +98,8 @@ export function AvisoDuplicadosPersona({
 
   return (
     <Marco>
-      <p className="t-body-m font-semibold">Personas parecidas ya cargadas</p>
-      <ul className="t-caption mt-1 flex flex-col gap-1">
+      <p className="t-body-m font-semibold text-warning-text">Personas parecidas ya cargadas</p>
+      <ul className="t-caption mt-1 flex flex-col gap-1 text-warning-text">
         {duplicados.map((d) => (
           <li key={d.persona_id} className="flex flex-wrap items-center gap-2">
             <span className="font-semibold">
@@ -104,7 +108,7 @@ export function AvisoDuplicadosPersona({
             {d.empresa && <span>· {d.empresa}</span>}
             {d.coincide !== "nombre" && <span>· coincide el {d.coincide}</span>}
             {onUsar && (
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onUsar(d.persona_id, `${d.nombre} ${d.apellido ?? ""}`.trim())}>
+              <button type="button" className="btn btn-ghost btn-sm text-warning-text" onClick={() => onUsar(d.persona_id, `${d.nombre} ${d.apellido ?? ""}`.trim())}>
                 Usar esta
               </button>
             )}

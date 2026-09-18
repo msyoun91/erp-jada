@@ -74,7 +74,7 @@ export function PersonasView({
                 href={`/obras/personas/${p.id}`}
                 className="card card-link tap-target flex flex-wrap items-center gap-x-3 gap-y-1 p-3 hover:bg-bg-subtle"
               >
-                <span className="t-body-m min-w-0 flex-1 truncate font-semibold">
+                <span className="t-body-m min-w-0 flex-1 truncate font-semibold text-text-primary">
                   {p.nombre} {p.apellido ?? ""}
                 </span>
                 {p.pendiente && <span className="badge badge-warning">Pendiente</span>}

@@ -39,7 +39,7 @@ export function PersonaDetalle({
   empresas,
   obras,
   permisos,
-  esMio,
+  duenio,
   puedeTransferir,
   usuarios,
   seccionTareas,
@@ -61,9 +61,10 @@ export function PersonaDetalle({
   permisos: { editar: boolean; vincularEmpresa: boolean; vincularObra: boolean };
   // null = sin la vista de Tareas: la sección no se muestra.
   seccionTareas: React.ReactNode;
-  // Compartir es solo del dueño; transferir, de quien tiene la persona con el
-  // permiso personal o de quien tiene obras_personas_todas (sql/089).
-  esMio: boolean;
+  // Transferir es de quien tiene la persona con el permiso personal o de quien
+  // tiene obras_personas_todas (sql/089). El nombre del dueño lo resuelve la
+  // page: es lo que el panel de transferencia muestra arriba de todo.
+  duenio: string | null;
   puedeTransferir: boolean;
   usuarios: Usuario[];
 }) {
@@ -155,7 +156,23 @@ export function PersonaDetalle({
               )
             }
           />
-          <Dato etiqueta="WhatsApp" valor={persona.whatsapp} />
+          {/* `wa.me` pide el número sin separadores. Se limpia acá y no se
+              guarda normalizado: el campo es texto libre a propósito. */}
+          <Dato
+            etiqueta="WhatsApp"
+            valor={
+              persona.whatsapp && (
+                <a
+                  href={`https://wa.me/${persona.whatsapp.replace(/[^\d]/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  {persona.whatsapp}
+                </a>
+              )
+            }
+          />
           <Dato
             etiqueta="Email"
             valor={
@@ -171,8 +188,8 @@ export function PersonaDetalle({
       </section>
 
       <section>
-        <div className="mb-2 flex items-center gap-2">
-          <h3 className="t-h3 flex-1">Empresas</h3>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <h3 className="t-h3 min-w-0 flex-1">Empresas</h3>
           {permisos.vincularEmpresa && !estado.pendiente && (
             <button className="btn btn-secondary btn-sm" onClick={() => setVinculando(true)}>
               <Plus size={14} />
@@ -211,7 +228,8 @@ export function PersonaDetalle({
                             title: "Quitar de la empresa",
                             mensaje: `«${nombre}» deja de figurar en «${e.razon_social}». Se pierde el cargo. Las dos fichas siguen existiendo.`,
                             confirmLabel: "Quitar",
-                            accion: () => desvincularPersonaEmpresa(e.id, persona.id),
+                            accion: () =>
+                              desvincularPersonaEmpresa(e.id, persona.id, e.empresa_id),
                             ok: "Vínculo quitado",
                           }),
                         destructive: true,
@@ -226,8 +244,8 @@ export function PersonaDetalle({
       </section>
 
       <section>
-        <div className="mb-2 flex items-center gap-2">
-          <h3 className="t-h3 flex-1">Obras</h3>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <h3 className="t-h3 min-w-0 flex-1">Obras</h3>
           {/* El vínculo obra↔persona también se arma desde acá: parado en la
               agenda, la obra es lo que se busca. */}
           {permisos.vincularObra && !estado.pendiente && (
@@ -276,7 +294,7 @@ export function PersonaDetalle({
           tipo="persona"
           id={persona.id}
           nombre={nombre}
-          duenioActual={null}
+          duenioActual={duenio}
           usuarios={usuarios}
           onClose={() => setTransfiriendo(false)}
         />

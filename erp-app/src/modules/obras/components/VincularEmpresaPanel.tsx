@@ -19,7 +19,7 @@ import {
   type RolEmpresa,
   type RolPersona,
 } from "../types";
-import { Buscador } from "./Buscador";
+import { Buscador, Elegido } from "./Buscador";
 import { RolesPicker } from "./RolesPicker";
 import { EmpresaFormPanel } from "./EmpresaFormPanel";
 
@@ -54,8 +54,17 @@ export function VincularEmpresaPanel({
   const [gente, setGente] = useState<PersonaDeEmpresa[]>([]);
   const [lote, setLote] = useState<Lote>({});
   const [enviando, setEnviando] = useState(false);
-  const [error, setError] = useState<string>();
+  // El campo viaja con el mensaje: los tres errores se renderizaban bajo el
+  // RolesPicker, incluidos "Elegí una empresa" y el que nombra a la gente sin
+  // rol, que están en otra parte del panel.
+  const [error, setError] = useState<{ campo: "empresa" | "roles" | "gente"; mensaje: string }>();
   const [creandoEmpresa, setCreandoEmpresa] = useState(false);
+
+  const hayCambios =
+    empresaId !== (vinculo?.empresa_id ?? "") ||
+    observaciones !== (vinculo?.observaciones ?? "") ||
+    roles.length !== (vinculo?.roles.length ?? 0) ||
+    roles.some((r) => !vinculo?.roles.includes(r));
 
   // Al elegir la empresa se trae su gente y viene toda tildada: es lo que pidió
   // el usuario. Las que ya están en la obra vienen destildadas porque volver a
@@ -84,15 +93,16 @@ export function VincularEmpresaPanel({
   }
 
   async function guardar() {
-    if (!empresaId) return setError("Elegí una empresa");
-    if (roles.length === 0) return setError("Elegí al menos un rol");
+    if (!empresaId) return setError({ campo: "empresa", mensaje: "Elegí una empresa" });
+    if (roles.length === 0) return setError({ campo: "roles", mensaje: "Elegí al menos un rol" });
 
     const marcadas = gente.filter((p) => lote[p.persona_id]?.marcada);
     const sinRol = marcadas.filter((p) => !lote[p.persona_id]?.rol);
     if (sinRol.length > 0) {
-      return setError(
-        `Elegí el rol en la obra de ${sinRol.map((p) => p.nombre).join(", ")}, o destildalas`,
-      );
+      return setError({
+        campo: "gente",
+        mensaje: `Elegí el rol en la obra de ${sinRol.map((p) => p.nombre).join(", ")}, o destildalas`,
+      });
     }
 
     setError(undefined);
@@ -150,7 +160,7 @@ export function VincularEmpresaPanel({
         title={vinculo ? "Modificar vínculo" : "Vincular empresa"}
         subtitle={empresaNombre || undefined}
         onClose={onClose}
-        hayCambios={roles.length > 0 || !!empresaId}
+        hayCambios={hayCambios}
         footer={
           <>
             <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -167,26 +177,21 @@ export function VincularEmpresaPanel({
             <div>
               <label className="t-label t-label-req mb-1 block">Empresa</label>
               {empresaId ? (
-                <div className="flex items-center gap-2">
-                  <span className="t-body-m flex-1 font-semibold">{empresaNombre}</span>
-                  <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => {
-                      setEmpresaId("");
-                      setEmpresaNombre("");
-                      setGente([]);
-                      setLote({});
-                    }}
-                  >
-                    Cambiar
-                  </button>
-                </div>
+                <Elegido
+                  nombre={empresaNombre}
+                  onCambiar={() => {
+                    setEmpresaId("");
+                    setEmpresaNombre("");
+                    setGente([]);
+                    setLote({});
+                  }}
+                />
               ) : (
                 <>
                   <Buscador
                     placeholder="Buscar empresa…"
                     buscar={buscarEmpresas}
+                    error={error?.campo === "empresa" ? error.mensaje : undefined}
                     onElegir={(o) => elegirEmpresa(o.id, o.etiqueta)}
                   />
                   {puedeCrearEmpresa && (
@@ -213,7 +218,7 @@ export function VincularEmpresaPanel({
               labels={LABEL_ROL_EMPRESA}
               seleccionados={roles}
               onChange={setRoles}
-              error={error}
+              error={error?.campo === "roles" ? error.mensaje : undefined}
             />
           </div>
 
@@ -238,6 +243,9 @@ export function VincularEmpresaPanel({
               <p className="t-caption mb-2">
                 Vienen todas tildadas. El rol es de esta obra, no el cargo en la empresa.
               </p>
+              {error?.campo === "gente" && (
+                <p className="input-error-text mb-2">{error.mensaje}</p>
+              )}
 
               <ul className="flex flex-col gap-2">
                 {gente.map((p) => {

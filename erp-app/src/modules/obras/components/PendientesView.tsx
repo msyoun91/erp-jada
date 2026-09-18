@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { FiltroDias } from "@/components/ui/FiltroDias";
+import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { formatFechaHora } from "@/lib/utils";
 import { resolverPendiente, similaresDelPendiente } from "../actions";
 import {
@@ -34,6 +35,11 @@ export function PendientesView({
   // Cuál se está resolviendo, no si hay alguna: como booleano, aprobar una fila
   // deshabilitaba el botón de todas sin decir cuál estaba procesando.
   const [enviando, setEnviando] = useState<string>();
+
+  // Las dos listas llegan sin `limit` desde la query: el contador va siempre
+  // y los botones aparecen recién pasando la página (GUIDE_DESIGN).
+  const { visibles: colaVisible, ...paginadoCola } = usePaginado(pendientes);
+  const { visibles: historialVisible, ...paginadoHistorial } = usePaginado(historial);
 
   async function verSimilares(p: Pendiente) {
     const encontrados = await similaresDelPendiente(p.tipo, p.registro_id);
@@ -72,8 +78,12 @@ export function PendientesView({
           hasta que se resuelva.
         </p>
 
+        {pendientes.length > 0 && (
+          <Paginacion {...paginadoCola} etiqueta="esperando autorización" />
+        )}
+
         {pendientes.length === 0 ? (
-          <div className="empty-state">
+          <div className="empty-state p-8">
             <p className="t-h3">No hay nada esperando</p>
             <p className="t-body-m mt-1">Toda alta y todo vínculo del módulo están resueltos.</p>
           </div>
@@ -81,7 +91,7 @@ export function PendientesView({
           // Filas separadas por borde, no cards adentro de una card: las dos
           // eran `bg-bg-surface` y la interna se distinguía solo por su borde.
           <ul className="flex flex-col">
-            {pendientes.map((p) => {
+            {colaVisible.map((p) => {
               const parecidos = similares[p.registro_id];
               const procesando = enviando === p.registro_id;
               return (
@@ -200,14 +210,16 @@ export function PendientesView({
           Quién resolvió qué y con qué motivo. Sin esto, un rechazo es una fila que desapareció.
         </p>
 
+        {historial.length > 0 && <Paginacion {...paginadoHistorial} etiqueta="resueltas" />}
+
         {historial.length === 0 ? (
-          <div className="empty-state">
+          <div className="empty-state p-8">
             <p className="t-h3">Nada resuelto</p>
             <p className="t-body-m mt-1">Nadie aprobó ni rechazó en este período.</p>
           </div>
         ) : (
           <ul className="flex flex-col">
-            {historial.map((h) => (
+            {historialVisible.map((h) => (
               <li
                 key={h.aprobacion_id}
                 className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border py-3 first:pt-0 last:border-b-0 last:pb-0"

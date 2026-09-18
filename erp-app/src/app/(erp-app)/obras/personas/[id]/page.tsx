@@ -107,6 +107,9 @@ export default async function PersonaPage({
   // `esMio` también acota editar y desactivar: la RLS de update exige ser el
   // dueño (sql/039), así que sin esto el receptor ve botones que no andan.
   const esMio = !!miId && persona.creado_por === miId;
+  // El panel de transferencia lo muestra arriba de todo. `usuarios` no me
+  // incluye, así que lo mío se resuelve por `esMio` y no por la búsqueda.
+  const duenio = esMio ? "vos" : (usuarios.find((u) => u.id === persona.creado_por)?.nombre ?? null);
   // Colgar la persona de una obra propia pide que sea mía o obras_personas_todas.
   // Espeja la RLS de obras_obra_persona_insert (sql/086).
   const vincularObra = vincular && (esMio || veTodas);
@@ -150,7 +153,7 @@ export default async function PersonaPage({
         ) : null
       }
       permisos={{ editar: editar && esMio, vincularEmpresa, vincularObra }}
-      esMio={esMio}
+      duenio={duenio}
       puedeTransferir={veTodas || (transferirPropias && esMio)}
       usuarios={usuarios.filter((u) => u.id !== miId)}
     />

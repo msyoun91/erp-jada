@@ -51,6 +51,10 @@ export function AuditoriaView({
   const resumen = resumenPorUsuario(accesos);
   const filtrados = usuarioId ? accesos.filter((a) => a.usuario_id === usuarioId) : accesos;
   const { visibles, ...paginado } = usePaginado(filtrados);
+  // Transferencias no tenía ni contador ni paginado, y la query no lleva
+  // `limit`: con un período de 90 días la lista se va de largo.
+  const { visibles: transferenciasVisibles, ...paginadoTransferencias } =
+    usePaginado(transferencias);
 
   return (
     <div className="flex flex-col gap-6">
@@ -69,7 +73,7 @@ export function AuditoriaView({
         </p>
 
         {resumen.length === 0 ? (
-          <div className="empty-state">
+          <div className="empty-state p-8">
             <p className="t-h3">Nadie abrió una ficha</p>
             <p className="t-body-m mt-1">No hubo accesos al contacto en este período.</p>
           </div>
@@ -132,27 +136,30 @@ export function AuditoriaView({
         </p>
 
         {transferencias.length === 0 ? (
-          <div className="empty-state">
+          <div className="empty-state p-8">
             <p className="t-h3">Sin transferencias</p>
             <p className="t-body-m mt-1">Nada cambió de dueño en este período.</p>
           </div>
         ) : (
-          <ul className="flex flex-col">
-            {transferencias.map((t) => (
-              <li
-                key={t.transferencia_id}
-                className="t-body-m row flex flex-wrap items-baseline gap-x-2 border-b border-border px-0 last:border-b-0"
-              >
-                <span className="t-caption shrink-0">{formatFechaHora(t.created_at)}</span>
-                <span>
-                  <span className="t-caption">{ETIQUETA_TIPO[t.tipo]}</span>{" "}
-                  <span className="font-semibold">{t.entidad ?? "—"}</span> de {t.de_usuario} a{" "}
-                  {t.a_usuario}
-                  {t.ejecutada_por !== t.de_usuario && ` — lo movió ${t.ejecutada_por}`}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <>
+            <Paginacion {...paginadoTransferencias} etiqueta="transferencias" />
+            <ul className="flex flex-col">
+              {transferenciasVisibles.map((t) => (
+                <li
+                  key={t.transferencia_id}
+                  className="t-body-m row flex flex-wrap items-baseline gap-x-2 border-b border-border px-0 last:border-b-0"
+                >
+                  <span className="t-caption shrink-0">{formatFechaHora(t.created_at)}</span>
+                  <span>
+                    <span className="t-caption">{ETIQUETA_TIPO[t.tipo]}</span>{" "}
+                    <span className="font-semibold">{t.entidad ?? "—"}</span> de {t.de_usuario} a{" "}
+                    {t.a_usuario}
+                    {t.ejecutada_por !== t.de_usuario && ` — lo movió ${t.ejecutada_por}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </section>
     </div>

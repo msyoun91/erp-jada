@@ -119,16 +119,16 @@ function Opcion({
   peligro?: boolean;
 }) {
   return (
-    <label className="flex cursor-pointer items-start gap-2">
+    <label className="tap-target flex cursor-pointer items-start gap-2">
       <input
         type="radio"
         name={nombre}
         checked={activo}
         onChange={onClick}
-        className="mt-0.5 shrink-0"
+        className="mt-0.5 h-4 w-4 shrink-0 accent-brand-700"
       />
       <span className="min-w-0">
-        <span className={`t-body-s ${peligro && activo ? "text-danger font-medium" : ""}`}>
+        <span className={`t-body-m ${peligro && activo ? "font-medium text-error" : ""}`}>
           {texto}
         </span>
         <span className="t-caption block">{nota}</span>

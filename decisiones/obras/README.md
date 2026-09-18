@@ -93,8 +93,18 @@ Nombre, campos, enums y `estado_obra`, desactivar, mensajes `OB`, GRANT por colu
 
 ## `ui.md`
 
-Listados, fichas, filtros por chips, acciones en `OverflowMenu`, breadcrumb, buscador en la barra del título.
+Listados, fichas, filtros por chips, acciones en `OverflowMenu`, breadcrumb, buscador en la barra del
+título, contraste de los avisos, errores por campo, `hayCambios`.
 
+Las seis últimas salen de la auditoría de UI del módulo (2026-09-18). De la misma pasada quedó una
+decisión de modelo **sin resolver**: `BACKLOG.md` → *Congelada dejó de estar congelada (`sql/040`)*.
+
+- Lo que la clase tipográfica pisa: el color de los avisos
+- El error de validación se renderiza donde está el campo
+- `hayCambios` se compara contra lo que abrió el panel
+- `Elegido` es uno solo, y las filas de la ficha de empresa tienen su menú
+- El vacío tiene que decir cuál de los dos vacíos es
+- Lo que faltaba del contrato que las guías ya pedían
 - UI — decisiones que no salen de la spec
 - Los `<select>` de vinculación se fueron a buscador
 - Enlaces externos: copiar, no inventar

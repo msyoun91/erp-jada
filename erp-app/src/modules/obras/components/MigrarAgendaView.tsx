@@ -82,6 +82,7 @@ export function MigrarAgendaView({ usuarios }: { usuarios: Usuario[] }) {
           </label>
           <select
             id="saliente"
+            aria-required
             className="input"
             value={saliente}
             onChange={(e) => elegirSaliente(e.target.value)}
@@ -101,6 +102,7 @@ export function MigrarAgendaView({ usuarios }: { usuarios: Usuario[] }) {
           </label>
           <select
             id="entrante"
+            aria-required
             className="input"
             value={entrante}
             onChange={(e) => setEntrante(e.target.value)}
@@ -176,11 +178,12 @@ export function MigrarAgendaView({ usuarios }: { usuarios: Usuario[] }) {
           </p>
 
           <div>
-            <label htmlFor="confirmacion" className="t-label mb-1 block">
+            <label htmlFor="confirmacion" className="t-label t-label-req mb-1 block">
               Escribí <span className="font-semibold">{nombreSaliente}</span> para confirmar
             </label>
             <input
               id="confirmacion"
+              aria-required
               className={`input ${error ? "input-error" : ""}`}
               value={confirmacion}
               onChange={(e) => setConfirmacion(e.target.value)}

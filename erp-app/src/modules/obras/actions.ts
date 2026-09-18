@@ -653,7 +653,14 @@ export async function vincularPersonaEmpresa(input: VincularPersonaEmpresaForm) 
   return { success: true as const };
 }
 
-export async function desvincularPersonaEmpresa(id: string, personaId: string) {
+// Las dos fichas revalidan siempre: el vínculo se quita desde los dos lados
+// —es la misma fila y el mismo permiso— y desde cualquiera de ellos la otra
+// queda mostrando una relación que ya no existe.
+export async function desvincularPersonaEmpresa(
+  id: string,
+  personaId: string,
+  empresaId: string,
+) {
   const supabase = await createClient();
 
   const { error, count } = await supabase
@@ -665,6 +672,7 @@ export async function desvincularPersonaEmpresa(id: string, personaId: string) {
   if (fallo) return { success: false as const, error: fallo };
 
   revalidatePath(`/obras/personas/${personaId}`);
+  revalidatePath(`/obras/empresas/${empresaId}`);
   return { success: true as const };
 }
 

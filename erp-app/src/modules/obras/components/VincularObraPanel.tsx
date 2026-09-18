@@ -12,7 +12,7 @@ import {
   type RolEmpresa,
   type RolPersona,
 } from "../types";
-import { Buscador } from "./Buscador";
+import { Buscador, Elegido } from "./Buscador";
 import { RolesPicker } from "./RolesPicker";
 
 // El otro sentido del vínculo obra↔entidad: hasta ahora solo se podía armar
@@ -38,13 +38,15 @@ export function VincularObraPanel({
   const [rolesPersona, setRolesPersona] = useState<RolPersona[]>([]);
   const [observaciones, setObservaciones] = useState("");
   const [enviando, setEnviando] = useState(false);
-  const [error, setError] = useState<string>();
+  // El campo viaja con el mensaje: el mismo string se pasaba al Buscador y al
+  // RolesPicker, así que cada error se imprimía dos veces en pantalla.
+  const [error, setError] = useState<{ campo: "obra" | "roles"; mensaje: string }>();
 
   const roles: string[] = empresa ? rolesEmpresa : rolesPersona;
 
   async function guardar() {
-    if (!obraId) return setError("Elegí una obra");
-    if (roles.length === 0) return setError("Elegí al menos un rol");
+    if (!obraId) return setError({ campo: "obra", mensaje: "Elegí una obra" });
+    if (roles.length === 0) return setError({ campo: "roles", mensaje: "Elegí al menos un rol" });
 
     setError(undefined);
     setEnviando(true);
@@ -81,7 +83,7 @@ export function VincularObraPanel({
       title="Vincular a una obra"
       subtitle={empresa?.razon_social ?? persona?.nombre}
       onClose={onClose}
-      hayCambios={!!obraId || roles.length > 0}
+      hayCambios={!!obraId || roles.length > 0 || !!observaciones}
       footer={
         <>
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
@@ -97,24 +99,18 @@ export function VincularObraPanel({
         <div>
           <label className="t-label t-label-req mb-1 block">Obra</label>
           {obraId ? (
-            <div className="flex items-center gap-2">
-              <span className="t-body-m min-w-0 flex-1 truncate font-semibold">{obraNombre}</span>
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => {
-                  setObraId("");
-                  setObraNombre("");
-                }}
-              >
-                Cambiar
-              </button>
-            </div>
+            <Elegido
+              nombre={obraNombre}
+              onCambiar={() => {
+                setObraId("");
+                setObraNombre("");
+              }}
+            />
           ) : (
             <Buscador
               placeholder="Buscar entre tus obras…"
               buscar={buscarObras}
-              error={error}
+              error={error?.campo === "obra" ? error.mensaje : undefined}
               onElegir={(o) => {
                 setObraId(o.id);
                 setObraNombre(o.etiqueta);
@@ -133,7 +129,7 @@ export function VincularObraPanel({
               labels={LABEL_ROL_EMPRESA}
               seleccionados={rolesEmpresa}
               onChange={setRolesEmpresa}
-              error={error}
+              error={error?.campo === "roles" ? error.mensaje : undefined}
             />
           ) : (
             <RolesPicker
@@ -141,7 +137,7 @@ export function VincularObraPanel({
               labels={LABEL_ROL_PERSONA}
               seleccionados={rolesPersona}
               onChange={setRolesPersona}
-              error={error}
+              error={error?.campo === "roles" ? error.mensaje : undefined}
             />
           )}
         </div>
