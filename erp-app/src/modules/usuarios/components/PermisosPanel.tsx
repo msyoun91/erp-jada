@@ -12,7 +12,7 @@ function labelModulo(modulo: string) {
   return LABEL_MAP[modulo] ?? modulo[0].toUpperCase() + modulo.slice(1);
 }
 
-export function PermisosModal({
+export function PermisosPanel({
   usuario,
   todos,
   submodulos,

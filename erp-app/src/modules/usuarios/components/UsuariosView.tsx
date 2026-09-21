@@ -12,7 +12,7 @@ import { desactivarUsuario, reactivarUsuario } from "../actions";
 import type { Submodulo, Usuario } from "../types";
 import { CrearUsuarioPanel } from "./CrearUsuarioPanel";
 import { EditarUsuarioPanel } from "./EditarUsuarioPanel";
-import { PermisosModal } from "./PermisosModal";
+import { PermisosPanel } from "./PermisosPanel";
 import { ResetearPasswordModal } from "./ResetearPasswordModal";
 
 const ESTADOS = [
@@ -200,7 +200,7 @@ export function UsuariosView({
       )}
 
       {usuarioPermisos && (
-        <PermisosModal
+        <PermisosPanel
           usuario={usuarioPermisos}
           todos={usuarios}
           submodulos={submodulos}

@@ -44,9 +44,11 @@ export function OverflowMenu({
       return;
     }
     const r = botonRef.current!.getBoundingClientRect();
-    // ponytail: alto estimado (~38px por ítem) solo para decidir si abre hacia
-    // arriba; si algún día los ítems cambian de alto, medir después de montar.
-    const alto = items.length * 38 + 8;
+    // ponytail: alto estimado solo para decidir si abre hacia arriba; si los
+    // ítems cambian de alto, medir después de montar. El ítem crece a 44px
+    // abajo de 768px por `.tap-target` (globals.css): estimarlo en 38 hacía
+    // que en mobile el menú se abriera hacia abajo y se saliera de pantalla.
+    const alto = items.length * (window.innerWidth < 768 ? 44 : 38) + 8;
     const cabeAbajo = window.innerHeight - r.bottom > alto;
     setPos({
       top: cabeAbajo ? r.bottom + 4 : Math.max(4, r.top - alto - 4),
