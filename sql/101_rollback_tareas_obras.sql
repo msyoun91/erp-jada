@@ -47,6 +47,11 @@
 -- Hoy delega en `usuario_tiene_permiso(auth.uid(), codigo)` (`sql/062`), que se
 -- va en la sección 3. Va PRIMERO: las policies de `submodulos` y
 -- `usuario_submodulos` la usan y tienen que seguir en pie todo el archivo.
+--
+-- ⚠ ESTA SECCIÓN ESTUVO MAL Y LA REPARA `sql/102`. Volver a `sql/001` perdió
+-- el `JOIN usuarios u ... AND u.activo` que había agregado `sql/020`: un
+-- usuario desactivado conservaba todos sus permisos de RLS. El cuerpo bueno es
+-- el de `sql/102`; el de abajo queda como registro de lo que corrió.
 
 CREATE OR REPLACE FUNCTION tiene_permiso(p_codigo text)
 RETURNS boolean

@@ -3,6 +3,14 @@
 Lo que no es de un módulo. Las reglas para escribir código nuevo viven en `.claude/guides/`; acá
 está **por qué** se decidió cada una. Leer solo el archivo que toca la tarea.
 
+> **Esta rama no tiene `tareas` ni `obras`** (`sql/101`, `sql/102`): salieron para rediseñar el
+> sistema de permisos desde cero. Los archivos de abajo siguen citándolos —`decisiones/obras/…`,
+> `db_schema/tareas.md`, `entes`, el bus de eventos, compartir al asignar— y esas decisiones
+> **son reales**: se tomaron, se implementaron y se pagaron. Lo que ya no existe es el código.
+>
+> Se dejan tal cual a propósito. Son el material de entrada del rediseño, no ruido: cada una dice
+> contra qué problema se decidió. Los archivos que nombran viven en `master`.
+
 ---
 
 ## `ui.md`
