@@ -4,6 +4,7 @@ import { Home, UsersRound, LogOut, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/modules/auth/actions";
+import { initials } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
 
 export const ICON_MAP: Record<string, LucideIcon> = {
@@ -22,12 +23,6 @@ const NAV_ITEM_INICIO: NavItem = { modulo: "dashboard", href: "/" };
 const NAV_ITEMS: NavItem[] = [
   { modulo: "usuarios", href: "/usuarios" },
 ];
-
-function initials(nombre: string) {
-  const parts = nombre.trim().split(" ");
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-  return nombre.slice(0, 2).toUpperCase();
-}
 
 export function SidebarNav({
   modulosVisibles,

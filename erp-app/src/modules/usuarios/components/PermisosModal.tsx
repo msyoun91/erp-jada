@@ -232,7 +232,7 @@ export function PermisosModal({
                         <button
                           type="button"
                           onClick={() => toggleVarios(idsBloque, !bloqueCompleto)}
-                          className="shrink-0 t-caption underline-offset-2 hover:text-text-primary hover:underline"
+                          className="btn btn-secondary btn-sm shrink-0"
                         >
                           {bloqueCompleto ? "Ninguna" : "Todas"}
                         </button>

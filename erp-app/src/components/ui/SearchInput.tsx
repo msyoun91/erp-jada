@@ -12,7 +12,7 @@ export function SearchInput({
   placeholder: string;
 }) {
   return (
-    <div className="relative min-w-[180px] flex-1">
+    <div className="relative grow basis-full sm:basis-auto sm:min-w-[180px]">
       <Search
         size={14}
         strokeWidth={1.75}

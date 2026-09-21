@@ -37,3 +37,19 @@ Sin submódulos nuevos: editar y resetear contraseña son el mismo nivel de auto
 **Filtro de estado con default en "Activos".** Existe recién ahora: hasta que se pudo reactivar, un inactivo en la lista no tenía nada que ofrecer. El default oculta a los desactivados porque son historia, no el trabajo del día. El estado vacío distingue los dos casos por `usuarios.length`, no por el filtro: con la base vacía dice "Sin usuarios todavía" e invita a crear; con la base llena y el filtro sin resultados dice "Sin resultados" y menciona el filtro, que es lo que probablemente lo causó.
 
 Verificado con `sql/tests/usuarios_email_sync.sql` (2/2). El caso "un UPDATE que no toca el email no dispara el trigger" planta un centinela en `usuarios` antes del UPDATE: comparar contra el mismo valor de antes daría OK con el trigger corriendo igual.
+
+## Lista y formularios: revisión visual
+
+**El badge de estado aparece solo cuando la lista puede mezclar estados.** Con el filtro en "Activos" —el default— todas las filas dirían "Activo": el badge repite el filtro en vez de informar. Se muestra con "Inactivos" y "Todos". `modules/usuarios/components/UsuariosView.tsx`.
+
+**La fila muestra cuántos permisos tiene el usuario.** `asignaciones` ya llegaba a la vista para el panel de permisos; contarlo ahí evita abrir el panel usuario por usuario para saber quién quedó sin acceso ("Sin permisos"). Oculto abajo de 640px, donde el ancho es del nombre. `UsuariosView.tsx`.
+
+**`initials()` subió a `lib/utils.ts`.** La usa el avatar del sidebar y el de la fila: dos módulos, una fuente. `lib/utils.ts`, `components/layout/SidebarNav.tsx`, `UsuariosView.tsx`.
+
+**"Todas"/"Ninguna" del panel de permisos es un `btn-secondary`, no texto subrayado en hover.** Era una acción que solo se anunciaba al pasar el mouse, y en touch no hay hover (GUIDE_DESIGN → Mobile-first). El borde la declara clickeable y el media query de `.btn` le da los 44px. `modules/usuarios/components/PermisosModal.tsx`.
+
+**El buscador ocupa su propia fila abajo de 640px (`SearchInput`).** `flex-1` lo dejaba encogerse hasta cortar el placeholder mientras select y botón se apretaban al lado. Va `grow basis-full sm:basis-auto` y no `flex-1 basis-full`: `flex-1` emite `flex: 1 1 0%` y pisa el `basis-full`. Toca todos los módulos que usen el componente. `components/ui/SearchInput.tsx`.
+
+**Crear y editar pasaron de `Modal` a `RightPanel`.** Era la desviación que quedaba respecto de GUIDE_DESIGN → *Crear y editar: panel lateral, no modal*; no había excepción escrita, así que se corrigió el código y no la guía. Los archivos pasaron a llamarse `CrearUsuarioPanel.tsx` y `EditarUsuarioPanel.tsx`. Crear además gana el `hayCambios` que ya tenía editar: cerrar por backdrop o Escape con el formulario a medio llenar ahora pregunta.
+
+**El botón de submit vive en el footer del panel, atado al form con `form="<id>"`.** `RightPanel` renderiza el footer fuera de `children`, así que el botón queda fuera del `<form>`; el atributo nativo los asocia sin ref, estado ni handler puente. `CrearUsuarioPanel.tsx`, `EditarUsuarioPanel.tsx`.

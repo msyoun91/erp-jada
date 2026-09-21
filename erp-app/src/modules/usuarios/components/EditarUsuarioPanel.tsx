@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Modal } from "@/components/ui/Modal";
+import { RightPanel } from "@/components/ui/RightPanel";
 import { editarUsuario } from "../actions";
 import { editarUsuarioSchema, type EditarUsuarioForm, type Usuario } from "../types";
 
-export function EditarUsuarioModal({
+const FORM_ID = "editar-usuario";
+
+export function EditarUsuarioPanel({
   usuario,
   onClose,
 }: {
@@ -39,14 +41,40 @@ export function EditarUsuarioModal({
   }
 
   return (
-    <Modal title="Editar usuario" onClose={onClose} maxWidth={460} hayCambios={isDirty}>
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <RightPanel
+      title="Editar usuario"
+      subtitle={usuario.nombre}
+      onClose={onClose}
+      hayCambios={isDirty}
+      footer={
+        <>
+          <div className="flex-1" />
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={onClose}
+            disabled={enviando}
+          >
+            Cancelar
+          </button>
+          <button type="submit" form={FORM_ID} className="btn btn-primary btn-sm" disabled={enviando}>
+            {enviando ? "Guardando…" : "Guardar"}
+          </button>
+        </>
+      }
+    >
+      <form
+        id={FORM_ID}
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4"
+      >
         <div>
           <label htmlFor="editar-nombre" className="t-label t-label-req mb-1 block">
             Nombre
           </label>
           <input
             id="editar-nombre"
+            aria-required
             aria-invalid={!!errors.nombre}
             className={`input ${errors.nombre ? "input-error" : ""}`}
             {...register("nombre")}
@@ -61,6 +89,7 @@ export function EditarUsuarioModal({
           <input
             id="editar-email"
             type="email"
+            aria-required
             aria-invalid={!!errors.email}
             className={`input ${errors.email ? "input-error" : ""}`}
             {...register("email")}
@@ -70,16 +99,7 @@ export function EditarUsuarioModal({
             El email es con lo que entra al sistema: cambiarlo cambia su usuario de login.
           </p>
         </div>
-
-        <div className="mt-2 flex justify-end gap-3">
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={enviando}>
-            Cancelar
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={enviando}>
-            {enviando ? "Guardando..." : "Guardar"}
-          </button>
-        </div>
       </form>
-    </Modal>
+    </RightPanel>
   );
 }

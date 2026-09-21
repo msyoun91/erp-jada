@@ -54,3 +54,10 @@ export function mensajeError(error: unknown): string {
 
   return (codigo && MENSAJES_ERROR[codigo]) || "No se pudo completar la operación. Intentá de nuevo.";
 }
+
+// Iniciales para avatares: dos letras del nombre, o de nombre y apellido.
+export function initials(nombre: string): string {
+  const parts = nombre.trim().split(" ");
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return nombre.slice(0, 2).toUpperCase();
+}

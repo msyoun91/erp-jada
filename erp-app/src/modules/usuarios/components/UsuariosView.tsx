@@ -7,10 +7,11 @@ import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { initials } from "@/lib/utils";
 import { desactivarUsuario, reactivarUsuario } from "../actions";
 import type { Submodulo, Usuario } from "../types";
-import { CrearUsuarioModal } from "./CrearUsuarioModal";
-import { EditarUsuarioModal } from "./EditarUsuarioModal";
+import { CrearUsuarioPanel } from "./CrearUsuarioPanel";
+import { EditarUsuarioPanel } from "./EditarUsuarioPanel";
 import { PermisosModal } from "./PermisosModal";
 import { ResetearPasswordModal } from "./ResetearPasswordModal";
 
@@ -36,7 +37,7 @@ export function UsuariosView({
   const [texto, setTexto] = useState("");
   // Arranca en "activos": los desactivados son historia, no el trabajo del día.
   const [estado, setEstado] = useState<Estado>("activos");
-  const [modalCrear, setModalCrear] = useState(false);
+  const [panelCrear, setPanelCrear] = useState(false);
   const [editando, setEditando] = useState<Usuario | null>(null);
   const [reseteando, setReseteando] = useState<Usuario | null>(null);
   const [usuarioPermisos, setUsuarioPermisos] = useState<Usuario | null>(null);
@@ -60,6 +61,11 @@ export function UsuariosView({
       return;
     }
     toast.success("Usuario reactivado");
+  }
+
+  function cuentaPermisos(usuarioId: string) {
+    const total = asignaciones[usuarioId]?.length ?? 0;
+    return total === 0 ? "Sin permisos" : `${total} permiso${total !== 1 ? "s" : ""}`;
   }
 
   const q = texto.trim().toLowerCase();
@@ -89,7 +95,7 @@ export function UsuariosView({
         </select>
 
         {puedeGestionar && (
-          <button className="btn btn-primary" onClick={() => setModalCrear(true)}>
+          <button className="btn btn-primary" onClick={() => setPanelCrear(true)}>
             <UserPlus size={16} />
             Nuevo usuario
           </button>
@@ -115,16 +121,28 @@ export function UsuariosView({
           {visibles.map((usuario) => (
             <div
               key={usuario.id}
-              className="flex items-center gap-2 border-b border-border row last:border-b-0"
+              className="flex items-center gap-3 border-b border-border row last:border-b-0"
             >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-50 text-[13px] font-semibold text-text-brand">
+                {initials(usuario.nombre)}
+              </div>
+
               <div className="min-w-0 flex-1">
                 <p className="t-body-m truncate font-medium text-text-primary">{usuario.nombre}</p>
                 <p className="t-caption truncate">{usuario.email}</p>
               </div>
 
-              <span className={`badge shrink-0 ${usuario.activo ? "badge-success" : "badge-neutral"}`}>
-                {usuario.activo ? "Activo" : "Inactivo"}
+              <span className="hidden shrink-0 t-caption sm:inline">
+                {cuentaPermisos(usuario.id)}
               </span>
+
+              {/* Con el filtro en "Activos" el badge diría lo mismo en todas las
+                  filas: solo aporta cuando la lista puede mezclar estados. */}
+              {estado !== "activos" && (
+                <span className={`badge shrink-0 ${usuario.activo ? "badge-success" : "badge-neutral"}`}>
+                  {usuario.activo ? "Activo" : "Inactivo"}
+                </span>
+              )}
 
               {puedeGestionar && (
                 <OverflowMenu
@@ -173,9 +191,9 @@ export function UsuariosView({
         />
       )}
 
-      {modalCrear && <CrearUsuarioModal onClose={() => setModalCrear(false)} />}
+      {panelCrear && <CrearUsuarioPanel onClose={() => setPanelCrear(false)} />}
 
-      {editando && <EditarUsuarioModal usuario={editando} onClose={() => setEditando(null)} />}
+      {editando && <EditarUsuarioPanel usuario={editando} onClose={() => setEditando(null)} />}
 
       {reseteando && (
         <ResetearPasswordModal usuario={reseteando} onClose={() => setReseteando(null)} />
