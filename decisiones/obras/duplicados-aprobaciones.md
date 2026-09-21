@@ -72,6 +72,16 @@ Archivos: `sql/098_congelada_quiere_decir_congelada.sql`, `sql/tests/obras_098.s
 
 ---
 
+## El test de altas congeladas se pone al día sacando los casos sin sujeto (`sql/tests/obras_033.sql`)
+
+**Los seis casos del vínculo pendiente (04–07, 24–25) se borran y el resto no se renumera.** `sql/040` dropeó `obras_obra_persona.pendiente` y sacó `'obra_persona'` de `obras_resolver_pendiente`: esos casos afirmaban sobre algo que ya no existe. Quedan 26, y corren verde — 26/26 el 2026-09-21. Los números viejos se conservan para que los resultados anteriores se sigan leyendo.
+
+Tres se adaptaron en vez de borrarse: el sujeto sigue vivo y lo que cambió es el montaje. El 15 edita el vínculo propio (vincular una persona ajena a una obra propia no pasa la policy desde `sql/086`), el 29 cuelga la persona ajena de la empresa con `role = none`, y el 31/32 esperan 1 agregada / 0 pendientes — el lote de `obras_vincular_empresa` filtra por `creado_por` desde `sql/052` y `personas_pendientes` es 0 desde `sql/044`.
+
+Archivos: `sql/tests/obras_033.sql`.
+
+---
+
 ## El vínculo pendiente no abre la ficha
 
 > **Superado por *MODEL A* / `sql/039`–`040`.** Ya no hay vínculo pendiente. `obras_puede_ver_persona` dejó de contar **cualquier** vínculo: para ver una persona hay que ser su dueño, tener grant, o `obras_personas_todas`. El WITH CHECK de `obras_obra_persona_insert` exige visibilidad — no se vincula lo que no se ve.

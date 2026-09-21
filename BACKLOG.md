@@ -69,16 +69,3 @@ reparación vuelve a esperar `true`.
   resuelven con `obras_puede_ver_*`, que no cuenta contextuales. Correcto para no meterlo en la
   agenda, pero al receptor le muestra "de Fulano, sin link" a un contacto que abre normal desde la
   obra. Si se toca, el link va con `?ctx=`.
-
-## Segunda pasada de la auditoría de compartir/transferir (2026-09-18)
-
-Todo verificado contra la base en transacción revertida; exposición real al escribirla, 0 filas. Lo
-cerrado está en `decisiones/obras/visibilidad.md` (`sql/095`, `sql/096`, `sql/099`).
-
-**Decidido, sin implementar:**
-
-- **`sql/tests/obras_033.sql` no corre desde `sql/040`**: lee `obras_obra_persona.pendiente`, que
-  esa migración dropeó. No está muerto entero: solo perdieron su sujeto los casos del vínculo
-  pendiente (04–07 y 24–25; el 15 usa como montaje la fila del 05). Altas pendientes, cola,
-  aprobar/rechazar, el UPDATE bloqueado y el referente ajeno siguen vigentes. Se arregla sacando esos
-  casos y corriéndolo.

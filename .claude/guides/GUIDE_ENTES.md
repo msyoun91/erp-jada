@@ -25,11 +25,20 @@ tiene ficha, dueño, y puede aparecer como chip en otro módulo.
 ## 1. La ficha del módulo — antes de escribir SQL
 
 Junto con el árbol de vistas y funciones (`GUIDE_MODULO_NUEVO.md`, paso 0), se lista y se aprueba con
-el usuario. Un módulo puede no tener entes (el dashboard, un módulo de reportes o de configuración):
-la ficha dice `Entes: ninguno` y entonces tampoco emite eventos. Sin ficha aprobada no hay SQL.
+el usuario. Arranca por `Personas` (§1.1): de ahí salen las vistas y las funciones, no al revés. Un
+módulo puede no tener entes (el dashboard, un módulo de reportes o de configuración): la ficha dice
+`Entes: ninguno` y entonces tampoco emite eventos. Sin ficha aprobada no hay SQL.
+
+La ficha aprobada se pega en `decisiones/<modulo>.md` (o `decisiones/<modulo>/README.md` si es carpeta),
+bajo el título `## Ficha del módulo`. Aprobada en chat y no escrita es ficha perdida: en la sesión
+siguiente nadie puede contrastar contra ella.
 
 ```
 Módulo: obras
+Personas
+├── Manager  — ve todas las obras · transfiere, aprueba altas · —
+├── Vendedor — ve las suyas y las compartidas · carga y edita las suyas · no ve obras ajenas
+└── Taller   — NO usa el módulo (se evaluó y se descartó) · — · —
 Entes
 ├── obra      — dueño responsable_id · estado estado_obra · datos {nombre} · ruta /obras/{id} · submódulo obras_ver
 ├── empresa   — dueño creado_por · sin estado · ruta /obras/empresas/{id} · submódulo obras_empresas
@@ -54,6 +63,56 @@ Eventos que consume
 Un módulo puede emitir y consumir (Tareas), emitir sin consumir (Obras), o no tener entes ni
 eventos. `transferencia`, `compartido` y `revocado` todavía no los emite nadie: Obras los registra en
 `obras_transferencias` y en las tablas `*_compartida`, y entran al enum con su primer emisor (§2.8).
+
+### 1.1 Personas — se listan primero, antes que los entes
+
+Una persona es un rol de la empresa (manager, vendedor, taller, administración, cliente en
+`erp-cliente`), no un rol del sistema: el sistema no tiene roles, la autorización sigue siendo
+submódulos (`GUIDE_PERMISSIONS.md`). La persona vive solo en la ficha. Nunca una tabla, nunca un
+enum, nunca un `if (persona === 'vendedor')`. Un usuario real puede ser dos personas a la vez; por
+eso se le asignan submódulos, no personas.
+
+Tres datos por persona, en este orden: **qué ve · qué hace · qué NO ve**. La tercera es la que más se
+olvida y la más cara: sumar una persona que solo lee no agrega un botón, cambia la visibilidad —
+RLS, compartir, qué columnas y si ve datos sensibles. Esa capa es la que duele retocar después.
+
+Se pregunta antes de listar entes: *¿quién va a usar este módulo y qué hace cada uno con él,
+incluidos los que solo miran?* Incluye a quien lo mire desde `erp-cliente`.
+
+Una persona evaluada y descartada se escribe igual, con el motivo (`Taller — NO usa el módulo`). Vale
+más que el silencio: sin la línea, dentro de seis meses la pregunta se vuelve a abrir desde cero.
+
+Después, cada vista y cada función del árbol nombra a qué personas sirve:
+
+```
+Módulo: Obras
+├── Obras (vista)                    — manager, vendedor
+│   ├── obras_crear (funcion)        — manager, vendedor
+│   ├── obras_transferir (funcion)   — manager
+│   └── obras_ver_contacto (funcion) — manager, vendedor
+└── Empresas (vista)                 — manager, vendedor
+```
+
+**Vista o función sin persona no se construye.** Y al revés: si una persona no puede hacer su trabajo
+con el árbol, falta algo — encontrarlo acá es gratis, encontrarlo después del SQL no.
+
+### 1.2 La ficha reorienta: contrastar antes de sumar
+
+La ficha escrita no es documentación, es el contrato del módulo. Antes de sumar una vista, una
+función o una columna —también en debug, también meses después— se contrasta contra `Personas`. Si lo
+pedido no sirve a ninguna persona de la lista, **decirlo antes de construir**:
+
+> Este módulo está fichado para manager y vendedor. Lo que pedís sirve a taller, que está listado como
+> descartado. ¿Sumamos taller como persona (y revisamos visibilidad), o va a `BACKLOG.md`?
+
+Tres salidas, ninguna es callarse:
+
+1. **Persona nueva** → se actualiza `Personas` en la ficha y se revisa visibilidad antes de escribir código. Persona nueva no es una línea más: es repasar RLS y compartir.
+2. **Persona ya listada, faltaba la función** → se construye y la ficha suma la línea.
+3. **No sirve a nadie** → `BACKLOG.md` o se descarta.
+
+El usuario siempre puede decidir seguir igual. Lo que no puede pasar es que la desviación no se
+nombre.
 
 ## 2. Contrato de un ente
 

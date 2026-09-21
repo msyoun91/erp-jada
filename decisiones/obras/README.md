@@ -77,6 +77,8 @@ Aviso de duplicados, altas congeladas, cola de aprobación y logs por función.
 - Congelada, no marcada
 - **Congelada vuelve a congelar, con trigger y no con policy (`sql/098`)** — `sql/040` se había
   llevado el corte; vuelven `OB011` / `OB012`
+- **El test de altas congeladas se pone al día sacando los casos sin sujeto (`sql/tests/obras_033.sql`)** —
+  se van los seis casos del vínculo pendiente, quedan 26 y corren verde
 - El vínculo pendiente no abre la ficha
 - La detección corre en la base, y por eso hubo que partir las tres búsquedas
 - ~~Lo que el rechazo todavía no resuelve~~ — resuelto por `sql/038`

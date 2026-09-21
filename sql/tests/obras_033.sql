@@ -9,14 +9,16 @@
 --
 -- Lo que afirma este archivo:
 --   · que el trigger marca pendiente lo que se parece, y NO lo que no;
---   · que un vínculo pendiente no abre la ficha de contacto — que es el
---     motivo entero por el que el pedido existe;
 --   · que la fila congelada no acepta vínculos;
 --   · que `pendiente` no se puede tocar por UPDATE directo, y que el GRANT
 --     por columna no rompió los UPDATE que la app sí hace;
 --   · que aprobar y rechazar dejan rastro.
 --
--- Último resultado: 33/33.
+-- Último resultado: 26/26 el 2026-09-21. Antes fue 33/33, pero `sql/040` dropeó
+-- `obras_obra_persona.pendiente` y la rama de vínculo-pendiente se fue entera:
+-- faltan los números 04–07 y 24–25, y no se renumeró el resto para que los
+-- resultados viejos se sigan leyendo. Quedan 26 casos. Los números que
+-- sobreviven afirman lo mismo que antes salvo 31/32, abajo.
 --
 -- Encontró tres agujeros, todos anotados en `decisiones/obras/`: el guard de
 -- congelado explotaba con 42703 sobre `obras_persona_empresa`, `obras_aprobar`
@@ -100,35 +102,14 @@ BEGIN
   VALUES ('Ppwlt', 'Grrmnd', '11 5555-0002', 'ppwlt@zzqx.test', v_tester)
   RETURNING id INTO v_ajena;
 
-  -- ---------- Vincular lo propio no molesta a nadie ----------
+  -- ---------- Vincular lo propio ----------
+  -- 04–07 (vínculo pendiente, y que no abriera el contacto) murieron con
+  -- `sql/040`. El vínculo queda como montaje del caso 15.
   PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin)::text, true);
 
   INSERT INTO obras_obra_persona (obra_id, persona_id, roles)
   VALUES (v_obra, v_mia, ARRAY['compras']::rol_persona[])
-  RETURNING pendiente INTO v_b;
-  r := r || E'\n04 vincular persona propia: pendiente=' || v_b ||
-       CASE WHEN v_b THEN ' *** FALLA — friccion de mas' ELSE ' OK' END;
-
-  -- ---------- ...vincular lo ajeno espera autorización ----------
-  INSERT INTO obras_obra_persona (obra_id, persona_id, roles)
-  VALUES (v_obra, v_ajena, ARRAY['decisor']::rol_persona[])
-  RETURNING id, pendiente INTO v_vinculo, v_b;
-  r := r || E'\n05 vincular persona ajena: pendiente=' || v_b ||
-       CASE WHEN v_b THEN ' OK' ELSE ' *** FALLA — la puerta sigue abierta' END;
-
-  -- ---------- Y el vínculo pendiente NO abre el contacto ----------
-  -- Es el punto entero del pedido: si acá diera true, el vendedor vincularía,
-  -- leería el teléfono y esperaría el rechazo sentado.
-  SELECT obras_puede_ver_persona(v_ajena) INTO v_b;
-  r := r || E'\n06 vinculo pendiente da acceso a la persona: ' || v_b ||
-       CASE WHEN v_b THEN ' *** FALLA — autorizacion decorativa' ELSE ' OK' END;
-
-  BEGIN
-    PERFORM * FROM obras_ficha_persona(v_ajena);
-    r := r || E'\n07 ficha con vinculo pendiente: *** FALLA — la sirvio';
-  EXCEPTION WHEN others THEN
-    r := r || E'\n07 ficha con vinculo pendiente: cortado (' || SQLSTATE || ') OK';
-  END;
+  RETURNING id INTO v_vinculo;
 
   -- ---------- Congelado ----------
   INSERT INTO obras_empresas (razon_social, creado_por)
@@ -255,23 +236,8 @@ BEGIN
     r := r || E'\n23 resolver dos veces: cortado (' || SQLSTATE || ') OK';
   END;
 
-  -- ---------- Aprobar libera el vínculo ----------
-  PERFORM obras_resolver_pendiente('obra_persona', v_vinculo, true, NULL);
-
-  PERFORM set_config('role', 'none', true);
-  SELECT pendiente INTO v_b FROM obras_obra_persona WHERE id = v_vinculo;
-  r := r || E'\n24 aprobado deja de estar pendiente: ' || v_b ||
-       CASE WHEN v_b THEN ' *** FALLA' ELSE ' OK' END;
-
-  -- El vínculo aprobado sí da acceso — pero se desactivó en el caso 15, así
-  -- que se reactiva para probar lo que importa.
-  UPDATE obras_obra_persona SET activo = true WHERE id = v_vinculo;
-
-  PERFORM set_config('role', 'authenticated', true);
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin)::text, true);
-  SELECT obras_puede_ver_persona(v_ajena) INTO v_b;
-  r := r || E'\n25 vinculo aprobado da acceso: ' || v_b ||
-       CASE WHEN v_b THEN ' OK' ELSE ' *** FALLA — no sirve para nada' END;
+  -- 24–25 (aprobar el vínculo lo libera y eso abre el contacto) murieron con
+  -- `sql/040`: `obras_resolver_pendiente` ya no acepta 'obra_persona'.
 
   -- ---------- Empresa congelada, invisible para el resto ----------
   DECLARE
@@ -304,8 +270,14 @@ BEGIN
 
     INSERT INTO obras_persona_empresa (persona_id, empresa_id, cargo)
     VALUES (v_mia, v_empresa, 'Compras');
+
+    -- La ajena entra sin RLS a propósito: desde `sql/040` nadie ve a la vez la
+    -- persona del tester y la empresa del admin, y quién la colgó no es lo que
+    -- mide el caso 29 — mide qué devuelve la función.
+    PERFORM set_config('role', 'none', true);
     INSERT INTO obras_persona_empresa (persona_id, empresa_id, cargo)
     VALUES (v_ajena, v_empresa, 'Direccion');
+    PERFORM set_config('role', 'authenticated', true);
 
     SELECT count(*) INTO v_n FROM obras_personas_de_empresa(v_empresa, v_obra2);
     r := r || E'\n29 la gente de la empresa se lista entera: ' || v_n ||
@@ -324,15 +296,18 @@ BEGIN
         jsonb_build_object('persona_id', v_ajena, 'roles', jsonb_build_array('decisor'))
       )
     );
+    -- Desde `sql/052` el lote filtra por `creado_por = auth.uid()` y las demás
+    -- se saltean en silencio: la ajena no entra, y `personas_pendientes` es
+    -- siempre 0 desde `sql/044`.
     r := r || E'\n31 vinculo empresa + gente: ' || v_res.personas_agregadas || ' agregadas, ' ||
          v_res.personas_pendientes || ' pendientes' ||
-         CASE WHEN v_res.personas_agregadas = 2 AND v_res.personas_pendientes = 1
+         CASE WHEN v_res.personas_agregadas = 1 AND v_res.personas_pendientes = 0
               THEN ' OK' ELSE ' *** FALLA' END;
 
     SELECT count(*) INTO v_n FROM obras_obra_persona
     WHERE obra_id = v_obra2 AND activo AND empresa_id = v_empresa;
     r := r || E'\n32 quedaron escritas con su empresa: ' || v_n ||
-         CASE WHEN v_n = 2 THEN ' OK' ELSE ' *** FALLA' END;
+         CASE WHEN v_n = 1 THEN ' OK' ELSE ' *** FALLA' END;
   END;
 
   -- ---------- Marcar referente no es un atajo ----------
