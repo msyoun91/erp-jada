@@ -25,7 +25,10 @@ tiene ficha, dueño, y puede aparecer como chip en otro módulo.
 ## 1. La ficha del módulo — antes de escribir SQL
 
 Junto con el árbol de vistas y funciones (`GUIDE_MODULO_NUEVO.md`, paso 0), se lista y se aprueba con
-el usuario. Arranca por `Personas` (§1.1): de ahí salen las vistas y las funciones, no al revés. Un
+el usuario. Arranca por `Objetivo`: una línea, para qué existe el módulo y qué problema resuelve. Sigue
+`Personas` (§1.1): de ahí salen las vistas y las funciones, no al revés. Objetivo y personas son contra
+lo que se contrasta cualquier pedido posterior — si no entra en ninguno de los dos, se avisa antes de
+construirlo. Un
 módulo puede no tener entes (el dashboard, un módulo de reportes o de configuración): la ficha dice
 `Entes: ninguno` y entonces tampoco emite eventos. Sin ficha aprobada no hay SQL.
 
@@ -35,6 +38,7 @@ siguiente nadie puede contrastar contra ella.
 
 ```
 Módulo: obras
+Objetivo: <una línea: para qué existe el módulo y qué problema resuelve>
 Personas
 ├── Manager  — ve todas las obras · transfiere, aprueba altas · —
 ├── Vendedor — ve las suyas y las compartidas · carga y edita las suyas · no ve obras ajenas
@@ -55,14 +59,16 @@ Acciones
 Eventos que emite (sql/068)
 ├── obra: alta · estado · relacion_alta · relacion_baja (empresa, persona) — disparan
 ├── obra: baja · reactivacion — solo log: pasan por obras_set_activo (DEFINER)
+├── obra: compartido · revocado (sql/083) — desde obras_obra_compartida; los contextuales no emiten
 └── empresa, persona: ninguno
 Eventos que consume
 └── ninguno
 ```
 
 Un módulo puede emitir y consumir (Tareas), emitir sin consumir (Obras), o no tener entes ni
-eventos. `transferencia`, `compartido` y `revocado` todavía no los emite nadie: Obras los registra en
-`obras_transferencias` y en las tablas `*_compartida`, y entran al enum con su primer emisor (§2.8).
+eventos. `transferencia` todavía no lo emite nadie: Obras lo registra en `obras_transferencias`, y entra al
+enum con su primer emisor (§2.8). `compartido` y `revocado` los emite Obras desde
+`obras_obra_compartida` (`sql/083`).
 
 ### 1.1 Personas — se listan primero, antes que los entes
 
@@ -89,7 +95,7 @@ Módulo: Obras
 ├── Obras (vista)                    — manager, vendedor
 │   ├── obras_crear (funcion)        — manager, vendedor
 │   ├── obras_transferir (funcion)   — manager
-│   └── obras_ver_contacto (funcion) — manager, vendedor
+│   └── obras_referentes (funcion)   — manager
 └── Empresas (vista)                 — manager, vendedor
 ```
 
@@ -239,7 +245,7 @@ Vocabulario, enum `tipo_evento`:
 | `estado` | la columna de estado cambia de verdad, o nace con valor | `{estado, anterior}` |
 | `relacion_alta` / `relacion_baja` | otro ente se vincula / desvincula con un rol (uno por rol) | `{ente, registro_id, rol}` |
 | `transferencia` | cambia el dueño | `{de, a}` |
-| `compartido` / `revocado` | grant otorgado / apagado | `{usuario_id}` |
+| `compartido` / `revocado` | grant otorgado / apagado | `{usuario_id, otorgada_por, origen_*_id}` |
 
 Editar una columna escalar no es evento: sin consumidor es ruido y `updated_at` ya lo dice. Si aparece
 un caso, se suma `dato` con `{columna}`.

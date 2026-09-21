@@ -4,6 +4,71 @@ Módulo `obras`, ruta `/obras`, nombre visible **Agenda de Obras**. Fase 1: regi
 datos. Spec original en `spec.md` (fuera del repo). Acá está lo que la spec **no** dice o dice
 distinto de como quedó implementado.
 
+## Ficha del módulo
+
+```
+Módulo: obras (Agenda de Obras)
+Objetivo: PENDIENTE — lo escribe el usuario
+Personas
+├── Manager  — ve todas las obras, personas y empresas · transfiere, migra agendas, aprueba altas, audita accesos · —
+├── Vendedor — ve lo suyo y lo compartido con él · carga y edita lo suyo, vincula, comparte, transfiere lo propio · no ve obras ajenas, ni el contacto de personas ajenas, ni la comisión del referente
+└── Taller   — NO usa el módulo (se evaluó y se descartó) · — · —
+Entes
+├── obra      — dueño responsable_id · estado estado_obra · datos {nombre} · ruta /obras/{id} · submódulo obras_ver
+├── empresa   — dueño creado_por · sin estado · ruta /obras/empresas/{id} · submódulo obras_empresas
+└── persona   — dueño creado_por · sin estado · ruta /obras/personas/{id} · submódulo obras_personas · contacto solo por obras_ficha_persona (DEFINER, registra el acceso)
+Relaciones
+├── obra ↔ empresa    — rol_empresa[]            (obras_obra_empresa)
+├── obra ↔ persona    — rol_persona[] + empresa  (obras_obra_persona)
+├── persona ↔ empresa — cargo                    (obras_persona_empresa)
+└── obra ↔ persona    — referente + comisión     (obras_obra_referente)
+Acciones
+├── obra: crear · editar · cambiar estado · vincular · marcar referente · transferir · migrar agenda · compartir · revocar · desactivar · reactivar · aprobar alta
+├── empresa: crear · editar · vincular · transferir · desactivar · aprobar alta
+└── persona: crear · editar · vincular · transferir · desactivar · aprobar alta · ver contacto (registra el acceso)
+Eventos que emite (sql/068, sql/083)
+├── obra: alta · estado · relacion_alta · relacion_baja (empresa, persona) — disparan
+├── obra: baja · reactivacion — solo log: pasan por obras_set_activo (DEFINER)
+├── obra: compartido · revocado — desde obras_obra_compartida; los grants contextuales no emiten a propósito
+└── empresa, persona: ninguno
+Eventos que consume
+└── ninguno
+```
+
+Vistas y funciones, cada una con las personas a las que sirve (`db_schema/obras.md` § Permisos):
+
+```
+Módulo: Obras
+├── Obras (obras_ver)                             — manager, vendedor
+│   ├── obras_crear                               — manager, vendedor
+│   ├── obras_editar                              — manager, vendedor
+│   ├── obras_vincular                            — manager, vendedor
+│   ├── obras_referentes                          — manager   (ve y edita la comisión)
+│   ├── obras_transferir                          — manager   (implica ver todas las obras)
+│   ├── obras_transferir_propias                  — vendedor
+│   └── obras_desactivar                          — manager, vendedor
+├── Empresas (obras_empresas)                     — manager, vendedor
+│   ├── obras_empresas_crear                      — manager, vendedor
+│   ├── obras_empresas_editar                     — manager, vendedor
+│   ├── obras_empresas_todas                      — manager   (ve todas + transfiere)
+│   └── obras_empresas_transferir_propias         — vendedor
+├── Personas (obras_personas)                     — manager, vendedor
+│   ├── obras_personas_crear                      — manager, vendedor
+│   ├── obras_personas_editar                     — manager, vendedor
+│   ├── obras_personas_empresas                   — manager, vendedor
+│   ├── obras_personas_todas                      — manager   (ve todas + transfiere + log de accesos)
+│   └── obras_personas_transferir_propias         — vendedor
+├── Pendientes (obras_pendientes)                 — manager
+│   └── obras_aprobar                             — manager
+├── Compartido (obras_compartido, sin funciones)  — manager, vendedor
+├── Auditoría (obras_auditoria, sin funciones)    — manager
+└── Migrar (obras_migrar, sin funciones)          — manager
+```
+
+Compartir y revocar no tienen submódulo propio: son acto del responsable de la obra.
+
+---
+
 Índice. Leer este archivo y después **solo** los archivos del tema que toca la tarea. *MODEL A*
 (`visibilidad.md`) reescribió varias decisiones de los otros archivos: leerlo antes de apoyarse en
 una decisión de visibilidad o alcance.

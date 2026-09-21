@@ -2,7 +2,7 @@
 
 Siempre este orden, sin saltar pasos. Cada paso carga su guía; no cargarlas todas de entrada.
 
-0. **Listar la ficha del módulo y las vistas y funciones por vista, y confirmarlas con el usuario antes de escribir código.** La ficha —personas, entes, estados, relaciones, acciones, eventos que emite y consume— sigue el formato de `GUIDE_ENTES.md` §1. Empieza preguntando: *¿quién va a usar este módulo y qué hace cada uno con él, incluidos los que solo miran?* De las personas salen las vistas y funciones (`GUIDE_ENTES.md` §1.1), no al revés. Las vistas, cada una con las personas a las que sirve:
+0. **Listar la ficha del módulo y las vistas y funciones por vista, y confirmarlas con el usuario antes de escribir código.** La ficha —objetivo, personas, entes, estados, relaciones, acciones, eventos que emite y consume— sigue el formato de `GUIDE_ENTES.md` §1. Empieza preguntando dos cosas: *¿para qué existe este módulo y qué problema resuelve?* y *¿quién va a usar este módulo y qué hace cada uno con él, incluidos los que solo miran?* De las personas salen las vistas y funciones (`GUIDE_ENTES.md` §1.1), no al revés. Las vistas, cada una con las personas a las que sirve:
    ```
    Módulo: Nombre
    ├── modulo_vista1 (vista)          — personaA, personaB
@@ -21,7 +21,7 @@ Siempre este orden, sin saltar pasos. Cada paso carga su guía; no cargarlas tod
 
 ## Checklist
 
-- [ ] Ficha del módulo (personas, entes, estados, relaciones, acciones, eventos) y vistas y funciones por vista, cada una con sus personas, aprobadas
+- [ ] Ficha del módulo (objetivo, personas, entes, estados, relaciones, acciones, eventos) y vistas y funciones por vista, cada una con sus personas, aprobadas
 - [ ] Ficha pegada en `decisiones/<modulo>.md` bajo `## Ficha del módulo` — sin eso no se puede contrastar después (`GUIDE_ENTES.md` §1.2)
 - [ ] Checklist por ente de `GUIDE_ENTES.md` cumplido, incluida la rama en las siete funciones de core
 - [ ] SQL creado, con RLS, `GRANT` a `authenticated` y trigger `updated_at`
