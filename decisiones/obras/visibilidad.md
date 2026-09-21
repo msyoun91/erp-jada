@@ -1,5 +1,25 @@
 # Obras — Visibilidad y compartir
 
+## Transferir bloquea la fila que va a cambiar de dueño (`sql/100`)
+
+**Las tres funciones de transferencia leen al saliente con `FOR UPDATE`.** Última entrada de la
+segunda pasada de la auditoría. Entre leer `v_actual` y escribir el dueño nuevo no había candado:
+dos transferencias simultáneas de la misma obra leían el mismo saliente, las dos escribían
+`responsable_id` —gana la última— y las dos armaban su rama de contextuales, su fila de log y su
+`resolver_vinculos` desde él. Resultado: el log dice dos veces "de A" y los contactos migrados
+quedan repartidos entre dos destinos.
+
+Con el candado la segunda transacción espera y reevalúa la fila ya commiteada: si el destino es el
+dueño nuevo sale por `OB005`, y si no, transfiere desde el dueño correcto. El `AND activo` se
+reevalúa igual, así que desactivar en el medio sigue dando `OB004` / `OB025`.
+
+`obras_migrar_agenda` no entra: no lee el dueño para después escribirlo, filtra por
+`creado_por = p_de_usuario` dentro del propio UPDATE.
+
+Archivos: `sql/100_transferir_bloquea_la_fila.sql`, `sql/tests/obras_100.sql` (test de fuente: la
+carrera pide dos sesiones y el arnés corre en una; el comportamiento lo cubren obras_087, 089, 090
+y 096).
+
 ## Sacar un contacto de la obra corta; desactivar la obra archiva (`sql/099`)
 
 **Apagar un vínculo apaga los grants contextuales anclados en él, y una obra desactivada deja de

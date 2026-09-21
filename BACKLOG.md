@@ -82,6 +82,3 @@ cerrado está en `decisiones/obras/visibilidad.md` (`sql/095`, `sql/096`, `sql/0
   pendiente (04–07 y 24–25; el 15 usa como montaje la fila del 05). Altas pendientes, cola,
   aprobar/rechazar, el UPDATE bloqueado y el referente ajeno siguen vigentes. Se arregla sacando esos
   casos y corriéndolo.
-- **`obras_transferir` no bloquea la fila** (`FOR UPDATE`): dos transferencias simultáneas de la misma
-  obra dejan el log mal y los contactos migrados repartidos entre dos destinos. Improbable. Es una
-  línea, pero obliga a reescribir la función entera: va la próxima vez que se la toque.

@@ -14,6 +14,9 @@ una decisión de visibilidad o alcance.
 
 MODEL A (todo privado por dueño), compartir con checklist y cascada, grants heredados, alcance de personas, buscador global, `obras_aprobar`.
 
+- **Transferir bloquea la fila que va a cambiar de dueño (`sql/100`)** — `FOR UPDATE` sobre el
+  saliente en las tres funciones; dos transferencias simultáneas dejaban el log mal y los contactos
+  repartidos
 - **Sacar un contacto de la obra corta; desactivar la obra archiva (`sql/099`)** — el grant
   muere en la fila al bajar el vínculo; la obra desactivada no se abre para el receptor, que ve la
   fila y recibe un aviso; una rechazada no se reactiva
