@@ -8,7 +8,11 @@ distinto de como quedó implementado.
 
 ```
 Módulo: obras (Agenda de Obras)
-Objetivo: PENDIENTE — lo escribe el usuario
+Objetivo: Registrar cada obra con las empresas y personas que están involucradas para que la agenda
+          comercial sea del negocio y no del teléfono de cada vendedor, sin que eso exponga el
+          contacto ajeno. Al mismo tiempo compartir la información entre el equipo comercial y
+          fundamentar las bases para estadísticas, cuenta corriente que serán utilizadas en otros
+          módulos y evitar pérdida de contacto.
 Personas
 ├── Manager  — ve todas las obras, personas y empresas · transfiere, migra agendas, aprueba altas, audita accesos · —
 ├── Vendedor — ve lo suyo y lo compartido con él · carga y edita lo suyo, vincula, comparte, transfiere lo propio · no ve obras ajenas, ni el contacto de personas ajenas, ni la comisión del referente
