@@ -43,7 +43,7 @@ export async function signInAction(input: LoginForm): Promise<ResultadoLogin> {
 
 const SESION_VENCIDA = "Tu sesión venció. Volvé a ingresar.";
 
-export async function actualizarNombre(input: PerfilForm) {
+export async function actualizarPerfil(input: PerfilForm) {
   const parsed = perfilSchema.safeParse(input);
   if (!parsed.success) return { success: false as const, error: parsed.error.issues[0].message };
 
@@ -58,7 +58,7 @@ export async function actualizarNombre(input: PerfilForm) {
   // impide que "editar mi perfil" llegue hasta `activo`.
   const { error } = await supabase
     .from("usuarios")
-    .update({ nombre: parsed.data.nombre })
+    .update({ nombre: parsed.data.nombre, telefono: parsed.data.telefono })
     .eq("id", user.id);
 
   if (error) return { success: false as const, error: mensajeError(error) };

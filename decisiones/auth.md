@@ -92,3 +92,25 @@ Desde el celular, por `http://192.168.1.52:3000`, el login no logueaba, no mostr
 **Guardar deshabilitado si no hay cambios** (`!isDirty`), y `reset(data)` después de guardar: sin eso el form queda sucio para siempre y el botón invita a reenviar lo mismo.
 
 Verificado con `sql/tests/perfil_propio.sql` (3/3): cambio mi nombre, no puedo tocar `activo` (42501), no puedo renombrar a otro.
+
+### Celular propio en `/perfil` (`sql/103`)
+
+**Una sola columna `telefono`, guardada en dígitos.** Obras tenía `telefono` + `telefono_norm` porque buscaba por número conservando lo tecleado; acá nadie busca, y el destino del dato es un `tel:` y un `wa.me/<numero>`, que no aceptan paréntesis ni guiones. Normaliza el trigger `usuarios_telefono_normalizado` y el CHECK (8–15 dígitos) valida lo normalizado, no lo tecleado — el formulario repite la misma regla en Zod, sobre `v.replace(/\D/g, "")`, pero no normaliza: la autoridad del formato es la base.
+
+**`normalizar_telefono()` vive en `public`, sin prefijo de módulo.** Es la misma función que `obras_normalizar_telefono` y murió con `sql/101`. Cuando obras vuelva, usa esta: un teléfono se normaliza igual en todo el sistema.
+
+**Hubo que sumar la columna al GRANT.** `sql/022` había dado `GRANT UPDATE (nombre)`: con la policy `usuarios_update_propio` sola, el UPDATE pasaba RLS y lo rechazaba el privilegio. Los grants por columna se acumulan, así que `sql/103` agrega `telefono` sin tocar `nombre`.
+
+**El teléfono es dato de contacto, nunca credencial.** Nadie verifica que el número exista (no hay SMS ni OTP). No sirve como segundo factor ni como recuperación de cuenta.
+
+**Los botones de llamar y WhatsApp no van en `/perfil`:** nadie se llama a sí mismo. Acá va el campo editable; los `tel:` y `https://wa.me/<numero>` —links nativos, sin librería— van donde se ve a *otro*: la fila de Usuarios y, más adelante, los chips de persona. Falta decidir quién ve el número de quién (hoy `usuarios_select` lo entrega a la fila propia y a quien tenga `usuarios_ver`).
+
+Verificado con `sql/tests/perfil_telefono.sql` (4/4): se guarda normalizado, vaciar deja NULL, cuatro dígitos rebotan con 23514, y el teléfono ajeno sigue fuera de alcance.
+
+### Auditoría visual de `/perfil`
+
+**El email deshabilitado se veía idéntico a un campo editable.** Mismo fondo, mismo color de texto, `opacity: 1`; lo único distinto era el cursor, y en touch no hay cursor. `.input:disabled` no existía en `globals.css` (sí `.btn:disabled`). El arreglo es global, en `decisiones/global/ui.md`.
+
+**El mínimo de 8 caracteres de la contraseña solo aparecía como error.** Ahora es `t-caption` bajo el campo y el error lo reemplaza cuando falla — mismo patrón que el caption del email y que el del celular.
+
+**Queda afuera a propósito:** el `max-w-lg` deja media pantalla vacía en desktop, pero pasar a dos columnas recién se justifica cuando el perfil tenga una sección más; y "Contraseña actual" sigue sin ojo de mostrar/ocultar, que es el campo donde más se tipea a ciegas.

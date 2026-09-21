@@ -19,7 +19,7 @@ export default async function PerfilPage() {
 
   const { data: perfil } = await supabase
     .from("usuarios")
-    .select("nombre, email")
+    .select("nombre, email, telefono")
     .eq("id", user.id)
     .single();
 
@@ -31,7 +31,7 @@ export default async function PerfilPage() {
         <UserRound size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
         Mi perfil
       </h1>
-      <PerfilView nombre={perfil.nombre} email={perfil.email} />
+      <PerfilView nombre={perfil.nombre} email={perfil.email} telefono={perfil.telefono} />
     </div>
   );
 }

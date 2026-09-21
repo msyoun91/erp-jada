@@ -268,3 +268,7 @@ Pesos: 400 cuerpo, 500 labels/botones/nav, 600 títulos. **No se usa 700** — e
 ningún lado. `WidgetUsuarios` tenía `font-bold` y perdió el bold.
 
 `.btn` (14px/500) y `.input` (14px) ya coincidían con los del sitio y no se tocaron.
+
+## `.input:disabled`
+
+**Un campo deshabilitado se veía exactamente igual que uno editable** — mismo fondo, mismo texto, `opacity: 1` — y el único indicio era el cursor, que en touch no existe. Ahora `bg-bg-subtle` + `text-text-secondary` + `cursor-not-allowed`, con tokens (dark-aware) y sin `opacity`, que habría bajado el contraste del texto en vez de señalar el estado. Lo descubrió la auditoría del email de `/perfil`, pero toca todo campo deshabilitado del ERP. `globals.css`.

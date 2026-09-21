@@ -22,6 +22,7 @@ Tocar `components/ui/` o `globals.css`: design system, componentes compartidos, 
 - Tokens y clases de `globals.css`
 - Auditorías de UI app-wide — P0 — errores, confirmaciones, foco, boundaries · P1 — responsive y legibilidad · P1 — acciones de fila siempre en `OverflowMenu` · P2 — búsqueda, paginación y contador de resultados
 - DM Sans reemplaza a Barlow Semi Condensed + Plus Jakarta Sans
+- `.input:disabled` — el campo deshabilitado tiene que verse deshabilitado
 
 ## `permisos.md`
 

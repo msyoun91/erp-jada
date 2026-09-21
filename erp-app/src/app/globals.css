@@ -157,6 +157,9 @@
      pierde el rojo y se pinta azul de marca. */
   .input-error, .input-error:focus { @apply border-error ring-[3px] ring-[rgba(220,38,38,.12)]; }
   .input-error-text { @apply text-error-text text-xs mt-1; }
+  /* Sin esto un campo deshabilitado se ve idéntico a uno editable: el único
+     indicio era el cursor, y en touch no hay cursor. */
+  .input:disabled { @apply bg-bg-subtle text-text-secondary cursor-not-allowed; }
 
   .badge { @apply font-semibold text-[11px] rounded-full px-[9px] py-[3px]; }
   .badge-brand { @apply bg-brand-50 text-text-brand; }

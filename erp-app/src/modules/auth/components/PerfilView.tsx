@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
-import { actualizarNombre, cambiarPassword } from "../actions";
+import { actualizarPerfil, cambiarPassword } from "../actions";
 import {
   cambiarPasswordSchema,
   perfilSchema,
@@ -13,16 +13,32 @@ import {
   type PerfilForm,
 } from "../types";
 
-export function PerfilView({ nombre, email }: { nombre: string; email: string }) {
+export function PerfilView({
+  nombre,
+  email,
+  telefono,
+}: {
+  nombre: string;
+  email: string;
+  telefono: string | null;
+}) {
   return (
     <div className="flex max-w-lg flex-col gap-4">
-      <DatosForm nombre={nombre} email={email} />
+      <DatosForm nombre={nombre} email={email} telefono={telefono} />
       <PasswordForm />
     </div>
   );
 }
 
-function DatosForm({ nombre, email }: { nombre: string; email: string }) {
+function DatosForm({
+  nombre,
+  email,
+  telefono,
+}: {
+  nombre: string;
+  email: string;
+  telefono: string | null;
+}) {
   const [enviando, setEnviando] = useState(false);
   const {
     register,
@@ -31,12 +47,12 @@ function DatosForm({ nombre, email }: { nombre: string; email: string }) {
     formState: { errors, isDirty },
   } = useForm<PerfilForm>({
     resolver: zodResolver(perfilSchema),
-    defaultValues: { nombre },
+    defaultValues: { nombre, telefono: telefono ?? "" },
   });
 
   async function onSubmit(data: PerfilForm) {
     setEnviando(true);
-    const result = await actualizarNombre(data);
+    const result = await actualizarPerfil(data);
     setEnviando(false);
 
     if (!result.success) {
@@ -44,8 +60,10 @@ function DatosForm({ nombre, email }: { nombre: string; email: string }) {
       return;
     }
     // `reset` con lo guardado: sin esto el form queda "sucio" después de un
-    // guardado exitoso y el botón sigue habilitado sin nada que guardar.
-    reset(data);
+    // guardado exitoso y el botón sigue habilitado sin nada que guardar. El
+    // teléfono se recorta a dígitos porque es lo que el trigger dejó en la
+    // base: mostrar lo tecleado sería mostrar algo que ya no existe.
+    reset({ ...data, telefono: data.telefono.replace(/\D/g, "") });
     toast.success("Perfil actualizado");
   }
 
@@ -75,6 +93,29 @@ function DatosForm({ nombre, email }: { nombre: string; email: string }) {
           <p className="t-caption mt-1">
             Es tu usuario para entrar al sistema. Lo cambia un administrador desde Usuarios.
           </p>
+        </div>
+
+        <div>
+          <label htmlFor="perfil-telefono" className="t-label mb-1 block">
+            Celular
+          </label>
+          <input
+            id="perfil-telefono"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder="11 4567-8900"
+            aria-invalid={!!errors.telefono}
+            className={`input ${errors.telefono ? "input-error" : ""}`}
+            {...register("telefono")}
+          />
+          {errors.telefono ? (
+            <p className="input-error-text">{errors.telefono.message}</p>
+          ) : (
+            <p className="t-caption mt-1">
+              Con característica, sin 0 ni 15. Se guarda solo en números.
+            </p>
+          )}
         </div>
 
         <div className="flex justify-end">
@@ -155,7 +196,11 @@ function PasswordForm() {
               {verPassword ? <EyeOff size={18} strokeWidth={1.75} /> : <Eye size={18} strokeWidth={1.75} />}
             </button>
           </div>
-          {errors.password && <p className="input-error-text">{errors.password.message}</p>}
+          {errors.password ? (
+            <p className="input-error-text">{errors.password.message}</p>
+          ) : (
+            <p className="t-caption mt-1">Mínimo 8 caracteres.</p>
+          )}
         </div>
 
         <div>
