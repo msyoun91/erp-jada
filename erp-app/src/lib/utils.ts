@@ -41,24 +41,6 @@ const MENSAJES_ERROR: Record<string, string> = {
   "23503": "El registro relacionado no existe",
   "23514": "Los datos no cumplen una regla del sistema",
   "42501": "No tenés permiso para hacer esto",
-  TA001: "Ese miembro tiene tareas activas en el proyecto — reasignalas antes de quitarlo",
-  TA002: "Hay asignados que no son miembros del proyecto destino",
-  TA003: "No tenés permiso para poner a otro usuario como responsable",
-  TA004: "El paso previo todavía no está completado",
-  TA005: "Esa cadena de pasos no es válida — el paso previo no se puede cambiar ni mezclar con recurrencia",
-  TA006: "No se puede mover de hilo una tarea que es parte de una cadena de pasos",
-  TA007: "Ese paso tiene un paso siguiente activo — desactivá la cadena desde el final",
-  TA008: "No se pudo guardar: el registro ya no existe o no tenés permiso para modificarlo",
-  TA009: "La plantilla no tiene pasos",
-  TA010: "La plantilla no corresponde a su tipo — una de tarea lleva un solo paso y solo una de proyecto lleva hilos",
-  TA011: "Una plantilla de proyecto crea su propio proyecto — usala desde Plantillas",
-  TA012: "El disparador no es válido — elegí un estado del módulo, y necesitás tener acceso a ese módulo",
-  TA013: "Esta plantilla se crea sola cuando cambia el estado — no se usa a mano",
-  TA015: "Los roles de la obra solo se usan en plantillas que corren solas",
-  TA016: "Alguien asignado no puede abrir lo relacionado y no tenés permiso para sacarlo de la tarea: compartíselo o pedile a quien pueda asignar.",
-  TA017: "No tenés acceso a ese hilo o proyecto, o ya no está activo",
-  TA018: "Solo quien administra tareas puede reactivar algo archivado",
-  TA019: "Solo el responsable puede posponer, archivar o mover de hilo esta tarea",
   email_exists: "Ese email ya está registrado",
   weak_password: "La contraseña es demasiado débil",
   invalid_credentials: "Email o contraseña incorrectos",
@@ -67,18 +49,8 @@ const MENSAJES_ERROR: Record<string, string> = {
   over_request_rate_limit: "Demasiados intentos. Esperá unos minutos e intentá de nuevo.",
 };
 
-// Clase `OB` (sql/032): el mensaje ya viene escrito para el usuario desde la
-// base, y dos de ellos llevan un conteo que un texto fijo perdería. Lista
-// blanca por código y no confianza en el mensaje: lo que no está marcado
-// —incluido cualquier P0001 nuevo— sigue cayendo en el genérico.
-const CODIGO_CON_MENSAJE_PROPIO = /^OB\d{3}$/;
-
 export function mensajeError(error: unknown): string {
-  const { code: codigo, message } = (error ?? {}) as { code?: string; message?: string };
-
-  if (codigo && CODIGO_CON_MENSAJE_PROPIO.test(codigo) && message?.trim()) {
-    return message;
-  }
+  const { code: codigo } = (error ?? {}) as { code?: string };
 
   return (codigo && MENSAJES_ERROR[codigo]) || "No se pudo completar la operación. Intentá de nuevo.";
 }

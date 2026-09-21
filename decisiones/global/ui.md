@@ -191,7 +191,8 @@ del módulo tareas.
 
 ### P0 — errores, confirmaciones, foco, boundaries
 
-- **Errores de Supabase nunca crudos.** `mensajeError(error)` en `lib/utils.ts`: mapa por código (`23505`, `23503`, `23514`, `42501`, `email_exists`, `weak_password`) y genérico para el resto. Todas las actions de `tareas` y `usuarios` lo usan. Los mensajes de Zod sí se muestran tal cual — ya están escritos para el usuario.
+- **Errores de Supabase nunca crudos.** `mensajeError(error)` en `lib/utils.ts`: mapa por código (`23505`, `23503`, `23514`, `42501`, `email_exists`, `weak_password`) y genérico para el resto. Los mensajes de Zod sí se muestran tal cual — ya están escritos para el usuario.
+- **Un mensaje escrito en la base se deja pasar por lista blanca de códigos, nunca confiando en el texto.** Obras lo usaba con `/^OB\d{3}$/` (`sql/032`): el `RAISE` traía el mensaje ya redactado y con conteos que un texto fijo pierde. Se retiró con el módulo (`sql/101`), y el mapa por código quedó solo. Cuando un módulo nuevo vuelva a escribir mensajes desde Postgres, el patrón es ese: una clase de código propia y un regex que la marque — lo no marcado, incluido cualquier `P0001` nuevo, cae en el genérico.
 - **`ConfirmModal` vive en `components/ui/Modal.tsx`**, no en archivo propio: es una envoltura de 30 líneas sobre `Modal` y se usa en 5 lugares. Reemplaza los `confirm()` nativos (que no respetan el design system ni el `<dialog>` en top layer).
 - **Foco visible: una sola regla global** en `@layer base` (`a, button, [tabindex]` → `outline-2 outline-offset-2 outline-brand-500`) en vez de un `:focus-visible` por clase. `select` queda afuera a propósito: usa `.input`, que ya tiene su propio `:focus`.
 - **`loading.tsx` + `error.tsx` en `app/(erp-app)/`**, no por ruta: las 5 páginas del grupo son server components esperando Supabase y el feedback es el mismo. Bajar el boundary a cada ruta cuando alguna necesite un skeleton propio.

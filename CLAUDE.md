@@ -137,7 +137,6 @@ erp-app/src/
 | `.claude/guides/GUIDE_MODULO_NUEVO.md` | crear un módulo |
 | `.claude/guides/GUIDE_ENTES.md` | entes, estados, relaciones entre módulos, compartir, eventos y disparadores, chips y fichas ajenas |
 | `.claude/guides/GUIDE_SYNC.md` | sincronización erp-app ↔ erp-cliente |
-| `decisiones/<modulo>/README.md` | modificar `tareas` u `obras` — el índice dice qué archivo del tema abrir |
 | `decisiones/<modulo>.md` | modificar `usuarios` o `auth` |
 | `decisiones/global/` | `ui.md`: `components/ui/`, `globals.css` · `permisos.md`: permisos · `infra.md`: infraestructura |
 | `db_schema/<modulo>.md` | leer o cambiar el esquema de ese módulo · `core.md`: usuarios y permisos |
