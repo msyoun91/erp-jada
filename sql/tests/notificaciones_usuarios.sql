@@ -34,6 +34,8 @@ BEGIN
     PERFORM set_config('request.jwt.claims',
       format('{"sub":"%s","role":"authenticated"}', pg_temp.id(p_como)), true);
     PERFORM set_config('role', 'authenticated', true);
+  ELSE
+    PERFORM set_config('role', 'service_role', true);
   END IF;
   EXECUTE p_sql;
   SET CONSTRAINTS ALL IMMEDIATE;

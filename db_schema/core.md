@@ -98,7 +98,7 @@ No se desactiva con miembros activos (`equipos_validar_desactivar`, US010).
 | activo | boolean | cambiar de equipo = desactivar la fila e insertar otra |
 | created_at / updated_at | timestamptz | |
 
-RLS de las dos (solo SELECT; escribe el admin con `service_role`): `usuarios_ver` y `usuarios_equipos` ven todo; `usuarios_equipo` ve su equipo vía `mi_equipo()` — `SECURITY DEFINER`, sin argumento para no exponer el equipo de otros. Desde `sql/105` es un envoltorio de `equipo_de(p_usuario)`, que no tiene GRANT.
+RLS de las dos (solo SELECT; escribe el admin con `service_role`): `usuarios_ver` y `usuarios_equipos` ven todo; `usuarios_equipo` ve su equipo vía `mi_equipo()` — `SECURITY DEFINER`, sin argumento para no exponer el equipo de otros. Desde `sql/105` es un envoltorio de `equipo_de(p_usuario)`, sin GRANT a `authenticated`. Grants de `service_role` (`sql/111`): SELECT/INSERT/UPDATE en las dos tablas y EXECUTE en `equipo_de` — las funciones de admin son INVOKER y corren con ese rol.
 
 Cambiar de equipo o quedar independiente: `asignar_equipo(p_admin, p_usuario, p_equipo)` (`sql/106`, solo `service_role`), las dos escrituras en una transacción. Trigger `equipos_miembros_notificar` (`sql/108`): la membresía nueva le avisa al delegador del equipo.
 
@@ -141,7 +141,7 @@ Exige `usuarios.activo` además de `usuario_submodulos.activo` y `submodulos.act
 
 **El predicado vigente es el de `sql/102`, no el de `sql/101`** (desde `sql/105` vive en `usuario_tiene_permiso`). El rollback lo devolvió a la versión de `sql/001`, que es anterior a `sql/020` y no exige `usuarios.activo`: mientras estuvo así, un usuario desactivado conservaba sus permisos en RLS. Es el ejemplo a tener a mano cuando el sistema de permisos nuevo escriba su propio rollback — volver a "la versión anterior" no es volver a la primera.
 
-`usuario_tiene_permiso(p_usuario uuid, p_codigo text)` —preguntar el permiso de **otro** usuario— volvió en `sql/105` para el techo y el guard de las funciones de admin. Sin GRANT a `authenticated`: la llaman triggers y funciones de `service_role`. `tiene_permiso(codigo)` pasó a ser `usuario_tiene_permiso(auth.uid(), codigo)`, como en `sql/062`: el predicado vive en un solo lugar.
+`usuario_tiene_permiso(p_usuario uuid, p_codigo text)` —preguntar el permiso de **otro** usuario— volvió en `sql/105` para el techo y el guard de las funciones de admin. Sin GRANT a `authenticated`: la llaman triggers y funciones de `service_role`, que como son INVOKER necesitan su EXECUTE (`sql/111`, junto con `UPDATE (delegable)` en `submodulos` para `fijar_delegables`). `tiene_permiso(codigo)` pasó a ser `usuario_tiene_permiso(auth.uid(), codigo)`, como en `sql/062`: el predicado vive en un solo lugar.
 
 Trigger `usuarios_validar_desactivar` (`sql/105`): desactivar a quien tiene `usuarios_delegar` falla con US009 — primero `quitar_delegador`.
 

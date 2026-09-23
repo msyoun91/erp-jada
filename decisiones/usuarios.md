@@ -158,6 +158,11 @@ partido esa definición en dos. `app/(erp-app)/usuarios/equipos/`, `modules/usua
 y `fijar_delegables` (apaga primero, así dispara la revocación). Crear, renombrar y desactivar un equipo son
 una fila: la action escribe directo con `service_role` y las reglas las ponen los triggers.
 
+**`service_role` necesita sus grants como cualquier rol (`sql/111`).** Las funciones de admin son INVOKER:
+todo lo que tocan —tablas y helpers con `REVOKE ... FROM PUBLIC`— necesita GRANT a `service_role`. Faltaban
+y todo daba 42501 en la app; los tests no lo vieron porque corrían el admin como `postgres`. Desde entonces
+`intentar` sin `p_como` pasa a `service_role` (`sql/tests/usuarios_equipos.sql`, `notificaciones_usuarios.sql`).
+
 **La salida del delegador vive solo en Equipos.** Desactivarlo desde Usuarios o sacarle `usuarios_delegar`
 en el panel de permisos sigue fallando con US009, y el mensaje ya dice qué falta; el admin va a
 "Quitar delegador" en la pestaña. En el panel, la delegación y su vista se muestran marcadas y bloqueadas
