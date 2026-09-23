@@ -166,3 +166,23 @@ registro no guarda rol~~ (`sql/066`); la descripción es texto plano; los chips 
 solo con los bugs de asignar y compartir (`decisiones/tareas/visibilidad.md`). El texto condicional de
 las plantillas que traía se construyó después en `sql/065` (`decisiones/tareas/plantillas.md`), y el rol
 del vínculo en `sql/066` (`decisiones/tareas/integracion.md`).
+
+## `entes` y `eventos` vuelven antes que Tareas, sin ningún ente (`sql/109`, 2026-09-23)
+
+**La infra cross-módulo vuelve sola, antes que el módulo que la usa.** Pedido del usuario al arrancar el
+rediseño de Tareas: el diseño ya estaba escrito (`GUIDE_ENTES.md`, las secciones de arriba) y solo
+faltaba el código que `sql/101` se llevó. `sql/109` trae `entes` (con `tabla` y `disparos` desde el
+nacimiento), `tipo_evento`, `eventos` y los tres emisores con los cuerpos de `sql/068`.
+
+**De las siete genéricas vuelven dos, y sin ramas.** `etiqueta_registro` y `puede_ver_relacion` porque las
+pide la RLS de `eventos`; responden "no" hasta que un ente les sume su rama. Las demás esperan a su
+primer llamador: `puede_abrir_registro` y `buscar_registros` vienen con Tareas, y
+`compartir_registros`, `puede_compartir_registro` y `sin_acceso` cuando esté decidido cómo se comparte
+con un equipo — el rediseño de Tareas suma tareas de equipo e interequipo, y escribirlas antes sería
+escribirlas dos veces. `disparar_plantillas` no es infra: es el consumidor que trae Tareas.
+
+**`entes.ruta` exige `{id}` por CHECK.** En `master` era convención de la guía; un ente sin `{id}` en la
+ruta rompe todo chip y todo link, y es una línea.
+
+Archivos: `sql/109_entes_eventos.sql`, `sql/tests/entes_eventos.sql`, `db_schema/core.md`,
+`database.types.ts`.

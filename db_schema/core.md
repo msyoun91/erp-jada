@@ -127,3 +127,51 @@ Exige `usuarios.activo` además de `usuario_submodulos.activo` y `submodulos.act
 `usuario_tiene_permiso(p_usuario uuid, p_codigo text)` —preguntar el permiso de **otro** usuario— volvió en `sql/105` para el techo y el guard de las funciones de admin. Sin GRANT a `authenticated`: la llaman triggers y funciones de `service_role`. `tiene_permiso(codigo)` pasó a ser `usuario_tiene_permiso(auth.uid(), codigo)`, como en `sql/062`: el predicado vive en un solo lugar.
 
 Trigger `usuarios_validar_desactivar` (`sql/105`): desactivar a quien tiene `usuarios_delegar` falla con US009 — primero `quitar_delegador`.
+
+## entes (`sql/109`)
+
+Catálogo cross-módulo: cada módulo registra acá sus entes en su propia migración (`GUIDE_ENTES.md` §2.2). Hoy vacía — el primero lo suma Tareas.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| codigo | text | UNIQUE simple, no parcial: destino de FK (`eventos.ente`), y un código no se reutiliza |
+| modulo | text | la rama que toman las genéricas (`CASE e.modulo`) |
+| submodulo | text | la vista que abre la ficha. Texto y no FK: `submodulos.codigo` es único parcial |
+| estados | regtype, nullable | el enum de la columna `estado`; NULL si el ente no tiene estado |
+| datos | text[] | default `{}` — columnas citables como `{columna}` desde otro módulo. Nunca contacto |
+| ruta | text | la ficha, con `{id}`. CHECK: empieza con una sola `/` y contiene `{id}` |
+| tabla | regclass | de dónde lee un consumidor la fila |
+| disparos | tipo_evento[] | default `{}` — qué eventos pueden disparar una plantilla |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | trigger `set_updated_at` |
+
+RLS `entes_select`: `activo AND tiene_permiso(submodulo)` — sin la vista del ente, el ente no existe. Solo `GRANT SELECT`: escribe la migración de cada módulo.
+
+## eventos (`sql/109`)
+
+Log append-only y punto de escucha de los consumidores (`GUIDE_ENTES.md` §2.8). Sin `activo` ni `updated_at`: una auditoría no oculta ni reescribe sus filas.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| ente | text FK → entes(codigo) | |
+| registro_id | uuid | sin FK — apunta a `entes.tabla` |
+| evento | enum `tipo_evento` (`alta`\|`baja`\|`reactivacion`\|`estado`\|`relacion_alta`\|`relacion_baja`) | `transferencia`, `compartido` y `revocado` entran con su primer emisor |
+| detalle | jsonb | default `{}` — `estado`: `{estado, anterior}`; `relacion_*`: `{ente, registro_id, rol}` |
+| actor_id | uuid FK → usuarios, nullable | `auth.uid()` de quien actuó; NULL desde `service_role` |
+| created_at | timestamptz | default `clock_timestamp()`: una sentencia emite varios y el orden queda |
+
+Índices `idx_eventos_registro (ente, registro_id, created_at)` e `idx_eventos_actor (actor_id)`.
+
+RLS `eventos_select`: `etiqueta_registro(ente, registro_id) IS NOT NULL`, y para `relacion_*` además `puede_ver_relacion(...)` — lo que no ves, no pasó. `eventos_insert`: `pg_trigger_depth() > 0`, solo desde un trigger. `GRANT SELECT, INSERT`; sin UPDATE.
+
+**Emisores** (INVOKER, para que un consumidor corra con la RLS de quien actuó):
+
+- `emitir_evento(ente, registro_id, evento, detalle)` — el INSERT. EXECUTE para `authenticated`; por RPC no inserta (la policy pide trigger).
+- `emitir_eventos_registro()` — trigger `AFTER INSERT OR UPDATE OF activo, estado`, `TG_ARGV = (ente)`: alta (solo si nace activo), reactivación, estado (si cambia de verdad o nace con valor), baja, en ese orden.
+- `emitir_eventos_relacion()` — trigger sobre la puente, `AFTER INSERT OR UPDATE OF activo, roles`, `TG_ARGV = (ente, columna, ente relacionado, columna)`: un evento por rol que aparece o se va, del lado del primer ente.
+
+**Genéricas cross-módulo, sin ramas** (INVOKER, EXECUTE para `authenticated` porque las llama la policy): `etiqueta_registro(ente, id)` devuelve NULL y `puede_ver_relacion(ente, id, ente_rel, id_rel)` false. Cada ente reemplaza el cuerpo sumando su `CASE e.modulo WHEN …`. `puede_abrir_registro`, `buscar_registros`, `relacionados_de_registro`, `puede_compartir_registro` y `compartir_registros` no existen todavía en esta rama.
+
+Test: `sql/tests/entes_eventos.sql` (arma un ente de prueba con su puente y sus ramas, todo en `ROLLBACK`).

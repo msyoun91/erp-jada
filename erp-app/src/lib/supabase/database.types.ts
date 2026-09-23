@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      entes: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          datos: string[]
+          disparos: Database["public"]["Enums"]["tipo_evento"][]
+          estados: unknown
+          id: string
+          modulo: string
+          ruta: string
+          submodulo: string
+          tabla: unknown
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          datos?: string[]
+          disparos?: Database["public"]["Enums"]["tipo_evento"][]
+          estados?: unknown
+          id?: string
+          modulo: string
+          ruta: string
+          submodulo: string
+          tabla: unknown
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          datos?: string[]
+          disparos?: Database["public"]["Enums"]["tipo_evento"][]
+          estados?: unknown
+          id?: string
+          modulo?: string
+          ruta?: string
+          submodulo?: string
+          tabla?: unknown
+          updated_at?: string
+        }
+        Relationships: []
+      }
       equipos: {
         Row: {
           activo: boolean
@@ -77,6 +122,51 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      eventos: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          detalle: Json
+          ente: string
+          evento: Database["public"]["Enums"]["tipo_evento"]
+          id: string
+          registro_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          detalle?: Json
+          ente: string
+          evento: Database["public"]["Enums"]["tipo_evento"]
+          id?: string
+          registro_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          detalle?: Json
+          ente?: string
+          evento?: Database["public"]["Enums"]["tipo_evento"]
+          id?: string
+          registro_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventos_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eventos_ente_fkey"
+            columns: ["ente"]
+            isOneToOne: false
+            referencedRelation: "entes"
+            referencedColumns: ["codigo"]
           },
         ]
       }
@@ -354,7 +444,20 @@ export type Database = {
         Args: { p_admin: string; p_usuario: string }
         Returns: undefined
       }
+      emitir_evento: {
+        Args: {
+          p_detalle?: Json
+          p_ente: string
+          p_evento: Database["public"]["Enums"]["tipo_evento"]
+          p_registro_id: string
+        }
+        Returns: undefined
+      }
       equipo_de: { Args: { p_usuario: string }; Returns: string }
+      etiqueta_registro: {
+        Args: { p_ente: string; p_id: string }
+        Returns: string
+      }
       fijar_delegables: {
         Args: { p_admin: string; p_submodulos: string[] }
         Returns: undefined
@@ -392,6 +495,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      puede_ver_relacion: {
+        Args: {
+          p_ente: string
+          p_ente_rel: string
+          p_id: string
+          p_id_rel: string
+        }
+        Returns: boolean
+      }
       quitar_delegador: {
         Args: {
           p_admin: string
@@ -408,6 +520,13 @@ export type Database = {
       }
     }
     Enums: {
+      tipo_evento:
+        | "alta"
+        | "baja"
+        | "reactivacion"
+        | "estado"
+        | "relacion_alta"
+        | "relacion_baja"
       tipo_notificacion:
         | "miembro_nuevo"
         | "permiso_otorgado"
@@ -540,6 +659,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      tipo_evento: [
+        "alta",
+        "baja",
+        "reactivacion",
+        "estado",
+        "relacion_alta",
+        "relacion_baja",
+      ],
       tipo_notificacion: [
         "miembro_nuevo",
         "permiso_otorgado",

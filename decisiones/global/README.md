@@ -7,6 +7,8 @@ está **por qué** se decidió cada una. Leer solo el archivo que toca la tarea.
 > sistema de permisos desde cero. Los archivos de abajo siguen citándolos —`decisiones/obras/…`,
 > `db_schema/tareas.md`, `entes`, el bus de eventos, compartir al asignar— y esas decisiones
 > **son reales**: se tomaron, se implementaron y se pagaron. Lo que ya no existe es el código.
+> Excepción: `entes`, `eventos` y sus emisores volvieron en `sql/109` (`entes.md`). El rediseño
+> de Tareas arrancó en `decisiones/tareas.md` (ficha, sin SQL).
 >
 > Se dejan tal cual a propósito. Son el material de entrada del rediseño, no ruido: cada una dice
 > contra qué problema se decidió. Los archivos que nombran viven en `master`.
@@ -42,6 +44,7 @@ Tocar `entes`, `lib/entes.ts`, las funciones cross-módulo de core, disparadores
 - "No existe" antes que "sin permiso"
 - Un ente en un texto es una referencia, no un nombre (decidido, no construido)
 - Tareas leída con la guía (2026-09-16)
+- `entes` y `eventos` vuelven antes que Tareas, sin ningún ente (`sql/109`)
 
 ## `infra.md`
 
