@@ -20,10 +20,11 @@ Todo está escrito en `decisiones/usuarios.md` → *Equipos y delegación de per
 
 `submodulo_reglas` (`sql/110`) ya existe; faltan las filas de tareas, que no se pueden cargar antes
 que sus submódulos:
-- `tareas_equipo` requiere `usuarios_delegar` y `usuarios_delegar` requiere `tareas_ver`.
-- `quitar_delegador` y `designar_delegador` tienen que respetarlas: el saliente pierde también
-  `tareas_equipo` (si no, US016), y el heredero o designado necesita `tareas_ver` antes de recibir
-  `usuarios_delegar`.
+- Las del bloque *Reglas entre permisos* de la ficha (`decisiones/tareas.md`), y `delegable` según
+  su lista de delegables.
+- `quitar_delegador` tiene que respetarlas: el saliente pierde también `tareas_equipo` y
+  `tareas_plantillas_equipo` (si no, US016). Ni él ni `designar_delegador` otorgan `tareas_ver`:
+  si el heredero o designado no lo tiene, fallan con US016 y el panel avisa.
 - Correr de nuevo `sql/tests/usuarios_equipos.sql`: sus delegadores de prueba no tienen `tareas_ver`.
 
 Decisión: `decisiones/global/permisos.md` → *Reglas entre permisos*; ficha: `decisiones/tareas.md`.

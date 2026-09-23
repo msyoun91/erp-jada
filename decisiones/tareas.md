@@ -162,9 +162,22 @@ Módulo: Tareas
 └── Todas (vista, tareas_todas)                 — admin
     └── tareas_administrar (funcion)            — admin
 
-Delegables: todo salvo tareas_pedir, tareas_equipo, tareas_repartir, tareas_todas y
-tareas_administrar. tareas_equipo solo con usuarios_delegar: un delegador por equipo.
+Delegables
+├── sí — tareas_ver · tareas_mision · tareas_plantillas
+└── no — tareas_pedir · tareas_equipo · tareas_repartir · tareas_plantillas_equipo
+         · tareas_plantillas_globales · tareas_todas · tareas_administrar
+
+Reglas entre permisos (filas de submodulo_reglas, en la migración de tareas)
+├── tareas_equipo            requiere usuarios_delegar — un delegador por equipo
+├── usuarios_delegar         requiere tareas_ver       — recibe bajas, cambios de equipo y transferencias
+├── tareas_plantillas_equipo requiere tareas_equipo    — la plantilla de equipo es de quien lleva la bandeja
+└── excluye: ninguna — admin vs. equipos sale de la membresía (US002), no de un par
+    · vista → función no va como regla: ya la da vista_id
+    · designar_delegador y quitar_delegador no otorgan tareas_ver: sin él, fallan con US016
 ```
+
+Abierta: si `usuarios_delegar` también requiere `tareas_equipo` (todo delegador con bandeja).
+Sin la regla, un equipo puede tener delegador y nadie que reciba lo asignado "al equipo".
 
 ## Decisiones del diseño (2026-09-23)
 
@@ -336,10 +349,9 @@ multi-asignado (`tareas_asignados`), `modo_completado`, `origen_app`, `tareas_ge
 - Una función que devuelva solo nombre de usuarios y equipos activos, para asignar y pedir:
   `usuarios_select` no deja ver otros equipos. Por fila, además, si es de mi equipo y si puede
   recibir (*Solo se asigna a quien puede recibirlo*): la UI decide asignar o pedir sin otra consulta.
-- Usuarios: el delegador (`usuarios_delegar`) tiene que tener `tareas_ver`, y `tareas_equipo` solo
-  la puede tener un delegador. Son dos filas `requiere` de `submodulo_reglas` (`sql/110`), que la
-  migración de tareas carga; el trigger y el panel de permisos ya las hacen valer. Queda
-  `quitar_delegador`: al saliente se le apaga también `tareas_equipo`, y el heredero necesita
-  `tareas_ver` (`BACKLOG.md`).
+- Usuarios: las reglas del bloque *Reglas entre permisos* de la ficha, que la migración de tareas
+  carga en `submodulo_reglas` (`sql/110`); el trigger y el panel de permisos ya las hacen valer.
+  Queda `quitar_delegador`: al saliente se le apagan también `tareas_equipo` y
+  `tareas_plantillas_equipo`, y el heredero necesita `tareas_ver` (`BACKLOG.md`).
 - Core: vuelven `puede_abrir_registro` y `buscar_registros`; ramas de `hilo` y `tarea` en
   `etiqueta_registro` y `puede_ver_relacion` (`sql/109`).

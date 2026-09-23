@@ -74,9 +74,8 @@ US017) y el panel de permisos la lee de la misma tabla para avisar antes de guar
 trigger y otra vez en el panel habría quedado duplicada.
 
 - **Casos que la originaron:** Equipos (`usuarios_equipos`, del admin) excluye Mi equipo
-  (`usuarios_equipo`, del delegador), cargada en `sql/110`. Las dos de la ficha de tareas
-  (`tareas_equipo` requiere `usuarios_delegar`; `usuarios_delegar` requiere `tareas_ver`) entran
-  con la migración de tareas.
+  (`usuarios_equipo`, del delegador), cargada en `sql/110`. Las de la ficha de tareas (`decisiones/tareas.md` → *Reglas entre
+  permisos*) entran con la migración de tareas.
 - **`excluye` es una fila por par y vale en los dos sentidos. `requiere` va en un solo sentido.**
 - **Vista → función no se carga como regla:** ya la expresa `vista_id` (US001).
 - **Panel (`PermisosPanel`), avisar y bloquear, nunca marcar solo:** lo marcado sin su requisito
