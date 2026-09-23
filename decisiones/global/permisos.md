@@ -65,3 +65,27 @@ delegar el delegador.
 
 Mecánica completa (equipos, heredero, "gana el admin"): `decisiones/usuarios.md` → *Equipos y
 delegación de permisos*.
+
+## Reglas entre permisos: `requiere` y `excluye` (`sql/110`, 2026-09-23)
+
+**Un permiso puede requerir otro o no poder tenerse junto con otro. La regla es una fila de
+`submodulo_reglas`, no código.** El trigger `usuario_submodulos_validar` la hace valer (US016,
+US017) y el panel de permisos la lee de la misma tabla para avisar antes de guardar. Escrita en el
+trigger y otra vez en el panel habría quedado duplicada.
+
+- **Casos que la originaron:** Equipos (`usuarios_equipos`, del admin) excluye Mi equipo
+  (`usuarios_equipo`, del delegador), cargada en `sql/110`. Las dos de la ficha de tareas
+  (`tareas_equipo` requiere `usuarios_delegar`; `usuarios_delegar` requiere `tareas_ver`) entran
+  con la migración de tareas.
+- **`excluye` es una fila por par y vale en los dos sentidos. `requiere` va en un solo sentido.**
+- **Vista → función no se carga como regla:** ya la expresa `vista_id` (US001).
+- **Panel (`PermisosPanel`), avisar y bloquear, nunca marcar solo:** lo marcado sin su requisito
+  muestra ⚠ "Requiere X" y deshabilita Guardar, como la función sin su vista. Marcar el requisito
+  automáticamente podría convertir a alguien en delegador sin que el admin lo vea. Lo que choca con
+  algo marcado queda deshabilitado con "No compatible con X". "Todas" y el checkbox del módulo se
+  saltean lo excluido, y lo excluido no cuenta para "completo".
+- **Admin y equipos no entra en la tabla.** `usuarios_gestionar` contra `usuarios_delegar` sale de
+  la membresía (US002/US003), no de un par de permisos.
+
+Archivos: `sql/110_submodulo_reglas.sql`, `sql/tests/submodulo_reglas.sql`,
+`modules/usuarios/components/PermisosPanel.tsx`, `modules/usuarios/queries.ts` (`getSubmoduloReglas`).

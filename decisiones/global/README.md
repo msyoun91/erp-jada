@@ -28,11 +28,12 @@ Tocar `components/ui/` o `globals.css`: design system, componentes compartidos, 
 
 ## `permisos.md`
 
-Tocar permisos: función ligada a su vista (`vista_id`), vista y función se autorizan por separado, delegación a equipos.
+Tocar permisos: función ligada a su vista (`vista_id`), vista y función se autorizan por separado, delegación a equipos, reglas entre permisos.
 
 - `funcion` ligada a su `vista` puntual (`vista_id`), no solo a `modulo`
 - Vista y función se autorizan por separado (`PermisosModal`)
 - Delegación con techo (en la base desde `sql/105`; falta la UI)
+- Reglas entre permisos: `requiere` y `excluye` (`sql/110`)
 
 ## `entes.md`
 

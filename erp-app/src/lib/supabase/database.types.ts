@@ -170,6 +170,45 @@ export type Database = {
           },
         ]
       }
+      submodulo_reglas: {
+        Row: {
+          activo: boolean
+          id: string
+          otro_id: string
+          submodulo_id: string
+          tipo: Database["public"]["Enums"]["tipo_regla_submodulo"]
+        }
+        Insert: {
+          activo?: boolean
+          id?: string
+          otro_id: string
+          submodulo_id: string
+          tipo: Database["public"]["Enums"]["tipo_regla_submodulo"]
+        }
+        Update: {
+          activo?: boolean
+          id?: string
+          otro_id?: string
+          submodulo_id?: string
+          tipo?: Database["public"]["Enums"]["tipo_regla_submodulo"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submodulo_reglas_otro_id_fkey"
+            columns: ["otro_id"]
+            isOneToOne: false
+            referencedRelation: "submodulos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submodulo_reglas_submodulo_id_fkey"
+            columns: ["submodulo_id"]
+            isOneToOne: false
+            referencedRelation: "submodulos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submodulos: {
         Row: {
           activo: boolean
@@ -531,6 +570,7 @@ export type Database = {
         | "miembro_nuevo"
         | "permiso_otorgado"
         | "delegador_designado"
+      tipo_regla_submodulo: "requiere" | "excluye"
       tipo_submodulo: "vista" | "funcion"
     }
     CompositeTypes: {
@@ -672,6 +712,7 @@ export const Constants = {
         "permiso_otorgado",
         "delegador_designado",
       ],
+      tipo_regla_submodulo: ["requiere", "excluye"],
       tipo_submodulo: ["vista", "funcion"],
     },
   },

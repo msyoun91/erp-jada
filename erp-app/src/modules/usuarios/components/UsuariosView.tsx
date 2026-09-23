@@ -9,7 +9,7 @@ import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { initials } from "@/lib/utils";
 import { desactivarUsuario, reactivarUsuario } from "../actions";
-import type { Submodulo, Usuario } from "../types";
+import type { Submodulo, SubmoduloRegla, Usuario } from "../types";
 import { CrearUsuarioPanel } from "./CrearUsuarioPanel";
 import { EditarUsuarioPanel } from "./EditarUsuarioPanel";
 import { PermisosPanel } from "./PermisosPanel";
@@ -26,11 +26,13 @@ type Estado = (typeof ESTADOS)[number]["valor"];
 export function UsuariosView({
   usuarios,
   submodulos,
+  reglas,
   asignaciones,
   puedeGestionar,
 }: {
   usuarios: Usuario[];
   submodulos: Submodulo[];
+  reglas: SubmoduloRegla[];
   asignaciones: Record<string, string[]>;
   puedeGestionar: boolean;
 }) {
@@ -204,6 +206,7 @@ export function UsuariosView({
           usuario={usuarioPermisos}
           todos={usuarios}
           submodulos={submodulos}
+          reglas={reglas}
           asignaciones={asignaciones}
           onClose={() => setUsuarioPermisos(null)}
         />

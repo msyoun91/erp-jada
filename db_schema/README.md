@@ -6,7 +6,7 @@ tablas, columnas o enums, actualizar ese archivo y `database.types.ts`.
 
 | Archivo | Contenido |
 |---|---|
-| `core.md` | `usuarios`, `submodulos`, `usuario_submodulos`, `equipos`, `usuario_tutorial`, `usuario_widgets`, `tiene_permiso()`, `entes`, `eventos` |
+| `core.md` | `usuarios`, `submodulos`, `submodulo_reglas`, `usuario_submodulos`, `equipos`, `usuario_tutorial`, `usuario_widgets`, `tiene_permiso()`, `entes`, `eventos` |
 
 Es todo lo que hay. Esta rama sacó `tareas` y `obras` para rediseñar permisos desde cero
 (`sql/101`, `sql/102`); sus archivos de esquema viven en `master`, junto con el código.

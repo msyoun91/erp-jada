@@ -5,7 +5,7 @@ import {
   puedeVerMiEquipo,
   puedeVerUsuarios,
 } from "@/modules/usuarios/permissions";
-import { getAsignaciones, getSubmodulos, getUsuarios } from "@/modules/usuarios/queries";
+import { getAsignaciones, getSubmoduloReglas, getSubmodulos, getUsuarios } from "@/modules/usuarios/queries";
 import { UsuariosView } from "@/modules/usuarios/components/UsuariosView";
 
 export default async function UsuariosPage() {
@@ -16,9 +16,10 @@ export default async function UsuariosPage() {
     notFound();
   }
 
-  const [usuarios, submodulos, asignaciones, puedeGestionar] = await Promise.all([
+  const [usuarios, submodulos, reglas, asignaciones, puedeGestionar] = await Promise.all([
     getUsuarios(),
     getSubmodulos(),
+    getSubmoduloReglas(),
     getAsignaciones(),
     puedeGestionarUsuarios(),
   ]);
@@ -27,6 +28,7 @@ export default async function UsuariosPage() {
     <UsuariosView
       usuarios={usuarios}
       submodulos={submodulos}
+      reglas={reglas}
       asignaciones={asignaciones}
       puedeGestionar={puedeGestionar}
     />

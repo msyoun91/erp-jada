@@ -337,7 +337,9 @@ multi-asignado (`tareas_asignados`), `modo_completado`, `origen_app`, `tareas_ge
   `usuarios_select` no deja ver otros equipos. Por fila, además, si es de mi equipo y si puede
   recibir (*Solo se asigna a quien puede recibirlo*): la UI decide asignar o pedir sin otra consulta.
 - Usuarios: el delegador (`usuarios_delegar`) tiene que tener `tareas_ver`, y `tareas_equipo` solo
-  la puede tener un delegador. Se valida al designarlo y al quitarle cualquiera de las dos (en
-  `usuario_submodulos_validar`).
+  la puede tener un delegador. Son dos filas `requiere` de `submodulo_reglas` (`sql/110`), que la
+  migración de tareas carga; el trigger y el panel de permisos ya las hacen valer. Queda
+  `quitar_delegador`: al saliente se le apaga también `tareas_equipo`, y el heredero necesita
+  `tareas_ver` (`BACKLOG.md`).
 - Core: vuelven `puede_abrir_registro` y `buscar_registros`; ramas de `hilo` y `tarea` en
   `etiqueta_registro` y `puede_ver_relacion` (`sql/109`).

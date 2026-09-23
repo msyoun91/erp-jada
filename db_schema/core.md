@@ -39,6 +39,23 @@ Seed: `usuarios_ver` (vista, nombre "Ver" — nunca repite el label del módulo)
 
 RLS: `submodulos_select` — `usuarios_gestionar`, `usuarios_equipos`, `usuarios_equipo` (el delegador nombra los permisos de su equipo), o los propios asignados.
 
+## submodulo_reglas
+
+Reglas entre permisos que no salen de vista → función (`sql/110`). Las lee el panel de permisos y las
+hace valer `usuario_submodulos_validar`. Decisión: `decisiones/global/permisos.md` → *Reglas entre permisos*.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| submodulo_id | uuid FK → submodulos | |
+| otro_id | uuid FK → submodulos | CHECK distinto de `submodulo_id` |
+| tipo | enum tipo_regla_submodulo | `requiere` (`submodulo_id` necesita `otro_id`, en un sentido) \| `excluye` (una fila por par, vale en los dos sentidos) |
+| activo | boolean | unique parcial (submodulo_id, otro_id) WHERE activo |
+
+Una regla con un submódulo inactivo no pesa. Seed: `usuarios_equipos` excluye `usuarios_equipo`.
+
+RLS: `submodulo_reglas_select` con `usuarios_ver`. Sin escrituras: se cargan por migración.
+
 ## usuario_submodulos
 
 Asignación usuario ↔ submódulo.
@@ -54,7 +71,7 @@ Asignación usuario ↔ submódulo.
 
 RLS: `usuario_submodulos_select` — las propias, `usuarios_gestionar`, `usuarios_equipos` sobre los miembros activos de cualquier equipo (`sql/106`), o `usuarios_equipo` sobre los de su equipo. `usuario_submodulos_insert_delegador` / `_update_delegador` (`sql/105`): con `usuarios_delegar`, sobre su equipo, siempre a su nombre (`otorgada_por = auth.uid()`); una fila activa solo si es suya. `GRANT INSERT (usuario_id, submodulo_id, otorgada_por, activo)` y `UPDATE (activo, otorgada_por)` a `authenticated`.
 
-Triggers (`sql/105`): `usuario_submodulos_validar` (constraint trigger diferido — función sin vista, admin fuera de equipos, un delegador por equipo, techo de las filas delegadas) y `usuario_submodulos_cascada` (al apagar una fila de un miembro, apaga lo que él delegó de eso; si es `usuarios_delegar`, todo — y sin heredero falla con US009 si queda otro miembro activo). `usuario_submodulos_notificar_alta` / `_reactiva` (`sql/108`): avisan al que recibe una vista o `usuarios_delegar` — ver `notificaciones.md`.
+Triggers (`sql/105`): `usuario_submodulos_validar` (constraint trigger diferido — función sin vista, `submodulo_reglas` desde `sql/110` (US016 requiere, US017 excluye), admin fuera de equipos, un delegador por equipo, techo de las filas delegadas) y `usuario_submodulos_cascada` (al apagar una fila de un miembro, apaga lo que él delegó de eso; si es `usuarios_delegar`, todo — y sin heredero falla con US009 si queda otro miembro activo). `usuario_submodulos_notificar_alta` / `_reactiva` (`sql/108`): avisan al que recibe una vista o `usuarios_delegar` — ver `notificaciones.md`.
 
 Funciones: `asignar_submodulos(p_admin, p_usuario, p_submodulos[])`, `quitar_delegador(p_admin, p_saliente, p_heredero, p_no_copiar[])` y, desde `sql/106`, `designar_delegador(p_admin, p_usuario)` y `fijar_delegables(p_admin, p_submodulos[])`, solo `service_role`; `delegar_submodulos(p_usuario, p_submodulos[])` INVOKER para `authenticated`. Una fila es delegada si `otorgada_por` es miembro de un equipo (`equipo_de()`).
 

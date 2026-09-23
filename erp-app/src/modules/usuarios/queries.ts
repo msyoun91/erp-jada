@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Equipo, MiEquipo, Otorgamiento, Submodulo, Usuario } from "./types";
+import type { Equipo, MiEquipo, Otorgamiento, Submodulo, SubmoduloRegla, Usuario } from "./types";
 
 export async function getUsuarios(): Promise<Usuario[]> {
   const supabase = await createClient();
@@ -20,6 +20,17 @@ export async function getSubmodulos(): Promise<Submodulo[]> {
     .eq("activo", true)
     .order("modulo")
     .order("orden");
+
+  if (error) throw error;
+  return data;
+}
+
+export async function getSubmoduloReglas(): Promise<SubmoduloRegla[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("submodulo_reglas")
+    .select("submodulo_id, otro_id, tipo")
+    .eq("activo", true);
 
   if (error) throw error;
   return data;

@@ -77,6 +77,16 @@ El submódulo-función existe solo para la capa de permisos — no como entidad 
 2. La barrera: `tiene_permiso('<codigo>')` en la policy o función SQL que hace la escritura (o `puedeX()` en la action si usa `service_role`).
 3. `puedeX()` en `permissions.ts` para que la vista muestre u oculte el botón.
 
+### Reglas entre permisos
+
+Un permiso puede **requerir** otro (en un sentido) o **excluir** otro (una fila por par, vale en los dos sentidos), incluso de otro módulo. Se declaran en la ficha del módulo y se cargan como filas de `submodulo_reglas` en la migración que siembra los submódulos. No se escriben en código: `usuario_submodulos_validar` las hace valer (US016 / US017) y `PermisosPanel` las lee para avisar y deshabilitar. Vista → función no va ahí, ya la da `vista_id`. Decisión: `decisiones/global/permisos.md` → *Reglas entre permisos*.
+
+```sql
+INSERT INTO submodulo_reglas (submodulo_id, otro_id, tipo)
+SELECT a.id, b.id, 'requiere' FROM submodulos a, submodulos b
+WHERE a.codigo = 'modulo_x' AND a.activo AND b.codigo = 'modulo_y' AND b.activo;
+```
+
 ### Funciones de `lib/permissions`
 
 | Función | Uso |

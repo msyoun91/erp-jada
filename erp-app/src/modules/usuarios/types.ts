@@ -83,6 +83,12 @@ export type Submodulo = {
   delegable: boolean;
 };
 
+export type SubmoduloRegla = {
+  submodulo_id: string;
+  otro_id: string;
+  tipo: "requiere" | "excluye";
+};
+
 export type Miembro = Pick<Usuario, "id" | "nombre" | "email" | "activo"> & {
   telefono: string | null;
 };

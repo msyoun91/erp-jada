@@ -16,6 +16,18 @@ admin en `sql/106` (tests en `sql/tests/usuarios_equipos.sql`), vista Mi equipo.
 
 Todo está escrito en `decisiones/usuarios.md` → *Equipos y delegación de permisos*.
 
+## tareas — reglas entre permisos, con la migración del módulo
+
+`submodulo_reglas` (`sql/110`) ya existe; faltan las filas de tareas, que no se pueden cargar antes
+que sus submódulos:
+- `tareas_equipo` requiere `usuarios_delegar` y `usuarios_delegar` requiere `tareas_ver`.
+- `quitar_delegador` y `designar_delegador` tienen que respetarlas: el saliente pierde también
+  `tareas_equipo` (si no, US016), y el heredero o designado necesita `tareas_ver` antes de recibir
+  `usuarios_delegar`.
+- Correr de nuevo `sql/tests/usuarios_equipos.sql`: sus delegadores de prueba no tienen `tareas_ver`.
+
+Decisión: `decisiones/global/permisos.md` → *Reglas entre permisos*; ficha: `decisiones/tareas.md`.
+
 ## erp-cliente — falta el `ThemeToggle`
 
 Vive en `SidebarNav` y el portal no tiene sidebar todavía. Va cuando el portal arranque de verdad

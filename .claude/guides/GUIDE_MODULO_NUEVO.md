@@ -11,6 +11,8 @@ Siempre este orden, sin saltar pasos. Cada paso carga su guía; no cargarlas tod
    └── modulo_vista2 (vista, sin funciones) — personaB
    ```
    Toda vista arranca con mayúscula. Todo módulo tiene al menos 1 vista. Una vista puede no tener funciones. Vista o función sin persona no se construye. Un módulo puede no tener entes; la ficha lo declara. No avanzar a SQL sin la ficha y la lista aprobadas.
+
+   Debajo de la lista, preguntar y declarar **qué se delega y qué reglas hay entre permisos**, también con permisos de otros módulos: qué permiso *requiere* otro (ej: `tareas_equipo` requiere `usuarios_delegar`) y cuáles *se excluyen* (ej: Equipos y Mi equipo). Cada regla es una fila de `submodulo_reglas` (`GUIDE_PERMISSIONS.md` → *Reglas entre permisos*); el panel de permisos y el trigger ya las hacen valer, no se escriben en código. Si ninguna aplica, la ficha lo dice.
 1. SQL y tipos de base de datos (`GUIDE_DB.md`), con el contrato de cada ente (`GUIDE_ENTES.md` §2)
 2. `types.ts` — schema Zod + tipos TypeScript (`GUIDE_TYPESCRIPT.md`)
 3. `permissions.ts` — verificación de acceso (`GUIDE_PERMISSIONS.md`)
@@ -25,7 +27,7 @@ Siempre este orden, sin saltar pasos. Cada paso carga su guía; no cargarlas tod
 - [ ] Ficha pegada en `decisiones/<modulo>.md` bajo `## Ficha del módulo` — sin eso no se puede contrastar después (`GUIDE_ENTES.md` §1.2)
 - [ ] Checklist por ente de `GUIDE_ENTES.md` cumplido, incluida la rama en las siete funciones de core
 - [ ] SQL creado, con RLS, `GRANT` a `authenticated` y trigger `updated_at`
-- [ ] Submódulos sembrados en la migración
+- [ ] Submódulos sembrados en la migración, con `delegable` y sus filas de `submodulo_reglas` (`requiere` / `excluye`); si una regla afecta a funciones que ya asignan permisos (`designar_delegador`, `quitar_delegador`), ajustarlas y correr `sql/tests/usuarios_equipos.sql`
 - [ ] `types.ts`, `permissions.ts`, `queries.ts`, `actions.ts`
 - [ ] `layout.tsx` (breadcrumb + `<h1>` + tabs) y entrada en `SidebarNav.tsx` (`NAV_ITEMS`, `ICON_MAP`, `LABEL_MAP`)
 - [ ] UI creada
