@@ -130,6 +130,60 @@ export type Database = {
           },
         ]
       }
+      usuario_notificaciones: {
+        Row: {
+          activo: boolean
+          actor_id: string | null
+          created_at: string
+          entidad: string
+          entidad_id: string
+          id: string
+          leida_at: string | null
+          tipo: unknown
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          activo?: boolean
+          actor_id?: string | null
+          created_at?: string
+          entidad: string
+          entidad_id: string
+          id?: string
+          leida_at?: string | null
+          tipo: unknown
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          activo?: boolean
+          actor_id?: string | null
+          created_at?: string
+          entidad?: string
+          entidad_id?: string
+          id?: string
+          leida_at?: string | null
+          tipo?: unknown
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_notificaciones_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuario_notificaciones_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuario_submodulos: {
         Row: {
           activo: boolean
@@ -307,6 +361,30 @@ export type Database = {
       }
       mi_equipo: { Args: never; Returns: string }
       normalizar_telefono: { Args: { t: string }; Returns: string }
+      notificaciones_listar: {
+        Args: { p_limite?: number }
+        Returns: {
+          actor: string
+          created_at: string
+          destino: string
+          destino_id: string
+          etiqueta: string
+          id: string
+          leida: boolean
+          motivo: string
+          tipo: unknown
+        }[]
+      }
+      notificar: {
+        Args: {
+          p_actor_id: string
+          p_entidad: string
+          p_entidad_id: string
+          p_tipo: unknown
+          p_usuario_id: string
+        }
+        Returns: undefined
+      }
       quitar_delegador: {
         Args: {
           p_admin: string
