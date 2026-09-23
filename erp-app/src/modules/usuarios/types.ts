@@ -82,3 +82,17 @@ export type Submodulo = {
   orden: number;
   delegable: boolean;
 };
+
+export type Miembro = Pick<Usuario, "id" | "nombre" | "email" | "activo"> & {
+  telefono: string | null;
+};
+
+// `otorgada_por` null es del admin, de antes de `sql/104`.
+export type Otorgamiento = { submodulo_id: string; otorgada_por: string | null };
+
+export type MiEquipo = {
+  yo: string;
+  equipo: Equipo;
+  miembros: Miembro[];
+  permisos: Record<string, Otorgamiento[]>;
+};

@@ -11,3 +11,11 @@ export function puedeGestionarUsuarios() {
 export function puedeVerEquipos() {
   return tienePermiso("usuarios_equipos");
 }
+
+export function puedeVerMiEquipo() {
+  return tienePermiso("usuarios_equipo");
+}
+
+export function puedeDelegar() {
+  return tienePermiso("usuarios_delegar");
+}

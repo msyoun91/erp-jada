@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Equipo, Submodulo, Usuario } from "./types";
+import type { Equipo, MiEquipo, Otorgamiento, Submodulo, Usuario } from "./types";
 
 export async function getUsuarios(): Promise<Usuario[]> {
   const supabase = await createClient();
@@ -62,4 +62,50 @@ export async function getMembresias(): Promise<Record<string, string>> {
 
   if (error) throw error;
   return Object.fromEntries(data.map((m) => [m.usuario_id, m.equipo_id]));
+}
+
+// Con la sesión del delegador: la RLS ya recorta a su equipo (`sql/104`).
+export async function getMiEquipo(): Promise<MiEquipo | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: propia, error: propiaError } = await supabase
+    .from("equipos_miembros")
+    .select("equipos(id, nombre, activo)")
+    .eq("usuario_id", user.id)
+    .eq("activo", true)
+    .maybeSingle();
+
+  if (propiaError) throw propiaError;
+  if (!propia?.equipos) return null;
+  const equipo = propia.equipos;
+
+  const { data: filas, error: filasError } = await supabase
+    .from("equipos_miembros")
+    .select("usuarios(id, nombre, email, telefono, activo)")
+    .eq("equipo_id", equipo.id)
+    .eq("activo", true);
+
+  if (filasError) throw filasError;
+  const miembros = filas
+    .map((f) => f.usuarios)
+    .filter((u): u is NonNullable<typeof u> => u !== null)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+  const { data: asignadas, error: asignadasError } = await supabase
+    .from("usuario_submodulos")
+    .select("usuario_id, submodulo_id, otorgada_por")
+    .in("usuario_id", miembros.map((m) => m.id))
+    .eq("activo", true);
+
+  if (asignadasError) throw asignadasError;
+  const permisos: Record<string, Otorgamiento[]> = {};
+  for (const { usuario_id, ...otorgamiento } of asignadas) {
+    (permisos[usuario_id] ??= []).push(otorgamiento);
+  }
+
+  return { yo: user.id, equipo, miembros, permisos };
 }

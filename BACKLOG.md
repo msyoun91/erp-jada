@@ -9,13 +9,10 @@ y la entrada se borra de este archivo.
 ## usuarios — equipos y delegación de permisos
 
 Decidido el 2026-09-23. Base completa: esquema en `sql/104`, reglas en `sql/105`, pestaña Equipos del
-admin en `sql/106` (tests en `sql/tests/usuarios_equipos.sql`). Falta:
-- **Sidebar con solo "Equipos" o "Mi equipo":** el ítem del módulo apunta a `/usuarios`, que pide
-  `usuarios_ver`. Hoy no pasa (el admin tiene las dos), pero quien tenga solo otra vista cae en un 404.
+admin en `sql/106` (tests en `sql/tests/usuarios_equipos.sql`), vista Mi equipo. Falta:
 - **"Gana el admin" explícito:** `asignar_submodulos` no cambia de dueño una fila que ya está activa,
   así que guardar el panel no se apropia de lo delegado. Para que el admin tome una fila del delegador
   hace falta un gesto propio en el panel (y un parámetro o función que lo exprese).
-- **Vista "Mi equipo":** la llama `delegar_submodulos` con la sesión del delegador.
 
 Todo está escrito en `decisiones/usuarios.md` → *Equipos y delegación de permisos*.
 

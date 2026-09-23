@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { mensajeError } from "@/lib/utils";
-import { puedeGestionarUsuarios } from "./permissions";
+import { puedeDelegar, puedeGestionarUsuarios } from "./permissions";
 import {
   asignarEquipoSchema,
   asignarSubmodulosSchema,
@@ -378,6 +378,32 @@ export async function fijarDelegables(input: FijarDelegablesForm) {
 
   const { error } = await createAdminClient().rpc("fijar_delegables", {
     p_admin: adminId,
+    p_submodulos: parsed.data.submodulo_ids,
+  });
+
+  if (error) {
+    return { success: false as const, error: mensajeError(error) };
+  }
+
+  revalidatePath("/usuarios", "layout");
+  return { success: true as const };
+}
+
+// Con la sesión del delegador, nunca `service_role`: equipo, techo y "solo lo
+// que otorgó él" los ponen la RLS y los triggers (`sql/105`).
+export async function delegarSubmodulos(input: AsignarSubmodulosForm) {
+  if (!(await puedeDelegar())) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const parsed = asignarSubmodulosSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("delegar_submodulos", {
+    p_usuario: parsed.data.usuario_id,
     p_submodulos: parsed.data.submodulo_ids,
   });
 

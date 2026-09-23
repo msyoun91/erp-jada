@@ -161,6 +161,27 @@ en el panel de permisos sigue fallando con US009, y el mensaje ya dice qué falt
 **Los equipos desactivados van en un `<details>` al pie, no en un filtro.** Son historia, y un equipo solo
 se desactiva vacío: no hay nada que trabajar sobre ellos salvo reactivarlos.
 
+## La vista Mi equipo
+
+**El delegador trabaja con su sesión, nunca con `service_role`.** `getMiEquipo()` lee con el cliente
+normal y la RLS de `sql/104`–`sql/106` recorta a su equipo; `delegarSubmodulos` llama
+`delegar_submodulos` (INVOKER) con la misma sesión. La action solo chequea `usuarios_delegar` y parsea:
+equipo, techo y "solo lo suyo" los ponen la RLS y los triggers. `app/(erp-app)/usuarios/mi-equipo/`,
+`modules/usuarios/components/MiEquipoView.tsx`, `DelegarPanel.tsx`.
+
+**El panel muestra lo que puede dar y todo lo que el miembro ya tiene.** Lo delegable que tiene el
+delegador es editable; lo que otorgó otro (el admin, o `otorgada_por` null) aparece marcado y bloqueado
+("Asignado por el admin"). Es el techo de `sql/105` espejado para no ofrecer lo que la base rechaza, igual
+que `huerfanas` en el panel del admin; la función sin su vista se calcula sobre el resultado final,
+porque la vista puede venir del admin.
+
+**Quien tiene la vista sin la función ve el panel en solo lectura.** La vista es "ver a mi equipo y sus
+permisos"; escribir es `usuarios_delegar`.
+
+**`/usuarios` redirige a la vista que el usuario tenga.** El sidebar apunta ahí y pide `usuarios_ver`;
+el delegador típico solo tiene Mi equipo y caía en un 404. Redirigir en la page es menos código que
+hacer el href del sidebar depender de los permisos.
+
 ## Desactivar por fin desactiva, y se puede reactivar (`sql/020_usuarios_activo.sql`)
 
 **El bug:** `desactivarUsuario` ponía `usuarios.activo = false` y nadie leía esa columna. `tiene_permiso()` (`sql/001`) miraba `usuario_submodulos.activo` y `submodulos.activo`, nunca al usuario; el proxy solo chequeaba que hubiera sesión; `auth.users` quedaba intacto. El desactivado seguía entrando con todos sus permisos, mientras el modal prometía "Perderá el acceso al sistema".
@@ -171,7 +192,7 @@ se desactiva vacío: no hay nada que trabajar sobre ellos salvo reactivarlos.
 2. **El proxy consulta `usuarios.activo` en cada request autenticado** (`lib/supabase/middleware.ts`), y si está inactivo hace `signOut()` + redirect a `/login?motivo=inactivo`. Cuesta un lookup por PK sobre la sesión abierta; el JWT no sabe nada de `activo`, así que el dato hay que ir a buscarlo. La rama `id = auth.uid()` de `usuarios_select` es la que hace posible esta consulta y por eso no se toca. Si el pathname ya es `/login` se devuelve la respuesta con la cookie limpia en vez de redirigir — redirigir sería un loop. El redirect copia las cookies de `supabaseResponse`: es una respuesta nueva y sin eso se pierde el borrado que acaba de escribir `signOut()`.
 3. **La cuenta se banea en `auth.users`** (`ban_duration: "876000h"`, cien años — Supabase no tiene ban permanente). Sin esto el access token vivo (≤1h) sigue sirviendo contra la API para todo lo que RLS concede por `auth.uid()` sin pasar por `tiene_permiso` — sus propias tareas, sus notas, sus widgets. El ban además rechaza el login nuevo, y `user_banned` ya estaba mapeado en `mensajeError`. Si el ban falla, la action revierte `activo` y devuelve error: mejor no desactivar que dejar la mitad puesta.
 
-**`getUserSubmodulos()` espeja el chequeo con `usuarios!inner(activo)`.** No es duplicación decorativa: las actions de `usuarios` usan `service_role`, que no pasa por RLS, así que ese chequeo en TS es la única barrera que tienen. Se verificó contra PostgREST que el embed resuelve (`usuario_submodulos` tiene una sola FK a `usuarios`) — si no resolviera, `data` sería null y el resultado "sin permisos" para todo el mundo.
+**`getUserSubmodulos()` espeja el chequeo con `usuarios!inner(activo)`.** No es duplicación decorativa: las actions de `usuarios` usan `service_role`, que no pasa por RLS, así que ese chequeo en TS es la única barrera que tienen. El embed nombra la FK (`usuarios!usuario_submodulos_usuario_id_fkey!inner`): desde `sql/104` hay dos FKs a `usuarios` (`otorgada_por`), PostgREST devolvía PGRST201, `data` quedaba null y nadie tenía permisos en la app hasta que se corrigió con la vista Mi equipo. Toda FK nueva hacia `usuarios` en `usuario_submodulos` vuelve a pedir revisar este embed.
 
 **No se puede desactivar la propia cuenta.** Sin la guarda, el único gestor puede dejar el sistema sin nadie capaz de reactivar a nadie — incluido él.
 
