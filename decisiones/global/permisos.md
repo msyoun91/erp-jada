@@ -45,5 +45,4 @@ Endurecer una policy no puede dejar un módulo sin quien lo administre. Toda res
 trigger o función) conserva la rama de esa función. Si una regla vieja la excluye a propósito, se revisa
 con el usuario, no se hereda en silencio. Funciona como cualquier otro submódulo: no es un rol.
 
-En tareas es `tareas_gestionar_ajenas` (`decisiones/tareas/visibilidad.md`). No absorbe `tareas_asignar`:
-repartir trabajo sigue siendo una función aparte.
+En usuarios es `usuarios_gestionar`.
