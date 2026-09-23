@@ -170,14 +170,14 @@ Delegables
 Reglas entre permisos (filas de submodulo_reglas, en la migración de tareas)
 ├── tareas_equipo            requiere usuarios_delegar — un delegador por equipo
 ├── usuarios_delegar         requiere tareas_ver       — recibe bajas, cambios de equipo y transferencias
+├── usuarios_delegar         requiere tareas_equipo    — todo delegador tiene bandeja
 ├── tareas_plantillas_equipo requiere tareas_equipo    — la plantilla de equipo es de quien lleva la bandeja
 └── excluye: ninguna — admin vs. equipos sale de la membresía (US002), no de un par
     · vista → función no va como regla: ya la da vista_id
-    · designar_delegador y quitar_delegador no otorgan tareas_ver: sin él, fallan con US016
+    · usuarios_delegar y tareas_equipo se requieren mutuamente: designar_delegador y
+      quitar_delegador las dan y las quitan juntas
+    · no otorgan tareas_ver: sin él, fallan con US016
 ```
-
-Abierta: si `usuarios_delegar` también requiere `tareas_equipo` (todo delegador con bandeja).
-Sin la regla, un equipo puede tener delegador y nadie que reciba lo asignado "al equipo".
 
 ## Decisiones del diseño (2026-09-23)
 
@@ -200,8 +200,11 @@ equipo). Lo asignado al equipo sin repartir lo ve solo el delegador, y mientras 
 asignado: completa, pone en espera, agrega resultado.
 
 **El delegador de tareas es el de usuarios.** `tareas_equipo` y `tareas_repartir` no son delegables,
-y `tareas_equipo` exige `usuarios_delegar`. Así, una sola persona por equipo ve la bandeja y recibe lo
-que dejan una baja, un cambio de equipo o una transferencia. Puede reasignar un paso abierto entre
+y `tareas_equipo` y `usuarios_delegar` se exigen mutuamente. Así, una sola persona por equipo ve la
+bandeja y recibe lo que dejan una baja, un cambio de equipo o una transferencia, y todo equipo con
+delegador tiene quien reciba lo asignado "al equipo". Como ninguna de las dos se puede tener sola,
+`designar_delegador` y `quitar_delegador` las mueven juntas; no es "marcar solo" en el panel, es el
+mismo rol. Puede reasignar un paso abierto entre
 miembros de su equipo, o desde el equipo a un miembro. Es una excepción por columna en el trigger, y
 se avisa al responsable del hilo.
 
@@ -351,7 +354,8 @@ multi-asignado (`tareas_asignados`), `modo_completado`, `origen_app`, `tareas_ge
   recibir (*Solo se asigna a quien puede recibirlo*): la UI decide asignar o pedir sin otra consulta.
 - Usuarios: las reglas del bloque *Reglas entre permisos* de la ficha, que la migración de tareas
   carga en `submodulo_reglas` (`sql/110`); el trigger y el panel de permisos ya las hacen valer.
-  Queda `quitar_delegador`: al saliente se le apagan también `tareas_equipo` y
-  `tareas_plantillas_equipo`, y el heredero necesita `tareas_ver` (`BACKLOG.md`).
+  Quedan `designar_delegador` y `quitar_delegador`: mueven `tareas_equipo` junto con
+  `usuarios_delegar`, al saliente se le apaga también `tareas_plantillas_equipo`, y el heredero
+  o designado necesita `tareas_ver` (`BACKLOG.md`).
 - Core: vuelven `puede_abrir_registro` y `buscar_registros`; ramas de `hilo` y `tarea` en
   `etiqueta_registro` y `puede_ver_relacion` (`sql/109`).

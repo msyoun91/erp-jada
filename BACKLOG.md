@@ -22,10 +22,12 @@ Todo está escrito en `decisiones/usuarios.md` → *Equipos y delegación de per
 que sus submódulos:
 - Las del bloque *Reglas entre permisos* de la ficha (`decisiones/tareas.md`), y `delegable` según
   su lista de delegables.
-- `quitar_delegador` tiene que respetarlas: el saliente pierde también `tareas_equipo` y
-  `tareas_plantillas_equipo` (si no, US016). Ni él ni `designar_delegador` otorgan `tareas_ver`:
-  si el heredero o designado no lo tiene, fallan con US016 y el panel avisa.
-- Correr de nuevo `sql/tests/usuarios_equipos.sql`: sus delegadores de prueba no tienen `tareas_ver`.
+- `designar_delegador` y `quitar_delegador` tienen que respetarlas: dan y quitan `tareas_equipo`
+  junto con `usuarios_delegar` (se requieren mutuamente), y el saliente pierde también
+  `tareas_plantillas_equipo` (si no, US016). Ninguna otorga `tareas_ver`: si el heredero o
+  designado no lo tiene, fallan con US016 y el panel avisa.
+- Correr de nuevo `sql/tests/usuarios_equipos.sql`: sus delegadores de prueba no tienen `tareas_ver`
+  ni `tareas_equipo`.
 
 Decisión: `decisiones/global/permisos.md` → *Reglas entre permisos*; ficha: `decisiones/tareas.md`.
 
