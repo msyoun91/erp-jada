@@ -26,10 +26,11 @@ Tocar `components/ui/` o `globals.css`: design system, componentes compartidos, 
 
 ## `permisos.md`
 
-Tocar permisos: función ligada a su vista (`vista_id`), vista y función se autorizan por separado.
+Tocar permisos: función ligada a su vista (`vista_id`), vista y función se autorizan por separado, delegación a equipos.
 
 - `funcion` ligada a su `vista` puntual (`vista_id`), no solo a `modulo`
 - Vista y función se autorizan por separado (`PermisosModal`)
+- Delegación con techo (decidido, sin implementar)
 
 ## `entes.md`
 

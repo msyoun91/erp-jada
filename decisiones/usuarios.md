@@ -1,5 +1,107 @@
 # Decisiones — módulo usuarios
 
+## Ficha del módulo
+
+Aprobada el 2026-09-23, junto con *Equipos y delegación de permisos* (abajo).
+
+```
+Módulo: usuarios
+Objetivo: quién entra al sistema y qué puede hacer cada uno — cuentas, equipos y permisos, con el
+          administrador como autoridad y una delegación acotada a cada equipo.
+Personas
+├── Administrador de sistema — ve todos los usuarios, equipos y permisos
+│                            · crea, edita, desactiva y reactiva cuentas, resetea contraseñas, asigna
+│                              permisos, crea equipos y sus miembros, designa delegador y heredero,
+│                              marca qué submódulos son delegables
+│                            · — (ve todo)
+├── Delegador de equipo      — ve a los miembros de su equipo, con todos sus datos y permisos
+│                            · asigna a su equipo los submódulos delegables que él tiene; revoca solo
+│                              lo que otorgó él
+│                            · no ve usuarios fuera de su equipo; no crea, edita, desactiva ni resetea
+│                              cuentas; no toca lo que otorgó el admin
+├── Miembro / independiente  — NO usa el módulo: su cuenta la ve en /perfil · — · —
+└── Agente IA                — NO usa el módulo. Puede ser miembro de un equipo, nunca delegador
+                               (regla de uso: hoy la base no distingue un agente de una persona)
+Entes: ninguno — usuario y equipo son de core: no tienen dueño ni se comparten
+Eventos que emite: ninguno · Eventos que consume: ninguno
+```
+
+```
+Módulo: Usuarios
+├── Usuarios (vista, usuarios_ver)            — admin
+│   └── usuarios_gestionar (funcion)          — admin: cuentas, permisos, equipos, delegador, heredero, delegable
+└── Mi equipo (vista, usuarios_equipo)        — delegador
+    └── usuarios_delegar (funcion)            — delegador
+```
+
+## Equipos y delegación de permisos (decidido 2026-09-23, sin implementar)
+
+**El admin asigna permisos; un delegador por equipo reparte a su equipo lo que el admin le dio.** Pedido
+del usuario: que el admin no tenga que asignar cada permiso de cada persona, sin crear roles. El delegador
+es una función (`usuarios_delegar`), no un rol; el equipo decide *a quién* puede delegar, nunca *qué*
+permisos tiene alguien. El equipo como unidad para compartir registros de un módulo viene después, sobre
+la misma membresía. La regla transversal está en `decisiones/global/permisos.md` → *Delegación con techo*.
+
+**Equipos.**
+- Los crea el admin con un nombre libre y les asigna los miembros. Tabla `equipos` + `equipos_miembros
+  (equipo_id, usuario_id, activo)`.
+- Un usuario está en un solo equipo o en ninguno (independiente): unique parcial `(usuario_id) WHERE activo`.
+- Quien tiene `usuarios_gestionar` no puede ser miembro de un equipo.
+- Un equipo con miembros activos no se puede desactivar.
+- Un usuario desactivado sigue en su equipo, igual que conserva sus asignaciones (`sql/020`): al
+  reactivarlo vuelve todo como estaba.
+
+**Delegador.**
+- Uno por equipo, y solo lo designa el admin. Delegador = el miembro del equipo que tiene
+  `usuarios_delegar`; un trigger rechaza un segundo delegador activo en el mismo equipo y que un
+  independiente tenga la función. No hay columna `equipos.delegado_id`: la autoridad sale de un
+  submódulo, no de un dato.
+- No hay cadena: `usuarios_delegar` y `usuarios_equipo` los otorga solo el admin.
+
+**Techo.** El delegador solo otorga submódulos que él mismo tiene y que están marcados como delegables
+(`submodulos.delegable`, `false` por defecto: una función nueva nace no delegable). Sigue valiendo
+*función sin su vista queda prohibida* (`decisiones/global/permisos.md`).
+
+**Quién otorgó cada permiso.**
+- `usuario_submodulos` suma `otorgada_por` y `updated_at`. Sigue habiendo una fila por par, así que la
+  vista del admin y la del delegador muestran la misma asignación.
+- Gana el admin: si el admin otorga algo que ya había dado el delegador, la fila pasa a
+  `otorgada_por = admin` y desde "Mi equipo" se ve bloqueada.
+- El delegador revoca solo las filas con `otorgada_por = él`.
+- Si el admin después revoca esa fila, se va: no vuelve a quedar "por el delegador". Es el costo de no
+  duplicar filas, y se aceptó.
+
+**Revocación en cascada.**
+- Si el admin le saca `X` al delegador, se revoca `X` en todo lo que el delegador otorgó.
+- Si un miembro cambia de equipo o queda independiente, se le revoca todo lo que le dieron por
+  delegación. En el equipo nuevo se le asignan permisos desde cero. Lo que otorgó el admin se conserva.
+
+**Heredero.**
+- El delegador sale si lo desactivan, lo sacan del equipo o el admin le quita `usuarios_delegar`. En
+  esa misma acción el admin elige un heredero, que tiene que ser miembro activo del equipo. Solo se
+  puede salir sin heredero si no queda otro miembro activo.
+- En una sola transacción:
+  1. El heredero recibe una copia de los permisos del delegador saliente, con `otorgada_por = admin`
+     (incluye `usuarios_delegar` y su vista).
+  2. Lo que el saliente delegó pasa a `otorgada_por = heredero`.
+  3. Lo que el saliente le había delegado al heredero pasa a `otorgada_por = admin`.
+- El admin ve la lista de lo que se copia, todo marcado por defecto. Si desmarca algo, el heredero no lo
+  recibe y se revoca en cascada del equipo. Así el techo se sigue cumpliendo: todo lo delegado está
+  dentro de los permisos del heredero.
+- El saliente pierde `usuarios_delegar` y su vista, aunque siga en el equipo desactivado; si no, habría
+  dos delegadores. Conserva lo demás que le dio el admin.
+
+**Visibilidad.** El delegador ve todos los datos de los miembros de su equipo (email y teléfono
+incluidos) y sus permisos, pero no puede editarlos. Suma una rama a `usuarios_select`.
+
+**Las reglas viven en Postgres, no en `actions.ts`.** Techo, un delegador por equipo, cascadas y
+herencia son triggers y funciones. Las actions de admin escriben con `service_role`, que se saltea la
+RLS pero no los triggers, así que la misma regla cubre las dos vías. El flujo del delegador corre con
+su sesión (`authenticated`), nunca con `service_role`.
+
+**Historial: lo mínimo.** `otorgada_por` + `updated_at` contestan quién dio el permiso que está vigente.
+Si hace falta saber quién lo sacó y cuándo, se suma un log; hoy no hay pedido.
+
 ## Desactivar por fin desactiva, y se puede reactivar (`sql/020_usuarios_activo.sql`)
 
 **El bug:** `desactivarUsuario` ponía `usuarios.activo = false` y nadie leía esa columna. `tiene_permiso()` (`sql/001`) miraba `usuario_submodulos.activo` y `submodulos.activo`, nunca al usuario; el proxy solo chequeaba que hubiera sesión; `auth.users` quedaba intacto. El desactivado seguía entrando con todos sus permisos, mientras el modal prometía "Perderá el acceso al sistema".

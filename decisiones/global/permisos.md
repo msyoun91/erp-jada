@@ -46,3 +46,22 @@ trigger o función) conserva la rama de esa función. Si una regla vieja la excl
 con el usuario, no se hereda en silencio. Funciona como cualquier otro submódulo: no es un rol.
 
 En usuarios es `usuarios_gestionar`.
+
+## Delegación con techo (decidido 2026-09-23, sin implementar)
+
+**Un submódulo lo otorga el admin (`usuarios_gestionar`) o, dentro de su equipo, el delegador
+(`usuarios_delegar`), y el delegador nunca da más de lo que tiene.** Sigue sin haber roles: el
+delegador es una función y el equipo es una membresía que no da permisos. Solo define a quién puede
+delegar el delegador.
+
+- **Sin excepción a "todo por submódulos".** Parecía hacer falta autoridad por fila ("delegador *de
+  este* equipo"), pero se resuelve con función + membresía + un trigger de uno por equipo, no con una
+  columna `delegado_id`.
+- **El techo tiene tres partes:** lo que el delegador tiene, lo marcado `submodulos.delegable` (`false`
+  por defecto) y la regla vista/función de arriba. Las funciones de administración no se marcan
+  delegables.
+- **Revocar es en cascada.** Todo lo delegado cuelga de un permiso del delegador (`otorgada_por`). Si
+  el delegador lo pierde, lo pierden también quienes lo recibieron de él.
+
+Mecánica completa (equipos, heredero, "gana el admin"): `decisiones/usuarios.md` → *Equipos y
+delegación de permisos*.
