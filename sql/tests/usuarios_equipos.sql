@@ -1,6 +1,7 @@
--- Verificación de sql/105: techo, un delegador por equipo, cascadas y heredero.
--- NO es una migración: todo corre dentro de una transacción que termina en
--- ROLLBACK. Correr después de aplicar sql/105.
+-- Verificación de sql/105 y sql/106: techo, un delegador por equipo, cascadas,
+-- heredero y las escrituras de la pestaña Equipos. NO es una migración: todo
+-- corre dentro de una transacción que termina en ROLLBACK. Correr después de
+-- aplicar sql/106.
 --
 -- Arma su propio mundo: cinco usuarios (A admin, D delegador, M1 y M2
 -- miembros, I independiente), el equipo T y un módulo `prueba105` con V (vista
@@ -249,6 +250,53 @@ SELECT pg_temp.intentar(format('UPDATE equipos_miembros SET activo = false WHERE
 SELECT pg_temp.caso('28 sin heredero, solo en el equipo',
   'ok', pg_temp.intentar(format('SELECT quitar_delegador(%L, %L, NULL)',
     pg_temp.id('A'), pg_temp.id('M2'))));
+
+-- ============================================================
+-- sql/106 — las escrituras de la pestaña Equipos
+-- ============================================================
+SELECT pg_temp.caso('29 I entra a T',
+  'ok', pg_temp.intentar(format('SELECT asignar_equipo(%L, %L, %L)',
+    pg_temp.id('A'), pg_temp.id('I'), pg_temp.id('T'))));
+SELECT pg_temp.caso('29 I es de T', pg_temp.id('T')::text, equipo_de(pg_temp.id('I'))::text);
+
+SELECT pg_temp.caso('30 el admin no entra a un equipo',
+  'US002', pg_temp.intentar(format('SELECT asignar_equipo(%L, %L, %L)',
+    pg_temp.id('A'), pg_temp.id('A'), pg_temp.id('T'))));
+
+SELECT pg_temp.caso('31 sin usuarios_gestionar no se asigna equipo',
+  '42501', pg_temp.intentar(format('SELECT asignar_equipo(%L, %L, NULL)',
+    pg_temp.id('I'), pg_temp.id('I'))));
+
+SELECT pg_temp.caso('32 M2 vuelve a ser delegador',
+  'ok', pg_temp.intentar(format('SELECT designar_delegador(%L, %L)',
+    pg_temp.id('A'), pg_temp.id('M2'))));
+SELECT pg_temp.caso('32 M2.delegar la otorgó A', 'on:A', pg_temp.fila('M2','delegar'));
+SELECT pg_temp.caso('32 M2 tiene Mi equipo', 'on:A', pg_temp.fila('M2','equipo'));
+
+SELECT pg_temp.caso('33 un segundo delegador en T',
+  'US004', pg_temp.intentar(format('SELECT designar_delegador(%L, %L)',
+    pg_temp.id('A'), pg_temp.id('I'))));
+
+SELECT pg_temp.caso('34 el delegador no sale del equipo',
+  'US009', pg_temp.intentar(format('SELECT asignar_equipo(%L, %L, NULL)',
+    pg_temp.id('A'), pg_temp.id('M2'))));
+
+SELECT pg_temp.caso('35 I queda independiente',
+  'ok', pg_temp.intentar(format('SELECT asignar_equipo(%L, %L, NULL)',
+    pg_temp.id('A'), pg_temp.id('I'))));
+SELECT pg_temp.caso('35 I no tiene equipo', NULL, equipo_de(pg_temp.id('I'))::text);
+
+SELECT pg_temp.caso('36 delegables: solo V',
+  'ok', pg_temp.intentar(format('SELECT fijar_delegables(%L, %L)',
+    pg_temp.id('A'), pg_temp.ids('V'))));
+SELECT pg_temp.caso('36 X deja de ser delegable', 'false',
+  (SELECT delegable::text FROM submodulos WHERE id = pg_temp.id('X')));
+SELECT pg_temp.caso('36 V vuelve a ser delegable', 'true',
+  (SELECT delegable::text FROM submodulos WHERE id = pg_temp.id('V')));
+
+SELECT pg_temp.caso('37 usuarios nunca es delegable',
+  '23514', pg_temp.intentar(format('SELECT fijar_delegables(%L, %L)',
+    pg_temp.id('A'), pg_temp.ids('V','ver'))));
 
 SELECT caso, esperado, obtenido, ok FROM r ORDER BY caso;
 
