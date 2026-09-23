@@ -34,7 +34,7 @@ Módulo: Usuarios
     └── usuarios_delegar (funcion)            — delegador
 ```
 
-## Equipos y delegación de permisos (decidido 2026-09-23; esquema en `sql/104`, reglas pendientes)
+## Equipos y delegación de permisos (decidido 2026-09-23; esquema en `sql/104`, reglas en `sql/105`)
 
 **El admin asigna permisos; un delegador por equipo reparte a su equipo lo que el admin le dio.** Pedido
 del usuario: que el admin no tenga que asignar cada permiso de cada persona, sin crear roles. El delegador
@@ -101,6 +101,42 @@ su sesión (`authenticated`), nunca con `service_role`.
 
 **Historial: lo mínimo.** `otorgada_por` + `updated_at` contestan quién dio el permiso que está vigente.
 Si hace falta saber quién lo sacó y cuándo, se suma un log; hoy no hay pedido.
+
+### Cómo quedó en la base (`sql/105`)
+
+**Una fila delegada es la que otorgó un miembro de un equipo.** El admin nunca es miembro, así que no
+hace falta columna que lo marque: el techo y las cascadas se aplican solo a esas filas. `equipo_de()`.
+
+**Las invariantes se validan al cierre de la transacción; las cascadas, en el acto.** El trigger de
+validación es `DEFERRABLE INITIALLY DEFERRED` porque hay estados intermedios legítimos: vista y función
+en el mismo upsert, o el heredero con `usuarios_delegar` antes de que el saliente lo pierda. Relee la
+fila en vez de usar `NEW`. Los tests fuerzan el chequeo con `SET CONSTRAINTS ALL IMMEDIATE`: con
+`ROLLBACK` el commit que lo dispara nunca llega.
+
+**"Función sin su vista" pasó de la action a la base (US001).** El delegador escribe sin pasar por
+ninguna action, así que la regla tenía que vivir abajo; la action ya no la repite. La UI la sigue
+mostrando (`huerfanas`) para no llegar al error.
+
+**`asignar_submodulos` reemplaza el "desactivar todo + upsert" de la action.** Con cascadas, apagar un
+permiso del delegador aunque sea un instante se lo saca a su equipo. La función apaga solo lo que sale,
+prende lo que entra, y lo que ya estaba activo conserva `otorgada_por`. Por eso guardar el panel no se
+apropia de lo delegado; "gana el admin" como gesto explícito quedó en `BACKLOG.md`.
+
+**La salida del delegador es `quitar_delegador`, separada de desactivar o sacar del equipo.** Desactivar
+también banea en auth, que está fuera de la transacción, así que no hay forma de hacerlo atómico
+completo. En cambio: desactivar al delegador, sacarlo del equipo o sacarle `usuarios_delegar` a mano
+falla con `US009` mientras la tenga. Después de `quitar_delegador` ya no es delegador y el resto es el
+flujo de siempre. Sin heredero solo pasa si no queda otro miembro activo (persona activa, membresía
+activa).
+
+**Dejar de marcar un submódulo como delegable revoca lo delegado.** Es el mismo techo: lo delegado tiene
+que estar dentro de lo delegable.
+
+**Las funciones de `usuarios` nunca son delegables (CHECK).** Es lo que impide la cadena, sin depender de
+que nadie marque mal un checkbox.
+
+**Los mensajes de estas reglas van con clase `US001`–`US015`** y `mensajeError()` los deja pasar tal
+cual: están escritos para el usuario. Es el mismo criterio que tuvo la clase `OB` de obras.
 
 ## Desactivar por fin desactiva, y se puede reactivar (`sql/020_usuarios_activo.sql`)
 

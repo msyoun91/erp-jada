@@ -49,9 +49,15 @@ const MENSAJES_ERROR: Record<string, string> = {
   over_request_rate_limit: "Demasiados intentos. Esperá unos minutos e intentá de nuevo.",
 };
 
-export function mensajeError(error: unknown): string {
-  const { code: codigo } = (error ?? {}) as { code?: string };
+// Clase `US` (sql/105): el mensaje ya viene escrito para el usuario desde la
+// base. Lista blanca por código y no confianza en el mensaje: un P0001 sigue
+// cayendo en el genérico.
+const CODIGO_CON_MENSAJE_PROPIO = /^US\d{3}$/;
 
+export function mensajeError(error: unknown): string {
+  const { code: codigo, message } = (error ?? {}) as { code?: string; message?: string };
+
+  if (codigo && message && CODIGO_CON_MENSAJE_PROPIO.test(codigo)) return message;
   return (codigo && MENSAJES_ERROR[codigo]) || "No se pudo completar la operación. Intentá de nuevo.";
 }
 

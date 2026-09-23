@@ -213,55 +213,26 @@ export async function asignarSubmodulos(input: AsignarSubmodulosForm) {
     return { success: false as const, error: parsed.error.issues[0].message };
   }
 
-  const admin = createAdminClient();
-  const { usuario_id, submodulo_ids } = parsed.data;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Antes de desactivar nada: una función sin su vista es un permiso inalcanzable
-  // desde la UI pero ejecutable por server action.
-  if (submodulo_ids.length > 0) {
-    const { data: funciones, error: funcionesError } = await admin
-      .from("submodulos")
-      .select("vista_id")
-      .in("id", submodulo_ids)
-      .eq("tipo", "funcion");
-
-    if (funcionesError) {
-      return { success: false as const, error: mensajeError(funcionesError) };
-    }
-
-    const autorizados = new Set(submodulo_ids);
-    if (funciones.some((f) => f.vista_id && !autorizados.has(f.vista_id))) {
-      return {
-        success: false as const,
-        error: "Cada función requiere que su vista esté autorizada",
-      };
-    }
+  if (!user) {
+    return { success: false as const, error: "No autorizado" };
   }
 
-  const { error: deactivateError } = await admin
-    .from("usuario_submodulos")
-    .update({ activo: false })
-    .eq("usuario_id", usuario_id);
+  // Con `service_role` no hay `auth.uid()`: el admin se pasa explícito para
+  // que quede en `otorgada_por`. Vista/función, techo y cascadas los valida la
+  // base (`sql/105`).
+  const { error } = await createAdminClient().rpc("asignar_submodulos", {
+    p_admin: user.id,
+    p_usuario: parsed.data.usuario_id,
+    p_submodulos: parsed.data.submodulo_ids,
+  });
 
-  if (deactivateError) {
-    return { success: false as const, error: mensajeError(deactivateError) };
-  }
-
-  if (submodulo_ids.length > 0) {
-    const { error: upsertError } = await admin
-      .from("usuario_submodulos")
-      .upsert(
-        submodulo_ids.map((submodulo_id) => ({
-          usuario_id,
-          submodulo_id,
-          activo: true,
-        })),
-        { onConflict: "usuario_id,submodulo_id" }
-      );
-
-    if (upsertError) {
-      return { success: false as const, error: mensajeError(upsertError) };
-    }
+  if (error) {
+    return { success: false as const, error: mensajeError(error) };
   }
 
   revalidatePath("/usuarios");

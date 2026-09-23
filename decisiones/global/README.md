@@ -30,7 +30,7 @@ Tocar permisos: función ligada a su vista (`vista_id`), vista y función se aut
 
 - `funcion` ligada a su `vista` puntual (`vista_id`), no solo a `modulo`
 - Vista y función se autorizan por separado (`PermisosModal`)
-- Delegación con techo (decidido, sin implementar)
+- Delegación con techo (en la base desde `sql/105`; falta la UI)
 
 ## `entes.md`
 

@@ -47,7 +47,7 @@ con el usuario, no se hereda en silencio. Funciona como cualquier otro submódul
 
 En usuarios es `usuarios_gestionar`.
 
-## Delegación con techo (decidido 2026-09-23, sin implementar)
+## Delegación con techo (decidido 2026-09-23; en la base desde `sql/105`)
 
 **Un submódulo lo otorga el admin (`usuarios_gestionar`) o, dentro de su equipo, el delegador
 (`usuarios_delegar`), y el delegador nunca da más de lo que tiene.** Sigue sin haber roles: el

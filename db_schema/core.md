@@ -32,7 +32,7 @@ Modelo: módulo → 1+ vistas → cada vista 0+ funciones (`vista_id`, no solo `
 | vista_id | uuid FK → submodulos, nullable | NULL si tipo=vista; obligatorio si tipo=funcion (CHECK + trigger valida misma `modulo`) |
 | nombre | text | label visible |
 | orden | int | orden en tabs/nav |
-| delegable | boolean | default false — el delegador solo otorga lo marcado (`sql/104`) |
+| delegable | boolean | default false — el delegador solo otorga lo marcado (`sql/104`). CHECK `submodulos_usuarios_no_delegable`: nunca en `modulo = 'usuarios'`. Pasarlo a false revoca lo delegado (`sql/105`) |
 | activo | boolean | |
 
 Seed: `usuarios_ver` (vista, nombre "Ver" — nunca repite el label del módulo), `usuarios_gestionar` (funcion → usuarios_ver), `usuarios_equipo` (vista "Mi equipo") y `usuarios_delegar` (funcion → usuarios_equipo) (`sql/104`).
@@ -52,11 +52,17 @@ Asignación usuario ↔ submódulo.
 | activo | boolean | UNIQUE normal (usuario_id, submodulo_id) — no parcial, por upsert (excepción GUIDE_DB) |
 | created_at / updated_at | timestamptz | |
 
-RLS: `usuario_submodulos_select` — las propias, `usuarios_gestionar`, o `usuarios_equipo` sobre los miembros activos de su equipo.
+RLS: `usuario_submodulos_select` — las propias, `usuarios_gestionar`, o `usuarios_equipo` sobre los miembros activos de su equipo. `usuario_submodulos_insert_delegador` / `_update_delegador` (`sql/105`): con `usuarios_delegar`, sobre su equipo, siempre a su nombre (`otorgada_por = auth.uid()`); una fila activa solo si es suya. `GRANT INSERT (usuario_id, submodulo_id, otorgada_por, activo)` y `UPDATE (activo, otorgada_por)` a `authenticated`.
+
+Triggers (`sql/105`): `usuario_submodulos_validar` (constraint trigger diferido — función sin vista, admin fuera de equipos, un delegador por equipo, techo de las filas delegadas) y `usuario_submodulos_cascada` (al apagar una fila de un miembro, apaga lo que él delegó de eso; si es `usuarios_delegar`, todo — y sin heredero falla con US009 si queda otro miembro activo).
+
+Funciones: `asignar_submodulos(p_admin, p_usuario, p_submodulos[])` y `quitar_delegador(p_admin, p_saliente, p_heredero, p_no_copiar[])` solo `service_role`; `delegar_submodulos(p_usuario, p_submodulos[])` INVOKER para `authenticated`. Una fila es delegada si `otorgada_por` es miembro de un equipo (`equipo_de()`).
 
 ## equipos
 
 Los crea el admin (`sql/104`). La membresía no da permisos: define a quién puede delegar el delegador. Decisión: `decisiones/usuarios.md` → *Equipos y delegación de permisos*.
+
+No se desactiva con miembros activos (`equipos_validar_desactivar`, US010).
 
 | columna | tipo | notas |
 |---|---|---|
@@ -75,7 +81,9 @@ Los crea el admin (`sql/104`). La membresía no da permisos: define a quién pue
 | activo | boolean | cambiar de equipo = desactivar la fila e insertar otra |
 | created_at / updated_at | timestamptz | |
 
-RLS de las dos (solo SELECT; escribe el admin con `service_role`): `usuarios_ver` ve todo; `usuarios_equipo` ve su equipo vía `mi_equipo()` — `SECURITY DEFINER`, sin argumento para no exponer el equipo de otros.
+RLS de las dos (solo SELECT; escribe el admin con `service_role`): `usuarios_ver` ve todo; `usuarios_equipo` ve su equipo vía `mi_equipo()` — `SECURITY DEFINER`, sin argumento para no exponer el equipo de otros. Desde `sql/105` es un envoltorio de `equipo_de(p_usuario)`, que no tiene GRANT.
+
+Trigger `equipos_miembros_validar` (`sql/105`): `equipo_id`/`usuario_id` inmutables (US015); no entra quien tiene `usuarios_gestionar` (US002) ni a un equipo inactivo (US011); el delegador no sale (US009); al salir, se apaga lo que le dieron por delegación.
 
 ## usuario_tutorial
 
@@ -112,6 +120,8 @@ SQL function, `SECURITY DEFINER`, usada en RLS de las 3 tablas y disponible como
 
 Exige `usuarios.activo` además de `usuario_submodulos.activo` y `submodulos.activo` (`sql/020_usuarios_activo.sql`): desactivar a alguien le saca todos los permisos sin tocar sus asignaciones, así reactivarlo se los devuelve tal cual estaban. Verificado con `sql/tests/usuarios_activo.sql`.
 
-**El cuerpo vigente es el de `sql/102`, no el de `sql/101`.** El rollback lo devolvió a la versión de `sql/001`, que es anterior a `sql/020` y no exige `usuarios.activo`: mientras estuvo así, un usuario desactivado conservaba sus permisos en RLS. Es el ejemplo a tener a mano cuando el sistema de permisos nuevo escriba su propio rollback — volver a "la versión anterior" no es volver a la primera.
+**El predicado vigente es el de `sql/102`, no el de `sql/101`** (desde `sql/105` vive en `usuario_tiene_permiso`). El rollback lo devolvió a la versión de `sql/001`, que es anterior a `sql/020` y no exige `usuarios.activo`: mientras estuvo así, un usuario desactivado conservaba sus permisos en RLS. Es el ejemplo a tener a mano cuando el sistema de permisos nuevo escriba su propio rollback — volver a "la versión anterior" no es volver a la primera.
 
-`usuario_tiene_permiso(p_usuario uuid, p_codigo text)` (`sql/062`) —preguntar el permiso de **otro** usuario— se fue con la infra cross-módulo (`sql/101`). El sistema de permisos nuevo la va a necesitar de vuelta: decidir si vive en el mismo lugar o si el predicado por usuario es la forma base y `tiene_permiso()` el envoltorio. Ver `decisiones/global/permisos.md`.
+`usuario_tiene_permiso(p_usuario uuid, p_codigo text)` —preguntar el permiso de **otro** usuario— volvió en `sql/105` para el techo y el guard de las funciones de admin. Sin GRANT a `authenticated`: la llaman triggers y funciones de `service_role`. `tiene_permiso(codigo)` pasó a ser `usuario_tiene_permiso(auth.uid(), codigo)`, como en `sql/062`: el predicado vive en un solo lugar.
+
+Trigger `usuarios_validar_desactivar` (`sql/105`): desactivar a quien tiene `usuarios_delegar` falla con US009 — primero `quitar_delegador`.

@@ -8,11 +8,17 @@ y la entrada se borra de este archivo.
 
 ## usuarios — equipos y delegación de permisos
 
-Decidido el 2026-09-23. El esquema ya corrió (`sql/104`: tablas, columnas, seed y visibilidad).
-Falta: los triggers y funciones de techo, un delegador por equipo, cascadas y heredero (`sql/105`,
-con tests); la UI de admin (equipos, miembros, `delegable`, heredero), que además tiene que pasar
-`otorgada_por` al otorgar; y la vista "Mi equipo". Todo está escrito en `decisiones/usuarios.md` →
-*Equipos y delegación de permisos*.
+Decidido el 2026-09-23. Base completa: esquema en `sql/104`, reglas en `sql/105` (tests en
+`sql/tests/usuarios_equipos.sql`). Falta:
+- **UI de admin:** equipos y miembros (escritura directa con `service_role`), `delegable`, y la
+  salida del delegador con heredero y lista de "no copiar" → `quitar_delegador`. Desactivar al
+  delegador o sacarlo del equipo falla con `US009` hasta que corra esa función.
+- **"Gana el admin" explícito:** `asignar_submodulos` no cambia de dueño una fila que ya está activa,
+  así que guardar el panel no se apropia de lo delegado. Para que el admin tome una fila del delegador
+  hace falta un gesto propio en el panel (y un parámetro o función que lo exprese).
+- **Vista "Mi equipo":** la llama `delegar_submodulos` con la sesión del delegador.
+
+Todo está escrito en `decisiones/usuarios.md` → *Equipos y delegación de permisos*.
 
 ## erp-cliente — falta el `ThemeToggle`
 

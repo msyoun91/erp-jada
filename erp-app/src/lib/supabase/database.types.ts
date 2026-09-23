@@ -284,9 +284,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      asignar_submodulos: {
+        Args: { p_admin: string; p_submodulos: string[]; p_usuario: string }
+        Returns: undefined
+      }
+      delegar_submodulos: {
+        Args: { p_submodulos: string[]; p_usuario: string }
+        Returns: undefined
+      }
+      equipo_de: { Args: { p_usuario: string }; Returns: string }
       mi_equipo: { Args: never; Returns: string }
       normalizar_telefono: { Args: { t: string }; Returns: string }
+      quitar_delegador: {
+        Args: {
+          p_admin: string
+          p_heredero: string
+          p_no_copiar?: string[]
+          p_saliente: string
+        }
+        Returns: undefined
+      }
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
+      usuario_tiene_permiso: {
+        Args: { p_codigo: string; p_usuario: string }
+        Returns: boolean
+      }
     }
     Enums: {
       tipo_submodulo: "vista" | "funcion"
