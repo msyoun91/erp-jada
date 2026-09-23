@@ -118,6 +118,10 @@ devolver el nombre (`decisiones/obras/visibilidad.md`).
 
 Pedido para la descripción de tareas: un editor con hipervínculos a la ficha de cada ente. Se guarda
 `{ente:uuid}` en el texto y se resuelve al mostrar con `etiqueta_registro`: link si lo ve, nada si no.
+**Corregido el 2026-09-23 (rediseño de tareas):** se guarda también la copia del nombre, y quien no lo
+ve lee esa copia como texto plano, sin link. Es la excepción a "no existe antes que sin permiso": el
+nombre lo escribió alguien que sí lo veía y eligió contarlo, igual que un `{dato}` de plantilla
+(`decisiones/tareas.md`).
 Mismo principio que *la notificación apunta, no copia* (`infra.md`). Los `{dato}` de plantillas siguen
 siendo copia por diseño: el texto lo lee quien no ve el registro, y por eso `entes.datos` nunca lleva
 contacto. El editor enriquecido es librería nueva: se consulta cuando se construya. Los chips

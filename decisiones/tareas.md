@@ -3,12 +3,12 @@
 Rediseño desde cero (2026-09-23). La versión anterior vive en `master` (`decisiones/tareas/`,
 `db_schema/tareas.md`); de ahí se trae lo listado en *Qué se trae de `master`* y nada más.
 
-> **Estado: ficha armada, sin SQL.** Antes de la migración se revisan agujeros contra esta ficha
-> (visibilidad, escrituras por columna, pedidos, plantillas). Lo que cambie se corrige acá primero.
+> **Estado: ficha armada y revisada, sin SQL.** La revisión de agujeros (2026-09-23) quedó volcada
+> en la ficha y en *Decisiones del diseño*. Lo que cambie se corrige acá primero.
 
 ## Ficha del módulo
 
-Armada con el usuario el 2026-09-23. Aprobación final pendiente de la revisión de agujeros.
+Armada con el usuario el 2026-09-23. Revisada el mismo día; falta la aprobación final.
 
 ```
 Módulo: tareas
@@ -35,7 +35,7 @@ Personas
 │                     · se asigna solo a sí mismo; con tareas_pedir pide a otros; acepta o
 │                       rechaza lo que le piden
 │                     · lo mismo que el miembro; sin bandeja
-├── Admin del módulo  — ve todo · hace todo (completar lo ajeno queda registrado), reactiva,
+├── Admin del módulo  — ve todo · hace todo (completar lo ajeno: nota obligatoria, firmado), reactiva,
 │                       plantillas globales, despublica, otorga tareas_pedir · —
 ├── Agente IA         — sin persona propia: trabaja como persona, con sus funciones y las mismas
 │                       restricciones; todo queda firmado con su cuenta
@@ -45,9 +45,10 @@ Personas
 Entes
 ├── hilo  — dueño responsable_id (transferible) · estado estado_hilo: abierto · cerrado
 │           · datos {titulo} · ruta /tareas/{id} · submódulo tareas_ver
-│           · resultado opcional al cerrar · recurrencia opcional: al cerrarse nace el siguiente
+│           · resultado opcional al cerrar · recurrencia opcional: cada cierre crea el siguiente,
+│             con los pasos copiados sin completar
 │           · no cierra con pasos pendientes, solicitados o rechazados sin resolver;
-│             sumar un paso lo reabre
+│             sumar o reabrir un paso lo reabre
 │           · no se comparte: visibilidad por participación · emite, no dispara
 └── tarea — paso de un hilo · dueño: el responsable de su hilo (heredado); el asignado ejecuta
             · estado estado_tarea: solicitada · pendiente · rechazada · completada · cancelada
@@ -61,7 +62,8 @@ Entes
             · datos {titulo} · ruta /tareas/paso/{id} (abre el hilo en ese paso)
             · submódulo tareas_ver · visibilidad = la de su hilo · no se comparte · emite, no dispara
             · campos del responsable del hilo: título · descripción con referencias · asignado ·
-              paso anterior · vence (fecha, o N días tras completar el previo) · prioridad
+              paso anterior · vence (fecha, o N días corridos tras completar el previo;
+              lo segundo solo con paso anterior) · prioridad
             · campos del asignado: estado (aceptar/rechazar/completar) · espera_hasta + motivo ·
               resultado opcional · motivo de rechazo · notas
             · responsable = asignado → escribe todo
@@ -76,18 +78,22 @@ No son entes
 │                        se copia como personal, sin asignados fijos y con el disparo apagado
 │                      · copiada_de guarda el origen
 │                      · paso asignado fuera del equipo de quien la usa: nace solicitado, exige
-│                        tareas_pedir
+│                        tareas_pedir; sin él, la plantilla no se muestra
+│                      · paso sin asignado fijo: se elige al usarla
 ├── notas            — de paso y de hilo, solo se agregan
 ├── tareas_ediciones — log de contenido de hilo y paso: campo, anterior, nuevo, quién, cuándo ·
 │                      lo escribe un trigger; nadie inserta, edita ni borra
 └── vínculos         — tareas_vinculos, derivada por la base de las referencias del texto
 
 Relaciones
-├── hilo → usuario           — responsable (columna)
+├── hilo → usuario           — responsable (columna) · transferir a otro equipo = a su delegador,
+│                              con los pasos abiertos del equipo de origen
 ├── tarea → hilo             — pertenece (obligatoria)
 ├── tarea → usuario | equipo — asignado, exactamente uno
 │                              · fuera del propio equipo (o cualquier otro, para un
 │                                independiente) = pedido, exige tareas_pedir
+│                              · la persona: activa y con tareas_ver · el equipo: con algún
+│                                miembro activo con tareas_equipo
 ├── tarea → tarea            — paso anterior: mismo hilo, inmutable, sin ciclos; vacío = paralelo
 ├── tarea → cualquier ente   — referencia {ente:uuid} + copia del nombre en el texto
 │                              · link ↗ (ficha al lado) si lo puede abrir; texto plano si no
@@ -101,7 +107,8 @@ Acciones
 │          · rechazar (motivo) · reasignar · repartir (equipo → persona) · poner en espera
 │          · completar · reabrir · cancelar · agregar nota · referenciar ente · desactivar
 │          (desde el último)
-│          ├── asignado: acepta, rechaza, espera, completa, reabre lo suyo
+│          ├── asignado: acepta, rechaza, espera, completa, reabre lo suyo; suma pasos
+│          │   asignados a sí mismo, colgados del suyo
 │          ├── delegador del equipo receptor: decide también los pedidos a sus miembros
 │          ├── responsable del hilo: edita, reasigna, cancela, reabre, resuelve rechazados;
 │          │   NO completa pasos de otro
@@ -110,19 +117,27 @@ Acciones
                · copiar del Catálogo
 
 Eventos que emite
-├── hilo:  alta · estado · baja · reactivacion
-├── tarea: alta · estado (aceptar, rechazar, reabrir, volver a solicitada) · baja · reactivacion
+├── hilo:  alta · estado · baja · reactivacion · transferencia ({anterior, nuevo}; entra al enum
+│          tipo_evento con este emisor)
+├── tarea: alta · estado (todo cambio, detalle {anterior, nuevo}) · baja · reactivacion
 │          · relacion_alta / relacion_baja (asignado) — el valor anterior del contenido va en
 │          tareas_ediciones
 └── campanita, a partir de esos eventos:
-    ├── tarea asignada    → la persona
+    ├── (nunca al que hizo la acción)
+    ├── tarea asignada    → la persona; si es al equipo, su delegador
     ├── pedido recibido   → la persona o su delegador; al equipo, quien tiene tareas_equipo ahí
     │                       (también cuando un pedido editado vuelve a solicitada)
-    ├── pedido aceptado   → quien pidió
-    ├── pedido rechazado  → quien pidió y el responsable del hilo
+    ├── pedido aceptado   → el responsable actual del hilo
+    ├── pedido rechazado  → el responsable actual del hilo
     ├── paso reabierto    → el asignado
     ├── hilo transferido  → el nuevo responsable
-    └── paso habilitado   → el asignado, al completarse el previo
+    ├── paso habilitado   → el asignado, al completarse el previo
+    ├── paso reasignado   → el responsable del hilo, cuando lo movió el delegador
+    ├── paso a reasignar  → el responsable, cuando la recurrencia no pudo copiar el asignado
+    ├── paso sumado       → el responsable, cuando lo sumó un asignado
+    ├── hilo dado de baja → los asignados de pasos abiertos
+    ├── paso completado   → el responsable del hilo
+    └── paso cancelado    → el asignado
 Eventos que consume
 └── de otros módulos → disparar_plantillas. Sin emisor todavía: se conecta con el primero.
 ```
@@ -142,7 +157,8 @@ Módulo: Tareas
 └── Todas (vista, tareas_todas)                 — admin
     └── tareas_administrar (funcion)            — admin
 
-Delegables: todo salvo tareas_pedir, tareas_todas y tareas_administrar.
+Delegables: todo salvo tareas_pedir, tareas_equipo, tareas_repartir, tareas_todas y
+tareas_administrar. tareas_equipo solo con usuarios_delegar: un delegador por equipo.
 ```
 
 ## Decisiones del diseño (2026-09-23)
@@ -159,6 +175,31 @@ completó un paso), el que tiene `tareas_equipo` en un equipo participante, y `t
 Un miembro no ve los hilos de su equipo donde no participa: lo propio queda privado sin flag.
 Consecuencia: lo que un participante no debe leer va en otro hilo.
 
+**El equipo participa si participa cualquier miembro.** El delegador ve todo hilo donde un miembro
+es responsable, asignado o completó un paso, o donde hay un paso asignado al equipo. Incluye lo que
+un miembro arma para sí. La vista Equipo filtra por miembro y por tipo (pedidos, al equipo, del
+equipo). Lo asignado al equipo sin repartir lo ve solo el delegador, y mientras tanto él hace de
+asignado: completa, pone en espera, agrega resultado.
+
+**El delegador de tareas es el de usuarios.** `tareas_equipo` y `tareas_repartir` no son delegables,
+y `tareas_equipo` exige `usuarios_delegar`. Así, una sola persona por equipo ve la bandeja y recibe lo
+que dejan una baja, un cambio de equipo o una transferencia. Puede reasignar un paso abierto entre
+miembros de su equipo, o desde el equipo a un miembro. Es una excepción por columna en el trigger, y
+se avisa al responsable del hilo.
+
+**Con `tareas_administrar` se asigna directo.** El admin del sistema no está en ningún equipo
+(`US002`), así que sin esto todo lo suyo sería pedido; el paso nace `pendiente`.
+
+**Pedir es un acto del responsable del hilo, y el aviso de la respuesta va al responsable actual.**
+Sin columna `pedido_por`: quién pidió en su momento queda en `eventos`.
+
+**El asignado puede sumar pasos para sí, colgados del suyo.** Sirve para subdividir su trabajo sin
+pedírselo al responsable, que recibe el aviso. El contenido sigue siendo del responsable después de
+creado.
+
+**Desactivar un hilo con pasos abiertos de otros se puede, y les avisa.** Lo completado se conserva y
+lo reactiva el admin.
+
 **Un solo asignado por paso, persona o equipo.** Dos personas = dos pasos: siempre claro quién
 debe. Lo asignado al equipo lo reparte quien tiene `tareas_equipo` + `tareas_repartir`.
 
@@ -169,12 +210,38 @@ receptor o el delegador de su equipo. Rechazar no cancela: el previo es inmutabl
 quedarían trabados, así que resuelve el responsable del hilo. Independiente: misma regla, todo otro
 es "afuera" (opción a; la b era una excepción).
 
+**Solo se asigna a quien puede recibirlo.** Asignar, pedir, repartir y reasignar exigen en la base
+que la persona esté activa y tenga `tareas_ver`, y que el equipo tenga algún miembro activo con
+`tareas_equipo`; si no, el paso queda invisible o sin quien lo decida. El selector ofrece solo a
+quien cumple. Si el receptor pierde el permiso después, lo resuelve `tareas_administrar`.
+
+**La baja de un usuario pasa sus pasos abiertos y sus hilos al delegador de su equipo.** El
+delegador de usuarios (`usuarios_delegar`), que es uno solo; si el que se va es el delegador, a su
+heredero. Del independiente no pasa nada solo: el admin transfiere desde Todas. Para que el
+destino cumpla *Solo se asigna a quien puede recibirlo*, el delegador tiene que tener `tareas_ver`
+(decisión del usuario). Trigger de tareas
+sobre `usuarios.activo`; completados y cancelados no se tocan (son registro).
+
+**Quien cambia de equipo no se lleva nada abierto del anterior.** Sus hilos y sus pasos abiertos en
+hilos cuyo responsable es del equipo anterior pasan al delegador de ese equipo, como en la baja. Los
+pasos que le pidieron desde otros equipos siguen siendo suyos. Trigger de tareas sobre
+`equipos_miembros`.
+
+**Transferir un hilo a otro equipo lo entrega al delegador de ese equipo.** El responsable pasa a
+ser el delegador del equipo destino, y los pasos abiertos asignados a gente del equipo de origen
+pasan también a él para que los reparta o los vuelva a pedir. Los pasos de terceros equipos no
+cambian. Exige `tareas_pedir` y es inmediata, sin aceptación: el delegador recibe el aviso. A un
+independiente, las mismas reglas con él como destino.
+
+**"Equipo participante" se calcula con la membresía actual** (`equipo_de()`), no la de cuando se
+asignó. Con las dos reglas de arriba no queda trabajo abierto colgado de un equipo viejo.
+
 **`tarea` es ente, no solo `hilo`.** Se había propuesto sin ficha propia; no alcanza: completar es
 el hecho central del registro y sin ente no llega a `eventos`, y otros módulos y la campanita
 apuntan a un paso. Barato: dueño y visibilidad se heredan del hilo.
 
 **Esperar es una fecha derivada, no un estado.** `espera_hasta` + motivo reemplaza a `en_espera` y
-al posponer de `master`: la misma idea dos veces. Se deriva como "bloqueada".
+al posponer de `master`: la misma idea dos veces. Se deriva como "en espera", aparte de "bloqueada".
 
 **Resultado opcional**, en el paso y en el hilo.
 
@@ -182,6 +249,10 @@ al posponer de `master`: la misma idea dos veces. Se deriva como "bloqueada".
 Pedido del usuario: que nadie —persona o agente— cambie lo pedido y lo marque hecho. El contenido
 es del responsable del hilo; estado, espera, resultado y notas, del asignado. `GRANT UPDATE` por
 columna + trigger, como `validar_gestionar_tarea` en `master`.
+
+**Excepción: `tareas_administrar` puede editar y completar lo ajeno.** Lo exige *Siempre hay una
+función que administra el módulo* (`decisiones/global/permisos.md`). Completar algo ajeno pide nota
+obligatoria y queda firmado en `eventos`. Aplica igual si esa función la tiene un agente IA.
 
 **Toda edición de contenido deja historial (`tareas_ediciones`) y lo cerrado se congela.**
 `eventos` no guarda valor anterior (`decisiones/global/entes.md`), por eso tabla aparte escrita por
@@ -196,7 +267,9 @@ prioridad no lo devuelve: ordena, no cambia el trabajo.
 
 **Referencias en el texto en vez de chips.** `{nombre}` de la plantilla se guarda como
 `{obra:uuid}` + copia del nombre; se ve como link ↗ que abre la ficha al lado si se puede abrir, y
-como texto plano si no. Aplica *Un ente en un texto es una referencia* (`decisiones/global/entes.md`).
+como texto plano si no. Aplica *Un ente en un texto es una referencia* (`decisiones/global/entes.md`),
+corregida para mostrar la copia en vez de nada: el paso tiene que entenderse, y el nombre lo contó
+quien sí lo veía.
 `tareas_vinculos` queda como dato (hilos de un registro, `plantilla_disparada`) y la escribe la
 base desde el texto: una sola fuente. Vincular a mano: textarea + "Relacionar" que inserta la
 marca, con vista previa; editor enriquecido solo si no alcanza (librería nueva, consultar).
@@ -208,10 +281,26 @@ Cada módulo con entes aporta su ficha; el registro ente → componente vive en 
 decide publicarla; del Catálogo se copia —nunca se usa directo, para no depender de ediciones
 ajenas—, sin asignados fijos y con el disparo apagado. `copiada_de` guarda el origen.
 
+**Los pasos sin asignado fijo se asignan al usar la plantilla.** El formulario pide uno por paso
+vacío, con quien la usa como valor por defecto. Nunca nace un paso sin dueño.
+
+**Una plantilla que pide afuera no se le muestra a quien no tiene `tareas_pedir`.** Decisión del
+usuario. `usar_plantilla` lo rechaza igual en la base: ocultarla no autoriza. Si un asignado
+elegido al usar la plantilla cae afuera, se aplica la regla de siempre: pedido con `tareas_pedir`.
+
 **Plantillas por evento esperan a su primer emisor.** Hoy ningún módulo emite; se construyen las
 manuales y `disparar_plantillas` se conecta después.
 
 **Recurrencia a nivel hilo**: al cerrarse nace el siguiente. Sin `pg_cron`, como en `master`.
+
+**Cada cierre genera un siguiente, también tras reabrir.** Elegido por el usuario sobre guardar
+`siguiente_id`: reabrir y volver a cerrar da otro ciclo, y el duplicado se cuida a mano.
+
+**El siguiente copia los pasos, sin lo hecho.** Títulos, descripciones, cadena, asignados y
+prioridad, todo sin completar; los vencimientos se corren por el intervalo. Sin notas, resultados
+ni historial. Un paso cuyo asignado está inactivo, o que sería un pedido y el responsable ya no
+tiene `tareas_pedir`, nace asignado al responsable con aviso para reasignarlo: la recurrencia nunca
+falla. Los pedidos válidos nacen `solicitada` y se vuelven a aceptar.
 
 ## Qué se trae de `master`
 
@@ -233,6 +322,10 @@ multi-asignado (`tareas_asignados`), `modo_completado`, `origen_app`, `tareas_ge
 ## Lo que el módulo necesita de afuera
 
 - Una función que devuelva solo nombre de usuarios y equipos activos, para asignar y pedir:
-  `usuarios_select` no deja ver otros equipos.
+  `usuarios_select` no deja ver otros equipos. Por fila, además, si es de mi equipo y si puede
+  recibir (*Solo se asigna a quien puede recibirlo*): la UI decide asignar o pedir sin otra consulta.
+- Usuarios: el delegador (`usuarios_delegar`) tiene que tener `tareas_ver`, y `tareas_equipo` solo
+  la puede tener un delegador. Se valida al designarlo y al quitarle cualquiera de las dos (en
+  `usuario_submodulos_validar`).
 - Core: vuelven `puede_abrir_registro` y `buscar_registros`; ramas de `hilo` y `tarea` en
   `etiqueta_registro` y `puede_ver_relacion` (`sql/109`).
