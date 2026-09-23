@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Toaster } from "sonner";
 
 // RightPanel y Modal son <dialog> en el top layer del browser; el <ol> de
@@ -10,13 +10,19 @@ import { Toaster } from "sonner";
 // por encima del último <dialog> abierto (el orden del top layer es por
 // momento de entrada). El posicionamiento sigue siendo de sonner; la caja
 // que dibujan las UA popover styles se anula en globals.css.
+// sonner solo renderiza el <ol> mientras hay toasts y lo recrea cada vez que
+// la cola pasa de 0 a 1, así que se observa el contenedor y no el <ol>.
 export function TopLayerToaster() {
-  useEffect(() => {
-    const ol = document.querySelector<HTMLElement>("[data-sonner-toaster]");
-    if (!ol || typeof ol.showPopover !== "function") return;
+  const ref = useRef<HTMLDivElement>(null);
 
-    ol.setAttribute("popover", "manual");
+  useEffect(() => {
+    const cont = ref.current;
+    if (!cont) return;
+
     const bump = () => {
+      const ol = cont.querySelector<HTMLElement>("[data-sonner-toaster]");
+      if (!ol || typeof ol.showPopover !== "function") return;
+      ol.setAttribute("popover", "manual");
       try {
         ol.hidePopover();
       } catch {}
@@ -29,9 +35,13 @@ export function TopLayerToaster() {
     const obs = new MutationObserver((records) => {
       if (records.some((r) => r.addedNodes.length)) bump();
     });
-    obs.observe(ol, { childList: true });
+    obs.observe(cont, { childList: true, subtree: true });
     return () => obs.disconnect();
   }, []);
 
-  return <Toaster position="top-right" richColors mobileOffset={{ top: "72px" }} />;
+  return (
+    <div ref={ref} className="contents">
+      <Toaster position="top-right" richColors mobileOffset={{ top: "72px" }} />
+    </div>
+  );
 }
