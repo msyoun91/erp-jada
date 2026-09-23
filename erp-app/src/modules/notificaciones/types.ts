@@ -1,9 +1,7 @@
 import { z } from "zod";
+import type { Database } from "@/lib/supabase/database.types";
 
-// El enum `tipo_notificacion` no tiene valores todavía (sql/107) y el generador
-// lo tipa `unknown`. El primer evento lo pasa a
-// `Database["public"]["Enums"]["tipo_notificacion"]`.
-export type TipoNotificacion = never;
+export type TipoNotificacion = Database["public"]["Enums"]["tipo_notificacion"];
 
 // El generador de tipos declara no-nulas las columnas de un `RETURNS TABLE`
 // (mismo defecto que corrige `argsRpc` del lado de los argumentos). Varias

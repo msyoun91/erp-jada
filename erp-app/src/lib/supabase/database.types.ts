@@ -139,7 +139,7 @@ export type Database = {
           entidad_id: string
           id: string
           leida_at: string | null
-          tipo: unknown
+          tipo: Database["public"]["Enums"]["tipo_notificacion"]
           updated_at: string
           usuario_id: string
         }
@@ -151,7 +151,7 @@ export type Database = {
           entidad_id: string
           id?: string
           leida_at?: string | null
-          tipo: unknown
+          tipo: Database["public"]["Enums"]["tipo_notificacion"]
           updated_at?: string
           usuario_id: string
         }
@@ -163,7 +163,7 @@ export type Database = {
           entidad_id?: string
           id?: string
           leida_at?: string | null
-          tipo?: unknown
+          tipo?: Database["public"]["Enums"]["tipo_notificacion"]
           updated_at?: string
           usuario_id?: string
         }
@@ -361,6 +361,13 @@ export type Database = {
       }
       mi_equipo: { Args: never; Returns: string }
       normalizar_telefono: { Args: { t: string }; Returns: string }
+      notificaciones_actores: {
+        Args: never
+        Returns: {
+          id: string
+          nombre: string
+        }[]
+      }
       notificaciones_listar: {
         Args: { p_limite?: number }
         Returns: {
@@ -372,7 +379,7 @@ export type Database = {
           id: string
           leida: boolean
           motivo: string
-          tipo: unknown
+          tipo: Database["public"]["Enums"]["tipo_notificacion"]
         }[]
       }
       notificar: {
@@ -380,7 +387,7 @@ export type Database = {
           p_actor_id: string
           p_entidad: string
           p_entidad_id: string
-          p_tipo: unknown
+          p_tipo: Database["public"]["Enums"]["tipo_notificacion"]
           p_usuario_id: string
         }
         Returns: undefined
@@ -401,6 +408,10 @@ export type Database = {
       }
     }
     Enums: {
+      tipo_notificacion:
+        | "miembro_nuevo"
+        | "permiso_otorgado"
+        | "delegador_designado"
       tipo_submodulo: "vista" | "funcion"
     }
     CompositeTypes: {
@@ -529,6 +540,11 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      tipo_notificacion: [
+        "miembro_nuevo",
+        "permiso_otorgado",
+        "delegador_designado",
+      ],
       tipo_submodulo: ["vista", "funcion"],
     },
   },

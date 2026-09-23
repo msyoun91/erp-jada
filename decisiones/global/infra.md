@@ -41,7 +41,8 @@ notificaciones; la de sugerencias no, y por qué está más abajo.
 **En `erp-v2` vuelve la infra sin ningún evento (`sql/107`, 2026-09-23).** `sql/101` la había
 borrado con tareas y obras porque todo su vocabulario era de esos módulos. Vuelven la tabla,
 `notificar()`, `notificaciones_listar()` sin ramas y la campanita, con el enum vacío: el primer
-evento se decide contra la ficha de su módulo (la de `usuarios` dice "Eventos que emite: ninguno").
+evento se decide contra la ficha de su módulo. Los primeros son de `usuarios` (`sql/108`,
+`decisiones/usuarios.md` → *Notificaciones*).
 `notificaciones_avisos()` no vuelve — contaba tareas vencidas. Los pasos para sumar un evento están
 en `db_schema/notificaciones.md`. Lo que sigue describe la versión de `master`.
 

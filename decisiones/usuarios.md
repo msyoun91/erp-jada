@@ -19,11 +19,16 @@ Personas
 │                              lo que otorgó él
 │                            · no ve usuarios fuera de su equipo; no crea, edita, desactiva ni resetea
 │                              cuentas; no toca lo que otorgó el admin
-├── Miembro / independiente  — NO usa el módulo: su cuenta la ve en /perfil · — · —
+├── Miembro / independiente  — NO usa el módulo: su cuenta la ve en /perfil; los avisos de permisos
+│                              le llegan a la campanita, que lleva al módulo otorgado · — · —
 └── Agente IA                — NO usa el módulo. Puede ser miembro de un equipo, nunca delegador
                                (regla de uso: hoy la base no distingue un agente de una persona)
 Entes: ninguno — usuario y equipo son de core: no tienen dueño ni se comparten
-Eventos que emite: ninguno · Eventos que consume: ninguno
+Eventos que emite (a la campanita, sql/108 — aprobado 2026-09-23)
+├── miembro_nuevo       → delegador: el admin le sumó alguien al equipo
+├── permiso_otorgado    → quien recibe una vista (miembro, independiente, delegador)
+└── delegador_designado → quien recibe usuarios_delegar (designación o herencia)
+Eventos que consume: ninguno
 ```
 
 ```
@@ -181,6 +186,37 @@ permisos"; escribir es `usuarios_delegar`.
 **`/usuarios` redirige a la vista que el usuario tenga.** El sidebar apunta ahí y pide `usuarios_ver`;
 el delegador típico solo tiene Mi equipo y caía en un 404. Redirigir en la page es menos código que
 hacer el href del sidebar depender de los permisos.
+
+## Notificaciones (`sql/108`)
+
+**Tres avisos, elegidos contra la ficha el 2026-09-23: miembro nuevo al delegador, vista otorgada al
+que la recibe y, como variante, la designación de delegador.** Quedaron afuera la revocación (las
+cascadas la vuelven una ráfaga y el destino ya no se puede abrir), "te sumaron al equipo" para el
+miembro (no puede leer `equipos` y habría que abrir la RLS solo para esto), desactivar y resetear
+(el afectado no puede entrar a verlo) y avisarle al admin lo que hace un delegador (es auditoría).
+`sql/108_notificaciones_usuarios.sql`, `modules/notificaciones/components/NotificacionesBell.tsx`.
+
+**Solo avisan las vistas, no las funciones.** Una función llega siempre con su vista o sobre una que ya
+se tenía, y avisar cada checkbox del panel sería una ráfaga. La excepción es `usuarios_delegar`, que
+es el aviso de la designación.
+
+**La variante terminó siendo un tipo propio (`delegador_designado`), en el mismo trigger y la misma
+rama.** Cambian texto, ícono, etiqueta (el equipo, no la vista) y destino, y la campanita los elige
+por tipo. `usuarios_equipo` no avisa si llega junto con la delegación: los AFTER ROW corren al final
+de la sentencia, así que la función ya está escrita cuando se evalúa la vista.
+
+**Un permiso que vuelve deja un solo aviso vivo.** Reactivar reusa la fila de `usuario_submodulos`, y
+el aviso de la vez anterior volvía a resolverse al lado del nuevo, con el actor de entonces. El
+trigger apaga los anteriores de esa fila antes de crear el nuevo.
+
+**El nombre del actor sale de `notificaciones_actores()` (DEFINER), no de abrir `usuarios`.** En v2 un
+miembro no ve al delegador ni al admin; en `master` lo abrían las ramas de tareas. La función
+devuelve solo el nombre, y solo de quienes provocaron las notificaciones propias.
+
+**`miembro_nuevo` va sin actor.** El admin escribe con `service_role` y la membresía no guarda quién
+la creó; sumar una columna para esto no se justificó, porque el único que puede hacerlo es el admin.
+
+Verificado con `sql/tests/notificaciones_usuarios.sql` (20/20).
 
 ## Desactivar por fin desactiva, y se puede reactivar (`sql/020_usuarios_activo.sql`)
 

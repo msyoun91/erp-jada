@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, type LucideIcon } from "lucide-react";
+import { Bell, KeyRound, ShieldCheck, UserPlus, type LucideIcon } from "lucide-react";
+import { LABEL_MAP } from "@/components/layout/SidebarNav";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { formatFechaHora } from "@/lib/utils";
 import { marcarLeida, marcarTodasLeidas } from "../actions";
@@ -14,13 +15,37 @@ import type { Notificacion, TipoNotificacion } from "../types";
 // Los colores van con los pares `-text` (`text-success-text`,
 // `text-error-text`, `text-warning-text`) o `text-brand-500`: `text-success` y
 // `text-error` son hex fijos y en dark quedan en 3.8:1.
-const ICONO: Record<TipoNotificacion, LucideIcon> = {};
-const TEXTO: Record<TipoNotificacion, string> = {};
-const COLOR: Record<TipoNotificacion, string> = {};
+const ICONO: Record<TipoNotificacion, LucideIcon> = {
+  miembro_nuevo: UserPlus,
+  permiso_otorgado: KeyRound,
+  delegador_designado: ShieldCheck,
+};
+const TEXTO: Record<TipoNotificacion, string> = {
+  miembro_nuevo: "Se sumó a tu equipo",
+  permiso_otorgado: "Te dieron acceso a",
+  delegador_designado: "Ahora sos el delegador de",
+};
+const COLOR: Record<TipoNotificacion, string> = {
+  miembro_nuevo: "text-brand-500",
+  permiso_otorgado: "text-success-text",
+  delegador_designado: "text-success-text",
+};
 
 // `destino` → ruta. Cada rama de `notificaciones_listar` que devuelva un
 // destino nuevo suma su entrada; sin entrada, el aviso no navega.
-const RUTA: Record<string, (id: string) => string> = {};
+const RUTA: Record<string, (id: string) => string> = {
+  mi_equipo: () => "/usuarios/mi-equipo",
+  usuarios: () => "/usuarios",
+};
+
+// `permiso_otorgado` trae el módulo en `destino` y la vista en `etiqueta`: los
+// nombres de vista no repiten el del módulo ("Ver"), así que solos no dicen nada.
+function etiquetaDe(n: Notificacion): string | null {
+  if (n.tipo === "permiso_otorgado" && n.destino && n.etiqueta) {
+    return `${LABEL_MAP[n.destino] ?? n.destino} · ${n.etiqueta}`;
+  }
+  return n.etiqueta;
+}
 
 export function NotificacionesBell({ notificaciones }: { notificaciones: Notificacion[] }) {
   const [abierto, setAbierto] = useState(false);
@@ -100,7 +125,7 @@ export function NotificacionesBell({ notificaciones }: { notificaciones: Notific
                         <span className="min-w-0 flex-1">
                           <span className="t-body-m block text-text-primary">
                             {TEXTO[n.tipo]}{" "}
-                            <strong className="font-semibold">{n.etiqueta ?? "un registro"}</strong>
+                            <strong className="font-semibold">{etiquetaDe(n) ?? "un registro"}</strong>
                           </span>
                           {n.motivo && (
                             <span className="t-body-m mt-0.5 block text-error-text">{n.motivo}</span>

@@ -54,7 +54,7 @@ Asignación usuario ↔ submódulo.
 
 RLS: `usuario_submodulos_select` — las propias, `usuarios_gestionar`, `usuarios_equipos` sobre los miembros activos de cualquier equipo (`sql/106`), o `usuarios_equipo` sobre los de su equipo. `usuario_submodulos_insert_delegador` / `_update_delegador` (`sql/105`): con `usuarios_delegar`, sobre su equipo, siempre a su nombre (`otorgada_por = auth.uid()`); una fila activa solo si es suya. `GRANT INSERT (usuario_id, submodulo_id, otorgada_por, activo)` y `UPDATE (activo, otorgada_por)` a `authenticated`.
 
-Triggers (`sql/105`): `usuario_submodulos_validar` (constraint trigger diferido — función sin vista, admin fuera de equipos, un delegador por equipo, techo de las filas delegadas) y `usuario_submodulos_cascada` (al apagar una fila de un miembro, apaga lo que él delegó de eso; si es `usuarios_delegar`, todo — y sin heredero falla con US009 si queda otro miembro activo).
+Triggers (`sql/105`): `usuario_submodulos_validar` (constraint trigger diferido — función sin vista, admin fuera de equipos, un delegador por equipo, techo de las filas delegadas) y `usuario_submodulos_cascada` (al apagar una fila de un miembro, apaga lo que él delegó de eso; si es `usuarios_delegar`, todo — y sin heredero falla con US009 si queda otro miembro activo). `usuario_submodulos_notificar_alta` / `_reactiva` (`sql/108`): avisan al que recibe una vista o `usuarios_delegar` — ver `notificaciones.md`.
 
 Funciones: `asignar_submodulos(p_admin, p_usuario, p_submodulos[])`, `quitar_delegador(p_admin, p_saliente, p_heredero, p_no_copiar[])` y, desde `sql/106`, `designar_delegador(p_admin, p_usuario)` y `fijar_delegables(p_admin, p_submodulos[])`, solo `service_role`; `delegar_submodulos(p_usuario, p_submodulos[])` INVOKER para `authenticated`. Una fila es delegada si `otorgada_por` es miembro de un equipo (`equipo_de()`).
 
@@ -83,7 +83,7 @@ No se desactiva con miembros activos (`equipos_validar_desactivar`, US010).
 
 RLS de las dos (solo SELECT; escribe el admin con `service_role`): `usuarios_ver` y `usuarios_equipos` ven todo; `usuarios_equipo` ve su equipo vía `mi_equipo()` — `SECURITY DEFINER`, sin argumento para no exponer el equipo de otros. Desde `sql/105` es un envoltorio de `equipo_de(p_usuario)`, que no tiene GRANT.
 
-Cambiar de equipo o quedar independiente: `asignar_equipo(p_admin, p_usuario, p_equipo)` (`sql/106`, solo `service_role`), las dos escrituras en una transacción.
+Cambiar de equipo o quedar independiente: `asignar_equipo(p_admin, p_usuario, p_equipo)` (`sql/106`, solo `service_role`), las dos escrituras en una transacción. Trigger `equipos_miembros_notificar` (`sql/108`): la membresía nueva le avisa al delegador del equipo.
 
 Trigger `equipos_miembros_validar` (`sql/105`): `equipo_id`/`usuario_id` inmutables (US015); no entra quien tiene `usuarios_gestionar` (US002) ni a un equipo inactivo (US011); el delegador no sale (US009); al salir, se apaga lo que le dieron por delegación.
 
