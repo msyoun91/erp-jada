@@ -14,11 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      equipos: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      equipos_miembros: {
+        Row: {
+          activo: boolean
+          created_at: string
+          equipo_id: string
+          id: string
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          equipo_id: string
+          id?: string
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          equipo_id?: string
+          id?: string
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipos_miembros_equipo_id_fkey"
+            columns: ["equipo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipos_miembros_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submodulos: {
         Row: {
           activo: boolean
           codigo: string
           created_at: string
+          delegable: boolean
           id: string
           modulo: string
           nombre: string
@@ -31,6 +98,7 @@ export type Database = {
           activo?: boolean
           codigo: string
           created_at?: string
+          delegable?: boolean
           id?: string
           modulo: string
           nombre: string
@@ -43,6 +111,7 @@ export type Database = {
           activo?: boolean
           codigo?: string
           created_at?: string
+          delegable?: boolean
           id?: string
           modulo?: string
           nombre?: string
@@ -66,6 +135,7 @@ export type Database = {
           activo: boolean
           created_at: string
           id: string
+          otorgada_por: string | null
           submodulo_id: string
           updated_at: string
           usuario_id: string
@@ -74,6 +144,7 @@ export type Database = {
           activo?: boolean
           created_at?: string
           id?: string
+          otorgada_por?: string | null
           submodulo_id: string
           updated_at?: string
           usuario_id: string
@@ -82,11 +153,19 @@ export type Database = {
           activo?: boolean
           created_at?: string
           id?: string
+          otorgada_por?: string | null
           submodulo_id?: string
           updated_at?: string
           usuario_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "usuario_submodulos_otorgada_por_fkey"
+            columns: ["otorgada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "usuario_submodulos_submodulo_id_fkey"
             columns: ["submodulo_id"]
@@ -205,6 +284,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      mi_equipo: { Args: never; Returns: string }
+      normalizar_telefono: { Args: { t: string }; Returns: string }
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
     }
     Enums: {

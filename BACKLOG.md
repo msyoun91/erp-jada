@@ -8,10 +8,11 @@ y la entrada se borra de este archivo.
 
 ## usuarios — equipos y delegación de permisos
 
-Decidido el 2026-09-23 y sin SQL todavía. Pide `equipos`, `equipos_miembros`,
-`usuario_submodulos.otorgada_por` + `updated_at`, `submodulos.delegable`, la vista `usuarios_equipo`
-con la función `usuarios_delegar`, y los triggers de techo, cascada y heredero. Todo está escrito en
-`decisiones/usuarios.md` → *Equipos y delegación de permisos*.
+Decidido el 2026-09-23. El esquema ya corrió (`sql/104`: tablas, columnas, seed y visibilidad).
+Falta: los triggers y funciones de techo, un delegador por equipo, cascadas y heredero (`sql/105`,
+con tests); la UI de admin (equipos, miembros, `delegable`, heredero), que además tiene que pasar
+`otorgada_por` al otorgar; y la vista "Mi equipo". Todo está escrito en `decisiones/usuarios.md` →
+*Equipos y delegación de permisos*.
 
 ## erp-cliente — falta el `ThemeToggle`
 

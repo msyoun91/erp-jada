@@ -34,7 +34,7 @@ Módulo: Usuarios
     └── usuarios_delegar (funcion)            — delegador
 ```
 
-## Equipos y delegación de permisos (decidido 2026-09-23, sin implementar)
+## Equipos y delegación de permisos (decidido 2026-09-23; esquema en `sql/104`, reglas pendientes)
 
 **El admin asigna permisos; un delegador por equipo reparte a su equipo lo que el admin le dio.** Pedido
 del usuario: que el admin no tenga que asignar cada permiso de cada persona, sin crear roles. El delegador

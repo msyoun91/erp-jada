@@ -15,7 +15,7 @@ Perfil 1:1 con `auth.users` (mismo `id`). Se crea automáticamente via trigger `
 
 `activo = false` es la desactivación real, no una marca de UI: le saca los permisos vía `tiene_permiso` (`sql/020`) y el proxy le corta la sesión. `desactivarUsuario` además banea la cuenta en `auth.users` — el access token vivo entraría igual por la API. Se revierte con "Reactivar" (`activo = true` + `ban_duration: "none"`).
 
-RLS: `usuarios_select` (fila propia, o `usuarios_ver` / los permisos de picker listados abajo) y `usuarios_update_propio` (`sql/022`) — `id = auth.uid()` acotado por `GRANT UPDATE (nombre, telefono) TO authenticated` (`telefono` se sumó en `sql/103`), que es lo que impide reactivarse solo desde `/perfil`. El resto de las escrituras siguen pasando por `service_role`.
+RLS: `usuarios_select` (fila propia, `usuarios_ver`, o `usuarios_equipo` sobre los miembros activos de su equipo — `sql/104`, que además sacó las ramas muertas de `tareas_*`/`obras_*`) y `usuarios_update_propio` (`sql/022`) — `id = auth.uid()` acotado por `GRANT UPDATE (nombre, telefono) TO authenticated` (`telefono` se sumó en `sql/103`), que es lo que impide reactivarse solo desde `/perfil`. El resto de las escrituras siguen pasando por `service_role`.
 
 ## submodulos
 
@@ -32,9 +32,12 @@ Modelo: módulo → 1+ vistas → cada vista 0+ funciones (`vista_id`, no solo `
 | vista_id | uuid FK → submodulos, nullable | NULL si tipo=vista; obligatorio si tipo=funcion (CHECK + trigger valida misma `modulo`) |
 | nombre | text | label visible |
 | orden | int | orden en tabs/nav |
+| delegable | boolean | default false — el delegador solo otorga lo marcado (`sql/104`) |
 | activo | boolean | |
 
-Seed inicial: `usuarios_ver` (vista, nombre "Ver" — nunca repite el label del módulo), `usuarios_gestionar` (funcion, vista_id → usuarios_ver).
+Seed: `usuarios_ver` (vista, nombre "Ver" — nunca repite el label del módulo), `usuarios_gestionar` (funcion → usuarios_ver), `usuarios_equipo` (vista "Mi equipo") y `usuarios_delegar` (funcion → usuarios_equipo) (`sql/104`).
+
+RLS: `submodulos_select` — `usuarios_gestionar`, `usuarios_equipo` (el delegador nombra los permisos de su equipo), o los propios asignados.
 
 ## usuario_submodulos
 
@@ -45,7 +48,34 @@ Asignación usuario ↔ submódulo.
 | id | uuid PK | |
 | usuario_id | uuid FK → usuarios | |
 | submodulo_id | uuid FK → submodulos | |
+| otorgada_por | uuid FK → usuarios, nullable | quién otorgó la fila vigente; NULL = admin, previo a `sql/104` |
 | activo | boolean | UNIQUE normal (usuario_id, submodulo_id) — no parcial, por upsert (excepción GUIDE_DB) |
+| created_at / updated_at | timestamptz | |
+
+RLS: `usuario_submodulos_select` — las propias, `usuarios_gestionar`, o `usuarios_equipo` sobre los miembros activos de su equipo.
+
+## equipos
+
+Los crea el admin (`sql/104`). La membresía no da permisos: define a quién puede delegar el delegador. Decisión: `decisiones/usuarios.md` → *Equipos y delegación de permisos*.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| nombre | text | no vacío, unique parcial WHERE activo |
+| activo | boolean | |
+| created_at / updated_at | timestamptz | |
+
+## equipos_miembros
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| equipo_id | uuid FK → equipos | |
+| usuario_id | uuid FK → usuarios | unique parcial WHERE activo: un solo equipo vigente |
+| activo | boolean | cambiar de equipo = desactivar la fila e insertar otra |
+| created_at / updated_at | timestamptz | |
+
+RLS de las dos (solo SELECT; escribe el admin con `service_role`): `usuarios_ver` ve todo; `usuarios_equipo` ve su equipo vía `mi_equipo()` — `SECURITY DEFINER`, sin argumento para no exponer el equipo de otros.
 
 ## usuario_tutorial
 
