@@ -30,6 +30,7 @@ Eventos que emite: ninguno · Eventos que consume: ninguno
 Módulo: Usuarios
 ├── Usuarios (vista, usuarios_ver)            — admin
 │   └── usuarios_gestionar (funcion)          — admin: cuentas, permisos, equipos, delegador, heredero, delegable
+├── Equipos (vista, usuarios_equipos)         — admin (sumada el 2026-09-23, sql/106; escribe con usuarios_gestionar)
 └── Mi equipo (vista, usuarios_equipo)        — delegador
     └── usuarios_delegar (funcion)            — delegador
 ```
@@ -137,6 +138,28 @@ que nadie marque mal un checkbox.
 
 **Los mensajes de estas reglas van con clase `US001`–`US015`** y `mensajeError()` los deja pasar tal
 cual: están escritos para el usuario. Es el mismo criterio que tuvo la clase `OB` de obras.
+
+## La pestaña Equipos (`sql/106`)
+
+**Equipos es una vista propia (`usuarios_equipos`), pedida por el usuario el 2026-09-23 en lugar de meter
+la gestión dentro de Usuarios.** La vista decide quién ve la pestaña y qué puede leer (todos los equipos,
+sus miembros y los permisos de los miembros, para marcar al delegador). Escribir sigue siendo de
+`usuarios_gestionar`: la autoridad de admin es una sola, y las reglas de `sql/105` ya la usan para decidir
+quién es admin (fuera de equipos, guard de las funciones). Una función nueva para esta vista habría
+partido esa definición en dos. `app/(erp-app)/usuarios/equipos/`, `modules/usuarios/components/Equipos*`.
+
+**Las escrituras de varias filas son funciones de la base, igual que `asignar_submodulos`.**
+`asignar_equipo` (apagar la membresía y crear otra van juntas), `designar_delegador` (la función y su vista)
+y `fijar_delegables` (apaga primero, así dispara la revocación). Crear, renombrar y desactivar un equipo son
+una fila: la action escribe directo con `service_role` y las reglas las ponen los triggers.
+
+**La salida del delegador vive solo en Equipos.** Desactivarlo desde Usuarios o sacarle `usuarios_delegar`
+en el panel de permisos sigue fallando con US009, y el mensaje ya dice qué falta; el admin va a
+"Quitar delegador" en la pestaña. En el panel, la delegación y su vista se muestran marcadas y bloqueadas
+(US013).
+
+**Los equipos desactivados van en un `<details>` al pie, no en un filtro.** Son historia, y un equipo solo
+se desactiva vacío: no hay nada que trabajar sobre ellos salvo reactivarlos.
 
 ## Desactivar por fin desactiva, y se puede reactivar (`sql/020_usuarios_activo.sql`)
 

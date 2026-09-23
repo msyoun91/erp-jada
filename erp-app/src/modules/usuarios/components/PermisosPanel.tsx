@@ -8,7 +8,7 @@ import { LABEL_MAP } from "@/components/layout/SidebarNav";
 import { asignarSubmodulos } from "../actions";
 import type { Submodulo, Usuario } from "../types";
 
-function labelModulo(modulo: string) {
+export function labelModulo(modulo: string) {
   return LABEL_MAP[modulo] ?? modulo[0].toUpperCase() + modulo.slice(1);
 }
 

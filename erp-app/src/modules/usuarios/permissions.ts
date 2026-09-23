@@ -7,3 +7,7 @@ export function puedeVerUsuarios() {
 export function puedeGestionarUsuarios() {
   return tienePermiso("usuarios_gestionar");
 }
+
+export function puedeVerEquipos() {
+  return tienePermiso("usuarios_equipos");
+}

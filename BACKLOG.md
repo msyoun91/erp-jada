@@ -8,11 +8,10 @@ y la entrada se borra de este archivo.
 
 ## usuarios — equipos y delegación de permisos
 
-Decidido el 2026-09-23. Base completa: esquema en `sql/104`, reglas en `sql/105` (tests en
-`sql/tests/usuarios_equipos.sql`). Falta:
-- **UI de admin:** equipos y miembros (escritura directa con `service_role`), `delegable`, y la
-  salida del delegador con heredero y lista de "no copiar" → `quitar_delegador`. Desactivar al
-  delegador o sacarlo del equipo falla con `US009` hasta que corra esa función.
+Decidido el 2026-09-23. Base completa: esquema en `sql/104`, reglas en `sql/105`, pestaña Equipos del
+admin en `sql/106` (tests en `sql/tests/usuarios_equipos.sql`). Falta:
+- **Sidebar con solo "Equipos" o "Mi equipo":** el ítem del módulo apunta a `/usuarios`, que pide
+  `usuarios_ver`. Hoy no pasa (el admin tiene las dos), pero quien tenga solo otra vista cae en un 404.
 - **"Gana el admin" explícito:** `asignar_submodulos` no cambia de dueño una fila que ya está activa,
   así que guardar el panel no se apropia de lo delegado. Para que el admin tome una fila del delegador
   hace falta un gesto propio en el panel (y un parámetro o función que lo exprese).

@@ -15,7 +15,7 @@ Perfil 1:1 con `auth.users` (mismo `id`). Se crea automáticamente via trigger `
 
 `activo = false` es la desactivación real, no una marca de UI: le saca los permisos vía `tiene_permiso` (`sql/020`) y el proxy le corta la sesión. `desactivarUsuario` además banea la cuenta en `auth.users` — el access token vivo entraría igual por la API. Se revierte con "Reactivar" (`activo = true` + `ban_duration: "none"`).
 
-RLS: `usuarios_select` (fila propia, `usuarios_ver`, o `usuarios_equipo` sobre los miembros activos de su equipo — `sql/104`, que además sacó las ramas muertas de `tareas_*`/`obras_*`) y `usuarios_update_propio` (`sql/022`) — `id = auth.uid()` acotado por `GRANT UPDATE (nombre, telefono) TO authenticated` (`telefono` se sumó en `sql/103`), que es lo que impide reactivarse solo desde `/perfil`. El resto de las escrituras siguen pasando por `service_role`.
+RLS: `usuarios_select` (fila propia, `usuarios_ver`, `usuarios_equipos` (`sql/106`), o `usuarios_equipo` sobre los miembros activos de su equipo — `sql/104`, que además sacó las ramas muertas de `tareas_*`/`obras_*`) y `usuarios_update_propio` (`sql/022`) — `id = auth.uid()` acotado por `GRANT UPDATE (nombre, telefono) TO authenticated` (`telefono` se sumó en `sql/103`), que es lo que impide reactivarse solo desde `/perfil`. El resto de las escrituras siguen pasando por `service_role`.
 
 ## submodulos
 
@@ -35,9 +35,9 @@ Modelo: módulo → 1+ vistas → cada vista 0+ funciones (`vista_id`, no solo `
 | delegable | boolean | default false — el delegador solo otorga lo marcado (`sql/104`). CHECK `submodulos_usuarios_no_delegable`: nunca en `modulo = 'usuarios'`. Pasarlo a false revoca lo delegado (`sql/105`) |
 | activo | boolean | |
 
-Seed: `usuarios_ver` (vista, nombre "Ver" — nunca repite el label del módulo), `usuarios_gestionar` (funcion → usuarios_ver), `usuarios_equipo` (vista "Mi equipo") y `usuarios_delegar` (funcion → usuarios_equipo) (`sql/104`).
+Seed: `usuarios_ver` (vista, nombre "Ver" — nunca repite el label del módulo), `usuarios_gestionar` (funcion → usuarios_ver), `usuarios_equipo` (vista "Mi equipo", orden 3) y `usuarios_delegar` (funcion → usuarios_equipo) (`sql/104`), `usuarios_equipos` (vista "Equipos", orden 2 — la pestaña del admin; `sql/106` se la dio a quien tenía `usuarios_gestionar`).
 
-RLS: `submodulos_select` — `usuarios_gestionar`, `usuarios_equipo` (el delegador nombra los permisos de su equipo), o los propios asignados.
+RLS: `submodulos_select` — `usuarios_gestionar`, `usuarios_equipos`, `usuarios_equipo` (el delegador nombra los permisos de su equipo), o los propios asignados.
 
 ## usuario_submodulos
 
@@ -52,11 +52,11 @@ Asignación usuario ↔ submódulo.
 | activo | boolean | UNIQUE normal (usuario_id, submodulo_id) — no parcial, por upsert (excepción GUIDE_DB) |
 | created_at / updated_at | timestamptz | |
 
-RLS: `usuario_submodulos_select` — las propias, `usuarios_gestionar`, o `usuarios_equipo` sobre los miembros activos de su equipo. `usuario_submodulos_insert_delegador` / `_update_delegador` (`sql/105`): con `usuarios_delegar`, sobre su equipo, siempre a su nombre (`otorgada_por = auth.uid()`); una fila activa solo si es suya. `GRANT INSERT (usuario_id, submodulo_id, otorgada_por, activo)` y `UPDATE (activo, otorgada_por)` a `authenticated`.
+RLS: `usuario_submodulos_select` — las propias, `usuarios_gestionar`, `usuarios_equipos` sobre los miembros activos de cualquier equipo (`sql/106`), o `usuarios_equipo` sobre los de su equipo. `usuario_submodulos_insert_delegador` / `_update_delegador` (`sql/105`): con `usuarios_delegar`, sobre su equipo, siempre a su nombre (`otorgada_por = auth.uid()`); una fila activa solo si es suya. `GRANT INSERT (usuario_id, submodulo_id, otorgada_por, activo)` y `UPDATE (activo, otorgada_por)` a `authenticated`.
 
 Triggers (`sql/105`): `usuario_submodulos_validar` (constraint trigger diferido — función sin vista, admin fuera de equipos, un delegador por equipo, techo de las filas delegadas) y `usuario_submodulos_cascada` (al apagar una fila de un miembro, apaga lo que él delegó de eso; si es `usuarios_delegar`, todo — y sin heredero falla con US009 si queda otro miembro activo).
 
-Funciones: `asignar_submodulos(p_admin, p_usuario, p_submodulos[])` y `quitar_delegador(p_admin, p_saliente, p_heredero, p_no_copiar[])` solo `service_role`; `delegar_submodulos(p_usuario, p_submodulos[])` INVOKER para `authenticated`. Una fila es delegada si `otorgada_por` es miembro de un equipo (`equipo_de()`).
+Funciones: `asignar_submodulos(p_admin, p_usuario, p_submodulos[])`, `quitar_delegador(p_admin, p_saliente, p_heredero, p_no_copiar[])` y, desde `sql/106`, `designar_delegador(p_admin, p_usuario)` y `fijar_delegables(p_admin, p_submodulos[])`, solo `service_role`; `delegar_submodulos(p_usuario, p_submodulos[])` INVOKER para `authenticated`. Una fila es delegada si `otorgada_por` es miembro de un equipo (`equipo_de()`).
 
 ## equipos
 
@@ -81,7 +81,9 @@ No se desactiva con miembros activos (`equipos_validar_desactivar`, US010).
 | activo | boolean | cambiar de equipo = desactivar la fila e insertar otra |
 | created_at / updated_at | timestamptz | |
 
-RLS de las dos (solo SELECT; escribe el admin con `service_role`): `usuarios_ver` ve todo; `usuarios_equipo` ve su equipo vía `mi_equipo()` — `SECURITY DEFINER`, sin argumento para no exponer el equipo de otros. Desde `sql/105` es un envoltorio de `equipo_de(p_usuario)`, que no tiene GRANT.
+RLS de las dos (solo SELECT; escribe el admin con `service_role`): `usuarios_ver` y `usuarios_equipos` ven todo; `usuarios_equipo` ve su equipo vía `mi_equipo()` — `SECURITY DEFINER`, sin argumento para no exponer el equipo de otros. Desde `sql/105` es un envoltorio de `equipo_de(p_usuario)`, que no tiene GRANT.
+
+Cambiar de equipo o quedar independiente: `asignar_equipo(p_admin, p_usuario, p_equipo)` (`sql/106`, solo `service_role`), las dos escrituras en una transacción.
 
 Trigger `equipos_miembros_validar` (`sql/105`): `equipo_id`/`usuario_id` inmutables (US015); no entra quien tiene `usuarios_gestionar` (US002) ni a un equipo inactivo (US011); el delegador no sale (US009); al salir, se apaga lo que le dieron por delegación.
 

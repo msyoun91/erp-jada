@@ -1,14 +1,19 @@
 import { UsersRound } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ModuleTabs } from "@/components/layout/ModuleTabs";
+import { puedeVerEquipos, puedeVerUsuarios } from "@/modules/usuarios/permissions";
 
-const tabs = [{ codigo: "usuarios_ver", label: "Usuarios", href: "/usuarios" }];
-
-export default function UsuariosLayout({
+export default async function UsuariosLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [verUsuarios, verEquipos] = await Promise.all([puedeVerUsuarios(), puedeVerEquipos()]);
+  const tabs = [
+    ...(verUsuarios ? [{ codigo: "usuarios_ver", label: "Usuarios", href: "/usuarios" }] : []),
+    ...(verEquipos ? [{ codigo: "usuarios_equipos", label: "Equipos", href: "/usuarios/equipos" }] : []),
+  ];
+
   return (
     <div className="flex flex-col h-full">
       <Breadcrumb modulo="usuarios" tabs={tabs} />

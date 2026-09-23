@@ -30,6 +30,40 @@ export const asignarSubmodulosSchema = z.object({
 
 export type AsignarSubmodulosForm = z.infer<typeof asignarSubmodulosSchema>;
 
+export const equipoSchema = z.object({
+  id: z.string().uuid().optional(),
+  nombre: z.string().trim().min(1, "El nombre es obligatorio"),
+});
+
+export type EquipoForm = z.infer<typeof equipoSchema>;
+
+export const asignarEquipoSchema = z.object({
+  usuario_id: z.string().uuid(),
+  equipo_id: z.string().uuid().nullable(),
+});
+
+export type AsignarEquipoForm = z.infer<typeof asignarEquipoSchema>;
+
+export const quitarDelegadorSchema = z.object({
+  saliente_id: z.string().uuid(),
+  heredero_id: z.string().uuid().nullable(),
+  no_copiar: z.array(z.string().uuid()),
+});
+
+export type QuitarDelegadorForm = z.infer<typeof quitarDelegadorSchema>;
+
+export const fijarDelegablesSchema = z.object({
+  submodulo_ids: z.array(z.string().uuid()),
+});
+
+export type FijarDelegablesForm = z.infer<typeof fijarDelegablesSchema>;
+
+export type Equipo = {
+  id: string;
+  nombre: string;
+  activo: boolean;
+};
+
 export type Usuario = {
   id: string;
   nombre: string;
@@ -46,4 +80,5 @@ export type Submodulo = {
   vista_id: string | null;
   nombre: string;
   orden: number;
+  delegable: boolean;
 };

@@ -284,6 +284,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      asignar_equipo: {
+        Args: { p_admin: string; p_equipo: string | null; p_usuario: string }
+        Returns: undefined
+      }
       asignar_submodulos: {
         Args: { p_admin: string; p_submodulos: string[]; p_usuario: string }
         Returns: undefined
@@ -292,13 +296,21 @@ export type Database = {
         Args: { p_submodulos: string[]; p_usuario: string }
         Returns: undefined
       }
+      designar_delegador: {
+        Args: { p_admin: string; p_usuario: string }
+        Returns: undefined
+      }
       equipo_de: { Args: { p_usuario: string }; Returns: string }
+      fijar_delegables: {
+        Args: { p_admin: string; p_submodulos: string[] }
+        Returns: undefined
+      }
       mi_equipo: { Args: never; Returns: string }
       normalizar_telefono: { Args: { t: string }; Returns: string }
       quitar_delegador: {
         Args: {
           p_admin: string
-          p_heredero: string
+          p_heredero: string | null
           p_no_copiar?: string[]
           p_saliente: string
         }

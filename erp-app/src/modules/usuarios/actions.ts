@@ -7,15 +7,34 @@ import { createClient } from "@/lib/supabase/server";
 import { mensajeError } from "@/lib/utils";
 import { puedeGestionarUsuarios } from "./permissions";
 import {
+  asignarEquipoSchema,
   asignarSubmodulosSchema,
   crearUsuarioSchema,
   editarUsuarioSchema,
+  equipoSchema,
+  fijarDelegablesSchema,
+  quitarDelegadorSchema,
   resetearPasswordSchema,
+  type AsignarEquipoForm,
   type AsignarSubmodulosForm,
   type CrearUsuarioForm,
   type EditarUsuarioForm,
+  type EquipoForm,
+  type FijarDelegablesForm,
+  type QuitarDelegadorForm,
   type ResetearPasswordForm,
 } from "./types";
+
+// Con `service_role` no hay `auth.uid()`: las funciones de admin de la base
+// reciben su id explícito, para `otorgada_por` y para su propio guard.
+async function adminActual(): Promise<string | null> {
+  if (!(await puedeGestionarUsuarios())) return null;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
 
 function createAdminClient() {
   return createSupabaseClient<Database>(
@@ -46,7 +65,7 @@ export async function crearUsuario(input: CrearUsuarioForm) {
     return { success: false as const, error: mensajeError(error) };
   }
 
-  revalidatePath("/usuarios");
+  revalidatePath("/usuarios", "layout");
   return { success: true as const };
 }
 
@@ -94,7 +113,7 @@ export async function editarUsuario(input: EditarUsuarioForm) {
     return { success: false as const, error: mensajeError(error) };
   }
 
-  revalidatePath("/usuarios");
+  revalidatePath("/usuarios", "layout");
   return { success: true as const };
 }
 
@@ -163,7 +182,7 @@ export async function desactivarUsuario(usuarioId: string) {
     return { success: false as const, error: mensajeError(banError) };
   }
 
-  revalidatePath("/usuarios");
+  revalidatePath("/usuarios", "layout");
   return { success: true as const };
 }
 
@@ -199,12 +218,13 @@ export async function reactivarUsuario(usuarioId: string) {
     return { success: false as const, error: mensajeError(banError) };
   }
 
-  revalidatePath("/usuarios");
+  revalidatePath("/usuarios", "layout");
   return { success: true as const };
 }
 
 export async function asignarSubmodulos(input: AsignarSubmodulosForm) {
-  if (!(await puedeGestionarUsuarios())) {
+  const adminId = await adminActual();
+  if (!adminId) {
     return { success: false as const, error: "No autorizado" };
   }
 
@@ -213,20 +233,9 @@ export async function asignarSubmodulos(input: AsignarSubmodulosForm) {
     return { success: false as const, error: parsed.error.issues[0].message };
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false as const, error: "No autorizado" };
-  }
-
-  // Con `service_role` no hay `auth.uid()`: el admin se pasa explícito para
-  // que quede en `otorgada_por`. Vista/función, techo y cascadas los valida la
-  // base (`sql/105`).
+  // Vista/función, techo y cascadas los valida la base (`sql/105`).
   const { error } = await createAdminClient().rpc("asignar_submodulos", {
-    p_admin: user.id,
+    p_admin: adminId,
     p_usuario: parsed.data.usuario_id,
     p_submodulos: parsed.data.submodulo_ids,
   });
@@ -235,6 +244,147 @@ export async function asignarSubmodulos(input: AsignarSubmodulosForm) {
     return { success: false as const, error: mensajeError(error) };
   }
 
-  revalidatePath("/usuarios");
+  revalidatePath("/usuarios", "layout");
+  return { success: true as const };
+}
+
+// El nombre es unique parcial WHERE activo: reactivar también puede chocar.
+function errorEquipo(error: unknown) {
+  if ((error as { code?: string }).code === "23505") {
+    return { success: false as const, error: "Ya hay un equipo activo con ese nombre" };
+  }
+  return { success: false as const, error: mensajeError(error) };
+}
+
+export async function guardarEquipo(input: EquipoForm) {
+  if (!(await puedeGestionarUsuarios())) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const parsed = equipoSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const admin = createAdminClient();
+  const { id, nombre } = parsed.data;
+  const { error } = id
+    ? await admin.from("equipos").update({ nombre }).eq("id", id)
+    : await admin.from("equipos").insert({ nombre });
+
+  if (error) return errorEquipo(error);
+
+  revalidatePath("/usuarios", "layout");
+  return { success: true as const };
+}
+
+// Con miembros activos lo rechaza la base (US010).
+export async function cambiarEstadoEquipo(equipoId: string, activo: boolean) {
+  if (!(await puedeGestionarUsuarios())) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const { error } = await createAdminClient()
+    .from("equipos")
+    .update({ activo })
+    .eq("id", equipoId);
+
+  if (error) return errorEquipo(error);
+
+  revalidatePath("/usuarios", "layout");
+  return { success: true as const };
+}
+
+export async function asignarEquipo(input: AsignarEquipoForm) {
+  const adminId = await adminActual();
+  if (!adminId) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const parsed = asignarEquipoSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const { error } = await createAdminClient().rpc("asignar_equipo", {
+    p_admin: adminId,
+    p_usuario: parsed.data.usuario_id,
+    p_equipo: parsed.data.equipo_id,
+  });
+
+  if (error) {
+    return { success: false as const, error: mensajeError(error) };
+  }
+
+  revalidatePath("/usuarios", "layout");
+  return { success: true as const };
+}
+
+export async function designarDelegador(usuarioId: string) {
+  const adminId = await adminActual();
+  if (!adminId) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const { error } = await createAdminClient().rpc("designar_delegador", {
+    p_admin: adminId,
+    p_usuario: usuarioId,
+  });
+
+  if (error) {
+    return { success: false as const, error: mensajeError(error) };
+  }
+
+  revalidatePath("/usuarios", "layout");
+  return { success: true as const };
+}
+
+export async function quitarDelegador(input: QuitarDelegadorForm) {
+  const adminId = await adminActual();
+  if (!adminId) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const parsed = quitarDelegadorSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const { error } = await createAdminClient().rpc("quitar_delegador", {
+    p_admin: adminId,
+    p_saliente: parsed.data.saliente_id,
+    p_heredero: parsed.data.heredero_id,
+    p_no_copiar: parsed.data.no_copiar,
+  });
+
+  if (error) {
+    return { success: false as const, error: mensajeError(error) };
+  }
+
+  revalidatePath("/usuarios", "layout");
+  return { success: true as const };
+}
+
+export async function fijarDelegables(input: FijarDelegablesForm) {
+  const adminId = await adminActual();
+  if (!adminId) {
+    return { success: false as const, error: "No autorizado" };
+  }
+
+  const parsed = fijarDelegablesSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
+  const { error } = await createAdminClient().rpc("fijar_delegables", {
+    p_admin: adminId,
+    p_submodulos: parsed.data.submodulo_ids,
+  });
+
+  if (error) {
+    return { success: false as const, error: mensajeError(error) };
+  }
+
+  revalidatePath("/usuarios", "layout");
   return { success: true as const };
 }
