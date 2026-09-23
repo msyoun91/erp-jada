@@ -75,8 +75,13 @@ No son entes
 │                      · {dato} y {si hay ente:rol}…{fin}; pasos condicionados por rol
 │                      · manual ahora; por evento cuando haya un emisor (activación por usuario)
 │                      · publicada (la decide el dueño; el admin despublica) → Catálogo: se lee y
-│                        se copia como personal, sin asignados fijos y con el disparo apagado
-│                      · copiada_de guarda el origen
+│                        se copia como personal (o de equipo, con tareas_plantillas_equipo), sin
+│                        asignados fijos y con el disparo apagado; datos, condiciones y pasos
+│                        condicionados, tal cual
+│                      · la copia es independiente: ni el original ni ella se afectan después;
+│                        se puede editar y publicar como cualquier otra
+│                      · copiada_de guarda el origen, solo como dato: link si el original sigue
+│                        visible en el Catálogo, texto plano si no
 │                      · paso asignado fuera del equipo de quien la usa: nace solicitado, exige
 │                        tareas_pedir; sin él, la plantilla no se muestra
 │                      · paso sin asignado fijo: se elige al usarla
@@ -280,6 +285,13 @@ Cada módulo con entes aporta su ficha; el registro ente → componente vive en 
 **Plantillas en tres alcances y Catálogo.** Global (admin), equipo (delegador), personal. El dueño
 decide publicarla; del Catálogo se copia —nunca se usa directo, para no depender de ediciones
 ajenas—, sin asignados fijos y con el disparo apagado. `copiada_de` guarda el origen.
+
+**La copia del Catálogo es independiente y `copiada_de` es solo historia.** Sin aviso de "el
+original cambió": pediría versión y destinatarios, y se suma sin tocar el esquema si hace falta. El
+origen se muestra como link si sigue visible en el Catálogo y como texto plano si no, como las
+referencias. La copia se publica si su dueño quiere; las casi duplicadas las despublica el admin.
+El delegador copia directo como plantilla de equipo, sin pasar por personal. Sin asignados fijos,
+un pedido del original no se hereda: se elige al usarla y rige `tareas_pedir`.
 
 **Los pasos sin asignado fijo se asignan al usar la plantilla.** El formulario pide uno por paso
 vacío, con quien la usa como valor por defecto. Nunca nace un paso sin dueño.
