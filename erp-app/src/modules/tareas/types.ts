@@ -56,7 +56,7 @@ export const hiloSchema = z
     id: idSchema.optional(),
     titulo,
     recurrencia_cantidad: diasOpcional,
-    recurrencia_unidad: z.enum(["dia", "mes"]).nullish().transform((v) => v ?? null),
+    recurrencia_unidad: z.union([z.enum(["dia", "mes"]), z.literal("")]).nullish().transform((v) => v || null),
   })
   .refine((v) => (v.recurrencia_cantidad === null) === (v.recurrencia_unidad === null), {
     message: "La recurrencia lleva cantidad y unidad",

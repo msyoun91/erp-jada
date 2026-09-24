@@ -243,7 +243,9 @@ Reglas entre permisos (filas de submodulo_reglas, en la migración de tareas)
 - Escrituras multi-tabla como función `SECURITY INVOKER` (`sql/023`), id generado antes del
   INSERT, largos por CHECK.
 - UI: `Isla`, paneles de hilo y paso, `NotasSection`, `CompletarModal`, `CerrarHiloModal`,
-  `cadenaPasos.ts` (con test), `tareaLabels.ts`, `useTareaOptimista`, vista Misión.
+  `cadenaPasos.ts` (con test), `tareaLabels.ts`, vista Misión.
+
+**Sin `useTareaOptimista` (2026-09-24):** la app no tiene optimistic updates (`GUIDE_DESIGN.md`); las acciones esperan al servidor.
 
 **No se trae:** proyectos y su visibilidad pública/privada, tareas sueltas y la conversión,
 multi-asignado (`tareas_asignados`), `modo_completado`, `origen_app`, `tareas_gestionar_ajenas`,
