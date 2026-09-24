@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { REFERENCIA } from "./derivados";
 import type { Asignable, Edicion, Hilo, Nota, Plantilla, PlantillaPaso, Tarea } from "./types";
 
 export type Contexto = {
@@ -66,7 +67,30 @@ export type HiloCompleto = {
   pasos: Tarea[];
   notas: Nota[];
   ediciones: Edicion[];
+  enlaces: Record<string, string>;
 };
+
+// `ente:id` → ficha, de las referencias que quien lee puede abrir: el ente
+// visible (RLS de `entes`) y `etiqueta_registro` no NULL. El resto queda en texto.
+async function getEnlaces(textos: (string | null)[]): Promise<Record<string, string>> {
+  const refs = new Set(textos.flatMap((t) => [...(t ?? "").matchAll(REFERENCIA)].map((m) => `${m[1]}:${m[2]}`)));
+  if (refs.size === 0) return {};
+  const supabase = await createClient();
+  const { data: entes, error } = await supabase.from("entes").select("codigo, ruta");
+  if (error) throw error;
+  const rutas = new Map(entes.map((e) => [e.codigo, e.ruta]));
+  const pares = await Promise.all(
+    [...refs].map(async (ref) => {
+      const [ente, id] = ref.split(":");
+      const ruta = rutas.get(ente);
+      if (!ruta) return null;
+      const { data, error } = await supabase.rpc("etiqueta_registro", { p_ente: ente, p_id: id });
+      if (error) throw error;
+      return data === null ? null : ([ref, ruta.replace("{id}", id)] as const);
+    })
+  );
+  return Object.fromEntries(pares.filter((p) => p !== null));
+}
 
 // Lo que no se ve lo recorta la RLS: sin hilo visible, null.
 export async function getHilo(id: string): Promise<HiloCompleto | null> {
@@ -79,7 +103,8 @@ export async function getHilo(id: string): Promise<HiloCompleto | null> {
   ]);
   for (const r of [hilo, pasos, notas, ediciones]) if (r.error) throw r.error;
   if (!hilo.data) return null;
-  return { hilo: hilo.data, pasos: pasos.data ?? [], notas: notas.data ?? [], ediciones: ediciones.data ?? [] };
+  const enlaces = await getEnlaces((pasos.data ?? []).map((p) => p.descripcion));
+  return { hilo: hilo.data, pasos: pasos.data ?? [], notas: notas.data ?? [], ediciones: ediciones.data ?? [], enlaces };
 }
 
 export async function getHiloDePaso(id: string): Promise<string | null> {
@@ -95,7 +120,9 @@ export type PasoMision = Tarea & { tareas_hilos: Pick<Hilo, "titulo"> };
 // Misión: mis pasos por decidir o por hacer, de hilos vivos. Lo asignado a mi
 // equipo va en Equipo. `cadena` trae los pasos de esos hilos para derivar el
 // bloqueo, como en el hilo.
-export async function getMision(yo: string): Promise<{ pasos: PasoMision[]; cadena: PasoCadena[] }> {
+export async function getMision(
+  yo: string
+): Promise<{ pasos: PasoMision[]; cadena: PasoCadena[]; enlaces: Record<string, string> }> {
   const supabase = await createClient();
   const { data: pasos, error } = await supabase
     .from("tareas")
@@ -106,7 +133,8 @@ export async function getMision(yo: string): Promise<{ pasos: PasoMision[]; cade
     .eq("tareas_hilos.activo", true)
     .eq("tareas_hilos.estado", "abierto");
   if (error) throw error;
-  return { pasos, cadena: await getCadena(pasos) };
+  const [cadena, enlaces] = await Promise.all([getCadena(pasos), getEnlaces(pasos.map((p) => p.descripcion))]);
+  return { pasos, cadena, enlaces };
 }
 
 async function getCadena(pasos: { hilo_id: string }[]): Promise<PasoCadena[]> {

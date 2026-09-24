@@ -16,7 +16,15 @@ type Dialogo = "rechazar" | "completar" | "espera";
 
 // De a un paso: lo que toca ahora. Un pedido se decide aunque espere al
 // anterior; un pendiente bloqueado o en espera no toca todavía.
-export function MisionView({ pasos, cadena }: { pasos: PasoMision[]; cadena: PasoCadena[] }) {
+export function MisionView({
+  pasos,
+  cadena,
+  enlaces,
+}: {
+  pasos: PasoMision[];
+  cadena: PasoCadena[];
+  enlaces: Record<string, string>;
+}) {
   const [indice, setIndice] = useState(0);
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
   const hoy = hoyISO();
@@ -126,7 +134,7 @@ export function MisionView({ pasos, cadena }: { pasos: PasoMision[]; cadena: Pas
           </p>
         </div>
 
-        {actual.descripcion && <TextoConReferencias texto={actual.descripcion} />}
+        {actual.descripcion && <TextoConReferencias texto={actual.descripcion} enlaces={enlaces} />}
 
         <div className="flex flex-wrap gap-2">
           {actual.estado === "solicitada" ? (

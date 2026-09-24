@@ -36,6 +36,7 @@ export function PasoPanel({
   esCola,
   notas,
   ediciones,
+  enlaces,
   onClose,
 }: {
   hilo: Hilo;
@@ -45,6 +46,7 @@ export function PasoPanel({
   esCola: boolean;
   notas: Nota[];
   ediciones: Edicion[];
+  enlaces: Record<string, string>;
   onClose: () => void;
 }) {
   const { yo, miEquipo, admin, delegador } = useTareas();
@@ -112,7 +114,7 @@ export function PasoPanel({
           {!paso.activo && <span className="badge badge-neutral">Desactivado</span>}
         </div>
 
-        {paso.descripcion && <TextoConReferencias texto={paso.descripcion} />}
+        {paso.descripcion && <TextoConReferencias texto={paso.descripcion} enlaces={enlaces} />}
 
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
           {datos.map(([k, v]) => (

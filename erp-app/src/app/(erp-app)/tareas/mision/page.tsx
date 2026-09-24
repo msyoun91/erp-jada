@@ -9,7 +9,7 @@ export default async function MisionPage() {
 
   const yo = await getUsuarioActualId();
   if (!yo) notFound();
-  const { pasos, cadena } = await getMision(yo);
+  const { pasos, cadena, enlaces } = await getMision(yo);
 
-  return <MisionView pasos={pasos} cadena={cadena} />;
+  return <MisionView pasos={pasos} cadena={cadena} enlaces={enlaces} />;
 }

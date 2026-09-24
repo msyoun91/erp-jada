@@ -33,7 +33,7 @@ export function HiloView(props: Props) {
   );
 }
 
-function Contenido({ hilo, pasos, notas, ediciones, ctx, pasoAbierto, plantillas }: Props) {
+function Contenido({ hilo, pasos, notas, ediciones, enlaces, ctx, pasoAbierto, plantillas }: Props) {
   const nombre = useNombre();
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
   const [abierto, setAbierto] = useState<string | null>(pasoAbierto);
@@ -174,6 +174,7 @@ function Contenido({ hilo, pasos, notas, ediciones, ctx, pasoAbierto, plantillas
           esCola={!conSiguiente.has(pasoSeleccionado.id)}
           notas={notas.filter((n) => n.tarea_id === pasoSeleccionado.id)}
           ediciones={ediciones.filter((e) => e.tarea_id === pasoSeleccionado.id)}
+          enlaces={enlaces}
           onClose={() => setAbierto(null)}
         />
       )}

@@ -109,3 +109,7 @@ export function motivoRevisar(
   if (a.pedido && !pedir) return "pedido";
   return null;
 }
+
+// `{ente:uuid|nombre}` (sql/119): grupos ente, id, nombre. Sin `|nombre` no es
+// referencia y queda tal cual.
+export const REFERENCIA = /\{([a-z_]+):([0-9a-f-]{36})\|([^}]*)\}/g;
