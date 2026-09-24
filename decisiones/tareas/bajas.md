@@ -48,3 +48,9 @@ equipo" sin repartir— pasan también a él para que los reparta o los vuelva a
 cambian. Exige `tareas_pedir` y es inmediata, sin aceptación: el delegador recibe el aviso. A un
 independiente, las mismas reglas con él como destino.
 
+**El destino se mide contra el `equipo_id` guardado de cada fila, no contra el equipo actual
+(2026-09-24).** Cada hilo y cada paso abierto va al delegador de su propio `equipo_id`: es el equipo
+del que es el compromiso. Así lo que quedó huérfano de un equipo anterior (salió cuando no tenía
+delegador) llega a ese equipo si hoy lo tiene, y baja y cambio de equipo son una sola función. Un
+hilo cerrado sin equipo (de cuando era independiente) no tiene destino: queda con él.
+Archivos: `sql/114` → `tareas_entregar`, `tareas_usuario_baja`, `tareas_cambio_de_equipo`.

@@ -885,6 +885,7 @@ export type Database = {
       tareas_delegador_de: { Args: { p_equipo: string }; Returns: string }
       tareas_desactivar_hilo: { Args: { p_hilo: string }; Returns: undefined }
       tareas_desactivar_paso: { Args: { p_paso: string }; Returns: undefined }
+      tareas_entregar: { Args: { p_usuario: string }; Returns: undefined }
       tareas_equipo_de_asignado: {
         Args: { p_equipo: string; p_usuario: string }
         Returns: string

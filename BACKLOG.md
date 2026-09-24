@@ -20,11 +20,12 @@ Todo está escrito en `decisiones/usuarios.md` → *Equipos y delegación de per
 
 `sql/112` (esquema, catálogo, entes, visibilidad) y `sql/113` (escrituras y reglas: quién escribe
 qué, transiciones, pedidos, cadena, cierre, desactivación, notas e historial) aplicados el
-2026-09-24; `sql/tests/tareas_reglas.sql` pasa entero. Falta:
-- Bajas, cambios de equipo y pérdida de `tareas_ver`: mover hilos y pasos abiertos al delegador
-  (`bajas.md`), triggers sobre `usuarios.activo` y `equipos_miembros`.
+2026-09-24; `sql/tests/tareas_reglas.sql` pasa entero. `sql/114` (bajas y cambios de equipo)
+aplicado; `sql/tests/tareas_bajas.sql` pasa entero. Falta:
 - Avisos: `transferencia` en `tipo_evento`, `relacion_*` del asignado (con rama en
-  `puede_ver_relacion`) y los tipos de la campanita de la ficha.
+  `puede_ver_relacion`) y los tipos de la campanita de la ficha — incluidos paso reasignado, paso
+  huérfano e hilos huérfanos de la baja, el cambio de equipo y la pérdida de `tareas_ver` (que no
+  mueve nada: solo avisa).
 - La función de afuera para elegir a quién asignar o pedir (README → *Lo que el módulo necesita de
   afuera*).
 - Plantillas, Catálogo, recurrencia y `tareas_vinculos`.

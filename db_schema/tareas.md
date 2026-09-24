@@ -3,9 +3,9 @@
 Rediseño desde cero (`sql/112`). Ficha y decisiones: `decisiones/tareas/` (índice en su `README.md`).
 El esquema de `master` es otro módulo: no se mezclan nombres de allá.
 
-**Estado:** `sql/112` (esquema, catálogo, entes, visibilidad) y `sql/113` (escrituras y reglas)
-aplicados el 2026-09-24. Faltan bajas y cambios de equipo, avisos, plantillas y recurrencia
-(`BACKLOG.md`).
+**Estado:** `sql/112` (esquema, catálogo, entes, visibilidad), `sql/113` (escrituras y reglas)
+y `sql/114` (bajas y cambios de equipo) aplicados el 2026-09-24.
+Faltan avisos, plantillas y recurrencia (`BACKLOG.md`).
 
 ## Visibilidad — la unidad es el hilo
 
@@ -154,3 +154,15 @@ RPC (GRANT `authenticated`):
 - DEFINER: `tareas_desactivar_paso(paso)`, `tareas_desactivar_hilo(hilo)`,
   `tareas_transferir_hilo(hilo, responsable)` — la fila nueva de un UPDATE pasa por la policy de
   SELECT, y estas tres la sacan de la vista de quien actúa (42501 por PostgREST). El trigger decide.
+
+## Bajas y cambios de equipo (`sql/114`)
+
+Test: `sql/tests/tareas_bajas.sql`. Decisión: `decisiones/tareas/bajas.md`.
+
+- `tareas_entregar(usuario)` — sin GRANT. Sus hilos (todos) y sus pasos abiertos pasan al delegador
+  del `equipo_id` de cada fila, si puede recibir; si no, quedan (huérfanos). Corre a profundidad 2:
+  `tareas_al_editar` recalcula el equipo y lo que deja de ser pedido pasa a `pendiente`.
+- `tareas_usuario_baja` (AFTER UPDATE OF `activo` ON `usuarios`, al desactivar): entrega.
+- `tareas_cambio_de_equipo` (AFTER INSERT OR UPDATE OF `activo` ON `equipos_miembros`): al salir,
+  entrega; al entrar, lo abierto suyo sin equipo (hilos abiertos que lleva, pasos abiertos asignados)
+  toma el equipo nuevo.
