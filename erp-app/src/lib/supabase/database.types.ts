@@ -1107,6 +1107,13 @@ export type Database = {
         }
         Returns: string
       }
+      tareas_nombres: {
+        Args: never
+        Returns: {
+          id: string
+          nombre: string
+        }[]
+      }
       tareas_puede_recibir: {
         Args: { p_equipo: string; p_usuario: string }
         Returns: boolean

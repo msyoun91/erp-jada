@@ -70,6 +70,12 @@ UI necesita, y para el admin (sin equipo, asigna directo) "de mi equipo" diría 
 mide contra quien llama, que es el responsable al crear o reasignar; el delegador reparte dentro de
 su equipo, donde nunca es pedido. `sql/116`.
 
+**Los nombres de lo que se ve: `tareas_nombres()` (2026-09-24).** `usuarios_select` no deja ver
+otros equipos y `tareas_asignables()` trae solo los activos: el responsable dado de baja de un
+huérfano, o el autor de una nota que ya se fue, quedaban sin nombre. Devuelve id y nombre de quien
+figura en hilos, pasos, notas, historial y plantillas que quien llama ve, con las reglas de sus
+policies; mismo patrón que `notificaciones_actores()`. `sql/120`.
+
 **El agente IA trabaja como persona.** Sin reglas propias; la base no distingue agente de persona
 (`decisiones/usuarios.md`) y el usuario no quiere que lo haga por ahora.
 

@@ -5,7 +5,7 @@ El esquema de `master` es otro módulo: no se mezclan nombres de allá.
 
 **Estado:** `sql/112` (esquema, catálogo, entes, visibilidad), `sql/113` (escrituras y reglas),
 `sql/114` (bajas y cambios de equipo), `sql/115` (avisos), `sql/116` (asignables), `sql/117`
-(recurrencia), `sql/118` (plantillas) y `sql/119` (vínculos) aplicados el 2026-09-24. Falta lo del disparo
+(recurrencia), `sql/118` (plantillas), `sql/119` (vínculos) y `sql/120` (nombres) aplicados el 2026-09-24. Falta lo del disparo
 (`BACKLOG.md`).
 
 ## Visibilidad — la unidad es el hilo
@@ -166,6 +166,11 @@ RPC (GRANT `authenticated`):
 quien tiene `tareas_ver`; vacío si no. `pedido`: `tareas_es_pedido` con quien llama como
 responsable, siempre `false` con `tareas_administrar`. `puede_recibir`: `tareas_puede_recibir`. No
 autoriza nada: deciden los triggers de `sql/113`. Test: `sql/tests/tareas_asignables.sql`.
+
+`tareas_nombres() → (id, nombre)` (`sql/120`) — DEFINER, GRANT `authenticated`. Nombre de los usuarios
+y equipos, activos o no, que figuran en lo que quien llama ve: responsables, asignados, autores y
+quien ocultó notas e historial, dueños y asignados de plantillas. Mismas reglas que las policies;
+vacío sin `tareas_ver`. Test: `sql/tests/tareas_nombres.sql`.
 
 ## Bajas y cambios de equipo (`sql/114`)
 
