@@ -58,7 +58,9 @@ Entes
                 pendiente  → completada | cancelada
                              | solicitada (pedido: cambian título, descripción o vencimiento)
                              | rechazada (pedido: el receptor lo devuelve, motivo obligatorio)
-                rechazada  → cancelada
+                rechazada  → solicitada (volver a pedir: mismo u otro asignado afuera)
+                             | pendiente (reasignar adentro del equipo del responsable)
+                             | cancelada
                 completada | cancelada → pendiente (reabrir) | solicitada (reabrir un pedido,
                   si no lo reabre el asignado)
                 nacer y reasignar cualquier abierto: adentro del equipo del responsable =
@@ -71,7 +73,7 @@ Entes
             · datos {titulo} · ruta /tareas/paso/{id} (abre el hilo en ese paso)
             · submódulo tareas_ver · visibilidad = la de su hilo · no se comparte · emite, no dispara
             · campos del responsable del hilo: título · descripción con referencias · asignado ·
-              paso anterior · vence (fecha, o N días corridos tras completar el previo;
+              paso anterior · vence (fecha, o N días corridos desde que se habilita;
               lo segundo solo con paso anterior) · prioridad
             · campos del asignado: estado (aceptar/rechazar/completar) · espera_hasta + motivo ·
               resultado opcional · motivo de rechazo · notas
@@ -110,7 +112,8 @@ Relaciones
 │                                independiente) = pedido, exige tareas_pedir
 │                              · la persona: activa y con tareas_ver · el equipo: con
 │                                delegador activo
-├── tarea → tarea            — paso anterior: mismo hilo, inmutable, sin ciclos; vacío = paralelo
+├── tarea → tarea            — paso anterior: mismo hilo, inmutable (salvo "insertar antes de"),
+│                              sin ciclos; vacío = paralelo
 │                              · no bifurca: un solo siguiente por paso (unique de sql/017)
 ├── tarea → cualquier ente   — referencia {ente:uuid} + copia del nombre en el texto
 │                              · link ↗ (ficha al lado) si lo puede abrir; texto plano si no
@@ -121,14 +124,14 @@ Acciones
 ├── hilo: crear (vacío o desde plantilla) · editar · transferir responsable · cerrar · reabrir
 │         · cancelar pendientes y cerrar · desactivar (sin pasos completados; se lleva sus
 │         pasos) · reactivar (admin)
-├── tarea: sumar paso · editar · asignar (en el equipo) · pedir (afuera, tareas_pedir) · aceptar
-│          · rechazar (motivo) · reasignar · repartir (equipo → persona) · poner en espera
+├── tarea: sumar paso · insertar antes de · editar · asignar (en el equipo) · pedir (afuera, tareas_pedir) · aceptar
+│          · rechazar (motivo) · volver a pedir · reasignar · repartir (equipo → persona) · poner en espera
 │          · completar · reabrir · cancelar · agregar nota · referenciar ente · desactivar
 │          (desde el último)
 │          ├── asignado: acepta, rechaza, espera, completa, reabre lo suyo; suma pasos
 │          │   asignados a sí mismo, en paralelo (sin previo)
 │          ├── delegador del equipo receptor: decide también los pedidos a sus miembros
-│          ├── responsable del hilo: edita, reasigna, cancela, reabre, resuelve rechazados;
+│          ├── responsable del hilo: edita, inserta, reasigna, cancela, reabre, resuelve rechazados;
 │          │   NO completa pasos de otro
 │          └── tareas_administrar: todo, registrado
 └── plantilla: crear · editar · desactivar · usar · activar disparo · publicar/despublicar
@@ -145,7 +148,9 @@ Eventos que emite
     ├── (asignado = equipo → le llega a su delegador, en todos los avisos "al asignado")
     ├── tarea asignada    → el asignado
     ├── pedido recibido   → el asignado, y el delegador de la persona
-    │                       (también cuando un pedido editado vuelve a solicitada)
+    │                       (también cuando un pedido editado vuelve a solicitada, y al volver
+    │                       a pedir un rechazado) · lo que asigna tareas_administrar nace
+    │                       pendiente: "tarea asignada", solo al asignado
     ├── paso editado      → el asignado, por título, descripción o vencimiento, si no volvió a
     │                       solicitada (ahí va "pedido recibido"); sale de
     │                       tareas_ediciones (el contenido no emite evento)
@@ -153,7 +158,8 @@ Eventos que emite
     ├── pedido rechazado  → el responsable actual del hilo
     ├── paso reabierto    → el asignado
     ├── hilo transferido  → el nuevo responsable
-    ├── paso habilitado   → el asignado, al completarse el previo
+    ├── paso habilitado   → el asignado, al habilitarse (se completa o se cancela el previo)
+    ├── paso bloqueado    → el asignado, cuando un paso insertado antes lo bloquea
     ├── paso reasignado   → el responsable del hilo, cuando lo movió el delegador, la baja o el
     │                       cambio de equipo
     ├── paso quitado      → el asignado anterior, en toda reasignación hecha por una persona
@@ -175,7 +181,7 @@ Eventos que consume
 ```
 Módulo: Tareas
 ├── Hilos (vista, tareas_ver)                   — miembro, delegador, independiente, admin
-│   └── tareas_pedir (funcion, no delegable)    — los que elija el admin
+│   └── tareas_pedir (funcion, no delegable)    — los que elija el admin, y el admin
 ├── Misión (vista, tareas_mision)               — miembro, delegador, independiente
 ├── Equipo (vista, tareas_equipo)               — delegador
 │       bandeja: pedidos por decidir · asignado al equipo · hilos del equipo
@@ -200,6 +206,10 @@ Reglas entre permisos (filas de submodulo_reglas, en la migración de tareas)
 ├── tareas_plantillas_equipo requiere tareas_equipo    — la plantilla de equipo es de quien lleva la bandeja
 ├── tareas_todas             requiere tareas_administrar — sola sería pestaña vacía o un supervisor,
 │                                                        que no existe; con vista_id, van juntas
+├── tareas_mision            requiere tareas_ver       — hilo y paso se abren con tareas_ver: sin él,
+├── tareas_plantillas        requiere tareas_ver         filas que no se abren, un hilo creado que su
+├── tareas_todas             requiere tareas_ver         responsable no ve, huérfanos sin transferir
+├── tareas_administrar       requiere tareas_pedir     — el admin no tiene equipo: todo lo suyo es afuera
 └── excluye: ninguna — admin vs. equipos sale de la membresía (US002), no de un par
     · vista → función no va como regla: ya la da vista_id
     · usuarios_delegar y tareas_equipo se requieren mutuamente: designar_delegador y
@@ -242,6 +252,10 @@ se avisa al responsable del hilo.
 (`US002`), así que sin esto todo lo suyo sería pedido; el paso nace `pendiente`. Ampliado el
 2026-09-24: con `tareas_administrar` nunca se genera `solicitada` —ni al asignar, ni al reabrir, ni
 al editar—; si no, cada edición del admin devolvía sus pasos a pedir. Avisos y firma, igual.
+Precisado el 2026-09-24: sigue siendo un pedido (se calcula), solo que nace aceptado. El receptor
+lo puede devolver como cualquier pedido aceptado; el aviso es "tarea asignada", solo al asignado
+(no hay nada que decidir; el delegador lo ve en la bandeja). Pedir afuera exige `tareas_pedir`
+también al admin: `tareas_administrar requiere tareas_pedir`, regla y no excepción en el trigger.
 
 **"Pedido" se calcula en el momento, sin columna (2026-09-24).** Asignado afuera del equipo del
 responsable, hoy. Tras transferir un hilo al equipo del asignado, lo que era pedido pasa a interno:
@@ -276,6 +290,13 @@ es "afuera" (opción a; la b era una excepción).
 pedidos: sin salida, lo que el receptor ya no puede hacer figuraba como compromiso vigente y
 trababa los siguientes. Reusa el rechazo, su resolución y su aviso. Dentro del equipo no hace
 falta: el responsable es un compañero y reasigna.
+
+**Un rechazado se vuelve a pedir con un botón (2026-09-24).** `rechazada → solicitada`, al mismo
+u otro asignado afuera, con `tareas_pedir`; solo el responsable. Caso: "falta la medida" → se agrega
+y se vuelve a pedir a Juan; antes solo se podía cancelar, y reasignar al mismo no era un cambio.
+Editar un rechazado no lo reenvía: se corrige en varias ediciones y se reenvía una vez. El motivo
+del rechazo se limpia; el anterior queda en `eventos`. Reasignar adentro del equipo (`pendiente`) y
+cancelar quedan escritos como las otras salidas.
 
 **Solo se asigna a quien puede recibirlo.** Asignar, pedir, repartir, reasignar y transferir el
 hilo (sumado el 2026-09-24: sin eso nacía un responsable que no ve su hilo) exigen en la base
@@ -371,6 +392,25 @@ cancelado subiendo la cadena, y la cascada sigue de largo. Con Medir → Revisar
 Comprar, mirar solo el previo directo habilitaba Comprar con Medir pendiente, y la cascada se
 frenaba en Revisar. `master` miraba solo el directo; `cancelada no traba` se trae con este ajuste. Cada asignado recibe "paso reabierto"; un pedido reabierto por otro vuelve a `solicitada`
 (*Reabrir un pedido…*). Lo abierto más abajo queda bloqueado solo, por la regla de siempre.
+
+**El plazo relativo corre desde que el paso se habilita (2026-09-24).** No desde que se completa
+el previo: `sql/053` lo calculaba solo en `completada`, y con el cancelado transparente un paso cuyo
+previo se cancelaba quedaba habilitado y sin vencimiento para siempre. Habilitarse = dejar de estar
+bloqueada, por completarse o cancelarse el previo; volver a bloquearse (reabrir, insertar antes)
+borra la fecha y se recalcula en la próxima habilitación. Se descartó contar desde el primer previo
+completado: nacía vencido si ese se había completado hace un mes. El aviso "paso habilitado" sale
+en el mismo momento.
+
+**Insertar antes de: el único cambio de previo (2026-09-24).** Con el previo inmutable y un solo
+siguiente por paso, no se podía meter un paso entre dos (Medir → Comprar, faltaba Revisar) ni
+reemplazar uno del medio. Función en la base: crea el paso con el previo del siguiente y mueve el
+previo del siguiente al nuevo, en una transacción; el trigger de inmutabilidad deja pasar solo eso.
+Sin chequeo de ciclos (el nuevo no tiene descendientes). Solo el responsable del hilo, y antes de un
+paso no completado (si no, se reabre primero). Si el siguiente estaba habilitado queda bloqueado y
+su asignado recibe "paso bloqueado"; su vencimiento relativo se recalcula cuando se vuelva a
+habilitar (*El plazo relativo corre desde que el paso se habilita*).
+Reemplazar = cancelar (transparente) e insertar. Se descartó previo editable con chequeo de ciclos:
+reordenar no apareció en ningún escenario.
 
 **Solo se desactiva un paso no congelado (2026-09-24).** `solicitada`, `pendiente` o `rechazada`;
 completado o cancelado, solo `tareas_administrar`. Desactivar es para un error de carga; cancelar es
@@ -485,8 +525,10 @@ a Juan.
 ## Qué se trae de `master`
 
 - Triggers de la cadena (`sql/017`): bloqueada derivada, `cancelada` no traba (ahora transparente:
-  *Un cancelado es transparente en la cadena*), previo inmutable, no bifurca, desactivar desde la cola.
-- Vencimiento tras el previo (`sql/053`) y fecha de Argentina en las funciones (`sql/078`).
+  *Un cancelado es transparente en la cadena*), previo inmutable (salvo *Insertar antes de*), no
+  bifurca, desactivar desde la cola.
+- Vencimiento tras el previo (`sql/053`, ahora desde la habilitación: *El plazo relativo corre
+  desde que el paso se habilita*) y fecha de Argentina en las funciones (`sql/078`).
 - Notas append-only (`sql/008`, `sql/077`).
 - Motor de plantillas: `guardar_plantilla`, `usar_plantilla`, `rellenar_datos`, condiciones por
   rol, activaciones, `disparar_plantillas`, `plantilla_disparada`.
