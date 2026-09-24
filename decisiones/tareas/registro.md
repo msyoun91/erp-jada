@@ -24,6 +24,13 @@ marca, con vista previa; editor enriquecido solo si no alcanza (librería nueva,
 una obra pero no participa de un hilo que la nombra no ve ese hilo en la ficha de la obra. El título
 sale siempre de `etiqueta_registro` (INVOKER, hereda la RLS), nunca de una copia.
 
+**La referencia es `{ente:uuid|nombre}` y solo se lee de la descripción del paso (2026-09-24).** Un
+solo token con la copia adentro: una regex la saca, y `{dato}` de plantilla (sin `:uuid|`) no se
+confunde. Es el único campo "con referencias" de la ficha; título, notas y resultado quedan en texto.
+Sumar una referencia pide ver lo referenciado (TA021): si no, cualquiera metía su hilo en la ficha
+de un registro ajeno. Lo que copia la base (recurrencia) no se vuelve a revisar. Rol y plantilla del
+vínculo esperan al disparo. Archivos: `sql/119_tareas_vinculos.sql`, `sql/tests/tareas_vinculos.sql`.
+
 **La ficha del ente se abre al lado del paso.** Split en desktop, encima con "volver" en mobile.
 Cada módulo con entes aporta su ficha; el registro ente → componente vive en `app/`.
 

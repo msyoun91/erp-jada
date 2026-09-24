@@ -25,8 +25,8 @@ aplicado; `sql/tests/tareas_bajas.sql` pasa entero. `sql/115` (avisos) aplicado;
 `sql/tests/tareas_avisos.sql` pasa entero. `sql/116` (`tareas_asignables`) aplicado;
 `sql/tests/tareas_asignables.sql` pasa entero. `sql/117` (recurrencia y "paso a reasignar")
 aplicado; `sql/tests/tareas_recurrencia.sql` pasa entero. `sql/118` (plantillas y Catálogo)
-aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. Falta:
-- `tareas_vinculos` y las referencias `{ente:uuid}` en el texto.
+aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/119` (vínculos y referencias en la
+descripción) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. Falta:
 - Con el primer emisor: `{dato}`, condiciones por rol, activaciones y `disparar_plantillas`
   (`decisiones/tareas/catalogo.md`).
 

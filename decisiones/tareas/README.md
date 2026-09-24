@@ -5,7 +5,7 @@ Rediseño desde cero (2026-09-23). La versión anterior vive en `master` (su `de
 archivos de esta carpeta no repiten nombres de los de `master`: los punteros viejos de
 `decisiones/global/` (`plantillas.md`, `visibilidad.md`, `integracion.md`…) siguen siendo de allá.
 
-> **Estado: ficha aprobada (2026-09-24); `sql/112` a `sql/118` aplicados; falta el resto (ver `BACKLOG.md`).** Las revisiones de agujeros (2026-09-23 y
+> **Estado: ficha aprobada (2026-09-24); `sql/112` a `sql/119` aplicados; falta el resto (ver `BACKLOG.md`).** Las revisiones de agujeros (2026-09-23 y
 > 2026-09-24, por escenarios) quedaron volcadas en la ficha y en los archivos por tema; lo del 24
 > lleva fecha en cada decisión. Lo que cambie se corrige acá primero. Leer este índice y después
 > solo el archivo del tema.
@@ -18,7 +18,7 @@ archivos de esta carpeta no repiten nombres de los de `master`: los punteros vie
 | `participacion.md` | Visibilidad por hilo · el equipo participa · el delegador es el de usuarios · el admin asigna directo · un solo asignado · equipo participante guardado · columnas del que pide y del que hace · reasignar avisa · el admin completa lo ajeno · a quién se asigna o se pide · agente IA |
 | `pedidos.md` | "Pedido" calculado · pedir es del responsable · `tareas_pedir` · sin `tareas_pedir` · devolver · volver a pedir · editar un pedido aceptado · reabrir un pedido |
 | `bajas.md` | Solo se asigna a quien puede recibirlo · baja · los hilos se mueven todos · cambio de equipo · sin destino, huérfano · transferir a otro equipo · destino por el `equipo_id` de la fila |
-| `registro.md` | `tareas_ediciones` y congelado · ocultar nota o historial · referencias en el texto · RLS de `tareas_vinculos` · ficha al lado |
+| `registro.md` | `tareas_ediciones` y congelado · ocultar nota o historial · referencias en el texto · RLS de `tareas_vinculos` · `{ente:uuid|nombre}` solo en la descripción · ficha al lado |
 | `catalogo.md` | Toda plantilla es personal · copia independiente · pasos sin asignado · plantilla que pide afuera · nunca falla por un asignado · "a revisar" · plantillas por evento · `{dato}` y condiciones con el disparo · cadena por "espera al anterior" · el elegido gana |
 | `recurrencia.md` | Recurrencia por hilo · intervalo · cada cierre genera · preguntar si sigue · lo genera un trigger al cerrar · qué copia el siguiente |
 | `avisos.md` | De dónde salen · salidas con título sin link · todo lo que entra a `solicitada` es pedido · una vez por persona y cambio · quitado no avisa a quien se fue · bloqueado solo al insertar antes · huérfanos al cierre · `transferencia` con `{de, a}` · "paso a reasignar" al crear, sin actor |

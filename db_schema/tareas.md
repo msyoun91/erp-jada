@@ -5,7 +5,8 @@ El esquema de `master` es otro módulo: no se mezclan nombres de allá.
 
 **Estado:** `sql/112` (esquema, catálogo, entes, visibilidad), `sql/113` (escrituras y reglas),
 `sql/114` (bajas y cambios de equipo), `sql/115` (avisos), `sql/116` (asignables), `sql/117`
-(recurrencia) y `sql/118` (plantillas) aplicados el 2026-09-24. Faltan vínculos (`BACKLOG.md`).
+(recurrencia), `sql/118` (plantillas) y `sql/119` (vínculos) aplicados el 2026-09-24. Falta lo del disparo
+(`BACKLOG.md`).
 
 ## Visibilidad — la unidad es el hilo
 
@@ -263,3 +264,26 @@ RPC (INVOKER, GRANT `authenticated`; errores TA017 "no existe o no es tuya", TA0
   tiene. `asignados` es `{paso_id: {asignado_id | asignado_equipo_id}}`: el elegido; si no, el fijo
   que puede recibir; si no, quien la usa. INSERT comunes a profundidad 1: rigen las reglas de
   `sql/113` (un pedido sin `tareas_pedir`, TA010; un asignado que no es responsable, TA001).
+
+## Vínculos (`sql/119`)
+
+Test: `sql/tests/tareas_vinculos.sql`. Decisión: `decisiones/tareas/registro.md`.
+
+Un ente en la descripción de un paso se escribe `{ente:uuid|nombre}` (el nombre, sin `}`, es la copia
+que vio quien lo escribió). `tareas_referencias(texto) → (ente, registro_id)` (IMMUTABLE, GRANT
+`authenticated`) las saca del texto; sin `|nombre` no es referencia.
+
+| tareas_vinculos | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| tarea_id | uuid FK → tareas | |
+| ente | text FK → entes(codigo) | |
+| registro_id | uuid | sin FK — apunta a `entes.tabla` |
+| activo | boolean | unique parcial `(tarea_id, ente, registro_id) WHERE activo` |
+| created_at / updated_at | timestamptz | |
+
+La escribe solo `tareas_derivar_vinculos` (AFTER INSERT / UPDATE OF descripcion ON tareas, INVOKER):
+apaga lo que ya no está en el texto y suma lo nuevo; lo nuevo pide `etiqueta_registro` no NULL para
+quien escribe (TA021). Desde un trigger DEFINER (recurrencia) corre como dueño y no revisa. RLS:
+SELECT si se ve el paso; INSERT y UPDATE solo con `pg_trigger_depth() > 0`. `GRANT SELECT, INSERT
+(tarea_id, ente, registro_id), UPDATE (activo)`. Rol y plantilla del vínculo llegan con el disparo.

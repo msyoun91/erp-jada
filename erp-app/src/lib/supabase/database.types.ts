@@ -697,6 +697,51 @@ export type Database = {
           },
         ]
       }
+      tareas_vinculos: {
+        Row: {
+          activo: boolean
+          created_at: string
+          ente: string
+          id: string
+          registro_id: string
+          tarea_id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          ente: string
+          id?: string
+          registro_id: string
+          tarea_id: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          ente?: string
+          id?: string
+          registro_id?: string
+          tarea_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_vinculos_ente_fkey"
+            columns: ["ente"]
+            isOneToOne: false
+            referencedRelation: "entes"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "tareas_vinculos_tarea_id_fkey"
+            columns: ["tarea_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuario_notificaciones: {
         Row: {
           activo: boolean
@@ -1092,6 +1137,13 @@ export type Database = {
       tareas_puede_ver_tarea_de: {
         Args: { p_activo: boolean; p_hilo: string; p_usuario: string }
         Returns: boolean
+      }
+      tareas_referencias: {
+        Args: { p_texto: string }
+        Returns: {
+          ente: string
+          registro_id: string
+        }[]
       }
       tareas_siguiente_efectivo: { Args: { p_paso: string }; Returns: string }
       tareas_transferir_hilo: {
