@@ -6,7 +6,7 @@ import { RightPanel } from "@/components/ui/RightPanel";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import { aceptarPaso, cancelarPaso, desactivarPaso, reabrirPaso, reactivarPaso, volverAPedir } from "../actions";
-import { estaAbierto, estaEnEspera, estaVencido } from "../derivados";
+import { estaAbierto, estaEnEspera, estaVencido, sinReferencias } from "../derivados";
 import { ESTADO_PASO, PRIORIDAD, textoPlazoDias } from "../etiquetas";
 import type { Edicion, Hilo, Nota, Tarea } from "../types";
 import { useNombre, useTareas } from "./contexto";
@@ -102,7 +102,7 @@ export function PasoPanel({
   if (estaEnEspera(paso, hoy))
     datos.push(["En espera", `Hasta ${formatFecha(paso.espera_hasta!)}${paso.espera_motivo ? ` · ${paso.espera_motivo}` : ""}`]);
   if (paso.motivo_rechazo && e === "rechazada") datos.push(["Motivo del rechazo", paso.motivo_rechazo]);
-  if (paso.resultado) datos.push(["Resultado", paso.resultado]);
+  if (paso.resultado) datos.push(["Resultado", sinReferencias(paso.resultado)]);
 
   return (
     <RightPanel title={paso.titulo} subtitle={hilo.titulo} onClose={onClose}>

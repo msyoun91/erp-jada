@@ -113,3 +113,8 @@ export function motivoRevisar(
 // `{ente:uuid|nombre}` (sql/119): grupos ente, id, nombre. Sin `|nombre` no es
 // referencia y queda tal cual.
 export const REFERENCIA = /\{([a-z_]+):([0-9a-f-]{36})\|([^}]*)\}/g;
+
+// Fuera de la descripción del paso el token no es referencia: queda su nombre, sin link.
+export function sinReferencias(texto: string): string {
+  return texto.replace(REFERENCIA, "$3");
+}

@@ -31,6 +31,10 @@ Sumar una referencia pide ver lo referenciado (TA021): si no, cualquiera metía 
 de un registro ajeno. Lo que copia la base (recurrencia) no se vuelve a revisar. ~~Rol y plantilla del vínculo esperan al disparo~~ → el vínculo
 no los lleva: registro y plantilla viven en el hilo (`catalogo.md` → *El hilo guarda su registro*). Archivos: `sql/119_tareas_vinculos.sql`, `sql/tests/tareas_vinculos.sql`.
 
+**Un token fuera de la descripción se muestra como su nombre, sin link (2026-09-24).** Si alguien
+pega `{ente:uuid|nombre}` en una nota o en un resultado, no se ve el uuid ni se vuelve referencia:
+`sinReferencias` (`derivados.ts`) deja el nombre. Archivos: `NotasSection.tsx`, `PasoPanel.tsx`, `HiloView.tsx`.
+
 **La ficha del ente se abre al lado del paso.** Split en desktop, encima con "volver" en mobile.
 Cada módulo con entes aporta su ficha; el registro ente → componente vive en `app/`.
 

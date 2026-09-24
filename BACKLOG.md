@@ -55,12 +55,6 @@ Datos de prueba que quedaron en la base para reproducir: hilos "Cocina Pérez �
 copia en Admin. Antes de tocar cada punto, contrastar contra las personas de la ficha
 (`decisiones/tareas/README.md`).
 
-**1. Falta "Todo completado — cerrar" (decidido, sin implementar).** `decisiones/tareas/modelo.md`
-→ *El hilo lo cierra el responsable, a mano*: cuando no queda nada abierto, el hilo lo muestra.
-Hoy solo se cierra desde el menú "…". Dónde: `components/HiloView.tsx` ya calcula `abiertos`
-(línea ~47) y abre `CerrarHiloModal` con `setDialogo("cerrar")` (línea ~64); falta el aviso con
-botón cuando `abiertos === 0`, hay pasos activos, `dueno && vivo`. Solo UI, sin SQL.
-
 **2. Falta el botón "Relacionar" (decidido, sin implementar).** `decisiones/tareas/registro.md` →
 *Referencias en el texto en vez de chips*: "textarea + 'Relacionar' que inserta la marca, con vista
 previa". Hoy la referencia se escribe a mano como `{hilo:uuid|nombre}` o `{tarea:uuid|nombre}`,
@@ -101,12 +95,6 @@ texto plano (o quitarlo); (c) prohibir referencias en plantillas (hoy el `{dato}
 real: la referencia llega con el disparo). Recomendación: (c) + (b) para lo ya guardado — una
 plantilla es reusable y una referencia fija a un registro concreto casi nunca lo es. La regla va
 en `guardar_plantilla` (Postgres), no en `actions.ts`; registrar en `catalogo.md` o `registro.md`.
-
-**5. El token aparece crudo en notas.** Por diseño solo la descripción del paso lleva referencias
-(`registro.md`), pero si alguien pega `{hilo:uuid|nombre}` en una nota se ve el uuid. Mostrar solo
-el nombre, sin link: en `NotasSection.tsx` (línea ~62) `n.texto.replace(REFERENCIA, "$3")`
-(`REFERENCIA` de `derivados.ts`). Mismo tratamiento para resultado de paso y de hilo si se decide
-(revisar dónde se renderizan en `PasoPanel.tsx` y `HiloView.tsx`). Solo UI.
 
 **6. En un hilo cerrado el paso no ofrece "Reabrir" — alinear ficha o UI.** La ficha dice "sumar o
 reabrir un paso lo reabre" (el hilo); la UI oculta "Sumar paso" y las acciones del paso con el hilo

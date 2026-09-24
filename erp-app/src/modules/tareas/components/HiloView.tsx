@@ -8,7 +8,7 @@ import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import { desactivarHilo, reabrirHilo, reactivarHilo } from "../actions";
-import { estaAbierto, estaBloqueado, estaEnEspera, estaVencido, ordenarPasos } from "../derivados";
+import { estaAbierto, estaBloqueado, estaEnEspera, estaVencido, ordenarPasos, sinReferencias } from "../derivados";
 import { ESTADO_HILO, ESTADO_PASO, textoRecurrencia } from "../etiquetas";
 import type { HiloCompleto, PlantillaCompleta } from "../queries";
 import type { Tarea } from "../types";
@@ -126,8 +126,18 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, ctx, pasoAbierto, p
             </Link>
           )}
         </div>
-        {hilo.resultado && <p className="t-body-m whitespace-pre-wrap">{hilo.resultado}</p>}
+        {hilo.resultado && <p className="t-body-m whitespace-pre-wrap">{sinReferencias(hilo.resultado)}</p>}
       </div>
+
+      {dueno && vivo && activos.length > 0 && abiertos === 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-success-bg px-4 py-3 text-success-text">
+          <CheckCircle2 size={16} strokeWidth={1.75} className="shrink-0" />
+          <p className="t-body-m flex-1">Todo completado.</p>
+          <button className="btn btn-primary btn-sm" onClick={() => setDialogo("cerrar")}>
+            Cerrar hilo
+          </button>
+        </div>
+      )}
 
       <div>
         <div className="mb-2 flex items-center">

@@ -7,6 +7,7 @@ import { EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { formatFechaHora } from "@/lib/utils";
 import { agregarNota, ocultarNota } from "../actions";
+import { sinReferencias } from "../derivados";
 import { notaSchema, type Nota, type NotaForm } from "../types";
 import { useNombre, useTareas } from "./contexto";
 
@@ -59,7 +60,7 @@ export function NotasSection({ hiloId, tareaId, notas }: { hiloId: string; tarea
               </button>
             )}
           </div>
-          <p className="t-body-m whitespace-pre-wrap">{n.texto}</p>
+          <p className="t-body-m whitespace-pre-wrap">{sinReferencias(n.texto)}</p>
         </div>
       ))}
 
