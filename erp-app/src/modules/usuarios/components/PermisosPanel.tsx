@@ -57,8 +57,16 @@ export function PermisosPanel({
     return excluyentes.get(id)?.find((o) => marcados.has(o));
   }
 
+  // Una función bajo una vista bloqueada queda bloqueada en cascada.
+  function bloqueado(id: string, marcados: Set<string>): boolean {
+    if (marcados.has(id)) return false;
+    if (bloqueante(id, marcados) !== undefined) return true;
+    const vista = porId.get(id)?.vista_id;
+    return vista != null && bloqueado(vista, marcados);
+  }
+
   function deshabilitado(id: string) {
-    return !seleccionados.has(id) && bloqueante(id, seleccionados) !== undefined;
+    return bloqueado(id, seleccionados);
   }
 
   function toggle(id: string) {
@@ -75,7 +83,7 @@ export function PermisosPanel({
       const next = new Set(prev);
       for (const id of ids) {
         if (!value) next.delete(id);
-        else if (!bloqueante(id, next)) next.add(id);
+        else if (!bloqueado(id, next)) next.add(id);
       }
       return next;
     });
@@ -115,9 +123,11 @@ export function PermisosPanel({
         </span>
       );
     }
-    const otro = seleccionados.has(id) ? undefined : bloqueante(id, seleccionados);
-    if (!otro) return null;
-    const texto = `No compatible con ${etiqueta(otro)}`;
+    if (!deshabilitado(id)) return null;
+    const otro = bloqueante(id, seleccionados);
+    const texto = otro
+      ? `No compatible con ${etiqueta(otro)}`
+      : `Requiere ${etiqueta(porId.get(id)?.vista_id ?? "")}`;
     return (
       <span className="truncate t-caption" title={texto}>
         {texto}
