@@ -20,3 +20,17 @@ para todo lo demás (notas, devolver, historial). Sin segundo panel del paso.
 
 **De `master` se conserva:** columna `max-w-2xl`, flechas ← → (ignoradas con un `dialog[open]` o
 foco en un campo), barra de posición, índice que se recorta en vez de resetearse, "Sigue: …".
+
+## Equipo (2026-09-24)
+
+**Equipo = la bandeja del delegador, en tres tipos: Pedidos · Al equipo · Hilos.** Pedidos: pasos
+`solicitada` con `equipo_id` = su equipo (al equipo o a un miembro). Al equipo: `pendiente` con
+`asignado_equipo_id` = su equipo, sin repartir. Hilos: los de `equipo_id` del equipo o con un paso
+de ese `equipo_id`, como la RLS. `getEquipo` en `queries.ts`; vista en `EquipoView.tsx`.
+
+**Filtro por miembro en Pedidos y en Hilos, no en Al equipo.** Lo del equipo no es de nadie
+todavía. Los miembros salen de `tareas_asignables()` sin `pedido`.
+
+**Acciones en la fila, como en Misión.** Pedido: Aceptar · Rechazar · Repartir. Al equipo: Completar
+(si no espera al anterior) · Poner en espera · Repartir. Repartir = `ReasignarModal` con
+`soloMiEquipo`. Hilos reusa `HilosView` sin "Nuevo hilo": un hilo nuevo es de quien lo crea.

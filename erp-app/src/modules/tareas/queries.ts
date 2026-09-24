@@ -106,13 +106,53 @@ export async function getMision(yo: string): Promise<{ pasos: PasoMision[]; cade
     .eq("tareas_hilos.activo", true)
     .eq("tareas_hilos.estado", "abierto");
   if (error) throw error;
-  if (pasos.length === 0) return { pasos, cadena: [] };
+  return { pasos, cadena: await getCadena(pasos) };
+}
 
-  const { data: cadena, error: cadenaError } = await supabase
+async function getCadena(pasos: { hilo_id: string }[]): Promise<PasoCadena[]> {
+  if (pasos.length === 0) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("tareas")
     .select("id, paso_anterior_id, estado, created_at, titulo")
     .in("hilo_id", [...new Set(pasos.map((p) => p.hilo_id))])
     .eq("activo", true);
-  if (cadenaError) throw cadenaError;
-  return { pasos, cadena };
+  if (error) throw error;
+  return data;
+}
+
+export type PasoEquipo = Tarea & { tareas_hilos: Pick<Hilo, "titulo" | "responsable_id"> };
+
+// Equipo: la bandeja del delegador. Pasos vivos de su equipo por decidir o por
+// repartir, y los hilos donde participa el equipo (`equipo_id` guardado del
+// hilo o de algún paso, como en la RLS).
+export async function getEquipo(
+  equipo: string
+): Promise<{ pasos: PasoEquipo[]; cadena: PasoCadena[]; hilos: HiloResumen[] }> {
+  const supabase = await createClient();
+  const [pasos, delEquipo] = await Promise.all([
+    supabase
+      .from("tareas")
+      .select("*, tareas_hilos!inner(titulo, responsable_id)")
+      .eq("equipo_id", equipo)
+      .eq("activo", true)
+      .in("estado", ["solicitada", "pendiente"])
+      .eq("tareas_hilos.activo", true)
+      .eq("tareas_hilos.estado", "abierto"),
+    supabase.from("tareas").select("hilo_id").eq("equipo_id", equipo).eq("activo", true),
+  ]);
+  if (pasos.error) throw pasos.error;
+  if (delEquipo.error) throw delEquipo.error;
+
+  const ids = [...new Set(delEquipo.data.map((t) => t.hilo_id))];
+  const filtro = ids.length > 0 ? `equipo_id.eq.${equipo},id.in.(${ids.join(",")})` : `equipo_id.eq.${equipo}`;
+  const { data: hilos, error } = await supabase
+    .from("tareas_hilos")
+    .select(RESUMEN)
+    .eq("activo", true)
+    .or(filtro)
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+
+  return { pasos: pasos.data, cadena: await getCadena(pasos.data), hilos };
 }

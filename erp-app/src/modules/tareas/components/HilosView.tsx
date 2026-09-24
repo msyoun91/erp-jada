@@ -23,10 +23,13 @@ export function HilosView({
   hilos,
   yo,
   nombres,
+  equipo = false,
 }: {
   hilos: HiloResumen[];
   yo: string;
   nombres: Record<string, string>;
+  // En la bandeja de Equipo: sin crear, que un hilo nuevo es de quien lo crea.
+  equipo?: boolean;
 }) {
   const [texto, setTexto] = useState("");
   const [estado, setEstado] = useState<Filtro>("abierto");
@@ -55,10 +58,12 @@ export function HilosView({
             </option>
           ))}
         </select>
-        <button className="btn btn-primary" onClick={() => setCreando(true)}>
-          <Plus size={16} />
-          Nuevo hilo
-        </button>
+        {!equipo && (
+          <button className="btn btn-primary" onClick={() => setCreando(true)}>
+            <Plus size={16} />
+            Nuevo hilo
+          </button>
+        )}
       </div>
 
       <Paginacion {...paginado} etiqueta="hilos" />
@@ -68,7 +73,9 @@ export function HilosView({
           <p className="t-h3">{hilos.length === 0 ? "Sin hilos todavía" : "Sin resultados"}</p>
           <p className="t-body-m mt-1">
             {hilos.length === 0
-              ? 'Acá aparecen los hilos que llevás y los que tienen un paso tuyo. Creá uno con "Nuevo hilo".'
+              ? equipo
+                ? "Acá aparecen los hilos donde participa alguien del equipo."
+                : 'Acá aparecen los hilos que llevás y los que tienen un paso tuyo. Creá uno con "Nuevo hilo".'
               : "Probá con otro término o cambiá el filtro de estado."}
           </p>
         </div>
