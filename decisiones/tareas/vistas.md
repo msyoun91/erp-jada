@@ -35,6 +35,21 @@ todavía. Los miembros salen de `tareas_asignables()` sin `pedido`.
 (si no espera al anterior) · Poner en espera · Repartir. Repartir = `ReasignarModal` con
 `soloMiEquipo`. Hilos reusa `HilosView` sin "Nuevo hilo": un hilo nuevo es de quien lo crea.
 
+## Plantillas (2026-09-24)
+
+**Plantillas = Mis plantillas · Catálogo, y "De otros" para el admin.** Una sola lectura
+(`getPlantillas`: la RLS recorta) y cada pestaña filtra. "De otros" es donde el admin ve, edita, usa y
+desactiva las ajenas (*Función admin por módulo*); publicar sigue siendo del dueño. Vista en
+`PlantillasView.tsx`; `?ver=catalogo` abre el Catálogo (el link de "Copia de «X»").
+
+**"A revisar" es `motivoRevisar` sobre `tareas_asignables()`** (`derivados.ts`, con test): el fijo que
+no figura o no puede recibir, o que sería pedido sin `tareas_pedir`. Al usarla, esos pasos y los
+vacíos se preguntan con quien la usa por defecto (`UsarPlantillaPanel`); el resto lo resuelve
+`usar_plantilla`.
+
+**"Usar plantilla" desde el hilo: solo el responsable (o el admin), con sus plantillas activas.**
+Suma los pasos en paralelo con lo que el hilo tiene.
+
 ## Todas (2026-09-24)
 
 **Todas = todos los hilos, con filtro Huérfanos · Desactivados.** Huérfano (`esHuerfano`, con test):

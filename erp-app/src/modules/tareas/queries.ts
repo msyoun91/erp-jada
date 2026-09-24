@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Asignable, Edicion, Hilo, Nota, Tarea } from "./types";
+import type { Asignable, Edicion, Hilo, Nota, Plantilla, PlantillaPaso, Tarea } from "./types";
 
 export type Contexto = {
   yo: string;
@@ -161,6 +161,22 @@ export async function getEquipo(
 export async function getTodas(): Promise<HiloResumen[]> {
   const supabase = await createClient();
   const { data, error } = await supabase.from("tareas_hilos").select(RESUMEN).order("updated_at", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+export type PlantillaCompleta = Plantilla & { tareas_plantillas_pasos: PlantillaPaso[] };
+
+// Las mías (también desactivadas), las publicadas y, al admin, todas: la RLS
+// recorta. Cada vista filtra.
+export async function getPlantillas(): Promise<PlantillaCompleta[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tareas_plantillas")
+    .select("*, tareas_plantillas_pasos(*)")
+    .eq("tareas_plantillas_pasos.activo", true)
+    .order("nombre")
+    .order("orden", { referencedTable: "tareas_plantillas_pasos" });
   if (error) throw error;
   return data;
 }

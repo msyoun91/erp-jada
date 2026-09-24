@@ -2,7 +2,7 @@
 // desde erp-app (Node despoja los tipos solo).
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { compararMision, esHuerfano, estaBloqueado, estaEnEspera, estaVencido, ordenarPasos } from "./derivados.ts";
+import { compararMision, esHuerfano, estaBloqueado, estaEnEspera, estaVencido, motivoRevisar, ordenarPasos } from "./derivados.ts";
 import type { EstadoTarea } from "./types.ts";
 
 type P = { id: string; paso_anterior_id: string | null; estado: EstadoTarea; created_at: string };
@@ -86,4 +86,14 @@ test("huérfano: responsable o asignado abierto que no recibe; inactivo no figur
   assert.equal(esHuerfano(hilo("ana", "dani"), asignables), true);
   assert.equal(esHuerfano(hilo("ana", "dani", "completada"), asignables), false);
   assert.equal(esHuerfano({ ...hilo("beto", "ana"), estado: "cerrado" }, asignables), false);
+});
+
+test("a revisar: fijo que no recibe, o pedido sin tareas_pedir", () => {
+  const fijo = (id: string | null) => ({ asignado_id: id, asignado_equipo_id: null });
+  assert.equal(motivoRevisar(fijo(null), asignables, false), null);
+  assert.equal(motivoRevisar(fijo("ana"), asignables, false), null);
+  assert.equal(motivoRevisar(fijo("beto"), asignables, true), "no_recibe");
+  assert.equal(motivoRevisar(fijo("dani"), asignables, true), "no_recibe");
+  assert.equal(motivoRevisar(fijo("caro"), asignables, false), "pedido");
+  assert.equal(motivoRevisar(fijo("caro"), asignables, true), null);
 });

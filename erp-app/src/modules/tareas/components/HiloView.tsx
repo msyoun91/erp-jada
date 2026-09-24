@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Archive, ArchiveRestore, ArrowLeftRight, CheckCircle2, ChevronRight, Pencil, Plus, Repeat, RotateCcw, UserRound } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeftRight, CheckCircle2, ClipboardList, ChevronRight, Pencil, Plus, Repeat, RotateCcw, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
@@ -10,7 +10,7 @@ import { formatFecha, hoyISO } from "@/lib/utils";
 import { desactivarHilo, reabrirHilo, reactivarHilo } from "../actions";
 import { estaAbierto, estaBloqueado, estaEnEspera, estaVencido, ordenarPasos } from "../derivados";
 import { ESTADO_HILO, ESTADO_PASO, textoRecurrencia } from "../etiquetas";
-import type { HiloCompleto } from "../queries";
+import type { HiloCompleto, PlantillaCompleta } from "../queries";
 import type { Tarea } from "../types";
 import { TareasProvider, useNombre, type TareasCtx } from "./contexto";
 import { Historial } from "./Historial";
@@ -19,18 +19,21 @@ import { CerrarHiloModal, TransferirModal } from "./HiloModales";
 import { NotasSection } from "./NotasSection";
 import { PasoFormPanel } from "./PasoFormPanel";
 import { PasoPanel } from "./PasoPanel";
+import { UsarPlantillaPanel } from "./UsarPlantillaPanel";
 
-type Dialogo = "sumar" | "editar" | "transferir" | "cerrar" | "desactivar";
+type Dialogo = "sumar" | "plantilla" | "editar" | "transferir" | "cerrar" | "desactivar";
 
-export function HiloView({ ctx, pasoAbierto, ...datos }: HiloCompleto & { ctx: TareasCtx; pasoAbierto: string | null }) {
+type Props = HiloCompleto & { ctx: TareasCtx; pasoAbierto: string | null; plantillas: PlantillaCompleta[] };
+
+export function HiloView(props: Props) {
   return (
-    <TareasProvider value={ctx}>
-      <Contenido {...datos} ctx={ctx} pasoAbierto={pasoAbierto} />
+    <TareasProvider value={props.ctx}>
+      <Contenido {...props} />
     </TareasProvider>
   );
 }
 
-function Contenido({ hilo, pasos, notas, ediciones, ctx, pasoAbierto }: HiloCompleto & { ctx: TareasCtx; pasoAbierto: string | null }) {
+function Contenido({ hilo, pasos, notas, ediciones, ctx, pasoAbierto, plantillas }: Props) {
   const nombre = useNombre();
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
   const [abierto, setAbierto] = useState<string | null>(pasoAbierto);
@@ -129,6 +132,12 @@ function Contenido({ hilo, pasos, notas, ediciones, ctx, pasoAbierto }: HiloComp
       <div>
         <div className="mb-2 flex items-center">
           <p className="t-label flex-1">Pasos</p>
+          {vivo && dueno && plantillas.length > 0 && (
+            <button className="btn btn-secondary btn-sm mr-2" onClick={() => setDialogo("plantilla")}>
+              <ClipboardList size={14} />
+              Usar plantilla
+            </button>
+          )}
           {vivo && (dueno || participo) && (
             <button className="btn btn-secondary btn-sm" onClick={() => setDialogo("sumar")}>
               <Plus size={14} />
@@ -174,6 +183,9 @@ function Contenido({ hilo, pasos, notas, ediciones, ctx, pasoAbierto }: HiloComp
           yo={ctx.yo}
           onClose={() => setDialogo(null)}
         />
+      )}
+      {dialogo === "plantilla" && (
+        <UsarPlantillaPanel plantillas={plantillas} hiloId={hilo.id} onClose={() => setDialogo(null)} />
       )}
       {dialogo === "editar" && <HiloFormPanel hilo={hilo} onClose={() => setDialogo(null)} />}
       {dialogo === "transferir" && <TransferirModal hilo={hilo} onClose={() => setDialogo(null)} />}

@@ -94,3 +94,18 @@ export function esHuerfano(
     (t) => t.activo && estaAbierto(t.estado) && !puedeRecibir(asignables, t.asignado_id ?? t.asignado_equipo_id)
   );
 }
+
+// "A revisar" de un paso de plantilla con asignado fijo: `usar_plantilla` lo
+// cambiaría por quien la usa, o la base lo rechazaría como pedido (TA010).
+export function motivoRevisar(
+  paso: { asignado_id: string | null; asignado_equipo_id: string | null },
+  asignables: Recibible[],
+  pedir: boolean
+): "no_recibe" | "pedido" | null {
+  const id = paso.asignado_id ?? paso.asignado_equipo_id;
+  if (!id) return null;
+  const a = buscar(asignables, id);
+  if (!a?.puede_recibir) return "no_recibe";
+  if (a.pedido && !pedir) return "pedido";
+  return null;
+}
