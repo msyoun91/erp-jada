@@ -158,6 +158,14 @@ RPC (GRANT `authenticated`):
   `tareas_transferir_hilo(hilo, responsable)` — la fila nueva de un UPDATE pasa por la policy de
   SELECT, y estas tres la sacan de la vista de quien actúa (42501 por PostgREST). El trigger decide.
 
+## A quién asignar o pedir (`sql/116`)
+
+`tareas_asignables() → (usuario_id, equipo_id, nombre, pedido, puede_recibir)` — DEFINER, GRANT
+`authenticated`. Usuarios y equipos activos, solo el nombre (una de las dos ids por fila), para
+quien tiene `tareas_ver`; vacío si no. `pedido`: `tareas_es_pedido` con quien llama como
+responsable, siempre `false` con `tareas_administrar`. `puede_recibir`: `tareas_puede_recibir`. No
+autoriza nada: deciden los triggers de `sql/113`. Test: `sql/tests/tareas_asignables.sql`.
+
 ## Bajas y cambios de equipo (`sql/114`)
 
 Test: `sql/tests/tareas_bajas.sql`. Decisión: `decisiones/tareas/bajas.md`.

@@ -5,7 +5,7 @@ Rediseño desde cero (2026-09-23). La versión anterior vive en `master` (su `de
 archivos de esta carpeta no repiten nombres de los de `master`: los punteros viejos de
 `decisiones/global/` (`plantillas.md`, `visibilidad.md`, `integracion.md`…) siguen siendo de allá.
 
-> **Estado: ficha aprobada (2026-09-24); `sql/112` a `sql/115` aplicados; falta el resto (ver `BACKLOG.md`).** Las revisiones de agujeros (2026-09-23 y
+> **Estado: ficha aprobada (2026-09-24); `sql/112` a `sql/116` aplicados; falta el resto (ver `BACKLOG.md`).** Las revisiones de agujeros (2026-09-23 y
 > 2026-09-24, por escenarios) quedaron volcadas en la ficha y en los archivos por tema; lo del 24
 > lleva fecha en cada decisión. Lo que cambie se corrige acá primero. Leer este índice y después
 > solo el archivo del tema.
@@ -15,7 +15,7 @@ archivos de esta carpeta no repiten nombres de los de `master`: los punteros vie
 | Archivo | Tema |
 |---|---|
 | `modelo.md` | Todo es un hilo · hilo híbrido · el asignado suma pasos · desactivar hilo y paso · `tarea` es ente · espera · resultado y cierre · reabrir en cascada · cancelado transparente · plazo relativo desde la habilitación · insertar antes de · abrir un paso es una sola regla |
-| `participacion.md` | Visibilidad por hilo · el equipo participa · el delegador es el de usuarios · el admin asigna directo · un solo asignado · equipo participante guardado · columnas del que pide y del que hace · reasignar avisa · el admin completa lo ajeno · agente IA |
+| `participacion.md` | Visibilidad por hilo · el equipo participa · el delegador es el de usuarios · el admin asigna directo · un solo asignado · equipo participante guardado · columnas del que pide y del que hace · reasignar avisa · el admin completa lo ajeno · a quién se asigna o se pide · agente IA |
 | `pedidos.md` | "Pedido" calculado · pedir es del responsable · `tareas_pedir` · sin `tareas_pedir` · devolver · volver a pedir · editar un pedido aceptado · reabrir un pedido |
 | `bajas.md` | Solo se asigna a quien puede recibirlo · baja · los hilos se mueven todos · cambio de equipo · sin destino, huérfano · transferir a otro equipo · destino por el `equipo_id` de la fila |
 | `registro.md` | `tareas_ediciones` y congelado · ocultar nota o historial · referencias en el texto · RLS de `tareas_vinculos` · ficha al lado |
@@ -251,9 +251,8 @@ multi-asignado (`tareas_asignados`), `modo_completado`, `origen_app`, `tareas_ge
 
 ## Lo que el módulo necesita de afuera
 
-- Una función que devuelva solo nombre de usuarios y equipos activos, para asignar y pedir:
-  `usuarios_select` no deja ver otros equipos. Por fila, además, si es de mi equipo y si puede
-  recibir (*Solo se asigna a quien puede recibirlo*): la UI decide asignar o pedir sin otra consulta.
+- ~~Una función que devuelva solo nombre de usuarios y equipos activos, para asignar y pedir~~ →
+  `tareas_asignables()` (`sql/116`, `participacion.md` → *A quién se asigna o se pide*).
 - Usuarios: las reglas del bloque *Reglas entre permisos* de la ficha, que la migración de tareas
   carga en `submodulo_reglas` (`sql/110`); el trigger y el panel de permisos ya las hacen valer.
   Quedan `designar_delegador` y `quitar_delegador`: mueven `tareas_equipo` junto con

@@ -22,11 +22,10 @@ Todo está escrito en `decisiones/usuarios.md` → *Equipos y delegación de per
 qué, transiciones, pedidos, cadena, cierre, desactivación, notas e historial) aplicados el
 2026-09-24; `sql/tests/tareas_reglas.sql` pasa entero. `sql/114` (bajas y cambios de equipo)
 aplicado; `sql/tests/tareas_bajas.sql` pasa entero. `sql/115` (avisos) aplicado;
-`sql/tests/tareas_avisos.sql` pasa entero. Falta:
+`sql/tests/tareas_avisos.sql` pasa entero. `sql/116` (`tareas_asignables`) aplicado;
+`sql/tests/tareas_asignables.sql` pasa entero. Falta:
 - "Paso a reasignar" al crear un paso desde plantillas o recurrencia con un asignado que no puede
   recibir (`decisiones/tareas/avisos.md` → *Pendiente*).
-- La función de afuera para elegir a quién asignar o pedir (README → *Lo que el módulo necesita de
-  afuera*).
 - Plantillas, Catálogo, recurrencia y `tareas_vinculos`.
 
 Ficha: `decisiones/tareas/README.md`; esquema: `db_schema/tareas.md`.

@@ -873,6 +873,16 @@ export type Database = {
         Args: { p_actor: string; p_equipo: string; p_usuario: string }
         Returns: boolean
       }
+      tareas_asignables: {
+        Args: never
+        Returns: {
+          equipo_id: string
+          nombre: string
+          pedido: boolean
+          puede_recibir: boolean
+          usuario_id: string
+        }[]
+      }
       tareas_bloquea: { Args: { p_paso: string }; Returns: boolean }
       tareas_cancelar_y_cerrar: {
         Args: { p_hilo: string; p_resultado?: string }

@@ -63,6 +63,13 @@ algo habitual). Vale igual para el delegador y el admin; no para la baja.
 función que administra el módulo* (`decisiones/global/permisos.md`). Completar algo ajeno pide nota
 obligatoria y queda firmado en `eventos`. Aplica igual si esa función la tiene un agente IA.
 
+**A quién se asigna o se pide: `tareas_asignables()` (2026-09-24).** Devuelve el nombre de todo
+usuario y equipo activo, a quien tenga `tareas_ver`: `usuarios_select` no deja ver otros equipos y
+abrirla expondría email y teléfono. Por fila, `pedido` en lugar de "es de mi equipo": es lo que la
+UI necesita, y para el admin (sin equipo, asigna directo) "de mi equipo" diría pedir siempre. Se
+mide contra quien llama, que es el responsable al crear o reasignar; el delegador reparte dentro de
+su equipo, donde nunca es pedido. `sql/116`.
+
 **El agente IA trabaja como persona.** Sin reglas propias; la base no distingue agente de persona
 (`decisiones/usuarios.md`) y el usuario no quiere que lo haga por ahora.
 
