@@ -885,7 +885,7 @@ export type Database = {
       }
       tareas_bloquea: { Args: { p_paso: string }; Returns: boolean }
       tareas_cancelar_y_cerrar: {
-        Args: { p_hilo: string; p_resultado?: string }
+        Args: { p_generar?: boolean; p_hilo: string; p_resultado?: string }
         Returns: undefined
       }
       tareas_completar_con_nota: {

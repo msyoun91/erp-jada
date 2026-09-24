@@ -59,6 +59,8 @@ asignado ya no puede recibir no recibe "paso a reasignar": el paso queda a su no
 `GUIDE_ENTES.md` §2.8, que manda sobre la ficha. Lo emite `emitir_eventos_registro` con la columna
 del dueño como segundo argumento: el próximo ente que se transfiera lo reusa.
 
-**Pendiente: "paso a reasignar" al crear un paso desde plantillas o recurrencia.**
-`tareas_al_crear` deja el paso en el responsable si el asignado no puede recibir, y el trigger de
-después no ve el asignado original. Va con plantillas y recurrencia (`BACKLOG.md`).
+**"Paso a reasignar" al crear desde un trigger lo avisa `tareas_al_crear`, sin actor (2026-09-24).**
+Es el único que ve el asignado original: el trigger de después ya no lo ve. Sin actor, le llega al
+responsable aunque haya cerrado él: al reabrir el paso queda a su nombre y lo está mirando; el
+ciclo nuevo nace en otro hilo, que no está mirando. Cubre recurrencia y, cuando lleguen, los
+disparos (`sql/117`).

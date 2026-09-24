@@ -17,6 +17,13 @@ recurrencia" (saca la recurrencia y no genera nada). Por defecto genera en un ci
 en "Cancelar pendientes y cerrar": si no, cerrar algo que ya no va hacía nacer otro ciclo con sus
 avisos. Absorbe el aviso de arriba: si ya hay siguiente, "generar" pasa a "¿generar otro?", con "no".
 
+**Lo genera un trigger al cerrar; no generar es cerrar sacando la recurrencia (2026-09-24).** El
+trigger crea los pasos a profundidad 2, así rigen las reglas de sistema de `tareas_al_crear` y la
+regla de "paso a reasignar" vive en un solo lugar. "Terminar la recurrencia" y el "no" a "¿generar
+otro?" son el mismo UPDATE de cierre con `recurrencia_*` en NULL: el ciclo cerrado ya pasó la
+recurrencia a su siguiente. `tareas_cancelar_y_cerrar(hilo, resultado, generar)` la saca salvo
+`generar`. Si el responsable ya no puede recibir, no hay siguiente y el cierre no falla. `sql/117`.
+
 **El siguiente copia los pasos, sin lo hecho.** Títulos, descripciones, cadena, asignados y
 prioridad, todo sin completar; los vencimientos se corren por el intervalo desde el vencimiento
 anterior, no desde el cierre, sin saltear ciclos: cada ciclo es un período, el atrasado nace
@@ -30,5 +37,7 @@ equipo). Un paso cuyo asignado no puede recibir (*Solo se asigna a quien puede r
 sería un pedido y el responsable ya no tiene `tareas_pedir`, nace asignado al responsable con aviso
 para reasignarlo: la recurrencia nunca falla. Los pedidos válidos nacen `solicitada` y se vuelven a
 aceptar. Se copia el asignado final: si el delegador repartió "al equipo" a Juan, el siguiente va
-a Juan.
+a Juan. Los cancelados también se copian (2026-09-24): "Cancelar pendientes y cerrar" generando
+dejaría el siguiente sin lo que no se llegó a hacer. Costo: un paso que dejó de ir en el medio de
+la cadena vuelve cada ciclo, porque solo se desactiva desde la cola.
 

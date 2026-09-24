@@ -4,8 +4,8 @@ Rediseño desde cero (`sql/112`). Ficha y decisiones: `decisiones/tareas/` (índ
 El esquema de `master` es otro módulo: no se mezclan nombres de allá.
 
 **Estado:** `sql/112` (esquema, catálogo, entes, visibilidad), `sql/113` (escrituras y reglas),
-`sql/114` (bajas y cambios de equipo) y `sql/115` (avisos) aplicados el 2026-09-24.
-Faltan plantillas y recurrencia (`BACKLOG.md`).
+`sql/114` (bajas y cambios de equipo), `sql/115` (avisos), `sql/116` (asignables) y `sql/117`
+(recurrencia) aplicados el 2026-09-24. Faltan plantillas y vínculos (`BACKLOG.md`).
 
 ## Visibilidad — la unidad es el hilo
 
@@ -152,7 +152,7 @@ Helpers sin GRANT: `tareas_hoy`, `tareas_delegador_de`, `tareas_puede_recibir`,
 
 RPC (GRANT `authenticated`):
 - INVOKER: `tareas_insertar_antes(siguiente, titulo, descripcion, asignado, asignado_equipo,
-  prioridad, vence, vence_dias) → uuid`, `tareas_cancelar_y_cerrar(hilo, resultado)`,
+  prioridad, vence, vence_dias) → uuid`, `tareas_cancelar_y_cerrar(hilo, resultado, generar = false)`,
   `tareas_completar_con_nota(tarea, nota, resultado)` (el admin completa lo ajeno; TA012 sin nota).
 - DEFINER: `tareas_desactivar_paso(paso)`, `tareas_desactivar_hilo(hilo)`,
   `tareas_transferir_hilo(hilo, responsable)` — la fila nueva de un UPDATE pasa por la policy de
@@ -201,3 +201,19 @@ Test: `sql/tests/tareas_avisos.sql`. Decisión: `decisiones/tareas/avisos.md`. T
 Helpers sin GRANT: `tareas_destinatario` (persona, o el delegador si es equipo),
 `tareas_avisar_asignado`, `tareas_avisar_huerfanos`. RPC: `tareas_avisos_salida()` (DEFINER, GRANT
 `authenticated`), la usa `notificaciones_listar`.
+
+## Recurrencia (`sql/117`)
+
+Test: `sql/tests/tareas_recurrencia.sql`. Decisión: `decisiones/tareas/recurrencia.md`.
+
+- `tareas_generar_siguiente` (AFTER UPDATE OF estado, `abierto` → `cerrado` con recurrencia y
+  activo; DEFINER): hilo nuevo con el mismo título, responsable y recurrencia, `recurrencia_de` =
+  el cerrado. Copia todos los pasos activos, de la raíz a la cola: título, descripción, cadena,
+  asignado, prioridad y `vence_dias`; `vence` corrido por el intervalo (fin de mes queda fin de
+  mes). Estado y equipo los pone `tareas_al_crear`. Sin siguiente si el responsable no puede
+  recibir.
+- No generar: cerrar con `recurrencia_*` en NULL en el mismo UPDATE. `tareas_cancelar_y_cerrar`
+  lo hace salvo `generar`.
+- `tareas_al_crear` (reemplazada): creado desde un trigger, el asignado que no puede recibir o el
+  pedido sin `tareas_pedir` del responsable quedan en el responsable, con `paso_a_reasignar` sin
+  actor.
