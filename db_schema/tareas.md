@@ -3,8 +3,9 @@
 Rediseño desde cero (`sql/112`). Ficha y decisiones: `decisiones/tareas/` (índice en su `README.md`).
 El esquema de `master` es otro módulo: no se mezclan nombres de allá.
 
-**Estado:** `sql/112` es solo esquema, catálogo, entes y visibilidad, con `GRANT SELECT`. Las
-escrituras y sus reglas llegan con `sql/113`: hasta entonces solo escribe `service_role`.
+**Estado:** `sql/112` (esquema, catálogo, entes, visibilidad) y `sql/113` (escrituras y reglas)
+aplicados el 2026-09-24. Faltan bajas y cambios de equipo, avisos, plantillas y recurrencia
+(`BACKLOG.md`).
 
 ## Visibilidad — la unidad es el hilo
 
@@ -105,3 +106,51 @@ Reglas (`submodulo_reglas`, todas `requiere`): `tareas_equipo` → `usuarios_del
 `{titulo}`, sin disparos. Rama `tareas_etiqueta(tipo, id)` (INVOKER, GRANT `authenticated`) en
 `etiqueta_registro`. Trigger `emitir_eventos` (`emitir_eventos_registro`) en las dos tablas: alta, estado,
 baja, reactivación.
+
+## Escrituras (`sql/113`)
+
+GRANT por columna; la policy dice sobre qué filas y el trigger quién puede qué. Test:
+`sql/tests/tareas_reglas.sql`. Errores con clase `TA` (`mensajeError` los deja pasar).
+
+| tabla | INSERT | UPDATE |
+|---|---|---|
+| `tareas_hilos` | `id, titulo, responsable_id` (default `auth.uid()`), `recurrencia_*` — policy: `tareas_ver` | `titulo, responsable_id, estado, resultado, recurrencia_*, activo` — policy: ve el hilo |
+| `tareas` | `id, hilo_id, paso_anterior_id, titulo, descripcion, asignado_id, asignado_equipo_id, prioridad, vence, vence_dias` — policy: ve el hilo | todo menos `hilo_id, equipo_id` y fechas — policy: ve el paso |
+| `tareas_notas` | `id, hilo_id, tarea_id, texto` — policy: autor = yo, ve el hilo (y el paso) | `activo` — `tareas_administrar` |
+| `tareas_ediciones` | — (trigger) | `activo` — `tareas_administrar` |
+
+`estado`, `equipo_id`, `vence` (con `vence_dias`) y lo del asignado al crear los pone la base.
+
+**Directo o sistema:** las reglas de actor valen con `pg_trigger_depth() = 1` y `auth.uid()`; lo que
+escriben los triggers en cascada (profundidad 2) solo respeta invariantes. Triggers DEFINER.
+
+Triggers:
+- `tareas_hilos_al_crear` / `tareas_hilos_al_editar` (BEFORE): responsable = yo salvo admin
+  (TA002), responsable que puede recibir (TA003), editar = responsable o admin (TA001), cerrado
+  congelado (TA007), cerrar sin pasos abiertos (TA008), desactivar sin completados (TA009), reactivar
+  solo admin, transferir afuera (contra `equipo_id` guardado) con `tareas_pedir` (TA010) y al
+  delegador del equipo destino (TA015). `equipo_id` = `equipo_de(responsable)`.
+- `tareas_hilos_transferir` (AFTER): si cambia el equipo, los pasos abiertos del equipo de origen
+  pasan al nuevo responsable.
+- `tareas_al_crear` / `tareas_al_editar` (BEFORE): quién escribe qué columna, transiciones, pedidos
+  (`tareas_estado_al_abrir`), receptor válido, espera y motivo que se limpian, bloqueo (TA004),
+  plazo relativo.
+- `tareas_propagar` (AFTER INSERT / UPDATE OF estado, activo): reabre el hilo, cascada de reabrir,
+  vencimiento del siguiente al habilitarse o bloquearse.
+- `tareas_validar_cadena` (constraint, diferido): desactivar desde la cola (TA006); el previo solo
+  cambia por *Insertar antes de* (TA005).
+- `tareas_registrar_ediciones` (AFTER, solo directo): `titulo, recurrencia_*` del hilo;
+  `titulo, descripcion, prioridad, vence, vence_dias` del paso.
+- `tareas_firmar_ocultar` (notas y ediciones): `ocultada_por` / `ocultada_at`.
+
+Helpers sin GRANT: `tareas_hoy`, `tareas_delegador_de`, `tareas_puede_recibir`,
+`tareas_equipo_de_asignado`, `tareas_es_pedido`, `tareas_actua_como_asignado`, `tareas_bloquea`,
+`tareas_siguiente_efectivo`, `tareas_estado_al_abrir`.
+
+RPC (GRANT `authenticated`):
+- INVOKER: `tareas_insertar_antes(siguiente, titulo, descripcion, asignado, asignado_equipo,
+  prioridad, vence, vence_dias) → uuid`, `tareas_cancelar_y_cerrar(hilo, resultado)`,
+  `tareas_completar_con_nota(tarea, nota, resultado)` (el admin completa lo ajeno; TA012 sin nota).
+- DEFINER: `tareas_desactivar_paso(paso)`, `tareas_desactivar_hilo(hilo)`,
+  `tareas_transferir_hilo(hilo, responsable)` — la fila nueva de un UPDATE pasa por la policy de
+  SELECT, y estas tres la sacan de la vista de quien actúa (42501 por PostgREST). El trigger decide.

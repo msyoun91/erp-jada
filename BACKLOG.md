@@ -18,14 +18,16 @@ Todo está escrito en `decisiones/usuarios.md` → *Equipos y delegación de per
 
 ## tareas — el SQL del módulo, en curso
 
-`sql/112` (esquema, catálogo, reglas entre permisos, entes, visibilidad, y `designar_delegador` /
-`quitar_delegador` moviendo `tareas_equipo`) está escrito y probado en una transacción revertida,
-**sin aplicar**. Falta:
-- `sql/113`: escrituras y sus reglas (quién escribe qué columna, transiciones, cadena, pedidos,
-  bajas y cambios de equipo, historial) y los avisos.
+`sql/112` (esquema, catálogo, entes, visibilidad) y `sql/113` (escrituras y reglas: quién escribe
+qué, transiciones, pedidos, cadena, cierre, desactivación, notas e historial) aplicados el
+2026-09-24; `sql/tests/tareas_reglas.sql` pasa entero. Falta:
+- Bajas, cambios de equipo y pérdida de `tareas_ver`: mover hilos y pasos abiertos al delegador
+  (`bajas.md`), triggers sobre `usuarios.activo` y `equipos_miembros`.
+- Avisos: `transferencia` en `tipo_evento`, `relacion_*` del asignado (con rama en
+  `puede_ver_relacion`) y los tipos de la campanita de la ficha.
+- La función de afuera para elegir a quién asignar o pedir (README → *Lo que el módulo necesita de
+  afuera*).
 - Plantillas, Catálogo, recurrencia y `tareas_vinculos`.
-- Al aplicar `sql/112`: sumar `tareas_ver` a los delegadores de `sql/tests/usuarios_equipos.sql` y
-  volver a correrlo — sin él, `designar_delegador` falla con US016.
 
 Ficha: `decisiones/tareas/README.md`; esquema: `db_schema/tareas.md`.
 

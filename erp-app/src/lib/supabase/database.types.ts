@@ -259,6 +259,323 @@ export type Database = {
           },
         ]
       }
+      tareas: {
+        Row: {
+          activo: boolean
+          asignado_equipo_id: string | null
+          asignado_id: string | null
+          created_at: string
+          descripcion: string | null
+          equipo_id: string | null
+          espera_hasta: string | null
+          espera_motivo: string | null
+          estado: Database["public"]["Enums"]["estado_tarea"]
+          hilo_id: string
+          id: string
+          motivo_rechazo: string | null
+          paso_anterior_id: string | null
+          prioridad: Database["public"]["Enums"]["prioridad_tarea"]
+          resultado: string | null
+          titulo: string
+          updated_at: string
+          vence: string | null
+          vence_dias: number | null
+        }
+        Insert: {
+          activo?: boolean
+          asignado_equipo_id?: string | null
+          asignado_id?: string | null
+          created_at?: string
+          descripcion?: string | null
+          equipo_id?: string | null
+          espera_hasta?: string | null
+          espera_motivo?: string | null
+          estado?: Database["public"]["Enums"]["estado_tarea"]
+          hilo_id: string
+          id?: string
+          motivo_rechazo?: string | null
+          paso_anterior_id?: string | null
+          prioridad?: Database["public"]["Enums"]["prioridad_tarea"]
+          resultado?: string | null
+          titulo: string
+          updated_at?: string
+          vence?: string | null
+          vence_dias?: number | null
+        }
+        Update: {
+          activo?: boolean
+          asignado_equipo_id?: string | null
+          asignado_id?: string | null
+          created_at?: string
+          descripcion?: string | null
+          equipo_id?: string | null
+          espera_hasta?: string | null
+          espera_motivo?: string | null
+          estado?: Database["public"]["Enums"]["estado_tarea"]
+          hilo_id?: string
+          id?: string
+          motivo_rechazo?: string | null
+          paso_anterior_id?: string | null
+          prioridad?: Database["public"]["Enums"]["prioridad_tarea"]
+          resultado?: string | null
+          titulo?: string
+          updated_at?: string
+          vence?: string | null
+          vence_dias?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_asignado_equipo_id_fkey"
+            columns: ["asignado_equipo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_asignado_id_fkey"
+            columns: ["asignado_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_equipo_id_fkey"
+            columns: ["equipo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_hilo_id_fkey"
+            columns: ["hilo_id"]
+            isOneToOne: false
+            referencedRelation: "tareas_hilos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_paso_anterior_fk"
+            columns: ["paso_anterior_id", "hilo_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
+            referencedColumns: ["id", "hilo_id"]
+          },
+        ]
+      }
+      tareas_ediciones: {
+        Row: {
+          activo: boolean
+          actor_id: string | null
+          anterior: string | null
+          campo: string
+          created_at: string
+          hilo_id: string
+          id: string
+          nuevo: string | null
+          ocultada_at: string | null
+          ocultada_por: string | null
+          tarea_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          actor_id?: string | null
+          anterior?: string | null
+          campo: string
+          created_at?: string
+          hilo_id: string
+          id?: string
+          nuevo?: string | null
+          ocultada_at?: string | null
+          ocultada_por?: string | null
+          tarea_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          actor_id?: string | null
+          anterior?: string | null
+          campo?: string
+          created_at?: string
+          hilo_id?: string
+          id?: string
+          nuevo?: string | null
+          ocultada_at?: string | null
+          ocultada_por?: string | null
+          tarea_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_ediciones_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_ediciones_hilo_id_fkey"
+            columns: ["hilo_id"]
+            isOneToOne: false
+            referencedRelation: "tareas_hilos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_ediciones_ocultada_por_fkey"
+            columns: ["ocultada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_ediciones_tarea_fk"
+            columns: ["tarea_id", "hilo_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
+            referencedColumns: ["id", "hilo_id"]
+          },
+        ]
+      }
+      tareas_hilos: {
+        Row: {
+          activo: boolean
+          created_at: string
+          equipo_id: string | null
+          estado: Database["public"]["Enums"]["estado_hilo"]
+          id: string
+          recurrencia_cantidad: number | null
+          recurrencia_de: string | null
+          recurrencia_unidad:
+            | Database["public"]["Enums"]["recurrencia_unidad"]
+            | null
+          responsable_id: string
+          resultado: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          equipo_id?: string | null
+          estado?: Database["public"]["Enums"]["estado_hilo"]
+          id?: string
+          recurrencia_cantidad?: number | null
+          recurrencia_de?: string | null
+          recurrencia_unidad?:
+            | Database["public"]["Enums"]["recurrencia_unidad"]
+            | null
+          responsable_id?: string
+          resultado?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          equipo_id?: string | null
+          estado?: Database["public"]["Enums"]["estado_hilo"]
+          id?: string
+          recurrencia_cantidad?: number | null
+          recurrencia_de?: string | null
+          recurrencia_unidad?:
+            | Database["public"]["Enums"]["recurrencia_unidad"]
+            | null
+          responsable_id?: string
+          resultado?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_hilos_equipo_id_fkey"
+            columns: ["equipo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_hilos_recurrencia_de_fkey"
+            columns: ["recurrencia_de"]
+            isOneToOne: false
+            referencedRelation: "tareas_hilos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_hilos_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_notas: {
+        Row: {
+          activo: boolean
+          autor_id: string
+          created_at: string
+          hilo_id: string
+          id: string
+          ocultada_at: string | null
+          ocultada_por: string | null
+          tarea_id: string | null
+          texto: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          autor_id?: string
+          created_at?: string
+          hilo_id: string
+          id?: string
+          ocultada_at?: string | null
+          ocultada_por?: string | null
+          tarea_id?: string | null
+          texto: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          autor_id?: string
+          created_at?: string
+          hilo_id?: string
+          id?: string
+          ocultada_at?: string | null
+          ocultada_por?: string | null
+          tarea_id?: string | null
+          texto?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_notas_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_notas_hilo_id_fkey"
+            columns: ["hilo_id"]
+            isOneToOne: false
+            referencedRelation: "tareas_hilos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_notas_ocultada_por_fkey"
+            columns: ["ocultada_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_notas_tarea_fk"
+            columns: ["tarea_id", "hilo_id"]
+            isOneToOne: false
+            referencedRelation: "tareas"
+            referencedColumns: ["id", "hilo_id"]
+          },
+        ]
+      }
       usuario_notificaciones: {
         Row: {
           activo: boolean
@@ -552,6 +869,93 @@ export type Database = {
         }
         Returns: undefined
       }
+      tareas_actua_como_asignado: {
+        Args: { p_actor: string; p_equipo: string; p_usuario: string }
+        Returns: boolean
+      }
+      tareas_bloquea: { Args: { p_paso: string }; Returns: boolean }
+      tareas_cancelar_y_cerrar: {
+        Args: { p_hilo: string; p_resultado?: string }
+        Returns: undefined
+      }
+      tareas_completar_con_nota: {
+        Args: { p_nota: string; p_resultado?: string; p_tarea: string }
+        Returns: undefined
+      }
+      tareas_delegador_de: { Args: { p_equipo: string }; Returns: string }
+      tareas_desactivar_hilo: { Args: { p_hilo: string }; Returns: undefined }
+      tareas_desactivar_paso: { Args: { p_paso: string }; Returns: undefined }
+      tareas_equipo_de_asignado: {
+        Args: { p_equipo: string; p_usuario: string }
+        Returns: string
+      }
+      tareas_es_pedido: {
+        Args: { p_equipo: string; p_responsable: string; p_usuario: string }
+        Returns: boolean
+      }
+      tareas_estado_al_abrir: {
+        Args: {
+          p_directo: boolean
+          p_equipo: string
+          p_responsable: string
+          p_usuario: string
+        }
+        Returns: Database["public"]["Enums"]["estado_tarea"]
+      }
+      tareas_etiqueta: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: string
+      }
+      tareas_hoy: { Args: never; Returns: string }
+      tareas_insertar_antes: {
+        Args: {
+          p_asignado_equipo_id: string
+          p_asignado_id: string
+          p_descripcion: string
+          p_prioridad?: Database["public"]["Enums"]["prioridad_tarea"]
+          p_siguiente: string
+          p_titulo: string
+          p_vence?: string
+          p_vence_dias?: number
+        }
+        Returns: string
+      }
+      tareas_puede_recibir: {
+        Args: { p_equipo: string; p_usuario: string }
+        Returns: boolean
+      }
+      tareas_puede_ver_hilo: {
+        Args: {
+          p_activo: boolean
+          p_equipo: string
+          p_hilo: string
+          p_responsable: string
+        }
+        Returns: boolean
+      }
+      tareas_puede_ver_hilo_de: {
+        Args: {
+          p_activo: boolean
+          p_equipo: string
+          p_hilo: string
+          p_responsable: string
+          p_usuario: string
+        }
+        Returns: boolean
+      }
+      tareas_puede_ver_tarea: {
+        Args: { p_activo: boolean; p_hilo: string }
+        Returns: boolean
+      }
+      tareas_puede_ver_tarea_de: {
+        Args: { p_activo: boolean; p_hilo: string; p_usuario: string }
+        Returns: boolean
+      }
+      tareas_siguiente_efectivo: { Args: { p_paso: string }; Returns: string }
+      tareas_transferir_hilo: {
+        Args: { p_hilo: string; p_responsable: string }
+        Returns: undefined
+      }
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
       usuario_tiene_permiso: {
         Args: { p_codigo: string; p_usuario: string }
@@ -559,6 +963,15 @@ export type Database = {
       }
     }
     Enums: {
+      estado_hilo: "abierto" | "cerrado"
+      estado_tarea:
+        | "solicitada"
+        | "pendiente"
+        | "rechazada"
+        | "completada"
+        | "cancelada"
+      prioridad_tarea: "baja" | "media" | "alta"
+      recurrencia_unidad: "dia" | "mes"
       tipo_evento:
         | "alta"
         | "baja"
@@ -699,6 +1112,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      estado_hilo: ["abierto", "cerrado"],
+      estado_tarea: [
+        "solicitada",
+        "pendiente",
+        "rechazada",
+        "completada",
+        "cancelada",
+      ],
+      prioridad_tarea: ["baja", "media", "alta"],
+      recurrencia_unidad: ["dia", "mes"],
       tipo_evento: [
         "alta",
         "baja",

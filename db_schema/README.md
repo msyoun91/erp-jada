@@ -8,7 +8,7 @@ tablas, columnas o enums, actualizar ese archivo y `database.types.ts`.
 |---|---|
 | `core.md` | `usuarios`, `submodulos`, `submodulo_reglas`, `usuario_submodulos`, `equipos`, `usuario_tutorial`, `usuario_widgets`, `tiene_permiso()`, `entes`, `eventos` |
 | `notificaciones.md` | `usuario_notificaciones`, `notificar()`, `notificaciones_listar()` |
-| `tareas.md` | hilos, pasos, notas, historial, permisos y visibilidad de tareas (`sql/112`) |
+| `tareas.md` | hilos, pasos, notas, historial, permisos, visibilidad y reglas de escritura de tareas (`sql/112`, `sql/113`) |
 
 Esta rama sacó `tareas` y `obras` para rediseñar permisos desde cero (`sql/101`, `sql/102`); sus
 esquemas viejos viven en `master`. Tareas vuelve rediseñado desde `sql/112`.

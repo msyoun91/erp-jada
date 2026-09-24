@@ -5,7 +5,7 @@ Rediseño desde cero (2026-09-23). La versión anterior vive en `master` (su `de
 archivos de esta carpeta no repiten nombres de los de `master`: los punteros viejos de
 `decisiones/global/` (`plantillas.md`, `visibilidad.md`, `integracion.md`…) siguen siendo de allá.
 
-> **Estado: ficha aprobada (2026-09-24); SQL en curso desde `sql/112` (ver `BACKLOG.md`).** Las revisiones de agujeros (2026-09-23 y
+> **Estado: ficha aprobada (2026-09-24); `sql/112` y `sql/113` aplicados, falta el resto (ver `BACKLOG.md`).** Las revisiones de agujeros (2026-09-23 y
 > 2026-09-24, por escenarios) quedaron volcadas en la ficha y en los archivos por tema; lo del 24
 > lleva fecha en cada decisión. Lo que cambie se corrige acá primero. Leer este índice y después
 > solo el archivo del tema.
@@ -21,6 +21,7 @@ archivos de esta carpeta no repiten nombres de los de `master`: los punteros vie
 | `registro.md` | `tareas_ediciones` y congelado · ocultar nota o historial · referencias en el texto · RLS de `tareas_vinculos` · ficha al lado |
 | `catalogo.md` | Toda plantilla es personal · copia independiente · pasos sin asignado · plantilla que pide afuera · nunca falla por un asignado · "a revisar" · plantillas por evento |
 | `recurrencia.md` | Recurrencia por hilo · intervalo · cada cierre genera · preguntar si sigue · qué copia el siguiente |
+| `escrituras.md` | Directo o sistema · desactivar y transferir por DEFINER · la cascada no exige `tareas_pedir` · desactivar el hilo no toca sus pasos · reabrir solo el estado · no se completa sin aceptar · transferir afuera contra el equipo guardado · plazo en días derivado · insertar antes por la forma · nota del admin · qué guarda el historial |
 
 ## Ficha del módulo
 
