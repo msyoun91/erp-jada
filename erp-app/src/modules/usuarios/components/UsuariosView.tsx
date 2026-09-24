@@ -28,12 +28,14 @@ export function UsuariosView({
   submodulos,
   reglas,
   asignaciones,
+  delegadas,
   puedeGestionar,
 }: {
   usuarios: Usuario[];
   submodulos: Submodulo[];
   reglas: SubmoduloRegla[];
   asignaciones: Record<string, string[]>;
+  delegadas: Record<string, Record<string, string>>;
   puedeGestionar: boolean;
 }) {
   const [texto, setTexto] = useState("");
@@ -208,6 +210,7 @@ export function UsuariosView({
           submodulos={submodulos}
           reglas={reglas}
           asignaciones={asignaciones}
+          delegadas={delegadas[usuarioPermisos.id] ?? {}}
           onClose={() => setUsuarioPermisos(null)}
         />
       )}

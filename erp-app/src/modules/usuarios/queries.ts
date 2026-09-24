@@ -52,6 +52,30 @@ export async function getAsignaciones(): Promise<Record<string, string[]>> {
   return asignaciones;
 }
 
+// Delegada = la otorgó un miembro de un equipo (`equipo_de`, sql/105): el admin
+// nunca es miembro. usuario → submódulo → quien la delegó.
+export async function getDelegadas(): Promise<Record<string, Record<string, string>>> {
+  const supabase = await createClient();
+  const [{ data, error }, membresias] = await Promise.all([
+    supabase
+      .from("usuario_submodulos")
+      .select("usuario_id, submodulo_id, otorgada_por")
+      .eq("activo", true)
+      .not("otorgada_por", "is", null),
+    getMembresias(),
+  ]);
+
+  if (error) throw error;
+
+  const delegadas: Record<string, Record<string, string>> = {};
+  for (const row of data) {
+    if (row.otorgada_por && membresias[row.otorgada_por]) {
+      (delegadas[row.usuario_id] ??= {})[row.submodulo_id] = row.otorgada_por;
+    }
+  }
+  return delegadas;
+}
+
 export async function getEquipos(): Promise<Equipo[]> {
   const supabase = await createClient();
   const { data, error } = await supabase

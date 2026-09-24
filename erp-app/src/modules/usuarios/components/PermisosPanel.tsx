@@ -18,6 +18,7 @@ export function PermisosPanel({
   submodulos,
   reglas,
   asignaciones,
+  delegadas,
   onClose,
 }: {
   usuario: Usuario;
@@ -25,10 +26,12 @@ export function PermisosPanel({
   submodulos: Submodulo[];
   reglas: SubmoduloRegla[];
   asignaciones: Record<string, string[]>;
+  delegadas: Record<string, string>;
   onClose: () => void;
 }) {
   const original = useMemo(() => new Set(asignaciones[usuario.id] ?? []), [asignaciones, usuario.id]);
   const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set(original));
+  const [tomar, setTomar] = useState<Set<string>>(new Set());
   const [busqueda, setBusqueda] = useState("");
   const [copiarDe, setCopiarDe] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -135,6 +138,34 @@ export function PermisosPanel({
     );
   }
 
+  // "Gana el admin" explícito (sql/121): guardar sin tomar deja la fila del delegador.
+  function delegacion(id: string) {
+    const delegador = delegadas[id];
+    if (!delegador || !seleccionados.has(id)) return null;
+    const tomada = tomar.has(id);
+    const nombre = todos.find((u) => u.id === delegador)?.nombre ?? "el delegador";
+    return (
+      <span className="ml-auto flex shrink-0 items-center gap-2">
+        <span className="t-caption">{tomada ? "Pasa al admin" : `Delegado por ${nombre}`}</span>
+        <button
+          type="button"
+          className="btn btn-secondary btn-sm"
+          onClick={(e) => {
+            e.preventDefault();
+            setTomar((prev) => {
+              const next = new Set(prev);
+              if (tomada) next.delete(id);
+              else next.add(id);
+              return next;
+            });
+          }}
+        >
+          {tomada ? "Deshacer" : "Tomar"}
+        </button>
+      </span>
+    );
+  }
+
   function copiarPermisos() {
     if (!copiarDe) return;
     setSeleccionados(new Set(asignaciones[copiarDe] ?? []));
@@ -146,6 +177,7 @@ export function PermisosPanel({
     const result = await asignarSubmodulos({
       usuario_id: usuario.id,
       submodulo_ids: [...seleccionados],
+      tomar_ids: [...tomar].filter((id) => seleccionados.has(id)),
     });
     setEnviando(false);
 
@@ -162,8 +194,9 @@ export function PermisosPanel({
     for (const id of new Set([...original, ...seleccionados])) {
       if (original.has(id) !== seleccionados.has(id)) count++;
     }
+    for (const id of tomar) if (seleccionados.has(id)) count++;
     return count;
-  }, [original, seleccionados]);
+  }, [original, seleccionados, tomar]);
 
   const otros = todos.filter((u) => u.id !== usuario.id && u.activo);
 
@@ -305,6 +338,7 @@ export function PermisosPanel({
                         <span className="truncate t-body-m text-text-primary">{vista.nombre}</span>
                         <span className="badge badge-info shrink-0">Vista</span>
                         {aviso(vista.id)}
+                        {delegacion(vista.id)}
                       </label>
                       {funciones.length > 0 && (
                         <button
@@ -334,6 +368,7 @@ export function PermisosPanel({
                         <span className="truncate t-body-m text-text-primary">{s.nombre}</span>
                         <span className="badge badge-neutral shrink-0">Función</span>
                         {aviso(s.id)}
+                        {delegacion(s.id)}
                       </label>
                     ))}
                   </div>

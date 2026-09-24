@@ -955,7 +955,12 @@ export type Database = {
         Returns: undefined
       }
       asignar_submodulos: {
-        Args: { p_admin: string; p_submodulos: string[]; p_usuario: string }
+        Args: {
+          p_admin: string
+          p_submodulos: string[]
+          p_tomar?: string[]
+          p_usuario: string
+        }
         Returns: undefined
       }
       copiar_plantilla: { Args: { p_plantilla: string }; Returns: string }

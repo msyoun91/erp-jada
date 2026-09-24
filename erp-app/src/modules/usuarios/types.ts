@@ -26,6 +26,7 @@ export type ResetearPasswordForm = z.infer<typeof resetearPasswordSchema>;
 export const asignarSubmodulosSchema = z.object({
   usuario_id: z.string().uuid(),
   submodulo_ids: z.array(z.string().uuid()),
+  tomar_ids: z.array(z.string().uuid()).optional(),
 });
 
 export type AsignarSubmodulosForm = z.infer<typeof asignarSubmodulosSchema>;

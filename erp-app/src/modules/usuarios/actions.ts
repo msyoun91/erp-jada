@@ -238,6 +238,7 @@ export async function asignarSubmodulos(input: AsignarSubmodulosForm) {
     p_admin: adminId,
     p_usuario: parsed.data.usuario_id,
     p_submodulos: parsed.data.submodulo_ids,
+    p_tomar: parsed.data.tomar_ids,
   });
 
   if (error) {

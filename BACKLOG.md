@@ -6,16 +6,6 @@ y la entrada se borra de este archivo.
 
 ---
 
-## usuarios — equipos y delegación de permisos
-
-Decidido el 2026-09-23. Base completa: esquema en `sql/104`, reglas en `sql/105`, pestaña Equipos del
-admin en `sql/106` (tests en `sql/tests/usuarios_equipos.sql`), vista Mi equipo. Falta:
-- **"Gana el admin" explícito:** `asignar_submodulos` no cambia de dueño una fila que ya está activa,
-  así que guardar el panel no se apropia de lo delegado. Para que el admin tome una fila del delegador
-  hace falta un gesto propio en el panel (y un parámetro o función que lo exprese).
-
-Todo está escrito en `decisiones/usuarios.md` → *Equipos y delegación de permisos*.
-
 ## tareas — el SQL del módulo, en curso
 
 `sql/112` (esquema, catálogo, entes, visibilidad) y `sql/113` (escrituras y reglas: quién escribe

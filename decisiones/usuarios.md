@@ -126,7 +126,12 @@ mostrando (`huerfanas`) para no llegar al error.
 **`asignar_submodulos` reemplaza el "desactivar todo + upsert" de la action.** Con cascadas, apagar un
 permiso del delegador aunque sea un instante se lo saca a su equipo. La función apaga solo lo que sale,
 prende lo que entra, y lo que ya estaba activo conserva `otorgada_por`. Por eso guardar el panel no se
-apropia de lo delegado; "gana el admin" como gesto explícito quedó en `BACKLOG.md`.
+apropia de lo delegado; "gana el admin" es un gesto aparte (abajo).
+
+**"Gana el admin" es el botón "Tomar" del panel de permisos (`sql/121`).** Cada fila delegada muestra
+"Delegado por X" y "Tomar"; al guardar, esas filas van en `p_tomar` y pasan a `otorgada_por = admin`,
+salvo que se hayan desmarcado. Parámetro de `asignar_submodulos` y no función aparte: el admin ya guarda
+todo desde el mismo panel. `getDelegadas()`, `PermisosPanel.tsx`.
 
 **La salida del delegador es `quitar_delegador`, separada de desactivar o sacar del equipo.** Desactivar
 también banea en auth, que está fuera de la transacción, así que no hay forma de hacerlo atómico

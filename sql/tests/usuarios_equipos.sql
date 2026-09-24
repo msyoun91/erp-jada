@@ -1,8 +1,8 @@
--- Verificación de sql/105 y sql/106: techo, un delegador por equipo, cascadas,
+-- Verificación de sql/105, sql/106 y sql/121: techo, un delegador por equipo, cascadas,
 -- heredero y las escrituras de la pestaña Equipos; desde sql/112, la
 -- delegación lleva `tareas_equipo` y requiere `tareas_ver`. NO es una
 -- migración: todo corre dentro de una transacción que termina en ROLLBACK.
--- Correr después de aplicar sql/112.
+-- Correr después de aplicar sql/121.
 --
 -- Arma su propio mundo: cinco usuarios (A admin, D delegador, M1 y M2
 -- miembros, I independiente), el equipo T y un módulo `prueba105` con V (vista
@@ -316,6 +316,30 @@ SELECT pg_temp.caso('36 V vuelve a ser delegable', 'true',
 SELECT pg_temp.caso('37 usuarios nunca es delegable',
   '23514', pg_temp.intentar(format('SELECT fijar_delegables(%L, %L)',
     pg_temp.id('A'), pg_temp.ids('V','ver'))));
+
+-- ============================================================
+-- sql/121 — "gana el admin" explícito
+-- ============================================================
+-- M1 vuelve a T y M2 (delegador) le da V.
+SELECT pg_temp.intentar(format('SELECT asignar_equipo(%L, %L, %L)',
+  pg_temp.id('A'), pg_temp.id('M1'), pg_temp.id('T')));
+SELECT pg_temp.intentar(format('SELECT delegar_submodulos(%L, %L)',
+  pg_temp.id('M1'), pg_temp.ids('V')), 'M2');
+
+SELECT pg_temp.caso('38 guardar el panel no se apropia',
+  'ok', pg_temp.intentar(format('SELECT asignar_submodulos(%L, %L, %L)',
+    pg_temp.id('A'), pg_temp.id('M1'), pg_temp.ids('W','V'))));
+SELECT pg_temp.caso('38 M1.V sigue de M2', 'on:M2', pg_temp.fila('M1','V'));
+
+SELECT pg_temp.caso('39 el admin toma V',
+  'ok', pg_temp.intentar(format('SELECT asignar_submodulos(%L, %L, %L, %L)',
+    pg_temp.id('A'), pg_temp.id('M1'), pg_temp.ids('W','V'), pg_temp.ids('V'))));
+SELECT pg_temp.caso('39 M1.V pasa al admin', 'on:A', pg_temp.fila('M1','V'));
+
+SELECT pg_temp.caso('40 M2 ya no la revoca',
+  'ok', pg_temp.intentar(format('SELECT delegar_submodulos(%L, %L)',
+    pg_temp.id('M1'), '{}'::uuid[]), 'M2'));
+SELECT pg_temp.caso('40 M1.V se queda', 'on:A', pg_temp.fila('M1','V'));
 
 SELECT caso, esperado, obtenido, ok FROM r ORDER BY caso;
 
