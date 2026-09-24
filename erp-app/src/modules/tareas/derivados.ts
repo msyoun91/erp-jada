@@ -69,3 +69,28 @@ export function compararMision(a: PasoOrden, b: PasoOrden) {
     a.created_at.localeCompare(b.created_at)
   );
 }
+
+type Recibible = { usuario_id: string | null; equipo_id: string | null; pedido: boolean; puede_recibir: boolean };
+
+function buscar<T extends Recibible>(asignables: T[], id: string | null) {
+  return id ? asignables.find((a) => a.usuario_id === id || a.equipo_id === id) : undefined;
+}
+
+// Espeja `tareas_puede_recibir` a través de `tareas_asignables()`: quien no
+// figura está inactivo.
+export function puedeRecibir(asignables: Recibible[], id: string | null) {
+  return buscar(asignables, id)?.puede_recibir === true;
+}
+
+// Huérfano (Todas): abierto, con responsable o asignado de un paso abierto
+// que ya no puede recibir.
+export function esHuerfano(
+  hilo: { activo: boolean; estado: string; responsable_id: string; tareas: { activo: boolean; estado: EstadoTarea; asignado_id: string | null; asignado_equipo_id: string | null }[] },
+  asignables: Recibible[]
+) {
+  if (!hilo.activo || hilo.estado !== "abierto") return false;
+  if (!puedeRecibir(asignables, hilo.responsable_id)) return true;
+  return hilo.tareas.some(
+    (t) => t.activo && estaAbierto(t.estado) && !puedeRecibir(asignables, t.asignado_id ?? t.asignado_equipo_id)
+  );
+}

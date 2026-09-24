@@ -23,13 +23,14 @@ export function HilosView({
   hilos,
   yo,
   nombres,
-  equipo = false,
+  vacio,
 }: {
   hilos: HiloResumen[];
   yo: string;
   nombres: Record<string, string>;
-  // En la bandeja de Equipo: sin crear, que un hilo nuevo es de quien lo crea.
-  equipo?: boolean;
+  // En Equipo y en Todas: sin crear, que un hilo nuevo es de quien lo crea;
+  // `vacio` es el texto de la lista vacía.
+  vacio?: string;
 }) {
   const [texto, setTexto] = useState("");
   const [estado, setEstado] = useState<Filtro>("abierto");
@@ -58,7 +59,7 @@ export function HilosView({
             </option>
           ))}
         </select>
-        {!equipo && (
+        {!vacio && (
           <button className="btn btn-primary" onClick={() => setCreando(true)}>
             <Plus size={16} />
             Nuevo hilo
@@ -73,9 +74,8 @@ export function HilosView({
           <p className="t-h3">{hilos.length === 0 ? "Sin hilos todavía" : "Sin resultados"}</p>
           <p className="t-body-m mt-1">
             {hilos.length === 0
-              ? equipo
-                ? "Acá aparecen los hilos donde participa alguien del equipo."
-                : 'Acá aparecen los hilos que llevás y los que tienen un paso tuyo. Creá uno con "Nuevo hilo".'
+              ? (vacio ??
+                'Acá aparecen los hilos que llevás y los que tienen un paso tuyo. Creá uno con "Nuevo hilo".')
               : "Probá con otro término o cambiá el filtro de estado."}
           </p>
         </div>
@@ -121,6 +121,7 @@ export function HilosView({
                     )}
                   </p>
                 </div>
+                {!h.activo && <span className="badge badge-neutral">Desactivado</span>}
                 <span className={`badge ${ESTADO_HILO[h.estado].badge}`}>{ESTADO_HILO[h.estado].label}</span>
                 <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
               </Link>

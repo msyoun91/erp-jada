@@ -34,3 +34,10 @@ todavía. Los miembros salen de `tareas_asignables()` sin `pedido`.
 **Acciones en la fila, como en Misión.** Pedido: Aceptar · Rechazar · Repartir. Al equipo: Completar
 (si no espera al anterior) · Poner en espera · Repartir. Repartir = `ReasignarModal` con
 `soloMiEquipo`. Hilos reusa `HilosView` sin "Nuevo hilo": un hilo nuevo es de quien lo crea.
+
+## Todas (2026-09-24)
+
+**Todas = todos los hilos, con filtro Huérfanos · Desactivados.** Huérfano (`esHuerfano`, con test):
+abierto y activo, con responsable o asignado de un paso abierto que ya no puede recibir. El admin
+transfiere o reasigna desde el hilo. `?responsable=` (del aviso "hilos huérfanos") suma el filtro
+"De {persona}": lo que lleva o tiene abierto. Reusa `HilosView` sin "Nuevo hilo".

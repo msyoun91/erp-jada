@@ -2,7 +2,7 @@
 // desde erp-app (Node despoja los tipos solo).
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { compararMision, estaBloqueado, estaEnEspera, estaVencido, ordenarPasos } from "./derivados.ts";
+import { compararMision, esHuerfano, estaBloqueado, estaEnEspera, estaVencido, ordenarPasos } from "./derivados.ts";
 import type { EstadoTarea } from "./types.ts";
 
 type P = { id: string; paso_anterior_id: string | null; estado: EstadoTarea; created_at: string };
@@ -66,4 +66,24 @@ test("misión: prioridad, después vence (sin fecha al final), después alta", (
     .sort(compararMision)
     .map((x) => x.id);
   assert.deepEqual(orden, ["b", "e", "c", "d", "f", "a"]);
+});
+
+const asignables = [
+  { usuario_id: "ana", equipo_id: null, pedido: false, puede_recibir: true },
+  { usuario_id: "beto", equipo_id: null, pedido: false, puede_recibir: false },
+  { usuario_id: "caro", equipo_id: null, pedido: true, puede_recibir: true },
+];
+
+test("huérfano: responsable o asignado abierto que no recibe; inactivo no figura", () => {
+  const hilo = (responsable_id: string, asignado: string, estado: EstadoTarea = "pendiente") => ({
+    activo: true,
+    estado: "abierto",
+    responsable_id,
+    tareas: [{ activo: true, estado, asignado_id: asignado, asignado_equipo_id: null }],
+  });
+  assert.equal(esHuerfano(hilo("ana", "ana"), asignables), false);
+  assert.equal(esHuerfano(hilo("beto", "ana"), asignables), true);
+  assert.equal(esHuerfano(hilo("ana", "dani"), asignables), true);
+  assert.equal(esHuerfano(hilo("ana", "dani", "completada"), asignables), false);
+  assert.equal(esHuerfano({ ...hilo("beto", "ana"), estado: "cerrado" }, asignables), false);
 });

@@ -164,7 +164,7 @@ function Contenido({ pasos, cadena, hilos }: Datos) {
 
       {tipo === "pedidos" && lista(pedidos, "Sin pedidos por decidir.")}
       {tipo === "equipo" && lista(alEquipo, "Nada asignado al equipo sin repartir.")}
-      {tipo === "hilos" && <HilosView hilos={hilosFiltrados} yo={yo} nombres={nombres} equipo />}
+      {tipo === "hilos" && <HilosView hilos={hilosFiltrados} yo={yo} nombres={nombres} vacio="Acá aparecen los hilos donde participa alguien del equipo." />}
 
       {dialogo?.tipo === "rechazar" && <RechazarModal paso={dialogo.paso} devolver={false} onClose={() => setDialogo(null)} />}
       {dialogo?.tipo === "completar" && <CompletarModal paso={dialogo.paso} onClose={() => setDialogo(null)} />}

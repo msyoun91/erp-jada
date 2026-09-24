@@ -31,10 +31,10 @@ export async function getAsignables(): Promise<Asignable[]> {
   return data;
 }
 
-export type PasoResumen = Pick<Tarea, "id" | "estado" | "asignado_id" | "vence" | "activo">;
+export type PasoResumen = Pick<Tarea, "id" | "estado" | "asignado_id" | "asignado_equipo_id" | "vence" | "activo">;
 export type HiloResumen = Hilo & { tareas: PasoResumen[] };
 
-const RESUMEN = "*, tareas(id, estado, asignado_id, vence, activo)";
+const RESUMEN = "*, tareas(id, estado, asignado_id, asignado_equipo_id, vence, activo)";
 
 // Hilos: donde participo como responsable o asignado de algún paso activo. La
 // RLS deja ver más (el equipo del delegador, todo al admin); eso va en Equipo
@@ -155,4 +155,12 @@ export async function getEquipo(
   if (error) throw error;
 
   return { pasos: pasos.data, cadena: await getCadena(pasos.data), hilos };
+}
+
+// Todas: lo que la RLS deja ver al admin, desactivados incluidos.
+export async function getTodas(): Promise<HiloResumen[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("tareas_hilos").select(RESUMEN).order("updated_at", { ascending: false });
+  if (error) throw error;
+  return data;
 }
