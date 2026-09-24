@@ -65,7 +65,8 @@ Entes
                   pendiente; afuera = solicitada
                 repartir o reasignar del delegador dentro de su equipo: conserva el estado
                   (el equipo ya decidió o decide)
-            · derivados, no guardados: bloqueada (previo sin completar) · en espera
+            · derivados, no guardados: bloqueada (el primer previo no cancelado, subiendo la
+              cadena, sin completar) · en espera
               (espera_hasta futura) · vencida
             · datos {titulo} · ruta /tareas/paso/{id} (abre el hilo en ese paso)
             · submódulo tareas_ver · visibilidad = la de su hilo · no se comparte · emite, no dispara
@@ -94,9 +95,10 @@ No son entes
 │                        tareas_pedir; sin él, la plantilla no se muestra
 │                      · paso sin asignado fijo: se elige al usarla
 ├── notas            — de paso y de hilo, solo se agregan · anota quien ve el hilo (insert =
-│                      select; también en pasos congelados)
+│                      select; también en pasos congelados) · tareas_administrar las oculta
 ├── tareas_ediciones — log de contenido de hilo y paso: campo, anterior, nuevo, quién, cuándo ·
-│                      lo escribe un trigger; nadie inserta, edita ni borra
+│                      lo escribe un trigger; nadie inserta, edita ni borra · tareas_administrar
+│                      oculta una entrada
 └── vínculos         — tareas_vinculos, derivada por la base de las referencias del texto
 
 Relaciones
@@ -109,6 +111,7 @@ Relaciones
 │                              · la persona: activa y con tareas_ver · el equipo: con
 │                                delegador activo
 ├── tarea → tarea            — paso anterior: mismo hilo, inmutable, sin ciclos; vacío = paralelo
+│                              · no bifurca: un solo siguiente por paso (unique de sql/017)
 ├── tarea → cualquier ente   — referencia {ente:uuid} + copia del nombre en el texto
 │                              · link ↗ (ficha al lado) si lo puede abrir; texto plano si no
 │                              · tareas_vinculos derivada (rol + plantilla si vino de un disparo)
@@ -123,7 +126,7 @@ Acciones
 │          · completar · reabrir · cancelar · agregar nota · referenciar ente · desactivar
 │          (desde el último)
 │          ├── asignado: acepta, rechaza, espera, completa, reabre lo suyo; suma pasos
-│          │   asignados a sí mismo, colgados del suyo
+│          │   asignados a sí mismo, en paralelo (sin previo)
 │          ├── delegador del equipo receptor: decide también los pedidos a sus miembros
 │          ├── responsable del hilo: edita, reasigna, cancela, reabre, resuelve rechazados;
 │          │   NO completa pasos de otro
@@ -154,11 +157,13 @@ Eventos que emite
     ├── paso reasignado   → el responsable del hilo, cuando lo movió el delegador, la baja o el
     │                       cambio de equipo
     ├── paso quitado      → el asignado anterior, en toda reasignación hecha por una persona
-    ├── paso a reasignar  → el responsable, cuando la recurrencia o un disparo no pudo usar el
-    │                       asignado
+    ├── paso a reasignar  → el responsable, cuando abrir el paso (recurrencia, disparo, reabrir,
+    │                       reactivar) no pudo usar el asignado
     ├── paso sumado       → el responsable, cuando lo sumó un asignado
     ├── paso huérfano     → el responsable, cuando su asignado se fue sin delegador que lo reciba
     │                       o perdió tareas_ver
+    ├── hilos huérfanos   → quienes tienen tareas_administrar, uno por hecho (la baja, la pérdida
+    │                       de tareas_ver), no por hilo: "Pedro dejó 5 hilos huérfanos" → Todas filtrada
     ├── hilo dado de baja → los asignados de pasos abiertos
     ├── paso dado de baja → el asignado, si no lo desactivó él
     ├── paso completado   → el responsable del hilo
@@ -234,14 +239,22 @@ miembros de su equipo, o desde el equipo a un miembro. Es una excepción por col
 se avisa al responsable del hilo.
 
 **Con `tareas_administrar` se asigna directo.** El admin del sistema no está en ningún equipo
-(`US002`), así que sin esto todo lo suyo sería pedido; el paso nace `pendiente`.
+(`US002`), así que sin esto todo lo suyo sería pedido; el paso nace `pendiente`. Ampliado el
+2026-09-24: con `tareas_administrar` nunca se genera `solicitada` —ni al asignar, ni al reabrir, ni
+al editar—; si no, cada edición del admin devolvía sus pasos a pedir. Avisos y firma, igual.
+
+**"Pedido" se calcula en el momento, sin columna (2026-09-24).** Asignado afuera del equipo del
+responsable, hoy. Tras transferir un hilo al equipo del asignado, lo que era pedido pasa a interno:
+editarlo avisa ("paso editado") y no lo devuelve a `solicitada`.
 
 **Pedir es un acto del responsable del hilo, y el aviso de la respuesta va al responsable actual.**
 Sin columna `pedido_por`: quién pidió en su momento queda en `eventos`.
 
-**El asignado puede sumar pasos para sí, colgados del suyo.** Sirve para subdividir su trabajo sin
+**El asignado puede sumar pasos para sí, en paralelo.** Sirve para subdividir su trabajo sin
 pedírselo al responsable, que recibe el aviso. El contenido sigue siendo del responsable después de
-creado.
+creado. Corregido el 2026-09-24: eran "colgados del suyo", que los ponía después (bloqueados hasta
+completar lo que querían subdividir) y bifurcaba la cadena si el suyo ya tenía siguiente. Sin
+previo no bloquean nada y la cadena no se toca.
 
 **Desactivar un hilo con pasos abiertos de otros se puede, y les avisa.** Solo si no tiene pasos
 completados (2026-09-24, misma regla que el paso): desactivar es error de carga, y lo desactivado lo
@@ -290,13 +303,16 @@ pasos abiertos —también los pedidos de otros equipos que aceptó— pasan al 
 anterior, como en la baja. Lo que aceptó lo aceptó como miembro de ese equipo: es compromiso del
 equipo, no de la persona, y quien cambia no sigue lo del equipo anterior. Así tampoco importa que al
 cambiar pierda lo delegado (`tareas_ver` incluido): no le queda nada abierto. Trigger de tareas
-sobre `equipos_miembros`.
+sobre `equipos_miembros`. Quien entra desde independiente no entrega nada (no hay anterior), pero lo
+abierto suyo —hilos que lleva, pasos asignados— toma `equipo_id` = el equipo nuevo; si no, el
+delegador nuevo no veía el trabajo en curso. Lo cerrado queda `NULL` (2026-09-24).
 
 **Sin destino, queda huérfano (2026-09-24).** Si el equipo no tiene delegador (se creó sin
 designarlo, o salió sin heredero) o la persona es independiente, la baja y el cambio de equipo no
 mueven nada: hilos y pasos quedan con ella. Todas suma el filtro "huérfanos" (responsable o
 asignado inactivo o sin `tareas_ver`) y el admin transfiere desde ahí. Perder `tareas_ver` a mano
-también deja huérfano, sin mover nada. El responsable de cada hilo con un paso huérfano recibe aviso: puede reasignarlo él sin esperar al admin. Se descartó exigir
+también deja huérfano, sin mover nada. El responsable de cada hilo con un paso huérfano recibe aviso: puede reasignarlo él sin esperar al admin. Un hilo huérfano no tiene a quién avisar, así que
+avisa a quienes tienen `tareas_administrar`: uno agrupado por hecho, no uno por hilo (2026-09-24). Se descartó exigir
 delegador en todo equipo: tocaba `usuarios` y la baja del último miembro activo seguía sin destino
 —bloquearla no sirve, a un despedido se lo banea en el acto—.
 
@@ -348,7 +364,12 @@ obligatoria y queda firmado en `eventos`. Aplica igual si esa función la tiene 
 **Reabrir un paso reabre en cascada sus siguientes completados (2026-09-24).** Elegido por el
 usuario sobre "reabrir desde el final". Si no, lo que siguió quedaba completado sobre un previo en
 corrección, y el siguiente abierto seguía habilitado. Recorre la cadena entera; los cancelados no
-se tocan. Cada asignado recibe "paso reabierto"; un pedido reabierto por otro vuelve a `solicitada`
+se reabren pero se atraviesan.
+
+**Un cancelado es transparente en la cadena (2026-09-24).** "Bloqueada" mira el primer previo no
+cancelado subiendo la cadena, y la cascada sigue de largo. Con Medir → Revisar (cancelado) →
+Comprar, mirar solo el previo directo habilitaba Comprar con Medir pendiente, y la cascada se
+frenaba en Revisar. `master` miraba solo el directo; `cancelada no traba` se trae con este ajuste. Cada asignado recibe "paso reabierto"; un pedido reabierto por otro vuelve a `solicitada`
 (*Reabrir un pedido…*). Lo abierto más abajo queda bloqueado solo, por la regla de siempre.
 
 **Solo se desactiva un paso no congelado (2026-09-24).** `solicitada`, `pendiente` o `rechazada`;
@@ -360,6 +381,11 @@ sacar un completado, primero se reabre, y reabrir avisa al asignado.
 `eventos` no guarda valor anterior (`decisiones/global/entes.md`), por eso tabla aparte escrita por
 trigger. Completado o cancelado no se edita: nota o reabrir, que emite y avisa.
 
+**`tareas_administrar` oculta una nota o una entrada del historial (2026-09-24).** `activo = false`
+con quién y cuándo, nunca DELETE; la RLS deja de mostrarla. Si no, una clave o un dato personal
+pegado por error, o el texto viejo de una descripción corregida, quedaba para siempre a la vista de
+todos los que ven el hilo. Ocultar no es borrar: lo filtrado se da por visto (una clave, se cambia).
+
 **Editar título, descripción o vencimiento de un pedido aceptado lo devuelve a `solicitada`.**
 Elegido por el usuario sobre "solo avisar": lo aceptado no cambia sin volver a aceptarse. La
 prioridad no lo devuelve: ordena, no cambia el trabajo.
@@ -369,6 +395,12 @@ no, rechazar → cancelar → reabrir dejaba `pendiente` algo que el receptor ha
 pedido cancelado antes de responderse volvía aceptado sin que nadie lo aceptara. Es la regla de
 nacimiento aplicada al reabrir: afuera del equipo del responsable = pedido, exige `tareas_pedir`.
 El asignado que reabre lo suyo lo retoma él: `pendiente`.
+
+**Abrir un paso es una sola regla: crear, reabrir (también en cascada), reactivar y copiar en la
+recurrencia (2026-09-24).** Estado de nacimiento y chequeo de receptor: si el asignado no puede
+recibir, queda en el responsable con "paso a reasignar". Si no, la cascada o la reactivación
+abrían en silencio pasos de alguien que ya se fue. "Paso huérfano" queda para lo que pasa después:
+la baja o la pérdida de permiso de quien ya lo tenía.
 
 **El agente IA trabaja como persona.** Sin reglas propias; la base no distingue agente de persona
 (`decisiones/usuarios.md`) y el usuario no quiere que lo haga por ahora.
@@ -414,6 +446,12 @@ responsable del hilo creado— con aviso "paso a reasignar", como la recurrencia
 no puede recibir, el disparo se saltea; la baja apaga sus activaciones. Un disparo nunca voltea la
 transacción del emisor: lo inesperado se registra y se avisa al activador, y la obra se crea igual.
 
+**Una plantilla que dejó de valer se marca "a revisar" para su dueño (2026-09-24).** Calculado al
+leer, en Mis plantillas: "Pedro ya no es del equipo" o "ya no puede recibir". Si el fijo se va a
+otro equipo sigue pudiendo recibir, pero pasa a ser pedido: la plantilla se oculta a quien no tiene
+`tareas_pedir` y nadie sabía por qué. Sin columnas ni triggers; los miembros no la ven hasta que el
+dueño la corrige.
+
 **Plantillas por evento esperan a su primer emisor.** Hoy ningún módulo emite; se construyen las
 manuales y `disparar_plantillas` se conecta después.
 
@@ -424,6 +462,11 @@ manuales y `disparar_plantillas` se conecta después.
 Precisado el 2026-09-24: ahora reabre cualquier asignado, y en cascada, así que quien cierra no
 sabe que ya se generó. El hilo nuevo guarda `recurrencia_de`; si ya existe un siguiente, el cierre
 pregunta "ya generó <link> — ¿generar otro?", con "no" por defecto. De paso, navega entre ciclos.
+
+**Cerrar un hilo recurrente pregunta si sigue (2026-09-24).** "Generar el siguiente" o "Terminar la
+recurrencia" (saca la recurrencia y no genera nada). Por defecto genera en un cierre común y termina
+en "Cancelar pendientes y cerrar": si no, cerrar algo que ya no va hacía nacer otro ciclo con sus
+avisos. Absorbe el aviso de arriba: si ya hay siguiente, "generar" pasa a "¿generar otro?", con "no".
 
 **El siguiente copia los pasos, sin lo hecho.** Títulos, descripciones, cadena, asignados y
 prioridad, todo sin completar; los vencimientos se corren por el intervalo desde el vencimiento
@@ -441,8 +484,8 @@ a Juan.
 
 ## Qué se trae de `master`
 
-- Triggers de la cadena (`sql/017`): bloqueada derivada, `cancelada` no traba, previo inmutable,
-  desactivar desde la cola.
+- Triggers de la cadena (`sql/017`): bloqueada derivada, `cancelada` no traba (ahora transparente:
+  *Un cancelado es transparente en la cadena*), previo inmutable, no bifurca, desactivar desde la cola.
 - Vencimiento tras el previo (`sql/053`) y fecha de Argentina en las funciones (`sql/078`).
 - Notas append-only (`sql/008`, `sql/077`).
 - Motor de plantillas: `guardar_plantilla`, `usar_plantilla`, `rellenar_datos`, condiciones por
