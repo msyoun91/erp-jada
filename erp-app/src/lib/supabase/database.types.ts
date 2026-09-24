@@ -980,10 +980,30 @@ export type Database = {
         | "estado"
         | "relacion_alta"
         | "relacion_baja"
+        | "transferencia"
       tipo_notificacion:
         | "miembro_nuevo"
         | "permiso_otorgado"
         | "delegador_designado"
+        | "tarea_asignada"
+        | "pedido_recibido"
+        | "paso_editado"
+        | "pedido_aceptado"
+        | "pedido_rechazado"
+        | "paso_reabierto"
+        | "hilo_transferido"
+        | "paso_habilitado"
+        | "paso_bloqueado"
+        | "paso_reasignado"
+        | "paso_quitado"
+        | "paso_a_reasignar"
+        | "paso_sumado"
+        | "paso_huerfano"
+        | "hilos_huerfanos"
+        | "hilo_dado_de_baja"
+        | "paso_dado_de_baja"
+        | "paso_completado"
+        | "paso_cancelado"
       tipo_regla_submodulo: "requiere" | "excluye"
       tipo_submodulo: "vista" | "funcion"
     }
@@ -1130,11 +1150,31 @@ export const Constants = {
         "estado",
         "relacion_alta",
         "relacion_baja",
+        "transferencia",
       ],
       tipo_notificacion: [
         "miembro_nuevo",
         "permiso_otorgado",
         "delegador_designado",
+        "tarea_asignada",
+        "pedido_recibido",
+        "paso_editado",
+        "pedido_aceptado",
+        "pedido_rechazado",
+        "paso_reabierto",
+        "hilo_transferido",
+        "paso_habilitado",
+        "paso_bloqueado",
+        "paso_reasignado",
+        "paso_quitado",
+        "paso_a_reasignar",
+        "paso_sumado",
+        "paso_huerfano",
+        "hilos_huerfanos",
+        "hilo_dado_de_baja",
+        "paso_dado_de_baja",
+        "paso_completado",
+        "paso_cancelado",
       ],
       tipo_regla_submodulo: ["requiere", "excluye"],
       tipo_submodulo: ["vista", "funcion"],

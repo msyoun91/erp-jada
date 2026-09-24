@@ -176,7 +176,7 @@ Log append-only y punto de escucha de los consumidores (`GUIDE_ENTES.md` §2.8).
 | id | uuid PK | |
 | ente | text FK → entes(codigo) | |
 | registro_id | uuid | sin FK — apunta a `entes.tabla` |
-| evento | enum `tipo_evento` (`alta`\|`baja`\|`reactivacion`\|`estado`\|`relacion_alta`\|`relacion_baja`) | `transferencia`, `compartido` y `revocado` entran con su primer emisor |
+| evento | enum `tipo_evento` (`alta`\|`baja`\|`reactivacion`\|`estado`\|`relacion_alta`\|`relacion_baja`\|`transferencia`) | `transferencia` desde `sql/115` (hilo); `compartido` y `revocado` entran con su primer emisor |
 | detalle | jsonb | default `{}` — `estado`: `{estado, anterior}`; `relacion_*`: `{ente, registro_id, rol}` |
 | actor_id | uuid FK → usuarios, nullable | `auth.uid()` de quien actuó; NULL desde `service_role` |
 | created_at | timestamptz | default `clock_timestamp()`: una sentencia emite varios y el orden queda |
@@ -188,9 +188,9 @@ RLS `eventos_select`: `etiqueta_registro(ente, registro_id) IS NOT NULL`, y para
 **Emisores** (INVOKER, para que un consumidor corra con la RLS de quien actuó):
 
 - `emitir_evento(ente, registro_id, evento, detalle)` — el INSERT. EXECUTE para `authenticated`; por RPC no inserta (la policy pide trigger).
-- `emitir_eventos_registro()` — trigger `AFTER INSERT OR UPDATE OF activo, estado`, `TG_ARGV = (ente)`: alta (solo si nace activo), reactivación, estado (si cambia de verdad o nace con valor), baja, en ese orden.
+- `emitir_eventos_registro()` — trigger `AFTER INSERT OR UPDATE OF activo, estado[, dueño]`, `TG_ARGV = (ente[, columna del dueño])`: alta (solo si nace activo), reactivación, estado (si cambia de verdad o nace con valor), transferencia `{de, a}` (si se pasó la columna del dueño y cambia), baja, en ese orden (`sql/115`).
 - `emitir_eventos_relacion()` — trigger sobre la puente, `AFTER INSERT OR UPDATE OF activo, roles`, `TG_ARGV = (ente, columna, ente relacionado, columna)`: un evento por rol que aparece o se va, del lado del primer ente.
 
-**Genéricas cross-módulo** (INVOKER, EXECUTE para `authenticated` porque las llama la policy): `etiqueta_registro(ente, id)` (rama `tareas` → `tareas_etiqueta`, `sql/112`; sin rama, NULL) y `puede_ver_relacion(ente, id, ente_rel, id_rel)` (sin ramas: false). Cada ente reemplaza el cuerpo sumando su `CASE e.modulo WHEN …`. `puede_abrir_registro`, `buscar_registros`, `relacionados_de_registro`, `puede_compartir_registro` y `compartir_registros` no existen todavía en esta rama.
+**Genéricas cross-módulo** (INVOKER, EXECUTE para `authenticated` porque las llama la policy): `etiqueta_registro(ente, id)` (rama `tareas` → `tareas_etiqueta`, `sql/112`; sin rama, NULL) y `puede_ver_relacion(ente, id, ente_rel, id_rel)` (rama `tareas`: quien ve el paso ve quién lo tuvo asignado, `sql/115`; sin rama, false). Cada ente reemplaza el cuerpo sumando su `CASE e.modulo WHEN …`. `puede_abrir_registro`, `buscar_registros`, `relacionados_de_registro`, `puede_compartir_registro` y `compartir_registros` no existen todavía en esta rama.
 
 Test: `sql/tests/entes_eventos.sql` (arma un ente de prueba con su puente y sus ramas, todo en `ROLLBACK`).

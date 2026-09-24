@@ -5,7 +5,7 @@ Rediseño desde cero (2026-09-23). La versión anterior vive en `master` (su `de
 archivos de esta carpeta no repiten nombres de los de `master`: los punteros viejos de
 `decisiones/global/` (`plantillas.md`, `visibilidad.md`, `integracion.md`…) siguen siendo de allá.
 
-> **Estado: ficha aprobada (2026-09-24); `sql/112`, `sql/113` y `sql/114` aplicados; falta el resto (ver `BACKLOG.md`).** Las revisiones de agujeros (2026-09-23 y
+> **Estado: ficha aprobada (2026-09-24); `sql/112` a `sql/115` aplicados; falta el resto (ver `BACKLOG.md`).** Las revisiones de agujeros (2026-09-23 y
 > 2026-09-24, por escenarios) quedaron volcadas en la ficha y en los archivos por tema; lo del 24
 > lleva fecha en cada decisión. Lo que cambie se corrige acá primero. Leer este índice y después
 > solo el archivo del tema.
@@ -21,6 +21,7 @@ archivos de esta carpeta no repiten nombres de los de `master`: los punteros vie
 | `registro.md` | `tareas_ediciones` y congelado · ocultar nota o historial · referencias en el texto · RLS de `tareas_vinculos` · ficha al lado |
 | `catalogo.md` | Toda plantilla es personal · copia independiente · pasos sin asignado · plantilla que pide afuera · nunca falla por un asignado · "a revisar" · plantillas por evento |
 | `recurrencia.md` | Recurrencia por hilo · intervalo · cada cierre genera · preguntar si sigue · qué copia el siguiente |
+| `avisos.md` | De dónde salen · salidas con título sin link · todo lo que entra a `solicitada` es pedido · una vez por persona y cambio · quitado no avisa a quien se fue · bloqueado solo al insertar antes · huérfanos al cierre · `transferencia` con `{de, a}` |
 | `escrituras.md` | Directo o sistema · desactivar y transferir por DEFINER · la cascada no exige `tareas_pedir` · desactivar el hilo no toca sus pasos · reabrir solo el estado · no se completa sin aceptar · transferir afuera contra el equipo guardado · plazo en días derivado · insertar antes por la forma · nota del admin · qué guarda el historial |
 
 ## Ficha del módulo
@@ -154,7 +155,7 @@ Acciones
                · copiar del Catálogo
 
 Eventos que emite
-├── hilo:  alta · estado · baja · reactivacion · transferencia ({anterior, nuevo}; entra al enum
+├── hilo:  alta · estado · baja · reactivacion · transferencia ({de, a}; entra al enum
 │          tipo_evento con este emisor)
 ├── tarea: alta · estado (todo cambio, detalle {anterior, nuevo}) · baja · reactivacion
 │          · relacion_alta / relacion_baja (asignado) — el valor anterior del contenido va en
@@ -164,8 +165,8 @@ Eventos que emite
     ├── (asignado = equipo → le llega a su delegador, en todos los avisos "al asignado")
     ├── tarea asignada    → el asignado
     ├── pedido recibido   → el asignado, y el delegador de la persona
-    │                       (también cuando un pedido editado vuelve a solicitada, y al volver
-    │                       a pedir un rechazado) · lo que asigna tareas_administrar nace
+    │                       (todo lo que entra a solicitada: también un pedido editado, volver
+    │                       a pedir un rechazado y reabrir un pedido) · lo que asigna tareas_administrar nace
     │                       pendiente: "tarea asignada", solo al asignado
     ├── paso editado      → el asignado, por título, descripción o vencimiento, si no volvió a
     │                       solicitada (ahí va "pedido recibido"); sale de
@@ -181,7 +182,7 @@ Eventos que emite
     ├── paso quitado      → el asignado anterior, en toda reasignación hecha por una persona
     ├── paso a reasignar  → el responsable, cuando abrir el paso (recurrencia, disparo, reabrir,
     │                       reactivar) no pudo usar el asignado
-    ├── paso sumado       → el responsable, cuando lo sumó un asignado
+    ├── paso sumado       → el responsable, cuando lo sumó otro (un asignado, el admin)
     ├── paso huérfano     → el responsable, cuando su asignado se fue sin delegador que lo reciba
     │                       o perdió tareas_ver
     ├── hilos huérfanos   → quienes tienen tareas_administrar, uno por hecho (la baja, la pérdida

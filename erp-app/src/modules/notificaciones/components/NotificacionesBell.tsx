@@ -2,7 +2,30 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, KeyRound, ShieldCheck, UserPlus, type LucideIcon } from "lucide-react";
+import {
+  Archive,
+  ArrowRightLeft,
+  Ban,
+  Bell,
+  CheckCheck,
+  CircleCheck,
+  CirclePlay,
+  CircleX,
+  ClipboardList,
+  Inbox,
+  KeyRound,
+  ListPlus,
+  Lock,
+  PencilLine,
+  RotateCcw,
+  ShieldCheck,
+  Shuffle,
+  TriangleAlert,
+  UserMinus,
+  UserPlus,
+  UserX,
+  type LucideIcon,
+} from "lucide-react";
 import { LABEL_MAP } from "@/components/layout/SidebarNav";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { formatFechaHora } from "@/lib/utils";
@@ -19,16 +42,73 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   miembro_nuevo: UserPlus,
   permiso_otorgado: KeyRound,
   delegador_designado: ShieldCheck,
+  tarea_asignada: ClipboardList,
+  pedido_recibido: Inbox,
+  paso_editado: PencilLine,
+  pedido_aceptado: CheckCheck,
+  pedido_rechazado: CircleX,
+  paso_reabierto: RotateCcw,
+  hilo_transferido: ArrowRightLeft,
+  paso_habilitado: CirclePlay,
+  paso_bloqueado: Lock,
+  paso_reasignado: Shuffle,
+  paso_quitado: UserMinus,
+  paso_a_reasignar: TriangleAlert,
+  paso_sumado: ListPlus,
+  paso_huerfano: UserX,
+  hilos_huerfanos: UserX,
+  hilo_dado_de_baja: Archive,
+  paso_dado_de_baja: Archive,
+  paso_completado: CircleCheck,
+  paso_cancelado: Ban,
 };
 const TEXTO: Record<TipoNotificacion, string> = {
   miembro_nuevo: "Se sumó a tu equipo",
   permiso_otorgado: "Te dieron acceso a",
   delegador_designado: "Ahora sos el delegador de",
+  tarea_asignada: "Te asignaron",
+  pedido_recibido: "Te pidieron",
+  paso_editado: "Cambió el paso",
+  pedido_aceptado: "Aceptaron tu pedido",
+  pedido_rechazado: "Rechazaron tu pedido",
+  paso_reabierto: "Se reabrió",
+  hilo_transferido: "Ahora sos responsable de",
+  paso_habilitado: "Ya podés empezar",
+  paso_bloqueado: "Quedó esperando un paso previo:",
+  paso_reasignado: "Se reasignó",
+  paso_quitado: "Ya no tenés asignado",
+  paso_a_reasignar: "Hay que reasignar",
+  paso_sumado: "Sumaron un paso:",
+  paso_huerfano: "Quedó sin asignado activo",
+  hilos_huerfanos: "Quedaron hilos huérfanos de",
+  hilo_dado_de_baja: "Se dio de baja el hilo",
+  paso_dado_de_baja: "Se dio de baja",
+  paso_completado: "Completaron",
+  paso_cancelado: "Se canceló",
 };
 const COLOR: Record<TipoNotificacion, string> = {
   miembro_nuevo: "text-brand-500",
   permiso_otorgado: "text-success-text",
   delegador_designado: "text-success-text",
+  tarea_asignada: "text-brand-500",
+  pedido_recibido: "text-brand-500",
+  paso_editado: "text-brand-500",
+  pedido_aceptado: "text-success-text",
+  pedido_rechazado: "text-error-text",
+  paso_reabierto: "text-warning-text",
+  hilo_transferido: "text-brand-500",
+  paso_habilitado: "text-success-text",
+  paso_bloqueado: "text-warning-text",
+  paso_reasignado: "text-brand-500",
+  paso_quitado: "text-warning-text",
+  paso_a_reasignar: "text-warning-text",
+  paso_sumado: "text-brand-500",
+  paso_huerfano: "text-error-text",
+  hilos_huerfanos: "text-error-text",
+  hilo_dado_de_baja: "text-warning-text",
+  paso_dado_de_baja: "text-warning-text",
+  paso_completado: "text-success-text",
+  paso_cancelado: "text-warning-text",
 };
 
 // `destino` → ruta. Cada rama de `notificaciones_listar` que devuelva un
@@ -36,6 +116,9 @@ const COLOR: Record<TipoNotificacion, string> = {
 const RUTA: Record<string, (id: string) => string> = {
   mi_equipo: () => "/usuarios/mi-equipo",
   usuarios: () => "/usuarios",
+  tarea: (id) => `/tareas/paso/${id}`,
+  hilo: (id) => `/tareas/${id}`,
+  tareas_todas: (id) => `/tareas/todas?responsable=${id}`,
 };
 
 // `permiso_otorgado` trae el módulo en `destino` y la vista en `etiqueta`: los

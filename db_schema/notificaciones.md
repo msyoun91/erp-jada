@@ -1,4 +1,4 @@
-# Notificaciones (`sql/107_notificaciones_infra.sql`, `sql/108_notificaciones_usuarios.sql` — corridas en Supabase vía MCP)
+# Notificaciones (`sql/107_notificaciones_infra.sql`, `sql/108_notificaciones_usuarios.sql`, `sql/115_tareas_avisos.sql` — corridas en Supabase vía MCP)
 
 Infra cross-módulo como `usuario_widgets` y `usuario_tutorial`: prefijo `usuario_`, RLS directo por `auth.uid()`, **sin submódulo y sin vista propia**. Decisión: `decisiones/global/infra.md` → *Notificaciones*.
 
@@ -11,6 +11,22 @@ Infra cross-módulo como `usuario_widgets` y `usuario_tutorial`: prefijo `usuari
 | `delegador_designado` | quien recibe | `usuario_submodulos` | alta o reactivación de `usuarios_delegar` — designación o herencia. `usuarios_equipo` que llega con la delegación no avisa aparte | nombre del equipo · `mi_equipo` |
 
 Las dos ramas piden la fila apuntada **activa**: miembro que se fue o permiso revocado → el aviso desaparece. Reactivar un permiso retira los avisos anteriores de esa misma fila (`activo = false`) antes de crear el nuevo. La versión con eventos de tareas y obras (`sql/038`…`sql/099`) vive en `master`.
+
+**Eventos de tareas (`sql/115`).** Diecinueve tipos; quién recibe cada uno, en la ficha
+(`decisiones/tareas/README.md` → *Eventos que emite*) y en `decisiones/tareas/avisos.md`. Salen de
+`tareas_avisar` (paso), `tareas_propagar` (habilitado, bloqueado), `tareas_hilos_avisar` (hilo) y
+`tareas_avisar_huerfanos` (baja y pérdida de `tareas_ver`); ver `db_schema/tareas.md` → *Avisos*.
+
+| entidad | tipos | resuelve | `destino` |
+|---|---|---|---|
+| `tareas` | `tarea_asignada`, `pedido_recibido`, `paso_editado`, `pedido_aceptado`, `pedido_rechazado` (`motivo` = `motivo_rechazo`), `paso_reabierto`, `paso_habilitado`, `paso_bloqueado`, `paso_reasignado`, `paso_quitado`, `paso_a_reasignar`, `paso_sumado`, `paso_huerfano`, `paso_dado_de_baja`, `paso_completado`, `paso_cancelado` | título del paso, con la RLS del lector | `tarea` |
+| `tareas_hilos` | `hilo_transferido`, `hilo_dado_de_baja` | título del hilo | `hilo` |
+| `usuarios` | `hilos_huerfanos` (a quienes tienen `tareas_administrar`) | nombre de quien los dejó; `motivo` = cuántos hilos abiertos le quedan que el lector ve; desaparece en 0 | `tareas_todas` |
+
+**Las salidas son la excepción a "apunta, no copia".** `paso_quitado`, `paso_dado_de_baja` y
+`hilo_dado_de_baja` avisan de algo que el destinatario ya no ve: `tareas_avisos_salida()` (DEFINER)
+da el título solo para esos tres tipos y solo de los avisos propios; `destino` va NULL salvo que
+todavía lo vea.
 
 ## Sumar un evento
 
@@ -28,8 +44,8 @@ Las dos ramas piden la fila apuntada **activa**: miembro que se fue o permiso re
 |---|---|---|
 | id | uuid PK | |
 | usuario_id | uuid FK → usuarios | destinatario |
-| tipo | enum `tipo_notificacion` | `miembro_nuevo` \| `permiso_otorgado` \| `delegador_designado` |
-| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos` |
+| tipo | enum `tipo_notificacion` | `miembro_nuevo` \| `permiso_otorgado` \| `delegador_designado` \| los diecinueve de tareas |
+| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos`, `tareas`, `tareas_hilos`, `usuarios` |
 | entidad_id | uuid | sin FK — apunta a varias tablas |
 | actor_id | uuid FK → usuarios, nullable | quién lo provocó. Null = evento del sistema |
 | leida_at | timestamptz, nullable | |
@@ -50,6 +66,6 @@ Las dos ramas piden la fila apuntada **activa**: miembro que se fue o permiso re
 
 ## Función `notificaciones_actores()`
 
-`SECURITY DEFINER`, EXECUTE para `authenticated`. Devuelve `id, nombre` de los actores de las notificaciones activas de `auth.uid()` — solo el nombre, nunca email ni teléfono. La usa `notificaciones_listar`.
+`SECURITY DEFINER`, EXECUTE para `authenticated`. Devuelve `id, nombre` de los actores de las notificaciones activas de `auth.uid()`, y de los usuarios apuntados (`entidad = 'usuarios'`) — solo el nombre, nunca email ni teléfono. La usa `notificaciones_listar`.
 
 El badge cuenta las no leídas **de esta lista**, no de la tabla.

@@ -3,9 +3,9 @@
 Rediseño desde cero (`sql/112`). Ficha y decisiones: `decisiones/tareas/` (índice en su `README.md`).
 El esquema de `master` es otro módulo: no se mezclan nombres de allá.
 
-**Estado:** `sql/112` (esquema, catálogo, entes, visibilidad), `sql/113` (escrituras y reglas)
-y `sql/114` (bajas y cambios de equipo) aplicados el 2026-09-24.
-Faltan avisos, plantillas y recurrencia (`BACKLOG.md`).
+**Estado:** `sql/112` (esquema, catálogo, entes, visibilidad), `sql/113` (escrituras y reglas),
+`sql/114` (bajas y cambios de equipo) y `sql/115` (avisos) aplicados el 2026-09-24.
+Faltan plantillas y recurrencia (`BACKLOG.md`).
 
 ## Visibilidad — la unidad es el hilo
 
@@ -104,8 +104,11 @@ Reglas (`submodulo_reglas`, todas `requiere`): `tareas_equipo` → `usuarios_del
 
 `entes`: `hilo` (`/tareas/{id}`) y `tarea` (`/tareas/paso/{id}`), submódulo `tareas_ver`, datos
 `{titulo}`, sin disparos. Rama `tareas_etiqueta(tipo, id)` (INVOKER, GRANT `authenticated`) en
-`etiqueta_registro`. Trigger `emitir_eventos` (`emitir_eventos_registro`) en las dos tablas: alta, estado,
-baja, reactivación.
+`etiqueta_registro`, y en `puede_ver_relacion` (quien ve el paso ve quién lo tuvo). Trigger `emitir_eventos`
+(`emitir_eventos_registro`) en las dos tablas: alta, estado, baja, reactivación; en el hilo, también
+`transferencia` `{de, a}` al cambiar `responsable_id` (`sql/115`). `emitir_eventos_asignado`
+(`tareas_emitir_asignado`, INVOKER) en `tareas`: `relacion_alta` / `relacion_baja` con
+`{ente: 'usuario'|'equipo', registro_id, rol: 'asignado'}` al nacer y al cambiar de asignado.
 
 ## Escrituras (`sql/113`)
 
@@ -166,3 +169,27 @@ Test: `sql/tests/tareas_bajas.sql`. Decisión: `decisiones/tareas/bajas.md`.
 - `tareas_cambio_de_equipo` (AFTER INSERT OR UPDATE OF `activo` ON `equipos_miembros`): al salir,
   entrega; al entrar, lo abierto suyo sin equipo (hilos abiertos que lleva, pasos abiertos asignados)
   toma el equipo nuevo.
+
+## Avisos (`sql/115`)
+
+Test: `sql/tests/tareas_avisos.sql`. Decisión: `decisiones/tareas/avisos.md`. Tipos y cómo se leen:
+`db_schema/notificaciones.md`.
+
+- `tareas_avisar` (AFTER INSERT / UPDATE OF asignado, estado, activo, título, descripción, vence,
+  vence_dias; DEFINER): llega el paso (asignada o pedido, y al delegador de la persona si es pedido),
+  sumado, reasignado, quitado, a reasignar (reabrir o reactivar sin un asignado que pueda recibir),
+  aceptado, rechazado, completado, cancelado, reabierto, editado (solo lo que escribe una persona)
+  y dado de baja. Una sola vez por persona y cambio.
+- `tareas_propagar` (reemplazada): habilitado al habilitarse el siguiente; bloqueado solo al insertar
+  antes.
+- `tareas_hilos_avisar` (AFTER UPDATE OF responsable_id, activo): transferido (solo abierto y activo)
+  y dado de baja (a los asignados de sus pasos abiertos).
+- Huérfanos: `tareas_avisar_huerfanos(usuario)`, desde `tareas_usuario_baja` (después de entregar) y
+  desde `tareas_perdida_de_ver` (constraint trigger diferido sobre `usuario_submodulos`: salir de un
+  equipo apaga `tareas_ver` antes de entregar). Si ya no puede recibir: "paso huérfano" al responsable
+  de cada paso abierto que le quedó, y "hilos huérfanos" a los `tareas_administrar` si le quedaron
+  hilos abiertos (reemplaza el anterior sobre la misma persona).
+
+Helpers sin GRANT: `tareas_destinatario` (persona, o el delegador si es equipo),
+`tareas_avisar_asignado`, `tareas_avisar_huerfanos`. RPC: `tareas_avisos_salida()` (DEFINER, GRANT
+`authenticated`), la usa `notificaciones_listar`.

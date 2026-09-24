@@ -62,6 +62,10 @@ ya podés ver no necesita autorización nueva: el permiso lo puso la entidad apu
 `notificaciones_listar` es INVOKER y resuelve con INNER JOIN: lo que la RLS no devuelve, no aparece.
 Verificado: sacarle la asignación al destinatario vacía su bandeja y la fila sigue existiendo.
 
+**Excepción: el aviso de lo que perdiste (`erp-v2`, `sql/115`).** "Paso quitado", "paso dado de
+baja" e "hilo dado de baja" muestran el título aunque la RLS ya no deje verlo, sin link: con la
+regla al pie de la letra se borraban antes de leerse. `decisiones/tareas/avisos.md`.
+
 **Evento es fila, estado es consulta.** "Te asignaron X" pasó una vez y tiene destinatario único.
 "Tenés 3 vencidas" es el estado de hoy: como fila necesitaría un cron que la cree a medianoche y
 otra pasada que la borre al completar la tarea. Es `notificaciones_avisos()`, mismo criterio que

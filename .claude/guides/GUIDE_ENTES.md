@@ -66,8 +66,8 @@ Eventos que consume
 ```
 
 Un módulo puede emitir y consumir (Tareas), emitir sin consumir (Obras), o no tener entes ni
-eventos. `transferencia` todavía no lo emite nadie: Obras lo registra en `obras_transferencias`, y entra al
-enum con su primer emisor (§2.8). `compartido` y `revocado` los emite Obras desde
+eventos. `transferencia` lo emite Tareas (hilo, `sql/115`) con el segundo argumento de
+`emitir_eventos_registro`; Obras lo registra en `obras_transferencias` (§2.8). `compartido` y `revocado` los emite Obras desde
 `obras_obra_compartida` (`sql/083`).
 
 ### 1.1 Personas — se listan primero, antes que los entes
@@ -260,14 +260,17 @@ Construido en `sql/068` (`db_schema/core.md`):
   (el truco de `tareas_vinculos`): con DEFINER los consumidores correrían como `postgres` y
   `disparar_plantillas` no dispararía.
 - Cada módulo emite desde **sus** triggers, con las dos funciones genéricas: `emitir_eventos_registro`
-  sobre el ente (alta, baja, reactivación, estado) y `emitir_eventos_relacion` por tabla puente (un
+  sobre el ente (alta, baja, reactivación, estado; con la columna del dueño como segundo argumento,
+  también `transferencia`) y `emitir_eventos_relacion` por tabla puente (un
   evento por rol que aparece o se va, del lado del primer ente). Nunca desde `actions.ts`.
 - Los consumidores cuelgan de `AFTER INSERT ON eventos` y filtran por `(ente, evento)`. Hoy uno:
   `disparar_plantillas`, con `disparo_evento` (y `disparo_estado` o `disparo_rol`) en la plantilla;
   lee la fila de `entes.tabla` con la RLS de quien actuó.
 - Es también la auditoría que `GUIDE_DB.md` exige (`tareas_eventos` se mudó ahí). Un log propio que ya
-  existe (`obras_transferencias`) sigue valiendo: no se escribe en los dos. `transferencia`,
-  `compartido` y `revocado` se suman al enum con su primer emisor.
+  existe (`obras_transferencias`) sigue valiendo: no se escribe en los dos. `compartido` y `revocado` se suman al
+  enum con su primer emisor.
+- Un vínculo que es columna y no puente (el asignado de un paso) emite `relacion_*` con un trigger
+  propio del módulo (`tareas_emitir_asignado`, `sql/115`).
 
 ## 3. UI de un ente
 
