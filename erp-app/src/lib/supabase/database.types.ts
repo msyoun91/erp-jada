@@ -576,6 +576,127 @@ export type Database = {
           },
         ]
       }
+      tareas_plantillas: {
+        Row: {
+          activo: boolean
+          copiada_de: string | null
+          created_at: string
+          descripcion: string | null
+          dueno_id: string
+          id: string
+          nombre: string
+          publicada: boolean
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          copiada_de?: string | null
+          created_at?: string
+          descripcion?: string | null
+          dueno_id?: string
+          id?: string
+          nombre: string
+          publicada?: boolean
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          copiada_de?: string | null
+          created_at?: string
+          descripcion?: string | null
+          dueno_id?: string
+          id?: string
+          nombre?: string
+          publicada?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_plantillas_copiada_de_fkey"
+            columns: ["copiada_de"]
+            isOneToOne: false
+            referencedRelation: "tareas_plantillas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_plantillas_dueno_id_fkey"
+            columns: ["dueno_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tareas_plantillas_pasos: {
+        Row: {
+          activo: boolean
+          asignado_equipo_id: string | null
+          asignado_id: string | null
+          created_at: string
+          descripcion: string | null
+          espera_anterior: boolean
+          id: string
+          orden: number
+          plantilla_id: string
+          prioridad: Database["public"]["Enums"]["prioridad_tarea"]
+          titulo: string
+          updated_at: string
+          vence_dias: number | null
+        }
+        Insert: {
+          activo?: boolean
+          asignado_equipo_id?: string | null
+          asignado_id?: string | null
+          created_at?: string
+          descripcion?: string | null
+          espera_anterior?: boolean
+          id?: string
+          orden: number
+          plantilla_id: string
+          prioridad?: Database["public"]["Enums"]["prioridad_tarea"]
+          titulo: string
+          updated_at?: string
+          vence_dias?: number | null
+        }
+        Update: {
+          activo?: boolean
+          asignado_equipo_id?: string | null
+          asignado_id?: string | null
+          created_at?: string
+          descripcion?: string | null
+          espera_anterior?: boolean
+          id?: string
+          orden?: number
+          plantilla_id?: string
+          prioridad?: Database["public"]["Enums"]["prioridad_tarea"]
+          titulo?: string
+          updated_at?: string
+          vence_dias?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tareas_plantillas_pasos_asignado_equipo_id_fkey"
+            columns: ["asignado_equipo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_plantillas_pasos_asignado_id_fkey"
+            columns: ["asignado_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tareas_plantillas_pasos_plantilla_id_fkey"
+            columns: ["plantilla_id"]
+            isOneToOne: false
+            referencedRelation: "tareas_plantillas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       usuario_notificaciones: {
         Row: {
           activo: boolean
@@ -792,6 +913,7 @@ export type Database = {
         Args: { p_admin: string; p_submodulos: string[]; p_usuario: string }
         Returns: undefined
       }
+      copiar_plantilla: { Args: { p_plantilla: string }; Returns: string }
       delegar_submodulos: {
         Args: { p_submodulos: string[]; p_usuario: string }
         Returns: undefined
@@ -817,6 +939,15 @@ export type Database = {
       fijar_delegables: {
         Args: { p_admin: string; p_submodulos: string[] }
         Returns: undefined
+      }
+      guardar_plantilla: {
+        Args: {
+          p_descripcion: string
+          p_id: string
+          p_nombre: string
+          p_pasos: Json
+        }
+        Returns: string
       }
       mi_equipo: { Args: never; Returns: string }
       normalizar_telefono: { Args: { t: string }; Returns: string }
@@ -968,6 +1099,15 @@ export type Database = {
         Returns: undefined
       }
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
+      usar_plantilla: {
+        Args: {
+          p_asignados?: Json
+          p_hilo?: string
+          p_plantilla: string
+          p_titulo?: string
+        }
+        Returns: string
+      }
       usuario_tiene_permiso: {
         Args: { p_codigo: string; p_usuario: string }
         Returns: boolean

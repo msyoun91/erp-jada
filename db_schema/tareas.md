@@ -4,8 +4,8 @@ Rediseño desde cero (`sql/112`). Ficha y decisiones: `decisiones/tareas/` (índ
 El esquema de `master` es otro módulo: no se mezclan nombres de allá.
 
 **Estado:** `sql/112` (esquema, catálogo, entes, visibilidad), `sql/113` (escrituras y reglas),
-`sql/114` (bajas y cambios de equipo), `sql/115` (avisos), `sql/116` (asignables) y `sql/117`
-(recurrencia) aplicados el 2026-09-24. Faltan plantillas y vínculos (`BACKLOG.md`).
+`sql/114` (bajas y cambios de equipo), `sql/115` (avisos), `sql/116` (asignables), `sql/117`
+(recurrencia) y `sql/118` (plantillas) aplicados el 2026-09-24. Faltan vínculos (`BACKLOG.md`).
 
 ## Visibilidad — la unidad es el hilo
 
@@ -146,7 +146,7 @@ Triggers:
   `titulo, descripcion, prioridad, vence, vence_dias` del paso.
 - `tareas_firmar_ocultar` (notas y ediciones): `ocultada_por` / `ocultada_at`.
 
-Helpers sin GRANT: `tareas_hoy`, `tareas_delegador_de`, `tareas_puede_recibir`,
+Helpers sin GRANT: `tareas_hoy` (con GRANT desde `sql/118`), `tareas_delegador_de`, `tareas_puede_recibir`,
 `tareas_equipo_de_asignado`, `tareas_es_pedido`, `tareas_actua_como_asignado`, `tareas_bloquea`,
 `tareas_siguiente_efectivo`, `tareas_estado_al_abrir`.
 
@@ -217,3 +217,49 @@ Test: `sql/tests/tareas_recurrencia.sql`. Decisión: `decisiones/tareas/recurren
 - `tareas_al_crear` (reemplazada): creado desde un trigger, el asignado que no puede recibir o el
   pedido sin `tareas_pedir` del responsable quedan en el responsable, con `paso_a_reasignar` sin
   actor.
+
+## Plantillas (`sql/118`)
+
+Test: `sql/tests/tareas_plantillas.sql`. Decisión: `decisiones/tareas/catalogo.md`. No son ente.
+
+| tareas_plantillas | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| nombre / descripcion | text | 1–500 / ≤ 5000 |
+| dueno_id | uuid FK → usuarios | default `auth.uid()`; fuera del `GRANT UPDATE` |
+| publicada | boolean | default false: en el Catálogo. Publica el dueño (TA018); despublica también el admin |
+| copiada_de | uuid FK → tareas_plantillas, nullable | origen de una copia del Catálogo, solo historia |
+| activo | boolean | reactiva solo el admin (TA019) |
+| created_at / updated_at | timestamptz | |
+
+| tareas_plantillas_pasos | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| plantilla_id | uuid FK → tareas_plantillas | |
+| orden | int | unique parcial `(plantilla_id, orden) WHERE activo` |
+| espera_anterior | boolean | default true: el paso sigue al de `orden` anterior; en el primero no cuenta. Cadenas sin bifurcar, como el hilo |
+| titulo / descripcion | text | 1–500 / ≤ 5000 |
+| asignado_id / asignado_equipo_id | uuid FK → usuarios / equipos | a lo sumo uno; ninguno = se elige al usarla. Sin validar al guardar: "a revisar" se calcula al leer con `tareas_asignables()` |
+| prioridad | enum `prioridad_tarea` | default `media` |
+| vence_dias | int > 0, nullable | con previo, `vence_dias` del paso; sin previo, `vence` = hoy + N |
+| activo | boolean | guardar desactiva los viejos e inserta |
+| created_at / updated_at | timestamptz | |
+
+RLS: ve una plantilla `tareas_administrar`, o con `tareas_plantillas` su dueño (también desactivada) y
+las publicadas activas (Catálogo). INSERT: dueño = yo con `tareas_plantillas`. UPDATE: dueño con
+`tareas_plantillas`, o `tareas_administrar`. Los pasos: SELECT si se ve la plantilla; INSERT/UPDATE si
+es mía o soy admin. `GRANT INSERT (id, nombre, descripcion, copiada_de)`, `UPDATE (nombre,
+descripcion, publicada, activo)`; pasos `INSERT` de todo menos `activo` y fechas, `UPDATE (activo)`.
+Trigger `tareas_plantillas_al_editar` (BEFORE UPDATE OF publicada, activo; DEFINER).
+
+RPC (INVOKER, GRANT `authenticated`; errores TA017 "no existe o no es tuya", TA020 sin pasos):
+- `guardar_plantilla(id, nombre, descripcion, pasos jsonb) → uuid` — `id` NULL crea. Reemplaza los
+  pasos; `pasos` es `[{titulo, descripcion, asignado_id, asignado_equipo_id, prioridad, vence_dias,
+  espera_anterior}]` en orden.
+- `copiar_plantilla(plantilla) → uuid` — solo publicada y activa; sin asignados, sin publicar,
+  `copiada_de` = el original.
+- `usar_plantilla(plantilla, titulo, hilo, asignados jsonb) → uuid` (el hilo) — la usa su dueño o el
+  admin. `hilo` NULL crea uno (título o el nombre); si no, suma los pasos en paralelo con lo que
+  tiene. `asignados` es `{paso_id: {asignado_id | asignado_equipo_id}}`: el elegido; si no, el fijo
+  que puede recibir; si no, quien la usa. INSERT comunes a profundidad 1: rigen las reglas de
+  `sql/113` (un pedido sin `tareas_pedir`, TA010; un asignado que no es responsable, TA001).

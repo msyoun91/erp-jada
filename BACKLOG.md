@@ -24,8 +24,11 @@ qué, transiciones, pedidos, cadena, cierre, desactivación, notas e historial) 
 aplicado; `sql/tests/tareas_bajas.sql` pasa entero. `sql/115` (avisos) aplicado;
 `sql/tests/tareas_avisos.sql` pasa entero. `sql/116` (`tareas_asignables`) aplicado;
 `sql/tests/tareas_asignables.sql` pasa entero. `sql/117` (recurrencia y "paso a reasignar")
-aplicado; `sql/tests/tareas_recurrencia.sql` pasa entero. Falta:
-- Plantillas, Catálogo y `tareas_vinculos`.
+aplicado; `sql/tests/tareas_recurrencia.sql` pasa entero. `sql/118` (plantillas y Catálogo)
+aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. Falta:
+- `tareas_vinculos` y las referencias `{ente:uuid}` en el texto.
+- Con el primer emisor: `{dato}`, condiciones por rol, activaciones y `disparar_plantillas`
+  (`decisiones/tareas/catalogo.md`).
 
 Ficha: `decisiones/tareas/README.md`; esquema: `db_schema/tareas.md`.
 

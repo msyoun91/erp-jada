@@ -42,3 +42,18 @@ la puede usar y no sabía por qué. Sin columnas ni triggers.
 **Plantillas por evento esperan a su primer emisor.** Hoy ningún módulo emite; se construyen las
 manuales y `disparar_plantillas` se conecta después.
 
+**`{dato}`, condiciones por rol y pasos condicionados llegan con el disparo (2026-09-24).** Leen un
+registro, y a mano no hay registro: `master` tampoco los usaba fuera de un disparo. `sql/118` guarda
+el texto tal cual; las columnas (`condicion`, datos) se suman con el primer emisor, junto con
+`disparar_plantillas` y las activaciones.
+
+**La cadena de la plantilla es "espera al anterior" por paso (2026-09-24).** Un booleano sobre el
+orden arma exactamente lo que admite un hilo —cadenas sin bifurcar, en paralelo entre sí— sin ids
+entre pasos que guardar reemplaza. Usada en un hilo existente, cada cadena arranca sin previo.
+`sql/118`.
+
+**El elegido al usarla gana sobre el fijo (2026-09-24).** Una sola regla en `usar_plantilla`: el
+elegido; si no, el fijo si puede recibir (`tareas_asignables()`); si no, quien la usa. La UI pregunta
+por los vacíos y los "a revisar"; si pregunta por otro, es el dueño cambiando su propia plantilla.
+El admin ve, edita y usa las ajenas (*Función admin por módulo*), pero no las publica: publicar es
+del dueño. `sql/118`.
