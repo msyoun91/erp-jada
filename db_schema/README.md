@@ -7,9 +7,11 @@ tablas, columnas o enums, actualizar ese archivo y `database.types.ts`.
 | Archivo | Contenido |
 |---|---|
 | `core.md` | `usuarios`, `submodulos`, `submodulo_reglas`, `usuario_submodulos`, `equipos`, `usuario_tutorial`, `usuario_widgets`, `tiene_permiso()`, `entes`, `eventos` |
+| `notificaciones.md` | `usuario_notificaciones`, `notificar()`, `notificaciones_listar()` |
+| `tareas.md` | hilos, pasos, notas, historial, permisos y visibilidad de tareas (`sql/112`) |
 
-Es todo lo que hay. Esta rama sacó `tareas` y `obras` para rediseñar permisos desde cero
-(`sql/101`, `sql/102`); sus archivos de esquema viven en `master`, junto con el código.
+Esta rama sacó `tareas` y `obras` para rediseñar permisos desde cero (`sql/101`, `sql/102`); sus
+esquemas viejos viven en `master`. Tareas vuelve rediseñado desde `sql/112`.
 
 Proyecto Supabase: `qbpudocgdvpeadcyyhfh`. Regenerar tipos tras cada migración:
 `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public > erp-app/src/lib/supabase/database.types.ts`

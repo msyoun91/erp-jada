@@ -5,7 +5,7 @@ Rediseño desde cero (2026-09-23). La versión anterior vive en `master` (su `de
 archivos de esta carpeta no repiten nombres de los de `master`: los punteros viejos de
 `decisiones/global/` (`plantillas.md`, `visibilidad.md`, `integracion.md`…) siguen siendo de allá.
 
-> **Estado: ficha aprobada (2026-09-24), sin SQL.** Las revisiones de agujeros (2026-09-23 y
+> **Estado: ficha aprobada (2026-09-24); SQL en curso desde `sql/112` (ver `BACKLOG.md`).** Las revisiones de agujeros (2026-09-23 y
 > 2026-09-24, por escenarios) quedaron volcadas en la ficha y en los archivos por tema; lo del 24
 > lleva fecha en cada decisión. Lo que cambie se corrige acá primero. Leer este índice y después
 > solo el archivo del tema.

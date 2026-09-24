@@ -52,7 +52,7 @@ hace valer `usuario_submodulos_validar`. Decisión: `decisiones/global/permisos.
 | tipo | enum tipo_regla_submodulo | `requiere` (`submodulo_id` necesita `otro_id`, en un sentido) \| `excluye` (una fila por par, vale en los dos sentidos) |
 | activo | boolean | unique parcial (submodulo_id, otro_id) WHERE activo |
 
-Una regla con un submódulo inactivo no pesa. Seed: `usuarios_equipos` excluye `usuarios_equipo`.
+Una regla con un submódulo inactivo no pesa. Seed: `usuarios_equipos` excluye `usuarios_equipo`; las de tareas (`sql/112`) en `tareas.md` → *Permisos*.
 
 RLS: `submodulo_reglas_select` con `usuarios_ver`. Sin escrituras: se cargan por migración.
 
@@ -73,7 +73,7 @@ RLS: `usuario_submodulos_select` — las propias, `usuarios_gestionar`, `usuario
 
 Triggers (`sql/105`): `usuario_submodulos_validar` (constraint trigger diferido — función sin vista, `submodulo_reglas` desde `sql/110` (US016 requiere, US017 excluye), admin fuera de equipos, un delegador por equipo, techo de las filas delegadas) y `usuario_submodulos_cascada` (al apagar una fila de un miembro, apaga lo que él delegó de eso; si es `usuarios_delegar`, todo — y sin heredero falla con US009 si queda otro miembro activo). `usuario_submodulos_notificar_alta` / `_reactiva` (`sql/108`): avisan al que recibe una vista o `usuarios_delegar` — ver `notificaciones.md`.
 
-Funciones: `asignar_submodulos(p_admin, p_usuario, p_submodulos[])`, `quitar_delegador(p_admin, p_saliente, p_heredero, p_no_copiar[])` y, desde `sql/106`, `designar_delegador(p_admin, p_usuario)` y `fijar_delegables(p_admin, p_submodulos[])`, solo `service_role`; `delegar_submodulos(p_usuario, p_submodulos[])` INVOKER para `authenticated`. Una fila es delegada si `otorgada_por` es miembro de un equipo (`equipo_de()`).
+Funciones: `asignar_submodulos(p_admin, p_usuario, p_submodulos[])`, `quitar_delegador(p_admin, p_saliente, p_heredero, p_no_copiar[])` y, desde `sql/106`, `designar_delegador(p_admin, p_usuario)` y `fijar_delegables(p_admin, p_submodulos[])`, solo `service_role`. Desde `sql/112`, `designar_delegador` y `quitar_delegador` dan y quitan `tareas_equipo` junto con `usuarios_delegar` (se requieren mutuamente); ninguna da `tareas_ver`, que la delegación también requiere (US016); `delegar_submodulos(p_usuario, p_submodulos[])` INVOKER para `authenticated`. Una fila es delegada si `otorgada_por` es miembro de un equipo (`equipo_de()`).
 
 ## equipos
 
@@ -147,7 +147,7 @@ Trigger `usuarios_validar_desactivar` (`sql/105`): desactivar a quien tiene `usu
 
 ## entes (`sql/109`)
 
-Catálogo cross-módulo: cada módulo registra acá sus entes en su propia migración (`GUIDE_ENTES.md` §2.2). Hoy vacía — el primero lo suma Tareas.
+Catálogo cross-módulo: cada módulo registra acá sus entes en su propia migración (`GUIDE_ENTES.md` §2.2). El primero es Tareas (`sql/112`).
 
 | columna | tipo | notas |
 |---|---|---|
@@ -164,6 +164,8 @@ Catálogo cross-módulo: cada módulo registra acá sus entes en su propia migra
 | created_at / updated_at | timestamptz | trigger `set_updated_at` |
 
 RLS `entes_select`: `activo AND tiene_permiso(submodulo)` — sin la vista del ente, el ente no existe. Solo `GRANT SELECT`: escribe la migración de cada módulo.
+
+Filas: `hilo` y `tarea` (`sql/112`, ver `tareas.md`).
 
 ## eventos (`sql/109`)
 
@@ -189,6 +191,6 @@ RLS `eventos_select`: `etiqueta_registro(ente, registro_id) IS NOT NULL`, y para
 - `emitir_eventos_registro()` — trigger `AFTER INSERT OR UPDATE OF activo, estado`, `TG_ARGV = (ente)`: alta (solo si nace activo), reactivación, estado (si cambia de verdad o nace con valor), baja, en ese orden.
 - `emitir_eventos_relacion()` — trigger sobre la puente, `AFTER INSERT OR UPDATE OF activo, roles`, `TG_ARGV = (ente, columna, ente relacionado, columna)`: un evento por rol que aparece o se va, del lado del primer ente.
 
-**Genéricas cross-módulo, sin ramas** (INVOKER, EXECUTE para `authenticated` porque las llama la policy): `etiqueta_registro(ente, id)` devuelve NULL y `puede_ver_relacion(ente, id, ente_rel, id_rel)` false. Cada ente reemplaza el cuerpo sumando su `CASE e.modulo WHEN …`. `puede_abrir_registro`, `buscar_registros`, `relacionados_de_registro`, `puede_compartir_registro` y `compartir_registros` no existen todavía en esta rama.
+**Genéricas cross-módulo** (INVOKER, EXECUTE para `authenticated` porque las llama la policy): `etiqueta_registro(ente, id)` (rama `tareas` → `tareas_etiqueta`, `sql/112`; sin rama, NULL) y `puede_ver_relacion(ente, id, ente_rel, id_rel)` (sin ramas: false). Cada ente reemplaza el cuerpo sumando su `CASE e.modulo WHEN …`. `puede_abrir_registro`, `buscar_registros`, `relacionados_de_registro`, `puede_compartir_registro` y `compartir_registros` no existen todavía en esta rama.
 
 Test: `sql/tests/entes_eventos.sql` (arma un ente de prueba con su puente y sus ramas, todo en `ROLLBACK`).

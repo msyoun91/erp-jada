@@ -16,19 +16,18 @@ admin en `sql/106` (tests en `sql/tests/usuarios_equipos.sql`), vista Mi equipo.
 
 Todo está escrito en `decisiones/usuarios.md` → *Equipos y delegación de permisos*.
 
-## tareas — reglas entre permisos, con la migración del módulo
+## tareas — el SQL del módulo, en curso
 
-`submodulo_reglas` (`sql/110`) ya existe; faltan las filas de tareas, que no se pueden cargar antes
-que sus submódulos:
-- Las del bloque *Reglas entre permisos* de la ficha (`decisiones/tareas/README.md`), y `delegable` según
-  su lista de delegables.
-- `designar_delegador` y `quitar_delegador` tienen que respetarlas: dan y quitan `tareas_equipo`
-  junto con `usuarios_delegar` (se requieren mutuamente). Ninguna otorga `tareas_ver`: si el heredero o
-  designado no lo tiene, fallan con US016 y el panel avisa.
-- Correr de nuevo `sql/tests/usuarios_equipos.sql`: sus delegadores de prueba no tienen `tareas_ver`
-  ni `tareas_equipo`.
+`sql/112` (esquema, catálogo, reglas entre permisos, entes, visibilidad, y `designar_delegador` /
+`quitar_delegador` moviendo `tareas_equipo`) está escrito y probado en una transacción revertida,
+**sin aplicar**. Falta:
+- `sql/113`: escrituras y sus reglas (quién escribe qué columna, transiciones, cadena, pedidos,
+  bajas y cambios de equipo, historial) y los avisos.
+- Plantillas, Catálogo, recurrencia y `tareas_vinculos`.
+- Al aplicar `sql/112`: sumar `tareas_ver` a los delegadores de `sql/tests/usuarios_equipos.sql` y
+  volver a correrlo — sin él, `designar_delegador` falla con US016.
 
-Decisión: `decisiones/global/permisos.md` → *Reglas entre permisos*; ficha: `decisiones/tareas/README.md`.
+Ficha: `decisiones/tareas/README.md`; esquema: `db_schema/tareas.md`.
 
 ## erp-cliente — falta el `ThemeToggle`
 

@@ -1,7 +1,8 @@
 -- Verificación de sql/105 y sql/106: techo, un delegador por equipo, cascadas,
--- heredero y las escrituras de la pestaña Equipos. NO es una migración: todo
--- corre dentro de una transacción que termina en ROLLBACK. Correr después de
--- aplicar sql/106.
+-- heredero y las escrituras de la pestaña Equipos; desde sql/112, la
+-- delegación lleva `tareas_equipo` y requiere `tareas_ver`. NO es una
+-- migración: todo corre dentro de una transacción que termina en ROLLBACK.
+-- Correr después de aplicar sql/112.
 --
 -- Arma su propio mundo: cinco usuarios (A admin, D delegador, M1 y M2
 -- miembros, I independiente), el equipo T y un módulo `prueba105` con V (vista
@@ -74,6 +75,11 @@ INSERT INTO ids (nombre, id)
 SELECT replace(codigo, 'usuarios_', ''), id FROM submodulos
 WHERE activo AND codigo IN ('usuarios_ver','usuarios_gestionar','usuarios_equipo','usuarios_delegar');
 
+-- Desde sql/112 la delegación requiere `tareas_ver` y `tareas_equipo`.
+INSERT INTO ids (nombre, id)
+SELECT CASE codigo WHEN 'tareas_ver' THEN 'tver' ELSE 'teq' END, id FROM submodulos
+WHERE activo AND codigo IN ('tareas_ver','tareas_equipo');
+
 INSERT INTO auth.users (id, email, raw_user_meta_data)
 SELECT id, lower(nombre) || '.' || id || '@test105.local', jsonb_build_object('nombre', 'test105 ' || nombre)
 FROM ids WHERE nombre IN ('A','D','M1','M2','I');
@@ -92,9 +98,13 @@ INSERT INTO equipos (id, nombre) VALUES (pg_temp.id('T'), 'test105 ' || pg_temp.
 INSERT INTO equipos_miembros (equipo_id, usuario_id)
 SELECT pg_temp.id('T'), pg_temp.id(n) FROM unnest(ARRAY['D','M1','M2']) AS n;
 
+-- Quien pueda llegar a delegador tiene `tareas_ver` del admin.
+INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+SELECT pg_temp.id(n), pg_temp.id('tver') FROM unnest(ARRAY['M2','I']) AS n;
+
 SELECT pg_temp.caso('00 montaje: D delegador con V, F, W',
   'ok', pg_temp.intentar(format('SELECT asignar_submodulos(%L, %L, %L)',
-    pg_temp.id('A'), pg_temp.id('D'), pg_temp.ids('equipo','delegar','V','F','W'))));
+    pg_temp.id('A'), pg_temp.id('D'), pg_temp.ids('tver','teq','equipo','delegar','V','F','W'))));
 
 SELECT pg_temp.caso('00 montaje: M1 recibe W del admin',
   'ok', pg_temp.intentar(format('SELECT asignar_submodulos(%L, %L, %L)',
@@ -148,11 +158,11 @@ SELECT pg_temp.caso('09 D se hace pasar por el admin',
 -- ============================================================
 SELECT pg_temp.caso('10 segundo delegador en T',
   'US004', pg_temp.intentar(format('SELECT asignar_submodulos(%L, %L, %L)',
-    pg_temp.id('A'), pg_temp.id('M2'), pg_temp.ids('equipo','delegar'))));
+    pg_temp.id('A'), pg_temp.id('M2'), pg_temp.ids('tver','teq','equipo','delegar'))));
 
 SELECT pg_temp.caso('11 independiente delegador',
   'US003', pg_temp.intentar(format('SELECT asignar_submodulos(%L, %L, %L)',
-    pg_temp.id('A'), pg_temp.id('I'), pg_temp.ids('equipo','delegar'))));
+    pg_temp.id('A'), pg_temp.id('I'), pg_temp.ids('tver','teq','equipo','delegar'))));
 
 SELECT pg_temp.caso('12 miembro con usuarios_gestionar',
   'US002', pg_temp.intentar(format('SELECT asignar_submodulos(%L, %L, %L)',
@@ -183,7 +193,7 @@ SELECT pg_temp.caso('18 sacar a D del equipo',
 
 SELECT pg_temp.caso('19 sacarle usuarios_delegar sin heredero',
   'US009', pg_temp.intentar(format('SELECT asignar_submodulos(%L, %L, %L)',
-    pg_temp.id('A'), pg_temp.id('D'), pg_temp.ids('equipo','V','F','W'))));
+    pg_temp.id('A'), pg_temp.id('D'), pg_temp.ids('tver','teq','equipo','V','F','W'))));
 
 -- ============================================================
 -- Cascadas
@@ -193,7 +203,7 @@ SELECT pg_temp.intentar(format('SELECT delegar_submodulos(%L, %L)',
 
 SELECT pg_temp.caso('20 el admin le saca F a D',
   'ok', pg_temp.intentar(format('SELECT asignar_submodulos(%L, %L, %L)',
-    pg_temp.id('A'), pg_temp.id('D'), pg_temp.ids('equipo','delegar','V','W'))));
+    pg_temp.id('A'), pg_temp.id('D'), pg_temp.ids('tver','teq','equipo','delegar','V','W'))));
 SELECT pg_temp.caso('20 M1.F se fue con él', 'off:D', pg_temp.fila('M1','F'));
 SELECT pg_temp.caso('20 M1.V se queda', 'on:D', pg_temp.fila('M1','V'));
 
@@ -208,7 +218,7 @@ SELECT pg_temp.caso('21 M1.W del admin se queda', 'on:A', pg_temp.fila('M1','W')
 -- M1 vuelve a T. D suma X y reparte: V y X a M1, V a M2.
 INSERT INTO equipos_miembros (equipo_id, usuario_id) VALUES (pg_temp.id('T'), pg_temp.id('M1'));
 SELECT pg_temp.intentar(format('SELECT asignar_submodulos(%L, %L, %L)',
-  pg_temp.id('A'), pg_temp.id('D'), pg_temp.ids('equipo','delegar','V','F','W','X')));
+  pg_temp.id('A'), pg_temp.id('D'), pg_temp.ids('tver','teq','equipo','delegar','V','F','W','X')));
 SELECT pg_temp.intentar(format('SELECT delegar_submodulos(%L, %L)',
   pg_temp.id('M1'), pg_temp.ids('V','X')), 'D');
 SELECT pg_temp.intentar(format('SELECT delegar_submodulos(%L, %L)',
@@ -221,11 +231,15 @@ SELECT pg_temp.caso('22 heredero fuera del equipo',
 SELECT pg_temp.caso('23 heredero sin la delegación',
   'US013', pg_temp.intentar(format('SELECT quitar_delegador(%L, %L, %L, %L)',
     pg_temp.id('A'), pg_temp.id('D'), pg_temp.id('M2'), pg_temp.ids('delegar'))));
+SELECT pg_temp.caso('23b heredero sin tareas_equipo',
+  'US013', pg_temp.intentar(format('SELECT quitar_delegador(%L, %L, %L, %L)',
+    pg_temp.id('A'), pg_temp.id('D'), pg_temp.id('M2'), pg_temp.ids('teq'))));
 
 SELECT pg_temp.caso('24 M2 hereda, sin X',
   'ok', pg_temp.intentar(format('SELECT quitar_delegador(%L, %L, %L, %L)',
     pg_temp.id('A'), pg_temp.id('D'), pg_temp.id('M2'), pg_temp.ids('X'))));
 SELECT pg_temp.caso('24 M2 es el delegador', 'on:A', pg_temp.fila('M2','delegar'));
+SELECT pg_temp.caso('24 M2 tiene tareas_equipo', 'on:A', pg_temp.fila('M2','teq'));
 SELECT pg_temp.caso('24 M2.V que le dio D pasa al admin', 'on:A', pg_temp.fila('M2','V'));
 SELECT pg_temp.caso('24 M2 recibe copia de W', 'on:A', pg_temp.fila('M2','W'));
 SELECT pg_temp.caso('24 M2 no recibe X', 'none', pg_temp.fila('M2','X'));
@@ -233,6 +247,7 @@ SELECT pg_temp.caso('24 M1.V ahora es de M2', 'on:M2', pg_temp.fila('M1','V'));
 SELECT pg_temp.caso('24 M1.X se revoca', 'off:M2', pg_temp.fila('M1','X'));
 SELECT pg_temp.caso('24 D pierde usuarios_delegar', 'off:A', pg_temp.fila('D','delegar'));
 SELECT pg_temp.caso('24 D pierde la vista Mi equipo', 'off:A', pg_temp.fila('D','equipo'));
+SELECT pg_temp.caso('24 D pierde tareas_equipo', 'off:A', pg_temp.fila('D','teq'));
 SELECT pg_temp.caso('24 D conserva V', 'on:A', pg_temp.fila('D','V'));
 
 SELECT pg_temp.caso('25 ahora D se puede desactivar',
@@ -252,6 +267,7 @@ SELECT pg_temp.intentar(format('UPDATE equipos_miembros SET activo = false WHERE
 SELECT pg_temp.caso('28 sin heredero, solo en el equipo',
   'ok', pg_temp.intentar(format('SELECT quitar_delegador(%L, %L, NULL)',
     pg_temp.id('A'), pg_temp.id('M2'))));
+SELECT pg_temp.caso('28 M2 pierde tareas_equipo', 'off:A', pg_temp.fila('M2','teq'));
 
 -- ============================================================
 -- sql/106 — las escrituras de la pestaña Equipos
@@ -274,6 +290,7 @@ SELECT pg_temp.caso('32 M2 vuelve a ser delegador',
     pg_temp.id('A'), pg_temp.id('M2'))));
 SELECT pg_temp.caso('32 M2.delegar la otorgó A', 'on:A', pg_temp.fila('M2','delegar'));
 SELECT pg_temp.caso('32 M2 tiene Mi equipo', 'on:A', pg_temp.fila('M2','equipo'));
+SELECT pg_temp.caso('32 M2 tiene tareas_equipo', 'on:A', pg_temp.fila('M2','teq'));
 
 SELECT pg_temp.caso('33 un segundo delegador en T',
   'US004', pg_temp.intentar(format('SELECT designar_delegador(%L, %L)',
