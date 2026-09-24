@@ -18,8 +18,20 @@ aplicado; `sql/tests/tareas_recurrencia.sql` pasa entero. `sql/118` (plantillas 
 aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/119` (vínculos y referencias en la
 descripción) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. `sql/120` (`tareas_nombres`)
 aplicado; `sql/tests/tareas_nombres.sql` pasa entero. Falta:
-- Con el primer emisor: `{dato}`, condiciones por rol, activaciones y `disparar_plantillas`
-  (`decisiones/tareas/catalogo.md`).
+- Con el primer emisor (obras), todo junto (decidido 2026-09-24, `decisiones/tareas/catalogo.md`
+  desde *La plantilla dice "Sobre"*, y `avisos.md` → *Un disparo avisa una vez*): "Sobre" en la
+  plantilla, registro (ente e id) y plantilla de origen en el hilo, `{@registro}` y `{@ente:rol}`,
+  activaciones y `disparar_plantillas`, `{dato}`, `{si hay}`, condiciones y pasos condicionados, los
+  avisos "plantilla disparada" y "plantilla fallida". "Sobre" espera al disparo: existe para él, y
+  con `hilo` como único ente se probaba contra el ente que no dispara. Al construir:
+  - `disparar_plantillas` DEFINER, con los chequeos a mano (dueño puede recibir, submódulo del
+    ente, visibilidad con `_de`). TA021 no revisa por ser DEFINER, no por la profundidad.
+  - `usar_plantilla` filtra por `auth.uid()`: o recibe el usuario desde `disparar_plantillas` o
+    comparten una interna DEFINER sin EXECUTE para `authenticated`.
+  - Core: columna de dueño en `entes`; `_de` de `etiqueta_registro` y `relacionados_de_registro`.
+  - "No se repite": chequeo en la función, no unique index (la recurrencia).
+  - `guardar_plantilla` valida las marcas contra "Sobre"; policy de plantillas con la rama del ente
+    visible y la de `tareas_administrar`.
 
 UI: vistas Hilos (`/tareas`, `/tareas/{id}`, `/tareas/paso/{id}`), Misión (`/tareas/mision`),
 Equipo (`/tareas/equipo`), Plantillas (`/tareas/plantillas`, con "Usar plantilla" desde el hilo) y
@@ -56,6 +68,8 @@ lo que exige conocer el uuid. Buscador sobre lo que quien escribe puede ver (hil
 `buscar_registros` de core si hace falta, ver *Lo que el módulo necesita de afuera* en el README)
 que inserta el token en la descripción del paso (`PasoFormPanel.tsx`, editar e insertar antes) y
 vista previa con `TextoConReferencias`. Editor enriquecido: no, sería librería nueva.
+Forma decidida: `decisiones/tareas/registro.md` → *"Relacionar": primero el módulo* (módulo,
+después `buscar_registros`). En plantillas no va hasta el disparo (solo relativas).
 
 **3. No hay link de vuelta ("mencionado en") — decidir primero.** `tareas_vinculos` tiene el dato
 pero ninguna vista lo muestra: en "Cocina Pérez — presupuesto" no aparece que dos pasos de otros
@@ -66,7 +80,11 @@ los referencian, con link) o si eso espera a la ficha de otro módulo. Si va: qu
 `queries.ts` sobre `tareas_vinculos` `WHERE activo AND ((ente='hilo' AND registro_id=hilo) OR
 (ente='tarea' AND registro_id IN pasos))`, sección en `HiloView.tsx` y en el panel del paso.
 
-**4. Referencias en plantillas y en el Catálogo — decidir primero.** Hoy:
+**4. Referencias en plantillas y en el Catálogo (decidido 2026-09-24, sin implementar).**
+`decisiones/tareas/catalogo.md` → *Sin referencias fijas en plantillas*: opción (c) + (b).
+`guardar_plantilla` rechaza `{ente:uuid|…}` (código de error nuevo, test en
+`sql/tests/tareas_plantillas.sql`); migración que pasa las guardadas a su nombre en texto plano
+(`regexp_replace` sobre `tareas_plantillas_pasos.descripcion`). Diagnóstico original:
 - `guardar_plantilla` (`sql/118`, línea ~158) guarda cualquier `{ente:uuid|nombre}` sin revisar
   si el dueño lo ve; falla recién al usar (`usar_plantilla` → trigger `tareas_derivar_vinculos`,
   TA021), sin quedar "a revisar" (`motivoRevisar` en `derivados.ts` no mira la descripción).
@@ -104,6 +122,11 @@ No filtra a nadie (la RLS de vínculos pasa por `tareas`, y un paso desactivado 
 futuro (punto 3, `plantilla_disparada`). Propuesta: sumar `activo` al `UPDATE OF` y, si
 `NEW.activo = false`, desactivar sus vínculos; al reactivar, volver a derivarlos (sin chequear TA021:
 lo reactiva el admin). Test en `sql/tests/tareas_vinculos.sql`; actualizar `db_schema/tareas.md`.
+
+**8. Equipos en plantillas: falta el dato de prueba, no código.** `asignado_equipo_id` en
+`tareas_plantillas_pasos` (`sql/118`) y el grupo "Equipos" en `AsignadoSelect` ya existen, pero solo
+listan equipos con delegador activo, y el único de la base ("Prueba") está inactivo y sin miembros.
+Para probar: un equipo activo con delegador.
 
 ## erp-cliente — falta el `ThemeToggle`
 

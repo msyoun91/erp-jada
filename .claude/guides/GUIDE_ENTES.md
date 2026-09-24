@@ -257,15 +257,18 @@ Construido en `sql/068` (`db_schema/core.md`):
   `etiqueta_registro(ente, registro_id) IS NOT NULL`, y para `relacion_*` además `puede_ver_relacion`
   (`sql/069`): ver la obra no es ver todos sus vínculos. INSERT solo por
   `emitir_evento(ente, registro_id, evento, detalle)`, **INVOKER** con policy `pg_trigger_depth() > 0`
-  (el truco de `tareas_vinculos`): con DEFINER los consumidores correrían como `postgres` y
-  `disparar_plantillas` no dispararía.
+  (el truco de `tareas_vinculos`): con DEFINER todos los consumidores correrían como `postgres`;
+  así, cada consumidor decide (`disparar_plantillas` es DEFINER a propósito, abajo).
 - Cada módulo emite desde **sus** triggers, con las dos funciones genéricas: `emitir_eventos_registro`
   sobre el ente (alta, baja, reactivación, estado; con la columna del dueño como segundo argumento,
   también `transferencia`) y `emitir_eventos_relacion` por tabla puente (un
   evento por rol que aparece o se va, del lado del primer ente). Nunca desde `actions.ts`.
 - Los consumidores cuelgan de `AFTER INSERT ON eventos` y filtran por `(ente, evento)`. Hoy uno:
-  `disparar_plantillas`, con `disparo_evento` (y `disparo_estado` o `disparo_rol`) en la plantilla;
-  lee la fila de `entes.tabla` con la RLS de quien actuó.
+  `disparar_plantillas`, con `disparo_evento` (y `disparo_estado` o `disparo_rol`) en la plantilla.
+  Es DEFINER: corren las plantillas del dueño del registro, no de quien actuó, y lo que ve el dueño
+  se mide a mano con funciones `_de(id, usuario)` (`decisiones/tareas/catalogo.md` → *El disparo
+  sigue al registro*). Por eso `entes` dice qué columna es el dueño, y cada ente que dispara aporta
+  su rama `_de` de `etiqueta_registro` y `relacionados_de_registro`.
 - Es también la auditoría que `GUIDE_DB.md` exige (`tareas_eventos` se mudó ahí). Un log propio que ya
   existe (`obras_transferencias`) sigue valiendo: no se escribe en los dos. `compartido` y `revocado` se suman al
   enum con su primer emisor.

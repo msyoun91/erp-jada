@@ -16,7 +16,7 @@ todos los que ven el hilo. Ocultar no es borrar: lo filtrado se da por visto (un
 como texto plano si no. Aplica *Un ente en un texto es una referencia* (`decisiones/global/entes.md`),
 corregida para mostrar la copia en vez de nada: el paso tiene que entenderse, y el nombre lo contó
 quien sí lo veía.
-`tareas_vinculos` queda como dato (hilos de un registro, `plantilla_disparada`) y la escribe la
+`tareas_vinculos` queda como dato (pasos que mencionan un registro; los hilos *sobre* un registro salen del hilo, `catalogo.md`) y la escribe la
 base desde el texto: una sola fuente. Vincular a mano: textarea + "Relacionar" que inserta la
 marca, con vista previa; editor enriquecido solo si no alcanza (librería nueva, consultar).
 
@@ -28,9 +28,14 @@ sale siempre de `etiqueta_registro` (INVOKER, hereda la RLS), nunca de una copia
 solo token con la copia adentro: una regex la saca, y `{dato}` de plantilla (sin `:uuid|`) no se
 confunde. Es el único campo "con referencias" de la ficha; título, notas y resultado quedan en texto.
 Sumar una referencia pide ver lo referenciado (TA021): si no, cualquiera metía su hilo en la ficha
-de un registro ajeno. Lo que copia la base (recurrencia) no se vuelve a revisar. Rol y plantilla del
-vínculo esperan al disparo. Archivos: `sql/119_tareas_vinculos.sql`, `sql/tests/tareas_vinculos.sql`.
+de un registro ajeno. Lo que copia la base (recurrencia) no se vuelve a revisar. ~~Rol y plantilla del vínculo esperan al disparo~~ → el vínculo
+no los lleva: registro y plantilla viven en el hilo (`catalogo.md` → *El hilo guarda su registro*). Archivos: `sql/119_tareas_vinculos.sql`, `sql/tests/tareas_vinculos.sql`.
 
 **La ficha del ente se abre al lado del paso.** Split en desktop, encima con "volver" en mobile.
 Cada módulo con entes aporta su ficha; el registro ente → componente vive en `app/`.
 
+**"Relacionar": primero el módulo, después el buscador (2026-09-24).** Botón junto a la descripción
+del paso (hilos y pasos sueltos): elegir el módulo y buscar en `buscar_registros` (INVOKER, una rama
+por ente: lo que quien escribe ve), que inserta `{ente:uuid|nombre}` con vista previa. En una
+plantilla el mismo botón ofrece solo referencias relativas (`catalogo.md` → *Referencias
+relativas*). Cierra la parte "decidir" del punto 2 de tareas en `BACKLOG.md`.

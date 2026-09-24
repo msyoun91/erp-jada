@@ -18,8 +18,8 @@ archivos de esta carpeta no repiten nombres de los de `master`: los punteros vie
 | `participacion.md` | Visibilidad por hilo · el equipo participa · el delegador es el de usuarios · el admin asigna directo · un solo asignado · equipo participante guardado · columnas del que pide y del que hace · reasignar avisa · el admin completa lo ajeno · a quién se asigna o se pide · los nombres de lo que se ve · agente IA |
 | `pedidos.md` | "Pedido" calculado · pedir es del responsable · `tareas_pedir` · sin `tareas_pedir` · devolver · volver a pedir · editar un pedido aceptado · reabrir un pedido |
 | `bajas.md` | Solo se asigna a quien puede recibirlo · baja · los hilos se mueven todos · cambio de equipo · sin destino, huérfano · transferir a otro equipo · destino por el `equipo_id` de la fila |
-| `registro.md` | `tareas_ediciones` y congelado · ocultar nota o historial · referencias en el texto · RLS de `tareas_vinculos` · `{ente:uuid|nombre}` solo en la descripción · ficha al lado |
-| `catalogo.md` | Toda plantilla es personal · copia independiente · pasos sin asignado · plantilla que pide afuera · nunca falla por un asignado · "a revisar" · plantillas por evento · `{dato}` y condiciones con el disparo · cadena por "espera al anterior" · el elegido gana |
+| `registro.md` | `tareas_ediciones` y congelado · ocultar nota o historial · referencias en el texto · RLS de `tareas_vinculos` · `{ente:uuid|nombre}` solo en la descripción · "Relacionar" · ficha al lado |
+| `catalogo.md` | Toda plantilla es personal · copia independiente · pasos sin asignado · plantilla que pide afuera · nunca falla por un asignado · "a revisar" · plantillas por evento · `{dato}` y condiciones con el disparo · cadena por "espera al anterior" · el elegido gana · "Sobre" · el disparo sigue al registro · no se repite · referencias relativas · sin referencias fijas · el admin y el "Sobre" ajeno |
 | `recurrencia.md` | Recurrencia por hilo · intervalo · cada cierre genera · preguntar si sigue · lo genera un trigger al cerrar · qué copia el siguiente |
 | `avisos.md` | De dónde salen · salidas con título sin link · todo lo que entra a `solicitada` es pedido · una vez por persona y cambio · quitado no avisa a quien se fue · bloqueado solo al insertar antes · huérfanos al cierre · `transferencia` con `{de, a}` · "paso a reasignar" al crear, sin actor |
 | `vistas.md` | Misión: qué entra, qué espera, orden, acciones en la tarjeta · Equipo: tres tipos, filtro por miembro, acciones en la fila · Plantillas: pestañas, "a revisar", usar desde el hilo · Todas: huérfanos |
@@ -70,6 +70,8 @@ Entes
 │           · no cierra con pasos pendientes, solicitados o rechazados sin resolver;
 │             sumar o reabrir un paso lo reabre
 │           · no se comparte: visibilidad por participación · emite, no dispara
+│           · registro (ente e id) y plantilla de origen, si nació de una plantilla con "Sobre";
+│             encabezado "Sobre: X ↗" si quien lee lo ve (con el primer emisor)
 └── tarea — paso de un hilo · dueño: el responsable de su hilo (heredado); el asignado ejecuta
             · estado estado_tarea: solicitada · pendiente · rechazada · completada · cancelada
                 solicitada → pendiente (aceptar) | rechazada (rechazar, motivo obligatorio)
@@ -103,7 +105,13 @@ No son entes
 ├── plantilla        — personal: la usa solo su dueño · compartir = publicar en el Catálogo
 │                      · crea un hilo o suma pasos a uno existente
 │                      · {dato} y {si hay ente:rol}…{fin}; pasos condicionados por rol
-│                      · manual ahora; por evento cuando haya un emisor (activación por usuario)
+│                      · Sobre: un ente o ninguno; con Sobre, usarla pide elegir el registro
+│                        (desde un hilo, suma a ese hilo); sin el submódulo del ente no se ve
+│                        ni se arma, salvo tareas_administrar, que la administra pero no la usa
+│                      · manual ahora; por evento (del ente de Sobre) con el primer emisor:
+│                        activación por usuario, corre la del dueño del registro, una vez por
+│                        plantilla y registro (hilo activo)
+│                      · referencias: solo relativas {@registro} · {@ente:rol}; nunca {ente:uuid|…}
 │                      · publicada (la decide el dueño; el admin despublica) → Catálogo: se lee y
 │                        se copia, sin asignados fijos y con el disparo apagado; datos, condiciones y pasos
 │                        condicionados, tal cual
@@ -135,7 +143,9 @@ Relaciones
 │                              · no bifurca: un solo siguiente por paso (unique de sql/017)
 ├── tarea → cualquier ente   — referencia {ente:uuid} + copia del nombre en el texto
 │                              · link ↗ (ficha al lado) si lo puede abrir; texto plano si no
-│                              · tareas_vinculos derivada (rol + plantilla si vino de un disparo)
+│                              · tareas_vinculos derivada del texto, sin rol ni plantilla
+├── hilo → registro          — ente + id guardados en el hilo, nullable; hilo → plantilla, nullable
+├── plantilla → ente (tipo)  — Sobre, nullable
 └── plantilla → usuario      — dueño
 
 Acciones
@@ -144,7 +154,7 @@ Acciones
 │         pasos) · reactivar (admin)
 ├── tarea: sumar paso · insertar antes de · editar · asignar (en el equipo) · pedir (afuera, tareas_pedir) · aceptar
 │          · rechazar (motivo) · volver a pedir · reasignar · repartir (equipo → persona) · poner en espera
-│          · completar · reabrir · cancelar · agregar nota · referenciar ente · desactivar
+│          · completar · reabrir · cancelar · agregar nota · referenciar ente ("Relacionar") · desactivar
 │          (desde el último)
 │          ├── asignado: acepta, rechaza, espera, completa, reabre lo suyo; suma pasos
 │          │   asignados a sí mismo, en paralelo (sin previo)
@@ -152,8 +162,8 @@ Acciones
 │          ├── responsable del hilo: edita, inserta, reasigna, cancela, reabre, resuelve rechazados;
 │          │   NO completa pasos de otro
 │          └── tareas_administrar: todo, registrado
-└── plantilla: crear · editar · desactivar · usar · activar disparo · publicar/despublicar
-               · copiar del Catálogo
+└── plantilla: crear · editar · desactivar · usar (con Sobre, eligiendo el registro) · activar
+               disparo · publicar/despublicar · copiar del Catálogo · referenciar (solo relativas)
 
 Eventos que emite
 ├── hilo:  alta · estado · baja · reactivacion · transferencia ({de, a}; entra al enum
@@ -191,7 +201,10 @@ Eventos que emite
     ├── hilo dado de baja → los asignados de pasos abiertos
     ├── paso dado de baja → el asignado, si no lo desactivó él
     ├── paso completado   → el responsable del hilo
-    └── paso cancelado    → el asignado
+    ├── paso cancelado    → el asignado
+    ├── plantilla disparada → el dueño del registro, una por plantilla (no por paso); los
+    │                       asignados, quien disparó incluido, "tarea asignada" como siempre
+    └── plantilla fallida → el dueño del registro → la plantilla
 Eventos que consume
 └── de otros módulos → disparar_plantillas. Sin emisor todavía: se conecta con el primero.
 ```
@@ -263,3 +276,6 @@ multi-asignado (`tareas_asignados`), `modo_completado`, `origen_app`, `tareas_ge
   o designado necesita `tareas_ver` (`BACKLOG.md`).
 - Core: vuelven `puede_abrir_registro` y `buscar_registros`; ramas de `hilo` y `tarea` en
   `etiqueta_registro` y `puede_ver_relacion` (`sql/109`).
+- Core, con el primer emisor: `entes` dice qué columna es el dueño del registro, y versiones `_de`
+  (con usuario explícito) de `etiqueta_registro` y `relacionados_de_registro` para el disparo
+  (`catalogo.md` → *El disparo sigue al registro*).

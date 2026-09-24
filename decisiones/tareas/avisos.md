@@ -64,3 +64,11 @@ Es el único que ve el asignado original: el trigger de después ya no lo ve. Si
 responsable aunque haya cerrado él: al reabrir el paso queda a su nombre y lo está mirando; el
 ciclo nuevo nace en otro hilo, que no está mirando. Cubre recurrencia y, cuando lleguen, los
 disparos (`sql/117`).
+
+**Un disparo avisa una vez al dueño, y a los asignados como siempre (2026-09-24).** Al dueño del
+registro: "Se creó *Instalación — Cocina Pérez* porque Carlos aprobó la obra" → el hilo; sus
+propios pasos no avisan aparte. Los demás asignados reciben "tarea asignada" o "pedido recibido",
+también quien disparó si es asignado de un paso: no asignó nada, así que el disparo avisa sin
+actor, como `tareas_al_crear`. Por disparar, quien actuó no recibe nada. Falla inesperada: la acción
+del emisor sigue y al dueño le llega "no pudo crearse" → la plantilla. Asignado inválido: "paso a
+reasignar", como hoy. Con el primer emisor.

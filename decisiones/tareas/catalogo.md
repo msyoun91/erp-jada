@@ -30,7 +30,7 @@ elegido al usar la plantilla cae afuera, se aplica la regla de siempre: pedido c
 **Una plantilla nunca falla por un asignado (2026-09-24).** Manual: el fijo que ya no puede recibir
 se trata como paso vacío (se elige, con quien la usa por defecto, y se avisa). Disparo: el asignado
 inválido, el paso vacío o el pedido sin `tareas_pedir` quedan en quien activó el disparo —el
-responsable del hilo creado— con aviso "paso a reasignar", como la recurrencia. Si el activador ya
+dueño del registro y responsable del hilo creado (*El disparo sigue al registro*)— con aviso "paso a reasignar", como la recurrencia. Si el activador ya
 no puede recibir, el disparo se saltea; la baja apaga sus activaciones. Un disparo nunca voltea la
 transacción del emisor: lo inesperado se registra y se avisa al activador, y la obra se crea igual.
 
@@ -57,3 +57,69 @@ elegido; si no, el fijo si puede recibir (`tareas_asignables()`); si no, quien l
 por los vacíos y los "a revisar"; si pregunta por otro, es el dueño cambiando su propia plantilla.
 El admin ve, edita y usa las ajenas (*Función admin por módulo*), pero no las publica: publicar es
 del dueño. `sql/118`.
+
+**La plantilla dice "Sobre" qué registro trabaja: un ente o ninguno (2026-09-24).** Aparte del
+disparo: "Sobre" define qué se puede referenciar y qué se pide al usarla; el disparo solo agrega que
+corra sola. Usarla a mano con "Sobre" pide elegir el registro (buscador, lo que quien la usa ve);
+sin elegir, no se usa. Desde un hilo siempre suma a ese hilo y pide el registro igual, sin
+precargar el actual ("Sobre: Hilo" desde el hilo A puede hablar del hilo B). "Sobre: Ninguno" es la
+plantilla de hoy. Los hilos no disparan: se eligen a mano; el proceso que encadena trabajo vive en
+el ente de negocio (la obra). Espera al primer emisor (`BACKLOG.md`).
+
+**El hilo guarda su registro (ente e id) y su plantilla (2026-09-24).** Solo si nació de una
+plantilla con "Sobre". El ente va en el hilo y no se deduce del "Sobre", que se puede editar
+después. Es la única fuente de "hilo sobre un registro" y "vino de esta plantilla":
+`tareas_vinculos` no lleva rol ni plantilla (`registro.md`). Sumar pasos a un hilo existente no le
+cambia el registro. La ficha del registro lista sus hilos; el encabezado del hilo muestra
+"Sobre: X ↗" si quien lee lo ve, y nada si no. Hilo "sobre X" a mano, sin plantilla: no, hasta que
+haga falta.
+
+**El disparo sigue al registro, no a quien actúa (2026-09-24).** Corren las plantillas que activó
+el dueño del registro, lo cambie quien lo cambie; el hilo nace suyo. Dueño que no puede recibir: no
+corre (la baja ya apaga sus activaciones). Transferido el registro, corren las del nuevo dueño.
+- **Transferir el registro no toca sus hilos.** El creado sigue con quien lo tenía; si el nuevo
+  dueño lo necesita, se transfiere a mano. Moverlo solo acoplaba el emisor con tareas, y el nuevo
+  dueño puede no tener Tareas. Si después corre otra plantilla del nuevo dueño, la obra queda con
+  dos hilos, visibles en su ficha.
+- **Quien no es dueño no dispara (costo aceptado).** El jefe de taller que quiere "cada obra
+  aprobada → Preparar materiales" publica una plantilla con ese paso asignado al equipo Taller;
+  cada dueño la copia y la activa, y el paso le llega por asignación. Si un dueño no la activa, el
+  taller no se entera: se corrige por proceso. Una sola regla, que da siempre lo mismo: el dueño
+  siempre ve su registro.
+- **Puerta abierta: activación "cualquier registro del ente".** Si aparece un caso que lo de arriba
+  no cubre: una activación por ente, sin importar el dueño, solo para quien tenga la vista `_todas`
+  del ente; el hilo nace de quien la activó. Se suma sin tocar lo demás: otro valor en la
+  activación y una rama más en `disparar_plantillas`. Descartado: "corren las de todos los que ven
+  el registro" — las copias activadas de una plantilla del Catálogo daban un hilo igual cada una, y
+  disparar o no dependía de lo compartido en ese momento.
+- **`disparar_plantillas` es DEFINER** y chequea a mano lo que la RLS no puede: el dueño puede
+  recibir, tiene el submódulo del ente, y lo que ve se mide con funciones `_de(id, usuario)`. Con
+  INVOKER corría como quien actuó: no encontraba la plantilla del dueño (`usar_plantilla` filtra
+  `dueno_id = auth.uid()`, TA017), el INSERT del hilo pedía `tareas_ver` a quien actuó
+  (`tareas_hilos_insert`) y TA021 medía lo que ve él. Supera `GUIDE_ENTES.md` §2.8;
+  `emitir_evento` sigue INVOKER.
+
+**Un disparo no se repite por plantilla y registro (2026-09-24).** Si hay un hilo `activo` de esa
+plantilla sobre ese registro, no corre. Cerrado cuenta: no vuelve a crearse. Desactivado no cuenta.
+Chequeo en `disparar_plantillas`, no unique index: la recurrencia deja el cerrado y el siguiente
+activos a la vez. Por plantilla y no por registro, para no bloquear plantillas distintas sobre la
+misma obra.
+
+**Referencias relativas, solo en plantillas (2026-09-24).** `{@registro}` (el de "Sobre"; en la
+UI, "El registro") y `{@ente:rol}` (quien tenga ese rol en él). Al usarla pasan a
+`{ente:uuid|nombre}`, la referencia de siempre. Rol vacío → desaparece (para la frase,
+`{si hay ente:rol}…{fin}` o paso condicionado); varios → todos, separados por coma. Cuenta lo que
+ve el dueño del hilo, no quien disparó: si no lo ve, desaparece sin nombre. El asignado que no lo
+ve lo lee en texto plano, como hoy. "Relacionar" en la plantilla ofrece solo estas: "El registro"
+y los roles del ente de "Sobre".
+
+**Sin referencias fijas `{ente:uuid|…}` en plantillas (2026-09-24).** Una plantilla es reusable y
+una referencia a un registro concreto casi nunca lo es; además, publicada, mostraba en el Catálogo
+el nombre de un registro a quien no lo ve. `guardar_plantilla` las rechaza; las guardadas pasan a
+texto plano (el nombre). Cierra el punto 4 de tareas en `BACKLOG.md`.
+
+**Sin el submódulo del ente, la plantilla no se ve (2026-09-24).** Ni en Mis plantillas ni en el
+Catálogo, ni se arma con ese "Sobre": sale de la RLS de `entes`; recuperado el submódulo,
+reaparece. `tareas_administrar` la ve igual (función admin): la edita, despublica y desactiva, pero
+no la usa —el buscador del ente le sale vacío y los roles quedan como marca, sin nombres—.
+Administra Tareas sin ganar nada del otro módulo.
