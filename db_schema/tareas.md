@@ -270,7 +270,7 @@ RPC (INVOKER, GRANT `authenticated`; errores TA017 "no existe o no es tuya", TA0
   que puede recibir; si no, quien la usa. INSERT comunes a profundidad 1: rigen las reglas de
   `sql/113` (un pedido sin `tareas_pedir`, TA010; un asignado que no es responsable, TA001).
 
-## Vínculos (`sql/119`)
+## Vínculos (`sql/119`, `sql/122`)
 
 Test: `sql/tests/tareas_vinculos.sql`. Decisión: `decisiones/tareas/registro.md`.
 
@@ -287,8 +287,9 @@ que vio quien lo escribió). `tareas_referencias(texto) → (ente, registro_id)`
 | activo | boolean | unique parcial `(tarea_id, ente, registro_id) WHERE activo` |
 | created_at / updated_at | timestamptz | |
 
-La escribe solo `tareas_derivar_vinculos` (AFTER INSERT / UPDATE OF descripcion ON tareas, INVOKER):
-apaga lo que ya no está en el texto y suma lo nuevo; lo nuevo pide `etiqueta_registro` no NULL para
-quien escribe (TA021). Desde un trigger DEFINER (recurrencia) corre como dueño y no revisa. RLS:
+La escribe solo `tareas_derivar_vinculos` (AFTER INSERT / UPDATE OF descripcion, activo ON tareas,
+INVOKER): apaga lo que ya no está en el texto y suma lo nuevo; lo nuevo pide `etiqueta_registro` no NULL
+para quien escribe (TA021). Paso desactivado → apaga todos; reactivado → los vuelve a derivar sin
+TA021 (`sql/122`). Desde un trigger DEFINER (recurrencia) corre como dueño y no revisa. RLS:
 SELECT si se ve el paso; INSERT y UPDATE solo con `pg_trigger_depth() > 0`. `GRANT SELECT, INSERT
 (tarea_id, ente, registro_id), UPDATE (activo)`. Rol y plantilla del vínculo llegan con el disparo.

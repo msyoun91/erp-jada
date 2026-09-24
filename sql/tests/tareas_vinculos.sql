@@ -1,9 +1,10 @@
--- Verificación de sql/119: referencias en la descripción y `tareas_vinculos`.
+-- Verificación de sql/119 y sql/122: referencias en la descripción y `tareas_vinculos`.
 -- NO es una migración: todo corre dentro de una transacción que termina en
--- ROLLBACK. Correr después de aplicar sql/112 a sql/119.
+-- ROLLBACK. Correr después de aplicar sql/112 a sql/122.
 --
 -- Mundo: M1 y M2, independientes con tareas_ver. M1 lleva H1 (paso p1) y H3
--- (recurrente, paso r1); M2 lleva H2. Nada depende de los datos reales.
+-- (recurrente, paso r1); M2 lleva H2. A administra Tareas.
+-- Nada depende de los datos reales.
 
 BEGIN;
 
@@ -75,16 +76,17 @@ $f$;
 -- ============================================================
 INSERT INTO ids (nombre, id)
 SELECT n, gen_random_uuid()
-FROM unnest(ARRAY['M1','M2','H1','H2','H3','p1','p2','r1']) AS n;
+FROM unnest(ARRAY['M1','M2','A','H1','H2','H3','p1','p2','r1']) AS n;
 
-INSERT INTO ids (nombre, id) SELECT codigo, id FROM submodulos WHERE activo AND codigo = 'tareas_ver';
+INSERT INTO ids (nombre, id) SELECT codigo, id FROM submodulos WHERE activo AND codigo IN ('tareas_ver', 'tareas_pedir', 'tareas_todas', 'tareas_administrar');
 
 INSERT INTO auth.users (id, email, raw_user_meta_data)
 SELECT id, lower(nombre) || '.' || id || '@test119.local', jsonb_build_object('nombre', 'test119 ' || nombre)
-FROM ids WHERE nombre IN ('M1','M2');
+FROM ids WHERE nombre IN ('M1','M2','A');
 
 INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
-SELECT pg_temp.id(u), pg_temp.id('tareas_ver') FROM unnest(ARRAY['M1','M2']) AS u;
+SELECT pg_temp.id(u), pg_temp.id('tareas_ver') FROM unnest(ARRAY['M1','M2','A']) AS u
+UNION ALL SELECT pg_temp.id('A'), pg_temp.id(s) FROM unnest(ARRAY['tareas_pedir','tareas_todas','tareas_administrar']) AS s;
 SET CONSTRAINTS ALL IMMEDIATE;
 SET CONSTRAINTS ALL DEFERRED;
 
@@ -153,6 +155,16 @@ SELECT pg_temp.caso('07 H3 recurrente con r1 → H1, completado y cerrado', 'ok'
   pg_temp.id('r1'), pg_temp.id('H3')), 'M1'));
 SELECT pg_temp.caso('07 el paso del hilo siguiente → H1', 'hilo:H1', pg_temp.vinculos(
   (SELECT t.id FROM tareas t JOIN tareas_hilos h ON h.id = t.hilo_id WHERE h.recurrencia_de = pg_temp.id('H3'))));
+
+-- ============================================================
+-- Los vínculos siguen al `activo` del paso
+-- ============================================================
+SELECT pg_temp.caso('08 M1 desactiva p2', 'ok', pg_temp.intentar(format(
+  $s$SELECT tareas_desactivar_paso(%L)$s$, pg_temp.id('p2')), 'M1'));
+SELECT pg_temp.caso('08 p2 desactivado, sin vínculos', NULL, pg_temp.vinculos(pg_temp.id('p2')));
+SELECT pg_temp.caso('09 A reactiva p2', 'ok', pg_temp.intentar(format(
+  $s$UPDATE tareas SET activo = true WHERE id = %L$s$, pg_temp.id('p2')), 'A'));
+SELECT pg_temp.caso('09 p2 vuelve → H1', 'hilo:H1', pg_temp.vinculos(pg_temp.id('p2')));
 
 SELECT caso, esperado, obtenido, ok FROM r ORDER BY ok, caso;
 

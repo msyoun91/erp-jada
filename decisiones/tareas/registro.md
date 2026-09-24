@@ -35,6 +35,11 @@ no los lleva: registro y plantilla viven en el hilo (`catalogo.md` → *El hilo 
 pega `{ente:uuid|nombre}` en una nota o en un resultado, no se ve el uuid ni se vuelve referencia:
 `sinReferencias` (`derivados.ts`) deja el nombre. Archivos: `NotasSection.tsx`, `PasoPanel.tsx`, `HiloView.tsx`.
 
+**Los vínculos siguen al `activo` del paso (2026-09-24).** Desactivar un paso apaga sus vínculos:
+si no, contaba como mención viva para el admin y para lo que lea `tareas_vinculos` después
+("mencionado en", el disparo). Reactivarlo los vuelve a derivar sin TA021: lo hace el admin y la
+referencia ya se revisó al escribirla. Archivos: `sql/122_tareas_vinculos_activo.sql`, `sql/tests/tareas_vinculos.sql`.
+
 **La ficha del ente se abre al lado del paso.** Split en desktop, encima con "volver" en mobile.
 Cada módulo con entes aporta su ficha; el registro ente → componente vive en `app/`.
 

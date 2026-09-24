@@ -17,7 +17,8 @@ aplicado; `sql/tests/tareas_bajas.sql` pasa entero. `sql/115` (avisos) aplicado;
 aplicado; `sql/tests/tareas_recurrencia.sql` pasa entero. `sql/118` (plantillas y Catálogo)
 aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/119` (vínculos y referencias en la
 descripción) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. `sql/120` (`tareas_nombres`)
-aplicado; `sql/tests/tareas_nombres.sql` pasa entero. Falta:
+aplicado; `sql/tests/tareas_nombres.sql` pasa entero. `sql/122` (vínculos siguen al `activo` del
+paso) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. Falta:
 - Con el primer emisor (obras), todo junto (decidido 2026-09-24, `decisiones/tareas/catalogo.md`
   desde *La plantilla dice "Sobre"*, y `avisos.md` → *Un disparo avisa una vez*): "Sobre" en la
   plantilla, registro (ente e id) y plantilla de origen en el hilo, `{@registro}` y `{@ente:rol}`,
@@ -102,14 +103,6 @@ cerrado, así que primero hay que reabrir el hilo. Verificar en `sql/113` si la 
 un paso de un hilo cerrado (y si reabre el hilo). Si sí: preguntar al usuario si se muestra
 "Reabrir" en el paso (atajo) o si se corrige la ficha a "se reabre el hilo primero". Si no: corregir
 la ficha. `PasoPanel.tsx` (línea ~92) tiene la condición de "Reabrir".
-
-**7. Los vínculos de un paso desactivado quedan `activo = true`.** El trigger
-`tareas_derivar_vinculos` (`sql/119`, línea ~113) corre solo `ON INSERT OR UPDATE OF descripcion`.
-No filtra a nadie (la RLS de vínculos pasa por `tareas`, y un paso desactivado solo lo ve
-`tareas_administrar`), pero cuenta como mención viva para el admin y para cualquier consumidor
-futuro (punto 3, `plantilla_disparada`). Propuesta: sumar `activo` al `UPDATE OF` y, si
-`NEW.activo = false`, desactivar sus vínculos; al reactivar, volver a derivarlos (sin chequear TA021:
-lo reactiva el admin). Test en `sql/tests/tareas_vinculos.sql`; actualizar `db_schema/tareas.md`.
 
 **8. Equipos en plantillas: falta el dato de prueba, no código.** `asignado_equipo_id` en
 `tareas_plantillas_pasos` (`sql/118`) y el grupo "Equipos" en `AsignadoSelect` ya existen, pero solo
