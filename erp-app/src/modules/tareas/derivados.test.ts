@@ -2,7 +2,7 @@
 // desde erp-app (Node despoja los tipos solo).
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { estaBloqueado, estaEnEspera, estaVencido, ordenarPasos } from "./derivados.ts";
+import { compararMision, estaBloqueado, estaEnEspera, estaVencido, ordenarPasos } from "./derivados.ts";
 import type { EstadoTarea } from "./types.ts";
 
 type P = { id: string; paso_anterior_id: string | null; estado: EstadoTarea; created_at: string };
@@ -58,4 +58,12 @@ test("espera y vencido", () => {
   assert.equal(estaVencido({ estado: "pendiente", vence: "2026-09-23" }, "2026-09-24"), true);
   assert.equal(estaVencido({ estado: "completada", vence: "2026-09-23" }, "2026-09-24"), false);
   assert.equal(estaVencido({ estado: "pendiente", vence: "2026-09-24" }, "2026-09-24"), false);
+});
+
+test("misión: prioridad, después vence (sin fecha al final), después alta", () => {
+  const p = (id: string, prioridad: "alta" | "media" | "baja", vence: string | null) => ({ id, prioridad, vence, created_at: id });
+  const orden = [p("d", "media", null), p("c", "media", "2026-10-02"), p("a", "baja", "2026-01-01"), p("b", "alta", null), p("e", "media", "2026-10-01"), p("f", "media", null)]
+    .sort(compararMision)
+    .map((x) => x.id);
+  assert.deepEqual(orden, ["b", "e", "c", "d", "f", "a"]);
 });

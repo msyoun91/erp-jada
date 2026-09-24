@@ -31,7 +31,8 @@ aplicado; `sql/tests/tareas_nombres.sql` pasa entero. Falta:
 - Con el primer emisor: `{dato}`, condiciones por rol, activaciones y `disparar_plantillas`
   (`decisiones/tareas/catalogo.md`).
 
-UI: vista Hilos hecha (`/tareas`, `/tareas/{id}`, `/tareas/paso/{id}`). Falta: Misión, Equipo,
+UI: vistas Hilos (`/tareas`, `/tareas/{id}`, `/tareas/paso/{id}`) y Misión (`/tareas/mision`) hechas.
+Falta: Equipo,
 Plantillas y Todas; las referencias `{ente:uuid|nombre}` se muestran como el nombre en negrita, sin
 link ↗ ni ficha al lado (`TextoConReferencias`); "Usar plantilla" desde el hilo.
 

@@ -88,3 +88,31 @@ export async function getHiloDePaso(id: string): Promise<string | null> {
   if (error) throw error;
   return data?.hilo_id ?? null;
 }
+
+export type PasoCadena = Pick<Tarea, "id" | "paso_anterior_id" | "estado" | "created_at" | "titulo">;
+export type PasoMision = Tarea & { tareas_hilos: Pick<Hilo, "titulo"> };
+
+// Misión: mis pasos por decidir o por hacer, de hilos vivos. Lo asignado a mi
+// equipo va en Equipo. `cadena` trae los pasos de esos hilos para derivar el
+// bloqueo, como en el hilo.
+export async function getMision(yo: string): Promise<{ pasos: PasoMision[]; cadena: PasoCadena[] }> {
+  const supabase = await createClient();
+  const { data: pasos, error } = await supabase
+    .from("tareas")
+    .select("*, tareas_hilos!inner(titulo)")
+    .eq("asignado_id", yo)
+    .eq("activo", true)
+    .in("estado", ["solicitada", "pendiente"])
+    .eq("tareas_hilos.activo", true)
+    .eq("tareas_hilos.estado", "abierto");
+  if (error) throw error;
+  if (pasos.length === 0) return { pasos, cadena: [] };
+
+  const { data: cadena, error: cadenaError } = await supabase
+    .from("tareas")
+    .select("id, paso_anterior_id, estado, created_at, titulo")
+    .in("hilo_id", [...new Set(pasos.map((p) => p.hilo_id))])
+    .eq("activo", true);
+  if (cadenaError) throw cadenaError;
+  return { pasos, cadena };
+}

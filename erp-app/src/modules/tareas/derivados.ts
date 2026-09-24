@@ -1,4 +1,4 @@
-import type { EstadoTarea } from "./types";
+import type { EstadoTarea, PrioridadTarea } from "./types";
 
 type PasoCadena = {
   id: string;
@@ -55,4 +55,17 @@ export function estaEnEspera(paso: { estado: EstadoTarea; espera_hasta: string |
 
 export function estaVencido(paso: { estado: EstadoTarea; vence: string | null }, hoy: string) {
   return estaAbierto(paso.estado) && paso.vence !== null && paso.vence < hoy;
+}
+
+type PasoOrden = { prioridad: PrioridadTarea; vence: string | null; created_at: string };
+const RANGO_PRIORIDAD: Record<PrioridadTarea, number> = { alta: 0, media: 1, baja: 2 };
+
+// Orden de Misión: prioridad, después lo que vence antes (sin fecha al final),
+// después lo más viejo.
+export function compararMision(a: PasoOrden, b: PasoOrden) {
+  return (
+    RANGO_PRIORIDAD[a.prioridad] - RANGO_PRIORIDAD[b.prioridad] ||
+    (a.vence ?? "9999").localeCompare(b.vence ?? "9999") ||
+    a.created_at.localeCompare(b.created_at)
+  );
 }
