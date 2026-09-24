@@ -8,7 +8,7 @@ está **por qué** se decidió cada una. Leer solo el archivo que toca la tarea.
 > `db_schema/tareas.md`, `entes`, el bus de eventos, compartir al asignar— y esas decisiones
 > **son reales**: se tomaron, se implementaron y se pagaron. Lo que ya no existe es el código.
 > Excepción: `entes`, `eventos` y sus emisores volvieron en `sql/109` (`entes.md`). El rediseño
-> de Tareas arrancó en `decisiones/tareas.md` (ficha, sin SQL).
+> de Tareas arrancó en `decisiones/tareas/README.md` (ficha aprobada, sin SQL); sus archivos no repiten nombres de los de `master`.
 >
 > Se dejan tal cual a propósito. Son el material de entrada del rediseño, no ruido: cada una dice
 > contra qué problema se decidió. Los archivos que nombran viven en `master`.

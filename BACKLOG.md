@@ -20,7 +20,7 @@ Todo está escrito en `decisiones/usuarios.md` → *Equipos y delegación de per
 
 `submodulo_reglas` (`sql/110`) ya existe; faltan las filas de tareas, que no se pueden cargar antes
 que sus submódulos:
-- Las del bloque *Reglas entre permisos* de la ficha (`decisiones/tareas.md`), y `delegable` según
+- Las del bloque *Reglas entre permisos* de la ficha (`decisiones/tareas/README.md`), y `delegable` según
   su lista de delegables.
 - `designar_delegador` y `quitar_delegador` tienen que respetarlas: dan y quitan `tareas_equipo`
   junto con `usuarios_delegar` (se requieren mutuamente). Ninguna otorga `tareas_ver`: si el heredero o
@@ -28,7 +28,7 @@ que sus submódulos:
 - Correr de nuevo `sql/tests/usuarios_equipos.sql`: sus delegadores de prueba no tienen `tareas_ver`
   ni `tareas_equipo`.
 
-Decisión: `decisiones/global/permisos.md` → *Reglas entre permisos*; ficha: `decisiones/tareas.md`.
+Decisión: `decisiones/global/permisos.md` → *Reglas entre permisos*; ficha: `decisiones/tareas/README.md`.
 
 ## erp-cliente — falta el `ThemeToggle`
 
