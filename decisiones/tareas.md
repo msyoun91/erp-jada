@@ -22,22 +22,21 @@ Personas
 │                     · crea hilos y pasos; asigna a sí mismo o a un compañero; con tareas_pedir
 │                       pide a una persona de otro equipo o a otro equipo; acepta o rechaza lo
 │                       que le piden; completa lo suyo (resultado opcional), pone en espera,
-│                       agrega notas; edita y transfiere sus hilos; usa Misión; arma, publica y
-│                       copia plantillas personales
+│                       agrega notas; edita y transfiere sus hilos; usa Misión; arma, usa y
+│                       publica sus plantillas; copia del Catálogo
 │                     · no ve hilos de su equipo donde no participa; nada de otros equipos fuera
 │                       de los hilos donde participa
 ├── Delegador         — lo del miembro + todo hilo donde participe su equipo + la bandeja de
 │                       pedidos y de lo asignado "al equipo"
 │                     · acepta o rechaza los pedidos al equipo y a sus miembros; reparte lo del
-│                       equipo; reasigna dentro del equipo; arma y publica plantillas de equipo;
-│                       pide a otros equipos solo con tareas_pedir
+│                       equipo; reasigna dentro del equipo; pide a otros equipos solo con tareas_pedir
 │                     · no ve hilos de otros equipos donde el suyo no participa
 ├── Independiente     — ve lo mismo que el miembro
 │                     · se asigna solo a sí mismo; con tareas_pedir pide a otros; acepta o
 │                       rechaza lo que le piden
 │                     · lo mismo que el miembro; sin bandeja
 ├── Admin del módulo  — ve todo · hace todo (completar lo ajeno: nota obligatoria, firmado), reactiva,
-│                       plantillas globales, despublica, otorga tareas_pedir · —
+│                       despublica plantillas, otorga tareas_pedir · —
 ├── Agente IA         — sin persona propia: trabaja como persona, con sus funciones y las mismas
 │                       restricciones; todo queda firmado con su cuenta
 ├── Supervisor        — NO existe
@@ -46,8 +45,10 @@ Personas
 Entes
 ├── hilo  — dueño responsable_id (transferible) · estado estado_hilo: abierto · cerrado
 │           · datos {titulo} · ruta /tareas/{id} · submódulo tareas_ver
-│           · resultado opcional al cerrar · recurrencia opcional: cada cierre crea el siguiente,
-│             con los pasos copiados sin completar
+│           · resultado opcional al cerrar · recurrencia opcional (cada N días o meses): cada
+│             cierre crea el siguiente, con los pasos copiados sin completar
+│           · lo cierra el responsable, a mano, nunca solo · cerrado = congelado: se corrige con
+│             nota o se reabre
 │           · no cierra con pasos pendientes, solicitados o rechazados sin resolver;
 │             sumar o reabrir un paso lo reabre
 │           · no se comparte: visibilidad por participación · emite, no dispara
@@ -81,20 +82,19 @@ Entes
             · completada o cancelada = congelada: se corrige con nota o se reabre
 
 No son entes
-├── plantilla        — alcance global (admin) · equipo (delegador) · personal (cada uno)
+├── plantilla        — personal: la usa solo su dueño · compartir = publicar en el Catálogo
 │                      · crea un hilo o suma pasos a uno existente
 │                      · {dato} y {si hay ente:rol}…{fin}; pasos condicionados por rol
 │                      · manual ahora; por evento cuando haya un emisor (activación por usuario)
 │                      · publicada (la decide el dueño; el admin despublica) → Catálogo: se lee y
-│                        se copia como personal (o de equipo, con tareas_plantillas_equipo), sin
-│                        asignados fijos y con el disparo apagado; datos, condiciones y pasos
+│                        se copia, sin asignados fijos y con el disparo apagado; datos, condiciones y pasos
 │                        condicionados, tal cual
 │                      · la copia es independiente: ni el original ni ella se afectan después;
 │                        se puede editar y publicar como cualquier otra
 │                      · copiada_de guarda el origen, solo como dato: link si el original sigue
 │                        visible en el Catálogo, texto plano si no
 │                      · paso asignado fuera del equipo de quien la usa: nace solicitado, exige
-│                        tareas_pedir; sin él, la plantilla no se muestra
+│                        tareas_pedir; sin él, queda "a revisar" y no se usa
 │                      · paso sin asignado fijo: se elige al usarla
 ├── notas            — de paso y de hilo, solo se agregan · anota quien ve el hilo (insert =
 │                      select; también en pasos congelados) · tareas_administrar las oculta
@@ -118,7 +118,7 @@ Relaciones
 ├── tarea → cualquier ente   — referencia {ente:uuid} + copia del nombre en el texto
 │                              · link ↗ (ficha al lado) si lo puede abrir; texto plano si no
 │                              · tareas_vinculos derivada (rol + plantilla si vino de un disparo)
-└── plantilla → equipo | usuario — alcance
+└── plantilla → usuario      — dueño
 
 Acciones
 ├── hilo: crear (vacío o desde plantilla) · editar · transferir responsable · cerrar · reabrir
@@ -187,23 +187,19 @@ Módulo: Tareas
 │       bandeja: pedidos por decidir · asignado al equipo · hilos del equipo
 │       · reparte y reasigna dentro del equipo (sin función aparte)
 ├── Plantillas (vista, tareas_plantillas)       — miembro, delegador, independiente, admin
-│   │   pestañas: Mis plantillas · Catálogo
-│   ├── tareas_plantillas_equipo (funcion)      — delegador
-│   └── tareas_plantillas_globales (funcion)    — admin
+│       pestañas: Mis plantillas · Catálogo
 └── Todas (vista, tareas_todas)                 — admin
     │   filtro huérfanos: responsable o asignado inactivo o sin tareas_ver
     └── tareas_administrar (funcion)            — admin
 
 Delegables
 ├── sí — tareas_ver · tareas_mision · tareas_plantillas
-└── no — tareas_pedir · tareas_equipo · tareas_plantillas_equipo
-         · tareas_plantillas_globales · tareas_todas · tareas_administrar
+└── no — tareas_pedir · tareas_equipo · tareas_todas · tareas_administrar
 
 Reglas entre permisos (filas de submodulo_reglas, en la migración de tareas)
 ├── tareas_equipo            requiere usuarios_delegar — un delegador por equipo
 ├── usuarios_delegar         requiere tareas_ver       — recibe bajas, cambios de equipo y transferencias
 ├── usuarios_delegar         requiere tareas_equipo    — todo delegador tiene bandeja
-├── tareas_plantillas_equipo requiere tareas_equipo    — la plantilla de equipo es de quien lleva la bandeja
 ├── tareas_todas             requiere tareas_administrar — sola sería pestaña vacía o un supervisor,
 │                                                        que no existe; con vista_id, van juntas
 ├── tareas_mision            requiere tareas_ver       — hilo y paso se abren con tareas_ver: sin él,
@@ -286,6 +282,12 @@ receptor o el delegador de su equipo. Rechazar no cancela: el previo es inmutabl
 quedarían trabados, así que resuelve el responsable del hilo. Independiente: misma regla, todo otro
 es "afuera" (opción a; la b era una excepción).
 
+**Sin `tareas_pedir`, los pedidos vivos siguen pero no se reenvían (2026-09-24).** Todo lo que
+genera `solicitada` —nacer, reasignar afuera, reabrir, volver a pedir, editar título, descripción
+o vencimiento de un pedido— exige `tareas_pedir` en quien lo hace. Si el responsable lo pierde, el
+receptor sigue con lo aceptado y el responsable puede cancelar, cambiar prioridad, anotar o
+transferir el hilo. No se cancela nada: quitarle el permiso no anula lo que otro equipo ya aceptó.
+
 **Un pedido aceptado se puede devolver (2026-09-24).** `pendiente → rechazada` con motivo, solo en
 pedidos: sin salida, lo que el receptor ya no puede hacer figuraba como compromiso vigente y
 trababa los siguientes. Reusa el rechazo, su resolución y su aviso. Dentro del equipo no hace
@@ -367,6 +369,11 @@ si no, el nuevo asignado heredaba una espera ajena, un pedido vuelto a `solicita
 espera sin aceptarse y un reabierto volvía con fecha vieja. Trigger, sin estado nuevo.
 
 **Resultado opcional**, en el paso y en el hilo.
+
+**El hilo lo cierra el responsable, a mano (2026-09-24).** Cerrar pide el resultado y, si es
+recurrente, si sigue; un cierre automático al terminar el último paso se saltaba las dos cosas.
+Cuando no queda nada abierto, el hilo muestra "Todo completado — cerrar". Cerrado, se congela como
+un paso completado: título y resultado se corrigen con nota o reabriendo.
 
 **Quien pide y quien hace escriben columnas distintas, y completar es solo del asignado.**
 Pedido del usuario: que nadie —persona o agente— cambie lo pedido y lo marque hecho. El contenido
@@ -461,22 +468,29 @@ sale siempre de `etiqueta_registro` (INVOKER, hereda la RLS), nunca de una copia
 **La ficha del ente se abre al lado del paso.** Split en desktop, encima con "volver" en mobile.
 Cada módulo con entes aporta su ficha; el registro ente → componente vive en `app/`.
 
-**Plantillas en tres alcances y Catálogo.** Global (admin), equipo (delegador), personal. El dueño
-decide publicarla; del Catálogo se copia —nunca se usa directo, para no depender de ediciones
-ajenas—, sin asignados fijos y con el disparo apagado. `copiada_de` guarda el origen.
+**~~Plantillas en tres alcances y Catálogo~~** → *Toda plantilla es personal*.
+
+**Toda plantilla es personal; se comparte por el Catálogo (2026-09-24).** Decisión del usuario:
+cada uno usa solo las suyas, y lo ajeno se copia primero —nunca se usa directo, para no depender
+de ediciones ajenas—. Con eso los alcances global y de equipo solo servían para copiarse, que ya lo
+hace publicar: se fueron, con `tareas_plantillas_equipo`, `tareas_plantillas_globales` y su regla.
+El dueño decide publicarla; se copia sin asignados fijos y con el disparo apagado; `copiada_de`
+guarda el origen. Costo aceptado: si el delegador cambia el proceso del equipo, cada miembro vuelve
+a copiarlo.
 
 **La copia del Catálogo es independiente y `copiada_de` es solo historia.** Sin aviso de "el
 original cambió": pediría versión y destinatarios, y se suma sin tocar el esquema si hace falta. El
 origen se muestra como link si sigue visible en el Catálogo y como texto plano si no, como las
 referencias. La copia se publica si su dueño quiere; las casi duplicadas las despublica el admin.
-El delegador copia directo como plantilla de equipo, sin pasar por personal. Sin asignados fijos,
+Sin asignados fijos,
 un pedido del original no se hereda: se elige al usarla y rige `tareas_pedir`.
 
 **Los pasos sin asignado fijo se asignan al usar la plantilla.** El formulario pide uno por paso
 vacío, con quien la usa como valor por defecto. Nunca nace un paso sin dueño.
 
-**Una plantilla que pide afuera no se le muestra a quien no tiene `tareas_pedir`.** Decisión del
-usuario. `usar_plantilla` lo rechaza igual en la base: ocultarla no autoriza. Si un asignado
+**Una plantilla que pide afuera no se usa sin `tareas_pedir`.** Decisión del usuario. Como toda
+plantilla es personal, ya no se oculta: su dueño la ve "a revisar". `usar_plantilla` lo rechaza en
+la base: la UI no autoriza. Si un asignado
 elegido al usar la plantilla cae afuera, se aplica la regla de siempre: pedido con `tareas_pedir`.
 
 **Una plantilla nunca falla por un asignado (2026-09-24).** Manual: el fijo que ya no puede recibir
@@ -488,14 +502,15 @@ transacción del emisor: lo inesperado se registra y se avisa al activador, y la
 
 **Una plantilla que dejó de valer se marca "a revisar" para su dueño (2026-09-24).** Calculado al
 leer, en Mis plantillas: "Pedro ya no es del equipo" o "ya no puede recibir". Si el fijo se va a
-otro equipo sigue pudiendo recibir, pero pasa a ser pedido: la plantilla se oculta a quien no tiene
-`tareas_pedir` y nadie sabía por qué. Sin columnas ni triggers; los miembros no la ven hasta que el
-dueño la corrige.
+otro equipo sigue pudiendo recibir, pero pasa a ser pedido: si el dueño no tiene `tareas_pedir`, no
+la puede usar y no sabía por qué. Sin columnas ni triggers.
 
 **Plantillas por evento esperan a su primer emisor.** Hoy ningún módulo emite; se construyen las
 manuales y `disparar_plantillas` se conecta después.
 
 **Recurrencia a nivel hilo**: al cerrarse nace el siguiente. Sin `pg_cron`, como en `master`.
+Intervalo `recurrencia_cantidad` + `recurrencia_unidad` (`dia` | `mes`) de `master` (`sql/005`):
+semanal = 7 días, anual = 12 meses.
 
 **Cada cierre genera un siguiente, también tras reabrir.** Elegido por el usuario sobre guardar
 `siguiente_id`: reabrir y volver a cerrar da otro ciclo, y el duplicado se cuida a mano.
@@ -512,7 +527,8 @@ avisos. Absorbe el aviso de arriba: si ya hay siguiente, "generar" pasa a "¿gen
 prioridad, todo sin completar; los vencimientos se corren por el intervalo desde el vencimiento
 anterior, no desde el cierre, sin saltear ciclos: cada ciclo es un período, el atrasado nace
 vencido y se descarta con "Cancelar pendientes y cerrar". Fin de mes sigue siendo fin de mes (si
-el anterior era el último día, el siguiente también); el 29 o 30 que cae en febrero queda en 28.
+el anterior era el último día, el siguiente también); el 29 o 30 que cae en febrero queda en su
+último día (28 o 29).
 Los relativos al previo se copian tal cual (precisado el 2026-09-24). Sin notas, resultados
 ni historial. El estado no se copia: cada paso nace con las reglas de siempre, con la membresía
 de hoy (precisado el 2026-09-24; copiar dejaba `pendiente` a un compañero que ya era de otro
@@ -549,7 +565,7 @@ multi-asignado (`tareas_asignados`), `modo_completado`, `origen_app`, `tareas_ge
 - Usuarios: las reglas del bloque *Reglas entre permisos* de la ficha, que la migración de tareas
   carga en `submodulo_reglas` (`sql/110`); el trigger y el panel de permisos ya las hacen valer.
   Quedan `designar_delegador` y `quitar_delegador`: mueven `tareas_equipo` junto con
-  `usuarios_delegar`, al saliente se le apaga también `tareas_plantillas_equipo`, y el heredero
+  `usuarios_delegar`, y el heredero
   o designado necesita `tareas_ver` (`BACKLOG.md`).
 - Core: vuelven `puede_abrir_registro` y `buscar_registros`; ramas de `hilo` y `tarea` en
   `etiqueta_registro` y `puede_ver_relacion` (`sql/109`).
