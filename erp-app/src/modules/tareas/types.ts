@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Database } from "@/lib/supabase/database.types";
+import { REFERENCIA } from "./derivados";
 
 type Enums = Database["public"]["Enums"];
 type Tablas = Database["public"]["Tables"];
@@ -33,6 +34,10 @@ const textoOpcional = (max: number) =>
     .max(max, `Máximo ${max} caracteres`)
     .nullish()
     .transform((v) => v || null);
+// La base lo rechaza igual (TA022, sql/123).
+const textoPlantilla = textoOpcional(5000).refine((v) => v === null || v.search(REFERENCIA) === -1, {
+  message: "Una plantilla no menciona registros concretos: escribí el nombre en texto",
+});
 const titulo = z.string().trim().min(1, "El título es obligatorio").max(500, "Máximo 500 caracteres");
 const enteros = z.coerce.number().int("Tiene que ser un número entero").positive("Tiene que ser mayor a 0");
 const diasOpcional = z
@@ -165,7 +170,7 @@ export type TransferirForm = z.input<typeof transferirSchema>;
 export const plantillaPasoSchema = z
   .object({
     titulo,
-    descripcion: textoOpcional(5000),
+    descripcion: textoPlantilla,
     ...asignado,
     prioridad: z.enum(["baja", "media", "alta"]).default("media"),
     vence_dias: diasOpcional,
@@ -179,7 +184,7 @@ export const plantillaPasoSchema = z
 export const plantillaSchema = z.object({
   id: idSchema.optional(),
   nombre: z.string().trim().min(1, "El nombre es obligatorio").max(500, "Máximo 500 caracteres"),
-  descripcion: textoOpcional(5000),
+  descripcion: textoPlantilla,
   pasos: z.array(plantillaPasoSchema).min(1, "La plantilla necesita al menos un paso"),
 });
 export type PlantillaForm = z.input<typeof plantillaSchema>;

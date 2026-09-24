@@ -116,7 +116,9 @@ y los roles del ente de "Sobre".
 **Sin referencias fijas `{ente:uuid|…}` en plantillas (2026-09-24).** Una plantilla es reusable y
 una referencia a un registro concreto casi nunca lo es; además, publicada, mostraba en el Catálogo
 el nombre de un registro a quien no lo ve. `guardar_plantilla` las rechaza; las guardadas pasan a
-texto plano (el nombre). Cierra el punto 4 de tareas en `BACKLOG.md`.
+texto plano (el nombre). Trigger en las dos tablas y no chequeo en `guardar_plantilla`:
+`authenticated` inserta pasos directo. Archivos: `sql/123_tareas_plantillas_sin_referencias.sql`,
+`sql/tests/tareas_plantillas.sql`, `types.ts` (`textoPlantilla`).
 
 **Sin el submódulo del ente, la plantilla no se ve (2026-09-24).** Ni en Mis plantillas ni en el
 Catálogo, ni se arma con ese "Sobre": sale de la RLS de `entes`; recuperado el submódulo,

@@ -18,7 +18,8 @@ aplicado; `sql/tests/tareas_recurrencia.sql` pasa entero. `sql/118` (plantillas 
 aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/119` (vínculos y referencias en la
 descripción) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. `sql/120` (`tareas_nombres`)
 aplicado; `sql/tests/tareas_nombres.sql` pasa entero. `sql/122` (vínculos siguen al `activo` del
-paso) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. Falta:
+paso) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. `sql/123` (sin referencias fijas en
+plantillas) aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. Falta:
 - Con el primer emisor (obras), todo junto (decidido 2026-09-24, `decisiones/tareas/catalogo.md`
   desde *La plantilla dice "Sobre"*, y `avisos.md` → *Un disparo avisa una vez*): "Sobre" en la
   plantilla, registro (ente e id) y plantilla de origen en el hilo, `{@registro}` y `{@ente:rol}`,
@@ -74,28 +75,6 @@ que su RLS es la del hilo que referencia (ya recorta bien: `tareas_vinculos_sele
 los referencian, con link) o si eso espera a la ficha de otro módulo. Si va: query en
 `queries.ts` sobre `tareas_vinculos` `WHERE activo AND ((ente='hilo' AND registro_id=hilo) OR
 (ente='tarea' AND registro_id IN pasos))`, sección en `HiloView.tsx` y en el panel del paso.
-
-**4. Referencias en plantillas y en el Catálogo (decidido 2026-09-24, sin implementar).**
-`decisiones/tareas/catalogo.md` → *Sin referencias fijas en plantillas*: opción (c) + (b).
-`guardar_plantilla` rechaza `{ente:uuid|…}` (código de error nuevo, test en
-`sql/tests/tareas_plantillas.sql`); migración que pasa las guardadas a su nombre en texto plano
-(`regexp_replace` sobre `tareas_plantillas_pasos.descripcion`). Diagnóstico original:
-- `guardar_plantilla` (`sql/118`, línea ~158) guarda cualquier `{ente:uuid|nombre}` sin revisar
-  si el dueño lo ve; falla recién al usar (`usar_plantilla` → trigger `tareas_derivar_vinculos`,
-  TA021), sin quedar "a revisar" (`motivoRevisar` en `derivados.ts` no mira la descripción).
-  Probado con la plantilla "Ref ajena" (desactivada).
-- Publicar lleva la referencia al Catálogo y `copiar_plantilla` (`sql/118`, línea ~216) la copia:
-  el nombre del hilo ("Cocina Pérez — presupuesto") queda a la vista de todo el que lee el
-  Catálogo, aunque no participe del hilo. `registro.md` justifica mostrar la copia del nombre
-  porque "lo contó quien sí lo veía" a los que ven el hilo; en el Catálogo el público es otro.
-- `PlantillasView.tsx` (línea ~133) muestra la descripción cruda, con el uuid.
-
-Opciones para proponer al usuario: (a) validar referencias al guardar (misma regla TA021) y sumar
-"a revisar" si una deja de verse; (b) al publicar o copiar, convertir cada token a su nombre en
-texto plano (o quitarlo); (c) prohibir referencias en plantillas (hoy el `{dato}` cubre el caso
-real: la referencia llega con el disparo). Recomendación: (c) + (b) para lo ya guardado — una
-plantilla es reusable y una referencia fija a un registro concreto casi nunca lo es. La regla va
-en `guardar_plantilla` (Postgres), no en `actions.ts`; registrar en `catalogo.md` o `registro.md`.
 
 **6. En un hilo cerrado el paso no ofrece "Reabrir" — alinear ficha o UI.** La ficha dice "sumar o
 reabrir un paso lo reabre" (el hilo); la UI oculta "Sumar paso" y las acciones del paso con el hilo

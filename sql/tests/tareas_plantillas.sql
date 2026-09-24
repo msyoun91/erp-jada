@@ -1,6 +1,6 @@
--- Verificación de sql/118: plantillas personales y Catálogo. NO es una
--- migración: todo corre dentro de una transacción que termina en ROLLBACK.
--- Correr después de aplicar sql/112 a sql/118.
+-- Verificación de sql/118 y sql/123: plantillas personales y Catálogo. NO es
+-- una migración: todo corre dentro de una transacción que termina en ROLLBACK.
+-- Correr después de aplicar sql/112 a sql/123.
 --
 -- Mundo: G admin de usuarios; A admin de tareas (sin equipo); equipo T con D
 -- delegador, M1 (con tareas_pedir), M2 y M3; equipo U con E delegador y N1.
@@ -275,6 +275,20 @@ SELECT pg_temp.caso('13 M1 no la reactiva', 'TA019',
   pg_temp.intentar(format('UPDATE tareas_plantillas SET activo = true WHERE id = %L', pg_temp.id('P1')), 'M1'));
 SELECT pg_temp.caso('13 A la reactiva', 'ok',
   pg_temp.intentar(format('UPDATE tareas_plantillas SET activo = true WHERE id = %L', pg_temp.id('P1')), 'A'));
+
+-- ============================================================
+-- Sin referencias fijas
+-- ============================================================
+SELECT pg_temp.caso('14 un paso con referencia no se guarda', 'TA022',
+  pg_temp.guardar('P4', 'M1', format('[{"titulo":"z","descripcion":"ver {hilo:%s|H1}"}]', pg_temp.id('H1'))::jsonb));
+SELECT pg_temp.caso('14 ni insertando el paso directo', 'TA022', pg_temp.intentar(format(
+  $s$INSERT INTO tareas_plantillas_pasos (plantilla_id, orden, titulo, descripcion) VALUES (%L, 9, 'z', %L)$s$,
+  pg_temp.id('P3'), format('{hilo:%s|H1}', pg_temp.id('H1'))), 'M1'));
+SELECT pg_temp.caso('14 ni en la descripción de la plantilla', 'TA022', pg_temp.intentar(format(
+  $s$UPDATE tareas_plantillas SET descripcion = %L WHERE id = %L$s$,
+  format('{hilo:%s|H1}', pg_temp.id('H1')), pg_temp.id('P3')), 'M1'));
+SELECT pg_temp.caso('14 un {dato} o un id sin nombre sí', 'ok',
+  pg_temp.guardar('P3', 'M1', format('[{"titulo":"y","descripcion":"{cliente} {hilo:%s}"}]', pg_temp.id('H1'))::jsonb, false));
 
 SELECT caso, esperado, obtenido, ok FROM r ORDER BY ok, caso;
 

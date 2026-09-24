@@ -224,7 +224,7 @@ Test: `sql/tests/tareas_recurrencia.sql`. Decisión: `decisiones/tareas/recurren
   pedido sin `tareas_pedir` del responsable quedan en el responsable, con `paso_a_reasignar` sin
   actor.
 
-## Plantillas (`sql/118`)
+## Plantillas (`sql/118`, `sql/123`)
 
 Test: `sql/tests/tareas_plantillas.sql`. Decisión: `decisiones/tareas/catalogo.md`. No son ente.
 
@@ -257,6 +257,8 @@ las publicadas activas (Catálogo). INSERT: dueño = yo con `tareas_plantillas`.
 es mía o soy admin. `GRANT INSERT (id, nombre, descripcion, copiada_de)`, `UPDATE (nombre,
 descripcion, publicada, activo)`; pasos `INSERT` de todo menos `activo` y fechas, `UPDATE (activo)`.
 Trigger `tareas_plantillas_al_editar` (BEFORE UPDATE OF publicada, activo; DEFINER).
+Trigger `tareas_plantillas_sin_referencias` en las dos tablas (BEFORE INSERT / UPDATE OF descripcion;
+INVOKER): una `descripcion` con `{ente:uuid|nombre}` es TA022 (`sql/123`).
 
 RPC (INVOKER, GRANT `authenticated`; errores TA017 "no existe o no es tuya", TA020 sin pasos):
 - `guardar_plantilla(id, nombre, descripcion, pasos jsonb) → uuid` — `id` NULL crea. Reemplaza los
