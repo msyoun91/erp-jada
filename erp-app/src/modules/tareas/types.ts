@@ -200,3 +200,10 @@ export const usarPlantillaSchema = z.object({
   ),
 });
 export type UsarPlantillaForm = z.input<typeof usarPlantillaSchema>;
+
+export const buscarRegistrosSchema = z.object({
+  modulo: z.string().min(1),
+  texto: z.string().trim().min(2).max(200),
+});
+export type BuscarRegistrosForm = z.input<typeof buscarRegistrosSchema>;
+export type RegistroEncontrado = Database["public"]["Functions"]["buscar_registros"]["Returns"][number];

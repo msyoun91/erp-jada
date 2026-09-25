@@ -47,4 +47,7 @@ Cada módulo con entes aporta su ficha; el registro ente → componente vive en 
 del paso (hilos y pasos sueltos): elegir el módulo y buscar en `buscar_registros` (INVOKER, una rama
 por ente: lo que quien escribe ve), que inserta `{ente:uuid|nombre}` con vista previa. En una
 plantilla el mismo botón ofrece solo referencias relativas (`catalogo.md` → *Referencias
-relativas*). Cierra la parte "decidir" del punto 2 de tareas en `BACKLOG.md`.
+relativas*). Con un solo módulo con entes el selector no aparece. El nombre copiado pierde las `}`
+(cortarían el token). La vista previa muestra link solo en lo elegido en ese formulario.
+Archivos: `sql/124_buscar_registros.sql`, `sql/tests/tareas_buscar.sql`, `RelacionarModal.tsx`,
+`PasoFormPanel.tsx`, `actions.ts` (`modulosRelacionables`, `buscarRegistros`).

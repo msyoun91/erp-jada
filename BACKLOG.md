@@ -19,7 +19,8 @@ aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/119` (vínculos y 
 descripción) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. `sql/120` (`tareas_nombres`)
 aplicado; `sql/tests/tareas_nombres.sql` pasa entero. `sql/122` (vínculos siguen al `activo` del
 paso) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. `sql/123` (sin referencias fijas en
-plantillas) aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. Falta:
+plantillas) aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/124` (`buscar_registros`,
+"Relacionar") aplicado; `sql/tests/tareas_buscar.sql` pasa entero. Falta:
 - Con el primer emisor (obras), todo junto (decidido 2026-09-24, `decisiones/tareas/catalogo.md`
   desde *La plantilla dice "Sobre"*, y `avisos.md` → *Un disparo avisa una vez*): "Sobre" en la
   plantilla, registro (ente e id) y plantilla de origen en el hilo, `{@registro}` y `{@ente:rol}`,
@@ -56,16 +57,6 @@ Datos de prueba que quedaron en la base para reproducir: hilos "Cocina Pérez �
 (Tester) y "Prueba de hilo" (solo Admin); plantilla "Visita técnica" publicada por Tester y su
 copia en Admin. Antes de tocar cada punto, contrastar contra las personas de la ficha
 (`decisiones/tareas/README.md`).
-
-**2. Falta el botón "Relacionar" (decidido, sin implementar).** `decisiones/tareas/registro.md` →
-*Referencias en el texto en vez de chips*: "textarea + 'Relacionar' que inserta la marca, con vista
-previa". Hoy la referencia se escribe a mano como `{hilo:uuid|nombre}` o `{tarea:uuid|nombre}`,
-lo que exige conocer el uuid. Buscador sobre lo que quien escribe puede ver (hilos y pasos; volver
-`buscar_registros` de core si hace falta, ver *Lo que el módulo necesita de afuera* en el README)
-que inserta el token en la descripción del paso (`PasoFormPanel.tsx`, editar e insertar antes) y
-vista previa con `TextoConReferencias`. Editor enriquecido: no, sería librería nueva.
-Forma decidida: `decisiones/tareas/registro.md` → *"Relacionar": primero el módulo* (módulo,
-después `buscar_registros`). En plantillas no va hasta el disparo (solo relativas).
 
 **3. No hay link de vuelta ("mencionado en") — decidir primero.** `tareas_vinculos` tiene el dato
 pero ninguna vista lo muestra: en "Cocina Pérez — presupuesto" no aparece que dos pasos de otros

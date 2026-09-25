@@ -6,10 +6,12 @@ export function SearchInput({
   value,
   onChange,
   placeholder,
+  autoFocus,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
+  autoFocus?: boolean;
 }) {
   return (
     <div className="relative grow basis-full sm:basis-auto sm:min-w-[180px]">
@@ -24,6 +26,7 @@ export function SearchInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
+        autoFocus={autoFocus}
         className="input pl-8"
       />
     </div>

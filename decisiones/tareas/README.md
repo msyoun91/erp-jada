@@ -274,7 +274,7 @@ multi-asignado (`tareas_asignados`), `modo_completado`, `origen_app`, `tareas_ge
   Quedan `designar_delegador` y `quitar_delegador`: mueven `tareas_equipo` junto con
   `usuarios_delegar`, y el heredero
   o designado necesita `tareas_ver` (`BACKLOG.md`).
-- Core: vuelven `puede_abrir_registro` y `buscar_registros`; ramas de `hilo` y `tarea` en
+- Core: vuelve `puede_abrir_registro` (`buscar_registros` ya volvió, `sql/124`); ramas de `hilo` y `tarea` en
   `etiqueta_registro` y `puede_ver_relacion` (`sql/109`).
 - Core, con el primer emisor: `entes` dice qué columna es el dueño del registro, y versiones `_de`
   (con usuario explícito) de `etiqueta_registro` y `relacionados_de_registro` para el disparo

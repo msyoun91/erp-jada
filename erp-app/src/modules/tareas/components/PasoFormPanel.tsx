@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Link2 } from "lucide-react";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { crearPaso, editarPaso, insertarPasoAntes } from "../actions";
-import { editarPasoSchema, insertarAntesSchema, pasoSchema, type Tarea } from "../types";
+import { REFERENCIA } from "../derivados";
+import { editarPasoSchema, insertarAntesSchema, pasoSchema, type RegistroEncontrado, type Tarea } from "../types";
 import { AsignadoSelect } from "./AsignadoSelect";
 import { Campo, claseInput } from "./Campo";
+import { RelacionarModal } from "./RelacionarModal";
+import { TextoConReferencias } from "./TextoConReferencias";
 
 export type ModoPaso =
   | { tipo: "sumar"; hiloId: string; colas: Tarea[]; soloYo: boolean }
@@ -54,11 +58,17 @@ function iniciales(modo: ModoPaso, yo: string): Valores {
 
 export function PasoFormPanel({ modo, yo, onClose }: { modo: ModoPaso; yo: string; onClose: () => void }) {
   const [enviando, setEnviando] = useState(false);
+  const [relacionando, setRelacionando] = useState(false);
+  // Las elegidas en este formulario ya traen su link; las que venían, sin link en la vista previa.
+  const [enlaces, setEnlaces] = useState<Record<string, string>>({});
+  const descripcionRef = useRef<HTMLTextAreaElement | null>(null);
+  const cursor = useRef<number | null>(null);
   const {
     register,
     handleSubmit,
     control,
     setValue,
+    getValues,
     formState: { errors, isDirty },
   } = useForm<Valores>({
     // Cada modo valida con el schema de su action; los campos de más se descartan.
@@ -66,10 +76,33 @@ export function PasoFormPanel({ modo, yo, onClose }: { modo: ModoPaso; yo: strin
     defaultValues: iniciales(modo, yo),
   });
 
-  const [previo, asignadoId, asignadoEquipoId] = useWatch({
+  const [previo, asignadoId, asignadoEquipoId, descripcion] = useWatch({
     control,
-    name: ["paso_anterior_id", "asignado_id", "asignado_equipo_id"],
+    name: ["paso_anterior_id", "asignado_id", "asignado_equipo_id", "descripcion"],
   });
+  const descripcionReg = register("descripcion");
+  const conReferencias = !!descripcion && descripcion.search(REFERENCIA) !== -1;
+
+  function abrirRelacionar() {
+    cursor.current = descripcionRef.current?.selectionStart ?? null;
+    setRelacionando(true);
+  }
+
+  // `}` cortaría el token: el nombre es una copia, se limpia.
+  function relacionar(r: RegistroEncontrado) {
+    const token = `{${r.ente}:${r.registro_id}|${r.etiqueta.replace(/[}\n]/g, " ")}}`;
+    const actual = getValues("descripcion") ?? "";
+    const en = cursor.current ?? actual.length;
+    setValue("descripcion", actual.slice(0, en) + token + actual.slice(en), { shouldDirty: true, shouldValidate: true });
+    setEnlaces((e) => ({ ...e, [`${r.ente}:${r.registro_id}`]: r.href }));
+    setRelacionando(false);
+    requestAnimationFrame(() => {
+      const t = descripcionRef.current;
+      if (!t) return;
+      t.focus();
+      t.setSelectionRange(en + token.length, en + token.length);
+    });
+  }
   const conPrevio =
     modo.tipo === "sumar"
       ? !!previo
@@ -126,8 +159,21 @@ export function PasoFormPanel({ modo, yo, onClose }: { modo: ModoPaso; yo: strin
             id="paso-descripcion"
             rows={4}
             className={claseInput(errors.descripcion)}
-            {...register("descripcion")}
+            {...descripcionReg}
+            ref={(el) => {
+              descripcionReg.ref(el);
+              descripcionRef.current = el;
+            }}
           />
+          <button type="button" className="btn btn-ghost btn-sm mt-1" onClick={abrirRelacionar}>
+            <Link2 size={14} /> Relacionar
+          </button>
+          {conReferencias && (
+            <div className="mt-2 rounded-md bg-bg-subtle px-3 py-2">
+              <p className="t-caption mb-1 text-text-tertiary">Vista previa</p>
+              <TextoConReferencias texto={descripcion} enlaces={enlaces} />
+            </div>
+          )}
         </Campo>
 
         {modo.tipo !== "editar" && (
@@ -187,6 +233,7 @@ export function PasoFormPanel({ modo, yo, onClose }: { modo: ModoPaso; yo: strin
           )}
         </div>
       </form>
+      {relacionando && <RelacionarModal onElegir={relacionar} onClose={() => setRelacionando(false)} />}
     </RightPanel>
   );
 }

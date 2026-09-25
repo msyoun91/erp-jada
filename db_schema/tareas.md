@@ -295,3 +295,8 @@ para quien escribe (TA021). Paso desactivado → apaga todos; reactivado → los
 TA021 (`sql/122`). Desde un trigger DEFINER (recurrencia) corre como dueño y no revisa. RLS:
 SELECT si se ve el paso; INSERT y UPDATE solo con `pg_trigger_depth() > 0`. `GRANT SELECT, INSERT
 (tarea_id, ente, registro_id), UPDATE (activo)`. Rol y plantilla del vínculo llegan con el disparo.
+
+"Relacionar" (`sql/124`, test `sql/tests/tareas_buscar.sql`): rama `tareas_buscar(texto) → (tipo,
+id, titulo, subtitulo)` (INVOKER, GRANT `authenticated`) en `buscar_registros`: hilos y pasos
+activos cuyo título contiene el texto (≥ 2 letras, sin comodines), lo abierto primero, después lo
+que empieza con el texto, después lo reciente; 15 como máximo. El subtítulo del paso es su hilo.

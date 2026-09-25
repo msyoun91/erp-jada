@@ -6,6 +6,7 @@ import { argsRpc } from "@/lib/supabase/rpc";
 import { createClient } from "@/lib/supabase/server";
 import { mensajeError } from "@/lib/utils";
 import {
+  buscarRegistrosSchema,
   cerrarHiloSchema,
   completarAjenoSchema,
   completarSchema,
@@ -21,6 +22,7 @@ import {
   rechazarSchema,
   transferirSchema,
   usarPlantillaSchema,
+  type BuscarRegistrosForm,
   type CerrarHiloForm,
   type CompletarAjenoForm,
   type CompletarForm,
@@ -341,4 +343,27 @@ export async function desactivarPlantilla(id: string) {
 
 export async function reactivarPlantilla(id: string) {
   return editarPlantillaFila(id, { activo: true });
+}
+
+// ---------- Relacionar ----------
+
+// Lecturas para el buscador de "Relacionar": la RLS de `entes` y de cada
+// módulo recorta a lo que quien escribe ve.
+export async function modulosRelacionables() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("entes").select("modulo");
+  if (error) return fallo(error);
+  return { success: true as const, modulos: [...new Set(data.map((e) => e.modulo))] };
+}
+
+export async function buscarRegistros(input: BuscarRegistrosForm) {
+  const parsed = buscarRegistrosSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("buscar_registros", {
+    p_modulo: parsed.data.modulo,
+    p_texto: parsed.data.texto,
+  });
+  if (error) return fallo(error);
+  return { success: true as const, registros: data };
 }

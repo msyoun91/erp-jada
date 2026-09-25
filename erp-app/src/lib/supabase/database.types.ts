@@ -963,6 +963,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      buscar_registros: {
+        Args: { p_modulo: string; p_texto: string }
+        Returns: {
+          detalle: string
+          ente: string
+          etiqueta: string
+          href: string
+          registro_id: string
+        }[]
+      }
       copiar_plantilla: { Args: { p_plantilla: string }; Returns: string }
       delegar_submodulos: {
         Args: { p_submodulos: string[]; p_usuario: string }
@@ -1065,6 +1075,15 @@ export type Database = {
         }[]
       }
       tareas_bloquea: { Args: { p_paso: string }; Returns: boolean }
+      tareas_buscar: {
+        Args: { p_texto: string }
+        Returns: {
+          id: string
+          subtitulo: string
+          tipo: string
+          titulo: string
+        }[]
+      }
       tareas_cancelar_y_cerrar: {
         Args: { p_generar?: boolean; p_hilo: string; p_resultado?: string }
         Returns: undefined
