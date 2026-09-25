@@ -14,6 +14,7 @@ import type { HiloCompleto, PlantillaCompleta } from "../queries";
 import type { Tarea } from "../types";
 import { TareasProvider, useNombre, type TareasCtx } from "./contexto";
 import { Historial } from "./Historial";
+import { Menciones } from "./Menciones";
 import { HiloFormPanel } from "./HiloFormPanel";
 import { CerrarHiloModal, TransferirModal } from "./HiloModales";
 import { NotasSection } from "./NotasSection";
@@ -33,7 +34,7 @@ export function HiloView(props: Props) {
   );
 }
 
-function Contenido({ hilo, pasos, notas, ediciones, enlaces, ctx, pasoAbierto, plantillas }: Props) {
+function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, ctx, pasoAbierto, plantillas }: Props) {
   const nombre = useNombre();
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
   const [abierto, setAbierto] = useState<string | null>(pasoAbierto);
@@ -127,6 +128,7 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, ctx, pasoAbierto, p
           )}
         </div>
         {hilo.resultado && <p className="t-body-m whitespace-pre-wrap">{sinReferencias(hilo.resultado)}</p>}
+        <Menciones menciones={menciones.filter((m) => m.destino === hilo.id)} />
       </div>
 
       {dueno && vivo && activos.length > 0 && abiertos === 0 && (
@@ -185,6 +187,7 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, ctx, pasoAbierto, p
           notas={notas.filter((n) => n.tarea_id === pasoSeleccionado.id)}
           ediciones={ediciones.filter((e) => e.tarea_id === pasoSeleccionado.id)}
           enlaces={enlaces}
+          menciones={menciones.filter((m) => m.destino === pasoSeleccionado.id)}
           onClose={() => setAbierto(null)}
         />
       )}

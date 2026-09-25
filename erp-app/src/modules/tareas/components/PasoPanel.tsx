@@ -8,9 +8,11 @@ import { formatFecha, hoyISO } from "@/lib/utils";
 import { aceptarPaso, cancelarPaso, desactivarPaso, reabrirPaso, reactivarPaso, volverAPedir } from "../actions";
 import { estaAbierto, estaEnEspera, estaVencido, sinReferencias } from "../derivados";
 import { ESTADO_PASO, PRIORIDAD, textoPlazoDias } from "../etiquetas";
+import type { Mencion } from "../queries";
 import type { Edicion, Hilo, Nota, Tarea } from "../types";
 import { useNombre, useTareas } from "./contexto";
 import { Historial } from "./Historial";
+import { Menciones } from "./Menciones";
 import { NotasSection } from "./NotasSection";
 import { PasoFormPanel } from "./PasoFormPanel";
 import { CompletarAjenoModal, CompletarModal, EsperaModal, ReasignarModal, RechazarModal } from "./PasoModales";
@@ -37,6 +39,7 @@ export function PasoPanel({
   notas,
   ediciones,
   enlaces,
+  menciones,
   onClose,
 }: {
   hilo: Hilo;
@@ -47,6 +50,7 @@ export function PasoPanel({
   notas: Nota[];
   ediciones: Edicion[];
   enlaces: Record<string, string>;
+  menciones: Mencion[];
   onClose: () => void;
 }) {
   const { yo, miEquipo, admin, delegador } = useTareas();
@@ -89,9 +93,10 @@ export function PasoPanel({
       acciones.push({ label: "Cancelar paso", peligro: true, onClick: () => setDialogo("cancelar") });
       if (esCola) acciones.push({ label: "Desactivar", peligro: true, onClick: () => setDialogo("desactivar") });
     }
-    if ((e === "completada" && (dueno || asig)) || (e === "cancelada" && dueno))
-      acciones.push({ label: "Reabrir", onClick: () => correr(reabrirPaso, "Paso reabierto") });
   }
+  // Con el hilo cerrado también: reabrir el paso reabre el hilo (`tareas_propagar`).
+  if (hilo.activo && paso.activo && ((e === "completada" && (dueno || asig)) || (e === "cancelada" && dueno)))
+    acciones.push({ label: "Reabrir", onClick: () => correr(reabrirPaso, "Paso reabierto") });
   if (!paso.activo && admin) acciones.push({ label: "Reactivar", onClick: () => correr(reactivarPaso, "Paso reactivado") });
 
   const datos: [string, React.ReactNode][] = [
@@ -138,6 +143,8 @@ export function PasoPanel({
             ))}
           </div>
         )}
+
+        <Menciones menciones={menciones} />
 
         <div className="border-t border-border pt-4">
           <p className="t-label mb-2">Notas del paso</p>

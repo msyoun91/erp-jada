@@ -68,7 +68,11 @@ export type HiloCompleto = {
   notas: Nota[];
   ediciones: Edicion[];
   enlaces: Record<string, string>;
+  menciones: Mencion[];
 };
+
+// `destino`: el hilo o el paso mencionado; el resto, el paso que lo menciona.
+export type Mencion = { destino: string; pasoId: string; titulo: string; hilo: string };
 
 // `ente:id` → ficha, de las referencias que quien lee puede abrir: el ente
 // visible (RLS de `entes`) y `etiqueta_registro` no NULL. El resto queda en texto.
@@ -92,6 +96,27 @@ async function getEnlaces(textos: (string | null)[]): Promise<Record<string, str
   return Object.fromEntries(pares.filter((p) => p !== null));
 }
 
+// Pasos que mencionan al hilo o a uno de sus pasos. La RLS de `tareas_vinculos`
+// es la del paso que menciona: solo aparecen los que quien lee ve.
+async function getMenciones(hilo: string, pasos: string[]): Promise<Mencion[]> {
+  const supabase = await createClient();
+  const filtro = [`and(ente.eq.hilo,registro_id.eq.${hilo})`];
+  if (pasos.length > 0) filtro.push(`and(ente.eq.tarea,registro_id.in.(${pasos.join(",")}))`);
+  const { data, error } = await supabase
+    .from("tareas_vinculos")
+    .select("registro_id, tareas!inner(id, titulo, tareas_hilos!inner(titulo))")
+    .eq("activo", true)
+    .or(filtro.join(","))
+    .order("created_at");
+  if (error) throw error;
+  return data.map((v) => ({
+    destino: v.registro_id,
+    pasoId: v.tareas.id,
+    titulo: v.tareas.titulo,
+    hilo: v.tareas.tareas_hilos.titulo,
+  }));
+}
+
 // Lo que no se ve lo recorta la RLS: sin hilo visible, null.
 export async function getHilo(id: string): Promise<HiloCompleto | null> {
   const supabase = await createClient();
@@ -103,8 +128,11 @@ export async function getHilo(id: string): Promise<HiloCompleto | null> {
   ]);
   for (const r of [hilo, pasos, notas, ediciones]) if (r.error) throw r.error;
   if (!hilo.data) return null;
-  const enlaces = await getEnlaces((pasos.data ?? []).map((p) => p.descripcion));
-  return { hilo: hilo.data, pasos: pasos.data ?? [], notas: notas.data ?? [], ediciones: ediciones.data ?? [], enlaces };
+  const [enlaces, menciones] = await Promise.all([
+    getEnlaces((pasos.data ?? []).map((p) => p.descripcion)),
+    getMenciones(id, (pasos.data ?? []).map((p) => p.id)),
+  ]);
+  return { hilo: hilo.data, pasos: pasos.data ?? [], notas: notas.data ?? [], ediciones: ediciones.data ?? [], enlaces, menciones };
 }
 
 export async function getHiloDePaso(id: string): Promise<string | null> {

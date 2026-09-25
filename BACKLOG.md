@@ -58,22 +58,6 @@ Datos de prueba que quedaron en la base para reproducir: hilos "Cocina Pérez �
 copia en Admin. Antes de tocar cada punto, contrastar contra las personas de la ficha
 (`decisiones/tareas/README.md`).
 
-**3. No hay link de vuelta ("mencionado en") — decidir primero.** `tareas_vinculos` tiene el dato
-pero ninguna vista lo muestra: en "Cocina Pérez — presupuesto" no aparece que dos pasos de otros
-hilos lo referencian. `registro.md` dice que el vínculo queda "como dato (hilos de un registro…)" y
-que su RLS es la del hilo que referencia (ya recorta bien: `tareas_vinculos_select` pasa por
-`tareas`). Preguntar al usuario si el hilo y el paso muestran "Mencionado en" (lista de pasos que
-los referencian, con link) o si eso espera a la ficha de otro módulo. Si va: query en
-`queries.ts` sobre `tareas_vinculos` `WHERE activo AND ((ente='hilo' AND registro_id=hilo) OR
-(ente='tarea' AND registro_id IN pasos))`, sección en `HiloView.tsx` y en el panel del paso.
-
-**6. En un hilo cerrado el paso no ofrece "Reabrir" — alinear ficha o UI.** La ficha dice "sumar o
-reabrir un paso lo reabre" (el hilo); la UI oculta "Sumar paso" y las acciones del paso con el hilo
-cerrado, así que primero hay que reabrir el hilo. Verificar en `sql/113` si la base acepta reabrir
-un paso de un hilo cerrado (y si reabre el hilo). Si sí: preguntar al usuario si se muestra
-"Reabrir" en el paso (atajo) o si se corrige la ficha a "se reabre el hilo primero". Si no: corregir
-la ficha. `PasoPanel.tsx` (línea ~92) tiene la condición de "Reabrir".
-
 **8. Equipos en plantillas: falta el dato de prueba, no código.** `asignado_equipo_id` en
 `tareas_plantillas_pasos` (`sql/118`) y el grupo "Equipos" en `AsignadoSelect` ya existen, pero solo
 listan equipos con delegador activo, y el único de la base ("Prueba") está inactivo y sin miembros.

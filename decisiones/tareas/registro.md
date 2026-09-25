@@ -40,6 +40,12 @@ si no, contaba como mención viva para el admin y para lo que lea `tareas_vincul
 ("mencionado en", el disparo). Reactivarlo los vuelve a derivar sin TA021: lo hace el admin y la
 referencia ya se revisó al escribirla. Archivos: `sql/122_tareas_vinculos_activo.sql`, `sql/tests/tareas_vinculos.sql`.
 
+**El hilo y el paso muestran "Mencionado en" (2026-09-25).** Lista de los pasos que los referencian,
+con link al paso y el título de su hilo; sin menciones, no aparece. Sale de `tareas_vinculos`, así que
+recorta solo por su RLS: quien no ve el paso que menciona no se entera de la mención. No espera a
+otro módulo: el dato ya estaba y la prueba con dos usuarios lo echó en falta. Archivos: `queries.ts`
+(`getMenciones`), `Menciones.tsx`, `HiloView.tsx`, `PasoPanel.tsx`.
+
 **La ficha del ente se abre al lado del paso.** Split en desktop, encima con "volver" en mobile.
 Cada módulo con entes aporta su ficha; el registro ente → componente vive en `app/`.
 
