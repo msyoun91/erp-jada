@@ -5,7 +5,7 @@ Rediseño desde cero (2026-09-23). La versión anterior vive en `master` (su `de
 archivos de esta carpeta no repiten nombres de los de `master`: los punteros viejos de
 `decisiones/global/` (`plantillas.md`, `visibilidad.md`, `integracion.md`…) siguen siendo de allá.
 
-> **Estado: ficha aprobada (2026-09-24); `sql/112` a `sql/120` aplicados; falta el resto (ver `BACKLOG.md`).** Las revisiones de agujeros (2026-09-23 y
+> **Estado: ficha aprobada (2026-09-24); `sql/112` a `sql/124` aplicados; falta el resto (ver `BACKLOG.md`).** Las revisiones de agujeros (2026-09-23 y
 > 2026-09-24, por escenarios) quedaron volcadas en la ficha y en los archivos por tema; lo del 24
 > lleva fecha en cada decisión. Lo que cambie se corrige acá primero. Leer este índice y después
 > solo el archivo del tema.
@@ -271,9 +271,8 @@ multi-asignado (`tareas_asignados`), `modo_completado`, `origen_app`, `tareas_ge
   `tareas_asignables()` (`sql/116`, `participacion.md` → *A quién se asigna o se pide*).
 - Usuarios: las reglas del bloque *Reglas entre permisos* de la ficha, que la migración de tareas
   carga en `submodulo_reglas` (`sql/110`); el trigger y el panel de permisos ya las hacen valer.
-  Quedan `designar_delegador` y `quitar_delegador`: mueven `tareas_equipo` junto con
-  `usuarios_delegar`, y el heredero
-  o designado necesita `tareas_ver` (`BACKLOG.md`).
+  ~~Quedan `designar_delegador` y `quitar_delegador`~~ → `sql/112` §7: mueven `tareas_equipo`
+  junto con `usuarios_delegar`; el heredero o designado sin `tareas_ver` falla con US016.
 - Core: vuelve `puede_abrir_registro` (`buscar_registros` ya volvió, `sql/124`); ramas de `hilo` y `tarea` en
   `etiqueta_registro` y `puede_ver_relacion` (`sql/109`).
 - Core, con el primer emisor: `entes` dice qué columna es el dueño del registro, y versiones `_de`
