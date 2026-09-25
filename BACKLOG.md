@@ -35,6 +35,20 @@ plantillas) aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/124` (
   - "No se repite": chequeo en la función, no unique index (la recurrencia).
   - `guardar_plantilla` valida las marcas contra "Sobre"; policy de plantillas con la rama del ente
     visible y la de `tareas_administrar`.
+  - **Pasos que se completan solos (decidido 2026-09-25, `decisiones/obras.md` → *Dos acciones*).**
+    Solo en plantillas con "Sobre". El paso guarda la condición con la misma forma que el disparo:
+    `relacion_alta` + rol, o `estado` + valor. Un consumidor más de `AFTER INSERT ON eventos` completa
+    los pasos abiertos de hilos activos sobre ese registro. También se evalúa al nacer el paso y al
+    habilitarse: rol = que el registro lo tenga (`relacionados_de_registro`); estado = que esté en él
+    (si ya avanzó, lo completa el asignado a mano). Corre en cascada, así que las reglas de actor no
+    aplican (`escrituras.md` → *Directo o sistema*); anotarlo como decisión en `catalogo.md` y
+    contrastarlo con "completar es solo del asignado" (`participacion.md`). Un pedido sin aceptar no se
+    completa: se evalúa al aceptarlo. El resultado dice "Se vinculó un arquitecto a la obra", sin el
+    nombre: puede leerlo alguien de otro equipo que no ve los contactos. Desvincular después no lo
+    reabre. El asignado lo puede completar a mano igual.
+    Link de acción: `{@accion|texto}` en la descripción de la plantilla, sacado de la condición; abre
+    la ficha del registro al lado con `?vincular={rol}` (panel de Contactos) o `?estado={valor}`.
+    Texto plano si el asignado no ve el registro.
 
 UI: vistas Hilos (`/tareas`, `/tareas/{id}`, `/tareas/paso/{id}`), Misión (`/tareas/mision`),
 Equipo (`/tareas/equipo`), Plantillas (`/tareas/plantillas`, con "Usar plantilla" desde el hilo) y
@@ -62,6 +76,28 @@ copia en Admin. Antes de tocar cada punto, contrastar contra las personas de la 
 `tareas_plantillas_pasos` (`sql/118`) y el grupo "Equipos" en `AsignadoSelect` ya existen, pero solo
 listan equipos con delegador activo, y el único de la base ("Prueba") está inactivo y sin miembros.
 Para probar: un equipo activo con delegador.
+
+## Contactos y Obras — fichas aprobadas, falta el SQL (2026-09-25)
+
+`decisiones/contactos.md` y `decisiones/obras.md`, aprobadas el 2026-09-25. Siguiente: SQL de
+Contactos (`GUIDE_MODULO_NUEVO.md` paso 1, con su *Pendiente*). Orden:
+Contactos → Obras (con el paquete de Tareas "con el primer emisor", arriba) → Catálogo → Presupuestos
+→ Post-venta.
+
+Ya decidido para los módulos que vienen detrás, al fichar Obras:
+- **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos.
+- **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
+  ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
+  producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
+  ejecución y el seguimiento comercial al entregar cuelgan del presupuesto, no de la obra. El primer
+  presupuesto pasa la obra a `en_cotizacion` y el primero aprobado a `contratada`. La ficha de la
+  obra lista sus presupuestos con su estado actual. Los contactos operativos (capataz, quien recibe)
+  se vinculan al presupuesto. A decidir: cómo ve logística el nombre y la dirección de una obra que no
+  abre (propuesta: la etapa guarda su dirección de entrega).
+- **Post-venta**: módulo aislado para su equipo. La unidad (1°C, local, casa) se arma después,
+  eligiendo ítems del presupuesto aprobado ("estas 4 ventanas → 1°C"); si un ítem agrupa varias
+  unidades, se lleva ítem y cantidad. Una obra de un solo dueño es una unidad con todo. Propietarios e
+  inquilinos, vínculos de Contactos con `desde` / `hasta`; el seguro, un contrato de la unidad.
 
 ## erp-cliente — falta el `ThemeToggle`
 
