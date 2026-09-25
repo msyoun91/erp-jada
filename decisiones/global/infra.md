@@ -211,10 +211,14 @@ transferencia. Reconstruidas en `sql/083` y `sql/084`.
   `obras_emitir_eventos_grant` —el emisor de los dos eventos— quedó invisible, y de ahí salió la
   premisa falsa de que los eventos no se emitían.
 
-## Tests de pantalla: Playwright en `erp-app/e2e/`, solo lectura contra la base real (2026-09-25)
+## ~~Tests de pantalla: Playwright en `erp-app/e2e/`, solo lectura contra la base real (2026-09-25)~~
 
-**Los tests E2E no crean ni editan datos.** Hay un solo proyecto de Supabase (producción) y un E2E no puede hacer `ROLLBACK`: con "nunca DELETE", cada corrida dejaría registros desactivados. Cubren lo que no escribe — permisos por usuario, redirecciones, que las pantallas carguen. Los flujos con escritura se verifican con el agente `tester-ui` (Chrome) hasta que exista una base de prueba.
+Superada por "Tests de pantalla: Playwright puede escribir — la base no es de producción" (abajo).
+
+## Tests de pantalla: Playwright puede escribir — la base no es de producción (2026-09-25)
+
+**Los tests E2E pueden crear y editar datos.** El proyecto de Supabase no es producción (la premisa anterior era falsa), así que los flujos con escritura se prueban en Playwright además de con `tester-ui`. Igual tiene datos cargados: todo lo que crea un test lleva un marcador único en los textos (`Zqx<nro>`) y las aserciones filtran por ese marcador, nunca cuentan filas globales. Sin DELETE: lo creado se desactiva, si hace falta, desde la propia app.
 
 Dos usuarios (admin y tester) con credenciales en `erp-app/.env.test` (ignorado; plantilla en `.env.test.example`); `auth.setup.ts` loguea una vez y guarda la sesión en `e2e/.auth/`. Un proyecto de Playwright por usuario: `admin.spec.ts`, `tester.spec.ts`, `sin-sesion.spec.ts`. Correr con `npm run e2e`.
 
-Archivos: `erp-app/playwright.config.ts`, `erp-app/e2e/`, `.claude/agents/tester-ui.md`.
+Archivos: `erp-app/playwright.config.ts`, `erp-app/e2e/`, `.claude/agents/tester-ui.md`, `.claude/agents/tester.md`.

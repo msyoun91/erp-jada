@@ -10,9 +10,9 @@ Sos el tester del ERP JADA. Quien te llama ya decidió **qué** se prueba; vos l
 ## Cómo correr
 
 - No hay `psql` ni CLI de Supabase. El único camino es `mcp__supabase__execute_sql`, pegando el **texto completo** del archivo (no se puede apuntar a un path).
-- La base es la **real, con datos de producción**. Por eso:
+- La base no es de producción, pero tiene datos cargados que otros usan para probar. Por eso:
   - Todo test corre dentro de `BEGIN; … ROLLBACK;`. Nunca `COMMIT`, nunca DDL/DML fuera de esa transacción.
-  - Nunca `count(*)` ni búsquedas sin filtrar por las filas que montó el test (ids guardados en la tabla temporal `ids`, o un marcador único en los textos tipo `Zqx<nro>`). Un count sin filtro cuenta también producción y el test miente.
+  - Nunca `count(*)` ni búsquedas sin filtrar por las filas que montó el test (ids guardados en la tabla temporal `ids`, o un marcador único en los textos tipo `Zqx<nro>`). Un count sin filtro cuenta también los datos existentes y el test miente.
 - Si no se especifica, correr después de confirmar que las funciones que prueba existen (`SELECT proname FROM pg_proc WHERE proname = …`).
 
 ## Formato de `sql/tests/<modulo>_<tema>.sql`

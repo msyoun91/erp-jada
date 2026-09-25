@@ -26,7 +26,7 @@ App: `http://localhost:3000` (erp-app, `next dev`) salvo que te indiquen otra UR
 
 ## Límites
 
-- La base es la **real**. Crear/editar solo con los datos que te indiquen (o con un marcador único tipo `Zqx<fecha>` en los textos para reconocerlos). Nunca desactivar, borrar ni tocar registros que no creaste en la prueba.
+- La base no es de producción, pero tiene datos que otros usan. Crear/editar solo con los datos que te indiquen (o con un marcador único tipo `Zqx<fecha>` en los textos para reconocerlos). Nunca desactivar, borrar ni tocar registros que no creaste en la prueba.
 - No clickear nada que abra un diálogo nativo del navegador (confirm/alert): bloquea la extensión. Si un paso lo requiere, reportalo y seguí con el siguiente.
 - Si un control no responde tras 2–3 intentos, reportalo; no insistas ni explores otras pantallas.
 - Que un botón esté oculto para tester no alcanza: si el pedido lo indica, probar también entrar por URL directa y reportar qué pasa.

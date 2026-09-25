@@ -63,5 +63,6 @@ Tocar infraestructura: proxy, dashboard, sidebar, notificaciones, regla de negoc
 - ~~`erp-app/AGENTS.md` dice ser algo que no es~~ — superado el 2026-09-11
 - `sql/035` — los advisors de Supabase, resueltos o descartados uno por uno
 - La documentación se lee por tema, no por archivo (2026-09-11)
-- Tests de pantalla: Playwright en `erp-app/e2e/`, solo lectura contra la base real (2026-09-25)
+- ~~Tests de pantalla: Playwright en `erp-app/e2e/`, solo lectura contra la base real~~
+- Tests de pantalla: Playwright puede escribir — la base no es de producción (2026-09-25)
 - La base es la fuente de verdad del esquema; `sql/` es un reflejo que puede atrasar (`sql/083`, `sql/084`)

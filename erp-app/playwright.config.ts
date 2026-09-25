@@ -5,7 +5,7 @@ process.loadEnvFile(".env.test");
 
 const baseURL = "http://localhost:3000";
 
-// Corre contra la base real: los tests son de solo lectura (ver decisiones/global/infra.md).
+// La base no es de producción pero tiene datos: lo que crea un test lleva marcador Zqx<nro> (ver decisiones/global/infra.md).
 export default defineConfig({
   testDir: "e2e",
   fullyParallel: true,
