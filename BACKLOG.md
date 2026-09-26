@@ -95,8 +95,8 @@ Contactos → Obras (con el paquete de Tareas "con el primer emisor", arriba) �
    (`decisiones/obras.md`).
 3. ~~"Es la misma" y el referente del alta~~ — cerrado: el vínculo pasa a la existente
    (`decisiones/obras.md`).
-4. Empresas parecidas entre equipos comerciales: se congelan para aprobarse casi siempre, y fusionar
-   ese par le saca la empresa a un equipo.
+4. ~~La misma empresa en dos equipos~~ — cerrado: se pide con un pedido de Tareas y el equipo dueño
+   la comparte (`decisiones/contactos.md`).
 5. Falta el corte del SQL de Contactos y Obras en tramos, con un primer tramo usable.
 - Menor, al escribir el SQL: la baja pasa las obras al jefe solo si tiene `obras_ver`, como Tareas
   pide `tareas_ver`.

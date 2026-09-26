@@ -77,7 +77,8 @@ se desactiva aparte. Descartado: bloquear con vínculos abiertos (obliga a cerra
 vínculos; el dueño no cambia (una persona habla con un solo vendedor, como en "es la misma"). Los
 vínculos de la que se va pasan a la que queda; si las dos tenían uno abierto en el mismo registro, uno
 solo con los roles sumados (los cerrados se mueven tal cual). Teléfono y email, campo por campo, los elige el admin; las razones sociales de una empresa
-se suman. La que se va se desactiva con `fusionada_en`, y su historial (ediciones, accesos) queda donde
+se suman. Dos empresas de equipos distintos: la que queda pasa a estar compartida con el equipo de la
+otra, así nadie la pierde (2026-09-26). La que se va se desactiva con `fusionada_en`, y su historial (ediciones, accesos) queda donde
 estaba. Campanita al dueño de la que se va: "Marta Gómez se fusionó con la de Juan"; sigue viéndola en
 contexto en sus obras.
 
@@ -110,6 +111,21 @@ el `equipo_id` de quien la carga, guardado en ese momento. La ven los miembros d
 ve un vínculo suyo y el admin. Vale igual para cualquier equipo, sin excepción por nombre. Las
 personas no: son de su dueño (un vendedor no ve los referentes de otro).
 
+**Una empresa se comparte con otro equipo, a pedido (2026-09-26).** Norte tiene "Constructora Caputo"
+y Pedro (Sur) la necesita para Casa Núñez: el aviso a ciegas le dice "Constructora Caputo, de Juan Pérez
+(Norte)", y en vez de crearla se la pide a Norte con un pedido de Tareas (con `tareas_pedir`; si no la
+tiene, se lo pide a su jefe, como cualquier pedido). Juan acepta y desde la ficha de Caputo la comparte
+con Sur, que desde ahí la ve, la vincula y la corrige como propia. Un pedido por empresa, no por obra.
+- Comparte y deja de compartir cualquiera del equipo dueño, o el admin. Sigue siendo de Norte: la
+  desactiva su jefe.
+- Dejar de compartir no toca los vínculos que Sur ya creó (historia de la obra, como desactivar): Sur
+  solo deja de poder vincularla de nuevo.
+- Sin campanita propia: la respuesta al pedido ya avisa.
+
+Pedido del usuario. Descartado: que Norte vincule Caputo a Casa Núñez desde el pedido (un pedido por
+obra, vincula a una obra que no ve, y Contactos tendría que leer los pasos de Tareas); no congelar una
+empresa parecida a la de otro equipo (el usuario prefirió pedirla); empresas comunes a todos los equipos.
+
 **La empresa se identifica por su nombre, no por el CUIT (2026-09-25).** El usuario: el nombre queda y
 la razón social cambia, y con ella el CUIT (por ejemplo, un fideicomiso por edificio). Razón social y
 CUIT van como una lista de la empresa, sin unique, y a cuál se le cotiza lo elige el presupuesto cuando
@@ -121,7 +137,7 @@ las obras (`decisiones/obras.md` → *Altas parecidas*). Pedido del usuario, sob
 
 - **Se compara contra todo:** personas contra todas las agendas (nombre, y teléfono y email
   normalizados); empresas contra todas las empresas, de cualquier equipo (nombre). Antes de guardar,
-  aviso a ciegas: nombre y dueño, nada más. Editar un dato comparado que pasa a coincidir también
+  aviso a ciegas: nombre y dueño (de una empresa, también su equipo), nada más. Editar un dato comparado que pasa a coincidir también
   congela (`decisiones/obras.md` → *Editar también congela*).
 - **Congelada:** la ve solo quien la cargó, y la puede editar. No se vincula (ni a una obra ni a una
   empresa) y no se transfiere. El bloqueo, con triggers en la base.
@@ -137,14 +153,16 @@ las obras (`decisiones/obras.md` → *Altas parecidas*). Pedido del usuario, sob
   los guarda: *Vincular*, abajo). La persona sigue siendo de su dueño; quien la cargó la ve
   en contexto. Queda abierto, no es el camino por defecto. Una empresa parecida
   a la de otro equipo normalmente se aprueba: rechazarla deja a ese equipo sin empresa, porque no ve la
-  del otro.
+  del otro. El camino esperado es no crearla y pedírsela a ese equipo (*Una empresa se comparte*); por
+  eso el aviso a ciegas de una empresa dice también el equipo.
 - **Avisos:** "alta por aprobar" a quienes tienen `contactos_aprobar`; la decisión, a quien la cargó.
 
 ## Vincular: buscar o crear en el mismo panel (2026-09-26)
 
 Pedido del usuario: que vincular sea rápido, y que si el contacto no está se cree desde ahí.
 
-**El buscador muestra solo lo que podés vincular: tus personas y las empresas de tu equipo.** Pedro
+**El buscador muestra solo lo que podés vincular: tus personas y las empresas de tu equipo** (y las
+compartidas con él). Pedro
 ve a la arquitecta de Juan en Torre Belgrano y la busca para Casa Núñez: no aparece, la crea, el aviso a
 ciegas dice "Marta Gómez, de Juan Pérez", queda congelada con la obra y el rol, y el aprobador resuelve
 con "es la misma". Descartado: mostrarla deshabilitada ("pedile a Juan"), que lo deja esperando al dueño
@@ -180,7 +198,7 @@ lo componen desde `app/` (`GUIDE_ENTES.md` §2.7).
 
 | Desde | Busca | Crea si no está |
 |---|---|---|
-| Obra → vincular contacto | tus personas, empresas de tu equipo | persona o empresa, con su empresa |
+| Obra → vincular contacto | tus personas, empresas de tu equipo o compartidas con él | persona o empresa, con su empresa |
 | Nueva obra, origen referente → "¿Quién?" | ídem | persona o empresa, sin el campo empresa (ya es el nivel anidado) — `decisiones/obras.md` |
 | Persona → sumar empresa | empresas que ves | empresa, solo el nombre |
 | Empresa → sumar persona | tus personas | persona, con cargo en vez de rol |
@@ -197,8 +215,8 @@ Objetivo: las personas y empresas con las que trabaja la empresa, en un solo lug
           rol y su período a obras (después a etapas y unidades), y visibles solo para quien trabaja
           el registro al que están vinculadas.
 Personas
-├── Vendedor        — ve su agenda (las personas de las que es dueño), las empresas de su equipo y,
-│                     en contexto, los contactos vinculados a las obras que ve
+├── Vendedor        — ve su agenda (las personas de las que es dueño), las empresas de su equipo o
+│                     compartidas con él y, en contexto, los contactos vinculados a las obras que ve
 │                   · crea personas y empresas; vincula las suyas a lo que trabaja; en una obra que
 │                     trabaja, cierra vínculos, les cambia el rol y corrige sus contactos; transfiere
 │                     sus personas
@@ -232,13 +250,17 @@ Entes
 └── empresa — dueño creado_por · equipo_id de quien la carga, guardado en el momento · sin estado
               · datos {nombre} · ruta /contactos/empresas/{id} · submódulo contactos_ver
               · se identifica por el nombre, sin unique; razón social y CUIT, en su lista
-              · la ven: los miembros de su equipo (o solo quien la cargó, si no tiene equipo), quien
-                ve algún vínculo suyo, contactos_administrar · la editan: su equipo (o quien la
-                cargó), contactos_administrar, quien trabaja un registro al que está vinculada
+              · la ven: los miembros de su equipo (o solo quien la cargó, si no tiene equipo) y de
+                los equipos con los que se compartió, quien ve algún vínculo suyo,
+                contactos_administrar · la editan: su equipo (o quien la cargó), los equipos con
+                los que se compartió, contactos_administrar, quien trabaja un registro al que está
+                vinculada
               · congelada como la persona
 No son entes
 ├── razón social — contactos_empresa_razones (empresa, razon_social, cuit, activo), sin unique;
 │                  se ve con la empresa
+├── compartida   — contactos_empresa_equipos (empresa, equipo, activo): el equipo que la ve y la
+│                  vincula como propia; la escribe el equipo dueño o el admin
 ├── ediciones    — contactos_ediciones: log de cambios de persona y empresa (campo, anterior, nuevo,
 │                  quién, cuándo); lo escribe un trigger; se ve con el registro (teléfono y email,
 │                  por la función que registra)
@@ -270,11 +292,14 @@ Acciones
 │            · reactivar y fusionar (admin)
 ├── empresa: crear (congelada si se parece) · editar (su equipo, admin, quien trabaja un registro
 │            vinculado; queda en contactos_ediciones)
-│            · sumar razón social · desactivar (jefe del equipo, admin) · reactivar, fusionar y asignar equipo (admin)
+│            · sumar razón social · compartir con un equipo y dejar de compartir (su equipo, admin;
+│            los vínculos quedan) · desactivar (jefe del equipo, admin) · reactivar, fusionar y
+│            asignar equipo (admin)
 ├── alta congelada: aprobar (persona: solo si es homónima; crea los vínculos guardados) · rechazar (motivo) · "es la misma"
 │                  (rechaza; opcional, vincula la existente a la obra y rol de la congelada)
 │                  — contactos_aprobar
-└── vínculo: vincular (la persona, su dueño o el aprobador en "es la misma"; la empresa, su equipo;
+└── vínculo: vincular (la persona, su dueño o el aprobador en "es la misma"; la empresa, su equipo o
+             uno con el que se compartió;
              sobre un registro que trabaja) · cerrar (hasta) · cambiar el rol · desactivar (cargado
              por error) — lo último, quien trabaja el registro
 Eventos que emite
