@@ -49,6 +49,12 @@ en Empresas, y el admin le asigna un equipo (`equipo_id`).
 Mecánica, al escribir el SQL: `asignar_equipo` suma el parámetro. Precedente: `designar_delegador`
 ya mueve `tareas_equipo` (`sql/112`).
 
+**Desactivar no toca los vínculos (2026-09-26).** Desactiva una persona su dueño o el admin (como
+transferir); una empresa, el jefe de su equipo o el admin (es del equipo, no de quien la cargó). Sus
+vínculos quedan: en cada obra sigue con su rol, marcada "inactiva", porque es historia de la obra
+(quién fue la arquitecta). Solo se frena vincularla de nuevo. Si estaba cargada por error, cada vínculo
+se desactiva aparte. Descartado: bloquear con vínculos abiertos (obliga a cerrarlos uno por uno).
+
 **Una persona o una empresa la edita quien la ve, y cada cambio queda registrado (2026-09-25).**
 El contacto es uno solo y lo usan varias obras: que lo corrija el primero que se entera (quien recibió
 la obra transferida y sabe el teléfono nuevo). Descartado: solo el dueño, que dejaba el dato viejo hasta
@@ -172,10 +178,11 @@ Relaciones
                                  ?vincular={rol} (link de acción de Tareas); se escribe una vez
 Acciones
 ├── persona: crear (congelada si se parece) · editar (quien la ve; queda en contactos_ediciones)
-│            · ver teléfono y email (registra) · transferir (dueño, admin) · desactivar
+│            · ver teléfono y email (registra) · transferir (dueño, admin) · desactivar (dueño, admin;
+│            sus vínculos quedan, "inactiva")
 │            · reactivar y fusionar (admin)
 ├── empresa: crear (congelada si se parece) · editar (quien la ve; queda en contactos_ediciones)
-│            · sumar razón social · desactivar · reactivar, fusionar y asignar equipo (admin)
+│            · sumar razón social · desactivar (jefe del equipo, admin) · reactivar, fusionar y asignar equipo (admin)
 ├── alta congelada: aprobar (persona: solo si es homónima) · rechazar (motivo) · "es la misma"
 │                  (rechaza; opcional, vincula la existente a la obra y rol de la congelada)
 │                  — contactos_aprobar
