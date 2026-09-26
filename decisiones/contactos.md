@@ -34,7 +34,7 @@ vínculo, y quien ve un vínculo ve la persona. Una sola regla, en `contactos_pu
 muestra solo las propias. Una persona vinculada a una obra que veo la veo ahí, con su rol y su
 teléfono, y su ficha me muestra solo ese vínculo. Dentro de ese registro puedo cerrar el vínculo o
 cambiarle el rol. Lo que no puedo es llevarla a otro registro: **vincular una persona es solo de su
-dueño y del admin.** Si no, quien recibe una obra transferida podía sumar el referente del anterior a sus
+dueño y del admin** (y del aprobador, en "es la misma"). Si no, quien recibe una obra transferida podía sumar el referente del anterior a sus
 propias obras y quedárselo. Las empresas no entran en esta regla: son del equipo.
 
 **La persona se transfiere, y la agenda sigue a las obras (2026-09-25).** El dueño es `responsable_id`,
@@ -90,7 +90,12 @@ las obras (`decisiones/obras.md` → *Altas parecidas*). Pedido del usuario, sob
 - **Aprueba `contactos_aprobar`, no el jefe:** una función que asigna el admin, no delegable. En
   "Por aprobar" ve el alta completa y, de cada parecida, nombre, dueño y qué dato coincidió ("mismo
   teléfono"), sin mostrarlo. Las altas de quien tiene la función no se congelan.
-- **Dos salidas:** aprobar · rechazar con motivo (se desactiva, no se fusiona). Una empresa parecida
+- **Tres salidas:** aprobar · rechazar con motivo (se desactiva, no se fusiona) · "es la misma".
+  Una persona se aprueba solo si es homónima: una persona habla con un solo vendedor (o con su equipo
+  comercial si no está), así que no se duplica en otra agenda. "Es la misma" rechaza la nueva y le deja
+  al aprobador, si quiere, vincular la existente a la obra y el rol para los que se cargó (la congelada
+  los guarda, salen de `?vincular={rol}`). La persona sigue siendo de su dueño; quien la cargó la ve
+  en contexto. Queda abierto, no es el camino por defecto. Una empresa parecida
   a la de otro equipo normalmente se aprueba: rechazarla deja a ese equipo sin empresa, porque no ve la
   del otro.
 - **Avisos:** "alta por aprobar" a quienes tienen `contactos_aprobar`; la decisión, a quien la cargó.
@@ -162,8 +167,10 @@ Acciones
 │            · reactivar y fusionar (admin)
 ├── empresa: crear (congelada si se parece) · editar (quien la ve; queda en contactos_ediciones)
 │            · sumar razón social · desactivar · reactivar y fusionar (admin)
-├── alta congelada: aprobar · rechazar (motivo) — contactos_aprobar
-└── vínculo: vincular (la persona, su dueño; la empresa, su equipo) · cerrar (hasta) · cambiar el
+├── alta congelada: aprobar (persona: solo si es homónima) · rechazar (motivo) · "es la misma"
+│                  (rechaza; opcional, vincula la existente a la obra y rol de la congelada)
+│                  — contactos_aprobar
+└── vínculo: vincular (la persona, su dueño o el aprobador en "es la misma"; la empresa, su equipo) · cerrar (hasta) · cambiar el
              rol · desactivar (cargado por error) — lo último, quien ve el registro
 Eventos que emite
 ├── persona: alta (al aprobarse, si entró congelada) · baja · reactivacion · transferencia ({de, a})
@@ -173,7 +180,7 @@ Eventos que emite
     ├── contacto transferido → el nuevo dueño
     ├── agenda recibida      → el jefe, por baja o cambio de equipo; una por hecho, con la cantidad
     ├── alta por aprobar     → quienes tienen contactos_aprobar
-    └── alta resuelta        → quien la cargó: aprobada o rechazada (con motivo)
+    └── alta resuelta        → quien la cargó: aprobada, rechazada (con motivo) o "es la misma"
 Eventos que consume
 └── ninguno
 ```
