@@ -78,6 +78,11 @@ registro de la ficha (un contacto, una tarea) va a su página y cierra el panel;
 hilo con el paso abierto por `?paso={id}`. La ficha no sabe dónde está montada, y las pestañas quedan
 como lo que el paso toca, sin lo explorado. Descartado: pestañas temporales dentro del panel.
 
+**Pestaña activa al abrir: la primera, salvo que se llegue por un link de acción (2026-09-26).** La
+primera es el registro del hilo. Un link de acción (`?vincular={rol}`, `?estado={valor}`) activa la
+de su registro con ese panel abierto; el ↗ del texto activa la suya. Sin recordar la última mirada:
+sería estado por persona para algo que se cambia con un clic.
+
 **"Relacionar": primero el módulo, después el buscador (2026-09-24).** Botón junto a la descripción
 del paso (hilos y pasos sueltos): elegir el módulo y buscar en `buscar_registros` (INVOKER, una rama
 por ente: lo que quien escribe ve), que inserta `{ente:uuid|nombre}` con vista previa. En una

@@ -53,9 +53,10 @@ plantillas) aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/124` (
 UI: vistas Hilos (`/tareas`, `/tareas/{id}`, `/tareas/paso/{id}`), Misión (`/tareas/mision`),
 Equipo (`/tareas/equipo`), Plantillas (`/tareas/plantillas`, con "Usar plantilla" desde el hilo) y
 Todas (`/tareas/todas`) hechas. Las referencias `{ente:uuid|nombre}` son link ↗ si quien lee las
-abre (`getEnlaces`) y navegan a la ficha. Falta: la ficha al lado en split
-(`decisiones/tareas/registro.md`) — va con el primer ente de otro módulo; hoy solo hay `hilo` y
-`tarea`, cuya ficha es el hilo mismo.
+abre (`getEnlaces`) y navegan a la ficha. Falta: las fichas de los vínculos al lado, en pestañas
+dentro del panel del paso ensanchado, y la del registro del hilo en su página — diseño cerrado en
+`decisiones/tareas/registro.md` (2026-09-26). Va con el primer ente de otro módulo; hoy solo hay
+`hilo` y `tarea`, cuya ficha es el hilo mismo.
 
 Ficha: `decisiones/tareas/README.md`; esquema: `db_schema/tareas.md`.
 
