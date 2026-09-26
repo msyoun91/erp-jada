@@ -57,8 +57,8 @@ se desactiva aparte. Descartado: bloquear con vínculos abiertos (obliga a cerra
 
 **Fusionar: el admin elige cuál queda, y esa conserva su dueño (2026-09-26).** Por defecto, la de más
 vínculos; el dueño no cambia (una persona habla con un solo vendedor, como en "es la misma"). Los
-vínculos de la que se va pasan a la que queda; si las dos estaban en el mismo registro, uno solo con los
-roles sumados. Teléfono y email, campo por campo, los elige el admin; las razones sociales de una empresa
+vínculos de la que se va pasan a la que queda; si las dos tenían uno abierto en el mismo registro, uno
+solo con los roles sumados (los cerrados se mueven tal cual). Teléfono y email, campo por campo, los elige el admin; las razones sociales de una empresa
 se suman. La que se va se desactiva con `fusionada_en`, y su historial (ediciones, accesos) queda donde
 estaba. Campanita al dueño de la que se va: "Marta Gómez se fusionó con la de Juan"; sigue viéndola en
 contexto en sus obras.
@@ -177,6 +177,8 @@ Relaciones
 │                              · la crea el dueño de la persona, con una empresa que ve; se ve con la
 │                                persona; la empresa aparece solo si se la ve (sin regla propia)
 └── persona | empresa → ente — roles[] · desde · hasta        (contactos_vinculos: ente, registro_id)
+                               · uno abierto por par (unique WHERE activo AND hasta IS NULL,
+                                 GUIDE_ENTES §2.6); volver es una fila nueva — igual persona ↔ empresa
                                · se ve si se ve el registro
                                · lo crea, sobre un registro que ve, el dueño de la persona o el
                                  equipo de la empresa; lo cierra o le cambia el rol quien ve el registro (un referente con comisión: ver

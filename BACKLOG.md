@@ -79,17 +79,13 @@ Para probar: un equipo activo con delegador.
 
 ## Contactos y Obras — fichas aprobadas, falta el SQL (2026-09-25)
 
-`decisiones/contactos.md` y `decisiones/obras.md`, aprobadas el 2026-09-25. Siguiente: cerrar los
-huecos de la revisión (abajo), de a uno, y después SQL de Contactos (`GUIDE_MODULO_NUEVO.md` paso 1,
+`decisiones/contactos.md` y `decisiones/obras.md`, aprobadas el 2026-09-25. Siguiente: SQL de Contactos (`GUIDE_MODULO_NUEVO.md` paso 1,
 con su *Pendiente*). Orden:
 Contactos → Obras (con el paquete de Tareas "con el primer emisor", arriba) → Catálogo → Presupuestos
 → Post-venta.
 
-**Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Huecos abiertos, por peso (cerrados: persona en otra agenda → "es la misma"; `contratada` irreversible → se revierte con causa; jefe de un participante → solo ve; comisión → la toca solo quien la ve; editar esquiva el congelado → editar también congela; huérfanas → filtro y campanita, como Obras; aprobador → "Ver contacto" registrado; desactivar → no toca vínculos; fusionar → el admin elige, queda su dueño); cada
-decisión va a `decisiones/<modulo>.md` antes de pasar al siguiente.
-
-1. **Unique del vínculo con `hasta`.** Un vínculo cerrado sigue `activo`, así que el unique parcial por par
-   (`GUIDE_ENTES.md` §2.6) no deja re-vincular al capataz que vuelve: `WHERE activo AND hasta IS NULL`.
+**Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Los nueve huecos, cerrados el
+2026-09-26 y escritos en `decisiones/contactos.md`, `decisiones/obras.md` y `GUIDE_ENTES.md` §2.6.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos.

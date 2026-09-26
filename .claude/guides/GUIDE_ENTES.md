@@ -216,6 +216,9 @@ id: en un UPDATE la policy de SELECT se evalúa sobre la fila nueva, y releer la
 - Puente `{modulo}_{ente_a}_{ente_b}` con `roles enum[]` (una relación con dos roles, no dos relaciones),
   `CHECK cardinality(roles) > 0`, `creado_por` por trigger `set_creado_por`, unique parcial por par
   `WHERE activo`. Ser algo por tener una fila (referente) no se duplica como rol.
+- Si el puente tiene `desde`/`hasta`, el unique es `WHERE activo AND hasta IS NULL`: uno abierto por par,
+  los cerrados son historia, y volver es una fila nueva (no reabrir, que borra el hueco). `activo = false`
+  sigue siendo solo "cargado por error".
 - Con un ente de **otro módulo**: si es siempre el mismo ente, FK directa (`presupuestos.obra_id →
   obras`); si es "cualquier ente", el par `(ente text FK → entes, registro_id uuid sin FK)` como
   `tareas_vinculos`, y la policy de INSERT exige `etiqueta_registro(ente, registro_id) IS NOT NULL`.
