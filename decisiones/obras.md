@@ -101,7 +101,17 @@ resolviera después, y el usuario eligió congelar. Contactos hace lo mismo con 
 - **Tres salidas:** aprobar · rechazar con motivo (se desactiva, no se fusiona) · "es la misma"
   (se rechaza y quien la cargó queda como participante de la existente: dos vendedores sobre el mismo
   edificio siguen trabajándolo juntos).
-- **Avisos:** "alta por aprobar" a quienes tienen `obras_aprobar`; la decisión, con motivo, a quien la cargó.
+- **"Es la misma" lleva a la existente el vínculo guardado del alta (2026-09-26).** Marta, referente de
+  Pedro, lo llama por Torre Belgrano; la carga con "¿Quién? = Marta", entra congelada porque Juan ya la
+  tenía, y el aprobador marca "es la misma": Marta queda como referente de la de Juan, sin preguntarle
+  al aprobador. No cruza dueños: Marta es de Pedro, que ya participa y trabaja la obra; es lo que haría
+  él a mano. Si la existente ya tenía a Marta abierta, se suman los roles, y un paso "vincular referente"
+  se completa solo. Rechazar descarta el vínculo; Marta sigue en la agenda de Pedro. La comisión la
+  registra Juan, y Pedro no la ve (participante); si el responsable tiene que ser Pedro, se transfiere.
+- **Avisos:** "alta por aprobar" a quienes tienen `obras_aprobar`; la decisión, con motivo, a quien la
+  cargó. Con "es la misma", también al responsable de la existente: "Pedro se sumó a Torre Belgrano, con
+  Marta Gómez como referente". La acción es del aprobador, así que "sumado a una obra" solo avisaba a
+  Pedro.
 
 ## Los estados son solo comerciales (2026-09-25)
 
@@ -158,7 +168,8 @@ es un referente que llama con una obra nueva, y la obra tiene que nacer con él 
 opcional, con el buscador de Contactos: busca y crea como el panel de vincular, sin el campo empresa (ya
 es el nivel anidado; `decisiones/contactos.md` → *Vincular: buscar o crear*). Obra, contacto nuevo y
 vínculo con rol referente se guardan en una sola función, todo o nada. Si la obra o el contacto entran
-congelados, el vínculo queda guardado y se crea al aprobarse. La página compone el buscador en el
+congelados, el vínculo queda guardado y se crea al aprobarse; con "es la misma", en la existente
+(*Altas parecidas*). La página compone el buscador en el
 formulario desde `app/`.
 
 **Las tareas de cada estado de la obra son de comercial. Las de ejecución cuelgan del presupuesto.**
@@ -269,7 +280,9 @@ Eventos que emite
     ├── obras huérfanas        → quienes tienen obras_administrar, cuando no hay jefe que las
     │                            reciba; una por hecho
     ├── alta por aprobar       → quienes tienen obras_aprobar
-    └── alta resuelta          → quien la cargó: aprobada, rechazada (con motivo) o "es la misma"
+    └── alta resuelta          → quien la cargó: aprobada, rechazada (con motivo) o "es la misma";
+                                 con "es la misma", también el responsable de la existente
+                                 (quién se sumó y con qué vínculo)
     · descartado: "cambiaron el estado de tu obra" (ruido entre quienes trabajan la misma obra)
 Eventos que consume
 └── ninguno hoy · con Presupuestos: presupuesto creado y aprobado mueven el estado

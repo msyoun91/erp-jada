@@ -165,7 +165,8 @@ Gómez · 11-5555-…" con [Vincular esa] y [Es otra, crear igual]. Si es de otr
 y empresa con cargo (abajo). Sin esto, quien la cargó tenía que volver a vincularla, y el paso de Tareas
 "vincular arquitecto" quedaba abierto hasta que se acordara. Cada vínculo guardado se crea cuando sus dos
 puntas dejan de estar congeladas; si para entonces quien la cargó ya no trabaja el registro, no se crea
-y "alta resuelta" lo dice. Rechazar y "es la misma", como arriba.
+y "alta resuelta" lo dice. Rechazar y "es la misma", como arriba. Si la congelada es la obra y resulta
+"es la misma", el vínculo pasa a la existente (`decisiones/obras.md` → *Altas parecidas*).
 
 **La empresa de la persona, en el mismo formulario.** Campo opcional con el mismo buscador: las empresas
 que ves (lo que pide persona ↔ empresa), primero las vinculadas al registro, así el capataz de la
