@@ -160,12 +160,13 @@ Catálogo cross-módulo: cada módulo registra acá sus entes en su propia migra
 | ruta | text | la ficha, con `{id}`. CHECK: empieza con una sola `/` y contiene `{id}` |
 | tabla | regclass | de dónde lee un consumidor la fila |
 | disparos | tipo_evento[] | default `{}` — qué eventos pueden disparar una plantilla |
+| roles | text[] | default `{}` — los roles que un contacto puede tener en un registro del ente; los valida `contactos_vinculos` (`sql/125`) |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | trigger `set_updated_at` |
 
 RLS `entes_select`: `activo AND tiene_permiso(submodulo)` — sin la vista del ente, el ente no existe. Solo `GRANT SELECT`: escribe la migración de cada módulo.
 
-Filas: `hilo` y `tarea` (`sql/112`, ver `tareas.md`).
+Filas: `hilo` y `tarea` (`sql/112`, ver `tareas.md`), `obra` (`sql/126`, `obras.md`), `persona` y `empresa` (`sql/127`, `contactos.md`).
 
 ## eventos (`sql/109`)
 
@@ -188,9 +189,9 @@ RLS `eventos_select`: `etiqueta_registro(ente, registro_id) IS NOT NULL`, y para
 **Emisores** (INVOKER, para que un consumidor corra con la RLS de quien actuó):
 
 - `emitir_evento(ente, registro_id, evento, detalle)` — el INSERT. EXECUTE para `authenticated`; por RPC no inserta (la policy pide trigger).
-- `emitir_eventos_registro()` — trigger `AFTER INSERT OR UPDATE OF activo, estado[, dueño]`, `TG_ARGV = (ente[, columna del dueño])`: alta (solo si nace activo), reactivación, estado (si cambia de verdad o nace con valor), transferencia `{de, a}` (si se pasó la columna del dueño y cambia), baja, en ese orden (`sql/115`).
-- `emitir_eventos_relacion()` — trigger sobre la puente, `AFTER INSERT OR UPDATE OF activo, roles`, `TG_ARGV = (ente, columna, ente relacionado, columna)`: un evento por rol que aparece o se va, del lado del primer ente.
+- `emitir_eventos_registro()` — trigger `AFTER INSERT OR UPDATE OF activo, estado[, dueño]`, `TG_ARGV = (ente[, columna del dueño[, columnas del estado]])`: alta (solo si nace activo), reactivación, estado (si cambia de verdad o nace con valor; las columnas de la tercera, separadas por coma, se suman al `detalle` si tienen valor — `sql/125`), transferencia `{de, a}` (si se pasó la columna del dueño, no vacía, y cambia), baja, en ese orden (`sql/115`).
+- `emitir_eventos_relacion()` — trigger sobre la puente, `AFTER INSERT OR UPDATE OF activo, roles[, hasta]`, `TG_ARGV = (ente, columna, ente relacionado, columna)`: un evento por rol que aparece o se va, del lado del primer ente. Desde `sql/125`, un ente que es el nombre de una columna de la fila toma su valor (`'ente'` en `contactos_vinculos`), y un vínculo con `hasta` cuenta como cerrado.
 
-**Genéricas cross-módulo** (INVOKER, EXECUTE para `authenticated` porque las llama la policy): `etiqueta_registro(ente, id)` (rama `tareas` → `tareas_etiqueta`, `sql/112`; sin rama, NULL) y `puede_ver_relacion(ente, id, ente_rel, id_rel)` (rama `tareas`: quien ve el paso ve quién lo tuvo asignado, `sql/115`; sin rama, false). Cada ente reemplaza el cuerpo sumando su `CASE e.modulo WHEN …`. `buscar_registros(p_modulo, p_texto) → (ente, registro_id, etiqueta, detalle, href)` (INVOKER, GRANT `authenticated`; rama `tareas` → `tareas_buscar`, `sql/124`; el JOIN con `entes` deja afuera lo que no se abre; sin rama, nada). `puede_abrir_registro`, `relacionados_de_registro`, `puede_compartir_registro` y `compartir_registros` no existen todavía en esta rama.
+**Genéricas cross-módulo** (INVOKER, EXECUTE para `authenticated` porque las llama la policy): `etiqueta_registro(ente, id)` (rama `tareas` → `tareas_etiqueta`, `sql/112`; sin rama, NULL) y `puede_ver_relacion(ente, id, ente_rel, id_rel)` (rama `tareas`: quien ve el paso ve quién lo tuvo asignado, `sql/115`; sin rama, false). Cada ente reemplaza el cuerpo sumando su `CASE e.modulo WHEN …`. `buscar_registros(p_modulo, p_texto) → (ente, registro_id, etiqueta, detalle, href)` (INVOKER, GRANT `authenticated`; rama `tareas` → `tareas_buscar`, `sql/124`; el JOIN con `entes` deja afuera lo que no se abre; sin rama, nada). `trabaja_registro(ente, id) → boolean` (`sql/125`; INVOKER, GRANT `authenticated`): si quien pregunta trabaja el registro, no solo lo ve; sin rama, false. Rama `obras` → `obras_trabaja` (`sql/126`). `puede_abrir_registro(ente, id, usuario) → boolean` (`sql/125`; DEFINER, sin GRANT: la llaman funciones DEFINER como "Ver contacto"): "lo ve" por usuario explícito; ramas `obras` → `obras_puede_abrir` y `contactos` → `contactos_puede_abrir`. Desde `sql/127`, `etiqueta_registro` y `buscar_registros` suman las ramas `obras` y `contactos`, y `puede_ver_relacion` contesta por Contactos (`contactos_puede_ver_relacion`) toda relación cuyo ente relacionado es de ese módulo. `relacionados_de_registro`, `puede_compartir_registro` y `compartir_registros` no existen todavía en esta rama.
 
 Test: `sql/tests/entes_eventos.sql` (arma un ente de prueba con su puente y sus ramas, todo en `ROLLBACK`).

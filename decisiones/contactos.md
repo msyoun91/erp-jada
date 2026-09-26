@@ -1,8 +1,9 @@
 # Decisiones — módulo contactos
 
 > **Estado: ficha aprobada (2026-09-25), armada con el usuario junto con la de Obras
-> (`decisiones/obras.md`) y revisada punto por punto; sin SQL todavía.** *Pendiente*, al pie, tiene
-> solo lo que se decide al escribir el SQL.
+> (`decisiones/obras.md`) y revisada punto por punto. Tramo 1 del SQL (`sql/127`, `sql/128`) aplicado
+> el 2026-09-26.** *Pendiente*, al pie, tiene solo lo que se decide al escribir el SQL de los tramos
+> que faltan.
 
 ## Personas y empresas viven en su propio módulo, no en Obras (2026-09-25)
 
@@ -228,6 +229,22 @@ un par sin FK; el registro vinculado varía por fila (obra hoy, etapa y unidad d
 Descartado: un trigger propio de Contactos (copiaba la diferencia de roles del emisor).
 
 Archivos: `sql/` (Contactos), `sql/tests/entes_eventos.sql`, `db_schema/core.md`, `GUIDE_ENTES.md` §2.6.
+
+## Las columnas de persona y empresa (2026-09-26)
+
+**Persona: `nombre` (un solo campo), `telefono`, `email`, `notas`. Empresa: `nombre`, `telefono`,
+`email`, `web`, `notas`.** Un solo nombre porque el aviso a ciegas y los chips dicen "Marta Gómez", y
+comparar homónimos es comparar ese texto. El teléfono se guarda solo con dígitos, como el de
+`usuarios`, así queda comparable para las parecidas. Descartado, con lo de `master` a la vista:
+`apellido` y `whatsapp` aparte, y dirección y localidad de la empresa (nada las usa todavía).
+Archivos: `sql/127`, `db_schema/contactos.md`.
+
+**"Ver contacto" pregunta "lo ve" por usuario explícito (2026-09-26).** Es DEFINER (teléfono y email
+están fuera del GRANT), y desde ahí `etiqueta_registro` respondería por el dueño de la función. Por eso
+la visibilidad de persona y empresa se escribe una vez, en `contactos_puede_ver_*_de`, y el vínculo
+cuenta si `puede_abrir_registro(ente, id, usuario)` —la genérica por usuario, con su rama en cada
+módulo— dice que se ve el registro. Las policies usan la misma función con `auth.uid()`.
+Archivos: `sql/125`, `sql/127`.
 
 ## Ficha del módulo
 

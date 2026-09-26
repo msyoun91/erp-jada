@@ -1,7 +1,7 @@
 # Decisiones — módulo obras
 
-> **Estado: ficha aprobada (2026-09-25), después de revisarla punto por punto con el usuario; sin
-> SQL todavía.** Rediseño desde cero: el usuario pidió no partir de lo que había en `master`. Los
+> **Estado: ficha aprobada (2026-09-25), después de revisarla punto por punto con el usuario. Tramo 1
+> del SQL (`sql/126`, `sql/128`) aplicado el 2026-09-26; lo que sigue, en `BACKLOG.md`.** Rediseño desde cero: el usuario pidió no partir de lo que había en `master`. Los
 > contactos son de otro módulo: `decisiones/contactos.md`. Orden de construcción en `BACKLOG.md`.
 
 ## La obra es del equipo comercial (2026-09-25)
@@ -162,6 +162,14 @@ función que asigna el admin y no se delega, para quien mira los números sin tr
 dueño, un gerente). Cuelga de la vista Obras, así que pide `obras_ver` y con él `contactos_ver`: sus
 listas quedan vacías si no es responsable ni participante de nada. Descartado: un supervisor que vea
 todas las obras (Todas sin `obras_administrar`); el usuario pidió los números.
+
+**Motivo y causa viajan en la fila: `estado_nota` (2026-09-26).** La obra guarda `motivo_perdida` y
+`estado_nota`, el texto del último cambio de estado: el detalle de la pérdida o la causa de la
+reversión. `emitir_eventos_registro` suma al `detalle` del evento `estado` las columnas que recibe como
+tercer argumento, así cada pérdida y cada reversión quedan en el historial. La causa usa la columna
+del detalle, no una propia. Descartado: pasar el texto por `set_config` (invisible, se pierde si
+alguien actualiza sin la función, y la base no lo puede exigir).
+Archivos: `sql/125`, `sql/126`, `db_schema/obras.md`.
 
 **Con origen "referente", el alta pregunta quién (2026-09-26).** Pedido del usuario: el caso típico
 es un referente que llama con una obra nueva, y la obra tiene que nacer con él vinculado. Campo "¿Quién?"

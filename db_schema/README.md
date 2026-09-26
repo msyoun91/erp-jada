@@ -9,9 +9,11 @@ tablas, columnas o enums, actualizar ese archivo y `database.types.ts`.
 | `core.md` | `usuarios`, `submodulos`, `submodulo_reglas`, `usuario_submodulos`, `equipos`, `usuario_tutorial`, `usuario_widgets`, `tiene_permiso()`, `entes`, `eventos` |
 | `notificaciones.md` | `usuario_notificaciones`, `notificar()`, `notificaciones_listar()` |
 | `tareas.md` | hilos, pasos, notas, historial, permisos, visibilidad, reglas de escritura, bajas y cambios de equipo de tareas (`sql/112`–`sql/114`) |
+| `obras.md` | obras, participantes, estados, ver/trabajar/a cargo, `obras_alta` (`sql/126`, `sql/128`) |
+| `contactos.md` | personas, empresas, persona ↔ empresa, vínculos con registros, ediciones, accesos, "Ver contacto" (`sql/127`, `sql/128`) |
 
 Esta rama sacó `tareas` y `obras` para rediseñar permisos desde cero (`sql/101`, `sql/102`); sus
-esquemas viejos viven en `master`. Tareas vuelve rediseñado desde `sql/112`.
+esquemas viejos viven en `master`. Tareas vuelve rediseñado desde `sql/112`; Obras, con Contactos aparte, desde `sql/126`.
 
 Proyecto Supabase: `qbpudocgdvpeadcyyhfh`. Regenerar tipos tras cada migración:
 `npx supabase gen types typescript --project-id qbpudocgdvpeadcyyhfh --schema public > erp-app/src/lib/supabase/database.types.ts`

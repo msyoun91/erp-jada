@@ -79,11 +79,21 @@ copia en Admin. Antes de tocar cada punto, contrastar contra las personas de la 
 listan equipos con delegador activo, y el único de la base ("Prueba") está inactivo y sin miembros.
 Para probar: un equipo activo con delegador.
 
-## Contactos y Obras — fichas aprobadas, falta el SQL (2026-09-25)
+## Contactos y Obras — tramo 1 en SQL, faltan las pantallas (2026-09-26)
 
-`decisiones/contactos.md` y `decisiones/obras.md`, aprobadas el 2026-09-25. Siguiente: el SQL
-(`GUIDE_MODULO_NUEVO.md` paso 1, con el *Pendiente* de Contactos). Orden de módulos: Contactos y Obras →
-Catálogo → Presupuestos → Post-venta.
+`decisiones/contactos.md` y `decisiones/obras.md`, aprobadas el 2026-09-25. Tramo 1, SQL aplicado el
+2026-09-26: `sql/125` (core: `entes.roles`, `trabaja_registro`, `puede_abrir_registro`, emisores),
+`sql/126` (obras), `sql/127` (contactos), `sql/128` (buscar o crear, `obras_alta`) y `sql/129`
+(desactivar vínculos por función). Pasan enteros `sql/tests/entes_eventos.sql`, `obras_reglas.sql`,
+`contactos_reglas.sql` y `obras_alta.sql`, y la regresión de Tareas y Usuarios. Esquema:
+`db_schema/obras.md`, `db_schema/contactos.md`. Siguiente: pasos 2–6 de `GUIDE_MODULO_NUEVO.md` para
+el tramo 1 (`types.ts`, `permissions.ts`, `queries.ts`, `actions.ts`, pantallas; `ENTES` en
+`lib/entes.ts` con labels de estados y roles) y la prueba "Juan carga Torre Belgrano…". Orden de
+módulos: Contactos y Obras → Catálogo → Presupuestos → Post-venta.
+
+Para las pantallas: `contactos_personas` no tiene `select *` (teléfono y email fuera del GRANT);
+transferir, desactivar (obra, persona, empresa, vínculo, persona ↔ empresa) van por sus funciones
+DEFINER, no por UPDATE.
 
 **Contactos y Obras van juntos, en tramos (2026-09-26).** Como Tareas: una migración por tema, cada
 una con su test en `sql/tests/` y sus pantallas, y el primer tramo ya usable. Juntos porque un vínculo

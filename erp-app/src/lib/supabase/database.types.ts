@@ -14,6 +14,343 @@ export type Database = {
   }
   public: {
     Tables: {
+      contactos_accesos: {
+        Row: {
+          created_at: string
+          id: string
+          persona_id: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          persona_id: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          persona_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contactos_accesos_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_accesos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contactos_ediciones: {
+        Row: {
+          actor_id: string | null
+          anterior: string | null
+          campo: string
+          created_at: string
+          empresa_id: string | null
+          id: string
+          nuevo: string | null
+          persona_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          anterior?: string | null
+          campo: string
+          created_at?: string
+          empresa_id?: string | null
+          id?: string
+          nuevo?: string | null
+          persona_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          anterior?: string | null
+          campo?: string
+          created_at?: string
+          empresa_id?: string | null
+          id?: string
+          nuevo?: string | null
+          persona_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contactos_ediciones_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_ediciones_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_ediciones_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contactos_empresas: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          email: string | null
+          equipo_id: string | null
+          id: string
+          nombre: string
+          notas: string | null
+          telefono: string | null
+          updated_at: string
+          web: string | null
+        }
+        Insert: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          email?: string | null
+          equipo_id?: string | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+          web?: string | null
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          email?: string | null
+          equipo_id?: string | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          telefono?: string | null
+          updated_at?: string
+          web?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contactos_empresas_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_empresas_equipo_id_fkey"
+            columns: ["equipo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contactos_persona_empresa: {
+        Row: {
+          activo: boolean
+          cargo: string | null
+          creado_por: string | null
+          created_at: string
+          desde: string
+          empresa_id: string
+          hasta: string | null
+          id: string
+          persona_id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          cargo?: string | null
+          creado_por?: string | null
+          created_at?: string
+          desde?: string
+          empresa_id: string
+          hasta?: string | null
+          id?: string
+          persona_id: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          cargo?: string | null
+          creado_por?: string | null
+          created_at?: string
+          desde?: string
+          empresa_id?: string
+          hasta?: string | null
+          id?: string
+          persona_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contactos_persona_empresa_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_persona_empresa_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_persona_empresa_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contactos_personas: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          email: string | null
+          id: string
+          nombre: string
+          notas: string | null
+          responsable_id: string
+          telefono: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          nombre: string
+          notas?: string | null
+          responsable_id?: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          nombre?: string
+          notas?: string | null
+          responsable_id?: string
+          telefono?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contactos_personas_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_personas_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contactos_vinculos: {
+        Row: {
+          activo: boolean
+          creado_por: string | null
+          created_at: string
+          desde: string
+          empresa_id: string | null
+          ente: string
+          hasta: string | null
+          id: string
+          persona_id: string | null
+          registro_id: string
+          roles: string[]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          creado_por?: string | null
+          created_at?: string
+          desde?: string
+          empresa_id?: string | null
+          ente: string
+          hasta?: string | null
+          id?: string
+          persona_id?: string | null
+          registro_id: string
+          roles: string[]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string | null
+          created_at?: string
+          desde?: string
+          empresa_id?: string | null
+          ente?: string
+          hasta?: string | null
+          id?: string
+          persona_id?: string | null
+          registro_id?: string
+          roles?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contactos_vinculos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_vinculos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_vinculos_ente_fkey"
+            columns: ["ente"]
+            isOneToOne: false
+            referencedRelation: "entes"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "contactos_vinculos_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_personas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entes: {
         Row: {
           activo: boolean
@@ -24,6 +361,7 @@ export type Database = {
           estados: unknown
           id: string
           modulo: string
+          roles: string[]
           ruta: string
           submodulo: string
           tabla: unknown
@@ -38,6 +376,7 @@ export type Database = {
           estados?: unknown
           id?: string
           modulo: string
+          roles?: string[]
           ruta: string
           submodulo: string
           tabla: unknown
@@ -52,6 +391,7 @@ export type Database = {
           estados?: unknown
           id?: string
           modulo?: string
+          roles?: string[]
           ruta?: string
           submodulo?: string
           tabla?: unknown
@@ -167,6 +507,150 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "entes"
             referencedColumns: ["codigo"]
+          },
+        ]
+      }
+      obras: {
+        Row: {
+          activo: boolean
+          compra_estimada: string | null
+          creado_por: string
+          created_at: string
+          direccion: string
+          equipo_id: string | null
+          estado: Database["public"]["Enums"]["estado_obra"]
+          estado_nota: string | null
+          id: string
+          localidad: string | null
+          motivo_perdida: Database["public"]["Enums"]["motivo_perdida"] | null
+          nombre: string
+          notas: string | null
+          origen: Database["public"]["Enums"]["origen_obra"]
+          responsable_id: string
+          tipo: Database["public"]["Enums"]["tipo_obra"]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          compra_estimada?: string | null
+          creado_por?: string
+          created_at?: string
+          direccion: string
+          equipo_id?: string | null
+          estado?: Database["public"]["Enums"]["estado_obra"]
+          estado_nota?: string | null
+          id?: string
+          localidad?: string | null
+          motivo_perdida?: Database["public"]["Enums"]["motivo_perdida"] | null
+          nombre: string
+          notas?: string | null
+          origen: Database["public"]["Enums"]["origen_obra"]
+          responsable_id?: string
+          tipo: Database["public"]["Enums"]["tipo_obra"]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          compra_estimada?: string | null
+          creado_por?: string
+          created_at?: string
+          direccion?: string
+          equipo_id?: string | null
+          estado?: Database["public"]["Enums"]["estado_obra"]
+          estado_nota?: string | null
+          id?: string
+          localidad?: string | null
+          motivo_perdida?: Database["public"]["Enums"]["motivo_perdida"] | null
+          nombre?: string
+          notas?: string | null
+          origen?: Database["public"]["Enums"]["origen_obra"]
+          responsable_id?: string
+          tipo?: Database["public"]["Enums"]["tipo_obra"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obras_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_equipo_id_fkey"
+            columns: ["equipo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obras_participantes: {
+        Row: {
+          activo: boolean
+          agregado_por: string | null
+          created_at: string
+          equipo_id: string | null
+          id: string
+          obra_id: string
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          activo?: boolean
+          agregado_por?: string | null
+          created_at?: string
+          equipo_id?: string | null
+          id?: string
+          obra_id: string
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          activo?: boolean
+          agregado_por?: string | null
+          created_at?: string
+          equipo_id?: string | null
+          id?: string
+          obra_id?: string
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obras_participantes_agregado_por_fkey"
+            columns: ["agregado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_participantes_equipo_id_fkey"
+            columns: ["equipo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_participantes_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_participantes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -973,6 +1457,124 @@ export type Database = {
           registro_id: string
         }[]
       }
+      contactos_buscar: {
+        Args: { p_texto: string }
+        Returns: {
+          id: string
+          subtitulo: string
+          tipo: string
+          titulo: string
+        }[]
+      }
+      contactos_crear_y_vincular: {
+        Args: {
+          p_cargo?: string
+          p_email?: string
+          p_empresa_id?: string
+          p_empresa_nombre?: string
+          p_ente: string
+          p_nombre: string
+          p_registro: string
+          p_roles: string[]
+          p_telefono?: string
+          p_tipo: string
+        }
+        Returns: string
+      }
+      contactos_desactivar_empresa: {
+        Args: { p_empresa: string }
+        Returns: undefined
+      }
+      contactos_desactivar_persona: {
+        Args: { p_persona: string }
+        Returns: undefined
+      }
+      contactos_desactivar_persona_empresa: {
+        Args: { p_relacion: string }
+        Returns: undefined
+      }
+      contactos_desactivar_vinculo: {
+        Args: { p_vinculo: string }
+        Returns: undefined
+      }
+      contactos_etiqueta: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: string
+      }
+      contactos_historial_contacto: {
+        Args: { p_persona: string }
+        Returns: {
+          actor_id: string
+          anterior: string
+          campo: string
+          created_at: string
+          nuevo: string
+        }[]
+      }
+      contactos_puede_abrir: {
+        Args: { p_id: string; p_tipo: string; p_usuario: string }
+        Returns: boolean
+      }
+      contactos_puede_ver_empresa: {
+        Args: {
+          p_activo: boolean
+          p_creado_por: string
+          p_empresa: string
+          p_equipo: string
+        }
+        Returns: boolean
+      }
+      contactos_puede_ver_empresa_de: {
+        Args: {
+          p_activo: boolean
+          p_creado_por: string
+          p_empresa: string
+          p_equipo: string
+          p_usuario: string
+        }
+        Returns: boolean
+      }
+      contactos_puede_ver_persona: {
+        Args: { p_activo: boolean; p_persona: string; p_responsable: string }
+        Returns: boolean
+      }
+      contactos_puede_ver_persona_de: {
+        Args: {
+          p_activo: boolean
+          p_persona: string
+          p_responsable: string
+          p_usuario: string
+        }
+        Returns: boolean
+      }
+      contactos_puede_ver_relacion: {
+        Args: { p_contacto: string; p_ente: string; p_id: string }
+        Returns: boolean
+      }
+      contactos_registrar_acceso: {
+        Args: { p_persona: string }
+        Returns: undefined
+      }
+      contactos_transferir_persona: {
+        Args: { p_persona: string; p_responsable: string }
+        Returns: undefined
+      }
+      contactos_ver_contacto: {
+        Args: { p_persona: string }
+        Returns: {
+          email: string
+          telefono: string
+        }[]
+      }
+      contactos_vinculables: {
+        Args: { p_texto: string }
+        Returns: {
+          detalle: string
+          id: string
+          nombre: string
+          tipo: string
+        }[]
+      }
       copiar_plantilla: { Args: { p_plantilla: string }; Returns: string }
       delegar_submodulos: {
         Args: { p_submodulos: string[]; p_usuario: string }
@@ -1042,6 +1644,79 @@ export type Database = {
         }
         Returns: undefined
       }
+      obras_a_cargo_de: {
+        Args: { p_obra: string; p_usuario: string }
+        Returns: boolean
+      }
+      obras_alta: {
+        Args: {
+          p_compra_estimada?: string
+          p_direccion: string
+          p_estado?: Database["public"]["Enums"]["estado_obra"]
+          p_localidad?: string
+          p_nombre: string
+          p_notas?: string
+          p_origen: Database["public"]["Enums"]["origen_obra"]
+          p_quien_empresa?: string
+          p_quien_nuevo_email?: string
+          p_quien_nuevo_nombre?: string
+          p_quien_nuevo_telefono?: string
+          p_quien_nuevo_tipo?: string
+          p_quien_persona?: string
+          p_tipo: Database["public"]["Enums"]["tipo_obra"]
+        }
+        Returns: string
+      }
+      obras_buscar: {
+        Args: { p_texto: string }
+        Returns: {
+          id: string
+          subtitulo: string
+          tipo: string
+          titulo: string
+        }[]
+      }
+      obras_desactivar: { Args: { p_obra: string }; Returns: undefined }
+      obras_etiqueta: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: string
+      }
+      obras_puede_abrir: {
+        Args: { p_id: string; p_tipo: string; p_usuario: string }
+        Returns: boolean
+      }
+      obras_puede_ver_obra: {
+        Args: {
+          p_activo: boolean
+          p_equipo: string
+          p_obra: string
+          p_responsable: string
+        }
+        Returns: boolean
+      }
+      obras_puede_ver_obra_de: {
+        Args: {
+          p_activo: boolean
+          p_equipo: string
+          p_obra: string
+          p_responsable: string
+          p_usuario: string
+        }
+        Returns: boolean
+      }
+      obras_trabaja: { Args: { p_obra: string }; Returns: boolean }
+      obras_trabaja_de: {
+        Args: { p_obra: string; p_usuario: string }
+        Returns: boolean
+      }
+      obras_transferir: {
+        Args: { p_obra: string; p_quedarme?: boolean; p_responsable: string }
+        Returns: undefined
+      }
+      puede_abrir_registro: {
+        Args: { p_ente: string; p_id: string; p_usuario: string }
+        Returns: boolean
+      }
       puede_ver_relacion: {
         Args: {
           p_ente: string
@@ -1074,6 +1749,21 @@ export type Database = {
           usuario_id: string
         }[]
       }
+      tareas_avisar_asignado: {
+        Args: { p: Database["public"]["Tables"]["tareas"]["Row"] }
+        Returns: undefined
+      }
+      tareas_avisar_huerfanos: {
+        Args: { p_usuario: string }
+        Returns: undefined
+      }
+      tareas_avisos_salida: {
+        Args: never
+        Returns: {
+          notificacion_id: string
+          titulo: string
+        }[]
+      }
       tareas_bloquea: { Args: { p_paso: string }; Returns: boolean }
       tareas_buscar: {
         Args: { p_texto: string }
@@ -1095,6 +1785,10 @@ export type Database = {
       tareas_delegador_de: { Args: { p_equipo: string }; Returns: string }
       tareas_desactivar_hilo: { Args: { p_hilo: string }; Returns: undefined }
       tareas_desactivar_paso: { Args: { p_paso: string }; Returns: undefined }
+      tareas_destinatario: {
+        Args: { p_equipo: string; p_usuario: string }
+        Returns: string
+      }
       tareas_entregar: { Args: { p_usuario: string }; Returns: undefined }
       tareas_equipo_de_asignado: {
         Args: { p_equipo: string; p_usuario: string }
@@ -1182,6 +1876,10 @@ export type Database = {
         Returns: undefined
       }
       tiene_permiso: { Args: { p_codigo: string }; Returns: boolean }
+      trabaja_registro: {
+        Args: { p_ente: string; p_id: string }
+        Returns: boolean
+      }
       usar_plantilla: {
         Args: {
           p_asignados?: Json
@@ -1198,12 +1896,33 @@ export type Database = {
     }
     Enums: {
       estado_hilo: "abierto" | "cerrado"
+      estado_obra:
+        | "idea"
+        | "en_busqueda"
+        | "en_cotizacion"
+        | "contratada"
+        | "perdida"
       estado_tarea:
         | "solicitada"
         | "pendiente"
         | "rechazada"
         | "completada"
         | "cancelada"
+      motivo_perdida:
+        | "precio"
+        | "plazo"
+        | "producto"
+        | "proveedor_habitual"
+        | "obra_suspendida"
+        | "sin_respuesta"
+        | "otro"
+      origen_obra:
+        | "referente"
+        | "cartel"
+        | "web_redes"
+        | "cliente_anterior"
+        | "llamado"
+        | "otro"
       prioridad_tarea: "baja" | "media" | "alta"
       recurrencia_unidad: "dia" | "mes"
       tipo_evento:
@@ -1237,6 +1956,12 @@ export type Database = {
         | "paso_dado_de_baja"
         | "paso_completado"
         | "paso_cancelado"
+      tipo_obra:
+        | "edificio_residencial"
+        | "casa"
+        | "oficinas_comercial"
+        | "industrial"
+        | "otro"
       tipo_regla_submodulo: "requiere" | "excluye"
       tipo_submodulo: "vista" | "funcion"
     }
@@ -1367,12 +2092,36 @@ export const Constants = {
   public: {
     Enums: {
       estado_hilo: ["abierto", "cerrado"],
+      estado_obra: [
+        "idea",
+        "en_busqueda",
+        "en_cotizacion",
+        "contratada",
+        "perdida",
+      ],
       estado_tarea: [
         "solicitada",
         "pendiente",
         "rechazada",
         "completada",
         "cancelada",
+      ],
+      motivo_perdida: [
+        "precio",
+        "plazo",
+        "producto",
+        "proveedor_habitual",
+        "obra_suspendida",
+        "sin_respuesta",
+        "otro",
+      ],
+      origen_obra: [
+        "referente",
+        "cartel",
+        "web_redes",
+        "cliente_anterior",
+        "llamado",
+        "otro",
       ],
       prioridad_tarea: ["baja", "media", "alta"],
       recurrencia_unidad: ["dia", "mes"],
@@ -1408,6 +2157,13 @@ export const Constants = {
         "paso_dado_de_baja",
         "paso_completado",
         "paso_cancelado",
+      ],
+      tipo_obra: [
+        "edificio_residencial",
+        "casa",
+        "oficinas_comercial",
+        "industrial",
+        "otro",
       ],
       tipo_regla_submodulo: ["requiere", "excluye"],
       tipo_submodulo: ["vista", "funcion"],

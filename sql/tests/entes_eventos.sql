@@ -242,6 +242,101 @@ SELECT pg_temp.caso('14 el cliente no edita eventos', '42501', pg_temp.intentar(
 SELECT pg_temp.caso('14 anon no llama emitir_evento', 'false',
   has_function_privilege('anon', 'public.emitir_evento(text, uuid, tipo_evento, jsonb)', 'EXECUTE')::text);
 
+-- ============================================================
+-- Puente con `ente` variable por fila (columna, no literal), y `hasta`
+-- ============================================================
+INSERT INTO ids (nombre, id) SELECT n, gen_random_uuid() FROM unnest(ARRAY['P2', 'O2']) AS n;
+
+SELECT pg_temp.caso('15 U1 crea P2', 'ok', pg_temp.intentar(format(
+  $s$INSERT INTO prueba109 (id, nombre) VALUES (%L, 'P2')$s$, pg_temp.id('P2')), 'U1'));
+
+CREATE TABLE prueba109_rel2 (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ente        text NOT NULL,
+  registro_id uuid NOT NULL REFERENCES prueba109(id),
+  otro_id     uuid NOT NULL,
+  roles       text[] NOT NULL,
+  hasta       date,
+  creado_por  uuid NOT NULL DEFAULT auth.uid(),
+  activo      boolean NOT NULL DEFAULT true
+);
+ALTER TABLE prueba109_rel2 ENABLE ROW LEVEL SECURITY;
+CREATE POLICY s ON prueba109_rel2 FOR SELECT TO authenticated USING (creado_por = (SELECT auth.uid()));
+CREATE POLICY i ON prueba109_rel2 FOR INSERT TO authenticated WITH CHECK (creado_por = (SELECT auth.uid()));
+CREATE POLICY u ON prueba109_rel2 FOR UPDATE TO authenticated USING (creado_por = (SELECT auth.uid()));
+GRANT SELECT, INSERT, UPDATE ON prueba109_rel2 TO authenticated;
+
+CREATE TRIGGER emitir_eventos
+  AFTER INSERT OR UPDATE OF activo, roles, hasta ON prueba109_rel2
+  FOR EACH ROW EXECUTE FUNCTION emitir_eventos_relacion('ente', 'registro_id', 'otro', 'otro_id');
+
+SELECT pg_temp.caso('15 U1 vincula O2 a P2 con roles a,b; ente = ''prueba109''', 'ok', pg_temp.intentar(format(
+  $s$INSERT INTO prueba109_rel2 (id, ente, registro_id, otro_id, roles) VALUES (%L, 'prueba109', %L, %L, '{a,b}')$s$,
+  gen_random_uuid(), pg_temp.id('P2'), pg_temp.id('O2')), 'U1'));
+SELECT pg_temp.caso('15 el evento lleva el ente de la fila, no el literal ''ente''', 'prueba109',
+  (SELECT DISTINCT ente FROM eventos WHERE registro_id = pg_temp.id('P2') AND evento = 'relacion_alta'));
+
+SELECT pg_temp.caso('16 cambiar otra columna sin tocar hasta no emite', 'ok', pg_temp.intentar(format(
+  $s$UPDATE prueba109_rel2 SET activo = true WHERE registro_id = %L$s$, pg_temp.id('P2')), 'U1'));
+SELECT pg_temp.caso('16 sigue con las dos altas, nada más', '2',
+  (SELECT count(*)::text FROM eventos WHERE registro_id = pg_temp.id('P2') AND evento IN ('relacion_alta', 'relacion_baja')));
+
+SELECT pg_temp.caso('17 U1 cierra el vínculo con hasta', 'ok', pg_temp.intentar(format(
+  $s$UPDATE prueba109_rel2 SET hasta = current_date WHERE registro_id = %L$s$, pg_temp.id('P2')), 'U1'));
+SELECT pg_temp.caso('17 hasta cierra: dos relacion_baja, uno por rol', 'relacion_baja:a relacion_baja:b',
+  (SELECT string_agg(evento || ':' || (detalle->>'rol'), ' ' ORDER BY detalle->>'rol')
+   FROM eventos WHERE registro_id = pg_temp.id('P2') AND evento = 'relacion_baja'));
+
+-- ============================================================
+-- emitir_eventos_registro: columnas extra en el evento `estado`
+-- ============================================================
+INSERT INTO ids (nombre, id) SELECT n, gen_random_uuid() FROM unnest(ARRAY['B1']) AS n;
+
+CREATE TABLE prueba109b (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  estado     estado_prueba109 NOT NULL DEFAULT 'abierta',
+  motivo     text,
+  nota       text,
+  creado_por uuid NOT NULL DEFAULT auth.uid(),
+  activo     boolean NOT NULL DEFAULT true
+);
+ALTER TABLE prueba109b ENABLE ROW LEVEL SECURITY;
+CREATE POLICY s ON prueba109b FOR SELECT TO authenticated USING (creado_por = (SELECT auth.uid()));
+CREATE POLICY i ON prueba109b FOR INSERT TO authenticated WITH CHECK (creado_por = (SELECT auth.uid()));
+CREATE POLICY u ON prueba109b FOR UPDATE TO authenticated USING (creado_por = (SELECT auth.uid()));
+GRANT SELECT, INSERT, UPDATE ON prueba109b TO authenticated;
+
+INSERT INTO entes (codigo, modulo, submodulo, estados, datos, ruta, tabla, disparos)
+VALUES ('prueba109b', 'prueba109', 'prueba109_ver', 'estado_prueba109', '{}', '/prueba109b/{id}',
+        'prueba109b', '{alta,estado}');
+
+CREATE TRIGGER emitir_eventos
+  AFTER INSERT OR UPDATE OF activo, estado ON prueba109b
+  FOR EACH ROW EXECUTE FUNCTION emitir_eventos_registro('prueba109b', '', 'motivo,nota');
+
+SELECT pg_temp.caso('18 U1 crea B1', 'ok', pg_temp.intentar(format(
+  $s$INSERT INTO prueba109b (id) VALUES (%L)$s$, pg_temp.id('B1')), 'U1'));
+SELECT pg_temp.caso('19 U1 cierra B1 con motivo, sin nota', 'ok', pg_temp.intentar(format(
+  $s$UPDATE prueba109b SET estado = 'cerrada', motivo = 'x' WHERE id = %L$s$, pg_temp.id('B1')), 'U1'));
+SELECT pg_temp.caso('19 el detalle lleva motivo (con valor)', 'x',
+  (SELECT detalle->>'motivo' FROM eventos WHERE registro_id = pg_temp.id('B1') AND evento = 'estado'
+   ORDER BY created_at DESC LIMIT 1));
+SELECT pg_temp.caso('19 el detalle no lleva nota (sin valor)', 'false',
+  (SELECT (detalle ? 'nota')::text FROM eventos WHERE registro_id = pg_temp.id('B1') AND evento = 'estado'
+   ORDER BY created_at DESC LIMIT 1));
+SELECT pg_temp.caso('20 con segundo argumento vacío, nunca hay transferencia', '0',
+  (SELECT count(*)::text FROM eventos WHERE registro_id = pg_temp.id('B1') AND evento = 'transferencia'));
+
+-- ============================================================
+-- entes.roles
+-- ============================================================
+SELECT pg_temp.caso('21 entes.roles: array de text, no nulo', 'ARRAY:_text:NO',
+  (SELECT data_type || ':' || udt_name || ':' || is_nullable
+   FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'entes' AND column_name = 'roles'));
+SELECT pg_temp.caso('21 entes.roles: default vacío', 'true',
+  ((SELECT column_default FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'entes' AND column_name = 'roles') LIKE '%{}%')::text);
+
 SELECT caso, esperado, obtenido, ok FROM r ORDER BY caso;
 
 ROLLBACK;
