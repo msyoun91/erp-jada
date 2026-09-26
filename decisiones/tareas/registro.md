@@ -73,6 +73,11 @@ quien mira, y crecería sin límite. Sin registro, la página del hilo va a todo
 como hoy. No cambia la navegación ya probada, y los modales de la ficha ("Vincular") apilan encima
 por el top layer del `<dialog>`. Descartado: que el paso reemplace la columna izquierda del hilo.
 
+**Los links de la ficha en la pestaña navegan fuera, como en su página (2026-09-26).** Clic en un
+registro de la ficha (un contacto, una tarea) va a su página y cierra el panel; "atrás" vuelve al
+hilo con el paso abierto por `?paso={id}`. La ficha no sabe dónde está montada, y las pestañas quedan
+como lo que el paso toca, sin lo explorado. Descartado: pestañas temporales dentro del panel.
+
 **"Relacionar": primero el módulo, después el buscador (2026-09-24).** Botón junto a la descripción
 del paso (hilos y pasos sueltos): elegir el módulo y buscar en `buscar_registros` (INVOKER, una rama
 por ente: lo que quien escribe ve), que inserta `{ente:uuid|nombre}` con vista previa. En una
