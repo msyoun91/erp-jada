@@ -142,6 +142,17 @@ de pérdida. `origen_obra`: referente · cartel en obra · web o redes · client
 descartaron avance de la construcción, monto potencial y unidades o m² estimados. Citables en
 plantillas: `{nombre}`, `{direccion}`, `{localidad}`.
 
+**Los números, en un widget del dashboard; `obras_numeros` lo abre a todas las obras (2026-09-26).**
+Origen, tipo y motivo se guardaban "para contar" y nadie contaba: la única vista con todas las obras,
+Todas, pide `obras_administrar`. El widget "Obras" muestra cuántas hay en cada estado, las perdidas del
+período por motivo (del historial, evento `estado`) y las contratadas por origen y por tipo; el período,
+con `FiltroDias`. Solo números: sin nombres de obras, contactos ni el detalle libre. Cuenta lo que cada
+uno ve (el vendedor las suyas, el jefe su equipo, el admin todo) y, con `obras_numeros`, todas: una
+función que asigna el admin y no se delega, para quien mira los números sin trabajar las obras (el
+dueño, un gerente). Cuelga de la vista Obras, así que pide `obras_ver` y con él `contactos_ver`: sus
+listas quedan vacías si no es responsable ni participante de nada. Descartado: un supervisor que vea
+todas las obras (Todas sin `obras_administrar`); el usuario pidió los números.
+
 **Con origen "referente", el alta pregunta quién (2026-09-26).** Pedido del usuario: el caso típico
 es un referente que llama con una obra nueva, y la obra tiene que nacer con él vinculado. Campo "¿Quién?"
 opcional, con el buscador de Contactos: busca y crea como el panel de vincular, sin el campo empresa (ya
@@ -186,6 +197,9 @@ Personas
 ├── Aprobador de altas — quien elija el admin (obras_aprobar) · ve las altas congeladas y lo parecido
 │                     (nombre, dirección, responsable) · aprueba, rechaza con motivo, "es la misma"
 │                   · no ve las obras ajenas enteras ni sus contactos, salvo por otro permiso
+├── Quien mira los números — quien elija el admin (obras_numeros), p. ej. el dueño · en el widget
+│                     "Obras", los números de todas: por estado, perdidas por motivo, contratadas por
+│                     origen y tipo · — · no ve ninguna obra ni contacto, salvo por otro permiso
 ├── Admin           — ve todo · hace todo, reactiva · —
 ├── Administración, producción, logística, colocación — NO usan Obras: trabajan la etapa en
 │                     Presupuestos (futuro) · no ven la obra ni sus contactos comerciales
@@ -270,14 +284,16 @@ Módulo: Obras
 ├── Obras (vista, obras_ver)                   — vendedor, jefe comercial, admin
 │   ├── obras_crear (funcion)                  — vendedor, jefe comercial
 │   ├── obras_equipo (funcion)                 — jefe comercial
-│   └── obras_aprobar (funcion)                — aprobador de altas: lista "Por aprobar"
+│   ├── obras_aprobar (funcion)                — aprobador de altas: lista "Por aprobar"
+│   └── obras_numeros (funcion)                — quien mira los números: el widget cuenta todas
+│                                                (sin ella, cuenta lo que ve)
 └── Todas (vista, obras_todas)                 — admin
     │   filtro huérfanas: responsable inactivo
     └── obras_administrar (funcion)            — admin
 
 Delegables
 ├── sí — obras_ver · obras_crear
-└── no — obras_equipo · obras_aprobar · obras_todas · obras_administrar
+└── no — obras_equipo · obras_aprobar · obras_numeros · obras_todas · obras_administrar
 Reglas entre permisos
 ├── obras_equipo  requiere usuarios_delegar  — el jefe comercial es el delegador
 ├── obras_ver     requiere contactos_ver     — sin él, los contactos de la ficha no existen para

@@ -91,8 +91,8 @@ Contactos → Obras (con el paquete de Tareas "con el primer emisor", arriba) �
 
 **Segunda revisión (2026-09-26): Obras 8,5/10, Contactos 7,5/10.** Cinco puntos, de a uno:
 1. ~~Ver no es trabajar~~ — cerrado (`decisiones/global/entes.md`).
-2. Origen, tipo y motivo de pérdida son "para contar", y ninguna persona ni vista cuenta: falta quien
-   solo mira (¿el dueño?) y dónde, sin `obras_administrar`.
+2. ~~Para contar, sin nadie que cuente~~ — cerrado: widget "Obras" y `obras_numeros`
+   (`decisiones/obras.md`).
 3. "Es la misma" de una obra no dice qué pasa con su vínculo guardado de referente ("¿Quién?").
 4. Empresas parecidas entre equipos comerciales: se congelan para aprobarse casi siempre, y fusionar
    ese par le saca la empresa a un equipo.
