@@ -68,6 +68,11 @@ paso. Depende de que exista `hilo → registro` (ente + id en `tareas_hilos`, to
 pestañas de lo que mencionan sus pasos: en hilos largos juntaría registros que no le conciernen a
 quien mira, y crecería sin límite. Sin registro, la página del hilo va a todo el ancho.
 
+**Con fichas, el panel del paso se ensancha y las lleva adentro (2026-09-26).** El paso sigue siendo
+`RightPanel` sobre el hilo (`?paso={id}`); con pestañas crece a dos columnas, sin ellas queda angosto
+como hoy. No cambia la navegación ya probada, y los modales de la ficha ("Vincular") apilan encima
+por el top layer del `<dialog>`. Descartado: que el paso reemplace la columna izquierda del hilo.
+
 **"Relacionar": primero el módulo, después el buscador (2026-09-24).** Botón junto a la descripción
 del paso (hilos y pasos sueltos): elegir el módulo y buscar en `buscar_registros` (INVOKER, una rama
 por ente: lo que quien escribe ve), que inserta `{ente:uuid|nombre}` con vista previa. En una
