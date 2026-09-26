@@ -94,7 +94,9 @@ las obras (`decisiones/obras.md` → *Altas parecidas*). Pedido del usuario, sob
   empresa) y no se transfiere. El bloqueo, con triggers en la base.
 - **Aprueba `contactos_aprobar`, no el jefe:** una función que asigna el admin, no delegable. En
   "Por aprobar" ve el alta completa y, de cada parecida, nombre, dueño y qué dato coincidió ("mismo
-  teléfono"), sin mostrarlo. Las altas de quien tiene la función no se congelan.
+  teléfono"), sin mostrarlo. Teléfono y email de la congelada, con el mismo "Ver contacto", que queda
+  en `contactos_accesos`: el aprobador no es excepción (2026-09-26). Las altas de quien tiene la
+  función no se congelan.
 - **Tres salidas:** aprobar · rechazar con motivo (se desactiva, no se fusiona) · "es la misma".
   Una persona se aprueba solo si es homónima: una persona habla con un solo vendedor (o con su equipo
   comercial si no está), así que no se duplica en otra agenda. "Es la misma" rechaza la nueva y le deja
@@ -124,8 +126,9 @@ Personas
 ├── Jefe comercial  — lo del vendedor, sobre las obras de su equipo · recibe la agenda de quien se
 │                     va y la reparte con "transferir" · —
 ├── Aprobador de altas — quien elija el admin (contactos_aprobar) · ve las altas congeladas y lo
-│                     parecido (nombre, dueño, qué dato coincidió) · aprueba, rechaza con motivo
-│                   · no ve agendas ajenas ni datos de contacto, salvo por otro permiso
+│                     parecido (nombre, dueño, qué dato coincidió) · aprueba, rechaza con motivo,
+│                     "es la misma" · teléfono y email de la congelada, con "Ver contacto" (registra)
+│                   · no ve agendas ajenas ni datos de contacto de la parecida, salvo por otro permiso
 ├── Auditor         — quien elija el admin (contactos_auditoria) · ve quién miró teléfono o email
 │                     de qué persona y cuándo · — · no ve el dato ni las agendas
 ├── Admin           — ve todo · hace todo, fusiona duplicados, reactiva · —

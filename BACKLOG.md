@@ -85,14 +85,12 @@ con su *Pendiente*). Orden:
 Contactos → Obras (con el paquete de Tareas "con el primer emisor", arriba) → Catálogo → Presupuestos
 → Post-venta.
 
-**Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Huecos abiertos, por peso (cerrados: persona en otra agenda → "es la misma"; `contratada` irreversible → se revierte con causa; jefe de un participante → solo ve; comisión → la toca solo quien la ve; editar esquiva el congelado → editar también congela; huérfanas → filtro y campanita, como Obras); cada
+**Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Huecos abiertos, por peso (cerrados: persona en otra agenda → "es la misma"; `contratada` irreversible → se revierte con causa; jefe de un participante → solo ve; comisión → la toca solo quien la ve; editar esquiva el congelado → editar también congela; huérfanas → filtro y campanita, como Obras; aprobador → "Ver contacto" registrado); cada
 decisión va a `decisiones/<modulo>.md` antes de pasar al siguiente.
 
-1. **El aprobador de contactos** "ve el alta completa" y "no ve datos de contacto": ¿ve el teléfono de
-   la congelada (y queda registrado) o solo "mismo teléfono"?
-2. **Desactivar y fusionar persona o empresa.** Quién desactiva, qué pasa con sus vínculos (¿desaparece
+1. **Desactivar y fusionar persona o empresa.** Quién desactiva, qué pasa con sus vínculos (¿desaparece
    de las 12 obras?); fusionar no está definido (de quién queda si eran de dos agendas).
-3. **Unique del vínculo con `hasta`.** Un vínculo cerrado sigue `activo`, así que el unique parcial por par
+2. **Unique del vínculo con `hasta`.** Un vínculo cerrado sigue `activo`, así que el unique parcial por par
    (`GUIDE_ENTES.md` §2.6) no deja re-vincular al capataz que vuelve: `WHERE activo AND hasta IS NULL`.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
