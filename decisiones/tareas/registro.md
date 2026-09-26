@@ -46,8 +46,12 @@ recorta solo por su RLS: quien no ve el paso que menciona no se entera de la men
 otro módulo: el dato ya estaba y la prueba con dos usuarios lo echó en falta. Archivos: `queries.ts`
 (`getMenciones`), `Menciones.tsx`, `HiloView.tsx`, `PasoPanel.tsx`.
 
-**La ficha del ente se abre al lado del paso.** Split en desktop, encima con "volver" en mobile.
-Cada módulo con entes aporta su ficha; el registro ente → componente vive en `app/`.
+**Las fichas de los vínculos del paso se ven al lado, en pestañas, desde que se abre (2026-09-26).**
+Una pestaña por vínculo que quien mira puede abrir; los que no, ni pestaña ni link. El ↗ del texto
+activa la pestaña de ese vínculo. Sin vínculos no hay columna derecha. Split en desktop, encima con
+"volver" en mobile. Se eligió sobre abrir una ficha por vez al hacer clic: el paso se trabaja mirando
+sus registros, no navegando hacia ellos. Cada módulo con entes aporta su ficha; el registro ente →
+componente vive en `app/`.
 
 **"Relacionar": primero el módulo, después el buscador (2026-09-24).** Botón junto a la descripción
 del paso (hilos y pasos sueltos): elegir el módulo y buscar en `buscar_registros` (INVOKER, una rama
