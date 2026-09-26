@@ -140,6 +140,14 @@ de pérdida. `origen_obra`: referente · cartel en obra · web o redes · client
 descartaron avance de la construcción, monto potencial y unidades o m² estimados. Citables en
 plantillas: `{nombre}`, `{direccion}`, `{localidad}`.
 
+**Con origen "referente", el alta pregunta quién (2026-09-26).** Pedido del usuario: el caso típico
+es un referente que llama con una obra nueva, y la obra tiene que nacer con él vinculado. Campo "¿Quién?"
+opcional, con el buscador de Contactos: busca y crea como el panel de vincular, sin el campo empresa (ya
+es el nivel anidado; `decisiones/contactos.md` → *Vincular: buscar o crear*). Obra, contacto nuevo y
+vínculo con rol referente se guardan en una sola función, todo o nada. Si la obra o el contacto entran
+congelados, el vínculo queda guardado y se crea al aprobarse. La página compone el buscador en el
+formulario desde `app/`.
+
 **Las tareas de cada estado de la obra son de comercial. Las de ejecución cuelgan del presupuesto.**
 Cada presupuesto aprobado genera su propio hilo, que sabe de qué etapa es. Lo mismo el seguimiento
 comercial al entregarse una etapa.
@@ -220,7 +228,7 @@ Relaciones
 │                              director de obra, referente
 └── futuras, del otro lado   — presupuesto → obra (FK en Presupuestos); unidad → obra (FK en Post-venta)
 Acciones
-├── obra: crear · editar · cambiar estado · vincular contacto · registrar comisión · sumar y quitar
+├── obra: crear (con origen referente, "¿Quién?" lo vincula) · editar · cambiar estado · vincular contacto · registrar comisión · sumar y quitar
 │         participante · transferir · desactivar (no contratada) · reactivar (admin)
 │         · aprobar alta · rechazar alta (motivo) · "es la misma" — obras_aprobar
 │         ├── responsable: todo lo de la obra

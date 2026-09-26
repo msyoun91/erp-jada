@@ -115,11 +115,57 @@ las obras (`decisiones/obras.md` → *Altas parecidas*). Pedido del usuario, sob
   Una persona se aprueba solo si es homónima: una persona habla con un solo vendedor (o con su equipo
   comercial si no está), así que no se duplica en otra agenda. "Es la misma" rechaza la nueva y le deja
   al aprobador, si quiere, vincular la existente a la obra y el rol para los que se cargó (la congelada
-  los guarda, salen de `?vincular={rol}`). La persona sigue siendo de su dueño; quien la cargó la ve
+  los guarda: *Vincular*, abajo). La persona sigue siendo de su dueño; quien la cargó la ve
   en contexto. Queda abierto, no es el camino por defecto. Una empresa parecida
   a la de otro equipo normalmente se aprueba: rechazarla deja a ese equipo sin empresa, porque no ve la
   del otro.
 - **Avisos:** "alta por aprobar" a quienes tienen `contactos_aprobar`; la decisión, a quien la cargó.
+
+## Vincular: buscar o crear en el mismo panel (2026-09-26)
+
+Pedido del usuario: que vincular sea rápido, y que si el contacto no está se cree desde ahí.
+
+**El buscador muestra solo lo que podés vincular: tus personas y las empresas de tu equipo.** Pedro
+ve a la arquitecta de Juan en Torre Belgrano y la busca para Casa Núñez: no aparece, la crea, el aviso a
+ciegas dice "Marta Gómez, de Juan Pérez", queda congelada con la obra y el rol, y el aprobador resuelve
+con "es la misma". Descartado: mostrarla deshabilitada ("pedile a Juan"), que lo deja esperando al dueño
+y hace que la lista deje de ser "lo que podés elegir". No sirve `buscar_registros`, que devuelve lo que
+se ve: el filtro es la misma regla que decide quién vincula.
+
+**Si no está, se crea desde ahí y se vincula en el mismo paso.** Al pie de la lista, siempre las dos:
+"+ Crear «texto» como persona" y "como empresa" (atar el tipo al rol era otra regla que mantener). El
+mismo panel, sin modal encima, pasa a un formulario corto con el texto como nombre; solo el nombre es
+obligatorio. Una función crea y vincula, todo o nada: si el vínculo falla (obra congelada), el contacto
+tampoco se crea, y no queda "se creó pero no se vinculó".
+
+**Las parecidas, en el panel y antes de guardar.** Si es tuya, se muestra entera: "Ya la tenés: Marta
+Gómez · 11-5555-…" con [Vincular esa] y [Es otra, crear igual]. Si es de otro, el aviso a ciegas con
+[Crear igual] (queda por aprobar) y [Cancelar].
+
+**Una congelada guarda los vínculos con los que se creó, y se crean al aprobarse.** Rol en un registro,
+y empresa con cargo (abajo). Sin esto, quien la cargó tenía que volver a vincularla, y el paso de Tareas
+"vincular arquitecto" quedaba abierto hasta que se acordara. Cada vínculo guardado se crea cuando sus dos
+puntas dejan de estar congeladas; si para entonces quien la cargó ya no ve el registro, no se crea y
+"alta resuelta" lo dice. Rechazar y "es la misma", como arriba.
+
+**La empresa de la persona, en el mismo formulario.** Campo opcional con el mismo buscador: las empresas
+que ves (lo que pide persona ↔ empresa), primero las vinculadas al registro, así el capataz de la
+constructora de la obra se elige sin escribir. Si no está, se crea con solo el nombre y todo se guarda
+junto con "Crear y vincular": empresa, persona, relación con cargo opcional y vínculo. Un solo nivel:
+desde la empresa nueva no se crea nada. Descartado: solo elegir existentes, que obligaba a volver a la
+ficha de la persona. Razón social y CUIT, después, desde la ficha de la empresa.
+
+**Dónde se busca y dónde se crea.** Un solo buscador, escrito en Contactos; la ficha de la obra y el alta
+lo componen desde `app/` (`GUIDE_ENTES.md` §2.7).
+
+| Desde | Busca | Crea si no está |
+|---|---|---|
+| Obra → vincular contacto | tus personas, empresas de tu equipo | persona o empresa, con su empresa |
+| Nueva obra, origen referente → "¿Quién?" | ídem | persona o empresa, sin el campo empresa (ya es el nivel anidado) — `decisiones/obras.md` |
+| Persona → sumar empresa | empresas que ves | empresa, solo el nombre |
+| Empresa → sumar persona | tus personas | persona, con cargo en vez de rol |
+| Persona o empresa → vincular a una obra | obras que ves, no congeladas | no: una obra pide dirección, tipo y sus parecidas |
+| Obra → sumar participante | usuarios activos con `obras_ver` | no: select simple, como `AsignadoSelect` |
 
 ## Ficha del módulo
 
@@ -157,7 +203,8 @@ Entes
 │             · la ven: su dueño, quien ve algún vínculo suyo (solo ese vínculo),
 │               contactos_administrar · la vincula a un registro: su dueño, contactos_administrar
 │             · congelada (flag, no estado) si el alta se parece a otra: la ve solo quien la cargó,
-│               no se vincula ni se transfiere; el alta cuenta al aprobarse
+│               no se vincula ni se transfiere; el alta cuenta al aprobarse; guarda los vínculos
+│               con los que se creó, que se crean al aprobarse
 └── empresa — dueño creado_por · equipo_id de quien la carga, guardado en el momento · sin estado
               · datos {nombre} · ruta /contactos/empresas/{id} · submódulo contactos_ver
               · se identifica por el nombre, sin unique; razón social y CUIT, en su lista
@@ -186,6 +233,8 @@ Relaciones
                                · los roles válidos los declara el módulo del ente
                                · el panel de vincular, compuesto en cada ficha, abre solo con
                                  ?vincular={rol} (link de acción de Tareas); se escribe una vez
+                               · busca solo lo que se puede vincular; si no está, crea y vincula
+                                 en un paso (*Vincular: buscar o crear*)
 Acciones
 ├── persona: crear (congelada si se parece) · editar (quien la ve; queda en contactos_ediciones)
 │            · ver teléfono y email (registra) · transferir (dueño, admin) · desactivar (dueño, admin;
@@ -193,7 +242,7 @@ Acciones
 │            · reactivar y fusionar (admin)
 ├── empresa: crear (congelada si se parece) · editar (quien la ve; queda en contactos_ediciones)
 │            · sumar razón social · desactivar (jefe del equipo, admin) · reactivar, fusionar y asignar equipo (admin)
-├── alta congelada: aprobar (persona: solo si es homónima) · rechazar (motivo) · "es la misma"
+├── alta congelada: aprobar (persona: solo si es homónima; crea los vínculos guardados) · rechazar (motivo) · "es la misma"
 │                  (rechaza; opcional, vincula la existente a la obra y rol de la congelada)
 │                  — contactos_aprobar
 └── vínculo: vincular (la persona, su dueño o el aprobador en "es la misma"; la empresa, su equipo) · cerrar (hasta) · cambiar el
@@ -234,5 +283,7 @@ Reglas entre permisos
 
 - **Roles por ente, en el SQL.** Un enum validado según el ente, o filas que siembra cada módulo en su
   migración, como `submodulo_reglas`.
+- **Vínculos guardados de una congelada, en el SQL.** Dónde viven (columnas o tabla aparte) y cómo los
+  crea la aprobación de la segunda punta sin pasar por la regla "vincula solo el dueño".
 - **El emisor de relación, en el SQL.** `emitir_eventos_relacion` recibe el ente fijo por argumento;
   acá el ente sale de la columna `ente` de cada fila.
