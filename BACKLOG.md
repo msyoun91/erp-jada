@@ -85,24 +85,21 @@ con su *Pendiente*). Orden:
 Contactos → Obras (con el paquete de Tareas "con el primer emisor", arriba) → Catálogo → Presupuestos
 → Post-venta.
 
-**Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Huecos abiertos, por peso (cerrados: persona en otra agenda → "es la misma"; `contratada` irreversible → se revierte con causa); cada
+**Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Huecos abiertos, por peso (cerrados: persona en otra agenda → "es la misma"; `contratada` irreversible → se revierte con causa; jefe de un participante → solo ve); cada
 decisión va a `decisiones/<modulo>.md` antes de pasar al siguiente.
 
-1. **Jefe del equipo de un participante.** Ve la obra (`equipo_id` de un participante), pero "lo del
-   responsable, en las obras de su equipo" no dice si transfiere o desactiva una obra de otro equipo.
-   Escribir que actuar como responsable es solo sobre `obra.equipo_id`, y qué le queda al otro jefe.
-2. **Comisión sobre un vínculo que otros tocan.** Un participante le saca "referente" al rol o desactiva
+1. **Comisión sobre un vínculo que otros tocan.** Un participante le saca "referente" al rol o desactiva
    el vínculo "por error" y la comisión queda colgada: bloquearlo con comisión activa, o apagarla junto.
-3. **El congelado se esquiva editando.** Cargar "Obra X" en "Calle 1" y renombrarla; cambiarle el
+2. **El congelado se esquiva editando.** Cargar "Obra X" en "Calle 1" y renombrarla; cambiarle el
    teléfono a una persona. Renombrar avisa y no congela. ¿Se acepta, o la edición que coincide avisa al
    aprobador?
-4. **Personas huérfanas sin cómo encontrarlas.** Con dueño inactivo "la transfiere el admin", pero
+3. **Personas huérfanas sin cómo encontrarlas.** Con dueño inactivo "la transfiere el admin", pero
    Contactos no tiene filtro ni campanita de huérfanas, como Obras.
-5. **El aprobador de contactos** "ve el alta completa" y "no ve datos de contacto": ¿ve el teléfono de
+4. **El aprobador de contactos** "ve el alta completa" y "no ve datos de contacto": ¿ve el teléfono de
    la congelada (y queda registrado) o solo "mismo teléfono"?
-6. **Desactivar y fusionar persona o empresa.** Quién desactiva, qué pasa con sus vínculos (¿desaparece
+5. **Desactivar y fusionar persona o empresa.** Quién desactiva, qué pasa con sus vínculos (¿desaparece
    de las 12 obras?); fusionar no está definido (de quién queda si eran de dos agendas).
-7. **Unique del vínculo con `hasta`.** Un vínculo cerrado sigue `activo`, así que el unique parcial por par
+6. **Unique del vínculo con `hasta`.** Un vínculo cerrado sigue `activo`, así que el unique parcial por par
    (`GUIDE_ENTES.md` §2.6) no deja re-vincular al capataz que vuelve: `WHERE activo AND hasta IS NULL`.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:

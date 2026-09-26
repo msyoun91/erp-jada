@@ -27,6 +27,12 @@ trabaja sin ser la responsable.
 que `tareas_equipo`, una sola persona por equipo. No va al revés: los delegadores de logística o
 producción no usan Obras.
 
+**El jefe actúa solo sobre `obra.equipo_id`; el del equipo de un participante solo la ve (2026-09-26).**
+Juan (Norte) es responsable de Belgrano y suma a Pedro (Sur): Laura, jefa de Sur, la ve y nada más; no
+edita, no cambia el estado, no vincula, no ve la comisión. Los poderes de responsable (transferir,
+desactivar, comisión) son del jefe de Norte. Si Pedro se va de Sur, la participación se cierra por la
+baja o el cambio de equipo, no por Laura.
+
 **La comisión del referente se registra ya, y la ven solo el vendedor responsable y el jefe comercial
 (2026-09-25).** Más el admin. Va sobre el vínculo con rol referente (`obras_comisiones`), así "ser
 referente" sigue siendo el rol del vínculo y no se duplica; varios referentes, una comisión cada uno.
@@ -150,7 +156,7 @@ Personas
 │                   · no ve obras de otros vendedores donde no participa; como participante, no ve
 │                     la comisión
 ├── Jefe comercial  — el delegador del equipo · lo del vendedor + todas las obras donde participa su
-│                     equipo · transfiere entre vendedores
+│                     equipo (solo ver, si no son de su equipo) · transfiere entre vendedores
 │                   · no ve obras de otros equipos donde el suyo no participa
 ├── Aprobador de altas — quien elija el admin (obras_aprobar) · ve las altas congeladas y lo parecido
 │                     (nombre, dirección, responsable) · aprueba, rechaza con motivo, "es la misma"
@@ -204,7 +210,8 @@ Acciones
 │         ├── responsable: todo lo de la obra
 │         ├── participante: editar, cambiar estado, vincular contactos (no ve la comisión; no
 │         │   suma participantes, no transfiere, no desactiva)
-│         ├── jefe comercial: lo del responsable, en las obras de su equipo
+│         ├── jefe comercial: lo del responsable, en las obras de su equipo (obra.equipo_id);
+│         │   en las que solo participa alguien de su equipo, solo ver
 │         └── obras_administrar: todo, en cualquier obra
 Eventos que emite
 ├── obra: alta (al aprobarse, si entró congelada) · estado (a perdida: + motivo y detalle; desde contratada: + causa) · baja
