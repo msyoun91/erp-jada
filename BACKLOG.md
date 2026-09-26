@@ -81,10 +81,26 @@ Para probar: un equipo activo con delegador.
 
 ## Contactos y Obras — fichas aprobadas, falta el SQL (2026-09-25)
 
-`decisiones/contactos.md` y `decisiones/obras.md`, aprobadas el 2026-09-25. Siguiente: SQL de Contactos (`GUIDE_MODULO_NUEVO.md` paso 1,
-con su *Pendiente*). Orden:
-Contactos → Obras (con el paquete de Tareas "con el primer emisor", arriba) → Catálogo → Presupuestos
-→ Post-venta.
+`decisiones/contactos.md` y `decisiones/obras.md`, aprobadas el 2026-09-25. Siguiente: el SQL
+(`GUIDE_MODULO_NUEVO.md` paso 1, con el *Pendiente* de Contactos). Orden de módulos: Contactos y Obras →
+Catálogo → Presupuestos → Post-venta.
+
+**Contactos y Obras van juntos, en tramos (2026-09-26).** Como Tareas: una migración por tema, cada
+una con su test en `sql/tests/` y sus pantallas, y el primer tramo ya usable. Juntos porque un vínculo
+no se prueba sin una obra a la que vincularlo.
+1. **Lo básico** — persona, empresa, obra, vínculos, participantes; "lo ve" y "lo trabaja"; estados con
+   motivo de pérdida y reversión; "Ver contacto" que registra (sacar el teléfono del SELECT después
+   obliga a revisar cada pantalla que ya lo lee); historial de ediciones; transferir y desactivar;
+   buscar o crear en el panel; "¿Quién?" en el alta. Prueba: Juan carga Torre Belgrano con Marta de
+   referente, suma a Pedro, y Laura la ve sin tocar nada.
+2. **Bajas** — bajas y cambios de equipo (obras y agenda), huérfanas, campanitas. Prueba: Juan se va y
+   sus obras y su agenda llegan al jefe.
+3. **Duplicados** — congelado de obra, persona y empresa, editar que congela, "Por aprobar", vínculos
+   guardados, "es la misma", compartir empresa. Prueba: Pedro carga la Belgrano de Juan y el aprobador
+   la resuelve.
+4. **El resto** — comisión, widget de números, Auditoría, fusionar, razones sociales.
+5. **Tareas** — el paquete "con el primer emisor" (arriba): plantillas por estado, pasos que se
+   completan solos. Prueba: el paso "vincular arquitecto" se cierra solo.
 
 **Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Los nueve huecos, cerrados el
 2026-09-26 y escritos en `decisiones/contactos.md`, `decisiones/obras.md` y `GUIDE_ENTES.md` §2.6.
@@ -97,7 +113,7 @@ Contactos → Obras (con el paquete de Tareas "con el primer emisor", arriba) �
    (`decisiones/obras.md`).
 4. ~~La misma empresa en dos equipos~~ — cerrado: se pide con un pedido de Tareas y el equipo dueño
    la comparte (`decisiones/contactos.md`).
-5. Falta el corte del SQL de Contactos y Obras en tramos, con un primer tramo usable.
+5. ~~El SQL sin cortes~~ — cerrado: cinco tramos (arriba).
 - Menor, al escribir el SQL: la baja pasa las obras al jefe solo si tiene `obras_ver`, como Tareas
   pide `tareas_ver`.
 
