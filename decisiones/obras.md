@@ -106,6 +106,12 @@ el motivo actual, que se limpia al reabrirla. Cada pérdida queda en el evento `
 motivo y texto), así que perderla dos veces no borra la primera. Descartado: guardar solo el último,
 que no permitía contar.
 
+**`contratada` se revierte con causa, mientras no haya presupuesto aprobado (2026-09-26).** Un clic
+equivocado no puede quedar para siempre. La revierten los mismos que cambian el estado, a cualquiera de
+los tres abiertos, con causa en texto libre y obligatoria (caso raro, no se cuenta: sin lista). La causa
+queda en el evento `estado` (`detalle`), como el motivo de pérdida, sin columna nueva. Con Presupuestos,
+el trigger suma la condición "ningún presupuesto aprobado"; con uno aprobado, contratada es final.
+
 **Datos de la obra (2026-09-25):** nombre, dirección, localidad, notas, origen, tipo de obra y fecha
 estimada de compra (mes y año). Origen y tipo son listas cerradas, para poder contar, igual que el motivo
 de pérdida. `origen_obra`: referente · cartel en obra · web o redes · cliente anterior · llamado · otro.
@@ -163,12 +169,13 @@ Entes
                idea           se detectó la obra, sin contacto todavía
                en_busqueda    se busca a quien decide
                en_cotizacion  hay al menos un presupuesto armándose o enviado
-               contratada     hay al menos un presupuesto aprobado; final
+               contratada     hay al menos un presupuesto aprobado; final salvo reversión
                perdida        no se concretó; motivo (lista cerrada) + detalle libre, en el
                               historial de eventos
              idea ↔ en_busqueda ↔ en_cotizacion: libre, se puede saltear
              cualquiera de esos tres → perdida → reabrir a cualquiera de los tres
-             → contratada: no vuelve atrás ni pasa a perdida
+             contratada → cualquiera de los tres, con causa (texto libre), mientras no haya
+               presupuesto aprobado; no pasa directo a perdida
              con Presupuestos: el primero lleva a en_cotizacion y el primero aprobado a contratada;
                desde ahí contratada la pone solo la base
            · la ven: responsable, participantes, obras_equipo sobre obra.equipo_id o el equipo_id de
@@ -200,7 +207,7 @@ Acciones
 │         ├── jefe comercial: lo del responsable, en las obras de su equipo
 │         └── obras_administrar: todo, en cualquier obra
 Eventos que emite
-├── obra: alta (al aprobarse, si entró congelada) · estado (a perdida: + motivo y detalle) · baja
+├── obra: alta (al aprobarse, si entró congelada) · estado (a perdida: + motivo y detalle; desde contratada: + causa) · baja
 │         · reactivacion · transferencia ({de, a})
 ├── obra: relacion_alta / relacion_baja por contacto (los emite el trigger de contactos_vinculos)
 └── campanita (nunca al que hizo la acción):

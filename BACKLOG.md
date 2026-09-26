@@ -85,27 +85,24 @@ con su *Pendiente*). Orden:
 Contactos → Obras (con el paquete de Tareas "con el primer emisor", arriba) → Catálogo → Presupuestos
 → Post-venta.
 
-**Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Huecos abiertos, por peso (el 1, persona en otra agenda, cerrado: "es la misma"); cada
+**Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Huecos abiertos, por peso (cerrados: persona en otra agenda → "es la misma"; `contratada` irreversible → se revierte con causa); cada
 decisión va a `decisiones/<modulo>.md` antes de pasar al siguiente.
 
-1. **`contratada` es irreversible y hoy se pone a mano.** Un clic equivocado no vuelve, no pasa a
-   perdida ni se desactiva, ni por el admin. Propuesta: `obras_administrar` la revierte mientras no haya
-   presupuesto aprobado (hoy, siempre), auditado.
-2. **Jefe del equipo de un participante.** Ve la obra (`equipo_id` de un participante), pero "lo del
+1. **Jefe del equipo de un participante.** Ve la obra (`equipo_id` de un participante), pero "lo del
    responsable, en las obras de su equipo" no dice si transfiere o desactiva una obra de otro equipo.
    Escribir que actuar como responsable es solo sobre `obra.equipo_id`, y qué le queda al otro jefe.
-3. **Comisión sobre un vínculo que otros tocan.** Un participante le saca "referente" al rol o desactiva
+2. **Comisión sobre un vínculo que otros tocan.** Un participante le saca "referente" al rol o desactiva
    el vínculo "por error" y la comisión queda colgada: bloquearlo con comisión activa, o apagarla junto.
-4. **El congelado se esquiva editando.** Cargar "Obra X" en "Calle 1" y renombrarla; cambiarle el
+3. **El congelado se esquiva editando.** Cargar "Obra X" en "Calle 1" y renombrarla; cambiarle el
    teléfono a una persona. Renombrar avisa y no congela. ¿Se acepta, o la edición que coincide avisa al
    aprobador?
-5. **Personas huérfanas sin cómo encontrarlas.** Con dueño inactivo "la transfiere el admin", pero
+4. **Personas huérfanas sin cómo encontrarlas.** Con dueño inactivo "la transfiere el admin", pero
    Contactos no tiene filtro ni campanita de huérfanas, como Obras.
-6. **El aprobador de contactos** "ve el alta completa" y "no ve datos de contacto": ¿ve el teléfono de
+5. **El aprobador de contactos** "ve el alta completa" y "no ve datos de contacto": ¿ve el teléfono de
    la congelada (y queda registrado) o solo "mismo teléfono"?
-7. **Desactivar y fusionar persona o empresa.** Quién desactiva, qué pasa con sus vínculos (¿desaparece
+6. **Desactivar y fusionar persona o empresa.** Quién desactiva, qué pasa con sus vínculos (¿desaparece
    de las 12 obras?); fusionar no está definido (de quién queda si eran de dos agendas).
-8. **Unique del vínculo con `hasta`.** Un vínculo cerrado sigue `activo`, así que el unique parcial por par
+7. **Unique del vínculo con `hasta`.** Un vínculo cerrado sigue `activo`, así que el unique parcial por par
    (`GUIDE_ENTES.md` §2.6) no deja re-vincular al capataz que vuelve: `WHERE activo AND hasta IS NULL`.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
