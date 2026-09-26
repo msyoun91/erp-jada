@@ -141,15 +141,17 @@ Además de las columnas de `GUIDE_DB.md` (`id`, `activo`, `created_at`, `updated
 ### 2.2 Registro en `entes`
 
 ```sql
-INSERT INTO entes (codigo, modulo, submodulo, estados, datos, ruta, tabla, disparos)
-VALUES ('presupuesto', 'presupuestos', 'presupuestos_ver', 'estado_presupuesto', '{numero}', '/presupuestos/{id}',
-        'presupuestos', '{alta,estado}')
+INSERT INTO entes (codigo, modulo, submodulo, estados, datos, roles, ruta, tabla, disparos)
+VALUES ('presupuesto', 'presupuestos', 'presupuestos_ver', 'estado_presupuesto', '{numero}', '{capataz}',
+        '/presupuestos/{id}', 'presupuestos', '{alta,estado}')
 ON CONFLICT (codigo) DO NOTHING;
 ```
 
 - `codigo` singular, sin prefijo de módulo, único para siempre: es destino de FK.
 - `submodulo`: la vista que abre la ficha. Sin ella el ente no existe para ese usuario (RLS de `entes`).
 - `estados` NULL si no tiene. `datos`: columnas citables como `{columna}` desde otro módulo — nunca contacto.
+- `roles`: los que puede tener un contacto vinculado al ente (`contactos_vinculos` los valida); `{}` si no
+  se le vinculan contactos.
 - `tabla`: de donde un consumidor lee la fila. `disparos`: los eventos que pueden disparar una plantilla —
   solo los que ocurren como quien actúa (uno que pasa por una función DEFINER no dispara), y ninguno si
   una plantilla disparada por el ente crearía otro igual (la tarea).
@@ -223,12 +225,14 @@ id: en un UPDATE la policy de SELECT se evalúa sobre la fila nueva, y releer la
   obras`); si es "cualquier ente", el par `(ente text FK → entes, registro_id uuid sin FK)` como
   `tareas_vinculos`, y la policy de INSERT exige `etiqueta_registro(ente, registro_id) IS NOT NULL`.
   Si lo vinculado pasa a ser parte del registro (los contactos de la obra), escribir —vincular, cerrar,
-  cambiar el rol— pide además que quien escribe **trabaje** el registro: la genérica "lo trabaja", con
-  la rama del módulo del ente (`decisiones/global/entes.md` → *Ver un registro no es trabajarlo*).
+  cambiar el rol— pide además que quien escribe **trabaje** el registro: `trabaja_registro(ente, id)`,
+  con la rama del módulo del ente (`decisiones/global/entes.md` → *Ver un registro no es trabajarlo*).
 - La relación se expone por `{modulo}_relacionados_{ente}` para que otro módulo pida "el arquitecto de
   esta obra" sin conocer la tabla.
 - Y avisa con otro trigger de una línea sobre el puente: `AFTER INSERT OR UPDATE OF activo, roles …
   EXECUTE FUNCTION emitir_eventos_relacion('<ente>', '<columna>', '<ente relacionado>', '<columna>')`.
+  Un `<ente>` que varía por fila se pasa como el nombre de su columna (`'ente'`): el emisor lee la columna
+  si la fila la tiene. Por eso un código de ente nunca coincide con el nombre de una columna del puente.
 
 ### 2.7 Acciones
 

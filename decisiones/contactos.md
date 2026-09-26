@@ -205,6 +205,30 @@ lo componen desde `app/` (`GUIDE_ENTES.md` §2.7).
 | Persona o empresa → vincular a una obra | obras que trabajás, no congeladas | no: una obra pide dirección, tipo y sus parecidas |
 | Obra → sumar participante | usuarios activos con `obras_ver` | no: select simple, como `AsignadoSelect` |
 
+## Los roles de un vínculo los declara el ente, en `entes.roles` (2026-09-26)
+
+**`entes` suma `roles text[]`, como `datos`: cada módulo lo llena al registrar su ente, y un trigger en
+`contactos_vinculos` rechaza un rol que no esté en la lista de su ente.** Los labels van en `ENTES`
+(`lib/entes.ts`), y Tareas saca de ahí las opciones de "vincular {rol}". El trigger valida al insertar o
+al cambiar `roles`: sacar un rol de la lista deja los vínculos viejos como historia.
+
+Descartado: un enum (una columna no cambia de enum según la fila; uno global haría que Contactos conozca
+los roles de cada módulo) y una tabla sembrada como `submodulo_reglas` (tabla, RLS y seed para un
+código sin más datos).
+
+Archivos: `sql/` (Contactos), `db_schema/core.md`, `GUIDE_ENTES.md` §2.2.
+
+## El contacto en dos columnas, y el emisor lee el ente de la fila (2026-09-26)
+
+**`contactos_vinculos` guarda el contacto en `persona_id` y `empresa_id` (`CHECK num_nonnulls = 1`), y
+emite con dos triggers `WHEN`, uno por columna. `emitir_eventos_relacion` toma un ente de la columna
+del mismo nombre si la fila la tiene (`'ente'`), y si no, el texto tal cual.** Dos FK reales en vez de
+un par sin FK; el registro vinculado varía por fila (obra hoy, etapa y unidad después).
+
+Descartado: un trigger propio de Contactos (copiaba la diferencia de roles del emisor).
+
+Archivos: `sql/` (Contactos), `sql/tests/entes_eventos.sql`, `db_schema/core.md`, `GUIDE_ENTES.md` §2.6.
+
 ## Ficha del módulo
 
 Aprobada el 2026-09-25, junto con la de Obras.
@@ -336,11 +360,8 @@ Reglas entre permisos
 
 ## Pendiente
 
-- **Roles por ente, en el SQL.** Un enum validado según el ente, o filas que siembra cada módulo en su
-  migración, como `submodulo_reglas`.
 - **Vínculos guardados de una congelada, en el SQL.** Dónde viven (columnas o tabla aparte) y cómo los
   crea la aprobación de la segunda punta sin pasar por la regla "vincula solo el dueño".
-- **La genérica "lo trabaja", en el SQL.** Nombre y firma, junto a `etiqueta_registro`, con la rama de
-  Obras; su `_de` si la pide el disparo (el vínculo guardado se crea a nombre de quien cargó la congelada).
-- **El emisor de relación, en el SQL.** `emitir_eventos_relacion` recibe el ente fijo por argumento;
-  acá el ente sale de la columna `ente` de cada fila.
+- **`trabaja_registro_de`, con los vínculos guardados.** `trabaja_registro` ya está decidida
+  (`decisiones/global/entes.md`); su `_de` entra con el tramo 3 (el vínculo guardado se crea a nombre de
+  quien cargó la congelada).

@@ -205,4 +205,10 @@ propio sigue pidiendo solo verlo: Laura puede relacionar Belgrano en un paso suy
 Descartado: que cada módulo frene con un trigger sobre la puente ajena, como el de la comisión en
 Obras: no alcanza a la edición de la persona, y el módulo que se olvide queda abierto.
 
+**La genérica es `trabaja_registro(ente, id) → boolean` (2026-09-26).** Misma forma que
+`etiqueta_registro`: INVOKER, STABLE, EXECUTE para `authenticated`, `CASE e.modulo`; sin rama, `false`
+(el módulo que se olvide queda cerrado). La rama de Obras llama a `obras_trabaja(obra)`, que Obras usa
+también en su policy de UPDATE. Sin `_de` por ahora: lo piden el disparo y la aprobación de una
+congelada (tramo 3), y entra junto con `etiqueta_registro_de`.
+
 Archivos: `.claude/guides/GUIDE_ENTES.md` §2.6, `decisiones/contactos.md`, `decisiones/obras.md`.
