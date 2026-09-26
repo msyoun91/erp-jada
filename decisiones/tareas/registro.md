@@ -64,6 +64,10 @@ trabaja en el contexto del registro del hilo y la plantilla no tiene que repetir
 paso. Depende de que exista `hilo → registro` (ente + id en `tareas_hilos`, todavía sin columnas:
 `BACKLOG.md` → disparo por registro).
 
+**La página del hilo muestra al lado solo la ficha del registro del hilo (2026-09-26).** Sin
+pestañas de lo que mencionan sus pasos: en hilos largos juntaría registros que no le conciernen a
+quien mira, y crecería sin límite. Sin registro, la página del hilo va a todo el ancho.
+
 **"Relacionar": primero el módulo, después el buscador (2026-09-24).** Botón junto a la descripción
 del paso (hilos y pasos sueltos): elegir el módulo y buscar en `buscar_registros` (INVOKER, una rama
 por ente: lo que quien escribe ve), que inserta `{ente:uuid|nombre}` con vista previa. En una
