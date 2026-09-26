@@ -55,6 +55,14 @@ vínculos quedan: en cada obra sigue con su rol, marcada "inactiva", porque es h
 (quién fue la arquitecta). Solo se frena vincularla de nuevo. Si estaba cargada por error, cada vínculo
 se desactiva aparte. Descartado: bloquear con vínculos abiertos (obliga a cerrarlos uno por uno).
 
+**Fusionar: el admin elige cuál queda, y esa conserva su dueño (2026-09-26).** Por defecto, la de más
+vínculos; el dueño no cambia (una persona habla con un solo vendedor, como en "es la misma"). Los
+vínculos de la que se va pasan a la que queda; si las dos estaban en el mismo registro, uno solo con los
+roles sumados. Teléfono y email, campo por campo, los elige el admin; las razones sociales de una empresa
+se suman. La que se va se desactiva con `fusionada_en`, y su historial (ediciones, accesos) queda donde
+estaba. Campanita al dueño de la que se va: "Marta Gómez se fusionó con la de Juan"; sigue viéndola en
+contexto en sus obras.
+
 **Una persona o una empresa la edita quien la ve, y cada cambio queda registrado (2026-09-25).**
 El contacto es uno solo y lo usan varias obras: que lo corrija el primero que se entera (quien recibió
 la obra transferida y sabe el teléfono nuevo). Descartado: solo el dueño, que dejaba el dato viejo hasta
@@ -195,6 +203,7 @@ Eventos que emite
 └── campanita (nunca al que hizo la acción):
     ├── contacto transferido → el nuevo dueño
     ├── agenda recibida      → el jefe, por baja o cambio de equipo; una por hecho, con la cantidad
+    ├── persona fusionada    → el dueño de la que se va
     ├── personas huérfanas   → quienes tienen contactos_administrar, cuando no hay jefe que las
     │                          reciba; una por hecho, con la cantidad
     ├── alta por aprobar     → quienes tienen contactos_aprobar
