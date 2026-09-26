@@ -157,7 +157,8 @@ Relaciones
 └── persona | empresa → ente — roles[] · desde · hasta        (contactos_vinculos: ente, registro_id)
                                · se ve si se ve el registro
                                · lo crea, sobre un registro que ve, el dueño de la persona o el
-                                 equipo de la empresa; lo cierra o le cambia el rol quien ve el registro
+                                 equipo de la empresa; lo cierra o le cambia el rol quien ve el registro (un referente con comisión: ver
+                                 decisiones/obras.md)
                                · los roles válidos los declara el módulo del ente
                                · el panel de vincular, compuesto en cada ficha, abre solo con
                                  ?vincular={rol} (link de acción de Tareas); se escribe una vez

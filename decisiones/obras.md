@@ -40,6 +40,14 @@ Es la única sección de la obra con regla propia: su RLS es responsable, `obras
 de la obra, u `obras_administrar`, sin submódulo nuevo. El participante ve la obra, pero no la comisión.
 Porcentaje o monto, uno de los dos por referente, a elección de quien la carga (CHECK: exactamente uno).
 
+**Un vínculo con comisión activa lo toca solo quien ve la comisión (2026-09-26).** Si no, un participante
+le saca "referente" o lo desactiva "por error" y la comisión queda colgada sin que el responsable se
+entere. Sacar el rol referente, cerrar o desactivar ese vínculo: el participante no puede, la base lo
+frena con "Este referente lo maneja el responsable de la obra" (sin nombrar la comisión). Responsable,
+jefe de la obra y admin sí, y la comisión se desactiva junto, con aviso previo en pantalla. Trigger de
+Obras sobre `contactos_vinculos`. Descartado: apagarla sola aunque lo haga el participante (el
+responsable la pierde sin saber) y bloquear a todos (obliga a borrarla a mano primero).
+
 ## Bajas y cambios de equipo (2026-09-25)
 
 **La baja o el cambio de equipo de un vendedor pasa sus obras al jefe del equipo guardado en cada
@@ -208,7 +216,8 @@ Acciones
 │         participante · transferir · desactivar (no contratada) · reactivar (admin)
 │         · aprobar alta · rechazar alta (motivo) · "es la misma" — obras_aprobar
 │         ├── responsable: todo lo de la obra
-│         ├── participante: editar, cambiar estado, vincular contactos (no ve la comisión; no
+│         ├── participante: editar, cambiar estado, vincular contactos (no ve la comisión ni toca
+│         │   el vínculo de un referente con comisión; no
 │         │   suma participantes, no transfiere, no desactiva)
 │         ├── jefe comercial: lo del responsable, en las obras de su equipo (obra.equipo_id);
 │         │   en las que solo participa alguien de su equipo, solo ver
