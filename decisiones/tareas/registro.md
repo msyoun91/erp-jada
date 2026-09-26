@@ -53,6 +53,11 @@ activa la pestaña de ese vínculo. Sin vínculos no hay columna derecha. Split 
 sus registros, no navegando hacia ellos. Cada módulo con entes aporta su ficha; el registro ente →
 componente vive en `app/`.
 
+**La pestaña muestra la ficha entera, con sus acciones (2026-09-26).** El mismo componente que la
+página del ente, no un resumen: el link de acción (`?vincular={rol}`, `?estado={valor}`) se resuelve
+ahí sin salir del paso, y cada módulo mantiene una sola ficha. Permisos y RLS los de siempre: la
+ficha muestra lo que quien mira puede ver y hacer.
+
 **"Relacionar": primero el módulo, después el buscador (2026-09-24).** Botón junto a la descripción
 del paso (hilos y pasos sueltos): elegir el módulo y buscar en `buscar_registros` (INVOKER, una rama
 por ente: lo que quien escribe ve), que inserta `{ente:uuid|nombre}` con vista previa. En una
