@@ -48,7 +48,8 @@ plantillas) aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/124` (
     reabre. El asignado lo puede completar a mano igual.
     Link de acción: `{@accion|texto}` en la descripción de la plantilla, sacado de la condición; abre
     la ficha del registro al lado con `?vincular={rol}` (panel de Contactos) o `?estado={valor}`.
-    Texto plano si el asignado no ve el registro.
+    Texto plano si el asignado no ve el registro; si lo ve sin trabajarlo, link común a la ficha, sin
+    `?vincular` ni `?estado` (`decisiones/global/entes.md` → *Ver un registro no es trabajarlo*).
 
 UI: vistas Hilos (`/tareas`, `/tareas/{id}`, `/tareas/paso/{id}`), Misión (`/tareas/mision`),
 Equipo (`/tareas/equipo`), Plantillas (`/tareas/plantillas`, con "Usar plantilla" desde el hilo) y
@@ -87,6 +88,17 @@ Contactos → Obras (con el paquete de Tareas "con el primer emisor", arriba) �
 
 **Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Los nueve huecos, cerrados el
 2026-09-26 y escritos en `decisiones/contactos.md`, `decisiones/obras.md` y `GUIDE_ENTES.md` §2.6.
+
+**Segunda revisión (2026-09-26): Obras 8,5/10, Contactos 7,5/10.** Cinco puntos, de a uno:
+1. ~~Ver no es trabajar~~ — cerrado (`decisiones/global/entes.md`).
+2. Origen, tipo y motivo de pérdida son "para contar", y ninguna persona ni vista cuenta: falta quien
+   solo mira (¿el dueño?) y dónde, sin `obras_administrar`.
+3. "Es la misma" de una obra no dice qué pasa con su vínculo guardado de referente ("¿Quién?").
+4. Empresas parecidas entre equipos comerciales: se congelan para aprobarse casi siempre, y fusionar
+   ese par le saca la empresa a un equipo.
+5. Falta el corte del SQL de Contactos y Obras en tramos, con un primer tramo usable.
+- Menor, al escribir el SQL: la baja pasa las obras al jefe solo si tiene `obras_ver`, como Tareas
+  pide `tareas_ver`.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos.

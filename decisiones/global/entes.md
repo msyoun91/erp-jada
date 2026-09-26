@@ -186,3 +186,23 @@ ruta rompe todo chip y todo link, y es una línea.
 
 Archivos: `sql/109_entes_eventos.sql`, `sql/tests/entes_eventos.sql`, `db_schema/core.md`,
 `database.types.ts`.
+
+## Ver un registro no es trabajarlo (2026-09-26, decidido, no construido)
+
+**Quien le suma algo a un registro ajeno pregunta si lo trabaja, no si lo ve.** Hasta acá la única
+pregunta cross-módulo era `etiqueta_registro` (lo ve), y la guía la pedía también para escribir una
+puente `(ente, registro_id)`. Obras es el primer ente donde difieren: Laura, jefa de Sur, ve Torre
+Belgrano porque Pedro participa, y nada más; con "lo ve", Contactos la dejaba cerrar el vínculo de la
+arquitecta, vincular una persona suya o corregir a Marta (`decisiones/contactos.md` → *Ver no es
+trabajar*).
+
+Una segunda genérica, con una rama por módulo como `etiqueta_registro`, contesta si quien pregunta
+trabaja el registro. La lista la escribe una vez el módulo del ente, que la usa también para sus
+propias escrituras; Contactos la pregunta sin conocer las tablas de Obras. Vale para lo que pasa a ser
+parte del registro (sus contactos, que se ven en su ficha y emiten sus eventos). Nombrarlo desde lo
+propio sigue pidiendo solo verlo: Laura puede relacionar Belgrano en un paso suyo de Tareas.
+
+Descartado: que cada módulo frene con un trigger sobre la puente ajena, como el de la comisión en
+Obras: no alcanza a la edición de la persona, y el módulo que se olvide queda abierto.
+
+Archivos: `.claude/guides/GUIDE_ENTES.md` §2.6, `decisiones/contactos.md`, `decisiones/obras.md`.

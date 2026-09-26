@@ -46,6 +46,7 @@ Tocar `entes`, `lib/entes.ts`, las funciones cross-módulo de core, disparadores
 - Un ente en un texto es una referencia, no un nombre (decidido, no construido)
 - Tareas leída con la guía (2026-09-16)
 - `entes` y `eventos` vuelven antes que Tareas, sin ningún ente (`sql/109`)
+- Ver un registro no es trabajarlo (2026-09-26, decidido, no construido)
 
 ## `infra.md`
 

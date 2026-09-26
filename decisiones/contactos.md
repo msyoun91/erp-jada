@@ -32,10 +32,28 @@ vínculo, y quien ve un vínculo ve la persona. Una sola regla, en `contactos_pu
 
 **La agenda es de su dueño; lo vinculado se ve en contexto (2026-09-25).** La pestaña Personas
 muestra solo las propias. Una persona vinculada a una obra que veo la veo ahí, con su rol y su
-teléfono, y su ficha me muestra solo ese vínculo. Dentro de ese registro puedo cerrar el vínculo o
-cambiarle el rol. Lo que no puedo es llevarla a otro registro: **vincular una persona es solo de su
+teléfono, y su ficha me muestra solo ese vínculo. Si además trabajo ese registro, puedo cerrar el
+vínculo o cambiarle el rol (*Ver no es trabajar*, abajo). Lo que no puedo es llevarla a otro registro: **vincular una persona es solo de su
 dueño y del admin** (y del aprobador, en "es la misma"). Si no, quien recibe una obra transferida podía sumar el referente del anterior a sus
 propias obras y quedárselo. Las empresas no entran en esta regla: son del equipo.
+
+**Ver no es trabajar: en contexto escribe quien trabaja el registro (2026-09-26).** Juan (Norte) es
+responsable de Torre Belgrano y suma a Pedro (Sur); Laura, jefa de Sur, la ve y nada más
+(`decisiones/obras.md`). Con "quien ve el registro", Laura cerraba el vínculo de Marta Gómez como
+arquitecta, le sacaba el rol decisor, vinculaba a Belgrano una persona suya o le cambiaba el teléfono
+a Marta. Contactos le pregunta al módulo del ente si quien escribe trabaja el registro
+(`decisiones/global/entes.md` → *Ver un registro no es trabajarlo*); en Obras: responsable,
+participantes, el jefe de `obra.equipo_id` y `obras_administrar`.
+- Vincular: el dueño de la persona (el equipo, si es empresa), y que trabaje el registro.
+- Cerrar, cambiar el rol o desactivar un vínculo: quien trabaja el registro.
+- Editar una persona o una empresa: su dueño (el equipo, si es empresa), el admin, o quien trabaja un
+  registro al que está vinculada.
+- Los vínculos guardados de una congelada, también el de "es la misma", se crean si quien la cargó
+  trabaja el registro en ese momento.
+
+Laura sigue viendo a Marta con su rol, y el teléfono con "Ver contacto". Descartado: que Obras la frene
+con su trigger sobre `contactos_vinculos` (no alcanza a la edición de Marta, y el módulo que se olvide
+queda abierto) y aflojar Obras ("solo ve, salvo los contactos").
 
 **La persona se transfiere, y la agenda sigue a las obras (2026-09-25).** El dueño es `responsable_id`,
 no `creado_por`. "Transferir persona": el dueño y el admin. En la baja, la agenda pasa al jefe del
@@ -63,13 +81,14 @@ se suman. La que se va se desactiva con `fusionada_en`, y su historial (edicione
 estaba. Campanita al dueño de la que se va: "Marta Gómez se fusionó con la de Juan"; sigue viéndola en
 contexto en sus obras.
 
-**Una persona o una empresa la edita quien la ve, y cada cambio queda registrado (2026-09-25).**
-El contacto es uno solo y lo usan varias obras: que lo corrija el primero que se entera (quien recibió
-la obra transferida y sabe el teléfono nuevo). Descartado: solo el dueño, que dejaba el dato viejo hasta
+**Una persona o una empresa la corrige quien trabaja con ella, y cada cambio queda registrado
+(2026-09-25).** El contacto es uno solo y lo usan varias obras: que lo corrija el primero que se entera
+(quien recibió la obra transferida y sabe el teléfono nuevo). Quien solo la ve en contexto, no
+(2026-09-26, *Ver no es trabajar*). Descartado: solo el dueño, que dejaba el dato viejo hasta
 que otro le avisara. `contactos_ediciones` (ente, registro_id, campo, anterior, nuevo, usuario,
 fecha): la escribe un trigger, nadie inserta ni edita, y la ve quien ve el registro. Es el mismo patrón
-que `tareas_ediciones`. Editar no es vincular: ver a Marta en contexto deja corregirla, no llevarla a
-otra obra.
+que `tareas_ediciones`. Editar no es vincular: trabajar la obra de Marta deja corregirla, no llevarla
+a otra obra.
 
 **Ver teléfono y email de una persona queda registrado, y se hace con un botón (2026-09-25).** La
 agenda es de la empresa: el registro detecta a quien se lleva los contactos (200 teléfonos la semana
@@ -145,8 +164,8 @@ Gómez · 11-5555-…" con [Vincular esa] y [Es otra, crear igual]. Si es de otr
 **Una congelada guarda los vínculos con los que se creó, y se crean al aprobarse.** Rol en un registro,
 y empresa con cargo (abajo). Sin esto, quien la cargó tenía que volver a vincularla, y el paso de Tareas
 "vincular arquitecto" quedaba abierto hasta que se acordara. Cada vínculo guardado se crea cuando sus dos
-puntas dejan de estar congeladas; si para entonces quien la cargó ya no ve el registro, no se crea y
-"alta resuelta" lo dice. Rechazar y "es la misma", como arriba.
+puntas dejan de estar congeladas; si para entonces quien la cargó ya no trabaja el registro, no se crea
+y "alta resuelta" lo dice. Rechazar y "es la misma", como arriba.
 
 **La empresa de la persona, en el mismo formulario.** Campo opcional con el mismo buscador: las empresas
 que ves (lo que pide persona ↔ empresa), primero las vinculadas al registro, así el capataz de la
@@ -164,7 +183,7 @@ lo componen desde `app/` (`GUIDE_ENTES.md` §2.7).
 | Nueva obra, origen referente → "¿Quién?" | ídem | persona o empresa, sin el campo empresa (ya es el nivel anidado) — `decisiones/obras.md` |
 | Persona → sumar empresa | empresas que ves | empresa, solo el nombre |
 | Empresa → sumar persona | tus personas | persona, con cargo en vez de rol |
-| Persona o empresa → vincular a una obra | obras que ves, no congeladas | no: una obra pide dirección, tipo y sus parecidas |
+| Persona o empresa → vincular a una obra | obras que trabajás, no congeladas | no: una obra pide dirección, tipo y sus parecidas |
 | Obra → sumar participante | usuarios activos con `obras_ver` | no: select simple, como `AsignadoSelect` |
 
 ## Ficha del módulo
@@ -179,10 +198,12 @@ Objetivo: las personas y empresas con las que trabaja la empresa, en un solo lug
 Personas
 ├── Vendedor        — ve su agenda (las personas de las que es dueño), las empresas de su equipo y,
 │                     en contexto, los contactos vinculados a las obras que ve
-│                   · crea personas y empresas; vincula las suyas a lo que ve; en una obra que ve,
-│                     cierra vínculos y les cambia el rol; transfiere sus personas
+│                   · crea personas y empresas; vincula las suyas a lo que trabaja; en una obra que
+│                     trabaja, cierra vínculos, les cambia el rol y corrige sus contactos; transfiere
+│                     sus personas
 │                   · no ve la agenda de otros vendedores ni vínculos de obras que no ve; no
-│                     lleva a otro registro una persona que ve solo en contexto
+│                     lleva a otro registro una persona que ve solo en contexto; en una obra que solo
+│                     ve, no toca nada
 ├── Jefe comercial  — lo del vendedor, sobre las obras de su equipo · recibe la agenda de quien se
 │                     va y la reparte con "transferir" · —
 ├── Aprobador de altas — quien elija el admin (contactos_aprobar) · ve las altas congeladas y lo
@@ -201,7 +222,9 @@ Entes
 │             · teléfono y email, fuera del SELECT: botón "Ver contacto" → función que registra
 │               el acceso en contactos_accesos (GUIDE_ENTES §2.1)
 │             · la ven: su dueño, quien ve algún vínculo suyo (solo ese vínculo),
-│               contactos_administrar · la vincula a un registro: su dueño, contactos_administrar
+│               contactos_administrar · la vincula a un registro que trabaja: su dueño,
+│               contactos_administrar · la editan: su dueño, contactos_administrar, quien trabaja
+│               un registro al que está vinculada
 │             · congelada (flag, no estado) si el alta se parece a otra: la ve solo quien la cargó,
 │               no se vincula ni se transfiere; el alta cuenta al aprobarse; guarda los vínculos
 │               con los que se creó, que se crean al aprobarse
@@ -209,7 +232,8 @@ Entes
               · datos {nombre} · ruta /contactos/empresas/{id} · submódulo contactos_ver
               · se identifica por el nombre, sin unique; razón social y CUIT, en su lista
               · la ven: los miembros de su equipo (o solo quien la cargó, si no tiene equipo), quien
-                ve algún vínculo suyo, contactos_administrar
+                ve algún vínculo suyo, contactos_administrar · la editan: su equipo (o quien la
+                cargó), contactos_administrar, quien trabaja un registro al que está vinculada
               · congelada como la persona
 No son entes
 ├── razón social — contactos_empresa_razones (empresa, razon_social, cuit, activo), sin unique;
@@ -227,26 +251,31 @@ Relaciones
                                · uno abierto por par (unique WHERE activo AND hasta IS NULL,
                                  GUIDE_ENTES §2.6); volver es una fila nueva — igual persona ↔ empresa
                                · se ve si se ve el registro
-                               · lo crea, sobre un registro que ve, el dueño de la persona o el
-                                 equipo de la empresa; lo cierra o le cambia el rol quien ve el registro (un referente con comisión: ver
-                                 decisiones/obras.md)
+                               · lo crea, sobre un registro que trabaja, el dueño de la persona o el
+                                 equipo de la empresa; lo cierra o le cambia el rol quien trabaja el
+                                 registro (un referente con comisión: ver decisiones/obras.md)
+                               · "trabaja" lo contesta el módulo del ente, no "lo ve"
+                                 (Ver no es trabajar)
                                · los roles válidos los declara el módulo del ente
                                · el panel de vincular, compuesto en cada ficha, abre solo con
                                  ?vincular={rol} (link de acción de Tareas); se escribe una vez
                                · busca solo lo que se puede vincular; si no está, crea y vincula
                                  en un paso (*Vincular: buscar o crear*)
 Acciones
-├── persona: crear (congelada si se parece) · editar (quien la ve; queda en contactos_ediciones)
+├── persona: crear (congelada si se parece) · editar (dueño, admin, quien trabaja un registro
+│            vinculado; queda en contactos_ediciones)
 │            · ver teléfono y email (registra) · transferir (dueño, admin) · desactivar (dueño, admin;
 │            sus vínculos quedan, "inactiva")
 │            · reactivar y fusionar (admin)
-├── empresa: crear (congelada si se parece) · editar (quien la ve; queda en contactos_ediciones)
+├── empresa: crear (congelada si se parece) · editar (su equipo, admin, quien trabaja un registro
+│            vinculado; queda en contactos_ediciones)
 │            · sumar razón social · desactivar (jefe del equipo, admin) · reactivar, fusionar y asignar equipo (admin)
 ├── alta congelada: aprobar (persona: solo si es homónima; crea los vínculos guardados) · rechazar (motivo) · "es la misma"
 │                  (rechaza; opcional, vincula la existente a la obra y rol de la congelada)
 │                  — contactos_aprobar
-└── vínculo: vincular (la persona, su dueño o el aprobador en "es la misma"; la empresa, su equipo) · cerrar (hasta) · cambiar el
-             rol · desactivar (cargado por error) — lo último, quien ve el registro
+└── vínculo: vincular (la persona, su dueño o el aprobador en "es la misma"; la empresa, su equipo;
+             sobre un registro que trabaja) · cerrar (hasta) · cambiar el rol · desactivar (cargado
+             por error) — lo último, quien trabaja el registro
 Eventos que emite
 ├── persona: alta (al aprobarse, si entró congelada) · baja · reactivacion · transferencia ({de, a})
 ├── empresa: alta (ídem) · baja · reactivacion
@@ -285,5 +314,7 @@ Reglas entre permisos
   migración, como `submodulo_reglas`.
 - **Vínculos guardados de una congelada, en el SQL.** Dónde viven (columnas o tabla aparte) y cómo los
   crea la aprobación de la segunda punta sin pasar por la regla "vincula solo el dueño".
+- **La genérica "lo trabaja", en el SQL.** Nombre y firma, junto a `etiqueta_registro`, con la rama de
+  Obras; su `_de` si la pide el disparo (el vínculo guardado se crea a nombre de quien cargó la congelada).
 - **El emisor de relación, en el SQL.** `emitir_eventos_relacion` recibe el ente fijo por argumento;
   acá el ente sale de la columna `ente` de cada fila.

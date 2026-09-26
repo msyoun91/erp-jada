@@ -31,7 +31,9 @@ producción no usan Obras.
 Juan (Norte) es responsable de Belgrano y suma a Pedro (Sur): Laura, jefa de Sur, la ve y nada más; no
 edita, no cambia el estado, no vincula, no ve la comisión. Los poderes de responsable (transferir,
 desactivar, comisión) son del jefe de Norte. Si Pedro se va de Sur, la participación se cierra por la
-baja o el cambio de equipo, no por Laura.
+baja o el cambio de equipo, no por Laura. Tampoco toca los contactos de la obra: no vincula, no cierra
+vínculos ni corrige a la arquitecta; Contactos le pregunta a Obras quién trabaja la obra
+(`decisiones/contactos.md` → *Ver no es trabajar*, 2026-09-26).
 
 **La comisión del referente se registra ya, y la ven solo el vendedor responsable y el jefe comercial
 (2026-09-25).** Más el admin. Va sobre el vínculo con rol referente (`obras_comisiones`), así "ser
@@ -209,6 +211,8 @@ Entes
                desde ahí contratada la pone solo la base
            · la ven: responsable, participantes, obras_equipo sobre obra.equipo_id o el equipo_id de
              un participante, obras_todas
+           · la trabajan (editar, cambiar el estado, vincular; lo pregunta también Contactos):
+             responsable, participantes, obras_equipo sobre obra.equipo_id, obras_administrar
            · se comparte sumando participantes · emite y dispara: alta, estado
            · congelada (no es un estado: un flag aparte) si el alta se parece a otra obra; la ve solo
              quien la cargó, no se vincula, no cambia de estado ni se transfiere; el alta cuenta al

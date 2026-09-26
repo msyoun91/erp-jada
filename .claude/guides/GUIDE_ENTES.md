@@ -222,6 +222,9 @@ id: en un UPDATE la policy de SELECT se evalúa sobre la fila nueva, y releer la
 - Con un ente de **otro módulo**: si es siempre el mismo ente, FK directa (`presupuestos.obra_id →
   obras`); si es "cualquier ente", el par `(ente text FK → entes, registro_id uuid sin FK)` como
   `tareas_vinculos`, y la policy de INSERT exige `etiqueta_registro(ente, registro_id) IS NOT NULL`.
+  Si lo vinculado pasa a ser parte del registro (los contactos de la obra), escribir —vincular, cerrar,
+  cambiar el rol— pide además que quien escribe **trabaje** el registro: la genérica "lo trabaja", con
+  la rama del módulo del ente (`decisiones/global/entes.md` → *Ver un registro no es trabajarlo*).
 - La relación se expone por `{modulo}_relacionados_{ente}` para que otro módulo pida "el arquitecto de
   esta obra" sin conocer la tabla.
 - Y avisa con otro trigger de una línea sobre el puente: `AFTER INSERT OR UPDATE OF activo, roles …
