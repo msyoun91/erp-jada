@@ -81,7 +81,14 @@ resolviera después, y el usuario eligió congelar. Contactos hace lo mismo con 
 (`decisiones/contactos.md`).
 
 - **Aviso a ciegas antes de guardar:** de lo parecido que no ve, solo el nombre de la obra y el de su
-  responsable. Renombrar avisa y no congela.
+  responsable.
+- **Editar también congela (2026-09-26).** Si no, se esquiva: cargar "Obra X" en "Calle 1" y
+  renombrarla. Solo cuando la edición cambia un dato comparado (obra: nombre, dirección; persona:
+  nombre, teléfono, email; empresa: nombre) y el valor nuevo coincide con otro registro; notas u otros
+  campos, no. La ven los que ya la veían, y sus vínculos siguen; se frena lo mismo que en el alta (no se
+  vincula, no cambia de estado, no se transfiere). Salidas: aprobar (homónima) · rechazar con motivo,
+  que vuelve el dato a su valor anterior sin desactivar (el registro era válido, no el cambio) · "es la
+  misma". Descartado: aceptarlo (el aviso a ciegas no alcanza) y avisar sin congelar.
 - **Congelada:** la ve solo quien la cargó, y la puede editar. No se vincula, no cambia de estado, no se
   transfiere y no dispara plantillas: para Tareas, el alta cuenta desde que se aprueba. El bloqueo va en
   la base, con triggers y error de clase propia, no con policies (el 42501 diría "sin permiso"). Es lo
@@ -197,7 +204,8 @@ Entes
            · se comparte sumando participantes · emite y dispara: alta, estado
            · congelada (no es un estado: un flag aparte) si el alta se parece a otra obra; la ve solo
              quien la cargó, no se vincula, no cambia de estado ni se transfiere; el alta cuenta al
-             aprobarse
+             aprobarse · también la edición que la hace parecida: la siguen viendo los de antes, y
+             rechazar vuelve el dato anterior
 No son entes
 ├── participante — obras_participantes (obra, usuario, equipo_id guardado); con obras_ver
 └── comisión     — obras_comisiones (vinculo_id → contactos_vinculos, porcentaje | monto): el

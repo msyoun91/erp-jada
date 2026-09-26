@@ -84,7 +84,8 @@ las obras (`decisiones/obras.md` → *Altas parecidas*). Pedido del usuario, sob
 
 - **Se compara contra todo:** personas contra todas las agendas (nombre, y teléfono y email
   normalizados); empresas contra todas las empresas, de cualquier equipo (nombre). Antes de guardar,
-  aviso a ciegas: nombre y dueño, nada más. Editar avisa y no congela.
+  aviso a ciegas: nombre y dueño, nada más. Editar un dato comparado que pasa a coincidir también
+  congela (`decisiones/obras.md` → *Editar también congela*).
 - **Congelada:** la ve solo quien la cargó, y la puede editar. No se vincula (ni a una obra ni a una
   empresa) y no se transfiere. El bloqueo, con triggers en la base.
 - **Aprueba `contactos_aprobar`, no el jefe:** una función que asigna el admin, no delegable. En
