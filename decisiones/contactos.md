@@ -42,6 +42,10 @@ no `creado_por`. "Transferir persona": el dueño y el admin. En la baja, la agen
 equipo, como las obras (`decisiones/obras.md` → *Bajas y cambios de equipo*); así el jefe la reparte
 con "transferir". En un cambio de equipo, el admin elige en ese momento si pasa al jefe (por defecto) o
 se queda con la persona. Sin jefe, o si era independiente, queda con dueño inactivo y la transfiere el admin.
+Se encuentran como en Obras (2026-09-26): filtro "huérfanas" (dueño inactivo) en Personas, con
+`contactos_administrar`, y campanita "personas huérfanas" a quienes la tienen, una por hecho, con la
+cantidad. Una empresa sin equipo cuya cargadora queda inactiva no la ve nadie: entra en el mismo filtro,
+en Empresas, y el admin le asigna un equipo (`equipo_id`).
 Mecánica, al escribir el SQL: `asignar_equipo` suma el parámetro. Precedente: `designar_delegador`
 ya mueve `tareas_equipo` (`sql/112`).
 
@@ -168,7 +172,7 @@ Acciones
 │            · ver teléfono y email (registra) · transferir (dueño, admin) · desactivar
 │            · reactivar y fusionar (admin)
 ├── empresa: crear (congelada si se parece) · editar (quien la ve; queda en contactos_ediciones)
-│            · sumar razón social · desactivar · reactivar y fusionar (admin)
+│            · sumar razón social · desactivar · reactivar, fusionar y asignar equipo (admin)
 ├── alta congelada: aprobar (persona: solo si es homónima) · rechazar (motivo) · "es la misma"
 │                  (rechaza; opcional, vincula la existente a la obra y rol de la congelada)
 │                  — contactos_aprobar
@@ -181,6 +185,8 @@ Eventos que emite
 └── campanita (nunca al que hizo la acción):
     ├── contacto transferido → el nuevo dueño
     ├── agenda recibida      → el jefe, por baja o cambio de equipo; una por hecho, con la cantidad
+    ├── personas huérfanas   → quienes tienen contactos_administrar, cuando no hay jefe que las
+    │                          reciba; una por hecho, con la cantidad
     ├── alta por aprobar     → quienes tienen contactos_aprobar
     └── alta resuelta        → quien la cargó: aprobada, rechazada (con motivo) o "es la misma"
 Eventos que consume
@@ -190,7 +196,8 @@ Eventos que consume
 ```
 Módulo: Contactos
 ├── Contactos (vista, contactos_ver)           — vendedor, jefe comercial, admin
-│   │   pestañas Personas · Empresas
+│   │   pestañas Personas · Empresas · filtro huérfanas (contactos_administrar): dueño inactivo;
+│   │   empresa sin equipo con cargadora inactiva
 │   ├── contactos_aprobar (funcion)            — aprobador de altas: lista "Por aprobar"
 │   └── contactos_administrar (funcion)        — admin: ve todo, fusiona, reactiva
 └── Auditoría (vista, contactos_auditoria)     — auditor, admin: quién miró qué contacto
