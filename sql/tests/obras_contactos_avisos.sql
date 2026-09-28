@@ -140,6 +140,19 @@ FROM (VALUES
 SET CONSTRAINTS ALL IMMEDIATE;
 SET CONSTRAINTS ALL DEFERRED;
 
+-- Tramo 3: lo que cargan quienes pueden aprobar no se congela. Este test
+-- prueba reglas de antes, con obras y contactos que se parecen entre sí; el
+-- congelado lo prueba `sql/tests/duplicados.sql`.
+INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+SELECT DISTINCT us.usuario_id, f.id
+FROM usuario_submodulos us
+JOIN ids i          ON i.id = us.usuario_id
+JOIN submodulos v   ON v.id = us.submodulo_id AND v.codigo IN ('obras_ver', 'contactos_ver')
+JOIN submodulos f   ON f.activo AND f.codigo = replace(v.codigo, '_ver', '_aprobar')
+WHERE us.activo;
+SET CONSTRAINTS ALL IMMEDIATE;
+SET CONSTRAINTS ALL DEFERRED;
+
 -- ============================================================
 -- 01 — Transferir una obra: el nuevo responsable recibe, el actor no
 -- ============================================================

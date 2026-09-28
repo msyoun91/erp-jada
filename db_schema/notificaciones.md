@@ -42,6 +42,15 @@ todavía lo vea.
 
 Los de `usuarios` desaparecen en 0 y uno nuevo sobre la misma persona reemplaza al anterior.
 
+**Altas parecidas (`sql/137`–`sql/139`).** Los resuelve `duplicados_avisos()` (DEFINER, solo los
+avisos propios): el aprobador no ve la congelada y quien la cargó no ve la rechazada.
+
+| entidad | tipos | resuelve | `destino` |
+|---|---|---|---|
+| `obras`, `contactos_personas`, `contactos_empresas` | `alta_por_aprobar` (a quienes tienen `obras_aprobar` / `contactos_aprobar`, al congelarse) | nombre; `motivo` = "edición" si lo es; desaparece al resolverse | `obras_por_aprobar`, `contactos_por_aprobar` |
+| ídem | `alta_aprobada`, `alta_rechazada`, `alta_es_la_misma` (al responsable; de una empresa, quien la cargó) | nombre; `motivo` = vínculos que no se crearon, el motivo del rechazo o el nombre de la existente | `obra` / `persona` / `empresa` si lo ve (de "es la misma", la existente) |
+| `obras_participantes` | `obra_misma_sumado` (al responsable de la existente) | nombre de la obra; `motivo` = quién se sumó | `obra` |
+
 ## Sumar un evento
 
 1. `ALTER TYPE tipo_notificacion ADD VALUE '<tipo>'`, en su propia transacción: el valor no se puede usar antes del commit y `notificaciones_listar` lo castea al crearse.
@@ -59,7 +68,7 @@ Los de `usuarios` desaparecen en 0 y uno nuevo sobre la misma persona reemplaza 
 | id | uuid PK | |
 | usuario_id | uuid FK → usuarios | destinatario |
 | tipo | enum `tipo_notificacion` | `miembro_nuevo` \| `permiso_otorgado` \| `delegador_designado` \| los diecinueve de tareas \| los ocho de obras y contactos (`sql/132`) |
-| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos`, `tareas`, `tareas_hilos`, `usuarios`, `obras`, `obras_participantes`, `contactos_personas` (`sql/134`) |
+| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos`, `tareas`, `tareas_hilos`, `usuarios`, `obras`, `obras_participantes`, `contactos_personas` (`sql/134`), `contactos_empresas` (`sql/138`) |
 | entidad_id | uuid | sin FK — apunta a varias tablas |
 | actor_id | uuid FK → usuarios, nullable | quién lo provocó. Null = evento del sistema |
 | leida_at | timestamptz, nullable | |

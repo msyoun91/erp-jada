@@ -112,8 +112,9 @@ resolviera después, y el usuario eligió congelar. Contactos hace lo mismo con 
   nombre, teléfono, email; empresa: nombre) y el valor nuevo coincide con otro registro; notas u otros
   campos, no. La ven los que ya la veían, y sus vínculos siguen; se frena lo mismo que en el alta (no se
   vincula, no cambia de estado, no se transfiere). Salidas: aprobar (homónima) · rechazar con motivo,
-  que vuelve el dato a su valor anterior sin desactivar (el registro era válido, no el cambio) · "es la
-  misma". Descartado: aceptarlo (el aviso a ciegas no alcanza) y avisar sin congelar.
+  que vuelve el dato a su valor anterior sin desactivar (el registro era válido, no el cambio).
+  Descartado: aceptarlo (el aviso a ciegas no alcanza) y avisar sin congelar. ~~"Es la misma"~~, ver
+  abajo *"Es la misma" es solo para un alta*.
 - **Lo que se congela, en la fila (2026-09-28).** Obra, persona y empresa llevan `congelada boolean`,
   `congelada_antes jsonb` (los datos comparados como estaban aprobados; NULL si es un alta) y
   `rechazo_motivo`. Rechazar un alta la desactiva; rechazar una edición restaura `congelada_antes` y
@@ -139,6 +140,20 @@ resolviera después, y el usuario eligió congelar. Contactos hace lo mismo con 
   él a mano. Si la existente ya tenía a Marta abierta, se suman los roles, y un paso "vincular referente"
   se completa solo. Rechazar descarta el vínculo; Marta sigue en la agenda de Pedro. La comisión la
   registra Juan, y Pedro no la ve (participante); si el responsable tiene que ser Pedro, se transfiere.
+- **"Es la misma" es solo para un alta (2026-09-28, al escribir `sql/139`).** En una edición, las dos
+  obras ya existían, con vínculos, historial y quizás presupuestos: unirlas es fusionar (tramo 4), no
+  desactivar una. La edición parecida se aprueba o se rechaza. `obras_resolver`, OB022.
+- **La existente queda en la fila: `misma_que` (2026-09-28).** Obra, persona y empresa. Es lo que
+  permite a "es la misma" sumar a quien cargó como participante sin tener la obra a cargo (la fila con
+  `misma_que`, en la misma transacción, autoriza OB013), y al aviso linkear a la existente.
+- **El vínculo con una punta congelada: se guarda solo en el paso en que nace (2026-09-28).** Crear y
+  vincular, o el "¿Quién?" del alta, van a `contactos_vinculos_guardados` si la obra o el contacto
+  nacen congelados en esa misma transacción (`created_at = now()`: el cliente no lo escribe). Vincular
+  después a algo congelado es CO020. Así `obras_alta` y `contactos_crear_y_vincular` no cambiaron: el
+  trigger de vincular decide. Archivos: `sql/139`.
+- **El aviso de la decisión va al dueño (2026-09-28).** Al responsable de la obra o la persona, y a
+  quien cargó la empresa. En un alta es quien la cargó; en una edición, el dueño y no quien editó (no
+  se guarda quién editó). Con "es la misma", Pedro recibe además "te sumaron a Torre Belgrano".
 - **Avisos:** "alta por aprobar" a quienes tienen `obras_aprobar`; la decisión, con motivo, a quien la
   cargó. Con "es la misma", también al responsable de la existente: "Pedro se sumó a Torre Belgrano, con
   Marta Gómez como referente". La acción es del aprobador, así que "sumado a una obra" solo avisaba a

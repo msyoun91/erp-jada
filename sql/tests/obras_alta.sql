@@ -140,6 +140,19 @@ SELECT pg_temp.id(u), pg_temp.id(s) FROM (VALUES
 SET CONSTRAINTS ALL IMMEDIATE;
 SET CONSTRAINTS ALL DEFERRED;
 
+-- Tramo 3: lo que cargan quienes pueden aprobar no se congela. Este test
+-- prueba reglas de antes, con obras y contactos que se parecen entre sí; el
+-- congelado lo prueba `sql/tests/duplicados.sql`.
+INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+SELECT DISTINCT us.usuario_id, f.id
+FROM usuario_submodulos us
+JOIN ids i          ON i.id = us.usuario_id
+JOIN submodulos v   ON v.id = us.submodulo_id AND v.codigo IN ('obras_ver', 'contactos_ver')
+JOIN submodulos f   ON f.activo AND f.codigo = replace(v.codigo, '_ver', '_aprobar')
+WHERE us.activo;
+SET CONSTRAINTS ALL IMMEDIATE;
+SET CONSTRAINTS ALL DEFERRED;
+
 SELECT pg_temp.caso('00 montaje: Marta, de Juan', 'ok', pg_temp.intentar(format(
   'INSERT INTO contactos_personas (id, nombre) VALUES (%L, %L)', pg_temp.id('Marta'), 'Zqx128 Marta'), 'Juan'));
 SELECT pg_temp.caso('00 montaje: Estudio J, de Juan (Norte)', 'ok', pg_temp.intentar(format(

@@ -69,6 +69,11 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   persona_transferida: ArrowRightLeft,
   agenda_recibida: Inbox,
   personas_huerfanas: UserX,
+  alta_por_aprobar: TriangleAlert,
+  alta_aprobada: CircleCheck,
+  alta_rechazada: CircleX,
+  alta_es_la_misma: Shuffle,
+  obra_misma_sumado: UserPlus,
 };
 const TEXTO: Record<TipoNotificacion, string> = {
   miembro_nuevo: "Se sumó a tu equipo",
@@ -101,6 +106,11 @@ const TEXTO: Record<TipoNotificacion, string> = {
   persona_transferida: "Ahora está en tu agenda",
   agenda_recibida: "Recibiste la agenda de",
   personas_huerfanas: "Quedaron personas huérfanas de",
+  alta_por_aprobar: "Espera aprobación:",
+  alta_aprobada: "Aprobaron",
+  alta_rechazada: "Rechazaron",
+  alta_es_la_misma: "Resolvieron como ya existente:",
+  obra_misma_sumado: "Se sumó alguien a",
 };
 const COLOR: Record<TipoNotificacion, string> = {
   miembro_nuevo: "text-brand-500",
@@ -133,6 +143,11 @@ const COLOR: Record<TipoNotificacion, string> = {
   persona_transferida: "text-brand-500",
   agenda_recibida: "text-brand-500",
   personas_huerfanas: "text-error-text",
+  alta_por_aprobar: "text-warning-text",
+  alta_aprobada: "text-success-text",
+  alta_rechazada: "text-error-text",
+  alta_es_la_misma: "text-brand-500",
+  obra_misma_sumado: "text-brand-500",
 };
 
 // `destino` → ruta. Cada rama de `notificaciones_listar` que devuelva un
@@ -147,6 +162,7 @@ const RUTA: Record<string, (id: string) => string> = {
   obras: () => "/obras",
   obras_todas: (id) => `/obras/todas?responsable=${id}`,
   persona: (id) => `/contactos/personas/${id}`,
+  empresa: (id) => `/contactos/empresas/${id}`,
   contactos: (id) => `/contactos?responsable=${id}`,
 };
 

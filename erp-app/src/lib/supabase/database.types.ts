@@ -108,39 +108,51 @@ export type Database = {
       contactos_empresas: {
         Row: {
           activo: boolean
+          congelada: boolean
+          congelada_antes: Json | null
           creado_por: string
           created_at: string
           email: string | null
           equipo_id: string | null
           id: string
+          misma_que: string | null
           nombre: string
           notas: string | null
+          rechazo_motivo: string | null
           telefono: string | null
           updated_at: string
           web: string | null
         }
         Insert: {
           activo?: boolean
+          congelada?: boolean
+          congelada_antes?: Json | null
           creado_por?: string
           created_at?: string
           email?: string | null
           equipo_id?: string | null
           id?: string
+          misma_que?: string | null
           nombre: string
           notas?: string | null
+          rechazo_motivo?: string | null
           telefono?: string | null
           updated_at?: string
           web?: string | null
         }
         Update: {
           activo?: boolean
+          congelada?: boolean
+          congelada_antes?: Json | null
           creado_por?: string
           created_at?: string
           email?: string | null
           equipo_id?: string | null
           id?: string
+          misma_que?: string | null
           nombre?: string
           notas?: string | null
+          rechazo_motivo?: string | null
           telefono?: string | null
           updated_at?: string
           web?: string | null
@@ -226,36 +238,48 @@ export type Database = {
       contactos_personas: {
         Row: {
           activo: boolean
+          congelada: boolean
+          congelada_antes: Json | null
           creado_por: string
           created_at: string
           email: string | null
           id: string
+          misma_que: string | null
           nombre: string
           notas: string | null
+          rechazo_motivo: string | null
           responsable_id: string
           telefono: string | null
           updated_at: string
         }
         Insert: {
           activo?: boolean
+          congelada?: boolean
+          congelada_antes?: Json | null
           creado_por?: string
           created_at?: string
           email?: string | null
           id?: string
+          misma_que?: string | null
           nombre: string
           notas?: string | null
+          rechazo_motivo?: string | null
           responsable_id?: string
           telefono?: string | null
           updated_at?: string
         }
         Update: {
           activo?: boolean
+          congelada?: boolean
+          congelada_antes?: Json | null
           creado_por?: string
           created_at?: string
           email?: string | null
           id?: string
+          misma_que?: string | null
           nombre?: string
           notas?: string | null
+          rechazo_motivo?: string | null
           responsable_id?: string
           telefono?: string | null
           updated_at?: string
@@ -350,6 +374,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contactos_vinculos_guardados: {
+        Row: {
+          a_empresa_id: string | null
+          activo: boolean
+          cargado_por: string
+          cargo: string | null
+          created_at: string
+          empresa_id: string | null
+          ente: string | null
+          id: string
+          persona_id: string | null
+          registro_id: string | null
+          resultado: string | null
+          roles: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          a_empresa_id?: string | null
+          activo?: boolean
+          cargado_por: string
+          cargo?: string | null
+          created_at?: string
+          empresa_id?: string | null
+          ente?: string | null
+          id?: string
+          persona_id?: string | null
+          registro_id?: string | null
+          resultado?: string | null
+          roles?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          a_empresa_id?: string | null
+          activo?: boolean
+          cargado_por?: string
+          cargo?: string | null
+          created_at?: string
+          empresa_id?: string | null
+          ente?: string | null
+          id?: string
+          persona_id?: string | null
+          registro_id?: string | null
+          resultado?: string | null
+          roles?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       entes: {
         Row: {
@@ -514,6 +586,8 @@ export type Database = {
         Row: {
           activo: boolean
           compra_estimada: string | null
+          congelada: boolean
+          congelada_antes: Json | null
           creado_por: string
           created_at: string
           direccion: string
@@ -522,10 +596,12 @@ export type Database = {
           estado_nota: string | null
           id: string
           localidad: string | null
+          misma_que: string | null
           motivo_perdida: Database["public"]["Enums"]["motivo_perdida"] | null
           nombre: string
           notas: string | null
           origen: Database["public"]["Enums"]["origen_obra"]
+          rechazo_motivo: string | null
           responsable_id: string
           tipo: Database["public"]["Enums"]["tipo_obra"]
           updated_at: string
@@ -533,6 +609,8 @@ export type Database = {
         Insert: {
           activo?: boolean
           compra_estimada?: string | null
+          congelada?: boolean
+          congelada_antes?: Json | null
           creado_por?: string
           created_at?: string
           direccion: string
@@ -541,10 +619,12 @@ export type Database = {
           estado_nota?: string | null
           id?: string
           localidad?: string | null
+          misma_que?: string | null
           motivo_perdida?: Database["public"]["Enums"]["motivo_perdida"] | null
           nombre: string
           notas?: string | null
           origen: Database["public"]["Enums"]["origen_obra"]
+          rechazo_motivo?: string | null
           responsable_id?: string
           tipo: Database["public"]["Enums"]["tipo_obra"]
           updated_at?: string
@@ -552,6 +632,8 @@ export type Database = {
         Update: {
           activo?: boolean
           compra_estimada?: string | null
+          congelada?: boolean
+          congelada_antes?: Json | null
           creado_por?: string
           created_at?: string
           direccion?: string
@@ -560,10 +642,12 @@ export type Database = {
           estado_nota?: string | null
           id?: string
           localidad?: string | null
+          misma_que?: string | null
           motivo_perdida?: Database["public"]["Enums"]["motivo_perdida"] | null
           nombre?: string
           notas?: string | null
           origen?: Database["public"]["Enums"]["origen_obra"]
+          rechazo_motivo?: string | null
           responsable_id?: string
           tipo?: Database["public"]["Enums"]["tipo_obra"]
           updated_at?: string
@@ -1578,6 +1662,48 @@ export type Database = {
           telefono: string
         }[]
       }
+      contactos_parecidas: {
+        Args: {
+          p_email?: string
+          p_id?: string
+          p_nombre: string
+          p_telefono?: string
+          p_tipo: string
+        }
+        Returns: {
+          coincide: string[]
+          dueno: string
+          equipo: string
+          id: string
+          nombre: string
+        }[]
+      }
+      contactos_por_aprobar: {
+        Args: never
+        Returns: {
+          antes: Json
+          created_at: string
+          dueno: string
+          equipo: string
+          guardados: Json
+          id: string
+          nombre: string
+          notas: string
+          parecidas: Json
+          tipo: string
+        }[]
+      }
+      contactos_resolver: {
+        Args: {
+          p_decision: string
+          p_existente?: string
+          p_id: string
+          p_motivo?: string
+          p_tipo: string
+          p_vincular?: boolean
+        }
+        Returns: undefined
+      }
       contactos_vinculables: {
         Args: { p_texto: string }
         Returns: {
@@ -1595,6 +1721,16 @@ export type Database = {
       designar_delegador: {
         Args: { p_admin: string; p_usuario: string }
         Returns: undefined
+      }
+      duplicados_avisos: {
+        Args: never
+        Returns: {
+          destino: string
+          destino_id: string
+          etiqueta: string
+          motivo: string
+          notificacion_id: string
+        }[]
       }
       emitir_evento: {
         Args: {
@@ -1704,6 +1840,42 @@ export type Database = {
       obras_puede_abrir: {
         Args: { p_id: string; p_tipo: string; p_usuario: string }
         Returns: boolean
+      }
+      obras_parecidas: {
+        Args: { p_direccion: string; p_nombre: string; p_obra?: string }
+        Returns: {
+          direccion: string
+          id: string
+          nombre: string
+          responsable: string
+        }[]
+      }
+      obras_por_aprobar: {
+        Args: never
+        Returns: {
+          antes: Json
+          created_at: string
+          direccion: string
+          estado: Database["public"]["Enums"]["estado_obra"]
+          guardados: Json
+          id: string
+          localidad: string
+          nombre: string
+          notas: string
+          origen: Database["public"]["Enums"]["origen_obra"]
+          parecidas: Json
+          responsable: string
+          tipo: Database["public"]["Enums"]["tipo_obra"]
+        }[]
+      }
+      obras_resolver: {
+        Args: {
+          p_decision: string
+          p_existente?: string
+          p_motivo?: string
+          p_obra: string
+        }
+        Returns: undefined
       }
       obras_puede_ver_obra: {
         Args: {
@@ -1991,6 +2163,11 @@ export type Database = {
         | "persona_transferida"
         | "agenda_recibida"
         | "personas_huerfanas"
+        | "alta_por_aprobar"
+        | "alta_aprobada"
+        | "alta_rechazada"
+        | "alta_es_la_misma"
+        | "obra_misma_sumado"
       tipo_obra:
         | "edificio_residencial"
         | "casa"
@@ -2200,6 +2377,11 @@ export const Constants = {
         "persona_transferida",
         "agenda_recibida",
         "personas_huerfanas",
+        "alta_por_aprobar",
+        "alta_aprobada",
+        "alta_rechazada",
+        "alta_es_la_misma",
+        "obra_misma_sumado",
       ],
       tipo_obra: [
         "edificio_residencial",

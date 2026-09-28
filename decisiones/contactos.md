@@ -159,6 +159,10 @@ las obras (`decisiones/obras.md` → *Altas parecidas*). Pedido del usuario, sob
   del otro. El camino esperado es no crearla y pedírsela a ese equipo (*Una empresa se comparte*); por
   eso el aviso a ciegas de una empresa dice también el equipo.
 - **Avisos:** "alta por aprobar" a quienes tienen `contactos_aprobar`; la decisión, a quien la cargó.
+- **El aprobador ve la persona congelada (2026-09-28).** Para "Ver contacto" sobre ella, que registra:
+  `contactos_puede_ver_persona_de` suma `contactos_aprobar` mientras está congelada. "Es la misma", solo
+  para un alta; guardar el vínculo solo en el paso en que nace; el aviso, al dueño: como Obras
+  (`decisiones/obras.md` → *Altas parecidas*).
 
 ## Vincular: buscar o crear en el mismo panel (2026-09-26)
 

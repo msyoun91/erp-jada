@@ -4,15 +4,15 @@ Personas, empresas y sus vínculos con cualquier registro (`sql/127`). Ficha y d
 `decisiones/contactos.md`.
 
 **Estado:** tramo 1 (`BACKLOG.md`) — `sql/127`, `sql/128` (buscar o crear en el panel) y `sql/129`
-(desactivar vínculos por función), aplicados el 2026-09-26. Tramo 2: `sql/132`–`sql/134` (bajas, huérfanas, campanitas). Faltan congelado, compartir empresa, razones sociales, fusionar,
-Auditoría.
+(desactivar vínculos por función), aplicados el 2026-09-26. Tramo 2: `sql/132`–`sql/134` (bajas, huérfanas, campanitas). Tramo 3: `sql/137`–`sql/139` (congelado,
+vínculos guardados, "Por aprobar"). Faltan compartir empresa, razones sociales, fusionar, Auditoría.
 
 ## Ver
 
 | | la ven | función |
 |---|---|---|
-| **Persona** | `contactos_administrar`; con `contactos_ver`: su dueño (activa) y quien ve un registro al que está vinculada (vínculo activo, abierto o cerrado) | `contactos_puede_ver_persona_de(persona, responsable, activo, usuario)` |
-| **Empresa** | `contactos_administrar`; con `contactos_ver`: su equipo (sin equipo, quien la cargó), activa, y quien ve un registro vinculado | `contactos_puede_ver_empresa_de(empresa, equipo, creado_por, activo, usuario)` |
+| **Persona** | `contactos_administrar`; con `contactos_ver`: su dueño (activa), quien ve un registro al que está vinculada (vínculo activo, abierto o cerrado) y, si está congelada, `contactos_aprobar` | `contactos_puede_ver_persona_de(persona, responsable, activo, usuario)` |
+| **Empresa** | `contactos_administrar`; con `contactos_ver`: su equipo (sin equipo, quien la cargó; un alta congelada, solo quien la cargó), activa, y quien ve un registro vinculado | `contactos_puede_ver_empresa_de(empresa, equipo, creado_por, activo, usuario)` |
 
 "Ve el registro" es `puede_abrir_registro` (DEFINER), porque "Ver contacto" pregunta desde una función
 DEFINER. Las `_de` son DEFINER sin GRANT; los envoltorios `contactos_puede_ver_persona(...)` y
@@ -32,8 +32,12 @@ DEFINER. Las `_de` son DEFINER sin GRANT; los envoltorios `contactos_puede_ver_p
 | activo | boolean | |
 | created_at / updated_at | timestamptz | |
 
-GRANT: SELECT (`id, nombre, notas, responsable_id, creado_por, activo, created_at, updated_at` — un
-`select *` falla con 42501); INSERT (`id, nombre, telefono, email, notas`); UPDATE (`nombre, telefono,
+Más `congelada`, `congelada_antes` (`{nombre, telefono, email}`), `rechazo_motivo` y `misma_que`, como
+en `obras.md`; empresa igual, con `congelada_antes` `{nombre}`.
+
+GRANT: SELECT (`id, nombre, notas, responsable_id, creado_por, activo, created_at, updated_at,
+congelada, rechazo_motivo, misma_que` — `congelada_antes` guarda teléfono y email; un `select *` falla
+con 42501); INSERT (`id, nombre, telefono, email, notas`); UPDATE (`nombre, telefono,
 email, notas, activo`). Teléfono y email se leen con `contactos_ver_contacto`.
 
 ## contactos_empresas — ente `empresa`
@@ -80,8 +84,12 @@ Unique parcial por contacto: `(persona_id, ente, registro_id)` y `(empresa_id, e
 
 RLS: SELECT si `etiqueta_registro(ente, registro_id)` no es NULL (el desactivado, solo el admin);
 INSERT con la misma condición; UPDATE sobre los activos. Trigger `contactos_vinculos_validar`: vincula
-y cambia quien trabaja el registro (`trabaja_registro`, CO015); al crear, además el dueño de la persona
-o el equipo de la empresa (o `contactos_administrar`, CO016), con el contacto activo (CO009). Cerrado,
+y cambia quien trabaja el registro (CO015); al crear, además el dueño de la persona o el equipo de la
+empresa (o `contactos_administrar`, CO016), con el contacto activo (CO009). Al crear, el actor es
+`NEW.creado_por` (fuera del GRANT: del cliente, siempre él; `trabaja_registro_de`), y un guardado
+activo de ese contacto, registro y `cargado_por` también autoriza. Con una punta congelada de antes,
+CO020; congelada en este mismo paso, la fila va a `contactos_vinculos_guardados` y no se inserta.
+`contactos_persona_empresa_validar` hace lo mismo con la empresa de la persona. Cerrado,
 no se reabre ni cambia (CO010); desactivado, no vuelve (CO011). GRANT: INSERT (`id, persona_id,
 empresa_id, ente, registro_id, roles, desde`), UPDATE (`roles, hasta, activo`).
 
@@ -89,6 +97,33 @@ Eventos: dos triggers `WHEN`, uno por columna del contacto:
 `emitir_eventos_relacion('ente', 'registro_id', 'persona'|'empresa', 'persona_id'|'empresa_id')` —
 `relacion_alta` / `relacion_baja` del lado del registro, uno por rol; cerrar (`hasta`) o desactivar es
 la baja de todos.
+
+## contactos_vinculos_guardados — lo que espera a que se apruebe (`sql/139`)
+
+`persona_id` | `empresa_id` (uno), y un registro (`ente`, `registro_id`, `roles`) o la empresa de la
+persona (`a_empresa_id`, `cargo`); `cargado_por`, `resultado` (`creado` | `descartado` |
+`sin_permiso`, NULL mientras está activo), `activo`. RLS sin policies, sin GRANT: la escriben los
+triggers de vincular y las funciones de resolver.
+
+- `contactos_crear_guardados(id)` — los de ese id cuyas puntas ya no están congeladas: crea el vínculo
+  a nombre de `cargado_por` (suma roles si ya hay uno abierto); si las reglas lo rechazan,
+  `sin_permiso`. `contactos_descartar_guardados(id)`. DEFINER, sin GRANT.
+
+## Altas parecidas (`sql/138`, `sql/139`)
+
+- `contactos_personas_parecidas_de(persona, nombre, telefono, email) → (id, coincide[])`: mismo
+  teléfono, mismo email o nombre ≥ 0,55. `contactos_empresas_parecidas_de(empresa, nombre)`: nombre ≥
+  0,45. DEFINER, sin GRANT.
+- Triggers `contactos_personas_congelar` / `contactos_empresas_congelar`, como en obras; sin
+  `contactos_aprobar` congela. Congelada, la persona no se transfiere ni se vincula (CO020).
+- `contactos_parecidas(tipo, nombre, telefono?, email?, id?) → (id, nombre, dueno, equipo, coincide)` —
+  aviso a ciegas; id y qué coincidió solo si es tuya.
+- `contactos_por_aprobar()` — personas y empresas congeladas, con parecidas (qué coincidió, sin el
+  dato) y guardados. Sin `contactos_aprobar`, vacía.
+- `contactos_resolver(tipo, id, decision, motivo?, existente?, vincular = true)`: `aprobar` (persona:
+  solo homónima, CO023) · `rechazar` (CO024 sin motivo) · `es_la_misma` (solo un alta, CO025;
+  existente activa y aprobada, CO026): con `vincular`, los guardados con registros pasan a la
+  existente y se crean a nombre de quien cargó. CO021 sin permiso, CO022 si no espera.
 
 ## contactos_ediciones y contactos_accesos — logs
 
@@ -151,16 +186,19 @@ alguien. Ver `notificaciones.md`.
 | `contactos_ver` | vista "Ver" | — | sí |
 | `contactos_administrar` | función "Administrar" | `contactos_ver` | no |
 
-`contactos_aprobar` y `contactos_auditoria` entran con su tramo.
+`contactos_aprobar` (función "Aprobar altas", vista `contactos_ver`, no delegable) entra en `sql/138`;
+`contactos_auditoria`, con su tramo.
 
 ## Entes y eventos
 
 Filas `persona` (ruta `/contactos/personas/{id}`) y `empresa` (`/contactos/empresas/{id}`) en `entes`:
-sin estados, `datos` `{nombre}`, sin roles, sin disparos. Triggers `emitir_eventos`: persona con
-`('persona', 'responsable_id')` (alta, baja, reactivación, transferencia); empresa con `('empresa')`.
+sin estados, `datos` `{nombre}`, sin roles, sin disparos. Triggers `emitir_eventos` (también `OF
+congelada`): persona con `('persona', 'responsable_id')` (alta, baja, reactivación, transferencia);
+empresa con `('empresa')`. El alta congelada emite al aprobarse.
 
 Ramas: `contactos_etiqueta` (nombre), `contactos_puede_abrir(tipo, id, usuario)` (DEFINER, sin GRANT),
 `contactos_buscar(texto)` y `contactos_puede_ver_relacion(ente, id, contacto)`: la rama de
 `puede_ver_relacion` para cualquier relación con un contacto, sea cual sea el módulo del registro.
 
-Tests: `sql/tests/contactos_reglas.sql`, `sql/tests/obras_alta.sql`, `sql/tests/obras_nombres.sql`.
+Tests: `sql/tests/contactos_reglas.sql`, `sql/tests/obras_alta.sql`, `sql/tests/obras_nombres.sql`,
+`sql/tests/duplicados.sql`.

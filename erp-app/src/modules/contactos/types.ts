@@ -14,8 +14,9 @@ type Funciones = Database["public"]["Functions"];
 
 // Teléfono y email de una persona están fuera del GRANT SELECT: se leen con
 // "Ver contacto" (`contactos_ver_contacto`), que deja registro.
-export const COLUMNAS_PERSONA = "id, nombre, notas, responsable_id, creado_por, activo, created_at, updated_at";
-export type Persona = Omit<Tablas["contactos_personas"]["Row"], "telefono" | "email">;
+export const COLUMNAS_PERSONA =
+  "id, nombre, notas, responsable_id, creado_por, activo, created_at, updated_at, congelada, rechazo_motivo, misma_que";
+export type Persona = Omit<Tablas["contactos_personas"]["Row"], "telefono" | "email" | "congelada_antes">;
 export type Empresa = Tablas["contactos_empresas"]["Row"];
 export type PersonaEmpresa = Tablas["contactos_persona_empresa"]["Row"];
 export type Vinculo = Tablas["contactos_vinculos"]["Row"];

@@ -201,7 +201,7 @@ FROM unnest(ARRAY['G','A','J','V','H','W','I','V2','V3','W2','Q','J2','H2',
 
 INSERT INTO ids (nombre, id)
 SELECT codigo, id FROM submodulos
-WHERE activo AND codigo IN ('obras_ver','obras_crear','obras_equipo','obras_todas','obras_administrar',
+WHERE activo AND codigo IN ('obras_ver','obras_crear','obras_equipo','obras_todas','obras_administrar','obras_aprobar',
                             'contactos_ver','contactos_administrar',
                             'usuarios_ver','usuarios_gestionar','usuarios_delegar','usuarios_equipo','tareas_ver','tareas_equipo');
 
@@ -236,6 +236,19 @@ FROM (VALUES
   ('J2','contactos_ver'), ('J2','obras_ver'), ('J2','obras_equipo'), ('J2','usuarios_equipo'), ('J2','usuarios_delegar'), ('J2','tareas_ver'), ('J2','tareas_equipo'),
   ('H2','contactos_ver'), ('H2','obras_ver'), ('H2','obras_crear')
 ) AS p (u, s);
+SET CONSTRAINTS ALL IMMEDIATE;
+SET CONSTRAINTS ALL DEFERRED;
+
+-- Tramo 3: lo que cargan quienes pueden aprobar no se congela. Este test
+-- prueba reglas de antes, con obras y contactos que se parecen entre sí; el
+-- congelado lo prueba `sql/tests/duplicados.sql`.
+INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+SELECT DISTINCT us.usuario_id, f.id
+FROM usuario_submodulos us
+JOIN ids i          ON i.id = us.usuario_id
+JOIN submodulos v   ON v.id = us.submodulo_id AND v.codigo IN ('obras_ver', 'contactos_ver')
+JOIN submodulos f   ON f.activo AND f.codigo = replace(v.codigo, '_ver', '_aprobar')
+WHERE us.activo;
 SET CONSTRAINTS ALL IMMEDIATE;
 SET CONSTRAINTS ALL DEFERRED;
 
@@ -353,6 +366,7 @@ SELECT pg_temp.caso('07 A no tenía huérfanas de W2 todavía', '-', pg_temp.fil
 -- obras_crear es función de la vista obras_ver (US001): se apaga primero para
 -- poder apagar la vista sin dar de baja a W2.
 SELECT pg_temp.caso('07 se le apaga obras_crear a W2 (función de la vista)', 'ok', pg_temp.perder_permiso('W2', 'obras_crear'));
+SELECT pg_temp.caso('07 y obras_aprobar (tramo 3, ver el montaje)', 'ok', pg_temp.perder_permiso('W2', 'obras_aprobar'));
 SELECT pg_temp.caso('07 se le apaga obras_ver a W2 (sin baja)', 'ok', pg_temp.perder_permiso('W2', 'obras_ver'));
 SELECT pg_temp.caso('07 A recibe obras_huerfanas sobre W2', '1 obra|obras_todas', pg_temp.fila('A', 'obras_huerfanas', 'W2'));
 
