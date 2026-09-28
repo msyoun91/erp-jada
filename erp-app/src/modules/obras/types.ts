@@ -13,6 +13,7 @@ export type TipoObra = Enums["tipo_obra"];
 
 export type Obra = Tablas["obras"]["Row"];
 export type Participante = Tablas["obras_participantes"]["Row"];
+export type Comision = Tablas["obras_comisiones"]["Row"];
 
 export const LABEL_ESTADO = ENTES.obra.estados;
 export const LABEL_ROL = ENTES.obra.roles;
@@ -104,6 +105,17 @@ export type TransferirForm = z.input<typeof transferirSchema>;
 
 export const participanteSchema = z.object({ obra_id: idSchema, usuario_id: idSchema });
 export type ParticipanteForm = z.input<typeof participanteSchema>;
+
+// Porcentaje "de lo contratado" o monto con moneda: uno de los dos (CHECK).
+export const comisionSchema = z
+  .object({
+    vinculo_id: idSchema,
+    tipo: z.enum(["porcentaje", "monto"]),
+    valor: z.number("Ingresá un número").positive("Tiene que ser mayor que cero"),
+    moneda: z.enum(["USD", "ARS"]).default("USD"),
+  })
+  .refine((v) => v.tipo !== "porcentaje" || v.valor <= 100, { message: "Máximo 100 %", path: ["valor"] });
+export type ComisionForm = z.input<typeof comisionSchema>;
 
 // "Es la misma" solo para un alta (OB022) y rechazar con motivo (OB021): los
 // hace valer `obras_resolver`; acá se adelanta el mensaje del motivo.

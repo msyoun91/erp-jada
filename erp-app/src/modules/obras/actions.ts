@@ -8,6 +8,7 @@ import { mensajeError } from "@/lib/utils";
 import { idSchema } from "@/lib/validacion";
 import {
   altaSchema,
+  comisionSchema,
   estadoSchema,
   obraSchema,
   parecidasSchema,
@@ -15,6 +16,7 @@ import {
   resolverSchema,
   transferirSchema,
   type AltaForm,
+  type ComisionForm,
   type EstadoForm,
   type ObraForm,
   type ParecidasForm,
@@ -127,6 +129,24 @@ export async function quitarParticipante(id: string) {
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
   const { error } = await supabase.from("obras_participantes").update({ activo: false }).eq("id", parsed.data);
+  return error ? fallo(error) : listo();
+}
+
+// Reemplaza la vigente (`obras_registrar_comision`): no se edita.
+export async function registrarComision(input: ComisionForm) {
+  const parsed = comisionSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const { vinculo_id, tipo, valor, moneda } = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc(
+    "obras_registrar_comision",
+    argsRpc<"obras_registrar_comision">({
+      p_vinculo: vinculo_id,
+      p_porcentaje: tipo === "porcentaje" ? valor : null,
+      p_monto: tipo === "monto" ? valor : null,
+      p_moneda: tipo === "monto" ? moneda : null,
+    })
+  );
   return error ? fallo(error) : listo();
 }
 

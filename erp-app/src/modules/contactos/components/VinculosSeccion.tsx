@@ -22,6 +22,10 @@ import { VincularPanel } from "./VincularPanel";
 
 type Dialogo = { tipo: "roles" | "cerrar" | "desactivar"; vinculo: VinculoDeRegistro };
 
+// Lo que otro módulo suma a un vínculo, por id (la comisión de Obras): se ve
+// en la fila, y `aviso` se lee antes de cerrarlo, sacarlo o cambiarle el rol.
+export type ExtraVinculo = { detalle: React.ReactNode; aviso?: string };
+
 function contacto(v: VinculoDeRegistro) {
   const p = v.contactos_personas;
   const e = v.contactos_empresas;
@@ -40,12 +44,14 @@ export function VinculosSeccion({
   vinculos,
   trabaja,
   vincular,
+  extras = {},
 }: {
   ente: string;
   registroId: string;
   vinculos: VinculoDeRegistro[];
   trabaja: boolean;
   vincular: string | null;
+  extras?: Record<string, ExtraVinculo>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -93,6 +99,7 @@ export function VinculosSeccion({
               {v.hasta ? `${formatFecha(v.desde)} – ${formatFecha(v.hasta)}` : `Desde ${formatFecha(v.desde)}`}
             </span>
           </p>
+          {extras[v.id]?.detalle}
         </div>
         {!c.activo && <span className="badge badge-neutral">Inactivo</span>}
         {menu.length > 0 && <OverflowMenu items={menu} />}
@@ -136,12 +143,19 @@ export function VinculosSeccion({
           onClose={cerrarPanel}
         />
       )}
-      {dialogo?.tipo === "roles" && <RolesModal ente={ente} vinculo={dialogo.vinculo} onClose={() => setDialogo(null)} />}
+      {dialogo?.tipo === "roles" && (
+        <RolesModal ente={ente} vinculo={dialogo.vinculo} aviso={extras[dialogo.vinculo.id]?.aviso} onClose={() => setDialogo(null)} />
+      )}
       {dialogo?.tipo === "cerrar" && (
         <CerrarModal
           id={dialogo.vinculo.id}
           titulo={`Cerrar vínculo de ${contacto(dialogo.vinculo).nombre}`}
-          explicacion="Deja de figurar desde esa fecha y pasa a «Anteriores». Si vuelve, se vincula de nuevo."
+          explicacion={[
+            "Deja de figurar desde esa fecha y pasa a «Anteriores». Si vuelve, se vincula de nuevo.",
+            extras[dialogo.vinculo.id]?.aviso,
+          ]
+            .filter(Boolean)
+            .join(" ")}
           accion={cerrarVinculo}
           onClose={() => setDialogo(null)}
         />
@@ -149,7 +163,9 @@ export function VinculosSeccion({
       {dialogo?.tipo === "desactivar" && (
         <ConfirmModal
           title="Cargado por error"
-          mensaje={`¿Sacar a ${contacto(dialogo.vinculo).nombre}? Es para un vínculo que no tendría que existir: si estuvo y ya no está, usá «Cerrar».`}
+          mensaje={`¿Sacar a ${contacto(dialogo.vinculo).nombre}? Es para un vínculo que no tendría que existir: si estuvo y ya no está, usá «Cerrar».${
+            extras[dialogo.vinculo.id]?.aviso ? ` ${extras[dialogo.vinculo.id]?.aviso}` : ""
+          }`}
           confirmLabel="Sacar"
           onConfirm={async () => {
             const result = await desactivarVinculo(dialogo.vinculo.id);
@@ -163,7 +179,17 @@ export function VinculosSeccion({
   );
 }
 
-function RolesModal({ ente, vinculo, onClose }: { ente: string; vinculo: VinculoDeRegistro; onClose: () => void }) {
+function RolesModal({
+  ente,
+  vinculo,
+  aviso,
+  onClose,
+}: {
+  ente: string;
+  vinculo: VinculoDeRegistro;
+  aviso?: string;
+  onClose: () => void;
+}) {
   const [enviando, setEnviando] = useState(false);
   const { handleSubmit, setValue, control, formState } = useForm<RolesForm>({
     resolver: zodResolver(rolesSchema),
@@ -194,6 +220,7 @@ function RolesModal({ ente, vinculo, onClose }: { ente: string; vinculo: Vinculo
     >
       <RolesCheck ente={ente} valor={roles} onCambio={(r) => setValue("roles", r, { shouldDirty: true })} />
       {formState.errors.roles && <p className="input-error-text">{formState.errors.roles.message}</p>}
+      {aviso && vinculo.roles.some((r) => !roles.includes(r)) && <p className="t-body-m text-warning-text">{aviso}</p>}
     </FormModal>
   );
 }

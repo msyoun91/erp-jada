@@ -63,6 +63,12 @@ segunda regla igual sería duplicación. Con la obra desactivada no la ve nadie,
 Quien la registró va en `creado_por` (no `created_by`: nombre de dominio). Archivos: `sql/142`,
 `sql/tests/obras_comisiones.sql`.
 
+**La comisión se ve en la fila del referente, no en una sección aparte (2026-09-28).** Elegido por el
+usuario: queda junto a quien la cobra, sin repetir su nombre. Contactos le deja a cada vínculo un
+`extras` (lo que se ve y un aviso para cerrar, sacar o cambiar el rol), y `obras/[id]/page.tsx` lo llena
+con `ComisionReferente`: Contactos no sabe qué es una comisión. Archivos:
+`modules/obras/components/ComisionReferente.tsx`, `modules/contactos/components/VinculosSeccion.tsx`.
+
 ## Los nombres de lo que se ve (2026-09-28)
 
 **`obras_nombres()` y `contactos_nombres()` dan el nombre de quienes figuran en lo que se ve;

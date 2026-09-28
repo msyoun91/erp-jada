@@ -1,4 +1,4 @@
-import type { MotivoPerdida, OrigenObra, TipoObra } from "./types";
+import type { Comision, MotivoPerdida, OrigenObra, TipoObra } from "./types";
 
 export const ORIGEN: Record<OrigenObra, string> = {
   referente: "Referente",
@@ -27,3 +27,8 @@ export const MOTIVO: Record<MotivoPerdida, { label: string; ejemplo: string }> =
   sin_respuesta: { label: "Sin respuesta", ejemplo: "Tres llamados sin contestar" },
   otro: { label: "Otro", ejemplo: "Contá qué pasó" },
 };
+
+export function textoComision(c: Pick<Comision, "porcentaje" | "monto" | "moneda">) {
+  if (c.porcentaje !== null) return `${c.porcentaje.toLocaleString("es-AR")} %`;
+  return `${c.moneda} ${(c.monto ?? 0).toLocaleString("es-AR")}`;
+}

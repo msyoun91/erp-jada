@@ -1,7 +1,7 @@
 import type { UsuarioBasico } from "@/lib/usuarios";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
-import type { Guardado, Obra, Parecida, Participante } from "./types";
+import type { Comision, Guardado, Obra, Parecida, Participante } from "./types";
 
 export type Evento = Database["public"]["Tables"]["eventos"]["Row"];
 
@@ -66,6 +66,20 @@ export async function getObra(id: string): Promise<ObraCompleta | null> {
     trabaja: trabaja.data ?? false,
     aCargo: aCargo.data ?? false,
   };
+}
+
+// Vigentes e historial de los vínculos dados; la RLS deja solo las de quien
+// tiene la obra a cargo. Las más nuevas primero.
+export async function getComisiones(vinculos: string[]): Promise<Comision[]> {
+  if (vinculos.length === 0) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("obras_comisiones")
+    .select("*")
+    .in("vinculo_id", vinculos)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data;
 }
 
 type FilaPorAprobar = Database["public"]["Functions"]["obras_por_aprobar"]["Returns"][number];
