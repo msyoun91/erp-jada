@@ -54,6 +54,9 @@ export const empresaSchema = z.object({
 });
 export type EmpresaForm = z.input<typeof empresaSchema>;
 
+export const equipoEmpresaSchema = z.object({ id: idSchema, equipo_id: idSchema });
+export type EquipoEmpresaForm = z.input<typeof equipoEmpresaSchema>;
+
 export const transferirPersonaSchema = z.object({ id: idSchema, responsable_id: idSchema });
 export type TransferirPersonaForm = z.input<typeof transferirPersonaSchema>;
 

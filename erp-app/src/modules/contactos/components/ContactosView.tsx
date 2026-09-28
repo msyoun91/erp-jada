@@ -8,7 +8,20 @@ import { SearchInput } from "@/components/ui/SearchInput";
 import { IconoContacto, type TipoContacto } from "./Buscador";
 import { EmpresaFormPanel, NuevaPersonaPanel } from "./ContactoFormPanel";
 
-export type FilaContacto = { id: string; nombre: string; detalle: string | null; activo: boolean };
+export type FilaContacto = {
+  id: string;
+  nombre: string;
+  detalle: string | null;
+  activo: boolean;
+  huerfana: boolean;
+  responsable_id: string | null;
+};
+
+// Solo con `contactos_administrar`: el filtro "huérfanas" y, desde el aviso
+// "personas huérfanas", las de quien se fue (`?responsable=`).
+export type Administrar = { de: { id: string; nombre: string } | null };
+
+type Filtro = "todas" | "huerfanas" | "de";
 
 const TEXTOS = {
   persona: {
@@ -16,28 +29,57 @@ const TEXTOS = {
     buscar: "Buscar persona…",
     nueva: "Nueva persona",
     vacio: 'Tu agenda: las personas que cargaste o te pasaron. Las que ves por una obra están en la obra. Creá una con "Nueva persona".',
+    sinHuerfanas: "Ninguna persona activa quedó sin dueño que la vea.",
   },
   empresa: {
     etiqueta: "empresas",
     buscar: "Buscar empresa…",
     nueva: "Nueva empresa",
     vacio: 'Las empresas de tu equipo. Creá una con "Nueva empresa".',
+    sinHuerfanas: "Ninguna empresa activa quedó sin equipo ni quien la vea.",
   },
 };
 
-export function ContactosView({ tipo, filas }: { tipo: TipoContacto; filas: FilaContacto[] }) {
+function pasa(filtro: Filtro, f: FilaContacto, de: string | undefined) {
+  if (filtro === "huerfanas") return f.huerfana;
+  if (filtro === "de") return f.activo && f.responsable_id === de;
+  return true;
+}
+
+export function ContactosView({
+  tipo,
+  filas,
+  administrar,
+}: {
+  tipo: TipoContacto;
+  filas: FilaContacto[];
+  administrar?: Administrar;
+}) {
   const [texto, setTexto] = useState("");
+  const [filtro, setFiltro] = useState<Filtro>(administrar?.de ? "de" : "todas");
   const [creando, setCreando] = useState(false);
   const t = TEXTOS[tipo];
 
   const q = texto.trim().toLowerCase();
-  const filtradas = filas.filter((f) => f.nombre.toLowerCase().includes(q));
+  const filtradas = filas.filter((f) => pasa(filtro, f, administrar?.de?.id) && f.nombre.toLowerCase().includes(q));
   const { visibles, ...paginado } = usePaginado(filtradas);
 
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder={t.buscar} />
+        {administrar && (
+          <select
+            className="input w-auto"
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value as Filtro)}
+            aria-label="Filtrar"
+          >
+            <option value="todas">Todas</option>
+            <option value="huerfanas">Huérfanas</option>
+            {administrar.de && <option value="de">De {administrar.de.nombre}</option>}
+          </select>
+        )}
         <button className="btn btn-primary" onClick={() => setCreando(true)}>
           <Plus size={16} />
           {t.nueva}
@@ -49,7 +91,9 @@ export function ContactosView({ tipo, filas }: { tipo: TipoContacto; filas: Fila
       {filtradas.length === 0 ? (
         <div className="empty-state">
           <p className="t-h3">{filas.length === 0 ? `Sin ${t.etiqueta} todavía` : "Sin resultados"}</p>
-          <p className="t-body-m mt-1">{filas.length === 0 ? t.vacio : "Probá con otro nombre."}</p>
+          <p className="t-body-m mt-1">
+            {filas.length === 0 ? t.vacio : filtro === "huerfanas" && !q ? t.sinHuerfanas : "Probá con otro nombre."}
+          </p>
         </div>
       ) : (
         <div className="flex flex-col rounded-lg border border-border bg-bg-surface">

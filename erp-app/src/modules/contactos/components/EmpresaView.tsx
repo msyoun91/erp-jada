@@ -11,15 +11,28 @@ import { FormModal } from "@/components/ui/FormModal";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { formatFecha } from "@/lib/utils";
-import { cerrarPersonaEmpresa, desactivarEmpresa, desactivarPersonaEmpresa, reactivarEmpresa, sumarEmpresa } from "../actions";
+import {
+  asignarEquipoEmpresa,
+  cerrarPersonaEmpresa,
+  desactivarEmpresa,
+  desactivarPersonaEmpresa,
+  reactivarEmpresa,
+  sumarEmpresa,
+} from "../actions";
 import type { EmpleadoConNombre, EmpresaCompleta } from "../queries";
-import { personaEmpresaSchema, type PersonaEmpresaForm, type Vinculable } from "../types";
+import {
+  equipoEmpresaSchema,
+  personaEmpresaSchema,
+  type EquipoEmpresaForm,
+  type PersonaEmpresaForm,
+  type Vinculable,
+} from "../types";
 import { BuscadorVinculables, IconoContacto } from "./Buscador";
 import { EmpresaFormPanel } from "./ContactoFormPanel";
 import { HistorialEdiciones, VinculosDeContacto, nombreDe } from "./FichaPartes";
 import { CerrarModal } from "./VinculosSeccion";
 
-type Dialogo = "editar" | "desactivar" | "sumar";
+type Dialogo = "editar" | "desactivar" | "sumar" | "equipo";
 type DialogoRelacion = { tipo: "cerrar" | "desactivar"; relacion: EmpleadoConNombre };
 
 type Props = EmpresaCompleta & {
@@ -28,9 +41,11 @@ type Props = EmpresaCompleta & {
   // Desactiva el delegador de su equipo, quien la cargó (sin equipo) o el admin (CO007).
   desactiva: boolean;
   nombres: Record<string, string>;
+  // A cuál puede pasarla el admin (CO008); vacío para el resto.
+  equipos: { id: string; nombre: string }[];
 };
 
-export function EmpresaView({ empresa, personas, vinculos, ediciones, yo, admin, desactiva, nombres }: Props) {
+export function EmpresaView({ empresa, personas, vinculos, ediciones, yo, admin, desactiva, nombres, equipos }: Props) {
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
   const [relacion, setRelacion] = useState<DialogoRelacion | null>(null);
   const nombre = (id: string | null) => nombreDe(nombres, id, yo);
@@ -43,6 +58,9 @@ export function EmpresaView({ empresa, personas, vinculos, ediciones, yo, admin,
 
   const menu = [
     ...(empresa.activo ? [{ label: "Editar", icon: <Pencil size={14} />, onClick: () => setDialogo("editar") }] : []),
+    ...(admin && empresa.activo && equipos.length > 0
+      ? [{ label: empresa.equipo_id ? "Cambiar equipo" : "Asignar equipo", icon: <UsersRound size={14} />, onClick: () => setDialogo("equipo") }]
+      : []),
     ...(desactiva && empresa.activo
       ? [{ label: "Desactivar", icon: <Archive size={14} />, onClick: () => setDialogo("desactivar"), destructive: true }]
       : []),
@@ -156,6 +174,9 @@ export function EmpresaView({ empresa, personas, vinculos, ediciones, yo, admin,
       </div>
 
       {dialogo === "editar" && <EmpresaFormPanel empresa={empresa} onClose={() => setDialogo(null)} />}
+      {dialogo === "equipo" && (
+        <EquipoModal empresaId={empresa.id} actual={empresa.equipo_id} equipos={equipos} onClose={() => setDialogo(null)} />
+      )}
       {dialogo === "sumar" && <SumarPersonaModal empresaId={empresa.id} onClose={() => setDialogo(null)} />}
       {dialogo === "desactivar" && (
         <ConfirmModal
@@ -256,6 +277,61 @@ function SumarPersonaModal({ empresaId, onClose }: { empresaId: string; onClose:
       </Campo>
       <Campo id="sp-desde" label="Desde" error={errors.desde}>
         <input id="sp-desde" type="date" className={claseInput(errors.desde)} {...register("desde")} />
+      </Campo>
+    </FormModal>
+  );
+}
+
+// La empresa pasa a ese equipo: la ven y la editan sus miembros, la desactiva
+// su delegador. Es como el admin rescata una huérfana (sin equipo, cargadora sin vista).
+function EquipoModal({
+  empresaId,
+  actual,
+  equipos,
+  onClose,
+}: {
+  empresaId: string;
+  actual: string | null;
+  equipos: { id: string; nombre: string }[];
+  onClose: () => void;
+}) {
+  const [enviando, setEnviando] = useState(false);
+  const { register, handleSubmit, formState } = useForm<EquipoEmpresaForm>({
+    resolver: zodResolver(equipoEmpresaSchema),
+    defaultValues: { id: empresaId, equipo_id: actual ?? "" },
+  });
+
+  async function onSubmit(data: EquipoEmpresaForm) {
+    setEnviando(true);
+    const r = await asignarEquipoEmpresa(data);
+    setEnviando(false);
+    if (!r.success) {
+      toast.error(r.error);
+      return;
+    }
+    toast.success("Equipo asignado");
+    onClose();
+  }
+
+  return (
+    <FormModal
+      title={actual ? "Cambiar equipo" : "Asignar equipo"}
+      confirmLabel="Guardar"
+      onClose={onClose}
+      onSubmit={handleSubmit(onSubmit)}
+      enviando={enviando}
+      hayCambios={formState.isDirty}
+    >
+      <p className="t-body-m">La ven y la editan los miembros del equipo; la desactiva su delegador.</p>
+      <Campo id="ee-equipo" label="Equipo" requerido error={formState.errors.equipo_id}>
+        <select id="ee-equipo" aria-required className={claseInput(formState.errors.equipo_id)} {...register("equipo_id")}>
+          <option value="">Elegí el equipo</option>
+          {equipos.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.nombre}
+            </option>
+          ))}
+        </select>
       </Campo>
     </FormModal>
   );

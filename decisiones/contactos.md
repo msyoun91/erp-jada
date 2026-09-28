@@ -364,8 +364,9 @@ Eventos que consume
 ```
 Módulo: Contactos
 ├── Contactos (vista, contactos_ver)           — vendedor, jefe comercial, admin
-│   │   pestañas Personas · Empresas · filtro huérfanas (contactos_administrar): dueño inactivo;
-│   │   empresa sin equipo con cargadora inactiva
+│   │   pestañas Personas · Empresas · filtro huérfanas (contactos_administrar): dueño sin
+│   │   contactos_ver ("De {quien}" desde el aviso); empresa activa sin equipo con cargadora sin
+│   │   contactos_ver — el admin le asigna un equipo desde la ficha
 │   ├── contactos_aprobar (funcion)            — aprobador de altas: lista "Por aprobar"
 │   └── contactos_administrar (funcion)        — admin: ve todo, fusiona, reactiva
 └── Auditoría (vista, contactos_auditoria)     — auditor, admin: quién miró qué contacto

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getUsuarioActualId } from "@/lib/usuarios";
 import { puedeAdministrar, puedeVerContactos } from "@/modules/contactos/permissions";
-import { getEmpresas, getNombres } from "@/modules/contactos/queries";
+import { getCandidatos, getEmpresas, getNombres } from "@/modules/contactos/queries";
 import { ContactosView } from "@/modules/contactos/components/ContactosView";
 
 export default async function EmpresasPage() {
@@ -9,7 +9,14 @@ export default async function EmpresasPage() {
   if (!yo || !(await puedeVerContactos())) notFound();
 
   const todas = await puedeAdministrar();
-  const [empresas, nombres] = await Promise.all([getEmpresas({ todas, yo }), getNombres()]);
+  const [empresas, nombres, candidatos] = await Promise.all([
+    getEmpresas({ todas, yo }),
+    getNombres(),
+    todas ? getCandidatos() : [],
+  ]);
+  // Huérfana: activa, sin equipo y con una cargadora sin `contactos_ver`: no la
+  // ve nadie más que el admin, que le asigna un equipo desde la ficha.
+  const pueden = new Set(candidatos.map((c) => c.id));
 
   return (
     <ContactosView
@@ -19,7 +26,10 @@ export default async function EmpresasPage() {
         nombre: e.nombre,
         detalle: todas && e.equipo_id ? (nombres[e.equipo_id] ?? null) : null,
         activo: e.activo,
+        huerfana: todas && e.activo && e.equipo_id === null && !pueden.has(e.creado_por),
+        responsable_id: null,
       }))}
+      administrar={todas ? { de: null } : undefined}
     />
   );
 }

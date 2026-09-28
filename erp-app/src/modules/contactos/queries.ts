@@ -25,6 +25,15 @@ export async function getCandidatos(): Promise<UsuarioBasico[]> {
   return data;
 }
 
+// A qué equipo pasa una empresa (CO008, solo el admin): los activos que deja
+// ver la RLS de `equipos`.
+export async function getEquipos(): Promise<{ id: string; nombre: string }[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("equipos").select("id, nombre").eq("activo", true).order("nombre");
+  if (error) throw error;
+  return data;
+}
+
 // La agenda: las personas de las que es dueño. Las que ve en contexto (por una
 // obra) aparecen en la obra, no acá. El admin ve todas, también las desactivadas.
 export async function getPersonas({ todas, yo }: { todas: boolean; yo: string }): Promise<Persona[]> {

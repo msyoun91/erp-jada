@@ -11,6 +11,7 @@ import {
   crearYVincularSchema,
   editarPersonaSchema,
   empresaSchema,
+  equipoEmpresaSchema,
   personaEmpresaSchema,
   personaSchema,
   rolesSchema,
@@ -20,6 +21,7 @@ import {
   type CrearYVincularForm,
   type EditarPersonaForm,
   type EmpresaForm,
+  type EquipoEmpresaForm,
   type PersonaEmpresaForm,
   type PersonaForm,
   type RolesForm,
@@ -138,6 +140,17 @@ export async function guardarEmpresa(input: EmpresaForm) {
   if (error) return fallo(error);
   revalidatePath("/contactos", "layout");
   return { success: true as const, id: nueva };
+}
+
+export async function asignarEquipoEmpresa(input: EquipoEmpresaForm) {
+  const parsed = equipoEmpresaSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("contactos_empresas")
+    .update({ equipo_id: parsed.data.equipo_id })
+    .eq("id", parsed.data.id);
+  return error ? fallo(error) : listo();
 }
 
 export async function desactivarEmpresa(id: string) {

@@ -147,7 +147,7 @@ const RUTA: Record<string, (id: string) => string> = {
   obras: () => "/obras",
   obras_todas: (id) => `/obras/todas?responsable=${id}`,
   persona: (id) => `/contactos/personas/${id}`,
-  contactos: () => "/contactos",
+  contactos: (id) => `/contactos?responsable=${id}`,
 };
 
 // `permiso_otorgado` trae el módulo en `destino` y la vista en `etiqueta`: los
