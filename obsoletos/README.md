@@ -19,6 +19,7 @@ escrita en el archivo que apunta, no acá.
 | `Pruebas de cambio en vinculos - Fase A.md`, `Pruebas de cambio en vinculos - Fase B.md` | Checklists de prueba manual de las fases A y B de `PLAN_TAREAS_VINCULOS.md` | Las dos fases están cerradas — decisión final en `decisiones/tareas/integracion.md` | `git mv "obsoletos/Pruebas de cambio en vinculos - Fase A.md" .` (ídem Fase B) |
 | `Pruebas de cambio en plantillas.md` | Checklist de prueba manual de plantillas, roles y link heredado (`sql/055`–`058`) | Las features que prueba están cerradas y documentadas en `decisiones/tareas/plantillas.md` e `integracion.md` | `git mv "obsoletos/Pruebas de cambio en plantillas.md" .` |
 | `sql-tests-share-directo/` | Los tests `obras_047`, `049`, `052`, `082` y `085` | Probaban el share directo de persona y empresa (`origen_obra_id`, `obras_compartir_persona`/`_empresa`), que `sql/086` dropeó: morían con `42P01`/`42883`. Lo que seguía valiendo se portó a `sql/tests/obras_compartir.sql` | `git mv obsoletos/sql-tests-share-directo/*.sql sql/tests/` |
+| `agentes/` | Los subagentes `migrador`, `tester` y `tester-ui` (ex `.claude/agents/`) | Consumían el plan: ~1 M de tokens en el tramo 2 contra ~15k corriendo los tests directo. `Agent` quedó denegado — ver `CLAUDE.md` → *Sin agentes* | `git mv obsoletos/agentes .claude/agents` y sacar `Agent` de `deny` en `.claude/settings.json` |
 
 Cuando `sync-contracts` haga falta de verdad — sincronización real entre `erp-app` y `erp-cliente`,
 ver `GUIDE_SYNC.md` — se restaura desde acá en vez de crearlo de cero.
