@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Archive, ArchiveRestore, CalendarX, Globe, Mail, Pencil, Phone, Plus, UsersRound } from "lucide-react";
+import { Archive, ArchiveRestore, CalendarX, Globe, Mail, Pencil, Phone, Plus, Share2, UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
@@ -14,6 +14,7 @@ import { formatFecha } from "@/lib/utils";
 import {
   asignarEquipoEmpresa,
   cerrarPersonaEmpresa,
+  compartirEmpresa,
   desactivarEmpresa,
   desactivarPersonaEmpresa,
   reactivarEmpresa,
@@ -21,8 +22,10 @@ import {
 } from "../actions";
 import type { EmpleadoConNombre, EmpresaCompleta } from "../queries";
 import {
+  compartirEmpresaSchema,
   equipoEmpresaSchema,
   personaEmpresaSchema,
+  type CompartirEmpresaForm,
   type EquipoEmpresaForm,
   type PersonaEmpresaForm,
   type Vinculable,
@@ -33,7 +36,7 @@ import { HistorialEdiciones, VinculosDeContacto, nombreDe } from "./FichaPartes"
 import { EsperaAprobacion } from "./Parecidas";
 import { CerrarModal } from "./VinculosSeccion";
 
-type Dialogo = "editar" | "desactivar" | "sumar" | "equipo";
+type Dialogo = "editar" | "desactivar" | "sumar" | "equipo" | "compartir";
 type DialogoRelacion = { tipo: "cerrar" | "desactivar"; relacion: EmpleadoConNombre };
 
 type Props = EmpresaCompleta & {
@@ -42,14 +45,35 @@ type Props = EmpresaCompleta & {
   // Desactiva el delegador de su equipo, quien la cargó (sin equipo) o el admin (CO007).
   desactiva: boolean;
   nombres: Record<string, string>;
-  // A cuál puede pasarla el admin (CO008); vacío para el resto.
+  // Los activos: con cuál compartirla y, el admin, a cuál pasarla (CO008).
   equipos: { id: string; nombre: string }[];
+  compartidaCon: { equipo_id: string; created_at: string }[];
+  // Comparte su equipo (sin equipo, quien la cargó) o el admin (CO027).
+  comparte: boolean;
 };
 
-export function EmpresaView({ empresa, personas, vinculos, ediciones, yo, admin, desactiva, nombres, equipos }: Props) {
+export function EmpresaView({
+  empresa,
+  personas,
+  vinculos,
+  ediciones,
+  yo,
+  admin,
+  desactiva,
+  nombres,
+  equipos,
+  compartidaCon,
+  comparte,
+}: Props) {
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
+  const [dejar, setDejar] = useState<string | null>(null);
   const [relacion, setRelacion] = useState<DialogoRelacion | null>(null);
   const nombre = (id: string | null) => nombreDe(nombres, id, yo);
+  const nombreEquipo = (id: string) => equipos.find((e) => e.id === id)?.nombre ?? nombres[id] ?? "Equipo inactivo";
+  const compartible = equipos.filter(
+    (e) => e.id !== empresa.equipo_id && !compartidaCon.some((c) => c.equipo_id === e.id)
+  );
+  const comparteAca = comparte && empresa.activo && !empresa.congelada;
 
   async function correr(accion: (id: string) => Promise<{ success: boolean; error?: string }>, ok: string) {
     const r = await accion(empresa.id);
@@ -61,6 +85,9 @@ export function EmpresaView({ empresa, personas, vinculos, ediciones, yo, admin,
     ...(empresa.activo ? [{ label: "Editar", icon: <Pencil size={14} />, onClick: () => setDialogo("editar") }] : []),
     ...(admin && empresa.activo && equipos.length > 0
       ? [{ label: empresa.equipo_id ? "Cambiar equipo" : "Asignar equipo", icon: <UsersRound size={14} />, onClick: () => setDialogo("equipo") }]
+      : []),
+    ...(comparteAca && compartible.length > 0
+      ? [{ label: "Compartir con otro equipo", icon: <Share2 size={14} />, onClick: () => setDialogo("compartir") }]
       : []),
     ...(desactiva && empresa.activo
       ? [{ label: "Desactivar", icon: <Archive size={14} />, onClick: () => setDialogo("desactivar"), destructive: true }]
@@ -120,6 +147,29 @@ export function EmpresaView({ empresa, personas, vinculos, ediciones, yo, admin,
           <UsersRound size={12} strokeWidth={1.75} />
           {empresa.equipo_id ? (nombres[empresa.equipo_id] ?? "—") : `Sin equipo · la cargó ${nombre(empresa.creado_por)}`}
         </p>
+        {compartidaCon.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="t-caption flex items-center gap-1">
+              <Share2 size={12} strokeWidth={1.75} />
+              Compartida con
+            </span>
+            {compartidaCon.map((c) => (
+              <span key={c.equipo_id} className="badge badge-neutral flex items-center gap-1" title={`Desde ${formatFecha(c.created_at)}`}>
+                {nombreEquipo(c.equipo_id)}
+                {comparte && empresa.activo && (
+                  <button
+                    type="button"
+                    aria-label={`Dejar de compartir con ${nombreEquipo(c.equipo_id)}`}
+                    className="-mr-1 rounded hover:text-text-primary"
+                    onClick={() => setDejar(c.equipo_id)}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </span>
+            ))}
+          </div>
+        )}
         {empresa.activo && empresa.congelada && <EsperaAprobacion tipo="empresa" />}
         <div className="flex flex-col gap-1">
           {empresa.telefono && (
@@ -178,6 +228,22 @@ export function EmpresaView({ empresa, personas, vinculos, ediciones, yo, admin,
       {dialogo === "editar" && <EmpresaFormPanel empresa={empresa} onClose={() => setDialogo(null)} />}
       {dialogo === "equipo" && (
         <EquipoModal empresaId={empresa.id} actual={empresa.equipo_id} equipos={equipos} onClose={() => setDialogo(null)} />
+      )}
+      {dialogo === "compartir" && (
+        <CompartirModal empresaId={empresa.id} equipos={compartible} onClose={() => setDialogo(null)} />
+      )}
+      {dejar && (
+        <ConfirmModal
+          title="Dejar de compartir"
+          mensaje={`¿Dejar de compartir ${empresa.nombre} con ${nombreEquipo(dejar)}? Deja de verla y de poder vincularla; las obras donde ya la vinculó la conservan.`}
+          confirmLabel="Dejar de compartir"
+          onConfirm={async () => {
+            const r = await compartirEmpresa({ id: empresa.id, equipo_id: dejar, compartir: false });
+            if (!r.success) toast.error(r.error);
+            else toast.success("Ya no se comparte");
+          }}
+          onClose={() => setDejar(null)}
+        />
       )}
       {dialogo === "sumar" && <SumarPersonaModal empresaId={empresa.id} onClose={() => setDialogo(null)} />}
       {dialogo === "desactivar" && (
@@ -327,6 +393,61 @@ function EquipoModal({
       <p className="t-body-m">La ven y la editan los miembros del equipo; la desactiva su delegador.</p>
       <Campo id="ee-equipo" label="Equipo" requerido error={formState.errors.equipo_id}>
         <select id="ee-equipo" aria-required className={claseInput(formState.errors.equipo_id)} {...register("equipo_id")}>
+          <option value="">Elegí el equipo</option>
+          {equipos.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.nombre}
+            </option>
+          ))}
+        </select>
+      </Campo>
+    </FormModal>
+  );
+}
+
+// Norte la comparte con Sur cuando Sur se la pide (un pedido de Tareas): Sur la
+// ve, la vincula y la corrige como propia. Sigue siendo de Norte.
+function CompartirModal({
+  empresaId,
+  equipos,
+  onClose,
+}: {
+  empresaId: string;
+  equipos: { id: string; nombre: string }[];
+  onClose: () => void;
+}) {
+  const [enviando, setEnviando] = useState(false);
+  const { register, handleSubmit, formState } = useForm<CompartirEmpresaForm>({
+    resolver: zodResolver(compartirEmpresaSchema),
+    defaultValues: { id: empresaId, equipo_id: "", compartir: true },
+  });
+
+  async function onSubmit(data: CompartirEmpresaForm) {
+    setEnviando(true);
+    const r = await compartirEmpresa(data);
+    setEnviando(false);
+    if (!r.success) {
+      toast.error(r.error);
+      return;
+    }
+    toast.success("Empresa compartida");
+    onClose();
+  }
+
+  return (
+    <FormModal
+      title="Compartir con otro equipo"
+      confirmLabel="Compartir"
+      onClose={onClose}
+      onSubmit={handleSubmit(onSubmit)}
+      enviando={enviando}
+      hayCambios={formState.isDirty}
+    >
+      <p className="t-body-m">
+        El equipo la ve, la vincula a sus obras y la corrige como propia. Sigue siendo de tu equipo: la desactiva su jefe.
+      </p>
+      <Campo id="ce-equipo" label="Equipo" requerido error={formState.errors.equipo_id}>
+        <select id="ce-equipo" aria-required className={claseInput(formState.errors.equipo_id)} {...register("equipo_id")}>
           <option value="">Elegí el equipo</option>
           {equipos.map((e) => (
             <option key={e.id} value={e.id}>

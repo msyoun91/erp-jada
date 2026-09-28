@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { getUsuarioActualId } from "@/lib/usuarios";
 import { idSchema } from "@/lib/validacion";
-import { desactivaEmpresa, puedeAdministrar, puedeVerContactos } from "@/modules/contactos/permissions";
-import { getEmpresa, getEquipos, getNombres } from "@/modules/contactos/queries";
+import { comparteEmpresa, desactivaEmpresa, puedeAdministrar, puedeVerContactos } from "@/modules/contactos/permissions";
+import { getCompartida, getEmpresa, getNombres } from "@/modules/contactos/queries";
 import { EmpresaView } from "@/modules/contactos/components/EmpresaView";
 
 export default async function EmpresaPage(props: PageProps<"/contactos/empresas/[id]">) {
@@ -10,9 +10,13 @@ export default async function EmpresaPage(props: PageProps<"/contactos/empresas/
   const yo = await getUsuarioActualId();
   if (!yo || !(await puedeVerContactos()) || !idSchema.safeParse(id).success) notFound();
 
-  const [datos, admin, nombres] = await Promise.all([getEmpresa(id), puedeAdministrar(), getNombres()]);
+  const [datos, admin, nombres, compartida] = await Promise.all([
+    getEmpresa(id),
+    puedeAdministrar(),
+    getNombres(),
+    getCompartida(id),
+  ]);
   if (!datos) notFound();
-  const equipos = admin ? await getEquipos() : [];
 
   return (
     <EmpresaView
@@ -21,7 +25,8 @@ export default async function EmpresaPage(props: PageProps<"/contactos/empresas/
       admin={admin}
       desactiva={await desactivaEmpresa(datos.empresa, yo)}
       nombres={nombres}
-      equipos={equipos}
+      {...compartida}
+      comparte={await comparteEmpresa(datos.empresa, yo)}
     />
   );
 }

@@ -28,15 +28,6 @@ export async function getCandidatos(): Promise<UsuarioBasico[]> {
   return data;
 }
 
-// A qué equipo pasa una empresa (CO008, solo el admin): los activos que deja
-// ver la RLS de `equipos`.
-export async function getEquipos(): Promise<{ id: string; nombre: string }[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.from("equipos").select("id, nombre").eq("activo", true).order("nombre");
-  if (error) throw error;
-  return data;
-}
-
 // La agenda: las personas de las que es dueño. Las que ve en contexto (por una
 // obra) aparecen en la obra, no acá. El admin ve todas, también las desactivadas.
 export async function getPersonas({ todas, yo }: { todas: boolean; yo: string }): Promise<Persona[]> {
@@ -48,20 +39,44 @@ export async function getPersonas({ todas, yo }: { todas: boolean; yo: string })
   return data;
 }
 
-// Las de su equipo (sin equipo, las que cargó); el admin, todas.
-export async function getEmpresas({ todas, yo }: { todas: boolean; yo: string }): Promise<Empresa[]> {
+// Las de su equipo (sin equipo, las que cargó) y las compartidas con él; el
+// admin, todas.
+export async function getEmpresas({ todas, yo }: { todas: boolean; yo: string }): Promise<(Empresa & { compartida: boolean })[]> {
   const supabase = await createClient();
   let query = supabase.from("contactos_empresas").select("*").order("nombre");
+  let compartidas = new Set<string>();
   if (!todas) {
     const { data: equipo, error } = await supabase.rpc("mi_equipo");
     if (error) throw error;
+    if (equipo) {
+      const { data, error } = await supabase
+        .from("contactos_empresa_equipos")
+        .select("empresa_id")
+        .eq("equipo_id", equipo);
+      if (error) throw error;
+      compartidas = new Set(data.map((c) => c.empresa_id));
+    }
+    const propias = equipo ? `equipo_id.eq.${equipo}` : `and(equipo_id.is.null,creado_por.eq.${yo})`;
     query = query
       .eq("activo", true)
-      .or(equipo ? `equipo_id.eq.${equipo}` : `and(equipo_id.is.null,creado_por.eq.${yo})`);
+      .or(compartidas.size > 0 ? `${propias},id.in.(${[...compartidas].join(",")})` : propias);
   }
   const { data, error } = await query;
   if (error) throw error;
-  return data;
+  return data.map((e) => ({ ...e, compartida: compartidas.has(e.id) }));
+}
+
+// Con qué equipos se compartió (se ve con la empresa) y los equipos activos,
+// para compartir o para que el admin la pase (CO008): `contactos_equipos`,
+// porque el vendedor no lee `equipos`.
+export async function getCompartida(empresa: string) {
+  const supabase = await createClient();
+  const [filas, equipos] = await Promise.all([
+    supabase.from("contactos_empresa_equipos").select("equipo_id, created_at").eq("empresa_id", empresa).order("created_at"),
+    supabase.rpc("contactos_equipos"),
+  ]);
+  for (const r of [filas, equipos]) if (r.error) throw r.error;
+  return { compartidaCon: filas.data ?? [], equipos: equipos.data ?? [] };
 }
 
 // Un vínculo con el registro al que apunta, resuelto como lo ve quien lee:

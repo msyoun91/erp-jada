@@ -21,6 +21,17 @@ export async function desactivaEmpresa(empresa: { equipo_id: string | null; crea
   return data === empresa.equipo_id;
 }
 
+// Espejo de CO027 para mostrar "Compartir": su equipo (sin equipo, quien la
+// cargó) o el admin. El equipo con el que se compartió no la comparte.
+export async function comparteEmpresa(empresa: { equipo_id: string | null; creado_por: string }, yo: string) {
+  if (await puedeAdministrar()) return true;
+  if (empresa.equipo_id === null) return empresa.creado_por === yo;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("mi_equipo");
+  if (error) throw error;
+  return data === empresa.equipo_id;
+}
+
 export function puedeAprobar() {
   return tienePermiso("contactos_aprobar");
 }

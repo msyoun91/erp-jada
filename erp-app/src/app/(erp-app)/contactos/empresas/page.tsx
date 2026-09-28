@@ -24,7 +24,12 @@ export default async function EmpresasPage() {
       filas={empresas.map((e) => ({
         id: e.id,
         nombre: e.nombre,
-        detalle: todas && e.equipo_id ? (nombres[e.equipo_id] ?? null) : null,
+        detalle:
+          todas && e.equipo_id
+            ? (nombres[e.equipo_id] ?? null)
+            : e.compartida && e.equipo_id
+              ? `Compartida por ${nombres[e.equipo_id] ?? "otro equipo"}`
+              : null,
         activo: e.activo,
         congelada: e.congelada,
         huerfana: todas && e.activo && e.equipo_id === null && !pueden.has(e.creado_por),

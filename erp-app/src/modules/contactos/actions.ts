@@ -8,6 +8,7 @@ import { idSchema } from "@/lib/validacion";
 import {
   buscarSchema,
   cerrarSchema,
+  compartirEmpresaSchema,
   crearYVincularSchema,
   editarPersonaSchema,
   empresaSchema,
@@ -20,6 +21,7 @@ import {
   transferirPersonaSchema,
   vincularSchema,
   type CerrarForm,
+  type CompartirEmpresaForm,
   type CrearYVincularForm,
   type EditarPersonaForm,
   type EmpresaForm,
@@ -155,6 +157,18 @@ export async function asignarEquipoEmpresa(input: EquipoEmpresaForm) {
     .from("contactos_empresas")
     .update({ equipo_id: parsed.data.equipo_id })
     .eq("id", parsed.data.id);
+  return error ? fallo(error) : listo();
+}
+
+export async function compartirEmpresa(input: CompartirEmpresaForm) {
+  const parsed = compartirEmpresaSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("contactos_compartir_empresa", {
+    p_empresa: parsed.data.id,
+    p_equipo: parsed.data.equipo_id,
+    p_compartir: parsed.data.compartir,
+  });
   return error ? fallo(error) : listo();
 }
 
