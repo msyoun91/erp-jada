@@ -216,3 +216,25 @@ export async function getPorAprobar(): Promise<PorAprobar[]> {
     guardados: f.guardados as Guardado[],
   }));
 }
+
+// Auditoría: vacías sin `contactos_auditoria`, la función lo decide.
+export async function getAuditoriaResumen(dias: number) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("contactos_auditoria_resumen", { p_dias: dias });
+  if (error) throw error;
+  return data;
+}
+
+export type AccesoAuditado = Database["public"]["Functions"]["contactos_auditoria_detalle"]["Returns"][number];
+
+// Hasta 501 filas: si llega la 501, hay más de las 500 que se muestran.
+export async function getAuditoriaDetalle(dias: number, usuario: string | null, persona: string | null) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("contactos_auditoria_detalle", {
+    p_dias: dias,
+    p_usuario: usuario ?? undefined,
+    p_persona: persona ?? undefined,
+  });
+  if (error) throw error;
+  return data;
+}

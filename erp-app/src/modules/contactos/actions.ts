@@ -249,6 +249,17 @@ export async function buscarEmpresas(texto: string) {
   return { success: true as const, resultados: data };
 }
 
+// El filtro de Auditoría: solo nombres de personas con algún acceso, sin abrir
+// la agenda (`contactos_auditoria_personas`).
+export async function buscarAuditadas(texto: string) {
+  const parsed = buscarSchema.safeParse(texto);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("contactos_auditoria_personas", { p_texto: parsed.data });
+  if (error) return fallo(error);
+  return { success: true as const, resultados: data };
+}
+
 export async function vincular(input: VincularForm) {
   const parsed = vincularSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);

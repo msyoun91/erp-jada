@@ -137,6 +137,11 @@ miró a Marta?"), con un buscador por nombre que no abre la agenda. Tope: 500 fi
 avisando que hay más. Un acceso es teléfono y email juntos: no se distingue qué miró.
 La vista no requiere `contactos_ver`; el buscador solo trae personas con algún acceso, y el detalle
 devuelve 501 filas para que la pantalla sepa si hay más (`sql/144`).
+Pantalla (2026-09-28): la pestaña Auditoría sale con su permiso y Personas/Empresas con `contactos_ver`;
+`/contactos` lleva al auditor sin agenda a `/contactos/auditoria` (el sidebar entra por ahí). Los
+filtros viven en la URL (`dias`, `usuario`, `persona`); el nombre de la persona elegida sale del
+detalle, porque el auditor no lee `contactos_personas`. La persona no es link: la vista no es puerta
+a la ficha (`AuditoriaView.tsx`, `FiltroPersona.tsx`).
 
 **Las empresas son del equipo que las carga (2026-09-25).** El usuario las prefirió privadas, pero
 que comercial las vea entero: así un vendedor no carga dos veces la misma constructora. Se resuelve con

@@ -35,3 +35,7 @@ export async function comparteEmpresa(empresa: { equipo_id: string | null; cread
 export function puedeAprobar() {
   return tienePermiso("contactos_aprobar");
 }
+
+export function puedeAuditar() {
+  return tienePermiso("contactos_auditoria");
+}

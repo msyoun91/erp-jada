@@ -1,14 +1,21 @@
 import { Contact } from "lucide-react";
 import { Breadcrumb } from "@/components/layout/Breadcrumb";
 import { ModuleTabs } from "@/components/layout/ModuleTabs";
+import { puedeAuditar, puedeVerContactos } from "@/modules/contactos/permissions";
 
-// Una sola vista (`contactos_ver`) con dos pestañas; Auditoría entra con su tramo.
-const tabs = [
-  { codigo: "contactos_personas", label: "Personas", href: "/contactos" },
-  { codigo: "contactos_empresas", label: "Empresas", href: "/contactos/empresas" },
-];
+// Auditoría es una vista aparte: el auditor no necesita ver la agenda.
+export default async function ContactosLayout({ children }: { children: React.ReactNode }) {
+  const [ver, auditar] = await Promise.all([puedeVerContactos(), puedeAuditar()]);
+  const tabs = [
+    ...(ver
+      ? [
+          { codigo: "contactos_personas", label: "Personas", href: "/contactos" },
+          { codigo: "contactos_empresas", label: "Empresas", href: "/contactos/empresas" },
+        ]
+      : []),
+    ...(auditar ? [{ codigo: "contactos_auditoria", label: "Auditoría", href: "/contactos/auditoria" }] : []),
+  ];
 
-export default function ContactosLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col h-full">
       <Breadcrumb modulo="contactos" tabs={tabs} />

@@ -20,7 +20,7 @@ export function FiltroDias({
       {DIAS_OPCIONES.map((d) => (
         <Link
           key={d}
-          href={`${href}?dias=${d}`}
+          href={`${href}${href.includes("?") ? "&" : "?"}dias=${d}`}
           aria-current={d === dias ? "page" : undefined}
           className={`tap-target t-caption flex items-center rounded-md px-3 py-1 ${
             d === dias ? "bg-brand-50 font-semibold text-brand-700" : "text-text-tertiary"

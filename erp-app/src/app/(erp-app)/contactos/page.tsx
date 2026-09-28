@@ -1,13 +1,18 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getUsuarioActualId } from "@/lib/usuarios";
 import { idSchema } from "@/lib/validacion";
-import { puedeAdministrar, puedeAprobar, puedeVerContactos } from "@/modules/contactos/permissions";
+import { puedeAdministrar, puedeAprobar, puedeAuditar, puedeVerContactos } from "@/modules/contactos/permissions";
 import { getCandidatos, getNombres, getPersonas, getPorAprobar } from "@/modules/contactos/queries";
 import { ContactosView } from "@/modules/contactos/components/ContactosView";
 
 export default async function PersonasPage(props: PageProps<"/contactos">) {
   const yo = await getUsuarioActualId();
-  if (!yo || !(await puedeVerContactos())) notFound();
+  if (!yo) notFound();
+  // El sidebar entra por acá; el auditor sin la agenda, a su vista.
+  if (!(await puedeVerContactos())) {
+    if (await puedeAuditar()) redirect("/contactos/auditoria");
+    notFound();
+  }
 
   const todas = await puedeAdministrar();
   const { responsable } = await props.searchParams;

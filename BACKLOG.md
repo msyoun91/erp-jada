@@ -130,7 +130,8 @@ no se prueba sin una obra a la que vincularlo.
    (`decisiones/obras.md`); Auditoría, fusionar con comisión, congeladas y links viejos
    (`decisiones/contactos.md`). SQL aplicado el 2026-09-28: `sql/142` (comisión), `sql/143`
    (números), `sql/144` (Auditoría), `sql/145`–`146` (fusionar), cada una con su test. Pantallas: la
-   comisión, en la fila del referente, y el widget "Obras" (2026-09-28). **Siguiente:** vista Auditoría, pantalla de
+   comisión, en la fila del referente, el widget "Obras" y la vista Auditoría (2026-09-28; probada con
+   `e2e/contactos.spec.ts`). **Siguiente:** pantalla de
    fusionar (con `conservar` para elegir la comisión) y "Se fusionó con …" en la ficha vieja. El texto
    del aviso `persona_fusionada` en la campanita es provisorio.
 5. **Tareas** — el paquete "con el primer emisor" (arriba): plantillas por estado, pasos que se
