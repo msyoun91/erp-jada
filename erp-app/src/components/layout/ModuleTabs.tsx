@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 
 export type Tab = { codigo: string; label: string; href: string };
 
-// Obras es el único módulo con páginas de detalle (/obras/{id},
-// /obras/personas/{id}): la tab activa es la del href más largo que sea
-// prefijo del pathname, porque /obras lo es de todas las demás.
+// Con páginas de detalle (/obras/{id}, /contactos/empresas/{id}) la tab activa
+// es la del href más largo que sea prefijo del pathname, porque /obras lo es
+// de todas las demás.
 // Compartida con Breadcrumb — misma noción de "dónde estoy".
 export function tabActiva(pathname: string, tabs: Tab[]): string | null {
   return tabs.reduce<string | null>((mejor, tab) => {

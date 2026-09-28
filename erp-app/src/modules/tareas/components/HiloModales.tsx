@@ -6,9 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { cerrarHilo, transferirHilo } from "../actions";
 import { cerrarHiloSchema, transferirSchema, type CerrarHiloForm, type Hilo, type TransferirForm } from "../types";
-import { Campo, claseInput } from "./Campo";
+import { Campo, claseInput } from "@/components/ui/Campo";
 import { useTareas } from "./contexto";
-import { FormModal } from "./FormModal";
+import { FormModal } from "@/components/ui/FormModal";
 
 // Con pasos abiertos no se cierra (TA008): cerrar los cancela.
 export function CerrarHiloModal({ hilo, abiertos, onClose }: { hilo: Hilo; abiertos: number; onClose: () => void }) {

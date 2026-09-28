@@ -112,7 +112,7 @@ export async function getPersona(id: string): Promise<PersonaCompleta | null> {
 }
 
 export type EmpleadoConNombre = PersonaEmpresa & {
-  contactos_personas: Pick<Persona, "id" | "nombre"> | null;
+  contactos_personas: Pick<Persona, "id" | "nombre" | "responsable_id"> | null;
 };
 
 export type EmpresaCompleta = {
@@ -128,7 +128,7 @@ export async function getEmpresa(id: string): Promise<EmpresaCompleta | null> {
     supabase.from("contactos_empresas").select("*").eq("id", id).maybeSingle(),
     supabase
       .from("contactos_persona_empresa")
-      .select("*, contactos_personas(id, nombre)")
+      .select("*, contactos_personas(id, nombre, responsable_id)")
       .eq("empresa_id", id)
       .eq("activo", true)
       .order("desde", { ascending: false }),

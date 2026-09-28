@@ -10,7 +10,7 @@ import { crearPaso, editarPaso, insertarPasoAntes } from "../actions";
 import { REFERENCIA } from "../derivados";
 import { editarPasoSchema, insertarAntesSchema, pasoSchema, type RegistroEncontrado, type Tarea } from "../types";
 import { AsignadoSelect } from "./AsignadoSelect";
-import { Campo, claseInput } from "./Campo";
+import { Campo, claseInput } from "@/components/ui/Campo";
 import { RelacionarModal } from "./RelacionarModal";
 import { TextoConReferencias } from "./TextoConReferencias";
 

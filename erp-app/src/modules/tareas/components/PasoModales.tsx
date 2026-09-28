@@ -19,8 +19,8 @@ import {
   type Tarea,
 } from "../types";
 import { AsignadoSelect } from "./AsignadoSelect";
-import { Campo, claseInput } from "./Campo";
-import { FormModal } from "./FormModal";
+import { Campo, claseInput } from "@/components/ui/Campo";
+import { FormModal } from "@/components/ui/FormModal";
 
 type Props = { paso: Tarea; onClose: () => void };
 

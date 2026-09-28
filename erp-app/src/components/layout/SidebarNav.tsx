@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, ListTodo, UsersRound, LogOut, type LucideIcon } from "lucide-react";
+import { Building2, Contact, Home, ListTodo, UsersRound, LogOut, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/modules/auth/actions";
@@ -11,12 +11,16 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   dashboard: Home,
   usuarios: UsersRound,
   tareas: ListTodo,
+  obras: Building2,
+  contactos: Contact,
 };
 
 export const LABEL_MAP: Record<string, string> = {
   dashboard: "Inicio",
   usuarios: "Usuarios",
   tareas: "Tareas",
+  obras: "Obras",
+  contactos: "Contactos",
 };
 
 type NavItem = { modulo: string; href: string };
@@ -24,6 +28,8 @@ type NavItem = { modulo: string; href: string };
 const NAV_ITEM_INICIO: NavItem = { modulo: "dashboard", href: "/" };
 const NAV_ITEMS: NavItem[] = [
   { modulo: "tareas", href: "/tareas" },
+  { modulo: "obras", href: "/obras" },
+  { modulo: "contactos", href: "/contactos" },
   { modulo: "usuarios", href: "/usuarios" },
 ];
 

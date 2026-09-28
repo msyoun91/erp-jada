@@ -10,7 +10,7 @@ import { guardarPlantilla } from "../actions";
 import type { PlantillaCompleta } from "../queries";
 import { plantillaSchema, type PlantillaForm } from "../types";
 import { AsignadoSelect } from "./AsignadoSelect";
-import { Campo, claseInput } from "./Campo";
+import { Campo, claseInput } from "@/components/ui/Campo";
 
 const FORM_ID = "plantilla-form";
 

@@ -14,7 +14,8 @@ for (const usuario of usuarios) {
     await page.getByLabel("Email").fill(usuario.email);
     await page.getByLabel("Contraseña", { exact: true }).fill(usuario.password);
     await page.getByRole("button", { name: "Ingresar" }).click();
-    await expect(page).not.toHaveURL(/\/login/);
+    // En dev, el primer ingreso compila la página de inicio: tarda más que el default.
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 30_000 });
     await page.context().storageState({ path: `e2e/.auth/${usuario.nombre}.json` });
   });
 }

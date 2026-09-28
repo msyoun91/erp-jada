@@ -241,8 +241,10 @@ id: en un UPDATE la policy de SELECT se evalúa sobre la fila nueva, y releer la
   `OB`, `TA`). `actions.ts` es glue.
 - Acción sobre un ente de **otro** módulo ("sacar presupuesto de la obra"): vive en el módulo que la
   ofrece, se relaciona por FK o `(ente, registro_id)`, y se muestra en la ficha ajena **por composición
-  en `app/`**: la page de la ficha importa el componente y lo pasa como prop (`seccionTareas` en
-  `obras/[id]/page.tsx`). Los módulos no se importan entre sí.
+  en `app/`**: la page de la ficha importa el componente y lo pasa como prop (`contactos` en
+  `obras/[id]/page.tsx`). Los módulos no se importan entre sí. Si el componente ajeno devuelve algo
+  (callback, como el "¿Quién?" del alta), un componente pasa de servidor a cliente solo como
+  elemento, no como tipo: el cableado va en un archivo cliente de `app/` (`obras/Obras.tsx`).
 
 ### 2.8 Eventos
 

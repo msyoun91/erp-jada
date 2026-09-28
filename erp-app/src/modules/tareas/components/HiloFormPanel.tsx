@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { crearHilo, editarHilo } from "../actions";
 import { hiloSchema, type Hilo, type HiloForm } from "../types";
-import { Campo, claseInput } from "./Campo";
+import { Campo, claseInput } from "@/components/ui/Campo";
 
 const FORM_ID = "hilo-form";
 

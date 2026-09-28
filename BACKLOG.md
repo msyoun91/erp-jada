@@ -79,7 +79,7 @@ copia en Admin. Antes de tocar cada punto, contrastar contra las personas de la 
 listan equipos con delegador activo, y el único de la base ("Prueba") está inactivo y sin miembros.
 Para probar: un equipo activo con delegador.
 
-## Contactos y Obras — tramo 1 en SQL y TypeScript, faltan las pantallas (2026-09-28)
+## Contactos y Obras — tramo 1 hecho y probado (2026-09-28)
 
 `decisiones/contactos.md` y `decisiones/obras.md`, aprobadas el 2026-09-25. Tramo 1, SQL aplicado el
 2026-09-26: `sql/125` (core: `entes.roles`, `trabaja_registro`, `puede_abrir_registro`, emisores),
@@ -88,9 +88,15 @@ Para probar: un equipo activo con delegador.
 `contactos_reglas.sql` y `obras_alta.sql`, y la regresión de Tareas y Usuarios. Esquema:
 `db_schema/obras.md`, `db_schema/contactos.md`. Capa TypeScript hecha el 2026-09-28 (`types.ts`,
 `permissions.ts`, `queries.ts`, `actions.ts` de los dos módulos, `lib/entes.ts`, `lib/validacion.ts`),
-con `sql/130` (nombres y candidatos) y `sql/131` (`obras_a_cargo`). Siguiente: las pantallas (paso 6,
-`GUIDE_DESIGN.md`) —layouts, `SidebarNav`, listas, fichas, alta con "¿Quién?", panel de vincular— y
-la prueba "Juan carga Torre Belgrano…". Orden de
+con `sql/130` (nombres y candidatos) y `sql/131` (`obras_a_cargo`). Pantallas escritas el 2026-09-28:
+`/obras` (lista, Todas, ficha con estado, transferir y participantes; alta con "¿Quién?"),
+`/contactos` (personas, empresas y sus fichas, "Ver contacto", historial) y el panel de vincular en la
+ficha de la obra. Probado con `e2e/obras.spec.ts` ("Juan carga Torre Belgrano…": Tester carga y trabaja,
+Admin la ve). Falta "Laura la ve sin tocar nada": ningún usuario de prueba tiene equipo ni `obras_equipo`;
+entra con el tramo 2 (bajas y equipos). Siguiente: tramo 2. Quedan para después, sin función que los respalde: vincular a una
+obra desde la ficha de la persona o la empresa (buscar "obras que trabajás"), y crear la empresa desde
+"Sumar empresa" o la persona desde "Sumar persona" (hoy, solo existentes: crear y relacionar en un
+paso pide una función, como `contactos_crear_y_vincular`). Orden de
 módulos: Contactos y Obras → Catálogo → Presupuestos → Post-venta.
 
 Para las pantallas: `contactos_personas` no tiene `select *` (teléfono y email fuera del GRANT);

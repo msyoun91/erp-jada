@@ -199,6 +199,24 @@ export async function buscarVinculables(texto: string) {
   return { success: true as const, resultados: data };
 }
 
+// La empresa de una persona: las que ve quien escribe (CO013), no solo las de
+// su equipo. La RLS decide cuáles.
+export async function buscarEmpresas(texto: string) {
+  const parsed = buscarSchema.safeParse(texto);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const patron = `%${parsed.data.replace(/[\\%_]/g, "\\$&")}%`;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("contactos_empresas")
+    .select("id, nombre")
+    .eq("activo", true)
+    .ilike("nombre", patron)
+    .order("nombre")
+    .limit(8);
+  if (error) return fallo(error);
+  return { success: true as const, resultados: data };
+}
+
 export async function vincular(input: VincularForm) {
   const parsed = vincularSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);

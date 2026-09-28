@@ -11,7 +11,7 @@ import { motivoRevisar } from "../derivados";
 import type { PlantillaCompleta } from "../queries";
 import { usarPlantillaSchema, type UsarPlantillaForm } from "../types";
 import { AsignadoSelect } from "./AsignadoSelect";
-import { Campo, claseInput } from "./Campo";
+import { Campo, claseInput } from "@/components/ui/Campo";
 import { useNombre, useTareas } from "./contexto";
 
 const FORM_ID = "usar-plantilla-form";
