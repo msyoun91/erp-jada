@@ -14,6 +14,14 @@ export const WIDGETS: WidgetDefinicion[] = [
     moduloRequerido: "usuarios",
     icono: "usuarios",
   },
+  // Lo dibuja Obras; `app/(erp-app)/page.tsx` lo compone (`modulos`).
+  {
+    id: "obras",
+    titulo: "Obras",
+    columnas: 2,
+    moduloRequerido: "obras",
+    icono: "obras",
+  },
 ];
 
 export type DashboardData = {

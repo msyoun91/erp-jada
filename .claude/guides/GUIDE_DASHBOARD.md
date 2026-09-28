@@ -12,7 +12,6 @@ modules/dashboard/
 ├── actions.ts        ← toggle de visibilidad en usuario_widgets (genérico, no se toca)
 └── components/
     ├── DashboardView.tsx     ← conecta widget.id → componente
-    ├── WidgetCard.tsx        ← base reutilizable + ICON_MAP de los widgets
     ├── WidgetUsuarios.tsx    ← ejemplo
     └── ConfigurarWidgets.tsx ← el toggle "Configurar"
 ```
@@ -44,7 +43,7 @@ Las consultas corren con el cliente del usuario, así que RLS ya acota lo que cu
 
 ```tsx
 // modules/dashboard/components/WidgetPedidos.tsx
-import { WidgetCard } from "./WidgetCard";
+import { WidgetCard } from "@/components/ui/WidgetCard";
 
 export function WidgetPedidos({ pendientes, columnas }: { pendientes: number; columnas: 1 | 2 }) {
   return (
@@ -62,7 +61,14 @@ export function WidgetPedidos({ pendientes, columnas }: { pendientes: number; co
 
 ## Paso 4 — Ícono
 
-`WidgetCard.tsx` tiene su propio `ICON_MAP` (lucide, `size={16}`, `strokeWidth={1.75}`). Sumar la clave; reusar el mismo ícono que el módulo tiene en `SidebarNav.tsx`.
+`components/ui/WidgetCard.tsx` tiene su propio `ICON_MAP` (lucide, `size={16}`, `strokeWidth={1.75}`). Sumar la clave; reusar el mismo ícono que el módulo tiene en `SidebarNav.tsx`.
+
+## Widget con etiquetas o consultas de su módulo
+
+Si el widget necesita lo de otro módulo (etiquetas, queries), lo dibuja ese módulo y `app/(erp-app)/page.tsx`
+lo compone en `modulos` de `DashboardView`, por id: los módulos no se importan entre sí. Ejemplo:
+`modules/obras/components/WidgetObras.tsx`, con su período en `?dias=` (`FiltroDias` en `accion`).
+La consulta corre solo si el widget está permitido y visible.
 
 ## Paso 5 — Conectar en `DashboardView.tsx`
 

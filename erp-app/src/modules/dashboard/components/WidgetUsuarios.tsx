@@ -1,4 +1,4 @@
-import { WidgetCard } from "./WidgetCard";
+import { WidgetCard } from "@/components/ui/WidgetCard";
 
 type Props = {
   totalActivos: number;

@@ -82,6 +82,17 @@ export async function getComisiones(vinculos: string[]): Promise<Comision[]> {
   return data;
 }
 
+export type Numero = Database["public"]["Functions"]["obras_contar"]["Returns"][number];
+
+// Los números del widget: lo que quien llama ve o, con `obras_numeros`, todas.
+// La función cuenta; nunca devuelve obras.
+export async function getNumeros(dias: number): Promise<Numero[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("obras_contar", { p_dias: dias });
+  if (error) throw error;
+  return data;
+}
+
 type FilaPorAprobar = Database["public"]["Functions"]["obras_por_aprobar"]["Returns"][number];
 export type PorAprobar = Omit<FilaPorAprobar, "antes" | "parecidas" | "guardados"> & {
   antes: { nombre: string; direccion: string } | null;

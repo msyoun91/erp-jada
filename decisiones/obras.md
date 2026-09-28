@@ -247,6 +247,10 @@ pasaron a ese estado dentro del período (evento `estado`) y siguen ahí; una co
 cuenta. Responde "¿de dónde vienen las que cerramos este trimestre?". Una sola función,
 `obras_contar(dias)`, DEFINER: con `obras_numeros` cuenta obras que quien llama no ve, y solo devuelve
 cantidades (`sql/143`).
+Pantalla (2026-09-28, elegida por el usuario): "Hoy" con los cinco estados en una línea; debajo,
+contratadas por origen y por tipo y perdidas por motivo, con barras de un color relativas al máximo del
+grupo. Lo dibuja Obras (`WidgetObras.tsx`) y el dashboard lo compone desde `app/`; período en `?dias=`,
+30 por defecto.
 
 **Motivo y causa viajan en la fila: `estado_nota` (2026-09-26).** La obra guarda `motivo_perdida` y
 `estado_nota`, el texto del último cambio de estado: el detalle de la pérdida o la causa de la

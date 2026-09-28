@@ -6,9 +6,11 @@ type Props = {
   data: DashboardData;
   widgets: WidgetDefinicion[];
   prefs: Record<string, boolean>;
+  // Widgets que dibuja su módulo, por id: `app/` los compone (GUIDE_ENTES §2.7).
+  modulos: Partial<Record<string, React.ReactNode>>;
 };
 
-export function DashboardView({ data, widgets, prefs }: Props) {
+export function DashboardView({ data, widgets, prefs, modulos }: Props) {
   const visibles = widgets.filter((w) => prefs[w.id] ?? true);
 
   return (
@@ -32,7 +34,7 @@ export function DashboardView({ data, widgets, prefs }: Props) {
                 />
               );
             }
-            return null;
+            return <div key={widget.id} className={widget.columnas === 2 ? "sm:col-span-2" : ""}>{modulos[widget.id]}</div>;
           })}
         </div>
       )}
