@@ -102,7 +102,7 @@ Pantallas del tramo 2: hecho el filtro "huérfanas" en Obras Todas (y "De {quien
 admin), y la casilla "su agenda pasa al jefe" en Usuarios al sacar del equipo o sumar a otro
 (marcada por defecto). Probado con `e2e/obras.spec.ts` ("Juan se va…": el admin arma, si no está,
 "Equipo Zqx pruebas" con Tester 2 de jefe comercial —delegador, con «Hilos» y "Jefe de equipo"—, saca a
-Tester y su obra y su persona pasan a Tester 2). Tramo 2 cerrado; siguiente: tramo 3 (duplicados). Quedan para después, sin función que los respalde: vincular a una
+Tester y su obra y su persona pasan a Tester 2). Tramo 2 cerrado. Tramo 3 (duplicados): decisiones cerradas el 2026-09-28 (qué es parecida, `congelada` + `congelada_antes` + `rechazo_motivo` en la fila, `contactos_vinculos_guardados` que autoriza el vínculo a nombre de quien cargó, "ver todo" incluye congeladas — `decisiones/obras.md` → *Altas parecidas*, `decisiones/contactos.md` → *Vincular*); siguiente: el SQL del tramo 3. Quedan para después, sin función que los respalde: vincular a una
 obra desde la ficha de la persona o la empresa (buscar "obras que trabajás"), y crear la empresa desde
 "Sumar empresa" o la persona desde "Sumar persona" (hoy, solo existentes: crear y relacionar en un
 paso pide una función, como `contactos_crear_y_vincular`). Orden de

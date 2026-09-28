@@ -99,6 +99,12 @@ y la resuelve quien tenga `obras_aprobar`.** Pedido del usuario, sobre el sistem
 resolviera después, y el usuario eligió congelar. Contactos hace lo mismo con personas y empresas
 (`decisiones/contactos.md`).
 
+- **Qué es parecida (2026-09-28): el criterio de `master`, con la dirección atada a sus números.**
+  Trigramas sobre el texto normalizado (minúsculas, sin acentos). Obra: nombre ≥ 0,45, o dirección
+  ≥ 0,45 **con los mismos números** ("Libertador 1200" y "Av. del Libertador 1200" sí; "Libertador 1250",
+  no: sin eso, cualquier obra sobre la misma avenida se congelaba). Persona: mismo teléfono, mismo email,
+  o nombre ≥ 0,55. Empresa: nombre ≥ 0,45. Contra todo lo activo, congeladas incluidas (dos cargas de la
+  misma obra mientras espera también se frenan).
 - **Aviso a ciegas antes de guardar:** de lo parecido que no ve, solo el nombre de la obra y el de su
   responsable.
 - **Editar también congela (2026-09-26).** Si no, se esquiva: cargar "Obra X" en "Calle 1" y
@@ -108,6 +114,14 @@ resolviera después, y el usuario eligió congelar. Contactos hace lo mismo con 
   vincula, no cambia de estado, no se transfiere). Salidas: aprobar (homónima) · rechazar con motivo,
   que vuelve el dato a su valor anterior sin desactivar (el registro era válido, no el cambio) · "es la
   misma". Descartado: aceptarlo (el aviso a ciegas no alcanza) y avisar sin congelar.
+- **Lo que se congela, en la fila (2026-09-28).** Obra, persona y empresa llevan `congelada boolean`,
+  `congelada_antes jsonb` (los datos comparados como estaban aprobados; NULL si es un alta) y
+  `rechazo_motivo`. Rechazar un alta la desactiva; rechazar una edición restaura `congelada_antes` y
+  descongela. Editar de nuevo mientras espera no pisa `congelada_antes`; si deja de parecerse, se
+  descongela sola y sale de "Por aprobar". Descartado: un historial de ediciones de obras solo para esto.
+- **"Ver todo" incluye las congeladas (2026-09-28).** `obras_todas` y el admin (y `contactos_todas`, si
+  llega) las ven, marcadas "por aprobar": su permiso es ver todo. Resolverlas sigue siendo solo de
+  `obras_aprobar` / `contactos_aprobar`.
 - **Congelada:** la ve solo quien la cargó, y la puede editar. No se vincula, no cambia de estado, no se
   transfiere y no dispara plantillas: para Tareas, el alta cuenta desde que se aprueba. El bloqueo va en
   la base, con triggers y error de clase propia, no con policies (el 42501 diría "sin permiso"). Es lo

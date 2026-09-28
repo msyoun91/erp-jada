@@ -189,6 +189,23 @@ puntas dejan de estar congeladas; si para entonces quien la cargó ya no trabaja
 y "alta resuelta" lo dice. Rechazar y "es la misma", como arriba. Si la congelada es la obra y resulta
 "es la misma", el vínculo pasa a la existente (`decisiones/obras.md` → *Altas parecidas*).
 
+**Los vínculos guardados, en una tabla aparte: `contactos_vinculos_guardados` (2026-09-28).** Persona o
+empresa, y `ente` + `registro_id` + `roles` o `empresa_id` + `cargo`, con `cargado_por`. Sin GRANT: la
+escriben las funciones de alta y de aprobación. Aprobar crea el vínculo real y desactiva la fila;
+rechazar la desactiva; "es la misma" sobre una obra le cambia el `registro_id`. Descartado: un flag en
+`contactos_vinculos`, que tocaba el unique parcial, los eventos, la policy y cada pantalla que lee vínculos.
+- **Se crea a nombre de quien cargó.** La aprobación inserta con `creado_por = cargado_por`, y
+  `contactos_vinculos_validar` valida contra `NEW.creado_por` en vez de `auth.uid()`: el cliente no puede
+  escribirlo (fuera del GRANT de INSERT), así que es confiable. Entra `trabaja_registro_de(ente, id,
+  usuario)`. Si Pedro ya no trabaja Casa Núñez, el vínculo no se crea y "alta resuelta" lo dice.
+- **El guardado autoriza el vínculo, también en "es la misma".** Pedro creó a Marta para Casa Núñez y el
+  aprobador la resuelve como la Marta de Juan: "es la misma" le cambia el `persona_id` al guardado, y
+  `contactos_vinculos_validar` acepta si `NEW.creado_por` es el dueño **o** hay un guardado activo con esa
+  persona, ese registro y `cargado_por = NEW.creado_por` (lo escriben solo funciones: la fila prueba que
+  alguien lo autorizó). Sigue exigiendo que Pedro trabaje el registro; Marta sigue siendo de Juan.
+  Descartado: que `contactos_aprobar` vincule cualquier persona (con un INSERT común, el aprobador se
+  llevaba a Marta a sus obras).
+
 **La empresa de la persona, en el mismo formulario.** Campo opcional con el mismo buscador: las empresas
 que ves (lo que pide persona ↔ empresa), primero las vinculadas al registro, así el capataz de la
 constructora de la obra se elige sin escribir. Si no está, se crea con solo el nombre y todo se guarda
@@ -380,8 +397,5 @@ Reglas entre permisos
 
 ## Pendiente
 
-- **Vínculos guardados de una congelada, en el SQL.** Dónde viven (columnas o tabla aparte) y cómo los
-  crea la aprobación de la segunda punta sin pasar por la regla "vincula solo el dueño".
-- **`trabaja_registro_de`, con los vínculos guardados.** `trabaja_registro` ya está decidida
-  (`decisiones/global/entes.md`); su `_de` entra con el tramo 3 (el vínculo guardado se crea a nombre de
-  quien cargó la congelada).
+- ~~Vínculos guardados de una congelada, en el SQL~~ y ~~`trabaja_registro_de`~~ — cerrados en
+  *Los vínculos guardados, en una tabla aparte* (arriba).
