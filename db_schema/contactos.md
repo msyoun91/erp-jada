@@ -5,14 +5,14 @@ Personas, empresas y sus vínculos con cualquier registro (`sql/127`). Ficha y d
 
 **Estado:** tramo 1 (`BACKLOG.md`) — `sql/127`, `sql/128` (buscar o crear en el panel) y `sql/129`
 (desactivar vínculos por función), aplicados el 2026-09-26. Tramo 2: `sql/132`–`sql/134` (bajas, huérfanas, campanitas). Tramo 3: `sql/137`–`sql/139` (congelado,
-vínculos guardados, "Por aprobar"). Faltan compartir empresa, razones sociales, fusionar, Auditoría.
+vínculos guardados, "Por aprobar") y `sql/140` (compartir empresa). Faltan razones sociales, fusionar, Auditoría.
 
 ## Ver
 
 | | la ven | función |
 |---|---|---|
 | **Persona** | `contactos_administrar`; con `contactos_ver`: su dueño (activa), quien ve un registro al que está vinculada (vínculo activo, abierto o cerrado) y, si está congelada, `contactos_aprobar` | `contactos_puede_ver_persona_de(persona, responsable, activo, usuario)` |
-| **Empresa** | `contactos_administrar`; con `contactos_ver`: su equipo (sin equipo, quien la cargó; un alta congelada, solo quien la cargó), activa, y quien ve un registro vinculado | `contactos_puede_ver_empresa_de(empresa, equipo, creado_por, activo, usuario)` |
+| **Empresa** | `contactos_administrar`; con `contactos_ver`: su equipo o uno con el que se compartió (sin equipo, quien la cargó; un alta congelada, solo quien la cargó), activa, y quien ve un registro vinculado | `contactos_puede_ver_empresa_de(empresa, equipo, creado_por, activo, usuario)` |
 
 "Ve el registro" es `puede_abrir_registro` (DEFINER), porque "Ver contacto" pregunta desde una función
 DEFINER. Las `_de` son DEFINER sin GRANT; los envoltorios `contactos_puede_ver_persona(...)` y
@@ -56,6 +56,25 @@ email, notas, activo`). Teléfono y email se leen con `contactos_ver_contacto`.
 
 GRANT: SELECT; INSERT (`id, nombre, telefono, email, web, notas`); UPDATE (lo mismo + `activo,
 equipo_id`).
+
+"Es de mi equipo" — el suyo, sin equipo quien la cargó, o compartida con el mío — lo contesta solo
+`contactos_empresa_del_equipo_de(empresa, equipo, creado_por, usuario)` (DEFINER, sin GRANT; envoltorio
+`contactos_empresa_de_mi_equipo(empresa, equipo, creado_por)` con GRANT, `sql/140`). Lo usan ver,
+corregir (CO006), vincular (CO016), `contactos_vinculables` y `contactos_parecidas`.
+
+## contactos_empresa_equipos — la empresa compartida con otro equipo (`sql/140`)
+
+`empresa_id`, `equipo_id`, `compartida_por`, `activo`. Unique parcial `(empresa_id, equipo_id) WHERE
+activo`: volver a compartir es una fila nueva. SELECT si se ve la empresa (activas); sin GRANT de
+escritura. El equipo con el que se compartió la ve, la vincula y la corrige como propia; desactivarla,
+reactivarla y cambiarle el equipo siguen siendo del dueño o el admin.
+
+- `contactos_compartir_empresa(empresa, equipo, compartir boolean)` — DEFINER, GRANT `authenticated`.
+  Su equipo (sin equipo, quien la cargó) o `contactos_administrar` (CO027); empresa activa (CO018), no
+  congelada (CO020); otro equipo activo (CO028). Dejar de compartir no toca los vínculos ya creados.
+  Sin evento ni campanita.
+- `contactos_equipos() → (id, nombre)` — DEFINER, GRANT `authenticated`: los equipos activos, para
+  elegir con quién (el vendedor no lee `equipos`).
 
 ## contactos_persona_empresa
 
@@ -201,4 +220,4 @@ Ramas: `contactos_etiqueta` (nombre), `contactos_puede_abrir(tipo, id, usuario)`
 `puede_ver_relacion` para cualquier relación con un contacto, sea cual sea el módulo del registro.
 
 Tests: `sql/tests/contactos_reglas.sql`, `sql/tests/obras_alta.sql`, `sql/tests/obras_nombres.sql`,
-`sql/tests/duplicados.sql`.
+`sql/tests/duplicados.sql`, `sql/tests/contactos_compartir.sql`.

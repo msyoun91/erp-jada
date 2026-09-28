@@ -124,6 +124,9 @@ con Sur, que desde ahí la ve, la vincula y la corrige como propia. Un pedido po
 - Dejar de compartir no toca los vínculos que Sur ya creó (historia de la obra, como desactivar): Sur
   solo deja de poder vincularla de nuevo.
 - Sin campanita propia: la respuesta al pedido ya avisa.
+- **Congelada no se comparte, y sin evento (2026-09-28).** Como no se vincula: espera aprobación.
+  Tampoco emite `compartido`: ese evento es por usuario (GUIDE_ENTES) y esto es por equipo; nadie lo
+  escucha. Compartir la trae de vuelta: fila nueva, como un vínculo. `sql/140`.
 
 Pedido del usuario. Descartado: que Norte vincule Caputo a Casa Núñez desde el pedido (un pedido por
 obra, vincula a una obra que no ve, y Contactos tendría que leer los pasos de Tareas); no congelar una

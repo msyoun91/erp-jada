@@ -105,6 +105,58 @@ export type Database = {
           },
         ]
       }
+      contactos_empresa_equipos: {
+        Row: {
+          activo: boolean
+          compartida_por: string
+          created_at: string
+          empresa_id: string
+          equipo_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          compartida_por: string
+          created_at?: string
+          empresa_id: string
+          equipo_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          compartida_por?: string
+          created_at?: string
+          empresa_id?: string
+          equipo_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contactos_empresa_equipos_compartida_por_fkey"
+            columns: ["compartida_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_empresa_equipos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_empresa_equipos_equipo_id_fkey"
+            columns: ["equipo_id"]
+            isOneToOne: false
+            referencedRelation: "equipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contactos_empresas: {
         Row: {
           activo: boolean
@@ -1555,6 +1607,10 @@ export type Database = {
           titulo: string
         }[]
       }
+      contactos_compartir_empresa: {
+        Args: { p_compartir: boolean; p_empresa: string; p_equipo: string }
+        Returns: undefined
+      }
       contactos_crear_y_vincular: {
         Args: {
           p_cargo?: string
@@ -1585,6 +1641,17 @@ export type Database = {
       contactos_desactivar_vinculo: {
         Args: { p_vinculo: string }
         Returns: undefined
+      }
+      contactos_empresa_de_mi_equipo: {
+        Args: { p_creado_por: string; p_empresa: string; p_equipo: string }
+        Returns: boolean
+      }
+      contactos_equipos: {
+        Args: never
+        Returns: {
+          id: string
+          nombre: string
+        }[]
       }
       contactos_etiqueta: {
         Args: { p_id: string; p_tipo: string }
