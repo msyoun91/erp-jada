@@ -100,7 +100,9 @@ entrega de la agenda). Pasan `obras_contactos_bajas.sql`, `obras_contactos_aviso
 Pantallas del tramo 2: hecho el filtro "huérfanas" en Obras Todas (y "De {quien}" desde el aviso,
 `?responsable=`), y en Personas y Empresas (asignar o cambiar el equipo de la empresa desde su ficha,
 admin), y la casilla "su agenda pasa al jefe" en Usuarios al sacar del equipo o sumar a otro
-(marcada por defecto). Siguiente: la prueba "Juan se va y sus obras y su agenda llegan al jefe". Quedan para después, sin función que los respalde: vincular a una
+(marcada por defecto). Probado con `e2e/obras.spec.ts` ("Juan se va…": el admin arma, si no está,
+"Equipo Zqx pruebas" con Tester 2 de jefe comercial —delegador, con «Hilos» y "Jefe de equipo"—, saca a
+Tester y su obra y su persona pasan a Tester 2). Tramo 2 cerrado; siguiente: tramo 3 (duplicados). Quedan para después, sin función que los respalde: vincular a una
 obra desde la ficha de la persona o la empresa (buscar "obras que trabajás"), y crear la empresa desde
 "Sumar empresa" o la persona desde "Sumar persona" (hoy, solo existentes: crear y relacionar en un
 paso pide una función, como `contactos_crear_y_vincular`). Orden de
