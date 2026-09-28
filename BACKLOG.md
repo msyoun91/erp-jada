@@ -97,8 +97,8 @@ entra con el tramo 2 (bajas y equipos). Tramo 2 en SQL, aplicado el 2026-09-28: 
 campanita), `sql/133` (bajas, cambios de equipo, huérfanas; `asignar_equipo` con `p_agenda_al_jefe`),
 `sql/134` (campanitas y `notificaciones_listar`), `sql/135`–`136` (permisos de `service_role` para la
 entrega de la agenda). Pasan `obras_contactos_bajas.sql`, `obras_contactos_avisos.sql` y la regresión.
-Siguiente: pantallas del tramo 2 — filtro "huérfanas" en Obras Todas, Personas y Empresas (asignar
-equipo a la empresa), la casilla "la agenda pasa al jefe" al cambiar de equipo en Usuarios, y la
+Pantallas del tramo 2: hecho el filtro "huérfanas" en Obras Todas (y "De {quien}" desde el aviso,
+`?responsable=`). Siguiente: "huérfanas" en Personas y Empresas (asignar equipo a la empresa), la casilla "la agenda pasa al jefe" al cambiar de equipo en Usuarios, y la
 prueba "Juan se va y sus obras y su agenda llegan al jefe". Quedan para después, sin función que los respalde: vincular a una
 obra desde la ficha de la persona o la empresa (buscar "obras que trabajás"), y crear la empresa desde
 "Sumar empresa" o la persona desde "Sumar persona" (hoy, solo existentes: crear y relacionar en un

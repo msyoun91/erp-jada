@@ -326,7 +326,7 @@ Módulo: Obras
 │   └── obras_numeros (funcion)                — quien mira los números: el widget cuenta todas
 │                                                (sin ella, cuenta lo que ve)
 └── Todas (vista, obras_todas)                 — admin
-    │   filtro huérfanas: responsable inactivo
+    │   filtro huérfanas: responsable sin obras_ver; "De {quien}" desde el aviso
     └── obras_administrar (funcion)            — admin
 
 Delegables

@@ -16,12 +16,18 @@ const FILTROS = [
   { valor: "todas", label: "Todas" },
 ] as const;
 
-type Filtro = (typeof FILTROS)[number]["valor"];
+type Filtro = (typeof FILTROS)[number]["valor"] | "huerfanas" | "persona";
 
-function pasa(filtro: Filtro, estado: EstadoObra) {
+// Todas: `todas` trae los que pueden recibir (activos con `obras_ver`, como
+// `obras_avisar_huerfanas`) y `responsable` llega del aviso "obras huérfanas".
+type Todas = { recibibles: string[]; responsable: string | null };
+
+function pasa(filtro: Filtro, o: ObraResumen, todas?: Todas) {
   if (filtro === "todas") return true;
-  if (filtro === "abiertas") return (ESTADOS_ABIERTOS as readonly EstadoObra[]).includes(estado);
-  return filtro === estado;
+  if (filtro === "abiertas") return (ESTADOS_ABIERTOS as readonly EstadoObra[]).includes(o.estado);
+  if (filtro === "huerfanas") return o.activo && !todas?.recibibles.includes(o.responsable_id);
+  if (filtro === "persona") return o.activo && o.responsable_id === todas?.responsable;
+  return filtro === o.estado;
 }
 
 // `Quien` llega solo si quien mira puede crear: el alta lo necesita y `app/`
@@ -31,20 +37,22 @@ export function ObrasView({
   yo,
   nombres,
   Quien,
+  todas,
 }: {
   obras: ObraResumen[];
   yo: string;
   nombres: Record<string, string>;
   Quien?: QuienSlot;
+  todas?: Todas;
 }) {
   const [texto, setTexto] = useState("");
-  const [filtro, setFiltro] = useState<Filtro>("abiertas");
+  const [filtro, setFiltro] = useState<Filtro>(todas?.responsable ? "persona" : "abiertas");
   const [creando, setCreando] = useState(false);
 
   const q = texto.trim().toLowerCase();
   const filtradas = obras.filter(
     (o) =>
-      pasa(filtro, o.estado) &&
+      pasa(filtro, o, todas) &&
       [o.nombre, o.direccion, o.localidad ?? ""].some((t) => t.toLowerCase().includes(q))
   );
   const { visibles, ...paginado } = usePaginado(filtradas);
@@ -64,6 +72,8 @@ export function ObrasView({
               {f.label}
             </option>
           ))}
+          {todas && <option value="huerfanas">Huérfanas</option>}
+          {todas?.responsable && <option value="persona">De {nombres[todas.responsable] ?? "—"}</option>}
         </select>
         {Quien && (
           <button className="btn btn-primary" onClick={() => setCreando(true)}>
@@ -81,7 +91,9 @@ export function ObrasView({
           <p className="t-body-m mt-1">
             {obras.length === 0
               ? `Acá aparecen las obras que llevás y en las que participás.${Quien ? ' Cargá una con "Nueva obra".' : ""}`
-              : "Probá con otro término o cambiá el filtro de estado."}
+              : filtro === "huerfanas"
+                ? "Ninguna obra activa quedó sin quien la trabaje."
+                : "Probá con otro término o cambiá el filtro de estado."}
           </p>
         </div>
       ) : (

@@ -145,7 +145,7 @@ const RUTA: Record<string, (id: string) => string> = {
   tareas_todas: (id) => `/tareas/todas?responsable=${id}`,
   obra: (id) => `/obras/${id}`,
   obras: () => "/obras",
-  obras_todas: () => "/obras/todas",
+  obras_todas: (id) => `/obras/todas?responsable=${id}`,
   persona: (id) => `/contactos/personas/${id}`,
   contactos: () => "/contactos",
 };
