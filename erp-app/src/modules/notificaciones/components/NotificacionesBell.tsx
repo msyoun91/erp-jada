@@ -61,6 +61,14 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   paso_dado_de_baja: Archive,
   paso_completado: CircleCheck,
   paso_cancelado: Ban,
+  obra_transferida: ArrowRightLeft,
+  obra_sumado: UserPlus,
+  obra_quitado: UserMinus,
+  obras_recibidas: Inbox,
+  obras_huerfanas: UserX,
+  persona_transferida: ArrowRightLeft,
+  agenda_recibida: Inbox,
+  personas_huerfanas: UserX,
 };
 const TEXTO: Record<TipoNotificacion, string> = {
   miembro_nuevo: "Se sumó a tu equipo",
@@ -85,6 +93,14 @@ const TEXTO: Record<TipoNotificacion, string> = {
   paso_dado_de_baja: "Se dio de baja",
   paso_completado: "Completaron",
   paso_cancelado: "Se canceló",
+  obra_transferida: "Ahora sos responsable de",
+  obra_sumado: "Te sumaron a la obra",
+  obra_quitado: "Ya no participás en",
+  obras_recibidas: "Recibiste las obras de",
+  obras_huerfanas: "Quedaron obras huérfanas de",
+  persona_transferida: "Ahora está en tu agenda",
+  agenda_recibida: "Recibiste la agenda de",
+  personas_huerfanas: "Quedaron personas huérfanas de",
 };
 const COLOR: Record<TipoNotificacion, string> = {
   miembro_nuevo: "text-brand-500",
@@ -109,6 +125,14 @@ const COLOR: Record<TipoNotificacion, string> = {
   paso_dado_de_baja: "text-warning-text",
   paso_completado: "text-success-text",
   paso_cancelado: "text-warning-text",
+  obra_transferida: "text-brand-500",
+  obra_sumado: "text-brand-500",
+  obra_quitado: "text-warning-text",
+  obras_recibidas: "text-brand-500",
+  obras_huerfanas: "text-error-text",
+  persona_transferida: "text-brand-500",
+  agenda_recibida: "text-brand-500",
+  personas_huerfanas: "text-error-text",
 };
 
 // `destino` → ruta. Cada rama de `notificaciones_listar` que devuelva un
@@ -119,6 +143,11 @@ const RUTA: Record<string, (id: string) => string> = {
   tarea: (id) => `/tareas/paso/${id}`,
   hilo: (id) => `/tareas/${id}`,
   tareas_todas: (id) => `/tareas/todas?responsable=${id}`,
+  obra: (id) => `/obras/${id}`,
+  obras: () => "/obras",
+  obras_todas: () => "/obras/todas",
+  persona: (id) => `/contactos/personas/${id}`,
+  contactos: () => "/contactos",
 };
 
 // `permiso_otorgado` trae el módulo en `destino` y la vista en `etiqueta`: los

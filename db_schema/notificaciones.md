@@ -28,6 +28,20 @@ Las dos ramas piden la fila apuntada **activa**: miembro que se fue o permiso re
 da el título solo para esos tres tipos y solo de los avisos propios; `destino` va NULL salvo que
 todavía lo vea.
 
+**Eventos de obras y contactos (`sql/132`–`sql/134`).** Quién recibe cada uno: `decisiones/obras.md` y
+`decisiones/contactos.md` → *Eventos que emite*. Los directos salen solo cuando actúa alguien
+(profundidad 1 y `auth.uid()`); lo que mueven la baja y el cambio de equipo avisa una vez por hecho.
+
+| entidad | tipos | resuelve | `destino` |
+|---|---|---|---|
+| `obras` | `obra_transferida` | nombre de la obra, con la RLS del lector | `obra` |
+| `obras_participantes` | `obra_sumado`, `obra_quitado` (salida: `obras_avisos_salida()`) | nombre de la obra | `obra` (NULL si ya no la ve) |
+| `contactos_personas` | `persona_transferida` | nombre de la persona | `persona` |
+| `usuarios` | `obras_recibidas`, `agenda_recibida` (al jefe) | nombre de quien se fue; `motivo` = cuántas obras o personas llegaron de él al lector (evento `transferencia` `{de, a}`) y siguen a su nombre | `obras`, `contactos` |
+| `usuarios` | `obras_huerfanas`, `personas_huerfanas` (a quienes administran el módulo) | nombre de quien las dejó; `motivo` = cuántas activas le quedan que el lector ve | `obras_todas`, `contactos` |
+
+Los de `usuarios` desaparecen en 0 y uno nuevo sobre la misma persona reemplaza al anterior.
+
 ## Sumar un evento
 
 1. `ALTER TYPE tipo_notificacion ADD VALUE '<tipo>'`, en su propia transacción: el valor no se puede usar antes del commit y `notificaciones_listar` lo castea al crearse.
@@ -44,8 +58,8 @@ todavía lo vea.
 |---|---|---|
 | id | uuid PK | |
 | usuario_id | uuid FK → usuarios | destinatario |
-| tipo | enum `tipo_notificacion` | `miembro_nuevo` \| `permiso_otorgado` \| `delegador_designado` \| los diecinueve de tareas |
-| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos`, `tareas`, `tareas_hilos`, `usuarios` |
+| tipo | enum `tipo_notificacion` | `miembro_nuevo` \| `permiso_otorgado` \| `delegador_designado` \| los diecinueve de tareas \| los ocho de obras y contactos (`sql/132`) |
+| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos`, `tareas`, `tareas_hilos`, `usuarios`, `obras`, `obras_participantes`, `contactos_personas` (`sql/134`) |
 | entidad_id | uuid | sin FK — apunta a varias tablas |
 | actor_id | uuid FK → usuarios, nullable | quién lo provocó. Null = evento del sistema |
 | leida_at | timestamptz, nullable | |

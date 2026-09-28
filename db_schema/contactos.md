@@ -4,8 +4,8 @@ Personas, empresas y sus vínculos con cualquier registro (`sql/127`). Ficha y d
 `decisiones/contactos.md`.
 
 **Estado:** tramo 1 (`BACKLOG.md`) — `sql/127`, `sql/128` (buscar o crear en el panel) y `sql/129`
-(desactivar vínculos por función), aplicados el 2026-09-26. Faltan bajas y huérfanas, congelado, compartir empresa, razones sociales, fusionar,
-Auditoría y campanitas.
+(desactivar vínculos por función), aplicados el 2026-09-26. Tramo 2: `sql/132`–`sql/134` (bajas, huérfanas, campanitas). Faltan congelado, compartir empresa, razones sociales, fusionar,
+Auditoría.
 
 ## Ver
 
@@ -129,6 +129,20 @@ Sin `activo` ni `updated_at`, como `eventos`.
 - `contactos_crear_y_vincular(ente, registro, roles, tipo, nombre, telefono?, email?, empresa_id?,
   empresa_nombre?, cargo?) → uuid` — INVOKER (`sql/128`). Persona (con empresa elegida o nueva, y
   cargo) o empresa, y el vínculo; todo o nada (CO019 si los parámetros no cierran).
+
+## Bajas y huérfanas (`sql/133`)
+
+- `contactos_jefe_de(equipo) → uuid` — el delegador del equipo (`usuarios_delegar`), con
+  `contactos_ver`; sin GRANT.
+- `contactos_entregar(usuario, equipo)` — sus personas pasan a ese jefe; sin jefe, nada. Al jefe, una
+  `agenda_recibida`. La llaman `contactos_usuario_baja` (trigger de `usuarios`, con su equipo actual) y
+  `asignar_equipo` si `p_agenda_al_jefe` (con el anterior, antes de apagar la membresía).
+- Huérfana: persona activa cuyo dueño no tiene `contactos_ver`. `contactos_avisar_huerfanas(usuario)`:
+  una `personas_huerfanas` a quienes tienen `contactos_administrar`; en la baja y al perder la vista
+  (`contactos_perdida_de_ver`, diferido). Las empresas no se mueven.
+
+Campanita directa (`sql/134`): `contactos_personas_avisar` → `persona_transferida`, solo cuando actúa
+alguien. Ver `notificaciones.md`.
 
 ## Permisos (`submodulos`, `modulo = 'contactos'`)
 

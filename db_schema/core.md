@@ -100,7 +100,7 @@ No se desactiva con miembros activos (`equipos_validar_desactivar`, US010).
 
 RLS de las dos (solo SELECT; escribe el admin con `service_role`): `usuarios_ver` y `usuarios_equipos` ven todo; `usuarios_equipo` ve su equipo vía `mi_equipo()` — `SECURITY DEFINER`, sin argumento para no exponer el equipo de otros. Desde `sql/105` es un envoltorio de `equipo_de(p_usuario)`, sin GRANT a `authenticated`. Grants de `service_role` (`sql/111`): SELECT/INSERT/UPDATE en las dos tablas y EXECUTE en `equipo_de` — las funciones de admin son INVOKER y corren con ese rol.
 
-Cambiar de equipo o quedar independiente: `asignar_equipo(p_admin, p_usuario, p_equipo)` (`sql/106`, solo `service_role`), las dos escrituras en una transacción. Trigger `equipos_miembros_notificar` (`sql/108`): la membresía nueva le avisa al delegador del equipo.
+Cambiar de equipo o quedar independiente: `asignar_equipo(p_admin, p_usuario, p_equipo, p_agenda_al_jefe = true)` (`sql/106`, `sql/133`; solo `service_role`), las dos escrituras en una transacción. Con `p_agenda_al_jefe`, antes de apagar la membresía entrega la agenda al jefe del equipo anterior (`contactos_entregar`, ver `contactos.md`). Trigger `equipos_miembros_notificar` (`sql/108`): la membresía nueva le avisa al delegador del equipo.
 
 Trigger `equipos_miembros_validar` (`sql/105`): `equipo_id`/`usuario_id` inmutables (US015); no entra quien tiene `usuarios_gestionar` (US002) ni a un equipo inactivo (US011); el delegador no sale (US009); al salir, se apaga lo que le dieron por delegación.
 

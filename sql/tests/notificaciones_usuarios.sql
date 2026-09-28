@@ -81,6 +81,11 @@ INSERT INTO ids (nombre, id)
 SELECT replace(codigo, 'usuarios_', ''), id FROM submodulos
 WHERE activo AND codigo IN ('usuarios_ver','usuarios_gestionar','usuarios_equipo','usuarios_delegar');
 
+-- Desde sql/112 la delegación requiere `tareas_ver` y `tareas_equipo`.
+INSERT INTO ids (nombre, id)
+SELECT CASE codigo WHEN 'tareas_ver' THEN 'tver' ELSE 'teq' END, id FROM submodulos
+WHERE activo AND codigo IN ('tareas_ver','tareas_equipo');
+
 INSERT INTO auth.users (id, email, raw_user_meta_data)
 SELECT id, lower(nombre) || '.' || id || '@test108.local', jsonb_build_object('nombre', 'test108 ' || nombre)
 FROM ids WHERE nombre IN ('A','D','M1','N');
@@ -92,9 +97,20 @@ INSERT INTO submodulos (id, codigo, modulo, tipo, nombre, orden, delegable, vist
 INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
 VALUES (pg_temp.id('A'), pg_temp.id('ver')), (pg_temp.id('A'), pg_temp.id('gestionar'));
 
+-- Quien pueda llegar a delegador tiene `tareas_ver` del admin (D, y M1 como
+-- heredero en el caso 06), como en `usuarios_equipos.sql`. `tareas_equipo` no
+-- se da suelto: requiere `usuarios_delegar` activo, y lo trae la propia
+-- designación.
+INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
+SELECT pg_temp.id(n), pg_temp.id('tver') FROM unnest(ARRAY['D','M1']) AS n;
+
 INSERT INTO equipos (id, nombre) VALUES (pg_temp.id('T'), 'test108 T');
 INSERT INTO equipos_miembros (equipo_id, usuario_id)
 SELECT pg_temp.id('T'), pg_temp.id(n) FROM unnest(ARRAY['D','M1']) AS n;
+
+-- Las notificaciones que dispara el montaje (tver/teq de D y M1) no son parte
+-- de lo que este test verifica: se apagan antes de los casos numerados.
+UPDATE usuario_notificaciones SET activo = false WHERE usuario_id IN (SELECT id FROM ids) AND activo;
 
 -- ============================================================
 -- permiso_otorgado / delegador_designado
@@ -108,13 +124,18 @@ SELECT pg_temp.caso('00 no se notifica a sí mismo', '0',
    JOIN usuario_submodulos us ON us.id = n.entidad_id
    WHERE us.usuario_id = pg_temp.id('A') AND us.submodulo_id = pg_temp.id('V')));
 
+-- `asignar_submodulos` reemplaza todo el activo del usuario por la lista: hay
+-- que repetir `tver` (del montaje) o se apaga y la delegación falla (US016).
 SELECT pg_temp.caso('01 A designa a D y le da V y F',
   'ok', pg_temp.intentar(format('SELECT asignar_submodulos(%L, %L, %L)',
-    pg_temp.id('A'), pg_temp.id('D'), pg_temp.ids('equipo','delegar','V','F'))));
+    pg_temp.id('A'), pg_temp.id('D'), pg_temp.ids('tver','teq','equipo','delegar','V','F'))));
 SELECT pg_temp.caso('01 una sola designación', '1', pg_temp.cuenta('D', 'delegador_designado'));
-SELECT pg_temp.caso('01 Mi equipo no avisa aparte; F no avisa', '1', pg_temp.cuenta('D', 'permiso_otorgado'));
+-- teq (tareas_equipo) es vista y no es usuarios_equipo: avisa aparte, igual que
+-- V; `cuenta` no filtra por activo, así que también entra la fila apagada del
+-- montaje (`tver` de D, vista igual que V y teq).
+SELECT pg_temp.caso('01 Mi equipo no avisa aparte; F no avisa; teq sí avisa', '3', pg_temp.cuenta('D', 'permiso_otorgado'));
 SELECT pg_temp.caso('01 bandeja de D',
-  'delegador_designado|test108 T|mi_equipo|test108 A / permiso_otorgado|V|prueba108|test108 A',
+  'delegador_designado|test108 T|mi_equipo|test108 A / permiso_otorgado|Equipo|tareas|test108 A / permiso_otorgado|V|prueba108|test108 A',
   pg_temp.bandeja('D'));
 
 SELECT pg_temp.caso('02 D delega V y F a M1',
@@ -126,7 +147,8 @@ SELECT pg_temp.caso('03 D le saca V y F a M1',
   'ok', pg_temp.intentar(format('SELECT delegar_submodulos(%L, %L)',
     pg_temp.id('M1'), '{}'::uuid[]), 'D'));
 SELECT pg_temp.caso('03 el permiso revocado sale de la bandeja', 'vacía', pg_temp.bandeja('M1'));
-SELECT pg_temp.caso('03 la fila sigue en la tabla', '1', pg_temp.cuenta('M1', 'permiso_otorgado'));
+-- Igual que en D: se suma la fila apagada del montaje (`tver` de M1).
+SELECT pg_temp.caso('03 la fila sigue en la tabla', '2', pg_temp.cuenta('M1', 'permiso_otorgado'));
 
 -- ============================================================
 -- miembro_nuevo
@@ -137,14 +159,14 @@ SELECT pg_temp.caso('04 A suma a N al equipo',
 SELECT pg_temp.caso('04 le llega al delegador', '1', pg_temp.cuenta('D', 'miembro_nuevo'));
 SELECT pg_temp.caso('04 no al resto del equipo', '0', pg_temp.cuenta('M1', 'miembro_nuevo'));
 SELECT pg_temp.caso('04 bandeja de D, sin actor (service_role)',
-  'delegador_designado|test108 T|mi_equipo|test108 A / miembro_nuevo|test108 N|mi_equipo|null / permiso_otorgado|V|prueba108|test108 A',
+  'delegador_designado|test108 T|mi_equipo|test108 A / miembro_nuevo|test108 N|mi_equipo|null / permiso_otorgado|Equipo|tareas|test108 A / permiso_otorgado|V|prueba108|test108 A',
   pg_temp.bandeja('D'));
 
 SELECT pg_temp.caso('05 A deja a N independiente',
   'ok', pg_temp.intentar(format('SELECT asignar_equipo(%L, %L, NULL)',
     pg_temp.id('A'), pg_temp.id('N'))));
 SELECT pg_temp.caso('05 el miembro que se fue sale de la bandeja',
-  'delegador_designado|test108 T|mi_equipo|test108 A / permiso_otorgado|V|prueba108|test108 A',
+  'delegador_designado|test108 T|mi_equipo|test108 A / permiso_otorgado|Equipo|tareas|test108 A / permiso_otorgado|V|prueba108|test108 A',
   pg_temp.bandeja('D'));
 
 -- ============================================================
@@ -153,8 +175,8 @@ SELECT pg_temp.caso('05 el miembro que se fue sale de la bandeja',
 SELECT pg_temp.caso('06 D sale con M1 de heredero',
   'ok', pg_temp.intentar(format('SELECT quitar_delegador(%L, %L, %L)',
     pg_temp.id('A'), pg_temp.id('D'), pg_temp.id('M1'))));
-SELECT pg_temp.caso('06 bandeja de M1: designado, Mi equipo no avisa aparte',
-  'delegador_designado|test108 T|mi_equipo|test108 A / permiso_otorgado|V|prueba108|test108 A',
+SELECT pg_temp.caso('06 bandeja de M1: designado, Mi equipo no avisa aparte, teq y V se reavisan',
+  'delegador_designado|test108 T|mi_equipo|test108 A / permiso_otorgado|Equipo|tareas|test108 A / permiso_otorgado|V|prueba108|test108 A',
   pg_temp.bandeja('M1'));
 SELECT pg_temp.caso('06 D ya no ve su designación',
   'permiso_otorgado|V|prueba108|test108 A', pg_temp.bandeja('D'));

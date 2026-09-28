@@ -73,6 +73,12 @@ Por qué moverlas y no dejar que el jefe las reparta a mano, si igual las ve: la
 corren a nombre del responsable, y con uno inactivo fallan hasta que alguien reasigne. Y quien cambia de
 equipo, como responsable, seguiría viendo obras comerciales desde el equipo nuevo.
 
+**Huérfana es "el responsable ya no ve Obras", no solo "inactivo" (2026-09-28).** Como en Tareas:
+perder `obras_ver` (a mano, o al cambiar de equipo y perder lo delegado) también deja la obra sin quien
+la trabaje, y avisa a `obras_administrar` igual que la baja. **Quien entra a un equipo desde
+independiente le pone ese equipo a sus obras y participaciones activas sin equipo**; si no, el jefe
+nuevo no las ve. Archivos: `sql/133`.
+
 **Transferir (2026-09-25).** Pueden transferir el responsable (sus obras), el jefe (las del equipo) y el
 admin, y solo a alguien activo y con `obras_ver`. El `equipo_id` pasa a ser el del nuevo responsable:
 si es de otro equipo comercial, deja de verla el jefe anterior y la ve el del nuevo. Participantes y

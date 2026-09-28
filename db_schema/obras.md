@@ -4,8 +4,9 @@ Rediseño desde cero (`sql/126`). Ficha y decisiones: `decisiones/obras.md`. Los
 son de Contactos (`contactos.md`). El esquema de `master` es otro módulo: no se mezclan nombres.
 
 **Estado:** tramo 1 (`BACKLOG.md`) — `sql/126` (obra, participantes, permisos, estados, transferir,
-desactivar, ente) y `sql/128` (`obras_alta` con "¿Quién?"), aplicados el 2026-09-26. Faltan bajas y
-huérfanas, congelado, comisión, widget y campanitas.
+desactivar, ente) y `sql/128` (`obras_alta` con "¿Quién?"), aplicados el 2026-09-26. Tramo 2 —
+`sql/132`–`sql/134` (bajas, cambios de equipo, huérfanas y campanitas). Faltan congelado, comisión y
+widget.
 
 ## Ver, trabajar, tener a cargo
 
@@ -95,6 +96,21 @@ Directo o sistema, como Tareas: quién hace qué vale a `pg_trigger_depth() = 1`
 - `obras_a_cargo(obra) → boolean` — DEFINER, GRANT `authenticated` (`sql/131`): envoltorio de
   `obras_a_cargo_de` con `auth.uid()`, para que la ficha muestre transferir, desactivar y participantes.
 - A quién se transfiere o se suma: `usuarios_con_permiso('obras_ver')` (core).
+
+## Bajas y cambios de equipo (`sql/133`)
+
+- `obras_jefe_de(equipo) → uuid` — el miembro activo con `obras_equipo` y `obras_ver`; sin GRANT.
+- `obras_entregar(usuario)` — sus obras (todas, también desactivadas) pasan al jefe del `equipo_id` de
+  cada una; sin jefe, quedan con él. Cierra todas sus participaciones. Al jefe, una `obras_recibidas`.
+- Triggers `obras_usuario_baja` (`usuarios.activo` → false: entrega y avisa huérfanas) y
+  `obras_cambio_de_equipo` (`equipos_miembros`: al salir, entrega; al entrar, sus obras y
+  participaciones activas sin equipo toman el nuevo). `obras_perdida_de_ver` (constraint trigger
+  diferido sobre `usuario_submodulos`): perder `obras_ver` avisa huérfanas.
+- Huérfana: obra activa cuyo responsable no tiene `obras_ver` (inactivo o sin la vista).
+  `obras_avisar_huerfanas(usuario)`: una `obras_huerfanas` a quienes tienen `obras_administrar`.
+
+Campanitas directas (`sql/134`): `obras_avisar` (transferida) y `obras_participantes_avisar` (sumado,
+quitado), solo cuando actúa alguien. Ver `notificaciones.md`.
 
 ## Permisos (`submodulos`, `modulo = 'obras'`)
 

@@ -1435,7 +1435,12 @@ export type Database = {
     }
     Functions: {
       asignar_equipo: {
-        Args: { p_admin: string; p_equipo: string | null; p_usuario: string }
+        Args: {
+          p_admin: string
+          p_agenda_al_jefe?: boolean
+          p_equipo: string | null
+          p_usuario: string
+        }
         Returns: undefined
       }
       asignar_submodulos: {
@@ -1978,6 +1983,14 @@ export type Database = {
         | "paso_dado_de_baja"
         | "paso_completado"
         | "paso_cancelado"
+        | "obra_transferida"
+        | "obra_sumado"
+        | "obra_quitado"
+        | "obras_recibidas"
+        | "obras_huerfanas"
+        | "persona_transferida"
+        | "agenda_recibida"
+        | "personas_huerfanas"
       tipo_obra:
         | "edificio_residencial"
         | "casa"
@@ -2179,6 +2192,14 @@ export const Constants = {
         "paso_dado_de_baja",
         "paso_completado",
         "paso_cancelado",
+        "obra_transferida",
+        "obra_sumado",
+        "obra_quitado",
+        "obras_recibidas",
+        "obras_huerfanas",
+        "persona_transferida",
+        "agenda_recibida",
+        "personas_huerfanas",
       ],
       tipo_obra: [
         "edificio_residencial",

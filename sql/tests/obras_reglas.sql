@@ -402,24 +402,6 @@ SELECT pg_temp.caso('09 hay un evento reactivacion', 'true',
   (SELECT (count(*) > 0)::text FROM eventos WHERE ente = 'obra' AND registro_id = pg_temp.id('Belgrano') AND evento = 'reactivacion'));
 
 -- ============================================================
--- 10 — quitar_delegador, corrido como service_role
--- ============================================================
--- Sin heredero, la salida del delegador solo vale si no queda nadie más en el
--- equipo (US009): Juan y Nico salen de Norte, JN queda solo.
-SELECT pg_temp.caso('10 Juan sale de Norte', 'ok', pg_temp.intentar(format(
-  'UPDATE equipos_miembros SET activo = false WHERE equipo_id = %L AND usuario_id = %L AND activo',
-  pg_temp.id('Norte'), pg_temp.id('Juan'))));
-SELECT pg_temp.caso('10 Nico sale de Norte', 'ok', pg_temp.intentar(format(
-  'UPDATE equipos_miembros SET activo = false WHERE equipo_id = %L AND usuario_id = %L AND activo',
-  pg_temp.id('Norte'), pg_temp.id('Nico'))));
-SELECT pg_temp.caso('10 GA quita a JN como delegador, sin heredero', 'ok', pg_temp.intentar(format(
-  'SELECT quitar_delegador(%L, %L, NULL)', pg_temp.id('GA'), pg_temp.id('JN'))));
-SELECT pg_temp.caso('10 JN pierde usuarios_delegar', 'false',
-  (SELECT usuario_tiene_permiso(pg_temp.id('JN'), 'usuarios_delegar')::text));
-SELECT pg_temp.caso('10 JN pierde obras_equipo', 'false',
-  (SELECT usuario_tiene_permiso(pg_temp.id('JN'), 'obras_equipo')::text));
-
--- ============================================================
 -- 11 — Genéricas: etiqueta, buscar, puede_abrir_registro, roles del ente
 -- ============================================================
 SELECT pg_temp.caso('11 etiqueta_registro para Juan (la ve)', 'Belgrano', pg_temp.etiqueta('Belgrano', 'Juan'));
@@ -444,6 +426,25 @@ SELECT pg_temp.caso('12 Nico no ve eventos de Caputo (no tiene relación)', '0',
 -- NULL en un insert: 'idea' IS DISTINCT FROM NULL) = 8.
 SELECT pg_temp.caso('12 Juan ve los eventos de su Caputo', '8',
   pg_temp.ve(format('SELECT 1 FROM eventos WHERE ente = ''obra'' AND registro_id = %L', pg_temp.id('Caputo')), 'Juan'));
+
+-- ============================================================
+-- 10 — quitar_delegador, corrido como service_role
+-- ============================================================
+-- Sin heredero, la salida del delegador solo vale si no queda nadie más en el
+-- equipo (US009): Juan y Nico salen de Norte, JN queda solo. Va al final: desde
+-- `sql/133`, salir de Norte entrega las obras de Juan a JN.
+SELECT pg_temp.caso('10 Juan sale de Norte', 'ok', pg_temp.intentar(format(
+  'UPDATE equipos_miembros SET activo = false WHERE equipo_id = %L AND usuario_id = %L AND activo',
+  pg_temp.id('Norte'), pg_temp.id('Juan'))));
+SELECT pg_temp.caso('10 Nico sale de Norte', 'ok', pg_temp.intentar(format(
+  'UPDATE equipos_miembros SET activo = false WHERE equipo_id = %L AND usuario_id = %L AND activo',
+  pg_temp.id('Norte'), pg_temp.id('Nico'))));
+SELECT pg_temp.caso('10 GA quita a JN como delegador, sin heredero', 'ok', pg_temp.intentar(format(
+  'SELECT quitar_delegador(%L, %L, NULL)', pg_temp.id('GA'), pg_temp.id('JN'))));
+SELECT pg_temp.caso('10 JN pierde usuarios_delegar', 'false',
+  (SELECT usuario_tiene_permiso(pg_temp.id('JN'), 'usuarios_delegar')::text));
+SELECT pg_temp.caso('10 JN pierde obras_equipo', 'false',
+  (SELECT usuario_tiene_permiso(pg_temp.id('JN'), 'obras_equipo')::text));
 
 SELECT caso, esperado, obtenido, ok FROM r ORDER BY ok, caso;
 

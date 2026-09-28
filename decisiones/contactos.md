@@ -65,6 +65,8 @@ Se encuentran como en Obras (2026-09-26): filtro "huérfanas" (dueño inactivo) 
 `contactos_administrar`, y campanita "personas huérfanas" a quienes la tienen, una por hecho, con la
 cantidad. Una empresa sin equipo cuya cargadora queda inactiva no la ve nadie: entra en el mismo filtro,
 en Empresas, y el admin le asigna un equipo (`equipo_id`).
+Huérfana, como en Obras (2026-09-28): dueño sin `contactos_ver` (inactivo o sin la vista); perder la
+vista también avisa. El jefe que recibe la agenda es el delegador del equipo (`sql/133`).
 Mecánica, al escribir el SQL: `asignar_equipo` suma el parámetro. Precedente: `designar_delegador`
 ya mueve `tareas_equipo` (`sql/112`).
 
