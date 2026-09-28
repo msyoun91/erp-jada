@@ -37,6 +37,7 @@ todavía lo vea.
 | `obras` | `obra_transferida` | nombre de la obra, con la RLS del lector | `obra` |
 | `obras_participantes` | `obra_sumado`, `obra_quitado` (salida: `obras_avisos_salida()`) | nombre de la obra | `obra` (NULL si ya no la ve) |
 | `contactos_personas` | `persona_transferida` | nombre de la persona | `persona` |
+| `contactos_personas` | `persona_fusionada` (al dueño de la que se va; `sql/145`–`146`) | nombre de la que se va; `motivo` = el dueño de la que queda. Lo resuelve `contactos_fusion_avisos` (DEFINER) | `persona` (la que queda), solo si la ve |
 | `usuarios` | `obras_recibidas`, `agenda_recibida` (al jefe) | nombre de quien se fue; `motivo` = cuántas obras o personas llegaron de él al lector (evento `transferencia` `{de, a}`) y siguen a su nombre | `obras`, `contactos` |
 | `usuarios` | `obras_huerfanas`, `personas_huerfanas` (a quienes administran el módulo) | nombre de quien las dejó; `motivo` = cuántas activas le quedan que el lector ve | `obras_todas`, `contactos` |
 

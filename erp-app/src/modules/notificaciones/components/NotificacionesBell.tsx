@@ -74,6 +74,7 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   alta_rechazada: CircleX,
   alta_es_la_misma: Shuffle,
   obra_misma_sumado: UserPlus,
+  persona_fusionada: Shuffle,
 };
 const TEXTO: Record<TipoNotificacion, string> = {
   miembro_nuevo: "Se sumó a tu equipo",
@@ -111,6 +112,7 @@ const TEXTO: Record<TipoNotificacion, string> = {
   alta_rechazada: "Rechazaron",
   alta_es_la_misma: "Resolvieron como ya existente:",
   obra_misma_sumado: "Se sumó alguien a",
+  persona_fusionada: "Se unificó con la ficha de otro dueño:",
 };
 const COLOR: Record<TipoNotificacion, string> = {
   miembro_nuevo: "text-brand-500",
@@ -148,6 +150,7 @@ const COLOR: Record<TipoNotificacion, string> = {
   alta_rechazada: "text-error-text",
   alta_es_la_misma: "text-brand-500",
   obra_misma_sumado: "text-brand-500",
+  persona_fusionada: "text-brand-500",
 };
 
 // `destino` → ruta. Cada rama de `notificaciones_listar` que devuelva un

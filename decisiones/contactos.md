@@ -89,9 +89,19 @@ las dos referentes de Belgrano, con 3 % y con USD 5000: el vínculo que queda ad
 Con las dos, la pantalla de fusionar las muestra y el admin elige, como teléfono y email; la otra pasa
 desactivada al vínculo que queda, como historial. Con una sola, pasa sin preguntar.
 
+**El admin elige la comisión eligiendo el vínculo que queda (2026-09-28).** Contactos no escribe en
+`obras_comisiones`: en un choque, `contactos_fusionar` desactiva un vínculo con `fusionado_en` (el que
+queda) y el trigger de Obras le pasa sus comisiones; la activa pasa inactiva si el que queda ya tenía
+una. Por defecto queda el vínculo de la persona que queda; `conservar` lista los de la que se va que el
+admin prefiere (el de USD 5000). Mostrar las dos comisiones en la pantalla pide ver la obra a cargo: un
+admin de Contactos sin Obras fusiona igual, con el vínculo por defecto. Archivos: `sql/146`,
+`sql/tests/contactos_fusionar.sql`.
+
 **Una congelada no se fusiona; lo que apunta a la que se va no se toca (2026-09-28).** La congelada
 se resuelve en "Por aprobar" con "es la misma", que ya maneja los vínculos guardados: fusionar es para
-dos aprobadas, así que los guardados nunca entran. Contactos no escribe en `tareas_vinculos` ni en
+dos aprobadas. Corrección al escribir el SQL: los guardados sí pueden apuntar a una aprobada (Marta,
+vinculada a una obra congelada), así que los activos pasan a la que queda; si no, al aprobarse la obra
+el vínculo fallaba contra una persona inactiva. Contactos no escribe en `tareas_vinculos` ni en
 `eventos`: la ficha de la que se va muestra "Se fusionó con Marta Gómez (de Juan) →", y los links viejos
 llegan a la que queda en un clic. Persona ↔ empresa pasa a la que queda como los vínculos; si las dos
 estaban en la misma empresa, queda una sola relación abierta.
@@ -125,6 +135,8 @@ usuario: accesos y personas distintas, de más a menos. Al tocar uno, su detalle
 hora, y el dueño de la persona ("miró 90 que no eran suyas" es la señal). Filtro por persona ("¿quién
 miró a Marta?"), con un buscador por nombre que no abre la agenda. Tope: 500 filas en el detalle,
 avisando que hay más. Un acceso es teléfono y email juntos: no se distingue qué miró.
+La vista no requiere `contactos_ver`; el buscador solo trae personas con algún acceso, y el detalle
+devuelve 501 filas para que la pantalla sepa si hay más (`sql/144`).
 
 **Las empresas son del equipo que las carga (2026-09-25).** El usuario las prefirió privadas, pero
 que comercial las vea entero: así un vendedor no carga dos veces la misma constructora. Se resuelve con

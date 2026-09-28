@@ -6,7 +6,8 @@ son de Contactos (`contactos.md`). El esquema de `master` es otro módulo: no se
 **Estado:** tramo 1 (`BACKLOG.md`) — `sql/126` (obra, participantes, permisos, estados, transferir,
 desactivar, ente) y `sql/128` (`obras_alta` con "¿Quién?"), aplicados el 2026-09-26. Tramo 2 —
 `sql/132`–`sql/134` (bajas, cambios de equipo, huérfanas y campanitas). Tramo 3 — `sql/137`–`sql/139`
-(parecidas, congelado, "Por aprobar"; ver *Altas parecidas*). Faltan comisión y widget.
+(parecidas, congelado, "Por aprobar"; ver *Altas parecidas*). Tramo 4 — `sql/142` (comisión) y
+`sql/143` (números del widget).
 
 ## Ver, trabajar, tener a cargo
 
@@ -108,6 +109,38 @@ Directo o sistema, como Tareas: quién hace qué vale a `pg_trigger_depth() = 1`
 - `obras_congelada(obra) → 'no'|'nueva'|'si'` — rama de `registro_congelado`; `nueva` es un alta
   congelada creada en esta transacción (`created_at = now()`).
 
+## obras_comisiones — la comisión del referente (`sql/142`)
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| vinculo_id | uuid FK → contactos_vinculos | un vínculo de obra, abierto, con rol `referente` (OB036) |
+| porcentaje | numeric(5,2), nullable | > 0 y ≤ 100; "de lo contratado" |
+| monto | numeric(14,2), nullable | > 0. CHECK: exactamente uno de porcentaje y monto |
+| moneda | enum `moneda` (`ARS`\|`USD`), nullable | CHECK: presente sii monto; con monto y sin moneda, la base pone `USD` |
+| creado_por | uuid FK → usuarios | default `auth.uid()` |
+| activo | boolean | unique parcial `(vinculo_id) WHERE activo`: una vigente; las inactivas son el historial |
+| created_at / updated_at | timestamptz | |
+
+No se edita: `obras_registrar_comision(vinculo, porcentaje, monto, moneda?) → uuid` (INVOKER)
+desactiva la vigente y crea otra. Una desactivada no vuelve (OB038). La ven y la escriben quienes
+tienen la obra a cargo (`obras_ve_comision(vinculo)`, DEFINER con GRANT, sobre `obras_a_cargo_de`;
+OB037 si no). RLS: SELECT, INSERT, UPDATE con `obras_ve_comision`. GRANT: SELECT, INSERT
+(`id, vinculo_id, porcentaje, monto, moneda`), UPDATE (`activo`).
+
+Trigger de Obras sobre `contactos_vinculos`, `obras_vinculo_con_comision` (AFTER UPDATE OF roles,
+hasta, activo, fusionado_en): sacarle `referente`, cerrar o desactivar un vínculo con comisión activa
+lo hace quien la tiene a cargo (OB039) y la comisión se desactiva junto. Si el vínculo se fusiona
+(`fusionado_en`), sus comisiones pasan al que queda; la activa pasa inactiva si ese ya tenía una
+(`sql/146`). `obras_nombres` suma a quien registró cada comisión que se ve.
+
+## Números del widget (`sql/143`)
+
+`obras_contar(dias) → (grupo, clave, cantidad)` — DEFINER, GRANT `authenticated`. Grupos: `estado`
+(la foto de hoy), `motivo` (perdidas), `origen` y `tipo` (contratadas); estos tres, solo las que
+pasaron a su estado actual en los últimos `dias` (evento `estado`). Cuenta lo que quien llama ve y,
+con `obras_numeros`, todas; sin `obras_ver`, nada. Activas; un alta congelada no cuenta.
+
 ## Funciones
 
 - `obras_transferir(obra, responsable, quedarme = false)` — DEFINER. Con `quedarme`, quien transfiere
@@ -155,7 +188,7 @@ quitado), solo cuando actúa alguien. Ver `notificaciones.md`.
 `obras_administrar`, `obras_ver`; `obras_ver` → `contactos_ver` (sembrada en `sql/127`).
 `quitar_delegador` saca `obras_equipo` junto con `usuarios_delegar`; `designar_delegador` no la da.
 `obras_aprobar` (función "Aprobar altas", vista `obras_ver`, no delegable) entra en `sql/138`;
-`obras_numeros`, con su tramo.
+`obras_numeros` (función "Ver números", vista `obras_ver`, no delegable), en `sql/143`.
 
 ## Entes y eventos
 
@@ -171,4 +204,4 @@ Ramas: `obras_etiqueta` (nombre), `obras_trabaja`, `trabaja_registro_de` → `ob
 sin GRANT), `obras_buscar(texto)` (activas por nombre o dirección; perdidas al final).
 
 Tests: `sql/tests/obras_reglas.sql`, `sql/tests/obras_alta.sql`, `sql/tests/obras_nombres.sql`,
-`sql/tests/duplicados.sql`.
+`sql/tests/duplicados.sql`, `sql/tests/obras_comisiones.sql`, `sql/tests/obras_numeros.sql`.

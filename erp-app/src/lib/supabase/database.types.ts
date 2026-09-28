@@ -166,6 +166,7 @@ export type Database = {
           created_at: string
           email: string | null
           equipo_id: string | null
+          fusionada_en: string | null
           id: string
           misma_que: string | null
           nombre: string
@@ -183,6 +184,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           equipo_id?: string | null
+          fusionada_en?: string | null
           id?: string
           misma_que?: string | null
           nombre: string
@@ -200,6 +202,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           equipo_id?: string | null
+          fusionada_en?: string | null
           id?: string
           misma_que?: string | null
           nombre?: string
@@ -222,6 +225,20 @@ export type Database = {
             columns: ["equipo_id"]
             isOneToOne: false
             referencedRelation: "equipos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_empresas_fusionada_en_fkey"
+            columns: ["fusionada_en"]
+            isOneToOne: false
+            referencedRelation: "contactos_empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_empresas_misma_que_fkey"
+            columns: ["misma_que"]
+            isOneToOne: false
+            referencedRelation: "contactos_empresas"
             referencedColumns: ["id"]
           },
         ]
@@ -295,6 +312,7 @@ export type Database = {
           creado_por: string
           created_at: string
           email: string | null
+          fusionada_en: string | null
           id: string
           misma_que: string | null
           nombre: string
@@ -311,6 +329,7 @@ export type Database = {
           creado_por?: string
           created_at?: string
           email?: string | null
+          fusionada_en?: string | null
           id?: string
           misma_que?: string | null
           nombre: string
@@ -327,6 +346,7 @@ export type Database = {
           creado_por?: string
           created_at?: string
           email?: string | null
+          fusionada_en?: string | null
           id?: string
           misma_que?: string | null
           nombre?: string
@@ -342,6 +362,20 @@ export type Database = {
             columns: ["creado_por"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_personas_fusionada_en_fkey"
+            columns: ["fusionada_en"]
+            isOneToOne: false
+            referencedRelation: "contactos_personas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_personas_misma_que_fkey"
+            columns: ["misma_que"]
+            isOneToOne: false
+            referencedRelation: "contactos_personas"
             referencedColumns: ["id"]
           },
           {
@@ -361,6 +395,7 @@ export type Database = {
           desde: string
           empresa_id: string | null
           ente: string
+          fusionado_en: string | null
           hasta: string | null
           id: string
           persona_id: string | null
@@ -375,6 +410,7 @@ export type Database = {
           desde?: string
           empresa_id?: string | null
           ente: string
+          fusionado_en?: string | null
           hasta?: string | null
           id?: string
           persona_id?: string | null
@@ -389,6 +425,7 @@ export type Database = {
           desde?: string
           empresa_id?: string | null
           ente?: string
+          fusionado_en?: string | null
           hasta?: string | null
           id?: string
           persona_id?: string | null
@@ -417,6 +454,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "entes"
             referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "contactos_vinculos_fusionado_en_fkey"
+            columns: ["fusionado_en"]
+            isOneToOne: false
+            referencedRelation: "contactos_vinculos"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "contactos_vinculos_persona_id_fkey"
@@ -473,7 +517,43 @@ export type Database = {
           roles?: string[] | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contactos_vinculos_guardados_a_empresa_id_fkey"
+            columns: ["a_empresa_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_vinculos_guardados_cargado_por_fkey"
+            columns: ["cargado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_vinculos_guardados_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contactos_vinculos_guardados_ente_fkey"
+            columns: ["ente"]
+            isOneToOne: false
+            referencedRelation: "entes"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "contactos_vinculos_guardados_persona_id_fkey"
+            columns: ["persona_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_personas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       entes: {
         Row: {
@@ -720,10 +800,68 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "obras_misma_que_fkey"
+            columns: ["misma_que"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "obras_responsable_id_fkey"
             columns: ["responsable_id"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obras_comisiones: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          id: string
+          moneda: Database["public"]["Enums"]["moneda"] | null
+          monto: number | null
+          porcentaje: number | null
+          updated_at: string
+          vinculo_id: string
+        }
+        Insert: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          id?: string
+          moneda?: Database["public"]["Enums"]["moneda"] | null
+          monto?: number | null
+          porcentaje?: number | null
+          updated_at?: string
+          vinculo_id: string
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          id?: string
+          moneda?: Database["public"]["Enums"]["moneda"] | null
+          monto?: number | null
+          porcentaje?: number | null
+          updated_at?: string
+          vinculo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obras_comisiones_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obras_comisiones_vinculo_id_fkey"
+            columns: ["vinculo_id"]
+            isOneToOne: false
+            referencedRelation: "contactos_vinculos"
             referencedColumns: ["id"]
           },
         ]
@@ -1598,6 +1736,38 @@ export type Database = {
           registro_id: string
         }[]
       }
+      contactos_auditoria_detalle: {
+        Args: { p_dias: number; p_persona?: string; p_usuario?: string }
+        Returns: {
+          created_at: string
+          dueno: string
+          dueno_id: string
+          persona: string
+          persona_id: string
+          usuario: string
+          usuario_id: string
+        }[]
+      }
+      contactos_auditoria_personas: {
+        Args: { p_texto: string }
+        Returns: {
+          id: string
+          nombre: string
+        }[]
+      }
+      contactos_auditoria_resumen: {
+        Args: { p_dias: number }
+        Returns: {
+          accesos: number
+          personas: number
+          usuario: string
+          usuario_id: string
+        }[]
+      }
+      contactos_avisar_huerfanas: {
+        Args: { p_usuario: string }
+        Returns: undefined
+      }
       contactos_buscar: {
         Args: { p_texto: string }
         Returns: {
@@ -1611,6 +1781,11 @@ export type Database = {
         Args: { p_compartir: boolean; p_empresa: string; p_equipo: string }
         Returns: undefined
       }
+      contactos_congelado: {
+        Args: { p_empresa: string; p_persona: string }
+        Returns: string
+      }
+      contactos_crear_guardados: { Args: { p_id: string }; Returns: undefined }
       contactos_crear_y_vincular: {
         Args: {
           p_cargo?: string
@@ -1642,9 +1817,32 @@ export type Database = {
         Args: { p_vinculo: string }
         Returns: undefined
       }
+      contactos_descartar_guardados: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
       contactos_empresa_de_mi_equipo: {
         Args: { p_creado_por: string; p_empresa: string; p_equipo: string }
         Returns: boolean
+      }
+      contactos_empresa_del_equipo_de: {
+        Args: {
+          p_creado_por: string
+          p_empresa: string
+          p_equipo: string
+          p_usuario: string
+        }
+        Returns: boolean
+      }
+      contactos_empresas_parecidas_de: {
+        Args: { p_empresa: string; p_nombre: string }
+        Returns: {
+          id: string
+        }[]
+      }
+      contactos_entregar: {
+        Args: { p_equipo: string; p_usuario: string }
+        Returns: undefined
       }
       contactos_equipos: {
         Args: never
@@ -1657,6 +1855,35 @@ export type Database = {
         Args: { p_id: string; p_tipo: string }
         Returns: string
       }
+      contactos_fusion_avisos: {
+        Args: never
+        Returns: {
+          destino: string
+          destino_id: string
+          etiqueta: string
+          motivo: string
+          notificacion_id: string
+        }[]
+      }
+      contactos_fusionada: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: {
+          dueno: string
+          id: string
+          nombre: string
+        }[]
+      }
+      contactos_fusionar: {
+        Args: {
+          p_conservar?: string[]
+          p_email_de_la_otra?: boolean
+          p_queda: string
+          p_se_va: string
+          p_telefono_de_la_otra?: boolean
+          p_tipo: string
+        }
+        Returns: undefined
+      }
       contactos_historial_contacto: {
         Args: { p_persona: string }
         Returns: {
@@ -1667,11 +1894,55 @@ export type Database = {
           nuevo: string
         }[]
       }
+      contactos_jefe_de: { Args: { p_equipo: string }; Returns: string }
       contactos_nombres: {
         Args: never
         Returns: {
           id: string
           nombre: string
+        }[]
+      }
+      contactos_parecidas: {
+        Args: {
+          p_email?: string
+          p_id?: string
+          p_nombre: string
+          p_telefono?: string
+          p_tipo: string
+        }
+        Returns: {
+          coincide: string[]
+          dueno: string
+          equipo: string
+          id: string
+          nombre: string
+        }[]
+      }
+      contactos_personas_parecidas_de: {
+        Args: {
+          p_email: string
+          p_nombre: string
+          p_persona: string
+          p_telefono: string
+        }
+        Returns: {
+          coincide: string[]
+          id: string
+        }[]
+      }
+      contactos_por_aprobar: {
+        Args: never
+        Returns: {
+          antes: Json
+          created_at: string
+          dueno: string
+          equipo: string
+          guardados: Json
+          id: string
+          nombre: string
+          notas: string
+          parecidas: Json
+          tipo: string
         }[]
       }
       contactos_puede_abrir: {
@@ -1718,48 +1989,6 @@ export type Database = {
         Args: { p_persona: string }
         Returns: undefined
       }
-      contactos_transferir_persona: {
-        Args: { p_persona: string; p_responsable: string }
-        Returns: undefined
-      }
-      contactos_ver_contacto: {
-        Args: { p_persona: string }
-        Returns: {
-          email: string
-          telefono: string
-        }[]
-      }
-      contactos_parecidas: {
-        Args: {
-          p_email?: string
-          p_id?: string
-          p_nombre: string
-          p_telefono?: string
-          p_tipo: string
-        }
-        Returns: {
-          coincide: string[]
-          dueno: string
-          equipo: string
-          id: string
-          nombre: string
-        }[]
-      }
-      contactos_por_aprobar: {
-        Args: never
-        Returns: {
-          antes: Json
-          created_at: string
-          dueno: string
-          equipo: string
-          guardados: Json
-          id: string
-          nombre: string
-          notas: string
-          parecidas: Json
-          tipo: string
-        }[]
-      }
       contactos_resolver: {
         Args: {
           p_decision: string
@@ -1770,6 +1999,17 @@ export type Database = {
           p_vincular?: boolean
         }
         Returns: undefined
+      }
+      contactos_transferir_persona: {
+        Args: { p_persona: string; p_responsable: string }
+        Returns: undefined
+      }
+      contactos_ver_contacto: {
+        Args: { p_persona: string }
+        Returns: {
+          email: string
+          telefono: string
+        }[]
       }
       contactos_vinculables: {
         Args: { p_texto: string }
@@ -1828,6 +2068,7 @@ export type Database = {
       }
       mi_equipo: { Args: never; Returns: string }
       normalizar_telefono: { Args: { t: string }; Returns: string }
+      normalizar_texto: { Args: { p: string }; Returns: string }
       notificaciones_actores: {
         Args: never
         Returns: {
@@ -1859,6 +2100,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      numeros_de: { Args: { p: string }; Returns: string[] }
       obras_a_cargo: { Args: { p_obra: string }; Returns: boolean }
       obras_a_cargo_de: {
         Args: { p_obra: string; p_usuario: string }
@@ -1883,6 +2125,18 @@ export type Database = {
         }
         Returns: string
       }
+      obras_avisar_huerfanas: {
+        Args: { p_usuario: string }
+        Returns: undefined
+      }
+      obras_avisos_salida: {
+        Args: never
+        Returns: {
+          nombre: string
+          notificacion_id: string
+          obra_id: string
+        }[]
+      }
       obras_buscar: {
         Args: { p_texto: string }
         Returns: {
@@ -1892,21 +2146,28 @@ export type Database = {
           titulo: string
         }[]
       }
+      obras_congelada: { Args: { p_obra: string }; Returns: string }
+      obras_contar: {
+        Args: { p_dias: number }
+        Returns: {
+          cantidad: number
+          clave: string
+          grupo: string
+        }[]
+      }
       obras_desactivar: { Args: { p_obra: string }; Returns: undefined }
+      obras_entregar: { Args: { p_usuario: string }; Returns: undefined }
       obras_etiqueta: {
         Args: { p_id: string; p_tipo: string }
         Returns: string
       }
+      obras_jefe_de: { Args: { p_equipo: string }; Returns: string }
       obras_nombres: {
         Args: never
         Returns: {
           id: string
           nombre: string
         }[]
-      }
-      obras_puede_abrir: {
-        Args: { p_id: string; p_tipo: string; p_usuario: string }
-        Returns: boolean
       }
       obras_parecidas: {
         Args: { p_direccion: string; p_nombre: string; p_obra?: string }
@@ -1915,6 +2176,13 @@ export type Database = {
           id: string
           nombre: string
           responsable: string
+        }[]
+      }
+      obras_parecidas_de: {
+        Args: { p_direccion: string; p_nombre: string; p_obra: string }
+        Returns: {
+          coincide: string
+          id: string
         }[]
       }
       obras_por_aprobar: {
@@ -1935,14 +2203,9 @@ export type Database = {
           tipo: Database["public"]["Enums"]["tipo_obra"]
         }[]
       }
-      obras_resolver: {
-        Args: {
-          p_decision: string
-          p_existente?: string
-          p_motivo?: string
-          p_obra: string
-        }
-        Returns: undefined
+      obras_puede_abrir: {
+        Args: { p_id: string; p_tipo: string; p_usuario: string }
+        Returns: boolean
       }
       obras_puede_ver_obra: {
         Args: {
@@ -1963,6 +2226,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      obras_registrar_comision: {
+        Args: {
+          p_moneda?: Database["public"]["Enums"]["moneda"]
+          p_monto: number
+          p_porcentaje: number
+          p_vinculo: string
+        }
+        Returns: string
+      }
+      obras_resolver: {
+        Args: {
+          p_decision: string
+          p_existente?: string
+          p_motivo?: string
+          p_obra: string
+        }
+        Returns: undefined
+      }
       obras_trabaja: { Args: { p_obra: string }; Returns: boolean }
       obras_trabaja_de: {
         Args: { p_obra: string; p_usuario: string }
@@ -1972,6 +2253,7 @@ export type Database = {
         Args: { p_obra: string; p_quedarme?: boolean; p_responsable: string }
         Returns: undefined
       }
+      obras_ve_comision: { Args: { p_vinculo: string }; Returns: boolean }
       puede_abrir_registro: {
         Args: { p_ente: string; p_id: string; p_usuario: string }
         Returns: boolean
@@ -1993,6 +2275,10 @@ export type Database = {
           p_saliente: string
         }
         Returns: undefined
+      }
+      registro_congelado: {
+        Args: { p_ente: string; p_id: string }
+        Returns: string
       }
       tareas_actua_como_asignado: {
         Args: { p_actor: string; p_equipo: string; p_usuario: string }
@@ -2139,6 +2425,10 @@ export type Database = {
         Args: { p_ente: string; p_id: string }
         Returns: boolean
       }
+      trabaja_registro_de: {
+        Args: { p_ente: string; p_id: string; p_usuario: string }
+        Returns: boolean
+      }
       usar_plantilla: {
         Args: {
           p_asignados?: Json
@@ -2174,6 +2464,7 @@ export type Database = {
         | "rechazada"
         | "completada"
         | "cancelada"
+      moneda: "ARS" | "USD"
       motivo_perdida:
         | "precio"
         | "plazo"
@@ -2235,6 +2526,7 @@ export type Database = {
         | "alta_rechazada"
         | "alta_es_la_misma"
         | "obra_misma_sumado"
+        | "persona_fusionada"
       tipo_obra:
         | "edificio_residencial"
         | "casa"
@@ -2385,6 +2677,7 @@ export const Constants = {
         "completada",
         "cancelada",
       ],
+      moneda: ["ARS", "USD"],
       motivo_perdida: [
         "precio",
         "plazo",
@@ -2449,6 +2742,7 @@ export const Constants = {
         "alta_rechazada",
         "alta_es_la_misma",
         "obra_misma_sumado",
+        "persona_fusionada",
       ],
       tipo_obra: [
         "edificio_residencial",

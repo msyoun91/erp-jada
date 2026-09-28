@@ -128,8 +128,11 @@ no se prueba sin una obra a la que vincularlo.
 4. **El resto** — comisión, widget de números, Auditoría, fusionar (razones sociales, descartadas el 2026-09-28).
    Decisiones cerradas el 2026-09-28: moneda y reemplazo de la comisión, período del widget
    (`decisiones/obras.md`); Auditoría, fusionar con comisión, congeladas y links viejos
-   (`decisiones/contactos.md`). **Siguiente: el SQL del tramo 4**, una migración por tema desde
-   `sql/142` (comisión, `obras_numeros`, Auditoría, fusionar), cada una con su test.
+   (`decisiones/contactos.md`). SQL aplicado el 2026-09-28: `sql/142` (comisión), `sql/143`
+   (números), `sql/144` (Auditoría), `sql/145`–`146` (fusionar), cada una con su test. **Siguiente:
+   las pantallas** — comisión en la ficha de la obra, widget "Obras", vista Auditoría, pantalla de
+   fusionar (con `conservar` para elegir la comisión) y "Se fusionó con …" en la ficha vieja. El texto
+   del aviso `persona_fusionada` en la campanita es provisorio.
 5. **Tareas** — el paquete "con el primer emisor" (arriba): plantillas por estado, pasos que se
    completan solos. Prueba: el paso "vincular arquitecto" se cierra solo.
 

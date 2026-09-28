@@ -57,6 +57,12 @@ jefe de la obra y admin sí, y la comisión se desactiva junto, con aviso previo
 Obras sobre `contactos_vinculos`. Descartado: apagarla sola aunque lo haga el participante (el
 responsable la pierde sin saber) y bloquear a todos (obliga a borrarla a mano primero).
 
+**"Ve la comisión" es tener la obra a cargo: `obras_a_cargo_de`, sin regla propia (2026-09-28).**
+Responsable, jefe sobre `obra.equipo_id` y admin son exactamente los de transferir y desactivar; una
+segunda regla igual sería duplicación. Con la obra desactivada no la ve nadie, como sus vínculos.
+Quien la registró va en `creado_por` (no `created_by`: nombre de dominio). Archivos: `sql/142`,
+`sql/tests/obras_comisiones.sql`.
+
 ## Los nombres de lo que se ve (2026-09-28)
 
 **`obras_nombres()` y `contactos_nombres()` dan el nombre de quienes figuran en lo que se ve;
@@ -232,7 +238,9 @@ todas las obras (Todas sin `obras_administrar`); el usuario pidió los números.
 **El período del widget cuenta lo que pasó en él; "por estado" es la foto de hoy (2026-09-28).** Por
 estado: cómo están ahora, sin período. Perdidas por motivo y contratadas por origen y tipo: las que
 pasaron a ese estado dentro del período (evento `estado`) y siguen ahí; una contratada y revertida no
-cuenta. Responde "¿de dónde vienen las que cerramos este trimestre?".
+cuenta. Responde "¿de dónde vienen las que cerramos este trimestre?". Una sola función,
+`obras_contar(dias)`, DEFINER: con `obras_numeros` cuenta obras que quien llama no ve, y solo devuelve
+cantidades (`sql/143`).
 
 **Motivo y causa viajan en la fila: `estado_nota` (2026-09-26).** La obra guarda `motivo_perdida` y
 `estado_nota`, el texto del último cambio de estado: el detalle de la pérdida o la causa de la

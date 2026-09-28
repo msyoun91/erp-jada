@@ -5,7 +5,8 @@ Personas, empresas y sus vínculos con cualquier registro (`sql/127`). Ficha y d
 
 **Estado:** tramo 1 (`BACKLOG.md`) — `sql/127`, `sql/128` (buscar o crear en el panel) y `sql/129`
 (desactivar vínculos por función), aplicados el 2026-09-26. Tramo 2: `sql/132`–`sql/134` (bajas, huérfanas, campanitas). Tramo 3: `sql/137`–`sql/139` (congelado,
-vínculos guardados, "Por aprobar") y `sql/140` (compartir empresa). Faltan fusionar y Auditoría.
+vínculos guardados, "Por aprobar") y `sql/140` (compartir empresa). Tramo 4: `sql/144` (Auditoría) y
+`sql/145`–`sql/146` (fusionar).
 
 ## Ver
 
@@ -154,7 +155,38 @@ Sin `activo` ni `updated_at`, como `eventos`.
   no la cascada). Se ve con el registro; las de `telefono` y `email` de una persona, solo por
   `contactos_historial_contacto`. GRANT SELECT.
 - `contactos_accesos` (`persona_id`, `usuario_id`, `created_at`): sin policies ni GRANT. La escriben
-  "Ver contacto" y el historial; la leerá Auditoría (tramo 4).
+  "Ver contacto" y el historial; la lee Auditoría.
+
+## Auditoría (`sql/144`)
+
+Tres funciones DEFINER con GRANT, vacías sin `contactos_auditoria`; nombres y fechas, nunca el dato.
+
+- `contactos_auditoria_resumen(dias) → (usuario_id, usuario, accesos, personas)`: de más a menos.
+- `contactos_auditoria_detalle(dias, usuario?, persona?) → (usuario_id, usuario, persona_id, persona,
+  dueno_id, dueno, created_at)`: el dueño actual de la persona. Hasta 501 filas: la pantalla muestra
+  500 y avisa si llegó la 501.
+- `contactos_auditoria_personas(texto) → (id, nombre)`: el buscador del filtro; solo personas con
+  algún acceso, hasta 15.
+
+## Fusionar (`sql/146`)
+
+Columnas: `contactos_personas.fusionada_en` y `contactos_empresas.fusionada_en` (la que queda; en el
+GRANT SELECT de personas) y `contactos_vinculos.fusionado_en` (el vínculo que queda). Fuera de los
+GRANT de escritura.
+
+- `contactos_fusionar(tipo, queda, se_va, telefono_de_la_otra = false, email_de_la_otra = false,
+  conservar uuid[] = '{}')` — DEFINER, GRANT. `contactos_administrar` (CO029); dos distintas, activas
+  y aprobadas (CO030). La que se va se desactiva con `fusionada_en`; la que queda conserva dueño y
+  nombre, y toma teléfono o email si se pide. Sus vínculos pasan a la que queda; en un choque (los
+  dos abiertos en el mismo registro) queda el de la que queda, o el de la que se va si su id está en
+  `conservar`; el otro se desactiva con `fusionado_en` y el trigger `contactos_vinculos_fusionar`
+  suma sus roles al que queda. Persona ↔ empresa igual (el choque desactiva la de la que se va).
+  Los guardados activos pasan a la que queda. Empresa: la que queda se comparte con el equipo de la
+  otra y con los suyos. Persona: campanita `persona_fusionada` a su dueño.
+- `contactos_vinculos_validar` no aplica las reglas de actor a un UPDATE que cambia el contacto o
+  `fusionado_en` (solo lo hace esta función).
+- `contactos_fusionada(tipo, id) → (id, nombre, dueno)` — DEFINER, GRANT: "Se fusionó con …" para
+  quien ve la que se va o la que queda; el id, solo si ve la que queda.
 
 ## Reglas de persona y empresa (triggers, clase `CO`)
 
@@ -207,7 +239,7 @@ alguien. Ver `notificaciones.md`.
 | `contactos_administrar` | función "Administrar" | `contactos_ver` | no |
 
 `contactos_aprobar` (función "Aprobar altas", vista `contactos_ver`, no delegable) entra en `sql/138`;
-`contactos_auditoria`, con su tramo.
+`contactos_auditoria` (vista "Auditoría", no delegable, sin requerir `contactos_ver`), en `sql/144`.
 
 ## Entes y eventos
 
@@ -221,4 +253,5 @@ Ramas: `contactos_etiqueta` (nombre), `contactos_puede_abrir(tipo, id, usuario)`
 `puede_ver_relacion` para cualquier relación con un contacto, sea cual sea el módulo del registro.
 
 Tests: `sql/tests/contactos_reglas.sql`, `sql/tests/obras_alta.sql`, `sql/tests/obras_nombres.sql`,
-`sql/tests/duplicados.sql`, `sql/tests/contactos_compartir.sql`.
+`sql/tests/duplicados.sql`, `sql/tests/contactos_compartir.sql`, `sql/tests/contactos_auditoria.sql`,
+`sql/tests/contactos_fusionar.sql`.
