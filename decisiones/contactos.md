@@ -79,11 +79,22 @@ se desactiva aparte. Descartado: bloquear con vínculos abiertos (obliga a cerra
 **Fusionar: el admin elige cuál queda, y esa conserva su dueño (2026-09-26).** Por defecto, la de más
 vínculos; el dueño no cambia (una persona habla con un solo vendedor, como en "es la misma"). Los
 vínculos de la que se va pasan a la que queda; si las dos tenían uno abierto en el mismo registro, uno
-solo con los roles sumados (los cerrados se mueven tal cual). Teléfono y email, campo por campo, los elige el admin; las razones sociales de una empresa
-se suman. Dos empresas de equipos distintos: la que queda pasa a estar compartida con el equipo de la
+solo con los roles sumados (los cerrados se mueven tal cual). Teléfono y email, campo por campo, los elige el admin. Dos empresas de equipos distintos: la que queda pasa a estar compartida con el equipo de la
 otra, así nadie la pierde (2026-09-26). La que se va se desactiva con `fusionada_en`, y su historial (ediciones, accesos) queda donde
 estaba. Campanita al dueño de la que se va: "Marta Gómez se fusionó con la de Juan"; sigue viéndola en
 contexto en sus obras.
+
+**Fusionar dos vínculos con comisión: el admin elige cuál queda (2026-09-28).** Marta está dos veces,
+las dos referentes de Belgrano, con 3 % y con USD 5000: el vínculo que queda admite una sola activa.
+Con las dos, la pantalla de fusionar las muestra y el admin elige, como teléfono y email; la otra pasa
+desactivada al vínculo que queda, como historial. Con una sola, pasa sin preguntar.
+
+**Una congelada no se fusiona; lo que apunta a la que se va no se toca (2026-09-28).** La congelada
+se resuelve en "Por aprobar" con "es la misma", que ya maneja los vínculos guardados: fusionar es para
+dos aprobadas, así que los guardados nunca entran. Contactos no escribe en `tareas_vinculos` ni en
+`eventos`: la ficha de la que se va muestra "Se fusionó con Marta Gómez (de Juan) →", y los links viejos
+llegan a la que queda en un clic. Persona ↔ empresa pasa a la que queda como los vínculos; si las dos
+estaban en la misma empresa, queda una sola relación abierta.
 
 **Una persona o una empresa la corrige quien trabaja con ella, y cada cambio queda registrado
 (2026-09-25).** El contacto es uno solo y lo usan varias obras: que lo corrija el primero que se entera
@@ -107,6 +118,13 @@ Solo personas: el teléfono de una empresa no es sensible.
 distinto de ver la agenda y se da por separado; el auditor no necesita ver la agenda de nadie.
 Función DEFINER con guard y tope de filas; devuelve nombres y fechas, nunca el dato: la pantalla que
 vigila el acceso no puede ser otra puerta al contacto. Mismo criterio que `master`.
+
+**Auditoría: resumen por usuario, detalle y filtro por persona (2026-09-28).** El caso: Juan mira 180
+contactos la semana antes de irse, cuando lo normal son 15. Período con `FiltroDias`. Arriba, por
+usuario: accesos y personas distintas, de más a menos. Al tocar uno, su detalle: persona, fecha y
+hora, y el dueño de la persona ("miró 90 que no eran suyas" es la señal). Filtro por persona ("¿quién
+miró a Marta?"), con un buscador por nombre que no abre la agenda. Tope: 500 filas en el detalle,
+avisando que hay más. Un acceso es teléfono y email juntos: no se distingue qué miró.
 
 **Las empresas son del equipo que las carga (2026-09-25).** El usuario las prefirió privadas, pero
 que comercial las vea entero: así un vendedor no carga dos veces la misma constructora. Se resuelve con
@@ -132,10 +150,11 @@ Pedido del usuario. Descartado: que Norte vincule Caputo a Casa Núñez desde el
 obra, vincula a una obra que no ve, y Contactos tendría que leer los pasos de Tareas); no congelar una
 empresa parecida a la de otro equipo (el usuario prefirió pedirla); empresas comunes a todos los equipos.
 
-**La empresa se identifica por su nombre, no por el CUIT (2026-09-25).** El usuario: el nombre queda y
-la razón social cambia, y con ella el CUIT (por ejemplo, un fideicomiso por edificio). Razón social y
-CUIT van como una lista de la empresa, sin unique, y a cuál se le cotiza lo elige el presupuesto cuando
-exista. El nombre tampoco es unique: los duplicados los ataja el congelado (abajo).
+**La empresa es solo su nombre: sin razón social ni CUIT (2026-09-28).** El usuario: el nombre queda y
+la razón social cambia, y con ella el CUIT (por ejemplo, un fideicomiso por edificio); no hace falta
+cargarlos. Se descartó la lista `contactos_empresa_razones` (2026-09-25) y, antes, un CUIT opcional sin
+validar. Si Presupuestos necesita a quién facturar, lo suma ahí. El nombre tampoco es unique: los
+duplicados los ataja el congelado (abajo).
 
 **Altas parecidas: congeladas hasta que las aprueba `contactos_aprobar` (2026-09-25).** Igual que
 las obras (`decisiones/obras.md` → *Altas parecidas*). Pedido del usuario, sobre el sistema de
@@ -223,7 +242,7 @@ que ves (lo que pide persona ↔ empresa), primero las vinculadas al registro, a
 constructora de la obra se elige sin escribir. Si no está, se crea con solo el nombre y todo se guarda
 junto con "Crear y vincular": empresa, persona, relación con cargo opcional y vínculo. Un solo nivel:
 desde la empresa nueva no se crea nada. Descartado: solo elegir existentes, que obligaba a volver a la
-ficha de la persona. Razón social y CUIT, después, desde la ficha de la empresa.
+ficha de la persona.
 
 **Dónde se busca y dónde se crea.** Un solo buscador, escrito en Contactos; la ficha de la obra y el alta
 lo componen desde `app/` (`GUIDE_ENTES.md` §2.7).
@@ -321,7 +340,7 @@ Entes
 │               con los que se creó, que se crean al aprobarse
 └── empresa — dueño creado_por · equipo_id de quien la carga, guardado en el momento · sin estado
               · datos {nombre} · ruta /contactos/empresas/{id} · submódulo contactos_ver
-              · se identifica por el nombre, sin unique; razón social y CUIT, en su lista
+              · se identifica por el nombre, sin unique; sin razón social ni CUIT
               · la ven: los miembros de su equipo (o solo quien la cargó, si no tiene equipo) y de
                 los equipos con los que se compartió, quien ve algún vínculo suyo,
                 contactos_administrar · la editan: su equipo (o quien la cargó), los equipos con
@@ -329,8 +348,6 @@ Entes
                 vinculada
               · congelada como la persona
 No son entes
-├── razón social — contactos_empresa_razones (empresa, razon_social, cuit, activo), sin unique;
-│                  se ve con la empresa
 ├── compartida   — contactos_empresa_equipos (empresa, equipo, activo): el equipo que la ve y la
 │                  vincula como propia; la escribe el equipo dueño o el admin
 ├── ediciones    — contactos_ediciones: log de cambios de persona y empresa (campo, anterior, nuevo,
@@ -364,7 +381,7 @@ Acciones
 │            · reactivar y fusionar (admin)
 ├── empresa: crear (congelada si se parece) · editar (su equipo, admin, quien trabaja un registro
 │            vinculado; queda en contactos_ediciones)
-│            · sumar razón social · compartir con un equipo y dejar de compartir (su equipo, admin;
+│            · compartir con un equipo y dejar de compartir (su equipo, admin;
 │            los vínculos quedan) · desactivar (jefe del equipo, admin) · reactivar, fusionar y
 │            asignar equipo (admin)
 ├── alta congelada: aprobar (persona: solo si es homónima; crea los vínculos guardados) · rechazar (motivo) · "es la misma"

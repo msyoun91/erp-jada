@@ -5,7 +5,7 @@ Personas, empresas y sus vínculos con cualquier registro (`sql/127`). Ficha y d
 
 **Estado:** tramo 1 (`BACKLOG.md`) — `sql/127`, `sql/128` (buscar o crear en el panel) y `sql/129`
 (desactivar vínculos por función), aplicados el 2026-09-26. Tramo 2: `sql/132`–`sql/134` (bajas, huérfanas, campanitas). Tramo 3: `sql/137`–`sql/139` (congelado,
-vínculos guardados, "Por aprobar") y `sql/140` (compartir empresa). Faltan razones sociales, fusionar, Auditoría.
+vínculos guardados, "Por aprobar") y `sql/140` (compartir empresa). Faltan fusionar y Auditoría.
 
 ## Ver
 

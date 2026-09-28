@@ -42,6 +42,13 @@ Es la única sección de la obra con regla propia: su RLS es responsable, `obras
 de la obra, u `obras_administrar`, sin submódulo nuevo. El participante ve la obra, pero no la comisión.
 Porcentaje o monto, uno de los dos por referente, a elección de quien la carga (CHECK: exactamente uno).
 
+**El monto lleva moneda, USD por defecto; la comisión no se edita, se reemplaza (2026-09-28).** En
+general se pacta en dólares, pero un monto sin moneda se lee mal el día que uno se pacta en pesos:
+`moneda` (ARS · USD) obligatoria con monto, nula con porcentaje (CHECK). El porcentaje es "de lo
+contratado", sin base hasta que existan Presupuestos. Cambiarla desactiva la fila y crea otra
+(`created_by`, `created_at`): las inactivas son el historial ("Antes: 3 % — Juan, 12/10"), con la misma
+RLS que la vigente, sin tabla de log. Una activa por vínculo (unique parcial `WHERE activo`).
+
 **Un vínculo con comisión activa lo toca solo quien ve la comisión (2026-09-26).** Si no, un participante
 le saca "referente" o lo desactiva "por error" y la comisión queda colgada sin que el responsable se
 entere. Sacar el rol referente, cerrar o desactivar ese vínculo: el participante no puede, la base lo
@@ -222,6 +229,11 @@ dueño, un gerente). Cuelga de la vista Obras, así que pide `obras_ver` y con �
 listas quedan vacías si no es responsable ni participante de nada. Descartado: un supervisor que vea
 todas las obras (Todas sin `obras_administrar`); el usuario pidió los números.
 
+**El período del widget cuenta lo que pasó en él; "por estado" es la foto de hoy (2026-09-28).** Por
+estado: cómo están ahora, sin período. Perdidas por motivo y contratadas por origen y tipo: las que
+pasaron a ese estado dentro del período (evento `estado`) y siguen ahí; una contratada y revertida no
+cuenta. Responde "¿de dónde vienen las que cerramos este trimestre?".
+
 **Motivo y causa viajan en la fila: `estado_nota` (2026-09-26).** La obra guarda `motivo_perdida` y
 `estado_nota`, el texto del último cambio de estado: el detalle de la pérdida o la causa de la
 reversión. `emitir_eventos_registro` suma al `detalle` del evento `estado` las columnas que recibe como
@@ -312,8 +324,9 @@ Entes
              rechazar vuelve el dato anterior
 No son entes
 ├── participante — obras_participantes (obra, usuario, equipo_id guardado); con obras_ver
-└── comisión     — obras_comisiones (vinculo_id → contactos_vinculos, porcentaje | monto): el
-                   vínculo es de una obra y tiene el rol referente; una por referente
+└── comisión     — obras_comisiones (vinculo_id → contactos_vinculos, porcentaje | monto + moneda): el
+                   vínculo es de una obra y tiene el rol referente; una activa por referente;
+                   no se edita: cambiarla desactiva la fila y crea otra (las inactivas, historial)
                    · la ven y la escriben: responsable, obras_equipo sobre obra.equipo_id,
                      obras_administrar
 Relaciones

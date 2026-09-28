@@ -125,7 +125,11 @@ no se prueba sin una obra a la que vincularlo.
 3. **Duplicados** — congelado de obra, persona y empresa, editar que congela, "Por aprobar", vínculos
    guardados, "es la misma", compartir empresa. Prueba: Pedro carga la Belgrano de Juan y el aprobador
    la resuelve.
-4. **El resto** — comisión, widget de números, Auditoría, fusionar, razones sociales.
+4. **El resto** — comisión, widget de números, Auditoría, fusionar (razones sociales, descartadas el 2026-09-28).
+   Decisiones cerradas el 2026-09-28: moneda y reemplazo de la comisión, período del widget
+   (`decisiones/obras.md`); Auditoría, fusionar con comisión, congeladas y links viejos
+   (`decisiones/contactos.md`). **Siguiente: el SQL del tramo 4**, una migración por tema desde
+   `sql/142` (comisión, `obras_numeros`, Auditoría, fusionar), cada una con su test.
 5. **Tareas** — el paquete "con el primer emisor" (arriba): plantillas por estado, pasos que se
    completan solos. Prueba: el paso "vincular arquitecto" se cierra solo.
 
