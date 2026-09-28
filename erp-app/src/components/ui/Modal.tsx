@@ -80,6 +80,7 @@ export function ConfirmModal({
   cancelLabel = "Cancelar",
   onConfirm,
   onClose,
+  children,
 }: {
   title: string;
   mensaje: string;
@@ -89,12 +90,14 @@ export function ConfirmModal({
   cancelLabel?: string;
   onConfirm: () => void | Promise<void>;
   onClose: () => void;
+  children?: React.ReactNode;
 }) {
   const [enviando, setEnviando] = useState(false);
 
   return (
     <Modal title={title} onClose={onClose}>
       <p className="t-body-m mb-6">{mensaje}</p>
+      {children && <div className="mb-6">{children}</div>}
       <div className="flex justify-end gap-2">
         <button className="btn btn-secondary" onClick={onClose} disabled={enviando}>
           {cancelLabel}

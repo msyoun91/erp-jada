@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { asignarEquipo } from "../actions";
+import { AgendaAlJefe } from "./AgendaAlJefe";
 import type { Equipo, Usuario } from "../types";
 
 export function AgregarMiembroPanel({
@@ -16,13 +17,18 @@ export function AgregarMiembroPanel({
   onClose: () => void;
 }) {
   const [usuarioId, setUsuarioId] = useState("");
+  const [agendaAlJefe, setAgendaAlJefe] = useState(true);
   const [enviando, setEnviando] = useState(false);
 
   const elegido = candidatos.find((c) => c.usuario.id === usuarioId);
 
   async function guardar() {
     setEnviando(true);
-    const result = await asignarEquipo({ usuario_id: usuarioId, equipo_id: equipo.id });
+    const result = await asignarEquipo({
+      usuario_id: usuarioId,
+      equipo_id: equipo.id,
+      agenda_al_jefe: agendaAlJefe,
+    });
     setEnviando(false);
 
     if (!result.success) {
@@ -86,10 +92,19 @@ export function AgregarMiembroPanel({
               ))}
             </select>
             {elegido?.equipoActual && (
-              <p className="t-caption mt-1">
-                Sale de {elegido.equipoActual} y pierde lo que le dio su delegador. Lo que le
-                asignaste vos se queda.
-              </p>
+              <>
+                <p className="t-caption mt-1">
+                  Sale de {elegido.equipoActual} y pierde lo que le dio su delegador. Lo que le
+                  asignaste vos se queda.
+                </p>
+                <div className="mt-4">
+                  <AgendaAlJefe
+                    equipo={elegido.equipoActual}
+                    checked={agendaAlJefe}
+                    onChange={setAgendaAlJefe}
+                  />
+                </div>
+              </>
             )}
           </div>
         )}

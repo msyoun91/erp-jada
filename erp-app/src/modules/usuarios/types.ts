@@ -41,6 +41,7 @@ export type EquipoForm = z.infer<typeof equipoSchema>;
 export const asignarEquipoSchema = z.object({
   usuario_id: z.string().uuid(),
   equipo_id: z.string().uuid().nullable(),
+  agenda_al_jefe: z.boolean(),
 });
 
 export type AsignarEquipoForm = z.infer<typeof asignarEquipoSchema>;

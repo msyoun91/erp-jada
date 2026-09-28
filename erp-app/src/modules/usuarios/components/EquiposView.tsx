@@ -18,6 +18,7 @@ import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { initials } from "@/lib/utils";
 import { asignarEquipo, cambiarEstadoEquipo, designarDelegador } from "../actions";
 import type { Equipo, Submodulo, Usuario } from "../types";
+import { AgendaAlJefe } from "./AgendaAlJefe";
 import { AgregarMiembroPanel } from "./AgregarMiembroPanel";
 import { DelegablesPanel } from "./DelegablesPanel";
 import { EquipoPanel } from "./EquipoPanel";
@@ -42,6 +43,7 @@ export function EquiposView({
   const [agregandoA, setAgregandoA] = useState<Equipo | null>(null);
   const [desactivando, setDesactivando] = useState<Equipo | null>(null);
   const [sacando, setSacando] = useState<{ usuario: Usuario; equipo: Equipo } | null>(null);
+  const [agendaAlJefe, setAgendaAlJefe] = useState(true);
   const [saliente, setSaliente] = useState<Usuario | null>(null);
   const [panelDelegables, setPanelDelegables] = useState(false);
 
@@ -95,7 +97,10 @@ export function EquiposView({
       {
         label: "Sacar del equipo",
         icon: <LogOut size={14} strokeWidth={1.75} />,
-        onClick: () => setSacando({ usuario, equipo }),
+        onClick: () => {
+          setAgendaAlJefe(true);
+          setSacando({ usuario, equipo });
+        },
         destructive: true,
       },
     ];
@@ -264,12 +269,22 @@ export function EquiposView({
           confirmLabel="Sacar"
           onConfirm={() =>
             ejecutar(
-              asignarEquipo({ usuario_id: sacando.usuario.id, equipo_id: null }),
+              asignarEquipo({
+                usuario_id: sacando.usuario.id,
+                equipo_id: null,
+                agenda_al_jefe: agendaAlJefe,
+              }),
               `${sacando.usuario.nombre} quedó sin equipo`,
             )
           }
           onClose={() => setSacando(null)}
-        />
+        >
+          <AgendaAlJefe
+            equipo={sacando.equipo.nombre}
+            checked={agendaAlJefe}
+            onChange={setAgendaAlJefe}
+          />
+        </ConfirmModal>
       )}
 
       {saliente && (

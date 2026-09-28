@@ -311,6 +311,7 @@ export async function asignarEquipo(input: AsignarEquipoForm) {
     p_admin: adminId,
     p_usuario: parsed.data.usuario_id,
     p_equipo: parsed.data.equipo_id,
+    p_agenda_al_jefe: parsed.data.agenda_al_jefe,
   });
 
   if (error) {
