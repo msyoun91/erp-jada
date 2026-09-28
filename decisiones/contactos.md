@@ -145,6 +145,11 @@ las obras (`decisiones/obras.md` → *Altas parecidas*). Pedido del usuario, sob
   normalizados); empresas contra todas las empresas, de cualquier equipo (nombre). Antes de guardar,
   aviso a ciegas: nombre y dueño (de una empresa, también su equipo), nada más. Editar un dato comparado que pasa a coincidir también
   congela (`decisiones/obras.md` → *Editar también congela*).
+- **La empresa nueva desde el campo empresa de una persona también avisa (2026-09-28).** En "Crear y
+  vincular", el primer intento revisa la persona y la empresa juntas y muestra los dos avisos; el segundo
+  pasa. Si la empresa es parecida entra congelada, la persona se vincula igual, y la relación con su cargo
+  queda guardada hasta que la empresa se apruebe (`contactos_persona_empresa_validar`, `sql/139`). Si la
+  parecida es tuya, "Usar esa" la elige en lugar de crear. `VincularPanel.tsx`.
 - **Congelada:** la ve solo quien la cargó, y la puede editar. No se vincula (ni a una obra ni a una
   empresa) y no se transfiere. El bloqueo, con triggers en la base.
 - **Aprueba `contactos_aprobar`, no el jefe:** una función que asigna el admin, no delegable. En

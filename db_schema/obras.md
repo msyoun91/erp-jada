@@ -96,7 +96,8 @@ Directo o sistema, como Tareas: quién hace qué vale a `pg_trigger_depth() = 1`
   Trigramas sobre `normalizar_texto` (minúsculas, sin acentos): nombre ≥ 0,45, o dirección ≥ 0,45 con
   los mismos números (`numeros_de`). Contra todas las activas, congeladas incluidas.
 - `obras_parecidas(nombre, direccion, obra?) → (id, nombre, direccion, responsable)` — DEFINER, GRANT:
-  el aviso a ciegas; id y dirección solo de las que se ven.
+  el aviso a ciegas; id y dirección solo de las que se ven. Hasta 10: las que ve primero, después por
+  parecido del nombre (`sql/141`).
 - `obras_por_aprobar()` — DEFINER, GRANT; vacía sin `obras_aprobar`. Cada congelada activa completa,
   con `antes`, `parecidas` (jsonb: id, nombre, dirección, responsable, coincide) y `guardados` (jsonb).
 - `obras_resolver(obra, decision, motivo?, existente?)` — DEFINER, GRANT. `aprobar` · `rechazar` (con

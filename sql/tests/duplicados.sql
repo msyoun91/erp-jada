@@ -1,4 +1,4 @@
--- Verificación de sql/137 a sql/139: parecidas, congelado, vínculos guardados,
+-- Verificación de sql/137 a sql/139 y sql/141 (orden del aviso): parecidas, congelado, vínculos guardados,
 -- "Por aprobar" y las tres salidas. NO es una migración: todo corre dentro de
 -- una transacción que revierte. Termina en un DO que lanza "N / M ok" y los
 -- casos que fallan.
@@ -169,6 +169,8 @@ SELECT pg_temp.caso('02 Pedro: Torre, sin id ni dirección, con su responsable',
 SELECT pg_temp.caso('02 Juan: su Torre, con id', pg_temp.id('Torre')::text, pg_temp.consultar(
   $s$SELECT id::text FROM obras_parecidas('Zqx139 Torre Belgrano', 'Calle 9') WHERE nombre = 'Zqx139 Torre Belgrano'$s$,
   'Juan'));
+SELECT pg_temp.caso('02 Pedro: la igual sale primera, aunque otras ordenen antes por nombre', 'Zqx139 Torre Belgrano',
+  pg_temp.consultar($s$SELECT nombre FROM obras_parecidas('Zqx139 Torre Belgrano', 'Calle 9') LIMIT 1$s$, 'Pedro'));
 SELECT pg_temp.caso('02 Pedro: Marta, de Juan, sin id ni qué coincidió', 'test139 Juan', pg_temp.consultar(
   $s$SELECT dueno FROM contactos_parecidas('persona', 'Zqx139 Marta Gomez')
      WHERE nombre = 'Zqx139 Marta Gómez' AND id IS NULL AND coincide IS NULL$s$, 'Pedro'));
@@ -394,6 +396,24 @@ SELECT pg_temp.caso('13 Laura ya la ve', '1', pg_temp.ve(format(
   'SELECT 1 FROM contactos_empresas WHERE id = %L', pg_temp.id('Caputo2')), 'Laura'));
 SELECT pg_temp.caso('13 evento alta al aprobarse', '1', (
   SELECT count(*)::text FROM eventos WHERE ente = 'empresa' AND registro_id = pg_temp.id('Caputo2') AND evento = 'alta'));
+
+-- ============================================================
+-- 14. Persona nueva con empresa nueva parecida: la persona se vincula, la
+--     empresa se congela y la relación queda guardada
+-- ============================================================
+SELECT pg_temp.caso('14 Pedro crea a Carlos con "Constructora Caputo SA"', 'ok', pg_temp.alta('Carlos', format(
+  $s$SELECT contactos_crear_y_vincular('obra', %L, '{arquitecto}', 'persona', 'Zqx139 Carlos Ruiz',
+     p_empresa_nombre => 'Zqx139 Constructora Caputo SA', p_cargo => 'Compras')$s$,
+  pg_temp.id('Nunez')), 'Pedro'));
+SELECT pg_temp.caso('14 Carlos sin congelar y vinculado', 'false|1', (
+  SELECT (SELECT congelada::text FROM contactos_personas WHERE id = pg_temp.id('Carlos')) || '|' ||
+         (SELECT count(*) FROM contactos_vinculos WHERE activo AND persona_id = pg_temp.id('Carlos'))));
+SELECT pg_temp.caso('14 la empresa nueva, congelada, y la relación guardada con su cargo', 'true|Compras', (
+  SELECT e.congelada || '|' || g.cargo
+  FROM contactos_vinculos_guardados g JOIN contactos_empresas e ON e.id = g.a_empresa_id
+  WHERE g.activo AND g.persona_id = pg_temp.id('Carlos')));
+SELECT pg_temp.caso('14 sin relación real todavía', '0', (
+  SELECT count(*)::text FROM contactos_persona_empresa WHERE persona_id = pg_temp.id('Carlos')));
 
 -- ============================================================
 -- Resultado

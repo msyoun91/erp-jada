@@ -121,6 +121,7 @@ function CrearForm({
 }) {
   const [empresa, setEmpresa] = useState<EmpresaElegida | null>(null);
   const { parecidas, revisar } = useParecidas();
+  const empresaNueva = useParecidas();
   const { register, handleSubmit, setValue, formState } = useForm<CrearYVincularForm>({
     resolver: zodResolver(crearYVincularSchema),
     defaultValues: { ente, registro_id: registroId, roles, tipo, nombre, telefono: "", email: "", cargo: "" },
@@ -129,7 +130,11 @@ function CrearForm({
 
   async function onSubmit(data: CrearYVincularForm) {
     setEnviando(true);
-    if (!(await revisar({ tipo: data.tipo, nombre: data.nombre, telefono: data.telefono, email: data.email }))) {
+    const [contactoOk, empresaOk] = await Promise.all([
+      revisar({ tipo: data.tipo, nombre: data.nombre, telefono: data.telefono, email: data.email }),
+      data.empresa_nombre ? empresaNueva.revisar({ tipo: "empresa", nombre: data.empresa_nombre }) : true,
+    ]);
+    if (!contactoOk || !empresaOk) {
       setEnviando(false);
       return;
     }
@@ -139,7 +144,8 @@ function CrearForm({
       toast.error(result.error);
       return;
     }
-    toast.success(parecidas ? `${data.nombre} creado: espera aprobación` : `${data.nombre} creado y vinculado`);
+    const empresaEspera = data.empresa_nombre && empresaNueva.parecidas ? `; ${data.empresa_nombre} espera aprobación` : "";
+    toast.success(parecidas ? `${data.nombre} creado: espera aprobación${empresaEspera}` : `${data.nombre} creado y vinculado${empresaEspera}`);
     onListo();
   }
 
@@ -176,6 +182,15 @@ function CrearForm({
             <Campo id="cv-cargo" label="Cargo" error={errors.cargo}>
               <input id="cv-cargo" placeholder="Capataz, compras…" className={claseInput(errors.cargo)} {...register("cargo")} />
             </Campo>
+          )}
+          {empresa?.id === null && empresaNueva.parecidas && (
+            <AvisoParecidas
+              tipo="empresa"
+              items={empresaNueva.parecidas}
+              verbo="creala"
+              usar="Usar esa"
+              onUsar={(p) => setEmpresa({ id: p.id, nombre: p.nombre })}
+            />
           )}
         </>
       )}

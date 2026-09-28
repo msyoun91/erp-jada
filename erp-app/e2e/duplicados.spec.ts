@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { asegurarAprobador, como, crearIgual, panel, tarjeta } from "./comun";
+import { aprobarPendientes, asegurarAprobador, como, crearIgual, panel, tarjeta } from "./comun";
 
 // Tramo 3 de Obras y Contactos: el admin aprueba altas. Tiene Edificio Norte y
 // a Lucía Pérez; Juan (tester) carga tres obras en la misma dirección y a Lucía
@@ -13,6 +13,9 @@ const rechazar = `Edificio Norte ${marca} R`;
 const misma = `Edificio Norte ${marca} M`;
 const lucia = `Lucía Pérez ${marca}`;
 const luciaDeJuan = `Lucia Perez ${marca}`;
+const vidrios = `Vidrios ${marca}`;
+const vidriosDeJuan = `Vidrios ${marca} SA`;
+const pablo = `Pablo Ruiz ${marca}`;
 
 test.describe.configure({ mode: "serial" });
 
@@ -46,6 +49,12 @@ test("el admin recibe Aprobar altas y carga lo existente", async ({ browser }) =
   await persona.getByLabel("Teléfono").fill(`11 4${marca.slice(3).padStart(5, "0")}`);
   await crearIgual(page, persona, "Crear persona", /\/contactos\/personas\/[0-9a-f-]{36}$/);
   await expect(page.getByRole("heading", { name: lucia })).toBeVisible();
+
+  await page.goto("/contactos/empresas");
+  await page.getByRole("button", { name: "Nueva empresa" }).click();
+  const empresa = panel(page);
+  await empresa.getByLabel("Nombre").fill(vidrios);
+  await crearIgual(page, empresa, "Crear empresa", /\/contactos\/empresas\/[0-9a-f-]{36}$/);
 
   await ctx.close();
 });
@@ -156,6 +165,38 @@ test("Juan ve cómo quedó cada una", async ({ browser }) => {
   await page.goto("/obras");
   await expect(page.getByRole("link", { name: new RegExp(rechazar) })).toHaveCount(0);
   await expect(page.getByRole("link", { name: new RegExp(misma) })).toHaveCount(0);
+
+  await ctx.close();
+});
+
+test("la empresa nueva de una persona también avisa y espera aprobación", async ({ browser }) => {
+  test.setTimeout(120_000);
+  const { ctx, page } = await como(browser, "tester");
+
+  await page.goto(urls.aprobar);
+  await page.getByRole("button", { name: "Vincular contacto" }).click();
+  const vincular = panel(page);
+  await vincular.getByRole("button", { name: "Arquitecto" }).click();
+  await vincular.getByLabel("Buscar persona o empresa").fill(pablo);
+  await vincular.getByRole("button", { name: `Crear «${pablo}» como persona` }).click();
+  await vincular.getByLabel("Buscar empresa").fill(vidriosDeJuan);
+  await vincular.getByRole("button", { name: `Crear «${vidriosDeJuan}»` }).click();
+  await vincular.getByLabel("Cargo").fill("Compras");
+
+  // Frena con el aviso de la empresa (y el de la persona, si hay de otras corridas).
+  await vincular.getByRole("button", { name: "Crear y vincular" }).click();
+  await expect(vincular.getByText(/^Se parece a otras? empresas?$/)).toBeVisible();
+  await expect(vincular.getByText(`${vidrios}, de Admin`, { exact: true })).toBeVisible();
+  await vincular.getByRole("button", { name: "Crear y vincular" }).click();
+  await expect(page.getByText(`${vidriosDeJuan} espera aprobación`)).toBeVisible();
+  await expect(vincular).toBeHidden();
+
+  // Aprobada la empresa, la relación guardada aparece en la ficha de Pablo.
+  await aprobarPendientes(browser, marca);
+  await page.reload();
+  await page.getByRole("link", { name: pablo }).click();
+  await expect(page.getByRole("heading", { name: pablo })).toBeVisible();
+  await expect(page.getByText(vidriosDeJuan)).toBeVisible();
 
   await ctx.close();
 });

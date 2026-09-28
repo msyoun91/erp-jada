@@ -107,6 +107,9 @@ resolviera después, y el usuario eligió congelar. Contactos hace lo mismo con 
   misma obra mientras espera también se frenan).
 - **Aviso a ciegas antes de guardar:** de lo parecido que no ve, solo el nombre de la obra y el de su
   responsable.
+- **El aviso ordena por parecido (2026-09-28).** Corta en 10: primero lo que ve, después (contactos) mismo
+  teléfono o email, después el nombre más parecido, y el nombre como desempate. Ordenado solo por nombre,
+  la igual podía quedar afuera detrás de diez parecidas que ordenaban antes. `sql/141`.
 - **Editar también congela (2026-09-26).** Si no, se esquiva: cargar "Obra X" en "Calle 1" y
   renombrarla. Solo cuando la edición cambia un dato comparado (obra: nombre, dirección; persona:
   nombre, teléfono, email; empresa: nombre) y el valor nuevo coincide con otro registro; notas u otros

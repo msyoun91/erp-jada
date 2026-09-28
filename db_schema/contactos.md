@@ -136,7 +136,8 @@ triggers de vincular y las funciones de resolver.
 - Triggers `contactos_personas_congelar` / `contactos_empresas_congelar`, como en obras; sin
   `contactos_aprobar` congela. Congelada, la persona no se transfiere ni se vincula (CO020).
 - `contactos_parecidas(tipo, nombre, telefono?, email?, id?) → (id, nombre, dueno, equipo, coincide)` —
-  aviso a ciegas; id y qué coincidió solo si es tuya.
+  aviso a ciegas; id y qué coincidió solo si es tuya. Hasta 10: tuyas primero, después mismo teléfono o
+  email, después por parecido del nombre (`sql/141`).
 - `contactos_por_aprobar()` — personas y empresas congeladas, con parecidas (qué coincidió, sin el
   dato) y guardados. Sin `contactos_aprobar`, vacía.
 - `contactos_resolver(tipo, id, decision, motivo?, existente?, vincular = true)`: `aprobar` (persona:
