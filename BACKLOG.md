@@ -131,9 +131,12 @@ no se prueba sin una obra a la que vincularlo.
    (`decisiones/contactos.md`). SQL aplicado el 2026-09-28: `sql/142` (comisión), `sql/143`
    (números), `sql/144` (Auditoría), `sql/145`–`146` (fusionar), cada una con su test. Pantallas: la
    comisión, en la fila del referente, el widget "Obras" y la vista Auditoría (2026-09-28; probada con
-   `e2e/contactos.spec.ts`). **Siguiente:** pantalla de
-   fusionar (con `conservar` para elegir la comisión) y "Se fusionó con …" en la ficha vieja. El texto
-   del aviso `persona_fusionada` en la campanita es provisorio.
+   `e2e/contactos.spec.ts`), y la pantalla de fusionar con
+   "Se fusionó con …" en la ficha vieja (2026-09-28; probada con `e2e/contactos.spec.ts`: el admin
+   fusiona las dos Marta de Juan). Sin probar en el navegador: elegir entre dos comisiones (lo cubre
+   `sql/tests/contactos_fusionar.sql`). Pendiente: una fusionada hoy se reactiva por SQL (la ficha
+   ya no ofrece "Reactivar"): decidir si CO004 la frena. El texto del aviso `persona_fusionada` en la
+   campanita es provisorio.
 5. **Tareas** — el paquete "con el primer emisor" (arriba): plantillas por estado, pasos que se
    completan solos. Prueba: el paso "vincular arquitecto" se cierra solo.
 

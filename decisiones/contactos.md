@@ -106,6 +106,15 @@ el vínculo fallaba contra una persona inactiva. Contactos no escribe en `tareas
 llegan a la que queda en un clic. Persona ↔ empresa pasa a la que queda como los vínculos; si las dos
 estaban en la misma empresa, queda una sola relación abierta.
 
+**La pantalla de fusionar: desde la ficha, y hay que ver los datos para elegirlos (2026-09-28).** El
+admin abre "Fusionar con…" en la ficha, elige el duplicado y pasa a `/contactos/fusionar`: las dos
+lado a lado, cuál queda (por defecto, la de más obras abiertas), teléfono y email campo por campo
+(por defecto, el de la que queda, salvo que esté vacío y la otra lo tenga) y, si una obra tiene a
+las dos con comisión, cuál queda. En una persona, "Fusionar" espera a "Ver los de las dos": elegir
+sin ver pierde un dato, y verlo queda registrado como cualquier "Ver contacto". El link viejo a la
+que se fue muestra "Se fusionó con …"; quien ya no la ve pasa directo a la que queda. Archivos:
+`FusionarView.tsx`, `app/(erp-app)/contactos/fusionar/page.tsx`, `e2e/contactos.spec.ts`.
+
 **Una persona o una empresa la corrige quien trabaja con ella, y cada cambio queda registrado
 (2026-09-25).** El contacto es uno solo y lo usan varias obras: que lo corrija el primero que se entera
 (quien recibió la obra transferida y sabe el teléfono nuevo). Quien solo la ve en contexto, no

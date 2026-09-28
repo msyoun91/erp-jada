@@ -153,3 +153,18 @@ export type ParecidaAviso = { id: string | null; nombre: string; dueno: string; 
 // Los jsonb de `contactos_por_aprobar` (sql/139).
 export type Parecida = { id: string; nombre: string; dueno: string; equipo: string | null; coincide: Coincide[] };
 export type Guardado = { ente: string | null; registro: string | null; roles: string[] | null; empresa: string | null; cargo: string | null };
+
+// Quién puede, que sean dos aprobadas y activas, lo hace valer
+// `contactos_fusionar` (CO029, CO030). `conservar`: los vínculos de la que se
+// va que quedan en un choque (el admin elige la comisión, sql/146).
+export const fusionarSchema = z
+  .object({
+    tipo: z.enum(["persona", "empresa"]),
+    queda: idSchema,
+    se_va: idSchema,
+    telefono_de_la_otra: z.boolean(),
+    email_de_la_otra: z.boolean(),
+    conservar: z.array(idSchema),
+  })
+  .refine((v) => v.queda !== v.se_va, { message: "Elegí dos distintas", path: ["se_va"] });
+export type FusionarForm = z.input<typeof fusionarSchema>;

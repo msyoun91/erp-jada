@@ -13,6 +13,7 @@ import {
   editarPersonaSchema,
   empresaSchema,
   equipoEmpresaSchema,
+  fusionarSchema,
   parecidasSchema,
   personaEmpresaSchema,
   personaSchema,
@@ -26,6 +27,7 @@ import {
   type EditarPersonaForm,
   type EmpresaForm,
   type EquipoEmpresaForm,
+  type FusionarForm,
   type ParecidaAviso,
   type ParecidasForm,
   type PersonaEmpresaForm,
@@ -51,6 +53,11 @@ function invalido(issues: { message: string }[]) {
 function listo() {
   revalidatePath("/", "layout");
   return { success: true as const };
+}
+
+// El texto tal cual, sin comodines: `%` y `_` escritos no amplían la búsqueda.
+function patronIlike(texto: string) {
+  return `%${texto.replace(/[\\%_]/g, "\\$&")}%`;
 }
 
 function validarId(id: unknown) {
@@ -236,13 +243,12 @@ export async function buscarVinculables(texto: string) {
 export async function buscarEmpresas(texto: string) {
   const parsed = buscarSchema.safeParse(texto);
   if (!parsed.success) return invalido(parsed.error.issues);
-  const patron = `%${parsed.data.replace(/[\\%_]/g, "\\$&")}%`;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("contactos_empresas")
     .select("id, nombre")
     .eq("activo", true)
-    .ilike("nombre", patron)
+    .ilike("nombre", patronIlike(parsed.data))
     .order("nombre")
     .limit(8);
   if (error) return fallo(error);
@@ -352,5 +358,41 @@ export async function resolverContacto(input: ResolverForm) {
       p_vincular: d.vincular,
     })
   );
+  return error ? fallo(error) : listo();
+}
+
+// ---------- Fusionar ----------
+
+// La otra, para fusionar: activas y aprobadas, del mismo tipo (el admin las ve todas).
+export async function buscarFusionables(tipo: "persona" | "empresa", excluir: string, texto: string) {
+  const parsed = buscarSchema.safeParse(texto);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from(tipo === "persona" ? "contactos_personas" : "contactos_empresas")
+    .select("id, nombre")
+    .eq("activo", true)
+    .eq("congelada", false)
+    .neq("id", excluir)
+    .ilike("nombre", patronIlike(parsed.data))
+    .order("nombre")
+    .limit(8);
+  if (error) return fallo(error);
+  return { success: true as const, resultados: data };
+}
+
+export async function fusionar(input: FusionarForm) {
+  const parsed = fusionarSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const d = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("contactos_fusionar", {
+    p_tipo: d.tipo,
+    p_queda: d.queda,
+    p_se_va: d.se_va,
+    p_telefono_de_la_otra: d.telefono_de_la_otra,
+    p_email_de_la_otra: d.email_de_la_otra,
+    p_conservar: d.conservar,
+  });
   return error ? fallo(error) : listo();
 }

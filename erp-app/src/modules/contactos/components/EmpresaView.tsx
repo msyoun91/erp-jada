@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Archive, ArchiveRestore, CalendarX, Globe, Mail, Pencil, Phone, Plus, Share2, UsersRound, X } from "lucide-react";
+import { Archive, ArchiveRestore, Merge, CalendarX, Globe, Mail, Pencil, Phone, Plus, Share2, UsersRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
@@ -20,7 +20,7 @@ import {
   reactivarEmpresa,
   sumarEmpresa,
 } from "../actions";
-import type { EmpleadoConNombre, EmpresaCompleta } from "../queries";
+import type { EmpleadoConNombre, EmpresaCompleta, Fusionada } from "../queries";
 import {
   compartirEmpresaSchema,
   equipoEmpresaSchema,
@@ -32,14 +32,17 @@ import {
 } from "../types";
 import { BuscadorVinculables, IconoContacto } from "./Buscador";
 import { EmpresaFormPanel } from "./ContactoFormPanel";
-import { HistorialEdiciones, VinculosDeContacto, nombreDe } from "./FichaPartes";
+import { HistorialEdiciones, SeFusiono, VinculosDeContacto, nombreDe } from "./FichaPartes";
+import { FusionarModal } from "./FusionarView";
 import { EsperaAprobacion } from "./Parecidas";
 import { CerrarModal } from "./VinculosSeccion";
 
-type Dialogo = "editar" | "desactivar" | "sumar" | "equipo" | "compartir";
+type Dialogo = "editar" | "desactivar" | "sumar" | "equipo" | "compartir" | "fusionar";
 type DialogoRelacion = { tipo: "cerrar" | "desactivar"; relacion: EmpleadoConNombre };
 
 type Props = EmpresaCompleta & {
+  // La que queda, si esta se fusionó en otra; `id` null si no la ve.
+  fusionada: Fusionada | null;
   yo: string;
   admin: boolean;
   // Desactiva el delegador de su equipo, quien la cargó (sin equipo) o el admin (CO007).
@@ -64,6 +67,7 @@ export function EmpresaView({
   equipos,
   compartidaCon,
   comparte,
+  fusionada,
 }: Props) {
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
   const [dejar, setDejar] = useState<string | null>(null);
@@ -92,7 +96,10 @@ export function EmpresaView({
     ...(desactiva && empresa.activo
       ? [{ label: "Desactivar", icon: <Archive size={14} />, onClick: () => setDialogo("desactivar"), destructive: true }]
       : []),
-    ...(admin && !empresa.activo
+    ...(admin && empresa.activo && !empresa.congelada
+      ? [{ label: "Fusionar con…", icon: <Merge size={14} />, onClick: () => setDialogo("fusionar") }]
+      : []),
+    ...(admin && !empresa.activo && !empresa.fusionada_en
       ? [{ label: "Reactivar", icon: <ArchiveRestore size={14} />, onClick: () => correr(reactivarEmpresa, "Empresa reactivada") }]
       : []),
   ];
@@ -171,6 +178,7 @@ export function EmpresaView({
           </div>
         )}
         {empresa.activo && empresa.congelada && <EsperaAprobacion tipo="empresa" />}
+        {fusionada && <SeFusiono tipo="empresa" fusionada={fusionada} />}
         <div className="flex flex-col gap-1">
           {empresa.telefono && (
             <a href={`tel:${empresa.telefono}`} className="t-body-m flex items-center gap-2 text-text-brand">
@@ -246,6 +254,7 @@ export function EmpresaView({
         />
       )}
       {dialogo === "sumar" && <SumarPersonaModal empresaId={empresa.id} onClose={() => setDialogo(null)} />}
+      {dialogo === "fusionar" && <FusionarModal tipo="empresa" id={empresa.id} onClose={() => setDialogo(null)} />}
       {dialogo === "desactivar" && (
         <ConfirmModal
           title="Desactivar empresa"

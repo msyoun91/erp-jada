@@ -1,8 +1,8 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getUsuarioActualId } from "@/lib/usuarios";
 import { idSchema } from "@/lib/validacion";
 import { puedeAdministrar, puedeVerContactos } from "@/modules/contactos/permissions";
-import { getCandidatos, getNombres, getPersona } from "@/modules/contactos/queries";
+import { getCandidatos, getFusionada, getNombres, getPersona } from "@/modules/contactos/queries";
 import { PersonaView } from "@/modules/contactos/components/PersonaView";
 
 export default async function PersonaPage(props: PageProps<"/contactos/personas/[id]">) {
@@ -16,7 +16,12 @@ export default async function PersonaPage(props: PageProps<"/contactos/personas/
     getNombres(),
     getCandidatos(),
   ]);
-  if (!datos) notFound();
+  // Un link viejo a una que se fusionó y ya no se ve lleva a la que queda.
+  const fusionada = !datos || datos.persona.fusionada_en ? await getFusionada("persona", id) : null;
+  if (!datos) {
+    if (fusionada?.id) redirect(`/contactos/personas/${fusionada.id}`);
+    notFound();
+  }
 
-  return <PersonaView {...datos} yo={yo} admin={admin} nombres={nombres} candidatos={candidatos} />;
+  return <PersonaView {...datos} yo={yo} admin={admin} nombres={nombres} candidatos={candidatos} fusionada={fusionada} />;
 }

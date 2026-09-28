@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Archive, ArchiveRestore, ArrowLeftRight, CalendarX, Eye, Mail, Pencil, Phone, Plus, UserRound } from "lucide-react";
+import { Archive, ArchiveRestore, Merge, ArrowLeftRight, CalendarX, Eye, Mail, Pencil, Phone, Plus, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
@@ -21,7 +21,7 @@ import {
   transferirPersona,
   verContacto,
 } from "../actions";
-import type { PersonaCompleta, PersonaEmpresaConNombre } from "../queries";
+import type { Fusionada, PersonaCompleta, PersonaEmpresaConNombre } from "../queries";
 import {
   personaEmpresaSchema,
   transferirPersonaSchema,
@@ -31,21 +31,24 @@ import {
 } from "../types";
 import { EmpresaSelector, IconoContacto, type EmpresaElegida } from "./Buscador";
 import { EditarPersonaPanel } from "./ContactoFormPanel";
-import { HistorialEdiciones, VinculosDeContacto, nombreDe } from "./FichaPartes";
+import { HistorialEdiciones, SeFusiono, VinculosDeContacto, nombreDe } from "./FichaPartes";
+import { FusionarModal } from "./FusionarView";
 import { EsperaAprobacion } from "./Parecidas";
 import { CerrarModal } from "./VinculosSeccion";
 
-type Dialogo = "editar" | "transferir" | "desactivar" | "sumar";
+type Dialogo = "editar" | "transferir" | "desactivar" | "sumar" | "fusionar";
 type DialogoRelacion = { tipo: "cerrar" | "desactivar"; relacion: PersonaEmpresaConNombre };
 
 type Props = PersonaCompleta & {
+  // La que queda, si esta se fusionó en otra; `id` null si no la ve.
+  fusionada: Fusionada | null;
   yo: string;
   admin: boolean;
   nombres: Record<string, string>;
   candidatos: UsuarioBasico[];
 };
 
-export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin, nombres, candidatos }: Props) {
+export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin, nombres, candidatos, fusionada }: Props) {
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
   const [relacion, setRelacion] = useState<DialogoRelacion | null>(null);
   const [contacto, setContacto] = useState<DatosContacto | null>(null);
@@ -80,7 +83,10 @@ export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin,
           { label: "Desactivar", icon: <Archive size={14} />, onClick: () => setDialogo("desactivar"), destructive: true },
         ]
       : []),
-    ...(admin && !persona.activo
+    ...(admin && persona.activo && !persona.congelada
+      ? [{ label: "Fusionar con…", icon: <Merge size={14} />, onClick: () => setDialogo("fusionar") }]
+      : []),
+    ...(admin && !persona.activo && !persona.fusionada_en
       ? [{ label: "Reactivar", icon: <ArchiveRestore size={14} />, onClick: () => correr(reactivarPersona, "Persona reactivada") }]
       : []),
   ];
@@ -137,6 +143,7 @@ export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin,
           {nombre(persona.responsable_id)}
         </p>
         {persona.activo && persona.congelada && <EsperaAprobacion tipo="persona" />}
+        {fusionada && <SeFusiono tipo="persona" fusionada={fusionada} />}
         {contacto ? (
           <div className="flex flex-col gap-1">
             {contacto.telefono ? (
@@ -208,6 +215,7 @@ export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin,
         />
       )}
       {dialogo === "sumar" && <SumarEmpresaModal personaId={persona.id} onClose={() => setDialogo(null)} />}
+      {dialogo === "fusionar" && <FusionarModal tipo="persona" id={persona.id} onClose={() => setDialogo(null)} />}
       {dialogo === "desactivar" && (
         <ConfirmModal
           title="Desactivar persona"

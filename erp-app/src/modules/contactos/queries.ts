@@ -238,3 +238,58 @@ export async function getAuditoriaDetalle(dias: number, usuario: string | null, 
   if (error) throw error;
   return data;
 }
+
+// Un lado de la fusión, igual para persona y empresa. `quien` es el dueño (la
+// persona) o el equipo (la empresa; sin equipo, quien la cargó). `contacto`
+// llega null en la persona: se lee con "Ver contacto", que registra.
+export type LadoFusion = {
+  id: string;
+  nombre: string;
+  quien: string | null;
+  equipo: string | null;
+  created_at: string;
+  vinculos: VinculoConRegistro[];
+  relaciones: string[];
+  contacto: { telefono: string | null; email: string | null } | null;
+};
+
+// Solo activas y aprobadas: lo demás no se fusiona (CO030).
+export async function getLadoFusion(tipo: "persona" | "empresa", id: string): Promise<LadoFusion | null> {
+  if (tipo === "persona") {
+    const d = await getPersona(id);
+    if (!d || !d.persona.activo || d.persona.congelada) return null;
+    return {
+      id,
+      nombre: d.persona.nombre,
+      quien: d.persona.responsable_id,
+      equipo: null,
+      created_at: d.persona.created_at,
+      vinculos: d.vinculos.filter((v) => v.hasta === null),
+      relaciones: d.empresas.flatMap((r) => (r.hasta === null && r.contactos_empresas ? [r.contactos_empresas.nombre] : [])),
+      contacto: null,
+    };
+  }
+  const d = await getEmpresa(id);
+  if (!d || !d.empresa.activo || d.empresa.congelada) return null;
+  return {
+    id,
+    nombre: d.empresa.nombre,
+    quien: d.empresa.equipo_id ?? d.empresa.creado_por,
+    equipo: d.empresa.equipo_id,
+    created_at: d.empresa.created_at,
+    vinculos: d.vinculos.filter((v) => v.hasta === null),
+    relaciones: d.personas.flatMap((r) => (r.hasta === null && r.contactos_personas ? [r.contactos_personas.nombre] : [])),
+    contacto: { telefono: d.empresa.telefono, email: d.empresa.email },
+  };
+}
+
+// "Se fusionó con …" (`contactos_fusionada`): el id solo si quien lee ve la que queda.
+export type Fusionada = { id: string | null; nombre: string; dueno: string };
+
+export async function getFusionada(tipo: "persona" | "empresa", id: string): Promise<Fusionada | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("contactos_fusionada", { p_tipo: tipo, p_id: id });
+  if (error) throw error;
+  const f = data[0];
+  return f ? { id: f.id as string | null, nombre: f.nombre, dueno: f.dueno } : null;
+}

@@ -1,8 +1,8 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getUsuarioActualId } from "@/lib/usuarios";
 import { idSchema } from "@/lib/validacion";
 import { comparteEmpresa, desactivaEmpresa, puedeAdministrar, puedeVerContactos } from "@/modules/contactos/permissions";
-import { getCompartida, getEmpresa, getNombres } from "@/modules/contactos/queries";
+import { getCompartida, getEmpresa, getFusionada, getNombres } from "@/modules/contactos/queries";
 import { EmpresaView } from "@/modules/contactos/components/EmpresaView";
 
 export default async function EmpresaPage(props: PageProps<"/contactos/empresas/[id]">) {
@@ -16,7 +16,11 @@ export default async function EmpresaPage(props: PageProps<"/contactos/empresas/
     getNombres(),
     getCompartida(id),
   ]);
-  if (!datos) notFound();
+  const fusionada = !datos || datos.empresa.fusionada_en ? await getFusionada("empresa", id) : null;
+  if (!datos) {
+    if (fusionada?.id) redirect(`/contactos/empresas/${fusionada.id}`);
+    notFound();
+  }
 
   return (
     <EmpresaView
@@ -27,6 +31,7 @@ export default async function EmpresaPage(props: PageProps<"/contactos/empresas/
       nombres={nombres}
       {...compartida}
       comparte={await comparteEmpresa(datos.empresa, yo)}
+      fusionada={fusionada}
     />
   );
 }

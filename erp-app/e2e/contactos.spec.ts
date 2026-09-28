@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { como, crearIgual, panel } from "./comun";
+import { aprobarPendientes, como, crearIgual, panel } from "./comun";
 
 // Tramo 3: compartir empresa. Caputo es de "Equipo Zqx pruebas" (Norte, el de
 // Pedro); el admin la comparte con "Equipo Zqx sur", donde está Juan (tester),
@@ -171,4 +171,63 @@ test("El auditor ve quién miró a Marta y que no era suya", async ({ browser })
   await expect(admin).toHaveURL(/usuario=.*persona=.*dias=7|dias=7.*usuario=/);
   await expect(admin.getByRole("heading", { name: `Admin y ${marta}` })).toBeVisible();
   await ctxAdmin.close();
+});
+
+// Tramo 4: fusionar. Juan carga a Marta dos veces, una con teléfono y otra con
+// email; el admin las fusiona desde la ficha de la primera, que queda y toma
+// el email de la otra. El link viejo muestra "Se fusionó con …" al admin y
+// lleva a Juan, que ya no ve la que se fue, a la que queda.
+test("El admin fusiona las dos Marta de Juan", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const queda = `Marta Fusion ${marca}`;
+  const seVa = `Marta Fusión ${marca}`;
+  // Por corrida: con el mismo dato que una anterior, no se aprueba.
+  const telefono = `11${marca.slice(3).padStart(8, "0")}`;
+  const { ctx: ctxJuan, page: juan } = await como(browser, "tester");
+  const urls: string[] = [];
+  for (const [nombre, campo, valor] of [
+    [queda, "Teléfono", telefono],
+    [seVa, "Email", `marta.${marca.toLowerCase()}@zqx.test`],
+  ]) {
+    await juan.goto("/contactos");
+    await juan.getByRole("button", { name: "Nueva persona" }).click();
+    const alta = panel(juan);
+    await alta.getByLabel("Nombre").fill(nombre);
+    await alta.getByLabel(campo).fill(valor);
+    urls.push(await crearIgual(juan, alta, "Crear persona", /\/contactos\/personas\/[0-9a-f-]{36}$/));
+  }
+  // La segunda se parece a la primera: queda por aprobar hasta que el admin la aprueba.
+  await aprobarPendientes(browser, marca);
+
+  const { ctx: ctxAdmin, page: admin } = await como(browser, "admin");
+  await admin.goto(urls[0]);
+  await admin.getByRole("button", { name: "Más acciones" }).click();
+  await admin.getByRole("button", { name: "Fusionar con…" }).click();
+  await panel(admin).getByPlaceholder("Buscar persona").fill(seVa);
+  await panel(admin).getByRole("button", { name: seVa }).click();
+  await expect(admin.getByRole("heading", { name: "Fusionar personas" })).toBeVisible();
+
+  const fusionar = admin.getByRole("button", { name: "Fusionar", exact: true });
+  await expect(fusionar).toBeDisabled();
+  await admin.getByRole("button", { name: "Ver los de las dos" }).click();
+  // Sin email en la que queda, se elige el de la otra.
+  await expect(admin.getByRole("radio", { name: new RegExp(`^marta\\.${marca.toLowerCase()}@`) })).toBeChecked();
+  await expect(admin.getByRole("radio", { name: new RegExp(`^${telefono}`) })).toBeChecked();
+  await fusionar.click();
+  await panel(admin).getByRole("button", { name: "Fusionar" }).click();
+  await expect(admin).toHaveURL(new RegExp(`${urls[0]}$`));
+  await admin.getByRole("button", { name: "Ver contacto" }).click();
+  await expect(admin.getByText(`marta.${marca.toLowerCase()}@zqx.test`)).toBeVisible();
+  await expect(admin.getByText(telefono)).toBeVisible();
+
+  await admin.goto(urls[1]);
+  await expect(admin.getByText("Desactivada")).toBeVisible();
+  await admin.getByRole("link", { name: `${queda} (de Tester) →` }).click();
+  await expect(admin).toHaveURL(new RegExp(`${urls[0]}$`));
+  await ctxAdmin.close();
+
+  await juan.goto(urls[1]);
+  await expect(juan).toHaveURL(new RegExp(`${urls[0]}$`));
+  await expect(juan.getByRole("heading", { name: queda })).toBeVisible();
+  await ctxJuan.close();
 });

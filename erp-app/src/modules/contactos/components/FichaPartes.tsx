@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Merge } from "lucide-react";
 import { toast } from "sonner";
 import { labelRol } from "@/lib/entes";
 import { formatFecha, formatFechaHora } from "@/lib/utils";
 import { historialContacto } from "../actions";
-import type { VinculoConRegistro } from "../queries";
+import type { Fusionada, VinculoConRegistro } from "../queries";
 import type { Edicion, EdicionContacto } from "../types";
 
 const CAMPO: Record<string, string> = {
@@ -20,6 +21,27 @@ const CAMPO: Record<string, string> = {
 export function nombreDe(nombres: Record<string, string>, id: string | null, yo: string) {
   if (!id) return "—";
   return id === yo ? "Vos" : (nombres[id] ?? "—");
+}
+
+// La ficha de la que se fue en una fusión: a cuál pasó todo. Sin link si
+// quien lee no ve la que queda.
+export function SeFusiono({ tipo, fusionada }: { tipo: "persona" | "empresa"; fusionada: Fusionada }) {
+  const texto = `${fusionada.nombre} (de ${fusionada.dueno})`;
+  return (
+    <p className="t-body-m flex items-center gap-2 rounded-md bg-bg-subtle px-3 py-2">
+      <Merge size={14} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+      <span>
+        Se fusionó con{" "}
+        {fusionada.id ? (
+          <Link href={`/contactos/${tipo === "persona" ? "personas" : "empresas"}/${fusionada.id}`} className="font-medium text-text-brand hover:underline">
+            {texto} →
+          </Link>
+        ) : (
+          texto
+        )}
+      </span>
+    </p>
+  );
 }
 
 // Dónde figura: el registro con su link si quien lee lo ve; si no, sin nombre.
