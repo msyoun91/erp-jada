@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Database } from "@/lib/supabase/database.types";
+import { fechaOpcional, idSchema, textoOpcional, uuidOpcional } from "@/lib/validacion";
 import { REFERENCIA } from "./derivados";
 
 type Enums = Database["public"]["Enums"];
@@ -18,22 +19,6 @@ export type Plantilla = Tablas["tareas_plantillas"]["Row"];
 export type PlantillaPaso = Tablas["tareas_plantillas_pasos"]["Row"];
 export type Asignable = Database["public"]["Functions"]["tareas_asignables"]["Returns"][number];
 
-// Un <select> o <input type="date"> vacío manda "", no undefined.
-const uuidOpcional = z
-  .union([z.string().uuid(), z.literal("")])
-  .nullish()
-  .transform((v) => v || null);
-const fechaOpcional = z
-  .union([z.iso.date("Fecha inválida"), z.literal("")])
-  .nullish()
-  .transform((v) => v || null);
-const textoOpcional = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max, `Máximo ${max} caracteres`)
-    .nullish()
-    .transform((v) => v || null);
 // La base lo rechaza igual (TA022, sql/123).
 const textoPlantilla = textoOpcional(5000).refine((v) => v === null || v.search(REFERENCIA) === -1, {
   message: "Una plantilla no menciona registros concretos: escribí el nombre en texto",
@@ -44,8 +29,6 @@ const diasOpcional = z
   .union([enteros, z.literal("")])
   .nullish()
   .transform((v) => (v === "" || v == null ? null : v));
-
-export const idSchema = z.string().uuid();
 
 // Exactamente uno: una persona o un equipo.
 const asignado = {

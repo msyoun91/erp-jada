@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { idSchema } from "@/modules/tareas/types";
+import { idSchema } from "@/lib/validacion";
 import { puedeVerTareas } from "@/modules/tareas/permissions";
 import { getHiloDePaso } from "@/modules/tareas/queries";
 

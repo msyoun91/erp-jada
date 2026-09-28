@@ -50,6 +50,17 @@ jefe de la obra y admin sí, y la comisión se desactiva junto, con aviso previo
 Obras sobre `contactos_vinculos`. Descartado: apagarla sola aunque lo haga el participante (el
 responsable la pierde sin saber) y bloquear a todos (obliga a borrarla a mano primero).
 
+## Los nombres de lo que se ve (2026-09-28)
+
+**`obras_nombres()` y `contactos_nombres()` dan el nombre de quienes figuran en lo que se ve;
+`usuarios_con_permiso(codigo)`, a quién se transfiere o se suma.** `usuarios_select` no deja ver otros
+equipos: la ficha de una obra quedaba sin responsable ni participantes, y transferir, sin candidatos.
+Mismo patrón que `tareas_nombres()` y `tareas_asignables()` (`decisiones/tareas/participacion.md`).
+Los candidatos son una sola función de core por permiso, no una por módulo: la regla es "tiene el
+permiso", igual para obras (`obras_ver`) y personas (`contactos_ver`). `obras_a_cargo(obra)` es el
+envoltorio con `auth.uid()` de `obras_a_cargo_de`, para mostrar los botones sin copiar la regla.
+Archivos: `sql/130`, `sql/131`, `sql/tests/obras_nombres.sql`.
+
 ## Bajas y cambios de equipo (2026-09-25)
 
 **La baja o el cambio de equipo de un vendedor pasa sus obras al jefe del equipo guardado en cada

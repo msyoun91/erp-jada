@@ -1511,6 +1511,13 @@ export type Database = {
           nuevo: string
         }[]
       }
+      contactos_nombres: {
+        Args: never
+        Returns: {
+          id: string
+          nombre: string
+        }[]
+      }
       contactos_puede_abrir: {
         Args: { p_id: string; p_tipo: string; p_usuario: string }
         Returns: boolean
@@ -1644,6 +1651,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      obras_a_cargo: { Args: { p_obra: string }; Returns: boolean }
       obras_a_cargo_de: {
         Args: { p_obra: string; p_usuario: string }
         Returns: boolean
@@ -1680,6 +1688,13 @@ export type Database = {
       obras_etiqueta: {
         Args: { p_id: string; p_tipo: string }
         Returns: string
+      }
+      obras_nombres: {
+        Args: never
+        Returns: {
+          id: string
+          nombre: string
+        }[]
       }
       obras_puede_abrir: {
         Args: { p_id: string; p_tipo: string; p_usuario: string }
@@ -1892,6 +1907,13 @@ export type Database = {
       usuario_tiene_permiso: {
         Args: { p_codigo: string; p_usuario: string }
         Returns: boolean
+      }
+      usuarios_con_permiso: {
+        Args: { p_codigo: string }
+        Returns: {
+          id: string
+          nombre: string
+        }[]
       }
     }
     Enums: {

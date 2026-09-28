@@ -89,6 +89,12 @@ Directo o sistema, como Tareas: quién hace qué vale a `pg_trigger_depth() = 1`
   quien_nuevo_email?) → uuid` — INVOKER (`sql/128`). La obra y un solo "¿Quién?" (OB017), vinculado
   con rol `referente`, solo con origen `referente`; todo o nada. El nuevo se crea con
   `contactos_crear_y_vincular`.
+- `obras_nombres() → (id, nombre)` — DEFINER, GRANT `authenticated` (`sql/130`). Los usuarios que
+  figuran en las obras que quien llama ve: responsable, quien la cargó, participantes y quién los sumó,
+  actores y `{de, a}` de las transferencias del historial.
+- `obras_a_cargo(obra) → boolean` — DEFINER, GRANT `authenticated` (`sql/131`): envoltorio de
+  `obras_a_cargo_de` con `auth.uid()`, para que la ficha muestre transferir, desactivar y participantes.
+- A quién se transfiere o se suma: `usuarios_con_permiso('obras_ver')` (core).
 
 ## Permisos (`submodulos`, `modulo = 'obras'`)
 
@@ -118,4 +124,4 @@ reactivación. Los `relacion_*` de sus contactos los emite `contactos_vinculos`.
 Ramas: `obras_etiqueta` (nombre), `obras_trabaja`, `obras_puede_abrir(tipo, id, usuario)` (DEFINER,
 sin GRANT), `obras_buscar(texto)` (activas por nombre o dirección; perdidas al final).
 
-Tests: `sql/tests/obras_reglas.sql`, `sql/tests/obras_alta.sql`.
+Tests: `sql/tests/obras_reglas.sql`, `sql/tests/obras_alta.sql`, `sql/tests/obras_nombres.sql`.

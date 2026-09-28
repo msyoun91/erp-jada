@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { idSchema } from "@/modules/tareas/types";
+import { idSchema } from "@/lib/validacion";
 import { puedeAdministrar, puedePedir, puedeVerEquipo, puedeVerPlantillas, puedeVerTareas } from "@/modules/tareas/permissions";
 import { getAsignables, getContexto, getHilo, getPlantillas } from "@/modules/tareas/queries";
 import { HiloView } from "@/modules/tareas/components/HiloView";

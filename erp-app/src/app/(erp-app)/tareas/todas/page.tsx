@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { idSchema } from "@/modules/tareas/types";
+import { idSchema } from "@/lib/validacion";
 import { puedeVerTodas } from "@/modules/tareas/permissions";
 import { getAsignables, getContexto, getTodas } from "@/modules/tareas/queries";
 import { TodasView } from "@/modules/tareas/components/TodasView";

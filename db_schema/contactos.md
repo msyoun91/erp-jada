@@ -120,6 +120,9 @@ Sin `activo` ni `updated_at`, como `eventos`.
   `contactos_desactivar_persona_empresa(relacion)` (`sql/129`) — DEFINER; las reglas son los triggers
   (CO018 si no existe o está desactivada). Desactivar saca la fila de la vista de quien lo hace, y
   Postgres rechaza (42501) un UPDATE directo cuya fila nueva no pasa la policy de SELECT.
+- `contactos_nombres() → (id, nombre)` — DEFINER, GRANT `authenticated` (`sql/130`). Dueño y quien
+  cargó cada persona y empresa que quien llama ve, el equipo de la empresa y los autores de sus
+  ediciones. A quién se transfiere una persona: `usuarios_con_permiso('contactos_ver')` (core).
 - `contactos_vinculables(texto) → (tipo, id, nombre, detalle)` — INVOKER (`sql/128`). Lo que quien
   busca puede vincular: sus personas y las empresas de su equipo (o propias sin equipo), activas. De la
   persona, su empresa abierta si se la ve.
@@ -146,4 +149,4 @@ Ramas: `contactos_etiqueta` (nombre), `contactos_puede_abrir(tipo, id, usuario)`
 `contactos_buscar(texto)` y `contactos_puede_ver_relacion(ente, id, contacto)`: la rama de
 `puede_ver_relacion` para cualquier relación con un contacto, sea cual sea el módulo del registro.
 
-Tests: `sql/tests/contactos_reglas.sql`, `sql/tests/obras_alta.sql`.
+Tests: `sql/tests/contactos_reglas.sql`, `sql/tests/obras_alta.sql`, `sql/tests/obras_nombres.sql`.

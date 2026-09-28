@@ -67,7 +67,7 @@ export type RegistroForm = z.input<typeof registroSchema>;
 
 **Trampas:**
 - **Schema con `.default()` → tipar `useForm<z.input<typeof schema>>`**, no `z.infer`/`z.output`. `zodResolver` espera el tipo de entrada (pre-default); con el de salida TS da un error sobre `Resolver<...>` que no deja ver la causa.
-- **Un `<select>` o `<input type="date">` con opción vacía manda `""`, no `undefined`**: `uuid().nullish()` o una fecha fallan la validación. Usar `uuidOpcional` / `fechaOpcional` (`modules/tareas/types.ts`): unión con `literal("")` + `transform` a `null`.
+- **Un `<select>` o `<input type="date">` con opción vacía manda `""`, no `undefined`**: `uuid().nullish()` o una fecha fallan la validación. Usar `uuidOpcional` / `fechaOpcional` / `textoOpcional` (`lib/validacion.ts`): unión con `literal("")` + `transform` a `null`.
 
 ## React
 

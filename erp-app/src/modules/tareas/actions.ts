@@ -5,6 +5,7 @@ import type { Database } from "@/lib/supabase/database.types";
 import { argsRpc } from "@/lib/supabase/rpc";
 import { createClient } from "@/lib/supabase/server";
 import { mensajeError } from "@/lib/utils";
+import { idSchema } from "@/lib/validacion";
 import {
   buscarRegistrosSchema,
   cerrarHiloSchema,
@@ -13,7 +14,6 @@ import {
   editarPasoSchema,
   esperaSchema,
   hiloSchema,
-  idSchema,
   insertarAntesSchema,
   notaSchema,
   pasoSchema,

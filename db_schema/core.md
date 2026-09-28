@@ -143,6 +143,8 @@ Exige `usuarios.activo` además de `usuario_submodulos.activo` y `submodulos.act
 
 `usuario_tiene_permiso(p_usuario uuid, p_codigo text)` —preguntar el permiso de **otro** usuario— volvió en `sql/105` para el techo y el guard de las funciones de admin. Sin GRANT a `authenticated`: la llaman triggers y funciones de `service_role`, que como son INVOKER necesitan su EXECUTE (`sql/111`, junto con `UPDATE (delegable)` en `submodulos` para `fijar_delegables`). `tiene_permiso(codigo)` pasó a ser `usuario_tiene_permiso(auth.uid(), codigo)`, como en `sql/062`: el predicado vive en un solo lugar.
 
+`usuarios_con_permiso(p_codigo) → (id, nombre)` (`sql/130`; DEFINER, GRANT `authenticated`): los activos con ese permiso, solo si quien llama también lo tiene. Es a quién se transfiere una obra o una persona, o se suma de participante; no autoriza nada (los triggers vuelven a exigirlo). Existe porque `usuarios_select` no deja ver otros equipos.
+
 Trigger `usuarios_validar_desactivar` (`sql/105`): desactivar a quien tiene `usuarios_delegar` falla con US009 — primero `quitar_delegador`.
 
 ## entes (`sql/109`)

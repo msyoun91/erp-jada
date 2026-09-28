@@ -63,7 +63,7 @@ function DatosForm({
     // guardado exitoso y el botón sigue habilitado sin nada que guardar. El
     // teléfono se recorta a dígitos porque es lo que el trigger dejó en la
     // base: mostrar lo tecleado sería mostrar algo que ya no existe.
-    reset({ ...data, telefono: data.telefono.replace(/\D/g, "") });
+    reset({ ...data, telefono: (data.telefono ?? "").replace(/\D/g, "") });
     toast.success("Perfil actualizado");
   }
 

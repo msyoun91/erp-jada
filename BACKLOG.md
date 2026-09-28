@@ -79,16 +79,18 @@ copia en Admin. Antes de tocar cada punto, contrastar contra las personas de la 
 listan equipos con delegador activo, y el único de la base ("Prueba") está inactivo y sin miembros.
 Para probar: un equipo activo con delegador.
 
-## Contactos y Obras — tramo 1 en SQL, faltan las pantallas (2026-09-26)
+## Contactos y Obras — tramo 1 en SQL y TypeScript, faltan las pantallas (2026-09-28)
 
 `decisiones/contactos.md` y `decisiones/obras.md`, aprobadas el 2026-09-25. Tramo 1, SQL aplicado el
 2026-09-26: `sql/125` (core: `entes.roles`, `trabaja_registro`, `puede_abrir_registro`, emisores),
 `sql/126` (obras), `sql/127` (contactos), `sql/128` (buscar o crear, `obras_alta`) y `sql/129`
 (desactivar vínculos por función). Pasan enteros `sql/tests/entes_eventos.sql`, `obras_reglas.sql`,
 `contactos_reglas.sql` y `obras_alta.sql`, y la regresión de Tareas y Usuarios. Esquema:
-`db_schema/obras.md`, `db_schema/contactos.md`. Siguiente: pasos 2–6 de `GUIDE_MODULO_NUEVO.md` para
-el tramo 1 (`types.ts`, `permissions.ts`, `queries.ts`, `actions.ts`, pantallas; `ENTES` en
-`lib/entes.ts` con labels de estados y roles) y la prueba "Juan carga Torre Belgrano…". Orden de
+`db_schema/obras.md`, `db_schema/contactos.md`. Capa TypeScript hecha el 2026-09-28 (`types.ts`,
+`permissions.ts`, `queries.ts`, `actions.ts` de los dos módulos, `lib/entes.ts`, `lib/validacion.ts`),
+con `sql/130` (nombres y candidatos) y `sql/131` (`obras_a_cargo`). Siguiente: las pantallas (paso 6,
+`GUIDE_DESIGN.md`) —layouts, `SidebarNav`, listas, fichas, alta con "¿Quién?", panel de vincular— y
+la prueba "Juan carga Torre Belgrano…". Orden de
 módulos: Contactos y Obras → Catálogo → Presupuestos → Post-venta.
 
 Para las pantallas: `contactos_personas` no tiene `select *` (teléfono y email fuera del GRANT);

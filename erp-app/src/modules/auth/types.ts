@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { telefonoOpcional } from "@/lib/validacion";
 
 // El browser resuelve "//evil.com" y "/\evil.com" como URLs absolutas aunque
 // arranquen con "/": sin este filtro, `?next=` es un open redirect.
@@ -21,18 +22,10 @@ export type LoginForm = z.input<typeof loginSchema>;
 
 export const perfilSchema = z.object({
   nombre: z.string().min(1, "El nombre es obligatorio"),
-  // Se valida en dígitos porque es lo que va a quedar guardado: el trigger de
-  // `sql/103` borra todo lo que no sea número antes del CHECK. Acá no se
-  // normaliza — la autoridad del formato es la base, no el formulario.
-  telefono: z
-    .string()
-    .refine((v) => {
-      const digitos = v.replace(/\D/g, "");
-      return digitos.length === 0 || (digitos.length >= 8 && digitos.length <= 15);
-    }, "El teléfono tiene que tener entre 8 y 15 dígitos"),
+  telefono: telefonoOpcional,
 });
 
-export type PerfilForm = z.infer<typeof perfilSchema>;
+export type PerfilForm = z.input<typeof perfilSchema>;
 
 export const cambiarPasswordSchema = z
   .object({
