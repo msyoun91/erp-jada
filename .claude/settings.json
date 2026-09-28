@@ -9,6 +9,9 @@
       "Bash(npm run type-check)",
       "Bash(npm install)",
       "Bash(npm ci)"
+    ],
+    "deny": [
+      "Agent"
     ]
   }
 }
