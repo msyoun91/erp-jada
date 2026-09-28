@@ -1,9 +1,12 @@
 import type { UsuarioBasico } from "@/lib/usuarios";
+import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 import {
   COLUMNAS_PERSONA,
   type Edicion,
   type Empresa,
+  type Guardado,
+  type Parecida,
   type Persona,
   type PersonaEmpresa,
   type Vinculo,
@@ -173,4 +176,28 @@ export async function getVinculosDe(ente: string, registro: string): Promise<Vin
     .order("desde");
   if (error) throw error;
   return data;
+}
+
+type FilaPorAprobar = Database["public"]["Functions"]["contactos_por_aprobar"]["Returns"][number];
+export type PorAprobar = Omit<FilaPorAprobar, "tipo" | "equipo" | "antes" | "parecidas" | "guardados"> & {
+  tipo: "persona" | "empresa";
+  equipo: string | null;
+  antes: { nombre: string } | null;
+  parecidas: Parecida[];
+  guardados: Guardado[];
+};
+
+// Vacía sin `contactos_aprobar`: la función lo decide.
+export async function getPorAprobar(): Promise<PorAprobar[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("contactos_por_aprobar");
+  if (error) throw error;
+  return data.map((f) => ({
+    ...f,
+    tipo: f.tipo as PorAprobar["tipo"],
+    equipo: f.equipo as string | null,
+    antes: f.antes as PorAprobar["antes"],
+    parecidas: f.parecidas as Parecida[],
+    guardados: f.guardados as Guardado[],
+  }));
 }

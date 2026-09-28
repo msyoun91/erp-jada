@@ -1,7 +1,7 @@
 import type { UsuarioBasico } from "@/lib/usuarios";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
-import type { Obra, Participante } from "./types";
+import type { Guardado, Obra, Parecida, Participante } from "./types";
 
 export type Evento = Database["public"]["Tables"]["eventos"]["Row"];
 
@@ -23,10 +23,10 @@ export async function getCandidatos(): Promise<UsuarioBasico[]> {
 
 export type ObraResumen = Pick<
   Obra,
-  "id" | "nombre" | "direccion" | "localidad" | "estado" | "responsable_id" | "activo" | "updated_at"
+  "id" | "nombre" | "direccion" | "localidad" | "estado" | "responsable_id" | "activo" | "congelada" | "updated_at"
 >;
 
-const RESUMEN = "id, nombre, direccion, localidad, estado, responsable_id, activo, updated_at";
+const RESUMEN = "id, nombre, direccion, localidad, estado, responsable_id, activo, congelada, updated_at";
 
 // La RLS decide cuáles: las del vendedor, las de su equipo al jefe, todas al
 // admin. Obras muestra las activas; Todas, también las desactivadas.
@@ -66,4 +66,24 @@ export async function getObra(id: string): Promise<ObraCompleta | null> {
     trabaja: trabaja.data ?? false,
     aCargo: aCargo.data ?? false,
   };
+}
+
+type FilaPorAprobar = Database["public"]["Functions"]["obras_por_aprobar"]["Returns"][number];
+export type PorAprobar = Omit<FilaPorAprobar, "antes" | "parecidas" | "guardados"> & {
+  antes: { nombre: string; direccion: string } | null;
+  parecidas: Parecida[];
+  guardados: Guardado[];
+};
+
+// Vacía sin `obras_aprobar`: la función lo decide.
+export async function getPorAprobar(): Promise<PorAprobar[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("obras_por_aprobar");
+  if (error) throw error;
+  return data.map((f) => ({
+    ...f,
+    antes: f.antes as PorAprobar["antes"],
+    parecidas: f.parecidas as Parecida[],
+    guardados: f.guardados as Guardado[],
+  }));
 }

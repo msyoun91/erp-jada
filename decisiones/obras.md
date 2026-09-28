@@ -159,6 +159,16 @@ resolviera después, y el usuario eligió congelar. Contactos hace lo mismo con 
   Marta Gómez como referente". La acción es del aprobador, así que "sumado a una obra" solo avisaba a
   Pedro.
 
+- **Las pantallas (2026-09-28).** "Por aprobar" es un botón con el conteo en la barra de Obras (y de
+  Contactos), no una tab: `obras_aprobar` es función, y la guía da tabs solo a las vistas. Abre
+  `/obras/por-aprobar` (`/contactos/por-aprobar`), que valida la función en el `page.tsx`. El aviso a
+  ciegas frena el primer "Crear" o "Guardar" y lo cambia a "Crear igual"; el segundo intento con los
+  mismos datos pasa y la base congela. Editar solo pregunta si cambió un dato comparado. En el
+  "¿Quién?" del alta el aviso va en vivo mientras se escribe, con "Elegir esa" si es tuya. Una persona
+  con mismo teléfono o email no muestra "Aprobar" habilitado (CO023). Archivos:
+  `modules/{obras,contactos}/components/PorAprobarView.tsx`, `modules/contactos/components/Parecidas.tsx`,
+  `ObraFormPanel.tsx`.
+
 ## Los estados son solo comerciales (2026-09-25)
 
 **El estado de la obra dice en qué punto está la relación comercial, no qué se está haciendo.** Lo

@@ -10,12 +10,16 @@ import {
   altaSchema,
   estadoSchema,
   obraSchema,
+  parecidasSchema,
   participanteSchema,
+  resolverSchema,
   transferirSchema,
   type AltaForm,
   type EstadoForm,
   type ObraForm,
+  type ParecidasForm,
   type ParticipanteForm,
+  type ResolverForm,
   type TransferirForm,
 } from "./types";
 
@@ -124,4 +128,36 @@ export async function quitarParticipante(id: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("obras_participantes").update({ activo: false }).eq("id", parsed.data);
   return error ? fallo(error) : listo();
+}
+
+export async function resolverObra(input: ResolverForm) {
+  const parsed = resolverSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc(
+    "obras_resolver",
+    argsRpc<"obras_resolver">({
+      p_obra: parsed.data.id,
+      p_decision: parsed.data.decision,
+      p_motivo: parsed.data.motivo,
+      p_existente: parsed.data.existente,
+    })
+  );
+  return error ? fallo(error) : listo();
+}
+
+// De lo que no ve, solo nombre y responsable: lo recorta la función.
+export async function buscarParecidas(input: ParecidasForm) {
+  const parsed = parecidasSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(
+    "obras_parecidas",
+    argsRpc<"obras_parecidas">({
+      p_nombre: parsed.data.nombre,
+      p_direccion: parsed.data.direccion,
+      p_obra: parsed.data.obra,
+    })
+  );
+  return error ? fallo(error) : { success: true as const, resultados: data };
 }

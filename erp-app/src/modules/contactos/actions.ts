@@ -12,8 +12,10 @@ import {
   editarPersonaSchema,
   empresaSchema,
   equipoEmpresaSchema,
+  parecidasSchema,
   personaEmpresaSchema,
   personaSchema,
+  resolverSchema,
   rolesSchema,
   transferirPersonaSchema,
   vincularSchema,
@@ -22,8 +24,11 @@ import {
   type EditarPersonaForm,
   type EmpresaForm,
   type EquipoEmpresaForm,
+  type ParecidaAviso,
+  type ParecidasForm,
   type PersonaEmpresaForm,
   type PersonaForm,
+  type ResolverForm,
   type RolesForm,
   type TransferirPersonaForm,
   type VincularForm,
@@ -288,5 +293,39 @@ export async function desactivarVinculo(id: string) {
   if (v.error) return v.error;
   const supabase = await createClient();
   const { error } = await supabase.rpc("contactos_desactivar_vinculo", { p_vinculo: v.id });
+  return error ? fallo(error) : listo();
+}
+
+// ---------- Altas parecidas ----------
+
+// De lo que no es tuyo, nombre, dueño y equipo: lo recorta la función.
+export async function buscarParecidas(input: ParecidasForm) {
+  const parsed = parecidasSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const d = parsed.data;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(
+    "contactos_parecidas",
+    argsRpc<"contactos_parecidas">({ p_tipo: d.tipo, p_nombre: d.nombre, p_telefono: d.telefono, p_email: d.email, p_id: d.id })
+  );
+  return error ? fallo(error) : { success: true as const, resultados: data as ParecidaAviso[] };
+}
+
+export async function resolverContacto(input: ResolverForm) {
+  const parsed = resolverSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const d = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc(
+    "contactos_resolver",
+    argsRpc<"contactos_resolver">({
+      p_tipo: d.tipo,
+      p_id: d.id,
+      p_decision: d.decision,
+      p_motivo: d.motivo,
+      p_existente: d.existente,
+      p_vincular: d.vincular,
+    })
+  );
   return error ? fallo(error) : listo();
 }

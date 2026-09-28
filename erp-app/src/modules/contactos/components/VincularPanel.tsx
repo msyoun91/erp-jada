@@ -9,6 +9,7 @@ import { RightPanel } from "@/components/ui/RightPanel";
 import { crearYVincular, vincular } from "../actions";
 import { crearYVincularSchema, type CrearYVincularForm, type Vinculable } from "../types";
 import { BuscadorVinculables, EmpresaSelector, type EmpresaElegida, type TipoContacto } from "./Buscador";
+import { AvisoParecidas, useParecidas } from "./Parecidas";
 import { RolesCheck } from "./RolesCheck";
 
 const FORM_ID = "crear-y-vincular";
@@ -86,6 +87,7 @@ export function VincularPanel({
             roles={roles}
             empresasDelRegistro={empresasDelRegistro}
             setEnviando={setEnviando}
+            onUsar={(p) => elegir({ tipo: creando.tipo, id: p.id, nombre: p.nombre, detalle: "" })}
             onListo={onClose}
           />
         ) : (
@@ -104,6 +106,7 @@ function CrearForm({
   roles,
   empresasDelRegistro,
   setEnviando,
+  onUsar,
   onListo,
 }: {
   ente: string;
@@ -113,9 +116,11 @@ function CrearForm({
   roles: string[];
   empresasDelRegistro: { id: string; nombre: string }[];
   setEnviando: (v: boolean) => void;
+  onUsar: (p: { id: string; nombre: string }) => void;
   onListo: () => void;
 }) {
   const [empresa, setEmpresa] = useState<EmpresaElegida | null>(null);
+  const { parecidas, revisar } = useParecidas();
   const { register, handleSubmit, setValue, formState } = useForm<CrearYVincularForm>({
     resolver: zodResolver(crearYVincularSchema),
     defaultValues: { ente, registro_id: registroId, roles, tipo, nombre, telefono: "", email: "", cargo: "" },
@@ -124,13 +129,17 @@ function CrearForm({
 
   async function onSubmit(data: CrearYVincularForm) {
     setEnviando(true);
+    if (!(await revisar({ tipo: data.tipo, nombre: data.nombre, telefono: data.telefono, email: data.email }))) {
+      setEnviando(false);
+      return;
+    }
     const result = await crearYVincular(data);
     setEnviando(false);
     if (!result.success) {
       toast.error(result.error);
       return;
     }
-    toast.success(`${data.nombre} creado y vinculado`);
+    toast.success(parecidas ? `${data.nombre} creado: espera aprobación` : `${data.nombre} creado y vinculado`);
     onListo();
   }
 
@@ -170,6 +179,7 @@ function CrearForm({
           )}
         </>
       )}
+      {parecidas && <AvisoParecidas tipo={tipo} items={parecidas} verbo="crealo" onUsar={onUsar} />}
     </form>
   );
 }

@@ -1,6 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { buscarParecidas } from "../actions";
+import type { ParecidaAviso } from "../types";
 import { BuscadorVinculables, IconoContacto, type TipoContacto } from "./Buscador";
+import { AvisoParecidas } from "./Parecidas";
 
 export type QuienElegido = { tipo: TipoContacto; id: string | null; nombre: string; telefono: string; email: string };
 
@@ -35,6 +39,27 @@ export function QuienPicker({
     );
   }
 
+  return <QuienNuevo valor={valor} onCambio={onCambio} />;
+}
+
+// El aviso a ciegas, mientras escribe: el alta de la obra guarda al nuevo, y
+// si se parece queda congelado con ella.
+function QuienNuevo({ valor, onCambio }: { valor: QuienElegido; onCambio: (q: QuienElegido | null) => void }) {
+  const [parecidas, setParecidas] = useState<ParecidaAviso[]>([]);
+  const { tipo, nombre, telefono, email } = valor;
+
+  useEffect(() => {
+    let vigente = true;
+    const t = setTimeout(async () => {
+      const r = nombre.trim() ? await buscarParecidas({ tipo, nombre, telefono, email }) : null;
+      if (vigente) setParecidas(r?.success ? r.resultados : []);
+    }, 400);
+    return () => {
+      vigente = false;
+      clearTimeout(t);
+    };
+  }, [tipo, nombre, telefono, email]);
+
   return (
     <div className="flex flex-col gap-2 rounded-md border border-border p-3">
       <div className="flex items-center gap-2">
@@ -66,6 +91,15 @@ export function QuienPicker({
         value={valor.email}
         onChange={(e) => onCambio({ ...valor, email: e.target.value })}
       />
+      {parecidas.length > 0 && (
+        <AvisoParecidas
+          tipo={tipo}
+          items={parecidas}
+          verbo="crealo"
+          usar="Elegir esa"
+          onUsar={(p) => onCambio({ tipo, id: p.id, nombre: p.nombre, telefono: "", email: "" })}
+        />
+      )}
     </div>
   );
 }

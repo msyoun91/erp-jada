@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Archive, ArchiveRestore, ArrowLeftRight, CalendarClock, Flag, MapPin, Pencil, Plus, UserRound, X } from "lucide-react";
+import { Archive, ArchiveRestore, ArrowLeftRight, CalendarClock, Flag, MapPin, Pencil, Plus, TriangleAlert, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
@@ -59,7 +59,9 @@ type Props = ObraCompleta & {
 export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, admin, nombres, candidatos, estadoInicial, contactos }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const [dialogo, setDialogo] = useState<Dialogo | null>(trabaja && estadoInicial ? "estado" : null);
+  // Congelada no cambia de estado, no se transfiere ni suma (OB018): se edita.
+  const congelada = obra.activo && obra.congelada;
+  const [dialogo, setDialogo] = useState<Dialogo | null>(trabaja && !congelada && estadoInicial ? "estado" : null);
   const [quitando, setQuitando] = useState<{ id: string; nombre: string } | null>(null);
   const nombre = (id: string | null) => (id ? (id === yo ? "Vos" : (nombres[id] ?? "—")) : "—");
 
@@ -76,7 +78,7 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
 
   const menu = [
     ...(trabaja ? [{ label: "Editar", icon: <Pencil size={14} />, onClick: () => setDialogo("editar") }] : []),
-    ...(aCargo ? [{ label: "Transferir", icon: <ArrowLeftRight size={14} />, onClick: () => setDialogo("transferir") }] : []),
+    ...(aCargo && !congelada ? [{ label: "Transferir", icon: <ArrowLeftRight size={14} />, onClick: () => setDialogo("transferir") }] : []),
     ...(aCargo && obra.estado !== "contratada"
       ? [{ label: "Desactivar", icon: <Archive size={14} />, onClick: () => setDialogo("desactivar"), destructive: true }]
       : []),
@@ -93,7 +95,7 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
       <div className="card flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="t-h2 min-w-0 flex-1">{obra.nombre}</h2>
-          {trabaja ? (
+          {trabaja && !congelada ? (
             <button
               className={`badge ${LABEL_ESTADO[obra.estado].badge} cursor-pointer`}
               onClick={() => setDialogo("estado")}
@@ -128,6 +130,13 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
             </span>
           )}
         </div>
+        {congelada && (
+          <p className="t-body-m flex items-start gap-2 rounded-md border border-warning/20 bg-warning-bg px-3 py-2 text-warning-text">
+            <TriangleAlert size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+            {obra.congelada_antes ? "El cambio se parece" : "Se parece"} a otra obra y espera aprobación. Mientras tanto no
+            cambia de estado, no se transfiere ni se vinculan contactos.
+          </p>
+        )}
         {(motivo || obra.estado_nota) && (
           <p className="t-body-m rounded-md bg-bg-subtle px-3 py-2">
             {motivo && <span className="font-semibold">{motivo}. </span>}
@@ -142,7 +151,7 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
       <div>
         <div className="mb-2 flex items-center">
           <p className="t-label flex-1">Participantes</p>
-          {aCargo && (
+          {aCargo && !congelada && (
             <button className="btn btn-secondary btn-sm" onClick={() => setDialogo("sumar")}>
               <Plus size={14} />
               Sumar participante

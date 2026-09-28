@@ -104,3 +104,28 @@ export type TransferirForm = z.input<typeof transferirSchema>;
 
 export const participanteSchema = z.object({ obra_id: idSchema, usuario_id: idSchema });
 export type ParticipanteForm = z.input<typeof participanteSchema>;
+
+// "Es la misma" solo para un alta (OB022) y rechazar con motivo (OB021): los
+// hace valer `obras_resolver`; acá se adelanta el mensaje del motivo.
+export const resolverSchema = z
+  .object({
+    id: idSchema,
+    decision: z.enum(["aprobar", "rechazar", "es_la_misma"]),
+    motivo: textoOpcional(1000),
+    existente: uuidOpcional,
+  })
+  .refine((v) => v.decision !== "rechazar" || v.motivo !== null, {
+    message: "Contá por qué se rechaza",
+    path: ["motivo"],
+  });
+export type ResolverForm = z.input<typeof resolverSchema>;
+
+// El aviso a ciegas antes de guardar (`obras_parecidas`): `obra` al editar.
+export const parecidasSchema = z.object({ nombre: datos.nombre, direccion: datos.direccion, obra: uuidOpcional });
+export type ParecidasForm = z.input<typeof parecidasSchema>;
+// id y dirección vienen NULL de las que no ve (el tipo generado no lo dice).
+export type ParecidaAviso = { id: string | null; nombre: string; direccion: string | null; responsable: string };
+
+// Los jsonb de `obras_por_aprobar` (sql/139).
+export type Parecida = { id: string; nombre: string; direccion: string; responsable: string; coincide: "nombre" | "direccion" };
+export type Guardado = { tipo: "persona" | "empresa"; nombre: string; roles: string[] | null };

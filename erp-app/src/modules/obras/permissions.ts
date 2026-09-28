@@ -15,3 +15,7 @@ export function puedeVerTodas() {
 export function puedeAdministrar() {
   return tienePermiso("obras_administrar");
 }
+
+export function puedeAprobar() {
+  return tienePermiso("obras_aprobar");
+}

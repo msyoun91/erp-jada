@@ -32,6 +32,7 @@ import {
 import { EmpresaSelector, IconoContacto, type EmpresaElegida } from "./Buscador";
 import { EditarPersonaPanel } from "./ContactoFormPanel";
 import { HistorialEdiciones, VinculosDeContacto, nombreDe } from "./FichaPartes";
+import { EsperaAprobacion } from "./Parecidas";
 import { CerrarModal } from "./VinculosSeccion";
 
 type Dialogo = "editar" | "transferir" | "desactivar" | "sumar";
@@ -73,7 +74,9 @@ export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin,
     ...(edita ? [{ label: "Editar", icon: <Pencil size={14} />, onClick: () => setDialogo("editar") }] : []),
     ...(dueno && persona.activo
       ? [
-          { label: "Transferir", icon: <ArrowLeftRight size={14} />, onClick: () => setDialogo("transferir") },
+          ...(persona.congelada
+            ? []
+            : [{ label: "Transferir", icon: <ArrowLeftRight size={14} />, onClick: () => setDialogo("transferir") }]),
           { label: "Desactivar", icon: <Archive size={14} />, onClick: () => setDialogo("desactivar"), destructive: true },
         ]
       : []),
@@ -133,6 +136,7 @@ export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin,
           <UserRound size={12} strokeWidth={1.75} />
           {nombre(persona.responsable_id)}
         </p>
+        {persona.activo && persona.congelada && <EsperaAprobacion tipo="persona" />}
         {contacto ? (
           <div className="flex flex-col gap-1">
             {contacto.telefono ? (

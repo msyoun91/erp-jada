@@ -20,3 +20,7 @@ export async function desactivaEmpresa(empresa: { equipo_id: string | null; crea
   if (error) throw error;
   return data === empresa.equipo_id;
 }
+
+export function puedeAprobar() {
+  return tienePermiso("contactos_aprobar");
+}

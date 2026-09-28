@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, MapPin, Plus, UserRound } from "lucide-react";
+import { ChevronRight, MapPin, Plus, ShieldCheck, UserRound } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import type { ObraResumen } from "../queries";
@@ -31,19 +31,21 @@ function pasa(filtro: Filtro, o: ObraResumen, todas?: Todas) {
 }
 
 // `Quien` llega solo si quien mira puede crear: el alta lo necesita y `app/`
-// lo compone desde Contactos.
+// lo compone desde Contactos. `porAprobar`, solo con `obras_aprobar`.
 export function ObrasView({
   obras,
   yo,
   nombres,
   Quien,
   todas,
+  porAprobar,
 }: {
   obras: ObraResumen[];
   yo: string;
   nombres: Record<string, string>;
   Quien?: QuienSlot;
   todas?: Todas;
+  porAprobar?: number;
 }) {
   const [texto, setTexto] = useState("");
   const [filtro, setFiltro] = useState<Filtro>(todas?.responsable ? "persona" : "abiertas");
@@ -75,6 +77,12 @@ export function ObrasView({
           {todas && <option value="huerfanas">Huérfanas</option>}
           {todas?.responsable && <option value="persona">De {nombres[todas.responsable] ?? "—"}</option>}
         </select>
+        {porAprobar !== undefined && (
+          <Link href="/obras/por-aprobar" className="btn btn-secondary">
+            <ShieldCheck size={16} />
+            Por aprobar{porAprobar > 0 && <span className="badge badge-warning">{porAprobar}</span>}
+          </Link>
+        )}
         {Quien && (
           <button className="btn btn-primary" onClick={() => setCreando(true)}>
             <Plus size={16} />
@@ -118,6 +126,7 @@ export function ObrasView({
                 </p>
               </div>
               {!o.activo && <span className="badge badge-neutral">Desactivada</span>}
+              {o.activo && o.congelada && <span className="badge badge-warning">Por aprobar</span>}
               <span className={`badge ${LABEL_ESTADO[o.estado].badge}`}>{LABEL_ESTADO[o.estado].label}</span>
               <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
             </Link>

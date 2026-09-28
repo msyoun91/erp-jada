@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, ShieldCheck } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { IconoContacto, type TipoContacto } from "./Buscador";
@@ -13,6 +13,7 @@ export type FilaContacto = {
   nombre: string;
   detalle: string | null;
   activo: boolean;
+  congelada: boolean;
   huerfana: boolean;
   responsable_id: string | null;
 };
@@ -50,10 +51,13 @@ export function ContactosView({
   tipo,
   filas,
   administrar,
+  porAprobar,
 }: {
   tipo: TipoContacto;
   filas: FilaContacto[];
   administrar?: Administrar;
+  // Solo con `contactos_aprobar`: personas y empresas juntas.
+  porAprobar?: number;
 }) {
   const [texto, setTexto] = useState("");
   const [filtro, setFiltro] = useState<Filtro>(administrar?.de ? "de" : "todas");
@@ -79,6 +83,12 @@ export function ContactosView({
             <option value="huerfanas">Huérfanas</option>
             {administrar.de && <option value="de">De {administrar.de.nombre}</option>}
           </select>
+        )}
+        {porAprobar !== undefined && (
+          <Link href="/contactos/por-aprobar" className="btn btn-secondary">
+            <ShieldCheck size={16} />
+            Por aprobar{porAprobar > 0 && <span className="badge badge-warning">{porAprobar}</span>}
+          </Link>
         )}
         <button className="btn btn-primary" onClick={() => setCreando(true)}>
           <Plus size={16} />
@@ -109,6 +119,7 @@ export function ContactosView({
                 {f.detalle && <p className="t-caption truncate">{f.detalle}</p>}
               </div>
               {!f.activo && <span className="badge badge-neutral">Desactivada</span>}
+              {f.activo && f.congelada && <span className="badge badge-warning">Por aprobar</span>}
               <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
             </Link>
           ))}

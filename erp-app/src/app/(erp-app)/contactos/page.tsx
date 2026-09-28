@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { getUsuarioActualId } from "@/lib/usuarios";
 import { idSchema } from "@/lib/validacion";
-import { puedeAdministrar, puedeVerContactos } from "@/modules/contactos/permissions";
-import { getCandidatos, getNombres, getPersonas } from "@/modules/contactos/queries";
+import { puedeAdministrar, puedeAprobar, puedeVerContactos } from "@/modules/contactos/permissions";
+import { getCandidatos, getNombres, getPersonas, getPorAprobar } from "@/modules/contactos/queries";
 import { ContactosView } from "@/modules/contactos/components/ContactosView";
 
 export default async function PersonasPage(props: PageProps<"/contactos">) {
@@ -28,9 +28,11 @@ export default async function PersonasPage(props: PageProps<"/contactos">) {
         nombre: p.nombre,
         detalle: todas ? (p.responsable_id === yo ? "Vos" : (nombres[p.responsable_id] ?? null)) : null,
         activo: p.activo,
+        congelada: p.congelada,
         huerfana: todas && p.activo && !pueden.has(p.responsable_id),
         responsable_id: p.responsable_id,
       }))}
+      porAprobar={(await puedeAprobar()) ? (await getPorAprobar()).length : undefined}
       administrar={todas ? { de: de ? { id: de, nombre: nombres[de] ?? "—" } : null } : undefined}
     />
   );

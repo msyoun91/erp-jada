@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getUsuarioActualId } from "@/lib/usuarios";
-import { puedeAdministrar, puedeVerContactos } from "@/modules/contactos/permissions";
-import { getCandidatos, getEmpresas, getNombres } from "@/modules/contactos/queries";
+import { puedeAdministrar, puedeAprobar, puedeVerContactos } from "@/modules/contactos/permissions";
+import { getCandidatos, getEmpresas, getNombres, getPorAprobar } from "@/modules/contactos/queries";
 import { ContactosView } from "@/modules/contactos/components/ContactosView";
 
 export default async function EmpresasPage() {
@@ -26,9 +26,11 @@ export default async function EmpresasPage() {
         nombre: e.nombre,
         detalle: todas && e.equipo_id ? (nombres[e.equipo_id] ?? null) : null,
         activo: e.activo,
+        congelada: e.congelada,
         huerfana: todas && e.activo && e.equipo_id === null && !pueden.has(e.creado_por),
         responsable_id: null,
       }))}
+      porAprobar={(await puedeAprobar()) ? (await getPorAprobar()).length : undefined}
       administrar={todas ? { de: null } : undefined}
     />
   );

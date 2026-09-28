@@ -19,6 +19,7 @@ import {
   type Persona,
   type PersonaForm,
 } from "../types";
+import { AvisoParecidas, useParecidas } from "./Parecidas";
 
 const FORM_ID = "contacto-form";
 
@@ -41,6 +42,7 @@ const claseForm = "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4"
 export function NuevaPersonaPanel({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
+  const { parecidas, revisar } = useParecidas();
   const { register, handleSubmit, formState } = useForm<PersonaForm>({
     resolver: zodResolver(personaSchema),
     defaultValues: { nombre: "", telefono: "", email: "", notas: "" },
@@ -49,19 +51,23 @@ export function NuevaPersonaPanel({ onClose }: { onClose: () => void }) {
 
   async function onSubmit(data: PersonaForm) {
     setEnviando(true);
+    if (!(await revisar({ tipo: "persona", nombre: data.nombre, telefono: data.telefono, email: data.email }))) {
+      setEnviando(false);
+      return;
+    }
     const result = await crearPersona(data);
     setEnviando(false);
     if (!result.success) {
       toast.error(result.error);
       return;
     }
-    toast.success("Persona creada");
+    toast.success(parecidas ? "Persona creada: espera aprobación" : "Persona creada");
     router.push(`/contactos/personas/${result.id}`);
     onClose();
   }
 
   return (
-    <RightPanel title="Nueva persona" onClose={onClose} hayCambios={formState.isDirty} footer={<Pie enviando={enviando} crear="Crear persona" onClose={onClose} />}>
+    <RightPanel title="Nueva persona" onClose={onClose} hayCambios={formState.isDirty} footer={<Pie enviando={enviando} crear={parecidas ? "Crear igual" : "Crear persona"} onClose={onClose} />}>
       <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className={claseForm}>
         <Campo id="p-nombre" label="Nombre" requerido error={errors.nombre}>
           <input id="p-nombre" aria-required placeholder="Marta Gómez" className={claseInput(errors.nombre)} {...register("nombre")} />
@@ -75,6 +81,7 @@ export function NuevaPersonaPanel({ onClose }: { onClose: () => void }) {
         <Campo id="p-notas" label="Notas" error={errors.notas}>
           <textarea id="p-notas" rows={3} className={claseInput(errors.notas)} {...register("notas")} />
         </Campo>
+        {parecidas && <AvisoParecidas tipo="persona" items={parecidas} verbo="creala" />}
       </form>
     </RightPanel>
   );
@@ -92,6 +99,7 @@ export function EditarPersonaPanel({
   onClose: () => void;
 }) {
   const [enviando, setEnviando] = useState(false);
+  const { parecidas, revisar } = useParecidas();
   const { register, handleSubmit, formState } = useForm<EditarPersonaForm>({
     resolver: zodResolver(editarPersonaSchema),
     defaultValues: {
@@ -105,6 +113,14 @@ export function EditarPersonaPanel({
 
   async function onSubmit(data: EditarPersonaForm) {
     setEnviando(true);
+    const compara =
+      data.nombre !== persona.nombre ||
+      (data.contacto && (data.contacto.telefono !== contacto?.telefono || data.contacto.email !== contacto?.email));
+    const datos = { tipo: "persona" as const, id: persona.id, nombre: data.nombre, ...data.contacto };
+    if (compara && !(await revisar(datos))) {
+      setEnviando(false);
+      return;
+    }
     const result = await editarPersona(data);
     setEnviando(false);
     if (!result.success) {
@@ -116,7 +132,12 @@ export function EditarPersonaPanel({
   }
 
   return (
-    <RightPanel title="Editar persona" onClose={onClose} hayCambios={formState.isDirty} footer={<Pie enviando={enviando} crear={null} onClose={onClose} />}>
+    <RightPanel
+      title="Editar persona"
+      onClose={onClose}
+      hayCambios={formState.isDirty}
+      footer={<Pie enviando={enviando} crear={parecidas ? "Guardar igual" : null} onClose={onClose} />}
+    >
       <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className={claseForm}>
         <Campo id="p-nombre" label="Nombre" requerido error={errors.nombre}>
           <input id="p-nombre" aria-required className={claseInput(errors.nombre)} {...register("nombre")} />
@@ -136,6 +157,7 @@ export function EditarPersonaPanel({
         <Campo id="p-notas" label="Notas" error={errors.notas}>
           <textarea id="p-notas" rows={3} className={claseInput(errors.notas)} {...register("notas")} />
         </Campo>
+        {parecidas && <AvisoParecidas tipo="persona" items={parecidas} verbo="guardala" />}
       </form>
     </RightPanel>
   );
@@ -144,6 +166,7 @@ export function EditarPersonaPanel({
 export function EmpresaFormPanel({ empresa, onClose }: { empresa?: Empresa; onClose: () => void }) {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
+  const { parecidas, revisar } = useParecidas();
   const { register, handleSubmit, formState } = useForm<EmpresaForm>({
     resolver: zodResolver(empresaSchema),
     defaultValues: {
@@ -159,13 +182,18 @@ export function EmpresaFormPanel({ empresa, onClose }: { empresa?: Empresa; onCl
 
   async function onSubmit(data: EmpresaForm) {
     setEnviando(true);
+    const compara = data.nombre !== empresa?.nombre;
+    if (compara && !(await revisar({ tipo: "empresa", id: empresa?.id, nombre: data.nombre }))) {
+      setEnviando(false);
+      return;
+    }
     const result = await guardarEmpresa(data);
     setEnviando(false);
     if (!result.success) {
       toast.error(result.error);
       return;
     }
-    toast.success(empresa ? "Empresa guardada" : "Empresa creada");
+    toast.success(`${empresa ? "Empresa guardada" : "Empresa creada"}${parecidas ? ": espera aprobación" : ""}`);
     if ("id" in result) router.push(`/contactos/empresas/${result.id}`);
     onClose();
   }
@@ -175,7 +203,9 @@ export function EmpresaFormPanel({ empresa, onClose }: { empresa?: Empresa; onCl
       title={empresa ? "Editar empresa" : "Nueva empresa"}
       onClose={onClose}
       hayCambios={formState.isDirty}
-      footer={<Pie enviando={enviando} crear={empresa ? null : "Crear empresa"} onClose={onClose} />}
+      footer={
+        <Pie enviando={enviando} crear={parecidas ? (empresa ? "Guardar igual" : "Crear igual") : empresa ? null : "Crear empresa"} onClose={onClose} />
+      }
     >
       <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className={claseForm}>
         <Campo id="e-nombre" label="Nombre" requerido error={errors.nombre}>
@@ -193,6 +223,7 @@ export function EmpresaFormPanel({ empresa, onClose }: { empresa?: Empresa; onCl
         <Campo id="e-notas" label="Notas" error={errors.notas}>
           <textarea id="e-notas" rows={3} className={claseInput(errors.notas)} {...register("notas")} />
         </Campo>
+        {parecidas && <AvisoParecidas tipo="empresa" items={parecidas} verbo={empresa ? "guardala" : "creala"} />}
       </form>
     </RightPanel>
   );

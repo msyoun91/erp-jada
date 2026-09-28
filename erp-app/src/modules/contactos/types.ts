@@ -114,3 +114,39 @@ export const rolesSchema = z.object({ id: idSchema, roles });
 export type RolesForm = z.input<typeof rolesSchema>;
 
 export const buscarSchema = z.string().trim().min(2, "Escribí al menos 2 letras").max(200);
+
+// "Es la misma" solo para un alta (CO025), rechazar con motivo (CO024) y una
+// persona se aprueba solo homónima (CO023): los hace valer `contactos_resolver`.
+export const resolverSchema = z
+  .object({
+    tipo: z.enum(["persona", "empresa"]),
+    id: idSchema,
+    decision: z.enum(["aprobar", "rechazar", "es_la_misma"]),
+    motivo: textoOpcional(1000),
+    existente: uuidOpcional,
+    vincular: z.boolean().default(true),
+  })
+  .refine((v) => v.decision !== "rechazar" || v.motivo !== null, {
+    message: "Contá por qué se rechaza",
+    path: ["motivo"],
+  });
+export type ResolverForm = z.input<typeof resolverSchema>;
+
+// El aviso a ciegas antes de guardar (`contactos_parecidas`): `id` al editar.
+export const parecidasSchema = z.object({
+  tipo: z.enum(["persona", "empresa"]),
+  nombre,
+  telefono: telefonoOpcional,
+  email: emailOpcional,
+  id: uuidOpcional,
+});
+export type ParecidasForm = z.input<typeof parecidasSchema>;
+
+export type Coincide = "nombre" | "telefono" | "email";
+// De la de otro, id, equipo y qué coincidió vienen NULL (el tipo generado no lo
+// dice); de una tuya congelada, solo el id.
+export type ParecidaAviso = { id: string | null; nombre: string; dueno: string; equipo: string | null; coincide: Coincide[] | null };
+
+// Los jsonb de `contactos_por_aprobar` (sql/139).
+export type Parecida = { id: string; nombre: string; dueno: string; equipo: string | null; coincide: Coincide[] };
+export type Guardado = { ente: string | null; registro: string | null; roles: string[] | null; empresa: string | null; cargo: string | null };

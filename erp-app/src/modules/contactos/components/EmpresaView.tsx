@@ -30,6 +30,7 @@ import {
 import { BuscadorVinculables, IconoContacto } from "./Buscador";
 import { EmpresaFormPanel } from "./ContactoFormPanel";
 import { HistorialEdiciones, VinculosDeContacto, nombreDe } from "./FichaPartes";
+import { EsperaAprobacion } from "./Parecidas";
 import { CerrarModal } from "./VinculosSeccion";
 
 type Dialogo = "editar" | "desactivar" | "sumar" | "equipo";
@@ -119,6 +120,7 @@ export function EmpresaView({ empresa, personas, vinculos, ediciones, yo, admin,
           <UsersRound size={12} strokeWidth={1.75} />
           {empresa.equipo_id ? (nombres[empresa.equipo_id] ?? "—") : `Sin equipo · la cargó ${nombre(empresa.creado_por)}`}
         </p>
+        {empresa.activo && empresa.congelada && <EsperaAprobacion tipo="empresa" />}
         <div className="flex flex-col gap-1">
           {empresa.telefono && (
             <a href={`tel:${empresa.telefono}`} className="t-body-m flex items-center gap-2 text-text-brand">

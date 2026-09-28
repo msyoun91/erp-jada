@@ -1,16 +1,27 @@
 "use client";
 
 import { useState, type ComponentType } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { TriangleAlert } from "lucide-react";
 import { FormProvider, useForm, useFormContext, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { ENTES } from "@/lib/entes";
-import { crearObra, editarObra } from "../actions";
+import { buscarParecidas, crearObra, editarObra } from "../actions";
 import { ORIGEN, TIPO } from "../etiquetas";
-import { ESTADOS_ABIERTOS, LABEL_ESTADO, altaSchema, obraSchema, type AltaForm, type Obra, type ObraForm } from "../types";
+import {
+  ESTADOS_ABIERTOS,
+  LABEL_ESTADO,
+  altaSchema,
+  obraSchema,
+  type AltaForm,
+  type Obra,
+  type ObraForm,
+  type ParecidaAviso,
+} from "../types";
 
 // "¿Quién?" lo busca y lo crea Contactos; `app/` lo compone (GUIDE_ENTES §2.7).
 export type Quien = { tipo: "persona" | "empresa"; id: string | null; nombre: string; telefono: string; email: string };
@@ -83,6 +94,63 @@ function CampoNotas() {
   );
 }
 
+// Aviso a ciegas antes de guardar: la primera vez que hay parecidas, las
+// muestra y frena; el segundo intento con el mismo nombre y dirección pasa, y
+// la base la congela.
+function useParecidas(obra: string | null) {
+  const [aviso, setAviso] = useState<{ clave: string; items: ParecidaAviso[] } | null>(null);
+
+  async function revisar(nombre: string, direccion: string) {
+    const clave = `${nombre}
+${direccion}`;
+    if (aviso?.clave === clave) return true;
+    const r = await buscarParecidas({ nombre, direccion, obra });
+    if (!r.success) {
+      toast.error(r.error);
+      return false;
+    }
+    if (r.resultados.length === 0) return true;
+    setAviso({ clave, items: r.resultados });
+    return false;
+  }
+
+  return { parecidas: aviso?.items ?? null, revisar };
+}
+
+// Estable: un ref inline corre en cada render y movería el scroll al tipear.
+function alAparecer(el: HTMLDivElement | null) {
+  el?.scrollIntoView({ block: "nearest" });
+}
+
+function AvisoParecidas({ items, verbo }: { items: ParecidaAviso[]; verbo: string }) {
+  return (
+    <div
+      ref={alAparecer}
+      className="rounded-md border border-warning/20 bg-warning-bg px-3 py-2 text-warning-text"
+    >
+      <p className="t-body-m flex items-center gap-2 font-medium">
+        <TriangleAlert size={16} strokeWidth={1.75} className="shrink-0" />
+        Se parece a {items.length === 1 ? "otra obra" : "otras obras"}
+      </p>
+      <ul className="t-body-m mt-1 flex flex-col gap-0.5">
+        {items.map((p, i) => (
+          <li key={p.id ?? i}>
+            {p.id ? (
+              <Link href={`/obras/${p.id}`} target="_blank" className="underline">
+                {p.nombre}
+              </Link>
+            ) : (
+              p.nombre
+            )}
+            {p.direccion && `, ${p.direccion}`} · {p.responsable}
+          </li>
+        ))}
+      </ul>
+      <p className="t-caption mt-1">Si es otra, {verbo} igual: queda por aprobar hasta que la revisen.</p>
+    </div>
+  );
+}
+
 function Pie({ enviando, confirmar, onClose }: { enviando: boolean; confirmar: string; onClose: () => void }) {
   return (
     <>
@@ -103,6 +171,7 @@ export function AltaObraPanel({ Quien, onClose }: { Quien: QuienSlot; onClose: (
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
   const [quien, setQuien] = useState<Quien | null>(null);
+  const { parecidas, revisar } = useParecidas(null);
   const form = useForm<AltaForm>({
     resolver: zodResolver(altaSchema),
     defaultValues: {
@@ -121,13 +190,17 @@ export function AltaObraPanel({ Quien, onClose }: { Quien: QuienSlot; onClose: (
 
   async function onSubmit(data: AltaForm) {
     setEnviando(true);
+    if (!(await revisar(data.nombre, data.direccion))) {
+      setEnviando(false);
+      return;
+    }
     const result = await crearObra(data);
     setEnviando(false);
     if (!result.success) {
       toast.error(result.error);
       return;
     }
-    toast.success("Obra creada");
+    toast.success(parecidas ? "Obra creada: espera aprobación" : "Obra creada");
     router.push(`/obras/${result.id}`);
     onClose();
   }
@@ -148,7 +221,7 @@ export function AltaObraPanel({ Quien, onClose }: { Quien: QuienSlot; onClose: (
       title="Nueva obra"
       onClose={onClose}
       hayCambios={formState.isDirty || quien !== null}
-      footer={<Pie enviando={enviando} confirmar="Crear obra" onClose={onClose} />}
+      footer={<Pie enviando={enviando} confirmar={parecidas ? "Crear igual" : "Crear obra"} onClose={onClose} />}
     >
       <FormProvider {...form}>
         <form
@@ -182,6 +255,7 @@ export function AltaObraPanel({ Quien, onClose }: { Quien: QuienSlot; onClose: (
             </select>
           </Campo>
           <CampoNotas />
+          {parecidas && <AvisoParecidas items={parecidas} verbo="creala" />}
         </form>
       </FormProvider>
     </RightPanel>
@@ -190,6 +264,7 @@ export function AltaObraPanel({ Quien, onClose }: { Quien: QuienSlot; onClose: (
 
 export function EditarObraPanel({ obra, onClose }: { obra: Obra; onClose: () => void }) {
   const [enviando, setEnviando] = useState(false);
+  const { parecidas, revisar } = useParecidas(obra.id);
   const form = useForm<ObraForm>({
     resolver: zodResolver(obraSchema),
     defaultValues: {
@@ -207,6 +282,11 @@ export function EditarObraPanel({ obra, onClose }: { obra: Obra; onClose: () => 
 
   async function onSubmit(data: ObraForm) {
     setEnviando(true);
+    const compara = data.nombre !== obra.nombre || data.direccion !== obra.direccion;
+    if (compara && !(await revisar(data.nombre, data.direccion))) {
+      setEnviando(false);
+      return;
+    }
     const result = await editarObra(data);
     setEnviando(false);
     if (!result.success) {
@@ -222,13 +302,14 @@ export function EditarObraPanel({ obra, onClose }: { obra: Obra; onClose: () => 
       title="Editar obra"
       onClose={onClose}
       hayCambios={formState.isDirty}
-      footer={<Pie enviando={enviando} confirmar="Guardar" onClose={onClose} />}
+      footer={<Pie enviando={enviando} confirmar={parecidas ? "Guardar igual" : "Guardar"} onClose={onClose} />}
     >
       <FormProvider {...form}>
         <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className={claseForm}>
           <CamposObra />
           <CampoOrigen />
           <CampoNotas />
+          {parecidas && <AvisoParecidas items={parecidas} verbo="guardala" />}
         </form>
       </FormProvider>
     </RightPanel>
