@@ -12,8 +12,8 @@ import { LABEL_ESTADO, type EstadoObra } from "@/modules/obras/types";
 import type { AccionFicha } from "../../fichas";
 
 // La ficha de la obra, en su página y en Tareas al lado del hilo o del paso.
-// Sin obra visible, null.
-export async function fichaObra(id: string, { vincular, estado }: AccionFicha) {
+// Sin obra visible, null. Al lado de un hilo, ese hilo no se lista.
+export async function fichaObra(id: string, { vincular, estado }: AccionFicha, hilo: string | null = null) {
   const yo = await getUsuarioActualId();
   if (!yo || !(await puedeVerObras())) return null;
 
@@ -64,7 +64,7 @@ export async function fichaObra(id: string, { vincular, estado }: AccionFicha) {
           extras={extras}
         />
       }
-      hilos={<HilosDeRegistro {...hilos} yo={yo} />}
+      hilos={<HilosDeRegistro hilos={hilos.hilos.filter((h) => h.id !== hilo)} nombres={hilos.nombres} yo={yo} />}
     />
   );
 }

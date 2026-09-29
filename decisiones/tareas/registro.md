@@ -112,3 +112,8 @@ relativas*). Con un solo módulo con entes el selector no aparece. El nombre cop
 (cortarían el token). La vista previa muestra link solo en lo elegido en ese formulario.
 Archivos: `sql/124_buscar_registros.sql`, `sql/tests/tareas_buscar.sql`, `RelacionarModal.tsx`,
 `PasoFormPanel.tsx`, `actions.ts` (`modulosRelacionables`, `buscarRegistros`).
+
+**Al lado de un hilo, la ficha no lista ese hilo (2026-09-29).** La sección "Hilos" de la ficha lo
+repetía al lado de sí mismo; `ficha()` recibe el hilo que se mira y la ficha lo saca. Si era el
+único, la sección no se dibuja. En su propia página, la ficha lista todos.
+Archivos: `fichas.tsx`, `obras/[id]/ficha.tsx`, `tareas/[id]/page.tsx`.

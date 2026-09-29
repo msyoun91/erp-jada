@@ -14,13 +14,18 @@ export function accionDe(params: Record<string, string | string[] | undefined>):
 }
 
 // Ente → ficha, para verla al lado en Tareas. `hilo` y `tarea` no tienen: su
-// ficha es el hilo mismo.
-const FICHAS: Record<string, (id: string, accion: AccionFicha) => Promise<ReactNode | null>> = {
+// ficha es el hilo mismo. `hilo`: el que se está mirando, que la ficha no lista.
+const FICHAS: Record<string, (id: string, accion: AccionFicha, hilo: string | null) => Promise<ReactNode | null>> = {
   obra: fichaObra,
   persona: fichaPersona,
   empresa: fichaEmpresa,
 };
 
-export async function ficha(ente: string, id: string, accion: AccionFicha = SIN_ACCION): Promise<ReactNode | null> {
-  return FICHAS[ente] ? FICHAS[ente](id, accion) : null;
+export async function ficha(
+  ente: string,
+  id: string,
+  hilo: string | null = null,
+  accion: AccionFicha = SIN_ACCION
+): Promise<ReactNode | null> {
+  return FICHAS[ente] ? FICHAS[ente](id, accion, hilo) : null;
 }

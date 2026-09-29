@@ -81,6 +81,8 @@ test("Juan la usa sobre su obra y el paso sin arquitecto no entra", async ({ bro
   await expect(page).toHaveURL(/\/tareas\/[0-9a-f-]{36}$/);
   const registro = page.getByRole("region", { name: "Ficha del registro" });
   await expect(registro.getByRole("heading", { name: obra })).toBeVisible();
+  // Al lado del hilo, la ficha no se lista a sí mismo: es el único, sin sección.
+  await expect(registro.getByText("Hilos", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Vincular arquitecto").first()).toBeVisible();
   await expect(page.getByText("Coordinar con el arquitecto")).toHaveCount(0);
 
@@ -93,6 +95,7 @@ test("Juan la usa sobre su obra y el paso sin arquitecto no entra", async ({ bro
   await expect(paso.getByRole("tab", { name: obra })).toHaveAttribute("aria-selected", "true");
   await expect(paso.getByRole("tab")).toHaveCount(1);
   await expect(paso.getByRole("tabpanel", { name: obra }).getByRole("heading", { name: obra })).toBeVisible();
+  await expect(paso.getByRole("tabpanel", { name: obra }).getByText("Hilos", { exact: true })).toHaveCount(0);
   await paso.getByRole("button", { name: `${obra} ↗` }).click();
   await expect(page).toHaveURL(/\/tareas\/[0-9a-f-]{36}\?paso=[0-9a-f-]{36}$/);
   // El link de acción abre "Vincular" en la pestaña de la obra, sin salir del paso;

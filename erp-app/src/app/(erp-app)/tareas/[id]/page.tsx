@@ -25,7 +25,7 @@ export default async function HiloPage(props: PageProps<"/tareas/[id]">) {
   ]);
   if (!datos) notFound();
   const { registro_ente, registro_id } = datos.hilo;
-  const registro = registro_ente && registro_id ? await ficha(registro_ente, registro_id) : null;
+  const registro = registro_ente && registro_id ? await ficha(registro_ente, registro_id, id) : null;
 
   // Las pestañas del paso abierto: el registro del hilo primero, después lo que
   // menciona su descripción y quien lee puede abrir, sin repetir (registro.md).
@@ -36,7 +36,7 @@ export default async function HiloPage(props: PageProps<"/tareas/[id]">) {
     // registro; la key la vuelve a montar para que lo tome.
     const accion = accionDe(params);
     const conAccion = accion.vincular !== null || accion.estado !== null;
-    const tab = conAccion && registro_ente && registro_id ? await ficha(registro_ente, registro_id, accion) : registro;
+    const tab = conAccion && registro_ente && registro_id ? await ficha(registro_ente, registro_id, id, accion) : registro;
     if (tab && datos.sobre)
       pestanas.push({
         ref: `${registro_ente}:${registro_id}`,
@@ -47,7 +47,7 @@ export default async function HiloPage(props: PageProps<"/tareas/[id]">) {
       .map(([, ente, rid, nombre]) => ({ ref: `${ente}:${rid}`, ente, rid, nombre }))
       .filter((r, i, todas) => r.ref in datos.enlaces && todas.findIndex((o) => o.ref === r.ref) === i)
       .filter((r) => !pestanas.some((p) => p.ref === r.ref));
-    const fichas = await Promise.all(refs.map((r) => ficha(r.ente, r.rid)));
+    const fichas = await Promise.all(refs.map((r) => ficha(r.ente, r.rid, id)));
     refs.forEach((r, i) => {
       if (fichas[i]) pestanas.push({ ref: r.ref, etiqueta: r.nombre, ficha: fichas[i] });
     });
