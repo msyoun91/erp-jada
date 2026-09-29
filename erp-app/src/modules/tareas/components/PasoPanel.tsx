@@ -7,7 +7,7 @@ import { ConfirmModal } from "@/components/ui/Modal";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import { aceptarPaso, cancelarPaso, desactivarPaso, reabrirPaso, reactivarPaso, volverAPedir } from "../actions";
 import { estaAbierto, estaEnEspera, estaVencido, sinReferencias } from "../derivados";
-import { ESTADO_PASO, PRIORIDAD, textoPlazoDias } from "../etiquetas";
+import { ESTADO_PASO, PRIORIDAD, textoCompleta, textoPlazoDias } from "../etiquetas";
 import type { Mencion } from "../queries";
 import type { Edicion, Hilo, Nota, Tarea } from "../types";
 import { useNombre, useTareas } from "./contexto";
@@ -107,6 +107,9 @@ export function PasoPanel({
   if (estaEnEspera(paso, hoy))
     datos.push(["En espera", `Hasta ${formatFecha(paso.espera_hasta!)}${paso.espera_motivo ? ` · ${paso.espera_motivo}` : ""}`]);
   if (paso.motivo_rechazo && e === "rechazada") datos.push(["Motivo del rechazo", paso.motivo_rechazo]);
+  // Completado solo, el resultado queda vacío: la condición dice por qué (catalogo.md).
+  if (hilo.registro_ente && paso.completa_evento && paso.completa_valor)
+    datos.push(["Se completa sola", textoCompleta(hilo.registro_ente, paso.completa_evento, paso.completa_valor)]);
   if (paso.resultado) datos.push(["Resultado", sinReferencias(paso.resultado)]);
 
   return (

@@ -67,6 +67,10 @@ cumple salen tachados con el porqué ("No entra: la obra no tiene arquitecto"), 
 "Se completa sola…" se muestra al crear un hilo, no al sumar a uno (puede no ser sobre ese
 registro). Archivos: `UsarPlantillaPanel.tsx`, `RegistroPicker.tsx`, `actions.ts`.
 
+**El paso muestra "Se completa sola" con su condición (2026-09-29).** En el panel del paso, como
+un dato más, mientras esté abierto y después: cerrado solo, el resultado queda vacío y esa fila
+dice por qué. Archivos: `PasoPanel.tsx`, `e2e/tareas.spec.ts`.
+
 ## Todas (2026-09-24)
 
 **Todas = todos los hilos, con filtro Huérfanos · Desactivados.** Huérfano (`esHuerfano`, con test):
