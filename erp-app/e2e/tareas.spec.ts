@@ -79,10 +79,8 @@ test("Juan la usa sobre su obra y el paso sin arquitecto no entra", async ({ bro
   await usar.getByRole("button", { name: "Crear hilo" }).click();
 
   await expect(page).toHaveURL(/\/tareas\/[0-9a-f-]{36}$/);
-  const registro = page.getByRole("region", { name: "Ficha del registro" });
-  await expect(registro.getByRole("heading", { name: obra })).toBeVisible();
-  // Al lado del hilo, la ficha no se lista a sí mismo: es el único, sin sección.
-  await expect(registro.getByText("Hilos", { exact: true })).toHaveCount(0);
+  // La ficha de la obra no va al lado del hilo: se ve al abrir el paso.
+  await expect(page.getByRole("heading", { name: obra })).toHaveCount(0);
   await expect(page.getByText("Vincular arquitecto").first()).toBeVisible();
   await expect(page.getByText("Coordinar con el arquitecto")).toHaveCount(0);
 

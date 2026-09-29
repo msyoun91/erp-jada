@@ -64,9 +64,12 @@ trabaja en el contexto del registro del hilo y la plantilla no tiene que repetir
 paso. Depende de que exista `hilo → registro` (ente + id en `tareas_hilos`, todavía sin columnas:
 `BACKLOG.md` → disparo por registro).
 
-**La página del hilo muestra al lado solo la ficha del registro del hilo (2026-09-26).** Sin
-pestañas de lo que mencionan sus pasos: en hilos largos juntaría registros que no le conciernen a
-quien mira, y crecería sin límite. Sin registro, la página del hilo va a todo el ancho.
+**~~La página del hilo muestra al lado solo la ficha del registro del hilo (2026-09-26).~~** Superada
+por *Las fichas se ven al abrir el paso, no en el hilo*.
+
+**Las fichas se ven al abrir el paso, no en el hilo (2026-09-29).** La página del hilo va siempre a
+todo el ancho; la ficha del registro llega como primera pestaña del paso abierto. Los entes se
+miran cuando se lee la descripción de la tarea, no al recorrer el hilo. Archivos: `tareas/[id]/page.tsx`.
 
 **Con fichas, el panel del paso se ensancha y las lleva adentro (2026-09-26).** El paso sigue siendo
 `RightPanel` sobre el hilo (`?paso={id}`); con pestañas crece a dos columnas, sin ellas queda angosto
@@ -114,6 +117,6 @@ Archivos: `sql/124_buscar_registros.sql`, `sql/tests/tareas_buscar.sql`, `Relaci
 `PasoFormPanel.tsx`, `actions.ts` (`modulosRelacionables`, `buscarRegistros`).
 
 **Al lado de un hilo, la ficha no lista ese hilo (2026-09-29).** La sección "Hilos" de la ficha lo
-repetía al lado de sí mismo; `ficha()` recibe el hilo que se mira y la ficha lo saca. Si era el
+repetía al lado de sí mismo (hoy, en la pestaña del paso); `ficha()` recibe el hilo que se mira y la ficha lo saca. Si era el
 único, la sección no se dibuja. En su propia página, la ficha lista todos.
 Archivos: `fichas.tsx`, `obras/[id]/ficha.tsx`, `tareas/[id]/page.tsx`.

@@ -29,8 +29,8 @@ UI: vistas Hilos (`/tareas`, `/tareas/{id}`, `/tareas/paso/{id}`), Misión (`/ta
 Equipo (`/tareas/equipo`), Plantillas (`/tareas/plantillas`, con "Usar plantilla" desde el hilo) y
 Todas (`/tareas/todas`) hechas. Las referencias `{ente:uuid|nombre}` son link ↗ si quien lee las
 abre (`getEnlaces`) y navegan a la ficha. Fichas al lado hechas (2026-09-29; `decisiones/tareas/registro.md`,
-`e2e/tareas.spec.ts`): la del registro junto al hilo, pestañas en el panel del paso y el link de
-acción dentro de la pestaña.
+`e2e/tareas.spec.ts`): pestañas en el panel del paso —el registro del hilo primero— y el link de
+acción dentro de la pestaña. El hilo va a todo el ancho, sin ficha al lado.
 
 Ficha: `decisiones/tareas/README.md`; esquema: `db_schema/tareas.md`.
 

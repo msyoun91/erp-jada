@@ -25,7 +25,6 @@ export default async function HiloPage(props: PageProps<"/tareas/[id]">) {
   ]);
   if (!datos) notFound();
   const { registro_ente, registro_id } = datos.hilo;
-  const registro = registro_ente && registro_id ? await ficha(registro_ente, registro_id, id) : null;
 
   // Las pestañas del paso abierto: el registro del hilo primero, después lo que
   // menciona su descripción y quien lee puede abrir, sin repetir (registro.md).
@@ -35,8 +34,7 @@ export default async function HiloPage(props: PageProps<"/tareas/[id]">) {
     // El link de acción (`?vincular=`, `?estado=`) abre su panel en la pestaña del
     // registro; la key la vuelve a montar para que lo tome.
     const accion = accionDe(params);
-    const conAccion = accion.vincular !== null || accion.estado !== null;
-    const tab = conAccion && registro_ente && registro_id ? await ficha(registro_ente, registro_id, id, accion) : registro;
+    const tab = registro_ente && registro_id ? await ficha(registro_ente, registro_id, id, accion) : null;
     if (tab && datos.sobre)
       pestanas.push({
         ref: `${registro_ente}:${registro_id}`,
@@ -53,7 +51,7 @@ export default async function HiloPage(props: PageProps<"/tareas/[id]">) {
     });
   }
 
-  const vista = (
+  return (
     <HiloView
       {...datos}
       pasoAbierto={abierto?.id ?? null}
@@ -61,13 +59,5 @@ export default async function HiloPage(props: PageProps<"/tareas/[id]">) {
       plantillas={plantillas.filter((p) => p.activo && p.dueno_id === contexto.yo)}
       ctx={{ ...contexto, asignables, admin, pedir, delegador }}
     />
-  );
-  // Al lado, solo la ficha del registro del hilo (registro.md); sin ella, a todo el ancho.
-  if (!registro) return vista;
-  return (
-    <div className="grid items-start gap-6 lg:grid-cols-2">
-      {vista}
-      <section aria-label="Ficha del registro">{registro}</section>
-    </div>
   );
 }
