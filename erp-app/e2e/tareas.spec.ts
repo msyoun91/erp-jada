@@ -79,6 +79,8 @@ test("Juan la usa sobre su obra y el paso sin arquitecto no entra", async ({ bro
   await usar.getByRole("button", { name: "Crear hilo" }).click();
 
   await expect(page).toHaveURL(/\/tareas\/[0-9a-f-]{36}$/);
+  const registro = page.getByRole("region", { name: "Ficha del registro" });
+  await expect(registro.getByRole("heading", { name: obra })).toBeVisible();
   await expect(page.getByText("Vincular arquitecto").first()).toBeVisible();
   await expect(page.getByText("Coordinar con el arquitecto")).toHaveCount(0);
 

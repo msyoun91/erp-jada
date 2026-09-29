@@ -73,6 +73,12 @@ quien mira, y crecería sin límite. Sin registro, la página del hilo va a todo
 como hoy. No cambia la navegación ya probada, y los modales de la ficha ("Vincular") apilan encima
 por el top layer del `<dialog>`. Descartado: que el paso reemplace la columna izquierda del hilo.
 
+**Cada ficha es una función en `app/` que devuelve la vista o null (2026-09-29).** `fichaObra`,
+`fichaPersona` y `fichaEmpresa` viven junto a su página (`app/(erp-app)/<modulo>/.../[id]/ficha.tsx`) y
+`app/(erp-app)/fichas.tsx` mapea ente → ficha. La página y Tareas llaman a la misma: una sola ficha
+por módulo, con sus permisos. Null es "no la ve": la página hace `notFound` y Tareas no la muestra.
+Archivos: `fichas.tsx`, `tareas/[id]/page.tsx`.
+
 **Los links de la ficha en la pestaña navegan fuera, como en su página (2026-09-26).** Clic en un
 registro de la ficha (un contacto, una tarea) va a su página y cierra el panel; "atrás" vuelve al
 hilo con el paso abierto por `?paso={id}`. La ficha no sabe dónde está montada, y las pestañas quedan

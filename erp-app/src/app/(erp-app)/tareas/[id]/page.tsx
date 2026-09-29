@@ -3,6 +3,7 @@ import { idSchema } from "@/lib/validacion";
 import { puedeAdministrar, puedePedir, puedeVerEquipo, puedeVerPlantillas, puedeVerTareas } from "@/modules/tareas/permissions";
 import { getAsignables, getContexto, getHilo, getPlantillas } from "@/modules/tareas/queries";
 import { HiloView } from "@/modules/tareas/components/HiloView";
+import { ficha } from "../../fichas";
 
 export default async function HiloPage(props: PageProps<"/tareas/[id]">) {
   const { id } = await props.params;
@@ -19,13 +20,23 @@ export default async function HiloPage(props: PageProps<"/tareas/[id]">) {
     puedeVerPlantillas().then((ver) => (ver ? getPlantillas() : [])),
   ]);
   if (!datos) notFound();
+  const { registro_ente, registro_id } = datos.hilo;
+  const registro = registro_ente && registro_id ? await ficha(registro_ente, registro_id) : null;
 
-  return (
+  const vista = (
     <HiloView
       {...datos}
       pasoAbierto={typeof paso === "string" ? paso : null}
       plantillas={plantillas.filter((p) => p.activo && p.dueno_id === contexto.yo)}
       ctx={{ ...contexto, asignables, admin, pedir, delegador }}
     />
+  );
+  // Al lado, solo la ficha del registro del hilo (registro.md); sin ella, a todo el ancho.
+  if (!registro) return vista;
+  return (
+    <div className="grid items-start gap-6 lg:grid-cols-2">
+      {vista}
+      <section aria-label="Ficha del registro">{registro}</section>
+    </div>
   );
 }
