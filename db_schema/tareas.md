@@ -225,9 +225,10 @@ Test: `sql/tests/tareas_recurrencia.sql`. Decisión: `decisiones/tareas/recurren
   pedido sin `tareas_pedir` del responsable quedan en el responsable, con `paso_a_reasignar` sin
   actor.
 
-## Plantillas (`sql/118`, `sql/123`, `sql/149`)
+## Plantillas (`sql/118`, `sql/123`, `sql/149`, `sql/150`)
 
-Test: `sql/tests/tareas_plantillas.sql`, `sql/tests/tareas_plantillas_sobre.sql`. Decisión: `decisiones/tareas/catalogo.md`. No son ente.
+Test: `sql/tests/tareas_plantillas.sql`, `sql/tests/tareas_plantillas_sobre.sql`,
+`sql/tests/tareas_usar_plantilla_registro.sql`. Decisión: `decisiones/tareas/catalogo.md`. No son ente.
 
 | tareas_plantillas | tipo | notas |
 |---|---|---|
@@ -272,9 +273,14 @@ INVOKER): una `descripcion` con `{ente:uuid|nombre}` es TA022 (`sql/123`).
 Trigger `tareas_plantillas_sobre` (BEFORE INSERT / UPDATE OF sobre y disparo; DEFINER): `sobre` nuevo
 o cambiado pide el submódulo del ente (TA023) y que los pasos activos le valgan (TA024); el disparo,
 uno de `entes.disparos` con un estado del enum (TA024); prenderlo, el dueño (TA025).
-Trigger `tareas_plantillas_pasos_validar` (BEFORE INSERT; DEFINER): condición y "se completa" valen
-para el `sobre` de la plantilla —sin `sobre`, no hay marcas— (TA024). Las dos preguntan a
-`tareas_plantilla_vale(sobre, evento, valor)`: rol de `entes.roles`, valor de `entes.estados`, `alta` sin valor.
+Trigger `tareas_plantillas_pasos_validar` (BEFORE INSERT; DEFINER): condición, "se completa" y las
+marcas del texto valen para el `sobre` de la plantilla —sin `sobre`, no hay marcas— (TA024). Las dos
+preguntan a `tareas_plantillas_paso_vale(sobre, condicion, completa_evento, completa_valor, titulo,
+descripcion)`, que usa `tareas_plantilla_vale(sobre, evento, valor)` (rol de `entes.roles`, valor de
+`entes.estados`, `alta` sin valor) y `tareas_plantilla_marcas_valen(sobre, titulo, descripcion)`
+(`sql/150`): en el título solo `{dato}` (de `entes.datos`); en la descripción además `{@registro}`,
+`{@rol}` y `{si hay rol}…{fin}` / `{si no hay rol}…{fin}`, sin anidar. Una marca es `{…}` con
+minúsculas y `_` (`{@x}`, `{si [no ]hay x}`, `{fin}`); otras llaves son texto.
 
 RPC (INVOKER, GRANT `authenticated`; errores TA017 "no existe o no es tuya", TA020 sin pasos):
 - `guardar_plantilla(id, nombre, descripcion, pasos jsonb, sobre = NULL, disparo_evento = NULL,
@@ -284,11 +290,21 @@ RPC (INVOKER, GRANT `authenticated`; errores TA017 "no existe o no es tuya", TA0
   completa_valor}]` en orden.
 - `copiar_plantilla(plantilla) → uuid` — solo publicada y activa; sin asignados, sin publicar,
   `copiada_de` = el original; `sobre`, disparo (apagado), condiciones y "se completa", tal cual.
-- `usar_plantilla(plantilla, titulo, hilo, asignados jsonb) → uuid` (el hilo) — la usa su dueño o el
-  admin. `hilo` NULL crea uno (título o el nombre); si no, suma los pasos en paralelo con lo que
-  tiene. `asignados` es `{paso_id: {asignado_id | asignado_equipo_id}}`: el elegido; si no, el fijo
-  que puede recibir; si no, quien la usa. INSERT comunes a profundidad 1: rigen las reglas de
-  `sql/113` (un pedido sin `tareas_pedir`, TA010; un asignado que no es responsable, TA001).
+- `usar_plantilla(plantilla, titulo, hilo, asignados jsonb, registro = NULL) → uuid` (el hilo) —
+  DEFINER, envoltorio de `tareas_usar_plantilla_de(..., registro, usuario)` con `auth.uid()` (`sql/150`;
+  DEFINER, sin GRANT: la comparte el disparo). La usa su dueño o el admin, si la ve (TA017). Con
+  `sobre`, `registro` es obligatorio y tiene que verlo quien la usa (`puede_abrir_registro`); sin
+  `sobre`, no va (TA026). `hilo` NULL crea uno (título o el nombre) con responsable = el usuario y, con
+  `sobre`, `registro_ente`/`registro_id`/`plantilla_id`; si no, suma los pasos en paralelo a un hilo
+  que el usuario ve (si no, 42501) sin tocarle el registro. `asignados` es `{paso_id: {asignado_id |
+  asignado_equipo_id}}`: el elegido; si no, el fijo que puede recibir (`tareas_puede_recibir`); si
+  no, el usuario. Un paso con `condicion` que el registro no cumple no se crea, y el siguiente que
+  espera al anterior espera al previo de ese. Título y descripción pasan por
+  `tareas_plantilla_texto(texto, ente, registro, usuario)` (DEFINER, sin GRANT): `{si…}` según los
+  roles del registro (`relacionados_de_registro_de`), `{dato}` copiado (llaves → paréntesis),
+  `{@registro}` y `{@rol}` a `{ente:uuid|nombre}` de lo que el usuario ve (varios, con coma; ninguno,
+  vacío). INSERT a profundidad 1: rigen las reglas de `sql/113` (TA010, TA001); los vínculos se
+  derivan sin TA021 (DEFINER) — las referencias ya salen filtradas por lo que ve el usuario.
 
 ## Vínculos (`sql/119`, `sql/122`)
 

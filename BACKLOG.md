@@ -148,10 +148,13 @@ no se prueba sin una obra a la que vincularlo.
    `disparar_plantillas` y los dos avisos → pasos que se completan solos.
    Hecho: core (`sql/148`; `sql/tests/entes_dueno_de.sql` pasa entero) y la plantilla con "Sobre",
    disparo, condición y "se completa cuando", y el hilo con registro y plantilla (`sql/149`;
-   `sql/tests/tareas_plantillas_sobre.sql` pasa entero). Sigue: `usar_plantilla` con registro —
-   una interna DEFINER por usuario, que valida y resuelve `{dato}`, `{@registro}`, `{@rol}`,
-   `{si hay rol}…{fin}` / `{si no hay rol}…{fin}` y la condición del paso, y escribe el registro y la
-   plantilla en el hilo nuevo—; `guardar_plantilla` valida esas marcas contra "Sobre". La baja todavía
+   `sql/tests/tareas_plantillas_sobre.sql` pasa entero), y `usar_plantilla` con registro sobre la
+   interna `tareas_usar_plantilla_de(..., registro, usuario)`, con las marcas validadas al guardar
+   (`sql/150`; `sql/tests/tareas_usar_plantilla_registro.sql` pasa entero). Sigue:
+   `disparar_plantillas` (consumidor de `eventos`, DEFINER, llama a la interna con el dueño del
+   registro; "no se repite") y los avisos "plantilla disparada" y "plantilla fallida". La UI de
+   "Usar" todavía no pide el registro: `actions.ts` no manda `p_registro`, así que una plantilla con
+   "Sobre" da TA026 hasta la fase de pantallas. La baja todavía
    no apaga `disparo_activo` (`decisiones/tareas/catalogo.md` → *Una plantilla nunca falla*): va con
    `disparar_plantillas`, que igual saltea al dueño que no puede recibir.
 

@@ -2508,6 +2508,7 @@ export type Database = {
           p_asignados?: Json
           p_hilo?: string
           p_plantilla: string
+          p_registro?: string
           p_titulo?: string
         }
         Returns: string

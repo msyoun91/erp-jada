@@ -119,12 +119,27 @@ así que un ente nuevo con roles o estados vale sin tocar Tareas. Los pasos se v
 (solo se insertan: guardar reemplaza) y cambiar "Sobre" rechaza si algún paso activo no le vale
 (TA024); por eso `guardar_plantilla` apaga los pasos viejos antes de tocar la plantilla. "Sobre" pide
 el submódulo del ente solo cuando cambia (TA023): el admin edita una plantilla sobre un ente que no
-ve sin perder su "Sobre". Las marcas en el texto (`{@rol}`, `{si hay rol}`) se validan con
-`usar_plantilla`, que las lee. `sql/149`.
+ve sin perder su "Sobre". Las marcas del texto se validan igual, al insertar el paso (`sql/150`,
+*Las marcas valen al guardar*). `sql/149`.
 
 **El ciclo siguiente de un hilo recurrente sigue sobre el mismo registro y plantilla (2026-09-29).**
 La recurrencia copia `registro_ente`, `registro_id` y `plantilla_id`: es el caso por el que "no se
 repite" es un chequeo y no un unique index. `sql/149`.
+
+**Las marcas valen al guardar, y cada una en su lugar (2026-09-29).** La misma validación que la
+condición (`tareas_plantillas_paso_vale`), así que una plantilla guardada nunca tiene una marca que
+`usar_plantilla` no sepa leer. En el título solo `{dato}`: el título no lleva referencias
+(`registro.md`) y un `{si…}` podía dejarlo vacío. `{si…}…{fin}` no se anida: un nivel alcanza para
+"si hay arquitecto, coordinar con él". Sin "Sobre", ninguna marca —como la condición—; otras llaves
+(`{Hola}`, `{X}`) son texto. Archivos: `sql/150`, `sql/tests/tareas_usar_plantilla_registro.sql`.
+
+**Las marcas se resuelven con lo que ve quien la usa (2026-09-29).** A mano, quien la usa (el
+responsable del hilo nuevo); en el disparo, el dueño del registro: la misma interna DEFINER,
+`tareas_usar_plantilla_de(..., usuario)`. "Hay rol" (`{si hay}`, condición del paso) es que el
+registro tenga el vínculo abierto; `{@rol}` nombra solo lo que el usuario ve. Hoy da lo mismo: quien
+ve el registro ve sus contactos (`contactos_puede_ver_persona_de`). Un paso que no entra no corta la
+cadena: el siguiente espera al anterior que sí entró. Sumar a un hilo existente pide el registro
+para leer las marcas, pero no se lo cambia. `sql/150`.
 
 **Un disparo no se repite por plantilla y registro (2026-09-24).** Si hay un hilo `activo` de esa
 plantilla sobre ese registro, no corre. Cerrado cuenta: no vuelve a crearse. Desactivado no cuenta.

@@ -1,4 +1,4 @@
--- Verificación de sql/118 y sql/123: plantillas personales y Catálogo. NO es
+-- Verificación de sql/118, sql/123 y sql/150: plantillas personales y Catálogo. NO es
 -- una migración: todo corre dentro de una transacción que termina en ROLLBACK.
 -- Correr después de aplicar sql/112 a sql/123.
 --
@@ -287,9 +287,26 @@ SELECT pg_temp.caso('14 ni insertando el paso directo', 'TA022', pg_temp.intenta
 SELECT pg_temp.caso('14 ni en la descripción de la plantilla', 'TA022', pg_temp.intentar(format(
   $s$UPDATE tareas_plantillas SET descripcion = %L WHERE id = %L$s$,
   format('{hilo:%s|H1}', pg_temp.id('H1')), pg_temp.id('P3')), 'M1'));
-SELECT pg_temp.caso('14 un {dato} o un id sin nombre sí', 'ok',
-  pg_temp.guardar('P3', 'M1', format('[{"titulo":"y","descripcion":"{cliente} {hilo:%s}"}]', pg_temp.id('H1'))::jsonb, false));
+SELECT pg_temp.caso('14 un id sin nombre sí', 'ok',
+  pg_temp.guardar('P3', 'M1', format('[{"titulo":"y","descripcion":"{hilo:%s}"}]', pg_temp.id('H1'))::jsonb, false));
+SELECT pg_temp.caso('14 un {dato} sin "Sobre", no (sql/150)', 'TA024',
+  pg_temp.guardar('P3', 'M1', '[{"titulo":"y","descripcion":"{cliente}"}]', false));
 
-SELECT caso, esperado, obtenido, ok FROM r ORDER BY ok, caso;
+DO $$
+DECLARE
+  v_ok int;
+  v_total int;
+  v_fallan text;
+BEGIN
+  SELECT count(*) FILTER (WHERE ok), count(*),
+         string_agg(caso || ' → esperado ' || coalesce(esperado, 'NULL') || ', obtenido ' || coalesce(obtenido, 'NULL'),
+                    E'
+' ORDER BY caso) FILTER (WHERE NOT ok)
+  INTO v_ok, v_total, v_fallan
+  FROM r;
+  RAISE EXCEPTION '% / % ok%', v_ok, v_total, coalesce(E'
+' || v_fallan, '');
+END;
+$$;
 
 ROLLBACK;
