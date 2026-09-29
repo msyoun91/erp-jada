@@ -134,9 +134,9 @@ no se prueba sin una obra a la que vincularlo.
    `e2e/contactos.spec.ts`), y la pantalla de fusionar con
    "Se fusionó con …" en la ficha vieja (2026-09-28; probada con `e2e/contactos.spec.ts`: el admin
    fusiona las dos Marta de Juan). Sin probar en el navegador: elegir entre dos comisiones (lo cubre
-   `sql/tests/contactos_fusionar.sql`). Pendiente: una fusionada hoy se reactiva por SQL (la ficha
-   ya no ofrece "Reactivar"): decidir si CO004 la frena. El texto del aviso `persona_fusionada` en la
-   campanita es provisorio.
+   `sql/tests/contactos_fusionar.sql`). Cierre (2026-09-29): una fusionada no se reactiva
+   (`sql/147`, CO031; `contactos_fusionar.sql` 36/36, `contactos_reglas.sql` 94/94),
+   y la campanita dice "**Marta Gómez** se fusionó con la de Juan". **Tramo 4 cerrado.**
 5. **Tareas** — el paquete "con el primer emisor" (arriba): plantillas por estado, pasos que se
    completan solos. Prueba: el paso "vincular arquitecto" se cierra solo.
 

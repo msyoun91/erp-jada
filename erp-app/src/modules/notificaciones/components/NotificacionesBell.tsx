@@ -112,7 +112,7 @@ const TEXTO: Record<TipoNotificacion, string> = {
   alta_rechazada: "Rechazaron",
   alta_es_la_misma: "Resolvieron como ya existente:",
   obra_misma_sumado: "Se sumó alguien a",
-  persona_fusionada: "Se unificó con la ficha de otro dueño:",
+  persona_fusionada: "se fusionó con la de",
 };
 const COLOR: Record<TipoNotificacion, string> = {
   miembro_nuevo: "text-brand-500",
@@ -256,11 +256,18 @@ export function NotificacionesBell({ notificaciones }: { notificaciones: Notific
                           className={`mt-0.5 shrink-0 ${COLOR[n.tipo]}`}
                         />
                         <span className="min-w-0 flex-1">
-                          <span className="t-body-m block text-text-primary">
-                            {TEXTO[n.tipo]}{" "}
-                            <strong className="font-semibold">{etiquetaDe(n) ?? "un registro"}</strong>
-                          </span>
-                          {n.motivo && (
+                          {n.tipo === "persona_fusionada" ? (
+                            <span className="t-body-m block text-text-primary">
+                              <strong className="font-semibold">{n.etiqueta ?? "Una persona"}</strong>{" "}
+                              {TEXTO[n.tipo]} {n.motivo ?? "otro dueño"}
+                            </span>
+                          ) : (
+                            <span className="t-body-m block text-text-primary">
+                              {TEXTO[n.tipo]}{" "}
+                              <strong className="font-semibold">{etiquetaDe(n) ?? "un registro"}</strong>
+                            </span>
+                          )}
+                          {n.motivo && n.tipo !== "persona_fusionada" && (
                             <span className="t-body-m mt-0.5 block text-error-text">{n.motivo}</span>
                           )}
                           <span className="t-caption mt-1 block">

@@ -115,6 +115,11 @@ sin ver pierde un dato, y verlo queda registrado como cualquier "Ver contacto". 
 que se fue muestra "Se fusionó con …"; quien ya no la ve pasa directo a la que queda. Archivos:
 `FusionarView.tsx`, `app/(erp-app)/contactos/fusionar/page.tsx`, `e2e/contactos.spec.ts`.
 
+**Una fusionada no se reactiva, ni el admin (2026-09-28).** Sus vínculos ya pasaron a la que queda:
+reactivarla deja la misma persona dos veces, una vacía que dice "Se fusionó con …". Si la fusión
+estuvo mal, se carga de nuevo. Trigger aparte de `*_al_editar` para frenar también el SQL directo
+(CO031). Archivos: `sql/147`, `sql/tests/contactos_fusionar.sql`.
+
 **Una persona o una empresa la corrige quien trabaja con ella, y cada cambio queda registrado
 (2026-09-25).** El contacto es uno solo y lo usan varias obras: que lo corrija el primero que se entera
 (quien recibió la obra transferida y sabe el teléfono nuevo). Quien solo la ve en contexto, no

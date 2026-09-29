@@ -1,4 +1,4 @@
--- Verificación de sql/146: fusionar personas y empresas. NO es una migración:
+-- Verificación de sql/146–147: fusionar personas y empresas, y que la fusionada no se reactive. NO es una migración:
 -- todo corre dentro de una transacción que revierte. Termina en un DO que
 -- lanza "N / M ok" y los casos que fallan.
 --
@@ -245,6 +245,21 @@ SELECT pg_temp.caso('05 Juan no mueve un vínculo a otra persona', '42501', pg_t
   'UPDATE contactos_vinculos SET persona_id = %L WHERE id = %L', pg_temp.id('Rosa1'), pg_temp.id('VO2')), 'Juan'));
 SELECT pg_temp.caso('05 Pedro (participante) no le saca referente a Marta', 'OB039', pg_temp.intentar(format(
   $s$UPDATE contactos_vinculos SET roles = '{decisor}' WHERE id = %L$s$, pg_temp.id('VM2')), 'Pedro'));
+
+-- ============================================================
+-- 06. Una fusionada no se reactiva (sql/147), ni el admin ni el SQL directo
+-- ============================================================
+SELECT pg_temp.caso('06 Ana no reactiva a Marta Dos', 'CO031', pg_temp.intentar(format(
+  'UPDATE contactos_personas SET activo = true WHERE id = %L', pg_temp.id('Marta2')), 'Ana'));
+SELECT pg_temp.caso('06 Ana no reactiva Caputo Dos', 'CO031', pg_temp.intentar(format(
+  'UPDATE contactos_empresas SET activo = true WHERE id = %L', pg_temp.id('Caputo2')), 'Ana'));
+DO $$
+BEGIN
+  UPDATE contactos_personas SET activo = true, fusionada_en = NULL WHERE id = pg_temp.id('Rosa2');
+  PERFORM pg_temp.caso('06 como superusuario, tampoco', 'CO031', 'ok');
+EXCEPTION WHEN OTHERS THEN
+  PERFORM pg_temp.caso('06 como superusuario, tampoco', 'CO031', SQLSTATE);
+END $$;
 
 -- ============================================================
 -- Resultado

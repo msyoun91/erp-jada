@@ -185,6 +185,8 @@ GRANT de escritura.
   otra y con los suyos. Persona: campanita `persona_fusionada` a su dueño.
 - `contactos_vinculos_validar` no aplica las reglas de actor a un UPDATE que cambia el contacto o
   `fusionado_en` (solo lo hace esta función).
+- Trigger `contactos_fusionada_no_reactiva` en personas y empresas (`sql/147`): con `fusionada_en`,
+  no se reactiva, ni el admin ni el SQL directo (CO031).
 - `contactos_fusionada(tipo, id) → (id, nombre, dueno)` — DEFINER, GRANT: "Se fusionó con …" para
   quien ve la que se va o la que queda; el id, solo si ve la que queda.
 
