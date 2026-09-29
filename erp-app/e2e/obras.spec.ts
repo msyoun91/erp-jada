@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { aprobarPendientes, confirmarConAviso, crearIgual, panel } from "./comun";
+import { aprobarPendientes, como, confirmarConAviso, crearIgual, panel } from "./comun";
 
 // Tramo 1 de Obras y Contactos: Juan (tester) carga Torre Belgrano con Marta de
 // referente, suma a Pedro (Tester 2), le vincula una constructora y ve el
@@ -197,5 +197,64 @@ test("Juan se va y sus obras y su agenda llegan al jefe", async ({ browser }) =>
   await expect(admin.getByRole("heading", { name: ana })).toBeVisible();
   await expect(admin.getByTitle("Dueño")).toHaveText("Tester 2");
 
+  await ctxAdmin.close();
+});
+
+// "Laura la ve sin tocar nada" (decisiones/obras.md): Juan (admin, sin equipo)
+// carga la obra y suma a Pedro (tester), que está en el equipo de Laura
+// (Tester 2, jefe con "Jefe de equipo"). Laura la abre y no tiene nada que
+// tocar: ni estado, ni menú, ni vincular, ni sumar. Corre después del tramo 2,
+// que deja armado el equipo; Pedro sale al final.
+const obraDeJuanNorte = `Torre Núñez ${marca}`;
+
+test("Laura, jefa del equipo de un participante, la ve sin tocar nada", async ({ browser }) => {
+  test.setTimeout(120_000);
+  const { ctx: ctxAdmin, page: admin } = await como(browser, "admin");
+  await admin.goto("/usuarios/equipos");
+  const seccion = admin.locator("section").filter({ has: admin.getByRole("heading", { name: equipo }) });
+  await expect(seccion.getByText("Tester 2", { exact: true })).toBeVisible();
+  const pedro = seccion.locator("div.row").filter({ has: admin.getByText("Tester", { exact: true }) });
+  if ((await pedro.count()) === 0) {
+    await seccion.locator("header").getByRole("button", { name: "Más acciones" }).click();
+    await admin.getByRole("button", { name: "Agregar miembro" }).click();
+    const alta = panel(admin);
+    await alta.getByLabel("Usuario").selectOption({ label: "Tester" });
+    await alta.getByRole("button", { name: "Agregar" }).click();
+    await expect(pedro).toBeVisible();
+  }
+
+  await admin.goto("/obras");
+  await admin.getByRole("button", { name: "Nueva obra" }).click();
+  const alta = panel(admin);
+  await alta.getByLabel("Nombre", { exact: true }).fill(obraDeJuanNorte);
+  await alta.getByLabel("Dirección").fill("Av. del Libertador 7000");
+  await alta.getByLabel("Tipo de obra").selectOption({ label: "Edificio residencial" });
+  await alta.getByLabel("Origen").selectOption({ label: "Referente" });
+  const url = await crearIgual(admin, alta, "Crear obra", /\/obras\/[0-9a-f-]{36}$/);
+  await admin.getByRole("button", { name: "Sumar participante" }).click();
+  const sumar = panel(admin);
+  await sumar.getByLabel("Quién").selectOption({ label: "Tester" });
+  await sumar.getByRole("button", { name: "Sumar", exact: true }).click();
+  await expect(admin.getByRole("listitem").filter({ hasText: /^Tester$/ })).toBeVisible();
+
+  const { ctx: ctxLaura, page: laura } = await como(browser, "tester2");
+  await laura.goto(url);
+  await expect(laura.getByRole("heading", { name: obraDeJuanNorte })).toBeVisible();
+  await expect(laura.getByRole("listitem").filter({ hasText: /^Tester$/ })).toBeVisible();
+  await expect(laura.getByTitle("Cambiar estado")).toHaveCount(0);
+  await expect(laura.getByRole("button", { name: "Más acciones" })).toHaveCount(0);
+  await expect(laura.getByRole("button", { name: "Vincular contacto" })).toHaveCount(0);
+  await expect(laura.getByRole("button", { name: "Sumar participante" })).toHaveCount(0);
+  await expect(laura.getByRole("button", { name: /^Quitar a/ })).toHaveCount(0);
+  await ctxLaura.close();
+
+  // Pedro sale sin pasarle nada al jefe: lo suyo de esta corrida ya pasó en el tramo 2.
+  await admin.goto("/usuarios/equipos");
+  await pedro.getByRole("button", { name: "Más acciones" }).click();
+  await admin.getByRole("button", { name: "Sacar del equipo" }).click();
+  const sacar = panel(admin);
+  await sacar.getByRole("checkbox", { name: /Su agenda pasa al jefe/ }).uncheck();
+  await sacar.getByRole("button", { name: "Sacar" }).click();
+  await expect(pedro).toHaveCount(0);
   await ctxAdmin.close();
 });

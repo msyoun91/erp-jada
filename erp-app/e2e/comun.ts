@@ -4,7 +4,7 @@ export function panel(page: Page) {
   return page.getByRole("dialog").last();
 }
 
-export async function como(browser: Browser, quien: "admin" | "tester") {
+export async function como(browser: Browser, quien: "admin" | "tester" | "tester2") {
   const ctx = await browser.newContext({ storageState: `e2e/.auth/${quien}.json` });
   return { ctx, page: await ctx.newPage() };
 }

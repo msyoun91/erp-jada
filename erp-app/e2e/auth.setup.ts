@@ -3,6 +3,7 @@ import { test as setup, expect } from "@playwright/test";
 const usuarios = [
   { nombre: "admin", email: process.env.E2E_ADMIN_EMAIL, password: process.env.E2E_ADMIN_PASSWORD },
   { nombre: "tester", email: process.env.E2E_TESTER_EMAIL, password: process.env.E2E_TESTER_PASSWORD },
+  { nombre: "tester2", email: process.env.E2E_TESTER2_EMAIL, password: process.env.E2E_TESTER2_PASSWORD },
 ];
 
 for (const usuario of usuarios) {

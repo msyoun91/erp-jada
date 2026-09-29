@@ -65,8 +65,8 @@ con `sql/130` (nombres y candidatos) y `sql/131` (`obras_a_cargo`). Pantallas es
 `/obras` (lista, Todas, ficha con estado, transferir y participantes; alta con "¿Quién?"),
 `/contactos` (personas, empresas y sus fichas, "Ver contacto", historial) y el panel de vincular en la
 ficha de la obra. Probado con `e2e/obras.spec.ts` ("Juan carga Torre Belgrano…": Tester carga y trabaja,
-Admin la ve). Falta "Laura la ve sin tocar nada": ningún usuario de prueba tiene equipo ni `obras_equipo`;
-entra con el tramo 2 (bajas y equipos). Tramo 2 en SQL, aplicado el 2026-09-28: `sql/132` (tipos de
+Admin la ve). "Laura la ve sin tocar nada" probada en `e2e/obras.spec.ts` (2026-09-29; Laura = Tester 2,
+con `E2E_TESTER2_*` en `.env.test`). Tramo 2 en SQL, aplicado el 2026-09-28: `sql/132` (tipos de
 campanita), `sql/133` (bajas, cambios de equipo, huérfanas; `asignar_equipo` con `p_agenda_al_jefe`),
 `sql/134` (campanitas y `notificaciones_listar`), `sql/135`–`136` (permisos de `service_role` para la
 entrega de la agenda). Pasan `obras_contactos_bajas.sql`, `obras_contactos_avisos.sql` y la regresión.
@@ -147,8 +147,6 @@ no se prueba sin una obra a la que vincularlo.
 4. ~~La misma empresa en dos equipos~~ — cerrado: se pide con un pedido de Tareas y el equipo dueño
    la comparte (`decisiones/contactos.md`).
 5. ~~El SQL sin cortes~~ — cerrado: cinco tramos (arriba).
-- Menor, al escribir el SQL: la baja pasa las obras al jefe solo si tiene `obras_ver`, como Tareas
-  pide `tareas_ver`.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos.
