@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { ConfirmModal } from "@/components/ui/Modal";
@@ -17,6 +18,9 @@ import { NotasSection } from "./NotasSection";
 import { PasoFormPanel } from "./PasoFormPanel";
 import { CompletarAjenoModal, CompletarModal, EsperaModal, ReasignarModal, RechazarModal } from "./PasoModales";
 import { TextoConReferencias } from "./TextoConReferencias";
+
+// Una ficha al lado del paso: `ref` es `ente:id`, como en `enlaces`.
+export type Pestana = { ref: string; etiqueta: string; ficha: React.ReactNode };
 
 type Dialogo =
   | "editar"
@@ -41,6 +45,7 @@ export function PasoPanel({
   enlaces,
   menciones,
   sobre,
+  pestanas,
   onClose,
 }: {
   hilo: Hilo;
@@ -53,12 +58,22 @@ export function PasoPanel({
   enlaces: Record<string, string>;
   menciones: Mencion[];
   sobre: HiloCompleto["sobre"];
+  pestanas: Pestana[];
   onClose: () => void;
 }) {
   const { yo, miEquipo, admin, delegador } = useTareas();
   const nombre = useNombre();
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
+  const [activa, setActiva] = useState<string | null>(null);
+  // En mobile la ficha va encima del paso, con "volver".
+  const [enFicha, setEnFicha] = useState(false);
   const hoy = hoyISO();
+  const actual = pestanas.find((p) => p.ref === activa) ?? pestanas[0];
+
+  function verFicha(ref: string) {
+    setActiva(ref);
+    setEnFicha(true);
+  }
 
   // Lo que se muestra; quien decide es `tareas_al_editar` (sql/113).
   const resp = hilo.responsable_id === yo;
@@ -115,48 +130,101 @@ export function PasoPanel({
   if (paso.resultado) datos.push(["Resultado", sinReferencias(paso.resultado)]);
 
   return (
-    <RightPanel title={paso.titulo} subtitle={hilo.titulo} onClose={onClose}>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={`badge ${ESTADO_PASO[e].badge}`}>{ESTADO_PASO[e].label}</span>
-          {bloqueado && <span className="badge badge-neutral">Espera al anterior</span>}
-          {estaVencido(paso, hoy) && <span className="badge badge-error">Vencido</span>}
-          {!paso.activo && <span className="badge badge-neutral">Desactivado</span>}
+    <RightPanel title={paso.titulo} subtitle={hilo.titulo} onClose={onClose} ancho={actual !== undefined}>
+      <div className="flex min-h-0 flex-1">
+        <div
+          className={`${enFicha ? "hidden lg:flex" : "flex"} min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4 ${
+            actual ? "lg:max-w-md lg:border-r lg:border-border" : ""
+          }`}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`badge ${ESTADO_PASO[e].badge}`}>{ESTADO_PASO[e].label}</span>
+            {bloqueado && <span className="badge badge-neutral">Espera al anterior</span>}
+            {estaVencido(paso, hoy) && <span className="badge badge-error">Vencido</span>}
+            {!paso.activo && <span className="badge badge-neutral">Desactivado</span>}
+          </div>
+
+          {paso.descripcion && (
+            <TextoConReferencias
+              texto={paso.descripcion}
+              enlaces={enlaces}
+              accion={hrefAccion(sobre, paso)}
+              pestanas={pestanas.map((p) => p.ref)}
+              onPestana={verFicha}
+            />
+          )}
+
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+            {datos.map(([k, v]) => (
+              <div key={k} className="contents">
+                <dt className="t-caption">{k}</dt>
+                <dd className="t-body-m whitespace-pre-wrap">{v}</dd>
+              </div>
+            ))}
+          </dl>
+
+          {acciones.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {acciones.map((a) => (
+                <button
+                  key={a.label}
+                  className={`btn btn-sm ${a.primaria ? "btn-primary" : "btn-secondary"} ${a.peligro ? "text-error-text" : ""}`}
+                  onClick={a.onClick}
+                >
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <Menciones menciones={menciones} />
+
+          <div className="border-t border-border pt-4">
+            <p className="t-label mb-2">Notas del paso</p>
+            <NotasSection hiloId={hilo.id} tareaId={paso.id} notas={notas} />
+          </div>
+
+          {actual && (
+            <div className="flex flex-wrap gap-2 lg:hidden">
+              {pestanas.map((p) => (
+                <button key={p.ref} className="btn btn-secondary btn-sm" onClick={() => verFicha(p.ref)}>
+                  {p.etiqueta}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <Historial ediciones={ediciones} />
         </div>
 
-        {paso.descripcion && <TextoConReferencias texto={paso.descripcion} enlaces={enlaces} accion={hrefAccion(sobre, paso)} />}
-
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-          {datos.map(([k, v]) => (
-            <div key={k} className="contents">
-              <dt className="t-caption">{k}</dt>
-              <dd className="t-body-m whitespace-pre-wrap">{v}</dd>
-            </div>
-          ))}
-        </dl>
-
-        {acciones.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {acciones.map((a) => (
-              <button
-                key={a.label}
-                className={`btn btn-sm ${a.primaria ? "btn-primary" : "btn-secondary"} ${a.peligro ? "text-error-text" : ""}`}
-                onClick={a.onClick}
-              >
-                {a.label}
+        {actual && (
+          <div className={`${enFicha ? "flex" : "hidden lg:flex"} min-w-0 flex-1 flex-col`}>
+            <div role="tablist" className="flex shrink-0 items-center gap-4 overflow-x-auto border-b border-border px-5 pt-3">
+              <button className="btn btn-ghost btn-sm mb-1 lg:hidden" onClick={() => setEnFicha(false)}>
+                <ArrowLeft size={14} />
+                Paso
               </button>
+              {pestanas.map((p) => (
+                <button
+                  key={p.ref}
+                  role="tab"
+                  aria-selected={p.ref === actual.ref}
+                  onClick={() => setActiva(p.ref)}
+                  className={`t-body-m shrink-0 px-1 pb-2 font-medium ${
+                    p.ref === actual.ref ? "border-b-2 border-brand-500 text-text-brand" : "text-text-tertiary"
+                  }`}
+                >
+                  {p.etiqueta}
+                </button>
+              ))}
+            </div>
+            {pestanas.map((p) => (
+              <div key={p.ref} role="tabpanel" aria-label={p.etiqueta} hidden={p.ref !== actual.ref} className="min-h-0 flex-1 overflow-y-auto p-5">
+                {p.ficha}
+              </div>
             ))}
           </div>
         )}
-
-        <Menciones menciones={menciones} />
-
-        <div className="border-t border-border pt-4">
-          <p className="t-label mb-2">Notas del paso</p>
-          <NotasSection hiloId={hilo.id} tareaId={paso.id} notas={notas} />
-        </div>
-
-        <Historial ediciones={ediciones} />
       </div>
 
       {dialogo === "editar" && <PasoFormPanel modo={{ tipo: "editar", paso }} yo={yo} onClose={() => setDialogo(null)} />}

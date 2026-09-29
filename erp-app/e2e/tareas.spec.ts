@@ -88,6 +88,13 @@ test("Juan la usa sobre su obra y el paso sin arquitecto no entra", async ({ bro
   const paso = panel(page);
   await expect(paso).toContainText("Se completa sola");
   await expect(paso).toContainText("Al vincular arquitecto");
+  // La obra del hilo es la primera pestaña, con su ficha entera; `{@registro}`
+  // en el texto no suma otra y su ↗ la activa sin salir del paso.
+  await expect(paso.getByRole("tab", { name: obra })).toHaveAttribute("aria-selected", "true");
+  await expect(paso.getByRole("tab")).toHaveCount(1);
+  await expect(paso.getByRole("tabpanel", { name: obra }).getByRole("heading", { name: obra })).toBeVisible();
+  await paso.getByRole("button", { name: `${obra} ↗` }).click();
+  await expect(page).toHaveURL(/\/tareas\/[0-9a-f-]{36}\?paso=[0-9a-f-]{36}$/);
   await expect(paso.getByRole("link", { name: "Vincular arquitecto ↗" })).toHaveAttribute(
     "href",
     /\/obras\/[0-9a-f-]{36}\?vincular=arquitecto$/

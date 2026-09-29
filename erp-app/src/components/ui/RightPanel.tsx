@@ -15,6 +15,7 @@ export function RightPanel({
   onClose,
   footer,
   hayCambios,
+  ancho,
   children,
 }: {
   title: string;
@@ -25,6 +26,8 @@ export function RightPanel({
   // click al costado no puede borrar un formulario a medio llenar. El submit
   // llama `onClose` directo y no pasa por acá.
   hayCambios?: boolean;
+  // Con contenido al lado (las fichas de un paso de Tareas): dos columnas.
+  ancho?: boolean;
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -52,7 +55,7 @@ export function RightPanel({
         }}
         className="fixed inset-0 m-0 h-full max-h-none w-full max-w-none justify-end overflow-hidden border-0 bg-transparent p-0 backdrop:bg-[rgba(7,11,20,.55)] open:flex"
       >
-        <div className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-bg-surface shadow-lg">
+        <div className={`relative flex h-full w-full ${ancho ? "max-w-6xl" : "max-w-md"} flex-col border-l border-border bg-bg-surface shadow-lg`}>
           <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
             <div>
               <h2 className="t-h3">{title}</h2>

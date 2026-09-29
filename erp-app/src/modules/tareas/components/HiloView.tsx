@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Archive, ArchiveRestore, ArrowLeftRight, CheckCircle2, ClipboardList, ChevronRight, Pencil, Plus, Repeat, RotateCcw, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
@@ -19,12 +20,13 @@ import { HiloFormPanel } from "./HiloFormPanel";
 import { CerrarHiloModal, TransferirModal } from "./HiloModales";
 import { NotasSection } from "./NotasSection";
 import { PasoFormPanel } from "./PasoFormPanel";
-import { PasoPanel } from "./PasoPanel";
+import { PasoPanel, type Pestana } from "./PasoPanel";
 import { UsarPlantillaPanel } from "./UsarPlantillaPanel";
 
 type Dialogo = "sumar" | "plantilla" | "editar" | "transferir" | "cerrar" | "desactivar";
 
-type Props = HiloCompleto & { ctx: TareasCtx; pasoAbierto: string | null; plantillas: PlantillaCompleta[] };
+// `pestanas`: las fichas del paso de `?paso=`, que arma el servidor (registro.md).
+type Props = HiloCompleto & { ctx: TareasCtx; pasoAbierto: string | null; pestanas: Pestana[]; plantillas: PlantillaCompleta[] };
 
 export function HiloView(props: Props) {
   return (
@@ -34,8 +36,10 @@ export function HiloView(props: Props) {
   );
 }
 
-function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, ctx, pasoAbierto, plantillas }: Props) {
+function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, ctx, pasoAbierto, pestanas, plantillas }: Props) {
   const nombre = useNombre();
+  const router = useRouter();
+  const pathname = usePathname();
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
   const [abierto, setAbierto] = useState<string | null>(pasoAbierto);
   const hoy = hoyISO();
@@ -52,6 +56,12 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
   const participo = activos.some((p) => p.asignado_id === ctx.yo);
   const recurrencia = textoRecurrencia(hilo.recurrencia_cantidad, hilo.recurrencia_unidad);
   const pasoSeleccionado = pasos.find((p) => p.id === abierto);
+
+  // Abre al instante; `?paso=` trae del servidor las fichas y el panel se ensancha.
+  function abrir(id: string | null) {
+    setAbierto(id);
+    router.replace(id ? `${pathname}?paso=${id}` : pathname, { scroll: false });
+  }
 
   async function correr(accion: (id: string) => Promise<{ success: boolean; error?: string }>, ok: string) {
     const result = await accion(hilo.id);
@@ -79,7 +89,7 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
     return (
       <button
         key={p.id}
-        onClick={() => setAbierto(p.id)}
+        onClick={() => abrir(p.id)}
         className={`flex w-full items-center gap-3 border-b border-border row text-left last:border-b-0 hover:bg-bg-subtle ${
           p.paso_anterior_id && porId.has(p.paso_anterior_id) ? "pl-10" : ""
         }`}
@@ -197,7 +207,8 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
           enlaces={enlaces}
           menciones={menciones.filter((m) => m.destino === pasoSeleccionado.id)}
           sobre={sobre}
-          onClose={() => setAbierto(null)}
+          pestanas={pasoSeleccionado.id === pasoAbierto ? pestanas : []}
+          onClose={() => abrir(null)}
         />
       )}
       {dialogo === "sumar" && (

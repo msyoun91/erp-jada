@@ -30,7 +30,8 @@ Equipo (`/tareas/equipo`), Plantillas (`/tareas/plantillas`, con "Usar plantilla
 Todas (`/tareas/todas`) hechas. Las referencias `{ente:uuid|nombre}` son link ↗ si quien lee las
 abre (`getEnlaces`) y navegan a la ficha. Fichas al lado (diseño en `decisiones/tareas/registro.md`),
 en tres pantallas: (1) la del registro del hilo en su página — hecha (2026-09-29; `e2e/tareas.spec.ts`);
-(2) pestañas en el panel del paso ensanchado, que llegan por `?paso=` y el ↗ activa la suya; (3) el
+(2) pestañas en el panel del paso ensanchado, que llegan por `?paso=` y el ↗ activa la suya — hecha
+(2026-09-29; `e2e/tareas.spec.ts`); (3) el
 link de acción abre su panel dentro de la pestaña.
 
 Ficha: `decisiones/tareas/README.md`; esquema: `db_schema/tareas.md`.

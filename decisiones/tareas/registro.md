@@ -79,6 +79,13 @@ por el top layer del `<dialog>`. Descartado: que el paso reemplace la columna iz
 por módulo, con sus permisos. Null es "no la ve": la página hace `notFound` y Tareas no la muestra.
 Archivos: `fichas.tsx`, `tareas/[id]/page.tsx`.
 
+**Abrir un paso pasa por `?paso=` y el servidor arma solo sus fichas (2026-09-29).** El panel abre
+al instante, angosto, y se ensancha cuando llegan las pestañas. Descartado armar de entrada las
+fichas de todo lo que mencionan los pasos: la carga del hilo crecería sin límite. La pestaña lleva el
+nombre copiado en el texto, como el ↗; el registro del hilo, su etiqueta. Archivos:
+`tareas/[id]/page.tsx`, `HiloView.tsx`, `PasoPanel.tsx` (`Pestana`), `TextoConReferencias.tsx`,
+`RightPanel.tsx` (`ancho`).
+
 **Los links de la ficha en la pestaña navegan fuera, como en su página (2026-09-26).** Clic en un
 registro de la ficha (un contacto, una tarea) va a su página y cierra el panel; "atrás" vuelve al
 hilo con el paso abierto por `?paso={id}`. La ficha no sabe dónde está montada, y las pestañas quedan

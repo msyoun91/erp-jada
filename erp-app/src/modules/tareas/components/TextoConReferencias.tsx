@@ -3,15 +3,20 @@ import { ACCION, REFERENCIA } from "../derivados";
 
 // Se lee como el nombre que vio quien lo escribió: link ↗ si quien lee lo
 // puede abrir (`enlaces`, de `getEnlaces`), texto plano si no. `{@accion|…}`
-// va a `accion` (`hrefAccion`); sin él, texto plano.
+// va a `accion` (`hrefAccion`); sin él, texto plano. Una referencia con
+// pestaña al lado (`pestanas`) la activa en vez de navegar.
 export function TextoConReferencias({
   texto,
   enlaces,
   accion = null,
+  pestanas = [],
+  onPestana,
 }: {
   texto: string;
   enlaces: Record<string, string>;
   accion?: string | null;
+  pestanas?: string[];
+  onPestana?: (ref: string) => void;
 }) {
   const salida = [];
   const trozos = texto.split(ACCION);
@@ -35,9 +40,14 @@ export function TextoConReferencias({
       salida.push(partes[i]);
       if (i + 3 >= partes.length) break;
       const [ente, id, nombre] = partes.slice(i + 1, i + 4);
-      const href = enlaces[`${ente}:${id}`];
+      const ref = `${ente}:${id}`;
+      const href = enlaces[ref];
       salida.push(
-        href ? (
+        onPestana && pestanas.includes(ref) ? (
+          <button key={`${j}-${i}`} type="button" onClick={() => onPestana(ref)} className="font-semibold text-text-brand hover:underline">
+            {nombre} ↗
+          </button>
+        ) : href ? (
           <Link key={`${j}-${i}`} href={href} className="font-semibold text-text-brand hover:underline">
             {nombre} ↗
           </Link>
