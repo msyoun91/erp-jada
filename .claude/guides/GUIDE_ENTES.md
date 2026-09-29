@@ -172,7 +172,7 @@ Cada una ramifica por `entes.modulo` (`CASE` / `IF`) y delega en una función de
 | `puede_compartir_registro(ente, id, usuario)` — DEFINER | `{modulo}_puede_compartir(tipo, id)` | Si quien llama (el dueño) puede dárselo a `usuario` |
 | `compartir_registros(selecciones)` — INVOKER | `{modulo}_compartir_registros(usuario, registros)` | Comparte. **Aditivo**: nunca revoca ni reordena cascadas |
 | `buscar_registros(modulo, texto)` — INVOKER | `{modulo}_buscar(texto)` | Lo que quien busca puede abrir, con `href` |
-| `relacionados_de_registro(ente, id)` — INVOKER | `{modulo}_relacionados_{ente}(id)` | `(ente, registro_id, rol)`: las propiedades relacionales |
+| `relacionados_de_registro(ente, id)` — INVOKER | `{modulo}_relacionados(ente, id)` del módulo de la **puente** (hoy Contactos) | `(ente, registro_id, rol)`: las propiedades relacionales |
 | `puede_ver_relacion(ente, id, ente_rel, id_rel)` — INVOKER | `{modulo}_puede_ver_relacion(tipo, id, ente_rel, id_rel)` | Si quien pregunta ve algún vínculo del par, activo o no: un EXISTS sobre la puente, que decide su RLS. Lo pide la RLS de `eventos` |
 
 La visibilidad por usuario explícito se escribe una vez: `{modulo}_puede_ver_{ente}_de(id, usuario)` es

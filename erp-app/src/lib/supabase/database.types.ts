@@ -562,6 +562,7 @@ export type Database = {
           created_at: string
           datos: string[]
           disparos: Database["public"]["Enums"]["tipo_evento"][]
+          dueno: string | null
           estados: unknown
           id: string
           modulo: string
@@ -577,6 +578,7 @@ export type Database = {
           created_at?: string
           datos?: string[]
           disparos?: Database["public"]["Enums"]["tipo_evento"][]
+          dueno?: string | null
           estados?: unknown
           id?: string
           modulo: string
@@ -592,6 +594,7 @@ export type Database = {
           created_at?: string
           datos?: string[]
           disparos?: Database["public"]["Enums"]["tipo_evento"][]
+          dueno?: string | null
           estados?: unknown
           id?: string
           modulo?: string
@@ -1989,6 +1992,14 @@ export type Database = {
         Args: { p_persona: string }
         Returns: undefined
       }
+      contactos_relacionados: {
+        Args: { p_ente: string; p_id: string }
+        Returns: {
+          ente: string
+          registro_id: string
+          rol: string
+        }[]
+      }
       contactos_resolver: {
         Args: {
           p_decision: string
@@ -2051,6 +2062,10 @@ export type Database = {
       equipo_de: { Args: { p_usuario: string }; Returns: string }
       etiqueta_registro: {
         Args: { p_ente: string; p_id: string }
+        Returns: string
+      }
+      etiqueta_registro_de: {
+        Args: { p_ente: string; p_id: string; p_usuario: string }
         Returns: string
       }
       fijar_delegables: {
@@ -2275,6 +2290,22 @@ export type Database = {
           p_saliente: string
         }
         Returns: undefined
+      }
+      relacionados_de_registro: {
+        Args: { p_ente: string; p_id: string }
+        Returns: {
+          ente: string
+          registro_id: string
+          rol: string
+        }[]
+      }
+      relacionados_de_registro_de: {
+        Args: { p_ente: string; p_id: string; p_usuario: string }
+        Returns: {
+          ente: string
+          registro_id: string
+          rol: string
+        }[]
       }
       registro_congelado: {
         Args: { p_ente: string; p_id: string }

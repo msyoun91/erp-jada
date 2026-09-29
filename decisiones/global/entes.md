@@ -212,3 +212,15 @@ también en su policy de UPDATE. Sin `_de` por ahora: lo piden el disparo y la a
 congelada (tramo 3), y entra junto con `etiqueta_registro_de`.
 
 Archivos: `.claude/guides/GUIDE_ENTES.md` §2.6, `decisiones/contactos.md`, `decisiones/obras.md`.
+
+## `relacionados_de_registro` ramifica por el módulo de la puente (2026-09-29, `sql/148`)
+
+**La rama la pone el módulo que guarda el vínculo con rol, no el del registro.** Los roles de una obra
+viven en `contactos_vinculos`, y cualquier ente con `roles` se relaciona igual: la genérica devuelve
+`contactos_relacionados(ente, id)` para todo registro, como `puede_ver_relacion` ya contesta por
+Contactos. La forma `{modulo}_relacionados_{ente}` de la guía obligaba a Obras a leer la puente ajena.
+Un segundo módulo con puente con rol suma un `UNION ALL`. Con el disparo entran las `_de` por usuario
+(`etiqueta_registro_de`, `relacionados_de_registro_de`), DEFINER sin GRANT, sobre `puede_abrir_registro`,
+que suma la rama `tareas`.
+
+Archivos: `sql/148_entes_dueno_de.sql`, `sql/tests/entes_dueno_de.sql`, `db_schema/core.md`.
