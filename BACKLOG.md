@@ -6,147 +6,19 @@ y la entrada se borra de este archivo.
 
 ---
 
-## tareas — el SQL del módulo, en curso
+## Contactos y Obras — lo que quedó afuera de los tramos
 
-`sql/112` (esquema, catálogo, entes, visibilidad) y `sql/113` (escrituras y reglas: quién escribe
-qué, transiciones, pedidos, cadena, cierre, desactivación, notas e historial) aplicados el
-2026-09-24; `sql/tests/tareas_reglas.sql` pasa entero. `sql/114` (bajas y cambios de equipo)
-aplicado; `sql/tests/tareas_bajas.sql` pasa entero. `sql/115` (avisos) aplicado;
-`sql/tests/tareas_avisos.sql` pasa entero. `sql/116` (`tareas_asignables`) aplicado;
-`sql/tests/tareas_asignables.sql` pasa entero. `sql/117` (recurrencia y "paso a reasignar")
-aplicado; `sql/tests/tareas_recurrencia.sql` pasa entero. `sql/118` (plantillas y Catálogo)
-aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/119` (vínculos y referencias en la
-descripción) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. `sql/120` (`tareas_nombres`)
-aplicado; `sql/tests/tareas_nombres.sql` pasa entero. `sql/122` (vínculos siguen al `activo` del
-paso) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. `sql/123` (sin referencias fijas en
-plantillas) aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/124` (`buscar_registros`,
-"Relacionar") aplicado; `sql/tests/tareas_buscar.sql` pasa entero. Falta:
-- ~~Con el primer emisor (obras), todo junto~~ → SQL hecho (`sql/148`–`sql/153`, 2026-09-29;
-  `db_schema/tareas.md` → *Plantillas*, `decisiones/tareas/catalogo.md`). Pantallas hechas, con el
-  link de acción `{@accion|texto}` (`sql/154`, 2026-09-29; `catalogo.md` → *El link de acción*).
+Los cinco tramos están cerrados (estado y tests en el encabezado de `decisiones/obras.md`). Quedan:
+- **Sin función que los respalde:** vincular a una obra desde la ficha de la persona o la empresa
+  (buscar "obras que trabajás", `decisiones/contactos.md` → *Vincular*), y crear la empresa desde
+  "Sumar empresa" o la persona desde "Sumar persona" (hoy, solo existentes: crear y relacionar en un
+  paso pide una función, como `contactos_crear_y_vincular`).
+- **Sin probar en el navegador:** elegir entre dos comisiones al fusionar (lo cubre
+  `sql/tests/contactos_fusionar.sql`).
 
-UI: vistas Hilos (`/tareas`, `/tareas/{id}`, `/tareas/paso/{id}`), Misión (`/tareas/mision`),
-Equipo (`/tareas/equipo`), Plantillas (`/tareas/plantillas`, con "Usar plantilla" desde el hilo) y
-Todas (`/tareas/todas`) hechas. Las referencias `{ente:uuid|nombre}` son link ↗ si quien lee las
-abre (`getEnlaces`) y navegan a la ficha. Fichas al lado hechas (2026-09-29; `decisiones/tareas/registro.md`,
-`e2e/tareas.spec.ts`): pestañas en el panel del paso —el registro del hilo primero— y el link de
-acción dentro de la pestaña. El hilo va a todo el ancho, sin ficha al lado.
+## Módulos que siguen
 
-Ficha: `decisiones/tareas/README.md`; esquema: `db_schema/tareas.md`.
-
-## tareas — hallazgos de la prueba con dos usuarios (2026-09-24)
-
-Prueba en Chrome con Admin (independiente, `tareas_administrar`) y Tester (independiente, con
-`tareas_ver`, `tareas_mision`, `tareas_plantillas`, `tareas_pedir`). Todo lo demás del módulo pasó:
-cadena, plazo relativo, insertar antes, pedidos (solicitar → aceptar → editar vuelve a
-`solicitada` → rechazar → volver a pedir), devolver, reasignar, espera, cancelar, desactivar,
-transferir, cerrar/reabrir, reabrir en cascada, plantillas y Catálogo, Todas y los 13 avisos.
-Datos de prueba que quedaron en la base para reproducir: hilos "Cocina Pérez — presupuesto",
-"Cocina Pérez — compra e instalación", "Instalador para cocina Pérez", "Visita técnica — Gómez"
-(Tester) y "Prueba de hilo" (solo Admin); plantilla "Visita técnica" publicada por Tester y su
-copia en Admin. Antes de tocar cada punto, contrastar contra las personas de la ficha
-(`decisiones/tareas/README.md`).
-
-**8. Equipos en plantillas: falta el dato de prueba, no código.** `asignado_equipo_id` en
-`tareas_plantillas_pasos` (`sql/118`) y el grupo "Equipos" en `AsignadoSelect` ya existen, pero solo
-listan equipos con delegador activo, y el único de la base ("Prueba") está inactivo y sin miembros.
-Para probar: un equipo activo con delegador.
-
-## Contactos y Obras — tramo 1 hecho y probado (2026-09-28)
-
-`decisiones/contactos.md` y `decisiones/obras.md`, aprobadas el 2026-09-25. Tramo 1, SQL aplicado el
-2026-09-26: `sql/125` (core: `entes.roles`, `trabaja_registro`, `puede_abrir_registro`, emisores),
-`sql/126` (obras), `sql/127` (contactos), `sql/128` (buscar o crear, `obras_alta`) y `sql/129`
-(desactivar vínculos por función). Pasan enteros `sql/tests/entes_eventos.sql`, `obras_reglas.sql`,
-`contactos_reglas.sql` y `obras_alta.sql`, y la regresión de Tareas y Usuarios. Esquema:
-`db_schema/obras.md`, `db_schema/contactos.md`. Capa TypeScript hecha el 2026-09-28 (`types.ts`,
-`permissions.ts`, `queries.ts`, `actions.ts` de los dos módulos, `lib/entes.ts`, `lib/validacion.ts`),
-con `sql/130` (nombres y candidatos) y `sql/131` (`obras_a_cargo`). Pantallas escritas el 2026-09-28:
-`/obras` (lista, Todas, ficha con estado, transferir y participantes; alta con "¿Quién?"),
-`/contactos` (personas, empresas y sus fichas, "Ver contacto", historial) y el panel de vincular en la
-ficha de la obra. Probado con `e2e/obras.spec.ts` ("Juan carga Torre Belgrano…": Tester carga y trabaja,
-Admin la ve). "Laura la ve sin tocar nada" probada en `e2e/obras.spec.ts` (2026-09-29; Laura = Tester 2,
-con `E2E_TESTER2_*` en `.env.test`). Tramo 2 en SQL, aplicado el 2026-09-28: `sql/132` (tipos de
-campanita), `sql/133` (bajas, cambios de equipo, huérfanas; `asignar_equipo` con `p_agenda_al_jefe`),
-`sql/134` (campanitas y `notificaciones_listar`), `sql/135`–`136` (permisos de `service_role` para la
-entrega de la agenda). Pasan `obras_contactos_bajas.sql`, `obras_contactos_avisos.sql` y la regresión.
-Pantallas del tramo 2: hecho el filtro "huérfanas" en Obras Todas (y "De {quien}" desde el aviso,
-`?responsable=`), y en Personas y Empresas (asignar o cambiar el equipo de la empresa desde su ficha,
-admin), y la casilla "su agenda pasa al jefe" en Usuarios al sacar del equipo o sumar a otro
-(marcada por defecto). Probado con `e2e/obras.spec.ts` ("Juan se va…": el admin arma, si no está,
-"Equipo Zqx pruebas" con Tester 2 de jefe comercial —delegador, con «Hilos» y "Jefe de equipo"—, saca a
-Tester y su obra y su persona pasan a Tester 2). Tramo 2 cerrado. Tramo 3 (duplicados): decisiones cerradas el 2026-09-28 (qué es parecida, `congelada` + `congelada_antes` + `rechazo_motivo` en la fila, `contactos_vinculos_guardados` que autoriza el vínculo a nombre de quien cargó, "ver todo" incluye congeladas — `decisiones/obras.md` → *Altas parecidas*, `decisiones/contactos.md` → *Vincular*); SQL aplicado el 2026-09-28: `sql/137`–`sql/139`, probado con `sql/tests/duplicados.sql` (82/82) y la regresión de obras y contactos. Pantallas del tramo 3 hechas el 2026-09-28 (Por aprobar en Obras y Contactos, aviso a ciegas en altas, ediciones, vincular y "¿Quién?", marca "por aprobar" en las listas y aviso en la ficha; `obras_aprobar` / `contactos_aprobar` ya salen en Usuarios): probadas el 2026-09-28 con `e2e/duplicados.spec.ts` (el Admin recibe "Aprobar altas" de Obras y Contactos; Tester carga tres obras parecidas y una persona parecida, con el aviso a ciegas y en vivo en "¿Quién?"; el Admin aprueba, rechaza con motivo y resuelve "es la misma", con el referente guardado llegando a la existente). Aviso a ciegas también para la empresa nueva desde el campo empresa de una persona (2026-09-28, `VincularPanel.tsx`; probado en `e2e/duplicados.spec.ts`). Compartir empresa en SQL, aplicado el 2026-09-28: `sql/140` (`contactos_empresa_equipos`, `contactos_compartir_empresa`, y "es de mi equipo" en una sola función), probado con `sql/tests/contactos_compartir.sql` (34/34) y la regresión (`contactos_reglas.sql` 94/94). `sql/141` (2026-09-28): el aviso a ciegas ordena por parecido, así la igual no queda afuera del corte en 10; `duplicados.sql` 87/87. Pantalla de compartir empresa hecha el 2026-09-28: en la ficha, "Compartir con otro equipo" (su equipo o el admin) y "Compartida con" con la cruz para dejar de compartir; la compartida sale en la lista del otro equipo como "Compartida por {equipo}". Los equipos para compartir y para "Cambiar equipo" salen de `contactos_equipos()`. Probada con `e2e/contactos.spec.ts` (el admin pasa Caputo a "Equipo Zqx pruebas" y la comparte con "Equipo Zqx sur", donde suma a Tester, que la ve marcada y sin "Compartir"; al dejar de compartir, deja de verla; Tester sale de Sur al final). Además, `e2e/obras.spec.ts` (tramos 1 y 2) adaptado: lo que carga se parece a lo de corridas anteriores, así que hace "Crear igual" y el Admin aprueba lo de la corrida antes de seguir (`e2e/comun.ts`). **Tramo 3 cerrado (2026-09-28).** Quedan para después, sin función que los respalde: vincular a una
-obra desde la ficha de la persona o la empresa (buscar "obras que trabajás"), y crear la empresa desde
-"Sumar empresa" o la persona desde "Sumar persona" (hoy, solo existentes: crear y relacionar en un
-paso pide una función, como `contactos_crear_y_vincular`). Orden de
-módulos: Contactos y Obras → Catálogo → Presupuestos → Post-venta.
-
-Para las pantallas: `contactos_personas` no tiene `select *` (teléfono y email fuera del GRANT);
-transferir, desactivar (obra, persona, empresa, vínculo, persona ↔ empresa) van por sus funciones
-DEFINER, no por UPDATE.
-
-**Contactos y Obras van juntos, en tramos (2026-09-26).** Como Tareas: una migración por tema, cada
-una con su test en `sql/tests/` y sus pantallas, y el primer tramo ya usable. Juntos porque un vínculo
-no se prueba sin una obra a la que vincularlo.
-1. **Lo básico** — persona, empresa, obra, vínculos, participantes; "lo ve" y "lo trabaja"; estados con
-   motivo de pérdida y reversión; "Ver contacto" que registra (sacar el teléfono del SELECT después
-   obliga a revisar cada pantalla que ya lo lee); historial de ediciones; transferir y desactivar;
-   buscar o crear en el panel; "¿Quién?" en el alta. Prueba: Juan carga Torre Belgrano con Marta de
-   referente, suma a Pedro, y Laura la ve sin tocar nada.
-2. **Bajas** — bajas y cambios de equipo (obras y agenda), huérfanas, campanitas. Prueba: Juan se va y
-   sus obras y su agenda llegan al jefe.
-3. **Duplicados** — congelado de obra, persona y empresa, editar que congela, "Por aprobar", vínculos
-   guardados, "es la misma", compartir empresa. Prueba: Pedro carga la Belgrano de Juan y el aprobador
-   la resuelve.
-4. **El resto** — comisión, widget de números, Auditoría, fusionar (razones sociales, descartadas el 2026-09-28).
-   Decisiones cerradas el 2026-09-28: moneda y reemplazo de la comisión, período del widget
-   (`decisiones/obras.md`); Auditoría, fusionar con comisión, congeladas y links viejos
-   (`decisiones/contactos.md`). SQL aplicado el 2026-09-28: `sql/142` (comisión), `sql/143`
-   (números), `sql/144` (Auditoría), `sql/145`–`146` (fusionar), cada una con su test. Pantallas: la
-   comisión, en la fila del referente, el widget "Obras" y la vista Auditoría (2026-09-28; probada con
-   `e2e/contactos.spec.ts`), y la pantalla de fusionar con
-   "Se fusionó con …" en la ficha vieja (2026-09-28; probada con `e2e/contactos.spec.ts`: el admin
-   fusiona las dos Marta de Juan). Sin probar en el navegador: elegir entre dos comisiones (lo cubre
-   `sql/tests/contactos_fusionar.sql`). Cierre (2026-09-29): una fusionada no se reactiva
-   (`sql/147`, CO031; `contactos_fusionar.sql` 36/36, `contactos_reglas.sql` 94/94),
-   y la campanita dice "**Marta Gómez** se fusionó con la de Juan". **Tramo 4 cerrado.**
-5. **Tareas** — el paquete "con el primer emisor" (arriba): plantillas por estado, pasos que se
-   completan solos. Prueba: el paso "vincular arquitecto" se cierra solo.
-   Decisiones cerradas el 2026-09-29 (`decisiones/tareas/catalogo.md`): la activación va en columnas
-   de la plantilla, las marcas de rol no llevan ente (`{@arquitecto}`), y con "Sobre", usarla a mano
-   vale igual que el disparo. SQL, en este orden, cada uno con su test: core (`entes.dueno`,
-   `etiqueta_registro_de`, `relacionados_de_registro[_de]` con la rama de Contactos) → plantilla con
-   "Sobre", disparo, condición y "se completa cuando", y el hilo con registro y plantilla →
-   `usar_plantilla` con registro (`{dato}`, `{@…}`, `{si hay}`, pasos condicionados) →
-   `disparar_plantillas` y los dos avisos → pasos que se completan solos.
-   Hecho: core (`sql/148`; `sql/tests/entes_dueno_de.sql` pasa entero) y la plantilla con "Sobre",
-   disparo, condición y "se completa cuando", y el hilo con registro y plantilla (`sql/149`;
-   `sql/tests/tareas_plantillas_sobre.sql` pasa entero), y `usar_plantilla` con registro sobre la
-   interna `tareas_usar_plantilla_de(..., registro, usuario)`, con las marcas validadas al guardar
-   (`sql/150`; `sql/tests/tareas_usar_plantilla_registro.sql` pasa entero), y `disparar_plantillas`
-   con sus dos avisos y la baja que apaga los disparos (`sql/151`–`sql/152`, 2026-09-29;
-   `sql/tests/tareas_disparar_plantillas.sql` 43/43, regresión `tareas_avisos` 87/87,
-   `tareas_reglas` 110/110, `tareas_bajas` 58/58), y los pasos que se completan solos (`sql/153`;
-   `sql/tests/tareas_pasos_se_completan.sql` 41/41, regresión `tareas_reglas` 110/110,
-   `tareas_disparar_plantillas` 43/43, `tareas_recurrencia` 48/48, `tareas_usar_plantilla_registro`
-   44/44). **SQL del tramo 5 cerrado**; siguen las pantallas, de a una: (1) formulario de la plantilla con "Sobre",
-   disparo, "Entra" y "Se completa" — hecho (2026-09-29; `e2e/tareas.spec.ts`); (2) "Usar" pide el
-   registro y tacha los pasos que no entran — hecho (2026-09-29; `e2e/tareas.spec.ts`); (3) "Sobre: X ↗" en el hilo — hecho (2026-09-29; `e2e/tareas.spec.ts`); (4) "Se completa sola…" en el paso — hecho (2026-09-29; `e2e/tareas.spec.ts`); (5) la ficha de la obra
-   lista sus hilos — hecho (2026-09-29; `e2e/tareas.spec.ts`). **Tramo 5 cerrado.** La campanita ya
-   muestra los dos avisos nuevos.
-
-**Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Los nueve huecos, cerrados el
-2026-09-26 y escritos en `decisiones/contactos.md`, `decisiones/obras.md` y `GUIDE_ENTES.md` §2.6.
-
-**Segunda revisión (2026-09-26): Obras 8,5/10, Contactos 7,5/10.** Cinco puntos, de a uno:
-1. ~~Ver no es trabajar~~ — cerrado (`decisiones/global/entes.md`).
-2. ~~Para contar, sin nadie que cuente~~ — cerrado: widget "Obras" y `obras_numeros`
-   (`decisiones/obras.md`).
-3. ~~"Es la misma" y el referente del alta~~ — cerrado: el vínculo pasa a la existente
-   (`decisiones/obras.md`).
-4. ~~La misma empresa en dos equipos~~ — cerrado: se pide con un pedido de Tareas y el equipo dueño
-   la comparte (`decisiones/contactos.md`).
-5. ~~El SQL sin cortes~~ — cerrado: cinco tramos (arriba).
+Orden: Contactos y Obras → **Catálogo** → Presupuestos → Post-venta.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos.

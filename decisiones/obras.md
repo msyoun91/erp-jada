@@ -1,7 +1,10 @@
 # Decisiones — módulo obras
 
-> **Estado: ficha aprobada (2026-09-25), después de revisarla punto por punto con el usuario. Tramo 1
-> del SQL (`sql/126`, `sql/128`) aplicado el 2026-09-26; lo que sigue, en `BACKLOG.md`.** Rediseño desde cero: el usuario pidió no partir de lo que había en `master`. Los
+> **Estado: ficha aprobada (2026-09-25), después de revisarla punto por punto con el usuario. Los cinco
+> tramos (básico, bajas, duplicados, el resto y Tareas con el primer emisor), con SQL y pantallas, cerrados
+> entre el 2026-09-26 y el 2026-09-29 (`sql/125`–`sql/154`). Tests: `sql/tests/obras_*.sql`,
+> `contactos_*.sql`, `duplicados.sql`, `entes_*.sql` y `e2e/{obras,contactos,duplicados,tareas}.spec.ts`.
+> Lo que queda, en `BACKLOG.md`.** Rediseño desde cero: el usuario pidió no partir de lo que había en `master`. Los
 > contactos son de otro módulo: `decisiones/contactos.md`. Orden de construcción en `BACKLOG.md`.
 
 ## La obra es del equipo comercial (2026-09-25)

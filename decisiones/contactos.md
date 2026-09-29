@@ -1,9 +1,8 @@
 # Decisiones — módulo contactos
 
 > **Estado: ficha aprobada (2026-09-25), armada con el usuario junto con la de Obras
-> (`decisiones/obras.md`) y revisada punto por punto. Tramo 1 del SQL (`sql/127`, `sql/128`) aplicado
-> el 2026-09-26.** *Pendiente*, al pie, tiene solo lo que se decide al escribir el SQL de los tramos
-> que faltan.
+> (`decisiones/obras.md`) y revisada punto por punto. Los cinco tramos, cerrados el 2026-09-29 (estado y
+> tests en el encabezado de `decisiones/obras.md`); lo que queda, en `BACKLOG.md`.**
 
 ## Personas y empresas viven en su propio módulo, no en Obras (2026-09-25)
 

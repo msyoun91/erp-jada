@@ -123,3 +123,34 @@ test("Juan la usa sobre su obra y el paso sin arquitecto no entra", async ({ bro
   await expect(page).toHaveURL(/\/tareas\/[0-9a-f-]{36}$/);
   await ctx.close();
 });
+
+// Hallazgo 8: un paso de plantilla asignado a un equipo. "Equipo Zqx pruebas"
+// lo arma `obras.spec.ts`, con Tester 2 de delegador; Juan es independiente,
+// así que el paso llega como pedido a la bandeja del equipo.
+test("Juan pide un paso de plantilla a un equipo y le llega a su jefe", async ({ browser }) => {
+  const alEquipo = `Pedido al equipo ${marca}`;
+  const { ctx, page } = await como(browser, "tester");
+  await page.goto("/tareas/plantillas");
+  await page.getByRole("button", { name: "Nueva plantilla" }).click();
+  const form = panel(page);
+  await form.getByLabel("Nombre").fill(alEquipo);
+  await form.getByLabel("Título", { exact: true }).fill(`Medir ${marca}`);
+  await form.getByLabel("Asignado").selectOption({ label: "Equipo Zqx pruebas · pedido" });
+  await form.getByRole("button", { name: "Crear plantilla" }).click();
+  await expect(form).toBeHidden();
+
+  const card = page.locator("div.card").filter({ hasText: alEquipo });
+  await card.getByRole("button", { name: "Usar" }).click();
+  const usar = panel(page);
+  await expect(usar.getByText("Equipo Zqx pruebas", { exact: true })).toBeVisible();
+  await usar.getByRole("button", { name: "Crear hilo" }).click();
+  await expect(page).toHaveURL(/\/tareas\/[0-9a-f-]{36}$/);
+  await expect(page.getByText(`Medir ${marca}`)).toBeVisible();
+  await ctx.close();
+
+  const jefe = await como(browser, "tester2");
+  await jefe.page.goto("/tareas/equipo");
+  await jefe.page.getByRole("button", { name: /^Pedidos/ }).click();
+  await expect(jefe.page.getByText(`Medir ${marca}`)).toBeVisible();
+  await jefe.ctx.close();
+});
