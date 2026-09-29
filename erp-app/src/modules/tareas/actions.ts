@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { mensajeError } from "@/lib/utils";
 import { idSchema } from "@/lib/validacion";
 import {
+  buscarDeEnteSchema,
   buscarRegistrosSchema,
   cerrarHiloSchema,
   completarAjenoSchema,
@@ -20,8 +21,10 @@ import {
   plantillaSchema,
   reasignarSchema,
   rechazarSchema,
+  registroDeEnteSchema,
   transferirSchema,
   usarPlantillaSchema,
+  type BuscarDeEnteForm,
   type BuscarRegistrosForm,
   type CerrarHiloForm,
   type CompletarAjenoForm,
@@ -323,11 +326,17 @@ export async function copiarPlantilla(id: string) {
 export async function usarPlantilla(input: UsarPlantillaForm) {
   const parsed = usarPlantillaSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
-  const { plantilla_id, titulo, hilo_id, asignados } = parsed.data;
+  const { plantilla_id, titulo, hilo_id, registro_id, asignados } = parsed.data;
   const supabase = await createClient();
   const { data, error } = await supabase.rpc(
     "usar_plantilla",
-    argsRpc<"usar_plantilla">({ p_plantilla: plantilla_id, p_titulo: titulo, p_hilo: hilo_id, p_asignados: asignados })
+    argsRpc<"usar_plantilla">({
+      p_plantilla: plantilla_id,
+      p_titulo: titulo,
+      p_hilo: hilo_id,
+      p_asignados: asignados,
+      p_registro: registro_id,
+    })
   );
   if (error) return fallo(error);
   revalidatePath("/tareas", "layout");
@@ -375,4 +384,39 @@ export async function buscarRegistros(input: BuscarRegistrosForm) {
   });
   if (error) return fallo(error);
   return { success: true as const, registros: data };
+}
+
+// El registro de "Sobre" al usar una plantilla: el buscador del módulo del
+// ente, solo ese ente (lo que quien la usa ve).
+export async function buscarRegistrosDe(input: BuscarDeEnteForm) {
+  const parsed = buscarDeEnteSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data: ente, error: errorEnte } = await supabase
+    .from("entes")
+    .select("modulo")
+    .eq("codigo", parsed.data.ente)
+    .maybeSingle();
+  if (errorEnte) return fallo(errorEnte);
+  if (!ente) return { success: true as const, registros: [] };
+  const { data, error } = await supabase.rpc("buscar_registros", {
+    p_modulo: ente.modulo,
+    p_texto: parsed.data.texto,
+  });
+  if (error) return fallo(error);
+  return { success: true as const, registros: data.filter((r) => r.ente === parsed.data.ente) };
+}
+
+// Los roles abiertos del registro, para decir qué pasos no van a entrar: la
+// misma lectura que la condición de `usar_plantilla`.
+export async function rolesDeRegistro(ente: string, registroId: string) {
+  const parsed = registroDeEnteSchema.safeParse({ ente, registro_id: registroId });
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("relacionados_de_registro", {
+    p_ente: parsed.data.ente,
+    p_id: parsed.data.registro_id,
+  });
+  if (error) return fallo(error);
+  return { success: true as const, roles: [...new Set(data.map((r) => r.rol))] };
 }

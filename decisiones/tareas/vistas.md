@@ -59,6 +59,14 @@ salen de `entes` (`getEntesSobre`, la RLS recorta); los labels, de `lib/entes.ts
 ofrece solo los entes que la app sabe decir: obra, persona y empresa (hilo y paso, cuando tengan
 labels ahí). Archivos: `PlantillaFormPanel.tsx`, `etiquetas.ts`, `e2e/tareas.spec.ts`.
 
+**Usar una plantilla con "Sobre" pide el registro y tacha lo que no entra (2026-09-29).** Decisión
+del usuario. Un buscador de ese ente solo (`buscarRegistrosDe`: `buscar_registros` del módulo,
+filtrado por ente) y, sin elegir, no se crea. Elegido, los pasos cuya condición el registro no
+cumple salen tachados con el porqué ("No entra: la obra no tiene arquitecto"), leyendo sus roles con
+`relacionados_de_registro` —la misma lectura que `usar_plantilla`—; no se les pregunta asignado.
+"Se completa sola…" se muestra al crear un hilo, no al sumar a uno (puede no ser sobre ese
+registro). Archivos: `UsarPlantillaPanel.tsx`, `RegistroPicker.tsx`, `actions.ts`.
+
 ## Todas (2026-09-24)
 
 **Todas = todos los hilos, con filtro Huérfanos · Desactivados.** Huérfano (`esHuerfano`, con test):

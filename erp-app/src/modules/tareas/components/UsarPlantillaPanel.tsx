@@ -6,19 +6,23 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { usarPlantilla } from "../actions";
+import { ENTES, labelRol, type CodigoEnte } from "@/lib/entes";
+import { rolesDeRegistro, usarPlantilla } from "../actions";
 import { motivoRevisar } from "../derivados";
+import { textoCompleta } from "../etiquetas";
 import type { PlantillaCompleta } from "../queries";
-import { usarPlantillaSchema, type UsarPlantillaForm } from "../types";
+import { usarPlantillaSchema, type RegistroEncontrado, type UsarPlantillaForm } from "../types";
 import { AsignadoSelect } from "./AsignadoSelect";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { useNombre, useTareas } from "./contexto";
+import { RegistroPicker } from "./RegistroPicker";
 
 const FORM_ID = "usar-plantilla-form";
 
 // Pregunta por los pasos vacíos y los "a revisar", con quien la usa por
 // defecto; el resto lo resuelve `usar_plantilla` (catalogo.md → *El elegido
-// gana sobre el fijo*). Con `hiloId` suma los pasos a ese hilo.
+// gana sobre el fijo*). Con `hiloId` suma los pasos a ese hilo. Con "Sobre"
+// pide el registro y avisa qué pasos no entran por su condición.
 export function UsarPlantillaPanel({
   plantillas,
   hiloId,
@@ -32,6 +36,9 @@ export function UsarPlantillaPanel({
   const { yo, asignables, pedir } = useTareas();
   const nombre = useNombre();
   const [enviando, setEnviando] = useState(false);
+  const [registro, setRegistro] = useState<RegistroEncontrado | null>(null);
+  // Los roles abiertos del registro elegido; null mientras no hay o se leen.
+  const [roles, setRoles] = useState<string[] | null>(null);
 
   function aElegir(p: PlantillaCompleta | undefined) {
     const pasos = (p?.tareas_plantillas_pasos ?? []).filter(
@@ -53,11 +60,34 @@ export function UsarPlantillaPanel({
       plantilla_id: plantillas[0]?.id ?? "",
       titulo: "",
       hilo_id: hiloId ?? null,
+      registro_id: null,
       asignados: aElegir(plantillas[0]),
     },
   });
   const [plantillaId, asignados] = useWatch({ control, name: ["plantilla_id", "asignados"] });
   const plantilla = plantillas.find((p) => p.id === plantillaId);
+  const sobre = plantilla?.sobre ?? null;
+  const labels = sobre ? ENTES[sobre as CodigoEnte] : undefined;
+
+  async function elegirRegistro(r: RegistroEncontrado | null) {
+    setRegistro(r);
+    setRoles(null);
+    setValue("registro_id", r?.registro_id ?? null);
+    if (!r || !sobre) return;
+    const result = await rolesDeRegistro(sobre, r.registro_id);
+    if (!result.success) toast.error(result.error);
+    else setRoles(result.roles);
+  }
+
+  // Sin registro o sin sus roles todavía, no se sabe: se muestra como que entra.
+  function porQueNoEntra(condicion: string | null) {
+    if (!condicion || !sobre || !roles) return null;
+    const no = condicion.startsWith("!");
+    const rol = condicion.replace("!", "");
+    if (roles.includes(rol) !== no) return null;
+    const el = labels?.el ?? "el registro";
+    return `No entra: ${el} ${no ? "tiene" : "no tiene"} ${labelRol(sobre, rol).toLowerCase()}`;
+  }
 
   async function onSubmit(data: UsarPlantillaForm) {
     setEnviando(true);
@@ -83,7 +113,12 @@ export function UsarPlantillaPanel({
           <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={enviando}>
             Cancelar
           </button>
-          <button type="submit" form={FORM_ID} className="btn btn-primary btn-sm" disabled={enviando || !plantilla}>
+          <button
+            type="submit"
+            form={FORM_ID}
+            className="btn btn-primary btn-sm"
+            disabled={enviando || !plantilla || (sobre !== null && !registro)}
+          >
             {enviando ? "Guardando…" : hiloId ? "Sumar pasos" : "Crear hilo"}
           </button>
         </>
@@ -100,7 +135,10 @@ export function UsarPlantillaPanel({
               id="usar-plantilla"
               className="input"
               {...register("plantilla_id", {
-                onChange: (e) => setValue("asignados", aElegir(plantillas.find((p) => p.id === e.target.value))),
+                onChange: (e) => {
+                  setValue("asignados", aElegir(plantillas.find((p) => p.id === e.target.value)));
+                  elegirRegistro(null);
+                },
               })}
             >
               {plantillas.map((p) => (
@@ -123,6 +161,17 @@ export function UsarPlantillaPanel({
           </Campo>
         )}
 
+        {sobre && (
+          <Campo id="usar-registro" label={labels?.nombre ?? "Registro"} requerido>
+            <RegistroPicker
+              ente={sobre}
+              placeholder={`Buscar ${labels?.un ?? "el registro"}`}
+              elegido={registro}
+              onElegir={elegirRegistro}
+            />
+          </Campo>
+        )}
+
         {plantilla && (
           <div className="flex flex-col gap-3">
             <p className="t-label">Pasos</p>
@@ -130,11 +179,27 @@ export function UsarPlantillaPanel({
               const elegido = asignados?.[paso.id];
               const motivo = motivoRevisar(paso, asignables, pedir);
               const fijo = paso.asignado_id ?? paso.asignado_equipo_id;
+              const noEntra = porQueNoEntra(paso.condicion);
+              if (noEntra) {
+                return (
+                  <div key={paso.id} className="flex flex-col gap-1">
+                    <p className="t-body-m text-text-tertiary line-through">
+                      {i + 1}. {paso.titulo}
+                    </p>
+                    <p className="t-caption">{noEntra}</p>
+                  </div>
+                );
+              }
               return (
                 <div key={paso.id} className="flex flex-col gap-1">
                   <p className="t-body-m font-medium">
                     {i + 1}. {paso.titulo}
                   </p>
+                  {sobre && !hiloId && paso.completa_evento && paso.completa_valor && (
+                    <p className="t-caption">
+                      Se completa sola {textoCompleta(sobre, paso.completa_evento, paso.completa_valor).toLowerCase()}
+                    </p>
+                  )}
                   {elegido ? (
                     <>
                       <AsignadoSelect

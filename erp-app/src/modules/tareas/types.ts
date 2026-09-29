@@ -206,6 +206,8 @@ export const usarPlantillaSchema = z.object({
   plantilla_id: idSchema,
   titulo: textoOpcional(500),
   hilo_id: uuidOpcional,
+  // Con "Sobre", obligatorio: lo exige `usar_plantilla` (TA026).
+  registro_id: uuidOpcional,
   // paso de la plantilla → a quién, cuando se elige al usarla.
   asignados: z.record(
     idSchema,
@@ -219,4 +221,11 @@ export const buscarRegistrosSchema = z.object({
   texto: z.string().trim().min(2).max(200),
 });
 export type BuscarRegistrosForm = z.input<typeof buscarRegistrosSchema>;
+
+export const registroDeEnteSchema = z.object({ ente: z.string().min(1), registro_id: idSchema });
+export const buscarDeEnteSchema = z.object({
+  ente: z.string().min(1),
+  texto: z.string().trim().min(2).max(200),
+});
+export type BuscarDeEnteForm = z.input<typeof buscarDeEnteSchema>;
 export type RegistroEncontrado = Database["public"]["Functions"]["buscar_registros"]["Returns"][number];
