@@ -45,7 +45,8 @@ manuales y `disparar_plantillas` se conecta después.
 **`{dato}`, condiciones por rol y pasos condicionados llegan con el disparo (2026-09-24).** Leen un
 registro, y a mano no hay registro: `master` tampoco los usaba fuera de un disparo. `sql/118` guarda
 el texto tal cual; las columnas (`condicion`, datos) se suman con el primer emisor, junto con
-`disparar_plantillas` y las activaciones.
+`disparar_plantillas` y las activaciones. Con "Sobre", usarla a mano elige el registro, así que
+`{dato}`, condiciones y pasos que se completan solos valen igual a mano que en el disparo (2026-09-29).
 
 **La cadena de la plantilla es "espera al anterior" por paso (2026-09-24).** Un booleano sobre el
 orden arma exactamente lo que admite un hilo —cadenas sin bifurcar, en paralelo entre sí— sin ids
@@ -99,6 +100,14 @@ corre (la baja ya apaga sus activaciones). Transferido el registro, corren las d
   (`tareas_hilos_insert`) y TA021 medía lo que ve él. Supera `GUIDE_ENTES.md` §2.8;
   `emitir_evento` sigue INVOKER.
 
+**La activación va en la plantilla, sin tabla aparte (2026-09-29).** Decisión del usuario.
+`tareas_plantillas` suma `sobre` (ente, nullable), `disparo_evento` (`alta` | `estado`, uno de
+`entes.disparos` del ente de "Sobre"), `disparo_estado` (con `estado`) y `disparo_activo`. Un disparo
+por plantilla. La tabla de activaciones de `master` existía porque las plantillas se compartían y
+cada usuario prendía la suya. Hoy toda plantilla es personal (*Toda plantilla es personal*) y la
+activa solo su dueño. La copia del Catálogo trae evento y estado con `disparo_activo = false`. Si
+hace falta la *Puerta abierta* ("cualquier registro del ente"), es otro valor acá.
+
 **Un disparo no se repite por plantilla y registro (2026-09-24).** Si hay un hilo `activo` de esa
 plantilla sobre ese registro, no corre. Cerrado cuenta: no vuelve a crearse. Desactivado no cuenta.
 Chequeo en `disparar_plantillas`, no unique index: la recurrencia deja el cerrado y el siguiente
@@ -106,12 +115,20 @@ activos a la vez. Por plantilla y no por registro, para no bloquear plantillas d
 misma obra.
 
 **Referencias relativas, solo en plantillas (2026-09-24).** `{@registro}` (el de "Sobre"; en la
-UI, "El registro") y `{@ente:rol}` (quien tenga ese rol en él). Al usarla pasan a
+UI, "El registro") y `{@rol}` (quien tenga ese rol en él; *Marcas de rol sin ente*). Al usarla pasan a
 `{ente:uuid|nombre}`, la referencia de siempre. Rol vacío → desaparece (para la frase,
-`{si hay ente:rol}…{fin}` o paso condicionado); varios → todos, separados por coma. Cuenta lo que
+`{si hay rol}…{fin}` o paso condicionado); varios → todos, separados por coma. Cuenta lo que
 ve el dueño del hilo, no quien disparó: si no lo ve, desaparece sin nombre. El asignado que no lo
 ve lo lee en texto plano, como hoy. "Relacionar" en la plantilla ofrece solo estas: "El registro"
 y los roles del ente de "Sobre".
+
+**Marcas de rol sin ente: `{@arquitecto}`, no `{@persona:arquitecto}` (2026-09-29).** Decisión del
+usuario, al arrancar el tramo 5. En una obra, un rol lo puede tener una persona (Laura) o una empresa
+(un estudio): `contactos_vinculos` lleva una o la otra con los mismos `roles`. Con el ente adelante,
+`{@persona:arquitecto}` no encontraba al estudio y había que escribir las dos marcas. Los roles son
+los de `entes.roles` del ente de "Sobre", así que el rol solo alcanza para `{@rol}`,
+`{si hay rol}…{fin}` / `{si no hay rol}…{fin}`, la condición del paso (`rol` / `!rol`) y "vincular
+{rol}" (se completa con cualquier `relacion_alta` de ese rol, sea persona o empresa).
 
 **Sin referencias fijas `{ente:uuid|…}` en plantillas (2026-09-24).** Una plantilla es reusable y
 una referencia a un registro concreto casi nunca lo es; además, publicada, mostraba en el Catálogo

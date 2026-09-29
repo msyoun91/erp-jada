@@ -23,7 +23,7 @@ plantillas) aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/124` (
 "Relacionar") aplicado; `sql/tests/tareas_buscar.sql` pasa entero. Falta:
 - Con el primer emisor (obras), todo junto (decidido 2026-09-24, `decisiones/tareas/catalogo.md`
   desde *La plantilla dice "Sobre"*, y `avisos.md` → *Un disparo avisa una vez*): "Sobre" en la
-  plantilla, registro (ente e id) y plantilla de origen en el hilo, `{@registro}` y `{@ente:rol}`,
+  plantilla, registro (ente e id) y plantilla de origen en el hilo, `{@registro}` y `{@rol}`,
   activaciones y `disparar_plantillas`, `{dato}`, `{si hay}`, condiciones y pasos condicionados, los
   avisos "plantilla disparada" y "plantilla fallida". "Sobre" espera al disparo: existe para él, y
   con `hilo` como único ente se probaba contra el ente que no dispara. Al construir:
@@ -139,6 +139,13 @@ no se prueba sin una obra a la que vincularlo.
    y la campanita dice "**Marta Gómez** se fusionó con la de Juan". **Tramo 4 cerrado.**
 5. **Tareas** — el paquete "con el primer emisor" (arriba): plantillas por estado, pasos que se
    completan solos. Prueba: el paso "vincular arquitecto" se cierra solo.
+   Decisiones cerradas el 2026-09-29 (`decisiones/tareas/catalogo.md`): la activación va en columnas
+   de la plantilla, las marcas de rol no llevan ente (`{@arquitecto}`), y con "Sobre", usarla a mano
+   vale igual que el disparo. SQL, en este orden, cada uno con su test: core (`entes.dueno`,
+   `etiqueta_registro_de`, `relacionados_de_registro[_de]` con la rama de Contactos) → plantilla con
+   "Sobre", disparo, condición y "se completa cuando", y el hilo con registro y plantilla →
+   `usar_plantilla` con registro (`{dato}`, `{@…}`, `{si hay}`, pasos condicionados) →
+   `disparar_plantillas` y los dos avisos → pasos que se completan solos.
 
 **Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Los nueve huecos, cerrados el
 2026-09-26 y escritos en `decisiones/contactos.md`, `decisiones/obras.md` y `GUIDE_ENTES.md` §2.6.
