@@ -169,6 +169,11 @@ export const plantillaPasoSchema = z
   .refine((v) => (v.completa_evento === null) === (v.completa_valor === null), {
     message: "Elegí cuándo se completa",
     path: ["completa_evento"],
+  })
+  // Espeja `tareas_plantillas_paso_vale` (sql/154).
+  .refine((v) => v.completa_evento !== null || !v.descripcion?.includes("{@accion|"), {
+    message: "El link de acción pide \"Se completa\"",
+    path: ["descripcion"],
   });
 
 // Qué rol, estado o evento vale para cada ente lo dice la base

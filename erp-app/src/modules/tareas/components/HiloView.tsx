@@ -196,6 +196,7 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
           ediciones={ediciones.filter((e) => e.tarea_id === pasoSeleccionado.id)}
           enlaces={enlaces}
           menciones={menciones.filter((m) => m.destino === pasoSeleccionado.id)}
+          sobre={sobre}
           onClose={() => setAbierto(null)}
         />
       )}

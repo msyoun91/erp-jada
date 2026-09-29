@@ -52,3 +52,8 @@ export function textoCompleta(ente: string, evento: string, valor: string) {
     ? `Al pasar a ${labelEstado(ente, valor)}`
     : `Al vincular ${labelRol(ente, valor).toLowerCase()}`;
 }
+
+// El texto que propone el chip de `{@accion|…}`; quien arma la plantilla lo reescribe.
+export function textoAccion(ente: string, evento: string, valor: string) {
+  return evento === "estado" ? `Pasar a ${labelEstado(ente, valor)}` : `Vincular ${labelRol(ente, valor).toLowerCase()}`;
+}

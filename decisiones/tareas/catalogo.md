@@ -154,6 +154,18 @@ no tiene los labels de roles y estados, así que la pantalla muestra la condici�
 que no es sobre ese registro, la plantilla no copia la condición. Archivos: `sql/153`,
 `sql/tests/tareas_pasos_se_completan.sql`.
 
+**El link de acción es una marca de la descripción: `{@accion|texto}` (2026-09-29).** Decisión del
+usuario, sobre hacer link la fila "Se completa sola": quien arma la plantilla elige dónde va el link
+y con qué palabras. Vale solo en la descripción de un paso con "Se completa" (la acción sale de esa
+condición: `?vincular={rol}` o `?estado={valor}`), sin llaves adentro (TA024). La base no la
+resuelve y pasa tal cual al paso; la pantalla la vuelve link a la ficha del registro del hilo: con el
+panel abierto si quien lee trabaja el registro y el paso está abierto, a la ficha sola si lo ve sin
+trabajarlo o el paso ya cerró, y texto plano si no lo ve, si el paso no se completa solo (sumada a un
+hilo que no es sobre ese registro) y fuera del panel del paso (Misión). El formulario la ofrece como
+chip "Link de acción" con "Vincular {rol}" / "Pasar a {estado}". Archivos: `sql/154`,
+`sql/tests/tareas_marca_accion.sql`, `derivados.ts` (`hrefAccion`), `TextoConReferencias.tsx`,
+`PlantillaFormPanel.tsx`, `e2e/tareas.spec.ts`.
+
 **Un disparo no se repite por plantilla y registro (2026-09-24).** Si hay un hilo `activo` de esa
 plantilla sobre ese registro, no corre. Cerrado cuenta: no vuelve a crearse. Desactivado no cuenta.
 Chequeo en `disparar_plantillas`, no unique index: la recurrencia deja el cerrado y el siguiente

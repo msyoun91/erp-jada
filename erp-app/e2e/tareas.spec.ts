@@ -24,6 +24,8 @@ test("Juan arma una plantilla sobre la obra que corre sola", async ({ browser })
   await form.getByRole("button", { name: "+ Obra" }).click();
   await expect(form.getByLabel("Descripción").nth(1)).toHaveValue("{@registro}");
   await form.getByLabel("Se completa").selectOption({ label: "Al vincular arquitecto" });
+  await form.getByRole("group", { name: "Insertar en la descripción" }).first().getByRole("button", { name: "+ Link de acción" }).click();
+  await expect(form.getByLabel("Descripción").nth(1)).toHaveValue("{@registro} {@accion|Vincular arquitecto}");
 
   await form.getByRole("button", { name: "Sumar paso" }).click();
   await form.getByLabel("Título", { exact: true }).nth(1).fill("Coordinar con el arquitecto");
@@ -84,6 +86,10 @@ test("Juan la usa sobre su obra y el paso sin arquitecto no entra", async ({ bro
   const paso = panel(page);
   await expect(paso).toContainText("Se completa sola");
   await expect(paso).toContainText("Al vincular arquitecto");
+  await expect(paso.getByRole("link", { name: "Vincular arquitecto ↗" })).toHaveAttribute(
+    "href",
+    /\/obras\/[0-9a-f-]{36}\?vincular=arquitecto$/
+  );
   await paso.getByRole("button", { name: "Cerrar" }).click();
   await expect(paso).toBeHidden();
 

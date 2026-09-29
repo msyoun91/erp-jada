@@ -92,7 +92,7 @@ export type HiloCompleto = {
   ediciones: Edicion[];
   enlaces: Record<string, string>;
   menciones: Mencion[];
-  sobre: { etiqueta: string; href: string } | null;
+  sobre: { etiqueta: string; href: string; trabaja: boolean } | null;
 };
 
 // `destino`: el hilo o el paso mencionado; el resto, el paso que lo menciona.
@@ -121,17 +121,20 @@ async function getEnlaces(textos: (string | null)[]): Promise<Record<string, str
 }
 
 // El registro de "Sobre", si quien lee lo ve; si no, null y el encabezado no lo nombra.
+// `trabaja`: el link de acción abre el panel (`hrefAccion`).
 async function getSobre(hilo: Hilo): Promise<HiloCompleto["sobre"]> {
   if (!hilo.registro_ente || !hilo.registro_id) return null;
   const supabase = await createClient();
-  const [ente, etiqueta] = await Promise.all([
+  const [ente, etiqueta, trabaja] = await Promise.all([
     supabase.from("entes").select("ruta").eq("codigo", hilo.registro_ente).maybeSingle(),
     supabase.rpc("etiqueta_registro", { p_ente: hilo.registro_ente, p_id: hilo.registro_id }),
+    supabase.rpc("trabaja_registro", { p_ente: hilo.registro_ente, p_id: hilo.registro_id }),
   ]);
   if (ente.error) throw ente.error;
   if (etiqueta.error) throw etiqueta.error;
+  if (trabaja.error) throw trabaja.error;
   if (!ente.data || etiqueta.data === null) return null;
-  return { etiqueta: etiqueta.data, href: ente.data.ruta.replace("{id}", hilo.registro_id) };
+  return { etiqueta: etiqueta.data, href: ente.data.ruta.replace("{id}", hilo.registro_id), trabaja: trabaja.data };
 }
 
 // Pasos que mencionan al hilo o a uno de sus pasos. La RLS de `tareas_vinculos`

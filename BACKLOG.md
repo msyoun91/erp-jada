@@ -22,14 +22,8 @@ paso) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. `sql/123` (sin refe
 plantillas) aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/124` (`buscar_registros`,
 "Relacionar") aplicado; `sql/tests/tareas_buscar.sql` pasa entero. Falta:
 - ~~Con el primer emisor (obras), todo junto~~ → SQL hecho (`sql/148`–`sql/153`, 2026-09-29;
-  `db_schema/tareas.md` → *Plantillas*, `decisiones/tareas/catalogo.md`). Queda para las pantallas:
-  - **Pasos que se completan solos, en pantalla.** La base deja el resultado vacío: el paso muestra
-    su condición ("se completa cuando se vincula un arquitecto a la obra") con los labels de roles y
-    estados que ya tiene la app (`catalogo.md` → *Un paso se completa solo cuando el registro cumple*).
-    Link de acción: `{@accion|texto}` en la descripción de la plantilla, sacado de la condición; abre
-    la ficha del registro al lado con `?vincular={rol}` (panel de Contactos) o `?estado={valor}`.
-    Texto plano si el asignado no ve el registro; si lo ve sin trabajarlo, link común a la ficha, sin
-    `?vincular` ni `?estado` (`decisiones/global/entes.md` → *Ver un registro no es trabajarlo*).
+  `db_schema/tareas.md` → *Plantillas*, `decisiones/tareas/catalogo.md`). Pantallas hechas, con el
+  link de acción `{@accion|texto}` (`sql/154`, 2026-09-29; `catalogo.md` → *El link de acción*).
 
 UI: vistas Hilos (`/tareas`, `/tareas/{id}`, `/tareas/paso/{id}`), Misión (`/tareas/mision`),
 Equipo (`/tareas/equipo`), Plantillas (`/tareas/plantillas`, con "Usar plantilla" desde el hilo) y

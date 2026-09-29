@@ -233,6 +233,18 @@ SELECT pg_temp.caso('06 el hilo, sin registro', 'true',
 SELECT pg_temp.caso('06 el hilo es de V', 'true',
   (SELECT (responsable_id = pg_temp.id('V'))::text FROM tareas_hilos WHERE id = pg_temp.id('H3')));
 
+-- ============================================================
+-- 07. `{@accion|texto}` (sql/154): con "se completa cuando", llega tal cual
+-- ============================================================
+SELECT pg_temp.caso('07 sin "se completa cuando"', 'TA024',
+  pg_temp.guardar('PX', 'V', '[{"titulo":"x","descripcion":"{@accion|vinculá}"}]', '''obra'''));
+SELECT pg_temp.caso('07 V guarda PA', 'ok',
+  pg_temp.guardar('PA', 'V', $j$[{"titulo":"Decisor","completa_evento":"relacion_alta","completa_valor":"decisor",
+    "descripcion":"Llamá y {@accion|vinculá al decisor} de {nombre}"}]$j$, '''obra'''));
+SELECT pg_temp.caso('07 V usa PA sobre Belgrano', 'ok', pg_temp.usar('PA', 'V', 'Belgrano', 'H4'));
+SELECT pg_temp.caso('07 la marca queda en el paso', 'Llamá y {@accion|vinculá al decisor} de Belgrano',
+  pg_temp.descripcion('H4', 'Decisor'));
+
 DO $$
 DECLARE
   v_ok int;

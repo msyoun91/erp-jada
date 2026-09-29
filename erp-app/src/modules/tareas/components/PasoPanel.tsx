@@ -6,9 +6,9 @@ import { RightPanel } from "@/components/ui/RightPanel";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import { aceptarPaso, cancelarPaso, desactivarPaso, reabrirPaso, reactivarPaso, volverAPedir } from "../actions";
-import { estaAbierto, estaEnEspera, estaVencido, sinReferencias } from "../derivados";
+import { estaAbierto, estaEnEspera, estaVencido, hrefAccion, sinReferencias } from "../derivados";
 import { ESTADO_PASO, PRIORIDAD, textoCompleta, textoPlazoDias } from "../etiquetas";
-import type { Mencion } from "../queries";
+import type { HiloCompleto, Mencion } from "../queries";
 import type { Edicion, Hilo, Nota, Tarea } from "../types";
 import { useNombre, useTareas } from "./contexto";
 import { Historial } from "./Historial";
@@ -40,6 +40,7 @@ export function PasoPanel({
   ediciones,
   enlaces,
   menciones,
+  sobre,
   onClose,
 }: {
   hilo: Hilo;
@@ -51,6 +52,7 @@ export function PasoPanel({
   ediciones: Edicion[];
   enlaces: Record<string, string>;
   menciones: Mencion[];
+  sobre: HiloCompleto["sobre"];
   onClose: () => void;
 }) {
   const { yo, miEquipo, admin, delegador } = useTareas();
@@ -122,7 +124,7 @@ export function PasoPanel({
           {!paso.activo && <span className="badge badge-neutral">Desactivado</span>}
         </div>
 
-        {paso.descripcion && <TextoConReferencias texto={paso.descripcion} enlaces={enlaces} />}
+        {paso.descripcion && <TextoConReferencias texto={paso.descripcion} enlaces={enlaces} accion={hrefAccion(sobre, paso)} />}
 
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
           {datos.map(([k, v]) => (

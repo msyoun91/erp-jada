@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { ENTES, labelRol, type CodigoEnte } from "@/lib/entes";
 import { guardarPlantilla } from "../actions";
-import { nombreEnte, textoCompleta, textoCondicion, textoDisparo } from "../etiquetas";
+import { nombreEnte, textoAccion, textoCompleta, textoCondicion, textoDisparo } from "../etiquetas";
 import type { EnteSobre, PlantillaCompleta } from "../queries";
 import { plantillaSchema, type PlantillaForm } from "../types";
 import { AsignadoSelect } from "./AsignadoSelect";
@@ -300,6 +300,10 @@ export function PlantillaFormPanel({
                     { marca: "{@registro}", label: labels?.nombre ?? "El registro" },
                     ...roles.map((r) => ({ marca: `{@${r}}`, label: labelRol(sobre, r) })),
                     ...datos.map((d) => ({ marca: `{${d}}`, label: labels?.datos[d]?.label ?? d })),
+                    // Solo con "Se completa": el link sale de esa condición (sql/154).
+                    ...(paso?.completa_evento && paso.completa_valor
+                      ? [{ marca: `{@accion|${textoAccion(sobre, paso.completa_evento, paso.completa_valor)}}`, label: "Link de acción" }]
+                      : []),
                   ].map((c) => (
                     <button
                       key={c.marca}

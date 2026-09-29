@@ -284,7 +284,9 @@ descripcion)`, que usa `tareas_plantilla_vale(sobre, evento, valor)` (rol de `en
 `entes.estados`, `alta` sin valor) y `tareas_plantilla_marcas_valen(sobre, titulo, descripcion)`
 (`sql/150`): en el título solo `{dato}` (de `entes.datos`); en la descripción además `{@registro}`,
 `{@rol}` y `{si hay rol}…{fin}` / `{si no hay rol}…{fin}`, sin anidar. Una marca es `{…}` con
-minúsculas y `_` (`{@x}`, `{si [no ]hay x}`, `{fin}`); otras llaves son texto.
+minúsculas y `_` (`{@x}`, `{si [no ]hay x}`, `{fin}`); otras llaves son texto. `{@accion|texto}` (`sql/154`,
+en `tareas_plantillas_paso_vale`) vale solo en la descripción de un paso con `completa_evento`, sin
+llaves en el texto; no se resuelve: pasa tal cual al paso y la pantalla la hace link.
 
 RPC (INVOKER, GRANT `authenticated`; errores TA017 "no existe o no es tuya", TA020 sin pasos):
 - `guardar_plantilla(id, nombre, descripcion, pasos jsonb, sobre = NULL, disparo_evento = NULL,

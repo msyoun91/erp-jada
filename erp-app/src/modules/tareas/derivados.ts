@@ -114,7 +114,22 @@ export function motivoRevisar(
 // referencia y queda tal cual.
 export const REFERENCIA = /\{([a-z_]+):([0-9a-f-]{36})\|([^}]*)\}/g;
 
+// `{@accion|texto}` (sql/154): el link de acción del paso que se completa solo.
+export const ACCION = /\{@accion\|([^{}]+)\}/g;
+
 // Fuera de la descripción del paso el token no es referencia: queda su nombre, sin link.
 export function sinReferencias(texto: string): string {
-  return texto.replace(REFERENCIA, "$3");
+  return texto.replace(REFERENCIA, "$3").replace(ACCION, "$1");
+}
+
+// Adónde lleva `{@accion|…}`: sin registro visible, a ningún lado; si quien lee
+// lo ve sin trabajarlo o el paso ya cerró, a la ficha; si no, con el panel abierto.
+export function hrefAccion(
+  sobre: { href: string; trabaja: boolean } | null,
+  paso: { estado: EstadoTarea; completa_evento: string | null; completa_valor: string | null }
+): string | null {
+  if (!sobre || !paso.completa_evento || !paso.completa_valor) return null;
+  if (!sobre.trabaja || !estaAbierto(paso.estado)) return sobre.href;
+  const param = paso.completa_evento === "estado" ? "estado" : "vincular";
+  return `${sobre.href}?${param}=${encodeURIComponent(paso.completa_valor)}`;
 }
