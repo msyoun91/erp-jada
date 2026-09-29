@@ -52,7 +52,8 @@ viendo lo suyo por participación.
 **Quien pide y quien hace escriben columnas distintas, y completar es solo del asignado.**
 Pedido del usuario: que nadie —persona o agente— cambie lo pedido y lo marque hecho. El contenido
 es del responsable del hilo; estado, espera, resultado y notas, del asignado. `GRANT UPDATE` por
-columna + trigger, como `validar_gestionar_tarea` en `master`.
+columna + trigger, como `validar_gestionar_tarea` en `master`. Excepción: el paso que se completa solo
+(`catalogo.md` → *Un paso se completa solo cuando el registro cumple*).
 
 **Reasignar avisa al que pierde el paso (2026-09-24).** El responsable puede reasignarse un paso
 ajeno y completarlo: queda en `eventos` y `tareas_ediciones`, pero el asignado anterior no se

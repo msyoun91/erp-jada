@@ -21,31 +21,11 @@ aplicado; `sql/tests/tareas_nombres.sql` pasa entero. `sql/122` (vínculos sigue
 paso) aplicado; `sql/tests/tareas_vinculos.sql` pasa entero. `sql/123` (sin referencias fijas en
 plantillas) aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/124` (`buscar_registros`,
 "Relacionar") aplicado; `sql/tests/tareas_buscar.sql` pasa entero. Falta:
-- Con el primer emisor (obras), todo junto (decidido 2026-09-24, `decisiones/tareas/catalogo.md`
-  desde *La plantilla dice "Sobre"*, y `avisos.md` → *Un disparo avisa una vez*): "Sobre" en la
-  plantilla, registro (ente e id) y plantilla de origen en el hilo, `{@registro}` y `{@rol}`,
-  activaciones y `disparar_plantillas`, `{dato}`, `{si hay}`, condiciones y pasos condicionados, los
-  avisos "plantilla disparada" y "plantilla fallida". "Sobre" espera al disparo: existe para él, y
-  con `hilo` como único ente se probaba contra el ente que no dispara. Al construir:
-  - `disparar_plantillas` DEFINER, con los chequeos a mano (dueño puede recibir, submódulo del
-    ente, visibilidad con `_de`). TA021 no revisa por ser DEFINER, no por la profundidad.
-  - `usar_plantilla` filtra por `auth.uid()`: o recibe el usuario desde `disparar_plantillas` o
-    comparten una interna DEFINER sin EXECUTE para `authenticated`.
-  - Core: columna de dueño en `entes`; `_de` de `etiqueta_registro` y `relacionados_de_registro`.
-  - "No se repite": chequeo en la función, no unique index (la recurrencia).
-  - `guardar_plantilla` valida las marcas contra "Sobre"; policy de plantillas con la rama del ente
-    visible y la de `tareas_administrar`.
-  - **Pasos que se completan solos (decidido 2026-09-25, `decisiones/obras.md` → *Dos acciones*).**
-    Solo en plantillas con "Sobre". El paso guarda la condición con la misma forma que el disparo:
-    `relacion_alta` + rol, o `estado` + valor. Un consumidor más de `AFTER INSERT ON eventos` completa
-    los pasos abiertos de hilos activos sobre ese registro. También se evalúa al nacer el paso y al
-    habilitarse: rol = que el registro lo tenga (`relacionados_de_registro`); estado = que esté en él
-    (si ya avanzó, lo completa el asignado a mano). Corre en cascada, así que las reglas de actor no
-    aplican (`escrituras.md` → *Directo o sistema*); anotarlo como decisión en `catalogo.md` y
-    contrastarlo con "completar es solo del asignado" (`participacion.md`). Un pedido sin aceptar no se
-    completa: se evalúa al aceptarlo. El resultado dice "Se vinculó un arquitecto a la obra", sin el
-    nombre: puede leerlo alguien de otro equipo que no ve los contactos. Desvincular después no lo
-    reabre. El asignado lo puede completar a mano igual.
+- ~~Con el primer emisor (obras), todo junto~~ → SQL hecho (`sql/148`–`sql/153`, 2026-09-29;
+  `db_schema/tareas.md` → *Plantillas*, `decisiones/tareas/catalogo.md`). Queda para las pantallas:
+  - **Pasos que se completan solos, en pantalla.** La base deja el resultado vacío: el paso muestra
+    su condición ("se completa cuando se vincula un arquitecto a la obra") con los labels de roles y
+    estados que ya tiene la app (`catalogo.md` → *Un paso se completa solo cuando el registro cumple*).
     Link de acción: `{@accion|texto}` en la descripción de la plantilla, sacado de la condición; abre
     la ficha del registro al lado con `?vincular={rol}` (panel de Contactos) o `?estado={valor}`.
     Texto plano si el asignado no ve el registro; si lo ve sin trabajarlo, link común a la ficha, sin
@@ -153,7 +133,10 @@ no se prueba sin una obra a la que vincularlo.
    (`sql/150`; `sql/tests/tareas_usar_plantilla_registro.sql` pasa entero), y `disparar_plantillas`
    con sus dos avisos y la baja que apaga los disparos (`sql/151`–`sql/152`, 2026-09-29;
    `sql/tests/tareas_disparar_plantillas.sql` 43/43, regresión `tareas_avisos` 87/87,
-   `tareas_reglas` 110/110, `tareas_bajas` 58/58). Sigue: pasos que se completan solos. La UI de
+   `tareas_reglas` 110/110, `tareas_bajas` 58/58), y los pasos que se completan solos (`sql/153`;
+   `sql/tests/tareas_pasos_se_completan.sql` 41/41, regresión `tareas_reglas` 110/110,
+   `tareas_disparar_plantillas` 43/43, `tareas_recurrencia` 48/48, `tareas_usar_plantilla_registro`
+   44/44). **SQL del tramo 5 cerrado**; siguen las pantallas. La UI de
    "Usar" todavía no pide el registro: `actions.ts` no manda `p_registro`, así que una plantilla con
    "Sobre" da TA026 hasta la fase de pantallas; la campanita ya muestra los dos avisos nuevos.
 

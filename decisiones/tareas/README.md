@@ -19,7 +19,7 @@ archivos de esta carpeta no repiten nombres de los de `master`: los punteros vie
 | `pedidos.md` | "Pedido" calculado · pedir es del responsable · `tareas_pedir` · sin `tareas_pedir` · devolver · volver a pedir · editar un pedido aceptado · reabrir un pedido |
 | `bajas.md` | Solo se asigna a quien puede recibirlo · baja · los hilos se mueven todos · cambio de equipo · sin destino, huérfano · transferir a otro equipo · destino por el `equipo_id` de la fila |
 | `registro.md` | `tareas_ediciones` y congelado · ocultar nota o historial · referencias en el texto · RLS de `tareas_vinculos` · `{ente:uuid|nombre}` solo en la descripción · token fuera de la descripción · vínculos y `activo` del paso · "Mencionado en" · "Relacionar" · ficha al lado |
-| `catalogo.md` | Toda plantilla es personal · copia independiente · pasos sin asignado · plantilla que pide afuera · nunca falla por un asignado · "a revisar" · plantillas por evento · `{dato}` y condiciones con el disparo · cadena por "espera al anterior" · el elegido gana · "Sobre" · el disparo sigue al registro · activación en la plantilla · prende el dueño, apaga el admin · qué marca vale para qué ente · las marcas valen al guardar · se resuelven con lo que ve quien la usa · el ciclo siguiente sigue sobre el registro · no se repite · referencias relativas · marcas de rol sin ente · sin referencias fijas · el admin y el "Sobre" ajeno |
+| `catalogo.md` | Toda plantilla es personal · copia independiente · pasos sin asignado · plantilla que pide afuera · nunca falla por un asignado · "a revisar" · plantillas por evento · `{dato}` y condiciones con el disparo · cadena por "espera al anterior" · el elegido gana · "Sobre" · el disparo sigue al registro · activación en la plantilla · prende el dueño, apaga el admin · qué marca vale para qué ente · las marcas valen al guardar · se resuelven con lo que ve quien la usa · el ciclo siguiente sigue sobre el registro · un paso se completa solo · no se repite · referencias relativas · marcas de rol sin ente · sin referencias fijas · el admin y el "Sobre" ajeno |
 | `recurrencia.md` | Recurrencia por hilo · intervalo · cada cierre genera · preguntar si sigue · lo genera un trigger al cerrar · qué copia el siguiente |
 | `avisos.md` | De dónde salen · salidas con título sin link · todo lo que entra a `solicitada` es pedido · una vez por persona y cambio · quitado no avisa a quien se fue · bloqueado solo al insertar antes · huérfanos al cierre · `transferencia` con `{de, a}` · "paso a reasignar" al crear, sin actor · un disparo avisa una vez al dueño · en un disparo no actúa nadie |
 | `vistas.md` | Misión: qué entra, qué espera, orden, acciones en la tarjeta · Equipo: tres tipos, filtro por miembro, acciones en la fila · Plantillas: pestañas, "a revisar", usar desde el hilo · Todas: huérfanos |
@@ -206,7 +206,8 @@ Eventos que emite
     │                       asignados, quien disparó incluido, "tarea asignada" como siempre
     └── plantilla fallida → el dueño del registro → la plantilla
 Eventos que consume
-└── de otros módulos → disparar_plantillas (`sql/152`): alta y estado de la obra.
+└── de otros módulos → disparar_plantillas (`sql/152`): alta y estado de la obra;
+    completar_pasos (`sql/153`): relacion_alta y estado del registro del hilo.
 ```
 
 ```

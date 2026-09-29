@@ -141,6 +141,19 @@ ve el registro ve sus contactos (`contactos_puede_ver_persona_de`). Un paso que 
 cadena: el siguiente espera al anterior que sí entró. Sumar a un hilo existente pide el registro
 para leer las marcas, pero no se lo cambia. `sql/150`.
 
+**Un paso se completa solo cuando el registro cumple (2026-09-29).** "Vincular {rol}" y "pasar a
+{estado}" (`decisiones/obras.md` → *Dos acciones*) se copian de la plantilla al paso y se evalúan al
+llegar el evento, al nacer el paso, al aceptarlo y al habilitarse: rol = el registro tiene un vínculo
+abierto con ese rol, sea quien sea que lo vea; estado = está en ese estado ahora (si ya avanzó, lo
+completa el asignado). Un pedido sin aceptar o un paso bloqueado esperan. Es la excepción a
+*completar es solo del asignado* (`participacion.md`): lo escribe la base en cascada (`escrituras.md`
+→ *Las reglas de actor valen para lo que escribe una persona*) y lo pidió el usuario; el asignado lo
+puede completar a mano igual. Reabrir no lo vuelve a evaluar —si no, un paso cerrado solo no se
+podría reabrir— y desvincular no lo reabre. El resultado queda vacío (decisión del usuario): la base
+no tiene los labels de roles y estados, así que la pantalla muestra la condición. Sumada a un hilo
+que no es sobre ese registro, la plantilla no copia la condición. Archivos: `sql/153`,
+`sql/tests/tareas_pasos_se_completan.sql`.
+
 **Un disparo no se repite por plantilla y registro (2026-09-24).** Si hay un hilo `activo` de esa
 plantilla sobre ese registro, no corre. Cerrado cuenta: no vuelve a crearse. Desactivado no cuenta.
 Chequeo en `disparar_plantillas`, no unique index: la recurrencia deja el cerrado y el siguiente

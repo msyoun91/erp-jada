@@ -1025,6 +1025,8 @@ export type Database = {
           activo: boolean
           asignado_equipo_id: string | null
           asignado_id: string | null
+          completa_evento: Database["public"]["Enums"]["tipo_evento"] | null
+          completa_valor: string | null
           created_at: string
           descripcion: string | null
           equipo_id: string | null
@@ -1046,6 +1048,8 @@ export type Database = {
           activo?: boolean
           asignado_equipo_id?: string | null
           asignado_id?: string | null
+          completa_evento?: Database["public"]["Enums"]["tipo_evento"] | null
+          completa_valor?: string | null
           created_at?: string
           descripcion?: string | null
           equipo_id?: string | null
@@ -1067,6 +1071,8 @@ export type Database = {
           activo?: boolean
           asignado_equipo_id?: string | null
           asignado_id?: string | null
+          completa_evento?: Database["public"]["Enums"]["tipo_evento"] | null
+          completa_valor?: string | null
           created_at?: string
           descripcion?: string | null
           equipo_id?: string | null

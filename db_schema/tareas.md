@@ -6,7 +6,7 @@ El esquema de `master` es otro módulo: no se mezclan nombres de allá.
 **Estado:** `sql/112` (esquema, catálogo, entes, visibilidad), `sql/113` (escrituras y reglas),
 `sql/114` (bajas y cambios de equipo), `sql/115` (avisos), `sql/116` (asignables), `sql/117`
 (recurrencia), `sql/118` (plantillas), `sql/119` (vínculos) y `sql/120` (nombres) aplicados el 2026-09-24. Disparo: `sql/148`–`sql/152`
-(2026-09-29); falta "se completa cuando" (`BACKLOG.md`).
+y pasos que se completan solos, `sql/153` (2026-09-29).
 
 ## Visibilidad — la unidad es el hilo
 
@@ -54,6 +54,7 @@ responsable, el asignado de algún paso activo, o quien tiene `tareas_equipo` si
 | vence_dias | int, nullable | > 0 y solo con previo |
 | espera_hasta / espera_motivo | date / text ≤ 500 | solo en `pendiente`; motivo solo con fecha |
 | resultado | text, nullable | ≤ 5000 |
+| completa_evento / completa_valor | enum `tipo_evento` / text, nullable | "se completa cuando", copiado de la plantilla (`sql/153`): `relacion_alta` + rol o `estado` + valor. Los dos o ninguno (CHECK `tareas_completa`); fuera de los GRANT: los escriben `usar_plantilla` —solo si el hilo es sobre el registro elegido— y la recurrencia |
 | motivo_rechazo | text, nullable | 1–2000; obligatorio en `rechazada` |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | `created_at` con `clock_timestamp()`: es el orden de los pasos |
@@ -219,7 +220,7 @@ Test: `sql/tests/tareas_recurrencia.sql`. Decisión: `decisiones/tareas/recurren
 - `tareas_generar_siguiente` (AFTER UPDATE OF estado, `abierto` → `cerrado` con recurrencia y
   activo; DEFINER): hilo nuevo con el mismo título, responsable y recurrencia, `recurrencia_de` =
   el cerrado. Copia todos los pasos activos, de la raíz a la cola: título, descripción, cadena,
-  asignado, prioridad y `vence_dias`; `vence` corrido por el intervalo (fin de mes queda fin de
+  asignado, prioridad, `vence_dias` y "se completa cuando"; `vence` corrido por el intervalo (fin de mes queda fin de
   mes). Estado y equipo los pone `tareas_al_crear`. Sin siguiente si el responsable no puede
   recibir.
 - No generar: cerrar con `recurrencia_*` en NULL en el mismo UPDATE. `tareas_cancelar_y_cerrar`
@@ -228,7 +229,7 @@ Test: `sql/tests/tareas_recurrencia.sql`. Decisión: `decisiones/tareas/recurren
   pedido sin `tareas_pedir` del responsable quedan en el responsable, con `paso_a_reasignar` sin
   actor.
 
-## Plantillas (`sql/118`, `sql/123`, `sql/149`, `sql/150`, `sql/152`)
+## Plantillas (`sql/118`, `sql/123`, `sql/149`, `sql/150`, `sql/152`, `sql/153`)
 
 Test: `sql/tests/tareas_plantillas.sql`, `sql/tests/tareas_plantillas_sobre.sql`,
 `sql/tests/tareas_usar_plantilla_registro.sql`. Decisión: `decisiones/tareas/catalogo.md`. No son ente.
@@ -326,6 +327,22 @@ disparo sigue al registro*; `decisiones/tareas/avisos.md` → *Un disparo avisa 
   toma actor (el pedido a quien movió el registro no nace aceptado) y los avisos del paso salen sin
   actor, sin "paso sumado" y sin los del dueño (`tareas_avisar_asignado`, `tareas_avisar`).
 - `tareas_usuario_baja` apaga `disparo_activo` de las plantillas de quien se va.
+
+### Pasos que se completan solos (`sql/153`)
+
+Test: `sql/tests/tareas_pasos_se_completan.sql`. Decisión: `decisiones/tareas/catalogo.md` → *Un
+paso se completa solo cuando el registro cumple*.
+
+- `tareas_completar_sola(paso)` (DEFINER, sin GRANT): un paso con `completa_evento`, activo,
+  `pendiente` y sin bloquear, de un hilo activo con registro, pasa a `completada` si el registro
+  cumple ahora: `relacion_alta` = algún vínculo abierto con ese rol (`relacionados_de_registro`, sin
+  filtrar por usuario); `estado` = su `estado` es ese valor. Corre en cascada (reglas de actor no); el
+  resultado queda NULL.
+- `tareas_completar_pasos` (trigger `completar_pasos`, AFTER INSERT ON `eventos`; DEFINER): con
+  `relacion_alta` (`detalle.rol`) o `estado` (`detalle.estado`), la llama por cada paso pendiente que
+  espera eso, en hilos activos sobre ese registro.
+- `tareas_propagar` (reemplazada): al final, la llama para el paso que nace o entra a `pendiente`
+  desde `solicitada` o `rechazada`, y para el siguiente que se habilita. Reabrir no evalúa.
 
 ## Vínculos (`sql/119`, `sql/122`)
 
