@@ -54,9 +54,11 @@ type Props = ObraCompleta & {
   estadoInicial: EstadoObra | null;
   // Los contactos los dibuja Contactos; `app/` los compone (GUIDE_ENTES §2.7).
   contactos: React.ReactNode;
+  // Los hilos sobre la obra, de Tareas.
+  hilos: React.ReactNode;
 };
 
-export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, admin, nombres, candidatos, estadoInicial, contactos }: Props) {
+export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, admin, nombres, candidatos, estadoInicial, contactos, hilos }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   // Congelada no cambia de estado, no se transfiere ni suma (OB018): se edita.
@@ -147,6 +149,8 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
       </div>
 
       {contactos}
+
+      {hilos}
 
       <div>
         <div className="mb-2 flex items-center">

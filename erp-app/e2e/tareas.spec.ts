@@ -90,5 +90,11 @@ test("Juan la usa sobre su obra y el paso sin arquitecto no entra", async ({ bro
   await expect(page.getByText("Sobre:")).toBeVisible();
   await page.getByRole("link", { name: `${obra} ↗` }).click();
   await expect(page).toHaveURL(/\/obras\/[0-9a-f-]{36}$/);
+
+  await expect(page.getByText("Hilos", { exact: true })).toBeVisible();
+  const hilo = page.getByRole("link", { name: new RegExp(plantilla) });
+  await expect(hilo).toContainText("0/1 completados");
+  await hilo.click();
+  await expect(page).toHaveURL(/\/tareas\/[0-9a-f-]{36}$/);
   await ctx.close();
 });

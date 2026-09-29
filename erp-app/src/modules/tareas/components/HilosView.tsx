@@ -35,7 +35,6 @@ export function HilosView({
   const [texto, setTexto] = useState("");
   const [estado, setEstado] = useState<Filtro>("abierto");
   const [creando, setCreando] = useState(false);
-  const hoy = hoyISO();
 
   const q = texto.trim().toLowerCase();
   const filtrados = hilos.filter(
@@ -80,57 +79,64 @@ export function HilosView({
           </p>
         </div>
       ) : (
-        <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
-          {visibles.map((h) => {
-            const pasos = h.tareas.filter((t) => t.activo && t.estado !== "cancelada");
-            const completados = pasos.filter((t) => t.estado === "completada").length;
-            const mios = pasos.filter((t) => t.asignado_id === yo && estaAbierto(t.estado)).length;
-            const vencidos = pasos.filter((t) => estaVencido(t, hoy)).length;
-            const recurrencia = textoRecurrencia(h.recurrencia_cantidad, h.recurrencia_unidad);
-            return (
-              <Link
-                key={h.id}
-                href={`/tareas/${h.id}`}
-                className="flex items-center gap-3 border-b border-border row last:border-b-0 hover:bg-bg-subtle"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="t-body-m truncate font-medium text-text-primary">{h.titulo}</p>
-                  <p className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="flex items-center gap-1">
-                      <UserRound size={12} strokeWidth={1.75} />
-                      {h.responsable_id === yo ? "Vos" : (nombres[h.responsable_id] ?? "—")}
-                    </span>
-                    <span>
-                      {completados}/{pasos.length} completados
-                    </span>
-                    {mios > 0 && (
-                      <span className="text-text-brand">
-                        {mios} {mios === 1 ? "paso tuyo" : "pasos tuyos"}
-                      </span>
-                    )}
-                    {vencidos > 0 && (
-                      <span className="text-error-text">
-                        {vencidos} {vencidos === 1 ? "vencido" : "vencidos"}
-                      </span>
-                    )}
-                    {recurrencia && (
-                      <span className="flex items-center gap-1">
-                        <Repeat size={12} strokeWidth={1.75} />
-                        {recurrencia}
-                      </span>
-                    )}
-                  </p>
-                </div>
-                {!h.activo && <span className="badge badge-neutral">Desactivado</span>}
-                <span className={`badge ${ESTADO_HILO[h.estado].badge}`}>{ESTADO_HILO[h.estado].label}</span>
-                <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
-              </Link>
-            );
-          })}
-        </div>
+        <HilosLista hilos={visibles} yo={yo} nombres={nombres} />
       )}
 
       {creando && <HiloFormPanel onClose={() => setCreando(false)} />}
+    </div>
+  );
+}
+
+export function HilosLista({ hilos, yo, nombres }: { hilos: HiloResumen[]; yo: string; nombres: Record<string, string> }) {
+  const hoy = hoyISO();
+  return (
+    <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
+      {hilos.map((h) => {
+        const pasos = h.tareas.filter((t) => t.activo && t.estado !== "cancelada");
+        const completados = pasos.filter((t) => t.estado === "completada").length;
+        const mios = pasos.filter((t) => t.asignado_id === yo && estaAbierto(t.estado)).length;
+        const vencidos = pasos.filter((t) => estaVencido(t, hoy)).length;
+        const recurrencia = textoRecurrencia(h.recurrencia_cantidad, h.recurrencia_unidad);
+        return (
+          <Link
+            key={h.id}
+            href={`/tareas/${h.id}`}
+            className="flex items-center gap-3 border-b border-border row last:border-b-0 hover:bg-bg-subtle"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="t-body-m truncate font-medium text-text-primary">{h.titulo}</p>
+              <p className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="flex items-center gap-1">
+                  <UserRound size={12} strokeWidth={1.75} />
+                  {h.responsable_id === yo ? "Vos" : (nombres[h.responsable_id] ?? "—")}
+                </span>
+                <span>
+                  {completados}/{pasos.length} completados
+                </span>
+                {mios > 0 && (
+                  <span className="text-text-brand">
+                    {mios} {mios === 1 ? "paso tuyo" : "pasos tuyos"}
+                  </span>
+                )}
+                {vencidos > 0 && (
+                  <span className="text-error-text">
+                    {vencidos} {vencidos === 1 ? "vencido" : "vencidos"}
+                  </span>
+                )}
+                {recurrencia && (
+                  <span className="flex items-center gap-1">
+                    <Repeat size={12} strokeWidth={1.75} />
+                    {recurrencia}
+                  </span>
+                )}
+              </p>
+            </div>
+            {!h.activo && <span className="badge badge-neutral">Desactivado</span>}
+            <span className={`badge ${ESTADO_HILO[h.estado].badge}`}>{ESTADO_HILO[h.estado].label}</span>
+            <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+          </Link>
+        );
+      })}
     </div>
   );
 }

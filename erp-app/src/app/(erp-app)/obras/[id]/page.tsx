@@ -3,6 +3,8 @@ import { getUsuarioActualId } from "@/lib/usuarios";
 import { idSchema } from "@/lib/validacion";
 import { getVinculosDe } from "@/modules/contactos/queries";
 import { VinculosSeccion, type ExtraVinculo } from "@/modules/contactos/components/VinculosSeccion";
+import { getHilosDeRegistro } from "@/modules/tareas/queries";
+import { HilosDeRegistro } from "@/modules/tareas/components/HilosDeRegistro";
 import { puedeAdministrar, puedeVerObras } from "@/modules/obras/permissions";
 import { getCandidatos, getComisiones, getNombres, getObra } from "@/modules/obras/queries";
 import { ComisionReferente } from "@/modules/obras/components/ComisionReferente";
@@ -18,12 +20,13 @@ export default async function ObraPage(props: PageProps<"/obras/[id]">) {
   const yo = await getUsuarioActualId();
   if (!yo || !(await puedeVerObras()) || !idSchema.safeParse(id).success) notFound();
 
-  const [datos, vinculos, nombres, candidatos, admin] = await Promise.all([
+  const [datos, vinculos, nombres, candidatos, admin, hilos] = await Promise.all([
     getObra(id),
     getVinculosDe("obra", id),
     getNombres(),
     getCandidatos(),
     puedeAdministrar(),
+    getHilosDeRegistro("obra", id),
   ]);
   if (!datos) notFound();
 
@@ -64,6 +67,7 @@ export default async function ObraPage(props: PageProps<"/obras/[id]">) {
           extras={extras}
         />
       }
+      hilos={<HilosDeRegistro {...hilos} yo={yo} />}
     />
   );
 }

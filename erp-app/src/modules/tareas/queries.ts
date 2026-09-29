@@ -63,6 +63,28 @@ export async function getMisHilos(yo: string): Promise<HiloResumen[]> {
   return data;
 }
 
+// La sección de la ficha del registro: los hilos que nacieron sobre él y quien
+// lee ve (RLS), abiertos primero. Sin hilos, sin nombres.
+export async function getHilosDeRegistro(
+  ente: CodigoEnte,
+  id: string
+): Promise<{ hilos: HiloResumen[]; nombres: Record<string, string> }> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tareas_hilos")
+    .select(RESUMEN)
+    .eq("registro_ente", ente)
+    .eq("registro_id", id)
+    .eq("activo", true)
+    .order("estado")
+    .order("updated_at", { ascending: false });
+  if (error) throw error;
+  if (data.length === 0) return { hilos: [], nombres: {} };
+  const { data: nombres, error: nombresError } = await supabase.rpc("tareas_nombres");
+  if (nombresError) throw nombresError;
+  return { hilos: data, nombres: Object.fromEntries(nombres.map((n) => [n.id, n.nombre])) };
+}
+
 export type HiloCompleto = {
   hilo: Hilo;
   pasos: Tarea[];

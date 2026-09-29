@@ -139,7 +139,8 @@ no se prueba sin una obra a la que vincularlo.
    44/44). **SQL del tramo 5 cerrado**; siguen las pantallas, de a una: (1) formulario de la plantilla con "Sobre",
    disparo, "Entra" y "Se completa" — hecho (2026-09-29; `e2e/tareas.spec.ts`); (2) "Usar" pide el
    registro y tacha los pasos que no entran — hecho (2026-09-29; `e2e/tareas.spec.ts`); (3) "Sobre: X ↗" en el hilo — hecho (2026-09-29; `e2e/tareas.spec.ts`); (4) "Se completa sola…" en el paso — hecho (2026-09-29; `e2e/tareas.spec.ts`); (5) la ficha de la obra
-   lista sus hilos. La campanita ya muestra los dos avisos nuevos.
+   lista sus hilos — hecho (2026-09-29; `e2e/tareas.spec.ts`). **Tramo 5 cerrado.** La campanita ya
+   muestra los dos avisos nuevos.
 
 **Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Los nueve huecos, cerrados el
 2026-09-26 y escritos en `decisiones/contactos.md`, `decisiones/obras.md` y `GUIDE_ENTES.md` §2.6.
