@@ -40,14 +40,11 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
 Vive en `SidebarNav` y el portal no tiene sidebar todavía. Va cuando el portal arranque de verdad
 (`decisiones/global/ui.md` → *El script de tema va en `<script>` plano*).
 
-## El backlog de tareas y obras vive en `master`
+## Sugerencia de tareas — sin caso real todavía
 
-Esta rama saca los dos módulos para rediseñar permisos desde cero (`sql/101`). Sus entradas
-—el chip `?ctx=` de compartir al asignar, las tareas sobre el modelo de entes, la sugerencia de
-tareas— siguen escritas en `BACKLOG.md` de `master`, junto con el código al que se refieren.
-
-No se copian acá: describen funciones que en esta rama no existen. Si un módulo vuelve, vuelve su
-entrada. Lo que sí tiene que sobrevivir al rediseño es el **diagnóstico**, no la reparación
-concreta: `puede_abrir_registro` no contaba los grants contextuales, y por eso un usuario con
-acceso otorgado igual no alcanzaba el contacto. La regla nueva tiene que contestar eso desde el
-día uno, no dejarlo para después.
+"¿Qué hago ahora?" ya lo contesta Misión; falta "¿qué tarea debería existir y no existe?" — la obra
+sin movimiento hace 60 días (`decisiones/global/infra.md` → *La sugerencia de tareas no se
+construyó*). El prerequisito de entonces ya está: el hilo sabe sobre qué registro es y el disparo
+guarda la plantilla en el vínculo (`sql/119`, `sql/148`–`152`), así que una sugerencia puede saber si
+la tarea ya existe. Cuando aparezca el caso, abre el flujo de plantillas ("Usar" con su "Sobre"), no
+un camino de creación nuevo.

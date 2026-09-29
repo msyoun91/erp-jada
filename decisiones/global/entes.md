@@ -131,8 +131,9 @@ arrastrables, igual — sin librería de dnd el arrastre nativo no anda en touch
 ## Tareas leída con la guía (2026-09-16)
 
 Prueba pedida por el usuario al cerrar la guía: llenar la ficha del módulo para Tareas sin
-modificarlo. Resultado: la guía se aplica y deja una lista concreta; lo que falta está en
-`BACKLOG.md` → *Tareas sobre el modelo de entes*.
+modificarlo. Resultado: la guía se aplica y deja una lista concreta, que el rediseño de tareas
+(2026-09-23) resolvió: referencias `{ente:uuid|nombre}` en la descripción (`decisiones/tareas/registro.md`)
+y sin chips (`decisiones/tareas/README.md` → *No se trae*).
 
 ```
 Módulo: tareas
