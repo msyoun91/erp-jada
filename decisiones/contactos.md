@@ -326,9 +326,19 @@ cuenta si `puede_abrir_registro(ente, id, usuario)` —la genérica por usuario,
 módulo— dice que se ve el registro. Las policies usan la misma función con `auth.uid()`.
 Archivos: `sql/125`, `sql/127`.
 
+## Los proveedores son empresas de Contactos (2026-09-29)
+
+**Compras es persona de Contactos: el proveedor es una empresa vinculada a un insumo de Catálogo con el
+rol `proveedor` (`entes.roles` del insumo), no una tabla de Catálogo.** Una empresa puede ser cliente y
+proveedora a la vez; con dos tablas tendría dos fichas. La empresa es del equipo de quien la carga, así
+que comercial y compras no se ven las agendas sin regla nueva. El precio ofrecido y la licitación no
+viven acá: van a Compras (`BACKLOG.md`).
+
+Archivos: esta ficha; el rol, al crear el ente insumo en Catálogo.
+
 ## Ficha del módulo
 
-Aprobada el 2026-09-25, junto con la de Obras.
+Aprobada el 2026-09-25, junto con la de Obras. Compras sumada el 2026-09-29.
 
 ```
 Módulo: contactos
@@ -346,6 +356,9 @@ Personas
 │                     ve, no toca nada
 ├── Jefe comercial  — lo del vendedor, sobre las obras de su equipo · recibe la agenda de quien se
 │                     va y la reparte con "transferir" · —
+├── Compras         — ve las empresas y personas de su equipo (sus proveedores) · las crea y las
+│                     vincula como proveedor a los insumos de Catálogo que trabaja · no ve la agenda
+│                     comercial (el equipo la separa, sin regla propia)
 ├── Aprobador de altas — quien elija el admin (contactos_aprobar) · ve las altas congeladas y lo
 │                     parecido (nombre, dueño, qué dato coincidió) · aprueba, rechaza con motivo,
 │                     "es la misma" · teléfono y email de la congelada, con "Ver contacto" (registra)

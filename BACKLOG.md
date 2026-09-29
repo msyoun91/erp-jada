@@ -18,7 +18,8 @@ Los cinco tramos están cerrados (estado y tests en el encabezado de `decisiones
 
 ## Módulos que siguen
 
-Orden: Contactos y Obras → **Catálogo** → Presupuestos → Post-venta.
+Orden: Contactos y Obras → **Catálogo** → Presupuestos → Post-venta. Sin lugar todavía en el orden:
+Stock y Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos.
@@ -30,6 +31,13 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   obra lista sus presupuestos con su estado actual. Los contactos operativos (capataz, quien recibe)
   se vinculan al presupuesto. A decidir: cómo ve logística el nombre y la dirección de una obra que no
   abre (propuesta: la etapa guarda su dirección de entrega).
+- **Stock** (decidido al fichar Catálogo, 2026-09-29): módulo propio, no parte de Catálogo. Lleva
+  existencias y movimientos de los insumos del catálogo; su persona principal es depósito/logística.
+  Quien presupuesta ve el stock del insumo sin poder tocarlo.
+- **Compras** (ídem): la licitación —varias ofertas por insumo, con precio, plazo y fecha, y una
+  elegida— vive acá. Elegir una oferta actualiza el costo vigente del insumo en Catálogo, que es el
+  único costo que lee el presupuesto. Los proveedores son empresas de Contactos
+  (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*).
 - **Post-venta**: módulo aislado para su equipo. La unidad (1°C, local, casa) se arma después,
   eligiendo ítems del presupuesto aprobado ("estas 4 ventanas → 1°C"); si un ítem agrupa varias
   unidades, se lleva ítem y cantidad. Una obra de un solo dueño es una unidad con todo. Propietarios e
