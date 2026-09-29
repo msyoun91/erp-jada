@@ -34,7 +34,7 @@ export function HiloView(props: Props) {
   );
 }
 
-function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, ctx, pasoAbierto, plantillas }: Props) {
+function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, ctx, pasoAbierto, plantillas }: Props) {
   const nombre = useNombre();
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
   const [abierto, setAbierto] = useState<string | null>(pasoAbierto);
@@ -115,6 +115,14 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, ctx, pas
             <UserRound size={12} strokeWidth={1.75} />
             {hilo.responsable_id === ctx.yo ? "Vos" : nombre(hilo.responsable_id)}
           </span>
+          {sobre && (
+            <span>
+              Sobre:{" "}
+              <Link href={sobre.href} className="font-semibold text-text-brand hover:underline">
+                {sobre.etiqueta} ↗
+              </Link>
+            </span>
+          )}
           {recurrencia && (
             <span className="flex items-center gap-1">
               <Repeat size={12} strokeWidth={1.75} />
