@@ -108,6 +108,24 @@ cada usuario prendía la suya. Hoy toda plantilla es personal (*Toda plantilla e
 activa solo su dueño. La copia del Catálogo trae evento y estado con `disparo_activo = false`. Si
 hace falta la *Puerta abierta* ("cualquier registro del ente"), es otro valor acá.
 
+**Prende el disparo su dueño; lo apaga también el admin (2026-09-29).** Como publicar: el admin
+edita y despublica lo ajeno, pero no lo pone a correr en nombre de otro (TA025). Editar sin tocar el
+disparo no cuenta como prenderlo. `sql/149`.
+
+**Qué marca vale para qué ente lo dice una función, y la hacen valer dos triggers (2026-09-29).**
+`tareas_plantilla_vale(sobre, evento, valor)`: rol de `entes.roles`, valor del enum de
+`entes.estados`, `alta` sin valor. La usan el disparo, la condición del paso y "se completa cuando",
+así que un ente nuevo con roles o estados vale sin tocar Tareas. Los pasos se validan al insertarse
+(solo se insertan: guardar reemplaza) y cambiar "Sobre" rechaza si algún paso activo no le vale
+(TA024); por eso `guardar_plantilla` apaga los pasos viejos antes de tocar la plantilla. "Sobre" pide
+el submódulo del ente solo cuando cambia (TA023): el admin edita una plantilla sobre un ente que no
+ve sin perder su "Sobre". Las marcas en el texto (`{@rol}`, `{si hay rol}`) se validan con
+`usar_plantilla`, que las lee. `sql/149`.
+
+**El ciclo siguiente de un hilo recurrente sigue sobre el mismo registro y plantilla (2026-09-29).**
+La recurrencia copia `registro_ente`, `registro_id` y `plantilla_id`: es el caso por el que "no se
+repite" es un chequeo y no un unique index. `sql/149`.
+
 **Un disparo no se repite por plantilla y registro (2026-09-24).** Si hay un hilo `activo` de esa
 plantilla sobre ese registro, no corre. Cerrado cuenta: no vuelve a crearse. Desactivado no cuenta.
 Chequeo en `disparar_plantillas`, no unique index: la recurrencia deja el cerrado y el siguiente

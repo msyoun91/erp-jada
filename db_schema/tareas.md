@@ -34,6 +34,7 @@ responsable, el asignado de algún paso activo, o quien tiene `tareas_equipo` si
 | resultado | text, nullable | ≤ 5000 |
 | recurrencia_cantidad / recurrencia_unidad | int > 0 / enum `recurrencia_unidad` (`dia`\|`mes`) | ambos o ninguno |
 | recurrencia_de | uuid FK → tareas_hilos, nullable | el ciclo anterior |
+| registro_ente / registro_id / plantilla_id | text FK → entes / uuid / uuid FK → tareas_plantillas, nullable | el registro de "Sobre" y la plantilla de la que nació (`sql/149`). Los tres o ninguno (CHECK `tareas_hilos_registro`); fuera de los GRANT: los escriben `usar_plantilla` y la recurrencia, que los copia al ciclo siguiente. Índices `(plantilla_id, registro_id)` y `(registro_ente, registro_id)` `WHERE activo` |
 | activo | boolean | |
 | created_at / updated_at | timestamptz | `created_at` con `clock_timestamp()` |
 
@@ -224,9 +225,9 @@ Test: `sql/tests/tareas_recurrencia.sql`. Decisión: `decisiones/tareas/recurren
   pedido sin `tareas_pedir` del responsable quedan en el responsable, con `paso_a_reasignar` sin
   actor.
 
-## Plantillas (`sql/118`, `sql/123`)
+## Plantillas (`sql/118`, `sql/123`, `sql/149`)
 
-Test: `sql/tests/tareas_plantillas.sql`. Decisión: `decisiones/tareas/catalogo.md`. No son ente.
+Test: `sql/tests/tareas_plantillas.sql`, `sql/tests/tareas_plantillas_sobre.sql`. Decisión: `decisiones/tareas/catalogo.md`. No son ente.
 
 | tareas_plantillas | tipo | notas |
 |---|---|---|
@@ -235,6 +236,10 @@ Test: `sql/tests/tareas_plantillas.sql`. Decisión: `decisiones/tareas/catalogo.
 | dueno_id | uuid FK → usuarios | default `auth.uid()`; fuera del `GRANT UPDATE` |
 | publicada | boolean | default false: en el Catálogo. Publica el dueño (TA018); despublica también el admin |
 | copiada_de | uuid FK → tareas_plantillas, nullable | origen de una copia del Catálogo, solo historia |
+| sobre | text FK → entes(codigo), nullable | el ente que trabaja; NULL = "Ninguno" |
+| disparo_evento | enum `tipo_evento`, nullable | `alta` \| `estado` (CHECK), y uno de `entes.disparos` del ente de `sobre` |
+| disparo_estado | text, nullable | un valor del enum de `entes.estados`; solo y siempre con `estado` (CHECK) |
+| disparo_activo | boolean | default false; solo con `disparo_evento` (CHECK). Lo prende solo el dueño (TA025); lo apaga también el admin |
 | activo | boolean | reactiva solo el admin (TA019) |
 | created_at / updated_at | timestamptz | |
 
@@ -248,24 +253,37 @@ Test: `sql/tests/tareas_plantillas.sql`. Decisión: `decisiones/tareas/catalogo.
 | asignado_id / asignado_equipo_id | uuid FK → usuarios / equipos | a lo sumo uno; ninguno = se elige al usarla. Sin validar al guardar: "a revisar" se calcula al leer con `tareas_asignables()` |
 | prioridad | enum `prioridad_tarea` | default `media` |
 | vence_dias | int > 0, nullable | con previo, `vence_dias` del paso; sin previo, `vence` = hoy + N |
+| condicion | text, nullable | `rol` o `!rol` (CHECK `^!?[a-z_]+$`): el paso entra si el registro tiene (o no) ese rol |
+| completa_evento / completa_valor | enum `tipo_evento` / text, nullable | "se completa cuando": `relacion_alta` + rol o `estado` + valor. Los dos o ninguno (CHECK) |
 | activo | boolean | guardar desactiva los viejos e inserta |
 | created_at / updated_at | timestamptz | |
 
 RLS: ve una plantilla `tareas_administrar`, o con `tareas_plantillas` su dueño (también desactivada) y
-las publicadas activas (Catálogo). INSERT: dueño = yo con `tareas_plantillas`. UPDATE: dueño con
+las publicadas activas (Catálogo), y en los dos casos con el submódulo del ente de `sobre` —
+`tareas_puede_ver_plantilla(dueno, publicada, activo, sobre)` (GRANT `authenticated`), envoltorio de
+`tareas_puede_ver_plantilla_de(..., usuario)`, que usa también `tareas_nombres` (`sql/149`). INSERT: dueño = yo con `tareas_plantillas`. UPDATE: dueño con
 `tareas_plantillas`, o `tareas_administrar`. Los pasos: SELECT si se ve la plantilla; INSERT/UPDATE si
-es mía o soy admin. `GRANT INSERT (id, nombre, descripcion, copiada_de)`, `UPDATE (nombre,
-descripcion, publicada, activo)`; pasos `INSERT` de todo menos `activo` y fechas, `UPDATE (activo)`.
+es mía o soy admin. `GRANT INSERT (id, nombre, descripcion, copiada_de, sobre, disparo_evento, disparo_estado,
+disparo_activo)`, `UPDATE (nombre, descripcion, publicada, activo, sobre, disparo_evento, disparo_estado,
+disparo_activo)`; pasos `INSERT` de todo menos `activo` y fechas, `UPDATE (activo)`.
 Trigger `tareas_plantillas_al_editar` (BEFORE UPDATE OF publicada, activo; DEFINER).
 Trigger `tareas_plantillas_sin_referencias` en las dos tablas (BEFORE INSERT / UPDATE OF descripcion;
 INVOKER): una `descripcion` con `{ente:uuid|nombre}` es TA022 (`sql/123`).
+Trigger `tareas_plantillas_sobre` (BEFORE INSERT / UPDATE OF sobre y disparo; DEFINER): `sobre` nuevo
+o cambiado pide el submódulo del ente (TA023) y que los pasos activos le valgan (TA024); el disparo,
+uno de `entes.disparos` con un estado del enum (TA024); prenderlo, el dueño (TA025).
+Trigger `tareas_plantillas_pasos_validar` (BEFORE INSERT; DEFINER): condición y "se completa" valen
+para el `sobre` de la plantilla —sin `sobre`, no hay marcas— (TA024). Las dos preguntan a
+`tareas_plantilla_vale(sobre, evento, valor)`: rol de `entes.roles`, valor de `entes.estados`, `alta` sin valor.
 
 RPC (INVOKER, GRANT `authenticated`; errores TA017 "no existe o no es tuya", TA020 sin pasos):
-- `guardar_plantilla(id, nombre, descripcion, pasos jsonb) → uuid` — `id` NULL crea. Reemplaza los
-  pasos; `pasos` es `[{titulo, descripcion, asignado_id, asignado_equipo_id, prioridad, vence_dias,
-  espera_anterior}]` en orden.
+- `guardar_plantilla(id, nombre, descripcion, pasos jsonb, sobre = NULL, disparo_evento = NULL,
+  disparo_estado = NULL, disparo_activo = false) → uuid` — `id` NULL crea. Reemplaza los pasos (apaga
+  los viejos antes de tocar la plantilla); `pasos` es `[{titulo, descripcion, asignado_id,
+  asignado_equipo_id, prioridad, vence_dias, espera_anterior, condicion, completa_evento,
+  completa_valor}]` en orden.
 - `copiar_plantilla(plantilla) → uuid` — solo publicada y activa; sin asignados, sin publicar,
-  `copiada_de` = el original.
+  `copiada_de` = el original; `sobre`, disparo (apagado), condiciones y "se completa", tal cual.
 - `usar_plantilla(plantilla, titulo, hilo, asignados jsonb) → uuid` (el hilo) — la usa su dueño o el
   admin. `hilo` NULL crea uno (título o el nombre); si no, suma los pasos en paralelo con lo que
   tiene. `asignados` es `{paso_id: {asignado_id | asignado_equipo_id}}`: el elegido; si no, el fijo

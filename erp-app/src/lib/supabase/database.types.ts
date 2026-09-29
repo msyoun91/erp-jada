@@ -1203,11 +1203,14 @@ export type Database = {
           equipo_id: string | null
           estado: Database["public"]["Enums"]["estado_hilo"]
           id: string
+          plantilla_id: string | null
           recurrencia_cantidad: number | null
           recurrencia_de: string | null
           recurrencia_unidad:
             | Database["public"]["Enums"]["recurrencia_unidad"]
             | null
+          registro_ente: string | null
+          registro_id: string | null
           responsable_id: string
           resultado: string | null
           titulo: string
@@ -1219,11 +1222,14 @@ export type Database = {
           equipo_id?: string | null
           estado?: Database["public"]["Enums"]["estado_hilo"]
           id?: string
+          plantilla_id?: string | null
           recurrencia_cantidad?: number | null
           recurrencia_de?: string | null
           recurrencia_unidad?:
             | Database["public"]["Enums"]["recurrencia_unidad"]
             | null
+          registro_ente?: string | null
+          registro_id?: string | null
           responsable_id?: string
           resultado?: string | null
           titulo: string
@@ -1235,11 +1241,14 @@ export type Database = {
           equipo_id?: string | null
           estado?: Database["public"]["Enums"]["estado_hilo"]
           id?: string
+          plantilla_id?: string | null
           recurrencia_cantidad?: number | null
           recurrencia_de?: string | null
           recurrencia_unidad?:
             | Database["public"]["Enums"]["recurrencia_unidad"]
             | null
+          registro_ente?: string | null
+          registro_id?: string | null
           responsable_id?: string
           resultado?: string | null
           titulo?: string
@@ -1343,10 +1352,14 @@ export type Database = {
           copiada_de: string | null
           created_at: string
           descripcion: string | null
+          disparo_activo: boolean
+          disparo_estado: string | null
+          disparo_evento: Database["public"]["Enums"]["tipo_evento"] | null
           dueno_id: string
           id: string
           nombre: string
           publicada: boolean
+          sobre: string | null
           updated_at: string
         }
         Insert: {
@@ -1354,10 +1367,14 @@ export type Database = {
           copiada_de?: string | null
           created_at?: string
           descripcion?: string | null
+          disparo_activo?: boolean
+          disparo_estado?: string | null
+          disparo_evento?: Database["public"]["Enums"]["tipo_evento"] | null
           dueno_id?: string
           id?: string
           nombre: string
           publicada?: boolean
+          sobre?: string | null
           updated_at?: string
         }
         Update: {
@@ -1365,10 +1382,14 @@ export type Database = {
           copiada_de?: string | null
           created_at?: string
           descripcion?: string | null
+          disparo_activo?: boolean
+          disparo_estado?: string | null
+          disparo_evento?: Database["public"]["Enums"]["tipo_evento"] | null
           dueno_id?: string
           id?: string
           nombre?: string
           publicada?: boolean
+          sobre?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1393,6 +1414,9 @@ export type Database = {
           activo: boolean
           asignado_equipo_id: string | null
           asignado_id: string | null
+          completa_evento: Database["public"]["Enums"]["tipo_evento"] | null
+          completa_valor: string | null
+          condicion: string | null
           created_at: string
           descripcion: string | null
           espera_anterior: boolean
@@ -1408,6 +1432,9 @@ export type Database = {
           activo?: boolean
           asignado_equipo_id?: string | null
           asignado_id?: string | null
+          completa_evento?: Database["public"]["Enums"]["tipo_evento"] | null
+          completa_valor?: string | null
+          condicion?: string | null
           created_at?: string
           descripcion?: string | null
           espera_anterior?: boolean
@@ -1423,6 +1450,9 @@ export type Database = {
           activo?: boolean
           asignado_equipo_id?: string | null
           asignado_id?: string | null
+          completa_evento?: Database["public"]["Enums"]["tipo_evento"] | null
+          completa_valor?: string | null
+          condicion?: string | null
           created_at?: string
           descripcion?: string | null
           espera_anterior?: boolean
@@ -2075,9 +2105,13 @@ export type Database = {
       guardar_plantilla: {
         Args: {
           p_descripcion: string
+          p_disparo_activo?: boolean
+          p_disparo_estado?: string
+          p_disparo_evento?: Database["public"]["Enums"]["tipo_evento"]
           p_id: string
           p_nombre: string
           p_pasos: Json
+          p_sobre?: string
         }
         Returns: string
       }
@@ -2428,6 +2462,15 @@ export type Database = {
           p_hilo: string
           p_responsable: string
           p_usuario: string
+        }
+        Returns: boolean
+      }
+      tareas_puede_ver_plantilla: {
+        Args: {
+          p_activo: boolean
+          p_dueno: string
+          p_publicada: boolean
+          p_sobre: string
         }
         Returns: boolean
       }
