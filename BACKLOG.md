@@ -150,13 +150,12 @@ no se prueba sin una obra a la que vincularlo.
    disparo, condición y "se completa cuando", y el hilo con registro y plantilla (`sql/149`;
    `sql/tests/tareas_plantillas_sobre.sql` pasa entero), y `usar_plantilla` con registro sobre la
    interna `tareas_usar_plantilla_de(..., registro, usuario)`, con las marcas validadas al guardar
-   (`sql/150`; `sql/tests/tareas_usar_plantilla_registro.sql` pasa entero). Sigue:
-   `disparar_plantillas` (consumidor de `eventos`, DEFINER, llama a la interna con el dueño del
-   registro; "no se repite") y los avisos "plantilla disparada" y "plantilla fallida". La UI de
+   (`sql/150`; `sql/tests/tareas_usar_plantilla_registro.sql` pasa entero), y `disparar_plantillas`
+   con sus dos avisos y la baja que apaga los disparos (`sql/151`–`sql/152`, 2026-09-29;
+   `sql/tests/tareas_disparar_plantillas.sql` 43/43, regresión `tareas_avisos` 87/87,
+   `tareas_reglas` 110/110, `tareas_bajas` 58/58). Sigue: pasos que se completan solos. La UI de
    "Usar" todavía no pide el registro: `actions.ts` no manda `p_registro`, así que una plantilla con
-   "Sobre" da TA026 hasta la fase de pantallas. La baja todavía
-   no apaga `disparo_activo` (`decisiones/tareas/catalogo.md` → *Una plantilla nunca falla*): va con
-   `disparar_plantillas`, que igual saltea al dueño que no puede recibir.
+   "Sobre" da TA026 hasta la fase de pantallas; la campanita ya muestra los dos avisos nuevos.
 
 **Revisión de las fichas (2026-09-25): Obras 8/10, Contactos 7/10.** Los nueve huecos, cerrados el
 2026-09-26 y escritos en `decisiones/contactos.md`, `decisiones/obras.md` y `GUIDE_ENTES.md` §2.6.

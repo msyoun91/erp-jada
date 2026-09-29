@@ -12,6 +12,7 @@ import {
   CirclePlay,
   CircleX,
   ClipboardList,
+  FileWarning,
   Inbox,
   KeyRound,
   ListPlus,
@@ -24,6 +25,7 @@ import {
   UserMinus,
   UserPlus,
   UserX,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { LABEL_MAP } from "@/components/layout/SidebarNav";
@@ -75,6 +77,8 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   alta_es_la_misma: Shuffle,
   obra_misma_sumado: UserPlus,
   persona_fusionada: Shuffle,
+  plantilla_disparada: Zap,
+  plantilla_fallida: FileWarning,
 };
 const TEXTO: Record<TipoNotificacion, string> = {
   miembro_nuevo: "Se sumó a tu equipo",
@@ -113,6 +117,8 @@ const TEXTO: Record<TipoNotificacion, string> = {
   alta_es_la_misma: "Resolvieron como ya existente:",
   obra_misma_sumado: "Se sumó alguien a",
   persona_fusionada: "se fusionó con la de",
+  plantilla_disparada: "Se creó",
+  plantilla_fallida: "No pudo crearse el hilo de la plantilla",
 };
 const COLOR: Record<TipoNotificacion, string> = {
   miembro_nuevo: "text-brand-500",
@@ -151,6 +157,8 @@ const COLOR: Record<TipoNotificacion, string> = {
   alta_es_la_misma: "text-brand-500",
   obra_misma_sumado: "text-brand-500",
   persona_fusionada: "text-brand-500",
+  plantilla_disparada: "text-brand-500",
+  plantilla_fallida: "text-error-text",
 };
 
 // `destino` → ruta. Cada rama de `notificaciones_listar` que devuelva un
@@ -160,6 +168,7 @@ const RUTA: Record<string, (id: string) => string> = {
   usuarios: () => "/usuarios",
   tarea: (id) => `/tareas/paso/${id}`,
   hilo: (id) => `/tareas/${id}`,
+  plantillas: () => "/tareas/plantillas",
   tareas_todas: (id) => `/tareas/todas?responsable=${id}`,
   obra: (id) => `/obras/${id}`,
   obras: () => "/obras",
@@ -267,7 +276,10 @@ export function NotificacionesBell({ notificaciones }: { notificaciones: Notific
                               <strong className="font-semibold">{etiquetaDe(n) ?? "un registro"}</strong>
                             </span>
                           )}
-                          {n.motivo && n.tipo !== "persona_fusionada" && (
+                          {n.motivo && n.tipo === "plantilla_disparada" && (
+                            <span className="t-body-m mt-0.5 block text-text-secondary">Sobre {n.motivo}</span>
+                          )}
+                          {n.motivo && n.tipo !== "persona_fusionada" && n.tipo !== "plantilla_disparada" && (
                             <span className="t-body-m mt-0.5 block text-error-text">{n.motivo}</span>
                           )}
                           <span className="t-caption mt-1 block">

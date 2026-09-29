@@ -2602,6 +2602,8 @@ export type Database = {
         | "alta_es_la_misma"
         | "obra_misma_sumado"
         | "persona_fusionada"
+        | "plantilla_disparada"
+        | "plantilla_fallida"
       tipo_obra:
         | "edificio_residencial"
         | "casa"
@@ -2818,6 +2820,8 @@ export const Constants = {
         "alta_es_la_misma",
         "obra_misma_sumado",
         "persona_fusionada",
+        "plantilla_disparada",
+        "plantilla_fallida",
       ],
       tipo_obra: [
         "edificio_residencial",

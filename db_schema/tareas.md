@@ -5,8 +5,8 @@ El esquema de `master` es otro módulo: no se mezclan nombres de allá.
 
 **Estado:** `sql/112` (esquema, catálogo, entes, visibilidad), `sql/113` (escrituras y reglas),
 `sql/114` (bajas y cambios de equipo), `sql/115` (avisos), `sql/116` (asignables), `sql/117`
-(recurrencia), `sql/118` (plantillas), `sql/119` (vínculos) y `sql/120` (nombres) aplicados el 2026-09-24. Falta lo del disparo
-(`BACKLOG.md`).
+(recurrencia), `sql/118` (plantillas), `sql/119` (vínculos) y `sql/120` (nombres) aplicados el 2026-09-24. Disparo: `sql/148`–`sql/152`
+(2026-09-29); falta "se completa cuando" (`BACKLOG.md`).
 
 ## Visibilidad — la unidad es el hilo
 
@@ -190,6 +190,9 @@ Test: `sql/tests/tareas_bajas.sql`. Decisión: `decisiones/tareas/bajas.md`.
 Test: `sql/tests/tareas_avisos.sql`. Decisión: `decisiones/tareas/avisos.md`. Tipos y cómo se leen:
 `db_schema/notificaciones.md`.
 
+- En un disparo (`sql/152`): `plantilla_disparada` al dueño → el hilo, con quien actuó de actor (si
+  actuó él, nada); `plantilla_fallida` al dueño → la plantilla, sin actor si actuó él. Los pasos
+  avisan sin actor y no al dueño (*Disparo*, en Plantillas).
 - `tareas_avisar` (AFTER INSERT / UPDATE OF asignado, estado, activo, título, descripción, vence,
   vence_dias; DEFINER): llega el paso (asignada o pedido, y al delegador de la persona si es pedido),
   sumado, reasignado, quitado, a reasignar (reabrir o reactivar sin un asignado que pueda recibir),
@@ -225,7 +228,7 @@ Test: `sql/tests/tareas_recurrencia.sql`. Decisión: `decisiones/tareas/recurren
   pedido sin `tareas_pedir` del responsable quedan en el responsable, con `paso_a_reasignar` sin
   actor.
 
-## Plantillas (`sql/118`, `sql/123`, `sql/149`, `sql/150`)
+## Plantillas (`sql/118`, `sql/123`, `sql/149`, `sql/150`, `sql/152`)
 
 Test: `sql/tests/tareas_plantillas.sql`, `sql/tests/tareas_plantillas_sobre.sql`,
 `sql/tests/tareas_usar_plantilla_registro.sql`. Decisión: `decisiones/tareas/catalogo.md`. No son ente.
@@ -305,6 +308,24 @@ RPC (INVOKER, GRANT `authenticated`; errores TA017 "no existe o no es tuya", TA0
   `{@registro}` y `{@rol}` a `{ente:uuid|nombre}` de lo que el usuario ve (varios, con coma; ninguno,
   vacío). INSERT a profundidad 1: rigen las reglas de `sql/113` (TA010, TA001); los vínculos se
   derivan sin TA021 (DEFINER) — las referencias ya salen filtradas por lo que ve el usuario.
+
+### Disparo (`sql/152`)
+
+Test: `sql/tests/tareas_disparar_plantillas.sql`. Decisión: `decisiones/tareas/catalogo.md` → *El
+disparo sigue al registro*; `decisiones/tareas/avisos.md` → *Un disparo avisa una vez al dueño*.
+
+- `tareas_disparar_plantillas` (trigger `disparar_plantillas`, AFTER INSERT ON `eventos`; DEFINER):
+  con `alta` o `estado` de un ente que lo tiene en `entes.disparos`, lee el dueño del registro
+  (`entes.dueno` de `entes.tabla`) y, si puede recibir, corre sus plantillas activas con
+  `disparo_activo`, ese `sobre` y ese evento (con `estado`, `disparo_estado` = `detalle.estado`) que
+  el dueño ve (`tareas_puede_ver_plantilla_de`), salvo que ya haya un hilo `activo` de la plantilla
+  sobre el registro (cerrado cuenta). Llama a `tareas_usar_plantilla_de(..., registro, dueño)`: el
+  hilo es del dueño. Cada plantilla en su bloque: un error cualquiera se registra (WARNING) y avisa
+  `plantilla_fallida`; la escritura del emisor sigue.
+- Mientras corre la interna, `set_config('tareas.disparo', 'on', true)`: `tareas_estado_al_abrir` no
+  toma actor (el pedido a quien movió el registro no nace aceptado) y los avisos del paso salen sin
+  actor, sin "paso sumado" y sin los del dueño (`tareas_avisar_asignado`, `tareas_avisar`).
+- `tareas_usuario_baja` apaga `disparo_activo` de las plantillas de quien se va.
 
 ## Vínculos (`sql/119`, `sql/122`)
 

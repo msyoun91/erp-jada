@@ -72,3 +72,13 @@ también quien disparó si es asignado de un paso: no asignó nada, así que el 
 actor, como `tareas_al_crear`. Por disparar, quien actuó no recibe nada. Falla inesperada: la acción
 del emisor sigue y al dueño le llega "no pudo crearse" → la plantilla. Asignado inválido: "paso a
 reasignar", como hoy. Con el primer emisor.
+
+**En un disparo no actúa nadie: lo marca `tareas.disparo` (2026-09-29).** Quien movió el registro
+sigue siendo `auth.uid()` dentro del disparo, y las reglas lo leían como actor: si era el asignado,
+el pedido del dueño nacía aceptado (`tareas_actua_como_asignado`), y si era admin, nunca pedido.
+`disparar_plantillas` prende `set_config('tareas.disparo', 'on', true)` mientras corre la interna;
+`tareas_estado_al_abrir` y los avisos del paso la leen como "sin actor". Descartado: poner al dueño
+como `auth.uid()` — `eventos.actor_id` perdía quién actuó. La fallida llega al dueño aunque haya
+actuado él (sin actor, que `notificar` no la descarte); la disparada no, porque ve el hilo nacer.
+La disparada lleva el registro en `motivo` ("Sobre Belgrano"). `sql/152`,
+`sql/tests/tareas_disparar_plantillas.sql`.

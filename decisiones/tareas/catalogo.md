@@ -39,8 +39,8 @@ leer, en Mis plantillas: "Pedro ya no es del equipo" o "ya no puede recibir". Si
 otro equipo sigue pudiendo recibir, pero pasa a ser pedido: si el dueño no tiene `tareas_pedir`, no
 la puede usar y no sabía por qué. Sin columnas ni triggers.
 
-**Plantillas por evento esperan a su primer emisor.** Hoy ningún módulo emite; se construyen las
-manuales y `disparar_plantillas` se conecta después.
+**~~Plantillas por evento esperan a su primer emisor.~~** → Obras emite; `disparar_plantillas`
+conectado en `sql/152` (*El disparo sigue al registro*).
 
 **`{dato}`, condiciones por rol y pasos condicionados llegan con el disparo (2026-09-24).** Leen un
 registro, y a mano no hay registro: `master` tampoco los usaba fuera de un disparo. `sql/118` guarda
