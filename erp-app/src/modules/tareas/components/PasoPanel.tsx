@@ -69,6 +69,12 @@ export function PasoPanel({
   const [enFicha, setEnFicha] = useState(false);
   const hoy = hoyISO();
   const actual = pestanas.find((p) => p.ref === activa) ?? pestanas[0];
+  // Con la pestaña del registro, el link de acción la activa y abre su panel ahí
+  // mismo (`?paso=` + `?vincular=` o `?estado=`); sin ella, va a la ficha.
+  const registro = `${hilo.registro_ente}:${hilo.registro_id}`;
+  const conPestana = pestanas.some((p) => p.ref === registro);
+  const href = hrefAccion(sobre, paso);
+  const accion = href && conPestana ? `/tareas/${hilo.id}?paso=${paso.id}${href.includes("?") ? `&${href.split("?")[1]}` : ""}` : href;
 
   function verFicha(ref: string) {
     setActiva(ref);
@@ -148,7 +154,8 @@ export function PasoPanel({
             <TextoConReferencias
               texto={paso.descripcion}
               enlaces={enlaces}
-              accion={hrefAccion(sobre, paso)}
+              accion={accion}
+            onAccion={conPestana ? () => verFicha(registro) : undefined}
               pestanas={pestanas.map((p) => p.ref)}
               onPestana={verFicha}
             />

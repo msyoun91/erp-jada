@@ -164,7 +164,8 @@ trabajarlo o el paso ya cerró, y texto plano si no lo ve, si el paso no se comp
 hilo que no es sobre ese registro) y fuera del panel del paso (Misión). El formulario la ofrece como
 chip "Link de acción" con "Vincular {rol}" / "Pasar a {estado}". Archivos: `sql/154`,
 `sql/tests/tareas_marca_accion.sql`, `derivados.ts` (`hrefAccion`), `TextoConReferencias.tsx`,
-`PlantillaFormPanel.tsx`, `e2e/tareas.spec.ts`.
+`PlantillaFormPanel.tsx`, `e2e/tareas.spec.ts`. Con la pestaña del registro en el paso, el link
+no sale del hilo (`registro.md` → *El link de acción se resuelve en la pestaña*).
 
 **Un disparo no se repite por plantilla y registro (2026-09-24).** Si hay un hilo `activo` de esa
 plantilla sobre ese registro, no corre. Cerrado cuenta: no vuelve a crearse. Desactivado no cuenta.

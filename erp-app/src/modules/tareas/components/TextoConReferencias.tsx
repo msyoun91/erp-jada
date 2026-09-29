@@ -4,19 +4,22 @@ import { ACCION, REFERENCIA } from "../derivados";
 // Se lee como el nombre que vio quien lo escribió: link ↗ si quien lee lo
 // puede abrir (`enlaces`, de `getEnlaces`), texto plano si no. `{@accion|…}`
 // va a `accion` (`hrefAccion`); sin él, texto plano. Una referencia con
-// pestaña al lado (`pestanas`) la activa en vez de navegar.
+// pestaña al lado (`pestanas`) la activa en vez de navegar; `onAccion`, lo mismo
+// con el link de acción, que además navega.
 export function TextoConReferencias({
   texto,
   enlaces,
   accion = null,
   pestanas = [],
   onPestana,
+  onAccion,
 }: {
   texto: string;
   enlaces: Record<string, string>;
   accion?: string | null;
   pestanas?: string[];
   onPestana?: (ref: string) => void;
+  onAccion?: () => void;
 }) {
   const salida = [];
   const trozos = texto.split(ACCION);
@@ -24,7 +27,7 @@ export function TextoConReferencias({
     if (j % 2 === 1) {
       salida.push(
         accion ? (
-          <Link key={`a${j}`} href={accion} className="font-semibold text-text-brand hover:underline">
+          <Link key={`a${j}`} href={accion} scroll={false} onClick={onAccion} className="font-semibold text-text-brand hover:underline">
             {trozos[j]} ↗
           </Link>
         ) : (

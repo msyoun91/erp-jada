@@ -4,6 +4,15 @@ export function hoyISO(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: ZONA_AR });
 }
 
+// La URL actual sin esos parámetros: el link de acción de Tareas abre una
+// ficha con `?vincular=` o `?estado=`, y al cerrar se saca solo ese, así
+// dentro de un hilo queda `?paso=`. Solo en el browser.
+export function urlSin(...nombres: string[]): string {
+  const q = new URLSearchParams(window.location.search);
+  for (const n of nombres) q.delete(n);
+  return `${window.location.pathname}${q.size > 0 ? `?${q}` : ""}`;
+}
+
 export function sumarDiasISO(fechaISO: string, dias: number): string {
   const fecha = new Date(`${fechaISO}T00:00:00Z`);
   fecha.setUTCDate(fecha.getUTCDate() + dias);

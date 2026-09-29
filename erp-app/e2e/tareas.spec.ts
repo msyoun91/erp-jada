@@ -95,10 +95,19 @@ test("Juan la usa sobre su obra y el paso sin arquitecto no entra", async ({ bro
   await expect(paso.getByRole("tabpanel", { name: obra }).getByRole("heading", { name: obra })).toBeVisible();
   await paso.getByRole("button", { name: `${obra} ↗` }).click();
   await expect(page).toHaveURL(/\/tareas\/[0-9a-f-]{36}\?paso=[0-9a-f-]{36}$/);
+  // El link de acción abre "Vincular" en la pestaña de la obra, sin salir del paso;
+  // al cerrarlo, queda el paso abierto.
   await expect(paso.getByRole("link", { name: "Vincular arquitecto ↗" })).toHaveAttribute(
     "href",
-    /\/obras\/[0-9a-f-]{36}\?vincular=arquitecto$/
+    /\/tareas\/[0-9a-f-]{36}\?paso=[0-9a-f-]{36}&vincular=arquitecto$/
   );
+  await paso.getByRole("link", { name: "Vincular arquitecto ↗" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(2);
+  await expect(panel(page)).toContainText("Vincular contacto");
+  await panel(page).getByRole("button", { name: "Cerrar" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await expect(page).toHaveURL(/\/tareas\/[0-9a-f-]{36}\?paso=[0-9a-f-]{36}$/);
+  await expect(paso.getByRole("tab", { name: obra })).toBeVisible();
   await paso.getByRole("button", { name: "Cerrar" }).click();
   await expect(paso).toBeHidden();
 

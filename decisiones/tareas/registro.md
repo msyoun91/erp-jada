@@ -86,6 +86,14 @@ nombre copiado en el texto, como el ↗; el registro del hilo, su etiqueta. Arch
 `tareas/[id]/page.tsx`, `HiloView.tsx`, `PasoPanel.tsx` (`Pestana`), `TextoConReferencias.tsx`,
 `RightPanel.tsx` (`ancho`).
 
+**El link de acción se resuelve en la pestaña (2026-09-29).** Con la pestaña del registro, el link
+es `/tareas/{hilo}?paso={id}&vincular={rol}` (o `&estado=`): la página arma esa pestaña con la
+acción y una key que la vuelve a montar, y el panel de la ficha se abre encima del paso. Al cerrarlo,
+la ficha saca solo su parámetro (`urlSin`, `lib/utils.ts`) y queda `?paso=`; antes lo hacía con
+`pathname` y dentro del hilo cerraba el paso. Sin la pestaña, sigue yendo a la ficha. Archivos:
+`tareas/[id]/page.tsx`, `PasoPanel.tsx`, `TextoConReferencias.tsx` (`onAccion`), `VinculosSeccion.tsx`,
+`ObraView.tsx`.
+
 **Los links de la ficha en la pestaña navegan fuera, como en su página (2026-09-26).** Clic en un
 registro de la ficha (un contacto, una tarea) va a su página y cierra el panel; "atrás" vuelve al
 hilo con el paso abierto por `?paso={id}`. La ficha no sabe dónde está montada, y las pestañas quedan

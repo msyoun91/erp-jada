@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Archive, ArchiveRestore, ArrowLeftRight, CalendarClock, Flag, MapPin, Pencil, Plus, TriangleAlert, UserRound, X } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ENTES, labelRol, type CodigoEnte } from "@/lib/entes";
 import type { UsuarioBasico } from "@/lib/usuarios";
-import { formatFechaHora } from "@/lib/utils";
+import { formatFechaHora, urlSin } from "@/lib/utils";
 import { desactivarObra, quitarParticipante, reactivarObra } from "../actions";
 import { MOTIVO, ORIGEN, TIPO } from "../etiquetas";
 import type { Evento, ObraCompleta } from "../queries";
@@ -60,7 +60,6 @@ type Props = ObraCompleta & {
 
 export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, admin, nombres, candidatos, estadoInicial, contactos, hilos }: Props) {
   const router = useRouter();
-  const pathname = usePathname();
   // Congelada no cambia de estado, no se transfiere ni suma (OB018): se edita.
   const congelada = obra.activo && obra.congelada;
   const [dialogo, setDialogo] = useState<Dialogo | null>(trabaja && !congelada && estadoInicial ? "estado" : null);
@@ -69,7 +68,7 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
 
   function cerrar() {
     setDialogo(null);
-    if (estadoInicial) router.replace(pathname, { scroll: false });
+    if (estadoInicial) router.replace(urlSin("estado"), { scroll: false });
   }
 
   async function correr(accion: (id: string) => Promise<{ success: boolean; error?: string }>, ok: string) {

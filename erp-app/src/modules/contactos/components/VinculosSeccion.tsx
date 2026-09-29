@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Archive, CalendarX, Plus, Tags } from "lucide-react";
@@ -12,7 +12,7 @@ import { FormModal } from "@/components/ui/FormModal";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { labelRol } from "@/lib/entes";
-import { formatFecha, hoyISO } from "@/lib/utils";
+import { formatFecha, hoyISO, urlSin } from "@/lib/utils";
 import { cambiarRoles, cerrarVinculo, desactivarVinculo } from "../actions";
 import type { VinculoDeRegistro } from "../queries";
 import { cerrarSchema, rolesSchema, type CerrarForm, type RolesForm } from "../types";
@@ -54,7 +54,6 @@ export function VinculosSeccion({
   extras?: Record<string, ExtraVinculo>;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [panel, setPanel] = useState<{ rol: string | null } | null>(trabaja && vincular !== null ? { rol: vincular || null } : null);
   const [dialogo, setDialogo] = useState<Dialogo | null>(null);
 
@@ -64,7 +63,7 @@ export function VinculosSeccion({
 
   function cerrarPanel() {
     setPanel(null);
-    if (vincular !== null) router.replace(pathname, { scroll: false });
+    if (vincular !== null) router.replace(urlSin("vincular"), { scroll: false });
   }
 
   function fila(v: VinculoDeRegistro) {

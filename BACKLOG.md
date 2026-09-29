@@ -28,11 +28,9 @@ plantillas) aplicado; `sql/tests/tareas_plantillas.sql` pasa entero. `sql/124` (
 UI: vistas Hilos (`/tareas`, `/tareas/{id}`, `/tareas/paso/{id}`), Misión (`/tareas/mision`),
 Equipo (`/tareas/equipo`), Plantillas (`/tareas/plantillas`, con "Usar plantilla" desde el hilo) y
 Todas (`/tareas/todas`) hechas. Las referencias `{ente:uuid|nombre}` son link ↗ si quien lee las
-abre (`getEnlaces`) y navegan a la ficha. Fichas al lado (diseño en `decisiones/tareas/registro.md`),
-en tres pantallas: (1) la del registro del hilo en su página — hecha (2026-09-29; `e2e/tareas.spec.ts`);
-(2) pestañas en el panel del paso ensanchado, que llegan por `?paso=` y el ↗ activa la suya — hecha
-(2026-09-29; `e2e/tareas.spec.ts`); (3) el
-link de acción abre su panel dentro de la pestaña.
+abre (`getEnlaces`) y navegan a la ficha. Fichas al lado hechas (2026-09-29; `decisiones/tareas/registro.md`,
+`e2e/tareas.spec.ts`): la del registro junto al hilo, pestañas en el panel del paso y el link de
+acción dentro de la pestaña.
 
 Ficha: `decisiones/tareas/README.md`; esquema: `db_schema/tareas.md`.
 
