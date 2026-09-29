@@ -83,11 +83,13 @@ por módulo, con sus permisos. Null es "no la ve": la página hace `notFound` y 
 Archivos: `fichas.tsx`, `tareas/[id]/page.tsx`.
 
 **Abrir un paso pasa por `?paso=` y el servidor arma solo sus fichas (2026-09-29).** El panel abre
-al instante, angosto, y se ensancha cuando llegan las pestañas. Descartado armar de entrada las
-fichas de todo lo que mencionan los pasos: la carga del hilo crecería sin límite. La pestaña lleva el
-nombre copiado en el texto, como el ↗; el registro del hilo, su etiqueta. Archivos:
-`tareas/[id]/page.tsx`, `HiloView.tsx`, `PasoPanel.tsx` (`Pestana`), `TextoConReferencias.tsx`,
-`RightPanel.tsx` (`ancho`).
+al instante; si el paso va a tener fichas (`esperaFichas`: hilo sobre un registro o una referencia
+que quien lee abre), ya ancho, con una ruedita donde van, para que se note que viene algo. Descartado
+armar de entrada las fichas de todo lo que mencionan los pasos: la carga del hilo crecería sin límite.
+La pestaña lleva el nombre copiado en el texto, como el ↗; el registro del hilo, su etiqueta. Las
+arma `pestanasDePaso` (`tareas/pestanas.tsx`), la misma para el hilo y Misión. Archivos:
+`tareas/[id]/page.tsx`, `HiloView.tsx`, `PasoPanel.tsx`, `Fichas.tsx` (`Pestana`),
+`TextoConReferencias.tsx`, `RightPanel.tsx` (`ancho`).
 
 **El link de acción se resuelve en la pestaña (2026-09-29).** Con la pestaña del registro, el link
 es `/tareas/{hilo}?paso={id}&vincular={rol}` (o `&estado=`): la página arma esa pestaña con la

@@ -109,8 +109,16 @@ test("Juan la usa sobre su obra y el paso sin arquitecto no entra", async ({ bro
   await expect(page.getByRole("dialog")).toHaveCount(1);
   await expect(page).toHaveURL(/\/tareas\/[0-9a-f-]{36}\?paso=[0-9a-f-]{36}$/);
   await expect(paso.getByRole("tab", { name: obra })).toBeVisible();
+  const conPaso = page.url();
   await paso.getByRole("button", { name: "Cerrar" }).click();
   await expect(paso).toBeHidden();
+
+  // En Misión, el mismo paso trae la ficha de la obra al lado de la tarjeta.
+  await page.goto(`/tareas/mision?paso=${new URL(conPaso).searchParams.get("paso")}`);
+  await expect(page.getByText("Vincular arquitecto").first()).toBeVisible();
+  await expect(page.getByRole("tab", { name: obra })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tabpanel", { name: obra }).getByRole("heading", { name: obra })).toBeVisible();
+  await page.goto(new URL(conPaso).pathname);
 
   await expect(page.getByText("Sobre:")).toBeVisible();
   await page.getByRole("link", { name: `${obra} ↗` }).click();

@@ -1,26 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import { aceptarPaso, cancelarPaso, desactivarPaso, reabrirPaso, reactivarPaso, volverAPedir } from "../actions";
-import { estaAbierto, estaEnEspera, estaVencido, hrefAccion, sinReferencias } from "../derivados";
+import { estaAbierto, estaEnEspera, estaVencido, esperaFichas, hrefAccion, sinReferencias } from "../derivados";
 import { ESTADO_PASO, PRIORIDAD, textoCompleta, textoPlazoDias } from "../etiquetas";
 import type { HiloCompleto, Mencion } from "../queries";
 import type { Edicion, Hilo, Nota, Tarea } from "../types";
 import { useNombre, useTareas } from "./contexto";
+import { BotonesFichas, Fichas, FichasCargando, type Pestana } from "./Fichas";
 import { Historial } from "./Historial";
 import { Menciones } from "./Menciones";
 import { NotasSection } from "./NotasSection";
 import { PasoFormPanel } from "./PasoFormPanel";
 import { CompletarAjenoModal, CompletarModal, EsperaModal, ReasignarModal, RechazarModal } from "./PasoModales";
 import { TextoConReferencias } from "./TextoConReferencias";
-
-// Una ficha al lado del paso: `ref` es `ente:id`, como en `enlaces`.
-export type Pestana = { ref: string; etiqueta: string; ficha: React.ReactNode };
 
 type Dialogo =
   | "editar"
@@ -58,7 +55,8 @@ export function PasoPanel({
   enlaces: Record<string, string>;
   menciones: Mencion[];
   sobre: HiloCompleto["sobre"];
-  pestanas: Pestana[];
+  // `null` mientras el servidor arma las fichas de este paso.
+  pestanas: Pestana[] | null;
   onClose: () => void;
 }) {
   const { yo, miEquipo, admin, delegador } = useTareas();
@@ -68,6 +66,9 @@ export function PasoPanel({
   // En mobile la ficha va encima del paso, con "volver".
   const [enFicha, setEnFicha] = useState(false);
   const hoy = hoyISO();
+  // Si va a tener fichas, el panel abre ancho con el lugar cargando, para que se note que viene algo.
+  const cargando = pestanas === null && esperaFichas(hilo.registro_ente, paso.descripcion, enlaces);
+  pestanas ??= [];
   const actual = pestanas.find((p) => p.ref === activa) ?? pestanas[0];
   // Con la pestaña del registro, el link de acción la activa y abre su panel ahí
   // mismo (`?paso=` + `?vincular=` o `?estado=`); sin ella, va a la ficha.
@@ -136,11 +137,11 @@ export function PasoPanel({
   if (paso.resultado) datos.push(["Resultado", sinReferencias(paso.resultado)]);
 
   return (
-    <RightPanel title={paso.titulo} subtitle={hilo.titulo} onClose={onClose} ancho={actual !== undefined}>
+    <RightPanel title={paso.titulo} subtitle={hilo.titulo} onClose={onClose} ancho={actual !== undefined || cargando}>
       <div className="flex min-h-0 flex-1">
         <div
           className={`${enFicha ? "hidden lg:flex" : "flex"} min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4 ${
-            actual ? "lg:max-w-md lg:border-r lg:border-border" : ""
+            actual || cargando ? "lg:max-w-md lg:border-r lg:border-border" : ""
           }`}
         >
           <div className="flex flex-wrap items-center gap-2">
@@ -191,47 +192,19 @@ export function PasoPanel({
             <NotasSection hiloId={hilo.id} tareaId={paso.id} notas={notas} />
           </div>
 
-          {actual && (
-            <div className="flex flex-wrap gap-2 lg:hidden">
-              {pestanas.map((p) => (
-                <button key={p.ref} className="btn btn-secondary btn-sm" onClick={() => verFicha(p.ref)}>
-                  {p.etiqueta}
-                </button>
-              ))}
-            </div>
-          )}
+          <BotonesFichas pestanas={pestanas} onFicha={verFicha} />
 
           <Historial ediciones={ediciones} />
         </div>
 
-        {actual && (
-          <div className={`${enFicha ? "flex" : "hidden lg:flex"} min-w-0 flex-1 flex-col`}>
-            <div role="tablist" className="flex shrink-0 items-center gap-4 overflow-x-auto border-b border-border px-5 pt-3">
-              <button className="btn btn-ghost btn-sm mb-1 lg:hidden" onClick={() => setEnFicha(false)}>
-                <ArrowLeft size={14} />
-                Paso
-              </button>
-              {pestanas.map((p) => (
-                <button
-                  key={p.ref}
-                  role="tab"
-                  aria-selected={p.ref === actual.ref}
-                  onClick={() => setActiva(p.ref)}
-                  className={`t-body-m shrink-0 px-1 pb-2 font-medium ${
-                    p.ref === actual.ref ? "border-b-2 border-brand-500 text-text-brand" : "text-text-tertiary"
-                  }`}
-                >
-                  {p.etiqueta}
-                </button>
-              ))}
-            </div>
-            {pestanas.map((p) => (
-              <div key={p.ref} role="tabpanel" aria-label={p.etiqueta} hidden={p.ref !== actual.ref} className="min-h-0 flex-1 overflow-y-auto p-5">
-                {p.ficha}
-              </div>
-            ))}
-          </div>
-        )}
+        {cargando && <FichasCargando className="hidden lg:flex" />}
+        <Fichas
+          pestanas={pestanas}
+          activa={activa}
+          onActiva={setActiva}
+          onVolver={() => setEnFicha(false)}
+          className={enFicha ? "flex" : "hidden lg:flex"}
+        />
       </div>
 
       {dialogo === "editar" && <PasoFormPanel modo={{ tipo: "editar", paso }} yo={yo} onClose={() => setDialogo(null)} />}

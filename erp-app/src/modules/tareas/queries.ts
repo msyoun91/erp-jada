@@ -122,7 +122,7 @@ async function getEnlaces(textos: (string | null)[]): Promise<Record<string, str
 
 // El registro de "Sobre", si quien lee lo ve; si no, null y el encabezado no lo nombra.
 // `trabaja`: el link de acción abre el panel (`hrefAccion`).
-async function getSobre(hilo: Hilo): Promise<HiloCompleto["sobre"]> {
+export async function getSobre(hilo: Pick<Hilo, "registro_ente" | "registro_id">): Promise<HiloCompleto["sobre"]> {
   if (!hilo.registro_ente || !hilo.registro_id) return null;
   const supabase = await createClient();
   const [ente, etiqueta, trabaja] = await Promise.all([
@@ -185,7 +185,7 @@ export async function getHiloDePaso(id: string): Promise<string | null> {
 }
 
 export type PasoCadena = Pick<Tarea, "id" | "paso_anterior_id" | "estado" | "created_at" | "titulo">;
-export type PasoMision = Tarea & { tareas_hilos: Pick<Hilo, "titulo"> };
+export type PasoMision = Tarea & { tareas_hilos: Pick<Hilo, "titulo" | "registro_ente" | "registro_id"> };
 
 // Misión: mis pasos por decidir o por hacer, de hilos vivos. Lo asignado a mi
 // equipo va en Equipo. `cadena` trae los pasos de esos hilos para derivar el
@@ -196,7 +196,7 @@ export async function getMision(
   const supabase = await createClient();
   const { data: pasos, error } = await supabase
     .from("tareas")
-    .select("*, tareas_hilos!inner(titulo)")
+    .select("*, tareas_hilos!inner(titulo, registro_ente, registro_id)")
     .eq("asignado_id", yo)
     .eq("activo", true)
     .in("estado", ["solicitada", "pendiente"])

@@ -20,7 +20,8 @@ import { HiloFormPanel } from "./HiloFormPanel";
 import { CerrarHiloModal, TransferirModal } from "./HiloModales";
 import { NotasSection } from "./NotasSection";
 import { PasoFormPanel } from "./PasoFormPanel";
-import { PasoPanel, type Pestana } from "./PasoPanel";
+import type { Pestana } from "./Fichas";
+import { PasoPanel } from "./PasoPanel";
 import { UsarPlantillaPanel } from "./UsarPlantillaPanel";
 
 type Dialogo = "sumar" | "plantilla" | "editar" | "transferir" | "cerrar" | "desactivar";
@@ -207,7 +208,7 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
           enlaces={enlaces}
           menciones={menciones.filter((m) => m.destino === pasoSeleccionado.id)}
           sobre={sobre}
-          pestanas={pasoSeleccionado.id === pasoAbierto ? pestanas : []}
+          pestanas={pasoSeleccionado.id === pasoAbierto ? pestanas : null}
           onClose={() => abrir(null)}
         />
       )}

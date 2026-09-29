@@ -18,6 +18,14 @@ sin fecha todavía (paso no habilitado) no ordena: solo le pasa a un bloqueado, 
 en espera reusan los modales de `PasoModales.tsx`; "Abrir en el hilo" lleva a `/tareas/paso/{id}`
 para todo lo demás (notas, devolver, historial). Sin segundo panel del paso.
 
+**Las fichas del paso, al lado de la tarjeta (2026-09-29).** Como en el panel del paso: el registro
+del hilo y lo que nombra la descripción, en pestañas (`pestanasDePaso`). Solo las del paso que se
+mira: cambiar de paso pasa por `?paso=` y muestra la ruedita hasta que llegan; descartado traer
+también las del siguiente, que haría más lenta la entrada. Con `?paso=` arranca en ese paso. En
+mobile, un botón por ficha y la ficha encima de la tarjeta, con "volver". El link de acción sigue
+en texto plano (`catalogo.md`). Archivos: `tareas/mision/page.tsx`, `MisionView.tsx`, `Fichas.tsx`,
+`queries.ts` (`getSobre`, `PasoMision`).
+
 **De `master` se conserva:** columna `max-w-2xl`, flechas ← → (ignoradas con un `dialog[open]` o
 foco en un campo), barra de posición, índice que se recorta en vez de resetearse, "Sigue: …".
 

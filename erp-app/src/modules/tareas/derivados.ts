@@ -117,6 +117,12 @@ export const REFERENCIA = /\{([a-z_]+):([0-9a-f-]{36})\|([^}]*)\}/g;
 // `{@accion|texto}` (sql/154): el link de acción del paso que se completa solo.
 export const ACCION = /\{@accion\|([^{}]+)\}/g;
 
+// Si el paso va a tener fichas al lado: el hilo es sobre un registro o la
+// descripción nombra algo que quien lee abre. Mientras llegan, se ve dónde van.
+export function esperaFichas(registroEnte: string | null, descripcion: string | null, enlaces: Record<string, string>): boolean {
+  return registroEnte !== null || [...(descripcion ?? "").matchAll(REFERENCIA)].some(([, ente, id]) => `${ente}:${id}` in enlaces);
+}
+
 // Fuera de la descripción del paso el token no es referencia: queda su nombre, sin link.
 export function sinReferencias(texto: string): string {
   return texto.replace(REFERENCIA, "$3").replace(ACCION, "$1");
