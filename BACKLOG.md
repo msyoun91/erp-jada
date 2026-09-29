@@ -136,7 +136,10 @@ no se prueba sin una obra a la que vincularlo.
    `tareas_reglas` 110/110, `tareas_bajas` 58/58), y los pasos que se completan solos (`sql/153`;
    `sql/tests/tareas_pasos_se_completan.sql` 41/41, regresión `tareas_reglas` 110/110,
    `tareas_disparar_plantillas` 43/43, `tareas_recurrencia` 48/48, `tareas_usar_plantilla_registro`
-   44/44). **SQL del tramo 5 cerrado**; siguen las pantallas. La UI de
+   44/44). **SQL del tramo 5 cerrado**; siguen las pantallas, de a una: (1) formulario de la plantilla con "Sobre",
+   disparo, "Entra" y "Se completa" — hecho (2026-09-29; `e2e/tareas.spec.ts`); (2) "Usar" pide el
+   registro; (3) "Sobre: X ↗" en el hilo; (4) "Se completa sola…" en el paso; (5) la ficha de la obra
+   lista sus hilos. La UI de
    "Usar" todavía no pide el registro: `actions.ts` no manda `p_registro`, así que una plantilla con
    "Sobre" da TA026 hasta la fase de pantallas; la campanita ya muestra los dos avisos nuevos.
 

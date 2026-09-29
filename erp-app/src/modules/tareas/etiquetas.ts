@@ -1,3 +1,4 @@
+import { ENTES, labelEstado, labelRol, type CodigoEnte } from "@/lib/entes";
 import type { EstadoHilo, EstadoTarea, PrioridadTarea, RecurrenciaUnidad } from "./types";
 
 export const ESTADO_PASO: Record<EstadoTarea, { label: string; badge: string }> = {
@@ -27,4 +28,27 @@ export function textoRecurrencia(cantidad: number | null, unidad: RecurrenciaUni
 
 export function textoPlazoDias(dias: number) {
   return `${dias} ${dias === 1 ? "día" : "días"} desde que se habilita`;
+}
+
+// "Sobre", disparo, condición y "se completa" de una plantilla, dichos con los
+// labels de `lib/entes.ts` (catalogo.md).
+export function nombreEnte(ente: string) {
+  return ENTES[ente as CodigoEnte]?.nombre ?? ente;
+}
+
+export function textoDisparo(ente: string, evento: string, estado: string | null) {
+  return evento === "estado" && estado
+    ? `Al pasar a ${labelEstado(ente, estado)}`
+    : `Al crearse ${ENTES[ente as CodigoEnte]?.el ?? ente}`;
+}
+
+export function textoCondicion(ente: string, condicion: string) {
+  const no = condicion.startsWith("!");
+  return `${no ? "Si no hay" : "Si hay"} ${labelRol(ente, condicion.replace("!", "")).toLowerCase()}`;
+}
+
+export function textoCompleta(ente: string, evento: string, valor: string) {
+  return evento === "estado"
+    ? `Al pasar a ${labelEstado(ente, valor)}`
+    : `Al vincular ${labelRol(ente, valor).toLowerCase()}`;
 }

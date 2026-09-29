@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { REFERENCIA } from "./derivados";
+import { ENTES, type CodigoEnte } from "@/lib/entes";
 import type { Asignable, Edicion, Hilo, Nota, Plantilla, PlantillaPaso, Tarea } from "./types";
 
 export type Contexto = {
@@ -235,4 +236,15 @@ export async function getPlantillas(): Promise<PlantillaCompleta[]> {
     .order("orden", { referencedTable: "tareas_plantillas_pasos" });
   if (error) throw error;
   return data;
+}
+
+export type EnteSobre = { codigo: CodigoEnte; roles: string[]; datos: string[]; disparos: string[] };
+
+// Los entes que puede elegir en "Sobre": la RLS de `entes` recorta a los que
+// ve, y solo van los que la app sabe decir (`lib/entes.ts`).
+export async function getEntesSobre(): Promise<EnteSobre[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("entes").select("codigo, roles, datos, disparos").order("codigo");
+  if (error) throw error;
+  return data.filter((e): e is typeof e & { codigo: CodigoEnte } => e.codigo in ENTES);
 }

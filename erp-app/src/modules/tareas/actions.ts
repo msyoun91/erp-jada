@@ -290,11 +290,20 @@ export async function ocultarEdicion(id: string) {
 export async function guardarPlantilla(input: PlantillaForm) {
   const parsed = plantillaSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
-  const { id, nombre, descripcion, pasos } = parsed.data;
+  const { id, nombre, descripcion, pasos, sobre, disparo_evento, disparo_estado, disparo_activo } = parsed.data;
   const supabase = await createClient();
   const { data, error } = await supabase.rpc(
     "guardar_plantilla",
-    argsRpc<"guardar_plantilla">({ p_id: id ?? null, p_nombre: nombre, p_descripcion: descripcion, p_pasos: pasos })
+    argsRpc<"guardar_plantilla">({
+      p_id: id ?? null,
+      p_nombre: nombre,
+      p_descripcion: descripcion,
+      p_pasos: pasos,
+      p_sobre: sobre,
+      p_disparo_evento: disparo_evento,
+      p_disparo_estado: disparo_estado,
+      p_disparo_activo: disparo_activo,
+    })
   );
   if (error) return fallo(error);
   revalidatePath("/tareas", "layout");

@@ -158,18 +158,48 @@ export const plantillaPasoSchema = z
     prioridad: z.enum(["baja", "media", "alta"]).default("media"),
     vence_dias: diasOpcional,
     espera_anterior: z.boolean().default(true),
+    condicion: z.string().regex(/^!?[a-z_]+$/).nullable().default(null),
+    completa_evento: z.enum(["relacion_alta", "estado"]).nullable().default(null),
+    completa_valor: z.string().min(1).nullable().default(null),
   })
   .refine((v) => v.asignado_id === null || v.asignado_equipo_id === null, {
     message: "Una persona o un equipo, no los dos",
     path: ["asignado_id"],
+  })
+  .refine((v) => (v.completa_evento === null) === (v.completa_valor === null), {
+    message: "Elegí cuándo se completa",
+    path: ["completa_evento"],
   });
 
-export const plantillaSchema = z.object({
-  id: idSchema.optional(),
-  nombre: z.string().trim().min(1, "El nombre es obligatorio").max(500, "Máximo 500 caracteres"),
-  descripcion: textoPlantilla,
-  pasos: z.array(plantillaPasoSchema).min(1, "La plantilla necesita al menos un paso"),
-});
+// Qué rol, estado o evento vale para cada ente lo dice la base
+// (`tareas_plantilla_vale`, TA024): acá solo la forma.
+export const plantillaSchema = z
+  .object({
+    id: idSchema.optional(),
+    nombre: z.string().trim().min(1, "El nombre es obligatorio").max(500, "Máximo 500 caracteres"),
+    descripcion: textoPlantilla,
+    sobre: z.string().min(1).nullable().default(null),
+    disparo_evento: z.enum(["alta", "estado"]).nullable().default(null),
+    disparo_estado: z.string().min(1).nullable().default(null),
+    disparo_activo: z.boolean().default(false),
+    pasos: z.array(plantillaPasoSchema).min(1, "La plantilla necesita al menos un paso"),
+  })
+  .refine((v) => v.sobre !== null || v.disparo_evento === null, {
+    message: "Para correr sola, la plantilla tiene que ser sobre un ente",
+    path: ["disparo_evento"],
+  })
+  .refine((v) => (v.disparo_evento === "estado") === (v.disparo_estado !== null), {
+    message: "Elegí el estado",
+    path: ["disparo_evento"],
+  })
+  .refine((v) => v.disparo_evento !== null || !v.disparo_activo, {
+    message: "Elegí cuándo corre",
+    path: ["disparo_evento"],
+  })
+  .refine((v) => v.sobre !== null || v.pasos.every((p) => p.condicion === null && p.completa_evento === null), {
+    message: "Las condiciones de los pasos van con un ente en \"Sobre\"",
+    path: ["sobre"],
+  });
 export type PlantillaForm = z.input<typeof plantillaSchema>;
 
 export const usarPlantillaSchema = z.object({

@@ -50,6 +50,15 @@ vacíos se preguntan con quien la usa por defecto (`UsarPlantillaPanel`); el res
 **"Usar plantilla" desde el hilo: solo el responsable (o el admin), con sus plantillas activas.**
 Suma los pasos en paralelo con lo que el hilo tiene.
 
+**El formulario de la plantilla muestra todo a la vista (2026-09-29).** Decisión del usuario. "Sobre" y
+"Corre sola" (un select: "Al crearse la obra", "Al pasar a {estado}"; con "Activa", que el admin solo
+puede apagar) van bajo la descripción; cada paso suma "Entra" (siempre, si hay o no hay {rol}) y "Se
+completa" (a mano, al vincular {rol}, al pasar a {estado}), y chips que insertan `{@registro}`,
+`{@rol}` y `{dato}` en la descripción. Cambiar "Sobre" limpia disparo y condiciones. Los códigos
+salen de `entes` (`getEntesSobre`, la RLS recorta); los labels, de `lib/entes.ts`, así que "Sobre"
+ofrece solo los entes que la app sabe decir: obra, persona y empresa (hilo y paso, cuando tengan
+labels ahí). Archivos: `PlantillaFormPanel.tsx`, `etiquetas.ts`, `e2e/tareas.spec.ts`.
+
 ## Todas (2026-09-24)
 
 **Todas = todos los hilos, con filtro Huérfanos · Desactivados.** Huérfano (`esHuerfano`, con test):

@@ -9,8 +9,8 @@ import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { copiarPlantilla, desactivarPlantilla, publicarPlantilla, reactivarPlantilla } from "../actions";
 import { motivoRevisar } from "../derivados";
-import { PRIORIDAD } from "../etiquetas";
-import type { PlantillaCompleta } from "../queries";
+import { nombreEnte, PRIORIDAD, textoCompleta, textoCondicion, textoDisparo } from "../etiquetas";
+import type { EnteSobre, PlantillaCompleta } from "../queries";
 import { TareasProvider, useNombre, useTareas, type TareasCtx } from "./contexto";
 import { PlantillaFormPanel } from "./PlantillaFormPanel";
 import { UsarPlantillaPanel } from "./UsarPlantillaPanel";
@@ -25,21 +25,31 @@ type Resultado = { success: boolean; error?: string };
 
 export function PlantillasView({
   plantillas,
+  entes,
   ver,
   ctx,
 }: {
   plantillas: PlantillaCompleta[];
+  entes: EnteSobre[];
   ver: VerPlantillas;
   ctx: TareasCtx;
 }) {
   return (
     <TareasProvider value={ctx}>
-      <Contenido plantillas={plantillas} verInicial={ver} />
+      <Contenido plantillas={plantillas} entes={entes} verInicial={ver} />
     </TareasProvider>
   );
 }
 
-function Contenido({ plantillas, verInicial }: { plantillas: PlantillaCompleta[]; verInicial: VerPlantillas }) {
+function Contenido({
+  plantillas,
+  entes,
+  verInicial,
+}: {
+  plantillas: PlantillaCompleta[];
+  entes: EnteSobre[];
+  verInicial: VerPlantillas;
+}) {
   const { yo, admin, asignables, pedir } = useTareas();
   const nombre = useNombre();
   const [ver, setVer] = useState<VerPlantillas>(verInicial);
@@ -120,6 +130,13 @@ function Contenido({ plantillas, verInicial }: { plantillas: PlantillaCompleta[]
           <span>
             {p.tareas_plantillas_pasos.length} {p.tareas_plantillas_pasos.length === 1 ? "paso" : "pasos"}
           </span>
+          {p.sobre && <span>Sobre: {nombreEnte(p.sobre)}</span>}
+          {p.sobre && p.disparo_evento && (
+            <span className={p.disparo_activo ? "text-text-brand" : ""}>
+              {textoDisparo(p.sobre, p.disparo_evento, p.disparo_estado)}
+              {p.disparo_activo ? "" : " (apagada)"}
+            </span>
+          )}
           {!mia && <span>De {nombre(p.dueno_id)}</span>}
           {p.copiada_de &&
             (original ? (
@@ -146,6 +163,10 @@ function Contenido({ plantillas, verInicial }: { plantillas: PlantillaCompleta[]
                     <span>{fijo ? nombre(fijo) : "Se elige al usarla"}</span>
                     {i > 0 && paso.espera_anterior && <span>Espera al anterior</span>}
                     {paso.vence_dias && <span>Vence a los {paso.vence_dias} días</span>}
+                    {p.sobre && paso.condicion && <span>{textoCondicion(p.sobre, paso.condicion)}</span>}
+                    {p.sobre && paso.completa_evento && paso.completa_valor && (
+                      <span>Se completa sola {textoCompleta(p.sobre, paso.completa_evento, paso.completa_valor).toLowerCase()}</span>
+                    )}
                     {paso.prioridad !== "media" && (
                       <span className={PRIORIDAD[paso.prioridad].clase}>Prioridad {PRIORIDAD[paso.prioridad].label.toLowerCase()}</span>
                     )}
@@ -213,8 +234,8 @@ function Contenido({ plantillas, verInicial }: { plantillas: PlantillaCompleta[]
         </details>
       )}
 
-      {dialogo?.tipo === "nueva" && <PlantillaFormPanel onClose={() => setDialogo(null)} />}
-      {dialogo?.tipo === "editar" && <PlantillaFormPanel plantilla={dialogo.plantilla} onClose={() => setDialogo(null)} />}
+      {dialogo?.tipo === "nueva" && <PlantillaFormPanel entes={entes} onClose={() => setDialogo(null)} />}
+      {dialogo?.tipo === "editar" && <PlantillaFormPanel plantilla={dialogo.plantilla} entes={entes} onClose={() => setDialogo(null)} />}
       {dialogo?.tipo === "usar" && <UsarPlantillaPanel plantillas={[dialogo.plantilla]} onClose={() => setDialogo(null)} />}
       {dialogo?.tipo === "desactivar" && (
         <ConfirmModal

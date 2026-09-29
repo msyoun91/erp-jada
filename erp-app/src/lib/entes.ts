@@ -78,3 +78,8 @@ export function labelRol(ente: string, rol: string) {
   const roles: Record<string, string> | undefined = ENTES[ente as CodigoEnte]?.roles;
   return roles?.[rol] ?? rol;
 }
+
+export function labelEstado(ente: string, estado: string) {
+  const estados: Record<string, { label: string }> | undefined = ENTES[ente as CodigoEnte]?.estados;
+  return estados?.[estado]?.label ?? estado;
+}
