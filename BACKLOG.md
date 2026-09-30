@@ -22,7 +22,8 @@ Orden: Contactos y Obras → **Catálogo** → Compras (costos) → Presupuestos
 todavía en el orden: Stock y la licitación de Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
-- **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos.
+- **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
+  `decisiones/catalogo.md`.
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
   producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
