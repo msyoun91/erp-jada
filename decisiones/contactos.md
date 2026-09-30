@@ -331,8 +331,8 @@ Archivos: `sql/125`, `sql/127`.
 **Compras es persona de Contactos: el proveedor es una empresa vinculada a un insumo de Catálogo con el
 rol `proveedor` (`entes.roles` del insumo), no una tabla de Catálogo.** Una empresa puede ser cliente y
 proveedora a la vez; con dos tablas tendría dos fichas. La empresa es del equipo de quien la carga, así
-que comercial y compras no se ven las agendas sin regla nueva. El precio ofrecido y la licitación no
-viven acá: van a Compras (`BACKLOG.md`).
+que comercial y compras no se ven las agendas sin regla nueva. El costo del insumo, el precio
+ofrecido y la licitación no viven acá: van al módulo Compras (`BACKLOG.md`).
 
 Archivos: esta ficha; el rol, al crear el ente insumo en Catálogo.
 

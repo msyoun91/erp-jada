@@ -18,8 +18,8 @@ Los cinco tramos están cerrados (estado y tests en el encabezado de `decisiones
 
 ## Módulos que siguen
 
-Orden: Contactos y Obras → **Catálogo** → Presupuestos → Post-venta. Sin lugar todavía en el orden:
-Stock y Compras.
+Orden: Contactos y Obras → **Catálogo** → Compras (costos) → Presupuestos → Post-venta. Sin lugar
+todavía en el orden: Stock y la licitación de Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos.
@@ -34,9 +34,12 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Stock** (decidido al fichar Catálogo, 2026-09-29): módulo propio, no parte de Catálogo. Lleva
   existencias y movimientos de los insumos del catálogo; su persona principal es depósito/logística.
   Quien presupuesta ve el stock del insumo sin poder tocarlo.
-- **Compras** (ídem): la licitación —varias ofertas por insumo, con precio, plazo y fecha, y una
-  elegida— vive acá. Elegir una oferta actualiza el costo vigente del insumo en Catálogo, que es el
-  único costo que lee el presupuesto. Los proveedores son empresas de Contactos
+- **Compras** (ídem): dueño del costo del insumo, no Catálogo. El costo es de reposición (lo que
+  costaría comprarlo hoy), en su moneda (ARS, US$, €), con historial; se convierte con el oficial BNA
+  venta. Catálogo lo lee para calcular el precio de venta; el técnico no lo ve. Tabla propia, no
+  columna del insumo: RLS filtra filas, no columnas. Arranca mínimo (costos) antes de Presupuestos;
+  después suma la licitación —varias ofertas por insumo, con precio, plazo y fecha, y una elegida—,
+  que al elegir actualiza el costo. Los proveedores son empresas de Contactos
   (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*).
 - **Post-venta**: módulo aislado para su equipo. La unidad (1°C, local, casa) se arma después,
   eligiendo ítems del presupuesto aprobado ("estas 4 ventanas → 1°C"); si un ítem agrupa varias
