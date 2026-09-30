@@ -82,6 +82,15 @@ por el top layer del `<dialog>`. Descartado: que el paso reemplace la columna iz
 por módulo, con sus permisos. Null es "no la ve": la página hace `notFound` y Tareas no la muestra.
 Archivos: `fichas.tsx`, `tareas/[id]/page.tsx`.
 
+**El hilo y el paso tienen ficha compacta, no la página entera (2026-09-29).** Excepción a *La
+pestaña muestra la ficha entera* para `hilo` y `tarea`: `HiloView` abre sus pasos con `?paso=`, el
+mismo parámetro que usa el paso que la contiene (hilo o Misión). La ficha del hilo es su encabezado y
+sus pasos en orden, sin acciones; cada paso navega a `/tareas/paso/{id}` y "Abrir hilo ↗" a su
+página. La de un paso es la de su hilo con ese paso resaltado y desplegado: descripción (referencias
+en texto, sin pestañas de pestañas) y resultado. Null si no se ve. Antes, `hilo` y `tarea` en la
+descripción de un paso navegaban fuera de Misión en vez de abrirse al lado.
+Archivos: `tareas/[id]/ficha.tsx`, `HiloFicha.tsx`, `fichas.tsx`.
+
 **Abrir un paso pasa por `?paso=` y el servidor arma solo sus fichas (2026-09-29).** El panel abre
 al instante; si el paso va a tener fichas (`esperaFichas`: hilo sobre un registro o una referencia
 que quien lee abre), ya ancho, con una ruedita donde van, para que se note que viene algo. Descartado
