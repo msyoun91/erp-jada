@@ -34,7 +34,8 @@ final** (Presupuestos: es donde se cargan las medidas).
 - Procesamiento, colocación de burlete, soldadura, mano de obra de instalación, y los **comerciales**:
   comercialización, manipulación.
 - **Fijo**: monto por unidad (soldadura $ 1.500 c/u). **Porcentual**: % sobre la suma de los insumos
-  **de su grupo** (no del paquete entero), con **precio mínimo** (mano de obra 15 %, mín $ 5.000).
+  **de su grupo** (no del paquete entero), con **precio mínimo** — el mínimo se aplica **una vez por
+  servicio en el paquete**, sobre la suma de sus grupos, no en cada grupo (mano de obra 15 %, mín $ 5.000).
 - Montos, % y mínimos los pone **administración**; el técnico no los ve.
 - **No hay margen:** el precio de venta es insumos a costo + servicios. La ganancia está en los
   servicios comerciales.
@@ -64,7 +65,8 @@ final** (Presupuestos: es donde se cargan las medidas).
 ```
 Insumo        cantidad (técnico, fija o fórmula) × costo de reposición (Compras) → a pesos, oficial BNA venta
 Servicio fijo cantidad (técnico) × monto (administración)
-Servicio %    % (administración) × suma de insumos de su grupo, con mínimo (administración)
+Servicio %    % (administración) × suma de insumos de su grupo; mínimo (administración) una vez
+              por servicio en el paquete, sobre la suma de sus grupos
 Comerciales   generales, con excepción por paquete (administración)
 Precio        insumos + servicios — se calcula en Presupuestos, con las medidas
 ```
