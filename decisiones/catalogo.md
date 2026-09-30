@@ -53,8 +53,9 @@ final** (Presupuestos: es donde se cargan las medidas).
   tenía), peso, versiones (un presupuesto no cambia si se edita el paquete) y **restricciones**
   (mín./máx. de una variable con su mensaje: **advierten, no frenan** — el vendedor ve el aviso y puede
   seguir) y **corte** por material (ángulo: 90°, 45°; no cambia el precio, es para el despiece de
-  Taller — se carga desde ya aunque Taller no exista). Después: reglas, simulador, grafo. A decidir:
-  colores, vidrios compuestos.
+  Taller — se carga desde ya aunque Taller no exista) y **colores** (el vendedor elige el color y cada
+  insumo se cambia solo por su equivalente en ese color; el que no tiene color, como la felpa, queda
+  igual). Después: reglas, simulador, grafo. A decidir: vidrios compuestos.
 - Un insumo suelto se precia como un paquete de una línea: costo + servicios comerciales generales.
 - **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
@@ -101,8 +102,8 @@ Entes, relaciones, acciones, eventos: pendientes
 
 ## Pendiente
 
-1. Del motor: colores y vidrios compuestos — ¿cuáles se usan hoy para
-   presupuestar? Lo que no, a `BACKLOG.md`.
+1. Del motor: vidrios compuestos — ¿se usan hoy para presupuestar? Si no, a `BACKLOG.md`.
+   Colores: dónde vive la equivalencia insumo → insumo de color.
 2. Peso y unidad de comercialización: confirmar el uso (peso de la abertura; ¿barra para vender
    suelto?; ¿logística?).
 3. Fórmulas: qué medidas carga el vendedor, condiciones, descuentos y desperdicio.
