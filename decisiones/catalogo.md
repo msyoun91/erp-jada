@@ -52,7 +52,9 @@ final** (Presupuestos: es donde se cargan las medidas).
   materiales con cantidad fija o calculada, **servicios con cantidad** (nuevo: la spec vieja no los
   tenía), peso, versiones (un presupuesto no cambia si se edita el paquete) y **restricciones**
   (mín./máx. de una variable con su mensaje: **advierten, no frenan** — el vendedor ve el aviso y puede
-  seguir). Después: reglas, simulador, grafo. A decidir: cortes, colores, vidrios compuestos.
+  seguir) y **corte** por material (ángulo: 90°, 45°; no cambia el precio, es para el despiece de
+  Taller — se carga desde ya aunque Taller no exista). Después: reglas, simulador, grafo. A decidir:
+  colores, vidrios compuestos.
 - Un insumo suelto se precia como un paquete de una línea: costo + servicios comerciales generales.
 - **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
@@ -99,7 +101,7 @@ Entes, relaciones, acciones, eventos: pendientes
 
 ## Pendiente
 
-1. Del motor: cortes, colores y vidrios compuestos — ¿cuáles se usan hoy para
+1. Del motor: colores y vidrios compuestos — ¿cuáles se usan hoy para
    presupuestar? Lo que no, a `BACKLOG.md`.
 2. Peso y unidad de comercialización: confirmar el uso (peso de la abertura; ¿barra para vender
    suelto?; ¿logística?).
