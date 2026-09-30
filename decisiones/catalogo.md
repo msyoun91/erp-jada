@@ -52,6 +52,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   tenía), peso y versiones (un presupuesto no cambia si se edita el paquete). Después: reglas, simulador,
   grafo. A decidir: cortes, restricciones, colores, vidrios compuestos.
 - Un insumo suelto se precia como un paquete de una línea: costo + servicios comerciales generales.
+- **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
+  estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
+  sandbox, auditoría). **Se le suma una pestaña Servicios** al lado de Materiales: el técnico elige el
+  servicio del catálogo y le pone cantidad fija o por variable (soldadura × 4); el monto no se ve.
 
 ## Precio de venta
 
