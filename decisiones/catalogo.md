@@ -58,7 +58,9 @@ final** (Presupuestos: es donde se cargan las medidas).
   igual). **La equivalencia vive en el insumo**, una sola vez (ART-2301 en negro mate es ART-2301-NM),
   y la usan todos los paquetes; el paquete solo dice qué colores ofrece. Descartado: mapear en cada
   paquete como el mockup — el mismo perfil se remapearía en cada plantilla y los mapeos podrían
-  contradecirse. Después: reglas, simulador, grafo. A decidir: vidrios compuestos.
+  contradecirse. Y **vidrios compuestos**: el paquete define cada paño (medidas por variable, espesor
+  máximo del canal) y el vendedor arma la composición al presupuestar (simple, DVH, TVH: vidrios +
+  cámaras); el sistema saca m² por vidrio y ml de separador. Después: reglas, simulador, grafo.
 - Un insumo suelto se precia como un paquete de una línea: costo + servicios comerciales generales.
 - **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
@@ -105,7 +107,7 @@ Entes, relaciones, acciones, eventos: pendientes
 
 ## Pendiente
 
-1. Del motor: vidrios compuestos — ¿se usan hoy para presupuestar? Si no, a `BACKLOG.md`.
+1. Vidrios: si la composición supera el espesor máximo del canal, ¿advierte o frena?
 2. Peso y unidad de comercialización: confirmar el uso (peso de la abertura; ¿barra para vender
    suelto?; ¿logística?).
 3. Fórmulas: qué medidas carga el vendedor, condiciones, descuentos y desperdicio.
