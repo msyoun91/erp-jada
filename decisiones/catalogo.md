@@ -56,6 +56,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
   sandbox, auditoría). **Se le suma una pestaña Servicios** al lado de Materiales: el técnico elige el
   servicio del catálogo y le pone cantidad fija o por variable (soldadura × 4); el monto no se ve.
+  **Cada servicio va en un grupo**, como los materiales: si el vendedor saca un grupo opcional
+  (mosquitero), su mano de obra sale con él.
 
 ## Precio de venta
 
