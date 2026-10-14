@@ -22,8 +22,12 @@ final** (Presupuestos: es donde se cargan las medidas).
 
 - Perfiles, tornillos, burletes, vidrios, silicona.
 - Datos: nombre, **unidad de compra** (ml, kg o unidad — cada insumo una), peso por unidad (para el
-  peso de la abertura), unidad de comercialización / presentación (ej: barra de 6 m) — su uso exacto
-  sigue pendiente —, **tipo** y **categoría** (ver *Categorías*).
+  peso de la abertura y logística), unidad de comercialización / presentación (ej: barra de 6 m),
+  **tipo** y **categoría** (ver *Categorías*).
+- **La presentación sirve para vender suelto y para comprar, no para el paquete** (2026-10-14). Suelto
+  se vende por presentación entera (2 barras = 12 ml × costo), no por fracción. Compras compra barras
+  enteras y Taller podrá calcular cuántas salen del despiece. En el paquete el insumo va en su unidad
+  (ml); el sobrante de barra entra por el desperdicio.
 - **"Se vende suelto"**: solo los marcados le aparecen al vendedor como producto. Lo marca
   administración.
 - Sin costo: el costo de reposición vive en Compras, con su moneda (ARS, US$, €).
@@ -149,7 +153,6 @@ Entes, relaciones, acciones, eventos: pendientes
 
 ## Pendiente
 
-1. Unidad de comercialización (barra de 6 m): ¿para qué se usa?
-2. Fórmulas: descuentos y desperdicio.
-3. Entes, relaciones, acciones, eventos; árbol de vistas y funciones; delegables y reglas entre
+1. Fórmulas: descuentos y desperdicio.
+2. Entes, relaciones, acciones, eventos; árbol de vistas y funciones; delegables y reglas entre
    permisos. Con eso la ficha se aprueba.
