@@ -71,14 +71,25 @@ final** (Presupuestos: es donde se cargan las medidas).
   canal, **advierte, no frena** (como las restricciones). Después: reglas, simulador, grafo.
 - **Lo que carga el vendedor lo define el paquete** (2026-10-14), no es un juego fijo de ancho, alto y
   cantidad: el técnico declara cada variable del vendedor. Puede ser una **medida** (número, con sus
-  restricciones) o una **opción** entre insumos (rueda simple o doble): el vendedor elige y el
-  material del paquete cambia por el elegido.
+  restricciones) o una **opción** entre insumos (manija plateada o marrón): el técnico marca un
+  material del paquete y le carga las alternativas; el vendedor elige y el material cambia por el
+  elegido. **Cada alternativa usa la fórmula del material o trae la suya** (una manija de dos puntos
+  de fijación lleva otros tornillos).
 - **El peso es para logística y condiciona herrajes** (2026-10-14): ej., pasado cierto peso de hoja
   va rueda doble.
-- **Una opción puede tomar su insumo por una variable calculada** (2026-10-14): "si `peso_hoja` > 40
-  kg → rueda doble". El sistema la elige y muestra por qué ("Rueda doble — por peso: 48 kg"); el
-  vendedor puede cambiarla y ve el aviso, no lo frena (como las restricciones). Es el único tipo de
-  regla del primer tramo; las reglas generales siguen para después.
+- ~~Una opción puede tomar su insumo por una variable calculada~~ → *Materiales condicionales*.
+- **Materiales condicionales: los pone el sistema, el vendedor no elige** (2026-10-14). Un material
+  puede llevar una condición sobre cualquier variable (medida o calculada): "si `ancho` > 1500 → se
+  agrega el herraje X", "si `peso_hoja` > 40 kg → rueda doble". Si se cumple, entra; si no, no. Un
+  reemplazo son dos materiales con condiciones opuestas (rueda simple si ≤ 40, doble si > 40). Como
+  las alternativas, **usa la fórmula del material o trae la suya**. El despiece muestra por qué entró
+  ("Rueda doble — `peso_hoja` 48 kg > 40"). Es el único tipo de regla del primer tramo; las reglas
+  generales siguen para después.
+  Por qué: la rueda no es una preferencia del cliente, la decide la medida; dejarla al vendedor
+  permitía armar una abertura que no anda.
+- **Cada material dice si suma al peso** (2026-10-14). Por defecto suma; el técnico lo apaga en el
+  material que no debe contar. Así la rueda queda fuera del peso del grupo: el peso que la elige no
+  cambia según qué rueda salga (si no, una condición sobre el peso dependería de sí misma).
 - Un insumo suelto se precia como un paquete de una línea: costo + servicios por categoría y generales.
 - **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
