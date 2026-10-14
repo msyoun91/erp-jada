@@ -94,6 +94,12 @@ final** (Presupuestos: es donde se cargan las medidas).
   desc_manija`. Así lo que cambia una medida se ve en la fórmula de esa medida, en un solo lugar.
   Descartado: que cada alternativa le "ajuste" la variable (−5 mm al ancho de hoja) — el ajuste
   quedaría escondido en la opción y la fórmula de `ancho_hoja` no diría la verdad.
+- **Una medida del vendedor puede traer un valor por defecto por fórmula** (2026-10-14), para hojas
+  asimétricas: `ancho_hoja_izq` propone `ancho / 2 + 25 - desc_manija` y el vendedor la pisa solo si
+  hace falta; `ancho_hoja_der` es calculada (`ancho - ancho_hoja_izq + 50 - 2 × desc_manija`). Si la
+  pisó, se respeta aunque cambie `ancho`; si no, se recalcula. Las piezas y los paños se cargan por
+  hoja. Descartado: un paquete "asimétrico" aparte — repite todos los materiales para el 10% de los
+  casos.
 - **El peso es para logística y condiciona herrajes** (2026-10-14): ej., pasado cierto peso de hoja
   va rueda doble.
 - ~~Una opción puede tomar su insumo por una variable calculada~~ → *Materiales condicionales*.
@@ -118,15 +124,19 @@ final** (Presupuestos: es donde se cargan las medidas).
   o fórmula) no puede sumar al peso del grupo: el paquete no se guarda así**, como una fórmula mal
   escrita. Es un error de armado y lo corrige el técnico; descartado: ignorarlo y avisar al vendedor,
   que no puede hacer nada.
-- **El sistema pone una variable de peso por grupo** (2026-10-14): `peso_hojas`, `peso_vidriado`…,
+- **El sistema pone una variable de peso por grupo** (2026-10-14): `peso_hoja_izq`, `peso_marco`…,
   suma de los materiales del grupo que suman al peso (cantidad × peso del insumo). El técnico arma con
   ellas el peso que necesita. Descartado: calcular el peso a mano en la fórmula (ml × kg/ml + m² ×
   espesor × 2,5) — repite el peso del insumo y queda viejo si cambia.
 - **El sistema también pone el peso de cada paño** (`peso_pano_izq`, `peso_pano_der`), porque la
-  composición es por paño y el promedio de las hojas puede esconder la pesada. El técnico usa la más
-  pesada: `peso_hoja = peso_hojas / 2 + maximo(peso_pano_izq; peso_pano_der)`, y las dos hojas llevan
-  la rueda que pide esa. Descartado: un grupo por hoja — exacto, pero duplica los materiales del
-  paquete; el costo del atajo es, a lo sumo, una rueda doble en una hoja liviana.
+  composición es por paño.
+- ~~El técnico usa la hoja más pesada (`peso_hojas / 2 + maximo(...)`)~~ → *Un grupo por hoja*.
+- **Un grupo por hoja** (2026-10-14): `hoja_izq`, `hoja_der`, cada uno con sus materiales y su peso
+  (`peso_total_hoja_izq = peso_hoja_izq + peso_pano_izq`). Cada hoja lleva la rueda que pide su peso,
+  y el despiece sale por hoja, como se arma en taller. Por qué: con hojas asimétricas el `/2` le
+  restaba aluminio a la ancha, justo la que puede pedir rueda doble; y como las piezas ya son por
+  hoja, separar grupos casi no duplica. Lo repetido (felpa, rueda, manija) se alivia con **"duplicar
+  grupo"**, que copia el grupo cambiando `_izq` por `_der` en las fórmulas.
 - Un insumo suelto se precia como un paquete de una línea: costo + servicios por categoría y generales.
 - **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
