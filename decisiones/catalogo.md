@@ -28,6 +28,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   se vende por presentación entera (2 barras = 12 ml × costo), no por fracción. Compras compra barras
   enteras y Taller podrá calcular cuántas salen del despiece. En el paquete el insumo va en su unidad
   (ml); el sobrante de barra entra por el desperdicio.
+- **El desperdicio es un % del insumo, uno solo para todos los paquetes** (2026-10-14): perfil 8 %
+  (6,60 ml → se cobran 7,13), vidrio 5 % sobre m², felpa 0 %. Lo carga el técnico: es cantidad, no
+  precio. Si un paquete necesita otro, va en la fórmula de esa línea (`(2×ancho + 2×alto) × 1,15`), sin
+  campo de excepción. Descartado: % por paquete — el mismo perfil tendría 8 % en uno y 10 % en otro.
 - **"Se vende suelto"**: solo los marcados le aparecen al vendedor como producto. Lo marca
   administración.
 - Sin costo: el costo de reposición vive en Compras, con su moneda (ARS, US$, €).
@@ -104,7 +108,8 @@ costo vive en Compras, la acción es de Compras y usa la categoría del catálog
 ## Precio de venta
 
 ```
-Insumo        cantidad (técnico, fija o fórmula) × costo de reposición (Compras) → a pesos, oficial BNA venta
+Insumo        cantidad (técnico, fija o fórmula) × (1 + desperdicio del insumo) × costo de reposición
+              (Compras) → a pesos, oficial BNA venta
 Servicio fijo cantidad (técnico) × monto (administración)
 Servicio %    % (administración) × suma de insumos de su grupo; mínimo (administración) una vez
               por servicio en el paquete, sobre la suma de sus grupos
@@ -153,6 +158,6 @@ Entes, relaciones, acciones, eventos: pendientes
 
 ## Pendiente
 
-1. Fórmulas: descuentos y desperdicio.
+1. Descuentos: ¿en Presupuestos o en Catálogo?
 2. Entes, relaciones, acciones, eventos; árbol de vistas y funciones; delegables y reglas entre
    permisos. Con eso la ficha se aprueba.
