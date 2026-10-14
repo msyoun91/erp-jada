@@ -47,8 +47,7 @@ final** (Presupuestos: es donde se cargan las medidas).
 - Montos, % y mínimos los pone **administración**; el técnico no los ve.
 - **No hay margen:** el precio de venta es insumos a costo + servicios. La ganancia está en los
   servicios comerciales.
-- Servicios comerciales: **generales**, se suman a todo paquete y a todo insumo suelto; administración
-  puede quitarlos o cambiarles el % en un paquete.
+- ~~Servicios comerciales: generales, con excepción por paquete~~ → *Servicios por categoría*.
 
 ### Paquetes — cómo se arma y cuánto lleva
 
@@ -80,7 +79,7 @@ final** (Presupuestos: es donde se cargan las medidas).
   kg → rueda doble". El sistema la elige y muestra por qué ("Rueda doble — por peso: 48 kg"); el
   vendedor puede cambiarla y ve el aviso, no lo frena (como las restricciones). Es el único tipo de
   regla del primer tramo; las reglas generales siguen para después.
-- Un insumo suelto se precia como un paquete de una línea: costo + servicios comerciales generales.
+- Un insumo suelto se precia como un paquete de una línea: costo + servicios por categoría y generales.
 - **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
   sandbox, auditoría). **Se le suma una pestaña Servicios** al lado de Materiales: el técnico elige el
@@ -105,6 +104,23 @@ historial** — como en los dos ERP viejos (`erp_old` `lista_precios/AumentoModa
 `precios/ActualizacionMasivaModal.tsx`). No por proveedor: a cada categoría le venden varios. Como el
 costo vive en Compras, la acción es de Compras y usa la categoría del catálogo.
 
+## Servicios por categoría (2026-10-14)
+
+**Un servicio porcentual puede aplicarse por regla, sin cargarlo en cada paquete: general, por
+categoría de paquete (Ventanas 30 %) o por categoría de insumo (Vidrios 10 %).** Se carga una vez
+y alcanza a todo paquete o insumo de esa categoría, también al insumo suelto. Reemplaza a los
+comerciales generales con excepción por paquete: son el caso de una regla general.
+
+**Si una línea cae en dos reglas del mismo servicio, gana la más específica, no se suman:** excepción
+del paquete › categoría del insumo › categoría del paquete › general. Sumar cobraría dos veces el
+mismo servicio sobre el mismo vidrio de una ventana.
+
+- El % va sobre los insumos que alcanza la regla (no sobre servicios) y no lleva mínimo.
+- Los servicios fijos (soldadura × 4) no van por categoría: su cantidad depende del paquete.
+- Reglas y excepciones las pone administración; el técnico ve qué recibe el paquete, sin el %.
+- Demo: https://claude.ai/artifact/RK1y3Gs42DoNx4h8v7yfzW (pestaña Servicios y "Lo que recibe por
+  categoría" en Paquetes).
+
 ## Precio de venta
 
 ```
@@ -113,7 +129,8 @@ Insumo        cantidad (técnico, fija o fórmula) × (1 + desperdicio del insum
 Servicio fijo cantidad (técnico) × monto (administración)
 Servicio %    % (administración) × suma de insumos de su grupo; mínimo (administración) una vez
               por servicio en el paquete, sobre la suma de sus grupos
-Comerciales   generales, con excepción por paquete (administración)
+Por categoría % (administración) sobre los insumos que alcanza; gana la regla más específica
+              (ver *Servicios por categoría*)
 Precio        insumos + servicios — se calcula en Presupuestos, con las medidas
 Descuento     no es de Catálogo: va en Presupuestos (BACKLOG.md), sobre el precio de lista
 ```
@@ -148,7 +165,7 @@ Personas
 │                          arma paquetes (quien tenga la función, no la persona) · no ve costos ni
 │                          precios
 ├── Administración       — ve todo, con costos (de Compras) y precios · pone montos, % y mínimos de
-│                          servicios, excepciones de comerciales, "se vende suelto" · —
+│                          servicios, reglas por categoría y excepciones, "se vende suelto" · —
 ├── Vendedor             — ve paquetes (despiece sin precios), insumos sueltos y precio de venta
 │                          · los elige al presupuestar (en Presupuestos) · no ve costos
 ├── Depósito             — ve insumos · — · no ve costos, paquetes ni precios
