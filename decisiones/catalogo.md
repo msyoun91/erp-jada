@@ -44,7 +44,8 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **La fórmula dice lo que queda puesto; el desperdicio, lo que se tira** (2026-10-14). Fórmulas y
   largos de pieza llevan la medida real (el `× 1,15` de la felpa vale: da vuelta en las esquinas y
   queda puesta); el desperdicio sale solo del insumo, se aplica para cobrar sobre la cantidad y no
-  toca el despiece (taller corta 1500, no 1650). Suelto no lleva desperdicio: se cobra la presentación
+  toca el despiece (taller corta 1500, no 1650) ni el peso (*El sistema pone una variable de peso por
+  grupo*). Suelto no lleva desperdicio: se cobra la presentación
   entera (2 barras = 12 ml, no 12,96). Por qué: un `× 1,10` en la fórmula se sumaba al 8 % (18,8 %).
 - **"Se vende suelto"**: solo los marcados le aparecen al vendedor como producto. Lo marca
   administración.
@@ -62,11 +63,12 @@ final** (Presupuestos: es donde se cargan las medidas).
   servicio en el paquete**, sobre la suma de sus grupos, no en cada grupo (mano de obra 15 %, mín $ 5.000).
   Como el paquete calcula una abertura, el mínimo es **por ventana**: 4 chicas de $ 3.000 cobran
   4 × $ 5.000 (ver *La cantidad es de la línea*).
-- **El % de un servicio del paquete no incluye vidrio ni cámara** (2026-10-14): va sobre perfiles,
+- **El % de un servicio del paquete no incluye vidrio, cámara ni panel** (2026-10-14): va sobre perfiles,
   herrajes y accesorios del grupo, separados por el tipo del insumo. El trabajo con el vidrio es un
   servicio fijo por m² (*Colocación de vidrio* × `m2_pano_izq`), con condición sobre `espesor_pano_*`
   si un DVH lleva más; el margen sobre el vidrio sigue por categoría (Vidrios 10 %). Por qué: con un
-  laminado 3× más caro, la mano de obra del 15 % subía $ 9.000 por la misma hoja. Descartado: casilla
+  laminado 3× más caro, la mano de obra del 15 % subía $ 9.000 por la misma hoja. El panel ciego,
+  igual: se compra hecho y se coloca como un vidrio. Descartado: casilla
   "incluye vidrio" por servicio — no hay caso que lo pida.
 - Montos, % y mínimos los pone **administración**; el técnico no los ve.
 - **No hay margen:** el precio de venta es insumos a costo + servicios. La ganancia está en los
@@ -114,10 +116,22 @@ final** (Presupuestos: es donde se cargan las medidas).
   hoja da travesaños a 45/45 y un travesaño intermedio a 90/90, y un parante puede ir 45/90. El
   despiece dice *Travesaño intermedio × 1 — 1270 mm — 90/90*. Por qué: con un ángulo por material el
   intermedio salía a 45° y la pieza se perdía.
+- **Una pieza más larga que la barra da aviso** (2026-10-14). El sistema compara cada pieza con el
+  contenido de la presentación del insumo (barra = 6 ml = 6000 mm): *Travesaño marco 6500 mm: más
+  largo que la barra de 6000 mm*. Aviso y no freno: se hace con barra especial o empalme, y lo que no
+  se fabrica ya lo frena una restricción del técnico. Por qué: se cobraba 6,5 ml y taller se enteraba
+  al cortar, con el presupuesto aprobado. Descartado: la restricción a mano en cada paquete — se
+  olvida y el largo ya está en el insumo.
 - **Lo que va por unidad se redondea hacia arriba solo** (2026-10-14), insumo o servicio: `alto / 250`
   = 4,4 → 5 tornillos. Por abertura y antes del desperdicio (5 con 5 % se cobran 5,25; el despiece dice
   5). ml y m² quedan con decimales. Lo que se usa en fracción va en otra unidad (silicona en ml, no
   ½ cartucho).
+- **El largo de cada pieza y cada lado de un paño se redondean al mm, hacia abajo** (2026-10-14), y
+  con ese número sale todo: despiece, ml cobrados, peso, `m2_pano_*`, `perimetro_pano_*` y el aviso
+  de barra. Las variables intermedias (`ancho_hoja_izq`) no se redondean: solo lo que se corta o se
+  pide. Por qué: con 1501 de ancho la hoja daba 772,5 mm y taller y vidriería redondeaban cada uno a
+  su manera; hacia abajo, porque medio mm de menos entra y de más no. Descartado: redondear las
+  variables intermedias — el error se acumula cuando una medida sale de otra.
 - **La cantidad es de la línea del presupuesto, no del paquete** (2026-10-14). El paquete calcula
   una abertura; ninguna fórmula ve la cantidad. La línea multiplica el precio unitario y el despiece
   (4 corredizas → 8 travesaños de marco). Por qué: como variable del técnico, la felpa sin `× cantidad`
@@ -134,6 +148,12 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **La composición del vidrio es por paño** (2026-10-14): todos arrancan con la misma y el vendedor
   cambia solo el que difiere ("usar en todos" copia una a las demás). Una puerta con fijo superior
   laminado y hoja en DVH, o un paño bajo de seguridad, se cobra bien sin armar otro paquete.
+- **La composición de un paño es vidrios y cámaras, o un panel solo** (2026-10-14). Panel es un tipo
+  fijo de insumo, por m², con espesor y peso por m² como el vidrio; el vendedor lo elige por paño y el
+  técnico puede dejarlo como composición por defecto (puerta: DVH arriba, panel abajo). Así el paño
+  da `espesor_pano_*`, `peso_pano_*` y `m2_pano_*`, y burlete, contravidrio y colocación entran sin
+  nada nuevo. Por defecto es *de la ventana* (puerta negra, panel negro). Por qué: como material por
+  fórmula el paño quedaba sin espesor y sin burlete, y no se podía cambiar a vidrio.
 - **Cada pieza de la composición se cobra en su unidad** (2026-10-14). Hoy vidrios y cámaras se
   compran sueltos a la vidriería, con el armado del DVH incluido en su precio: la cámara es un insumo
   por m² y se cobra por el m² del paño (DVH 4+12+4 de 1,4 m² → 1,4 m² de float 4, de cámara 12 y de
@@ -149,7 +169,7 @@ final** (Presupuestos: es donde se cargan las medidas).
   (felpa, tornillos, vidrio) no cambia. *De la ventana* (perfiles, tapas a la vista) va en el color de
   la ventana y sin el equivalente ese color no se ofrece (*ART-2410 sin negro mate*). *De herrajes*
   (manijas, cierres, kit central) sigue al color de herrajes de la línea; si no lo tiene, va en su
-  color base y no bloquea. Por defecto sale del tipo (perfil: de la ventana; el resto: sin color) y el
+  color base y no bloquea. Por defecto sale del tipo (perfil y panel: de la ventana; el resto: sin color) y el
   técnico lo cambia. Por qué: un perfil recién cargado sin variantes parecía "sin color" como la felpa
   y salía natural en una ventana negra; y el kit central plateado, que va en blanco y en negro, sacaba
   el blanco de toda la corrediza. Descartado: deducirlo solo del tipo — "otro" mezcla manijas y
@@ -167,9 +187,17 @@ final** (Presupuestos: es donde se cargan las medidas).
   la línea (*el paquete cambió: v3 → v4*); se congela al enviar. Por qué: la rueda doble guardada sin
   su condición cotizaba las dos ruedas mientras el técnico terminaba. Descartado: que la línea quede
   en la v3 hasta actualizarla a mano — saldría con lo que el técnico ya corrigió.
+- **El paquete guarda casos de prueba, y al publicar muestra qué cambia en cada uno** (2026-10-14).
+  Un caso es lo que carga el vendedor (medidas, opciones, composición por paño, color), con nombre;
+  se guarda desde Probar y se carga con un clic. "Publicar" corre los casos con el borrador y con la
+  versión publicada y lista las diferencias sin precios: materiales que entran o salen, piezas,
+  cantidades, avisos (*"3000 hoja pisada": rueda simple → doble (hoja der) · Travesaño hoja der 1460 →
+  1510 mm*). Una opción que ya no existe sigue *Lo elegido se guarda* y se marca. Por qué: cargar a
+  mano 4 casos de 8 campos en cada edición termina en probar uno, y lo roto lo encuentra el vendedor.
+  Descartado: resultado esperado por caso — habría que cargar el despiece entero a mano.
 - **Un insumo dado de baja cuenta como que no está** (2026-10-14): material fijo o condicional → el
-  paquete no se ofrece hasta que el técnico lo reemplace; alternativa → se cae y pasa a la primera
-  válida; variante de la ventana → ese color no se ofrece; variante de herrajes → color base con
+  paquete no se ofrece hasta que el técnico lo reemplace; alternativa → deja de ofrecerse y entra lo
+  que dice *Lo elegido se guarda* (Paquetes); variante de la ventana → ese color no se ofrece; variante de herrajes → color base con
   aviso. La baja no se frena: antes de confirmar muestra dónde se usa (*12 paquetes: 3 dejan de
   ofrecerse, 9 pierden una alternativa*) y el técnico ve esos paquetes marcados. Lo enviado no cambia:
   guarda su versión. Por qué: si no, se sigue cotizando un perfil que ya no se consigue.
@@ -191,7 +219,11 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **Una medida del vendedor puede traer un valor por defecto por fórmula** (2026-10-14), para hojas
   asimétricas: `ancho_hoja_izq` propone `ancho / 2 + 25 - desc_herraje_izq` y el vendedor la pisa
   solo si hace falta; `ancho_hoja_der` es calculada (`ancho - ancho_hoja_izq + 50 - desc_herraje_izq -
-  desc_herraje_der`). Si la pisó, se respeta aunque cambie `ancho`; si no, se recalcula. Las piezas y
+  desc_herraje_der`). Si la pisó, se respeta aunque cambie `ancho`; si no, se recalcula. **La pisada
+  muestra el automático al lado y vuelve con un botón o borrando el campo** (`900 · automático 925 ↺`),
+  y el plegado de la línea la nombra (*hoja izq: 900, pisada*): pisada en 900 sobre 1500, al pasar a
+  1800 salía asimétrica al revés y volver pedía calcular 925 a mano. Descartado: soltarla sola al
+  cambiar `ancho` (pierde la pisada a propósito) y un aviso (no hay nada mal). Las piezas y
   los paños se cargan por hoja. Descartado: un paquete "asimétrico" aparte — repite todos los
   materiales para el 10% de los casos.
 - **Los herrajes de cierre son una opción por hoja, y una alternativa puede llevar condiciones**
@@ -202,7 +234,7 @@ final** (Presupuestos: es donde se cargan las medidas).
   `desc_herraje_*`). Cada alternativa se ofrece si se cumplen sus condiciones, en las mismas casillas
   que los materiales condicionales: manijas y cierres con `cierre` = 0; tiradores y "sin herraje" con
   `cierre` ≥ 1. Por hoja siempre lleva herraje; con central es configurable. Si la elegida deja de
-  ofrecerse, pasa a la primera válida. Descartado: una opción que oculta a otra — es un concepto
+  ofrecerse, entra lo que dice *Lo elegido se guarda*. Descartado: una opción que oculta a otra — es un concepto
   nuevo, y las condiciones y las variables de opción ya existían.
 - **El cierre central es un kit y entra en la hoja que lleva el cuerpo** (2026-10-14), como material
   condicional: en `hoja_izq` si `cierre` = 1, en `hoja_der` si `cierre` = 2. El lado lo pide el
@@ -212,7 +244,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   pero es una extensión nueva para lo que resuelve un código 0/1/2.
 - ~~Todo lo que carga el vendedor tiene default~~ → *El default es obligatorio solo en lo secundario*.
 - **El default es obligatorio solo en lo secundario** (2026-10-14). Opción: el técnico marca la
-  alternativa por defecto; si su condición no se cumple, la primera que se ofrezca. Medida: el
+  alternativa por defecto; si su condición no se cumple, la primera que se ofrezca (*Lo elegido se
+  guarda*). Medida: el
   default por fórmula de arriba, o un número fijo. Grupo opcional: arranca puesto o sacado
   (mosquitero: no). **Una principal sin default arranca vacía y es obligatoria**: la línea queda sin
   precio con *Falta alto*; una secundaria sin default toma la primera alternativa si es opción, y si
@@ -220,10 +253,15 @@ final** (Presupuestos: es donde se cargan las medidas).
   sin default; el vidrio del primer paño es principal y el técnico decide si lo lleva (float 4 en una
   línea que casi siempre va así). Por qué: con 1000 por defecto, el alto olvidado en una de 6
   ventanas se cotizaba 1000 y tenía precio, así que nadie lo veía.
+- **Lo elegido se guarda; lo que entra se calcula** (2026-10-14). La línea guarda la alternativa
+  que eligió el vendedor y entra: lo elegido si se ofrece; si no, el default si se ofrece; si no, la
+  primera que se ofrezca. Nada se sobrescribe. Por qué: embutido → cierre central (entra tirador) →
+  vuelta a `cierre` = 0 perdía el embutido, y la ficha decía "primera válida" en un lado y "default"
+  en otro. Igual que la medida pisada: se respeta lo elegido y se muestra lo que entra hoy.
 - **Cada medida, opción o grupo opcional es principal o secundaria** (2026-10-14). El vendedor ve las
   principales; las secundarias quedan en "Más opciones", que plegado ya muestra qué entra (*herraje
-  izq: Manija · mosquitero: no*). Una secundaria sin default no se puede publicar, como una
-  fórmula mal escrita. Si una restricción avisa sobre una secundaria, el aviso se ve y "Más opciones"
+  izq: Manija · mosquitero: no*). Una medida secundaria sin default no se puede publicar, como una
+  fórmula mal escrita (una opción siempre tiene la primera alternativa). Si una restricción avisa sobre una secundaria, el aviso se ve y "Más opciones"
   se abre solo. Por qué: el vendedor cotiza lo común sin recorrer cada herraje y abre el resto cuando
   el cliente lo pide. Descartado: que sea principal según una condición (herraje principal solo con
   `cierre` = 0) — más lógica para lo que ya resuelve el plegado.
@@ -264,7 +302,9 @@ final** (Presupuestos: es donde se cargan las medidas).
   vendedor, que no puede hacer nada.
 - **El sistema pone una variable de peso por grupo** (2026-10-14): `peso_hoja_izq`, `peso_marco`…,
   suma de los materiales del grupo que suman al peso (cantidad × peso del insumo). El técnico arma con
-  ellas el peso que necesita. Descartado: calcular el peso a mano en la fórmula (ml × kg/ml + m² ×
+  ellas el peso que necesita. **El peso es de lo que queda puesto: cantidad sin desperdicio**, en
+  grupos, paños y el peso de la abertura para logística — el sobrante queda en taller y no viaja. Por
+  qué: una hoja de 38 kg (aluminio 14 + paño 24) con desperdicio pasaba a 40,3 y salía con rueda doble. Descartado: calcular el peso a mano en la fórmula (ml × kg/ml + m² ×
   espesor × 2,5) — repite el peso del insumo y queda viejo si cambia.
 - **Cada grupo opcional pone `con_<grupo>`: 1 si el vendedor lo puso, 0 si no** (2026-10-14), como
   pone `peso_<grupo>`. Con mosquitero el marco va de 3 guías: dos materiales condicionales, marco 2
@@ -281,7 +321,14 @@ final** (Presupuestos: es donde se cargan las medidas).
   y el despiece sale por hoja, como se arma en taller. Por qué: con hojas asimétricas el `/2` le
   restaba aluminio a la ancha, justo la que puede pedir rueda doble; y como las piezas ya son por
   hoja, separar grupos casi no duplica. Lo repetido (felpa, rueda, manija) se alivia con **"duplicar
-  grupo"**, que copia el grupo cambiando `_izq` por `_der` en las fórmulas.
+  grupo"**.
+- **"Duplicar grupo" pide qué reemplazar y por qué, y muestra cada cambio antes de confirmar**
+  (2026-10-14). Propone el par por los nombres (`hoja_izq` → `hoja_cen`: `_izq` → `_cen`) y lo aplica
+  en fórmulas, condiciones y variables de opción; la lista marca las variables que no existen
+  (*`desc_herraje_cen` ⚠ no existe*). Se confirma igual: es borrador, y una variable que no existe es
+  fórmula mal escrita, que no se publica. Por qué: con 3 hojas el `_izq` → `_der` fijo daba dos
+  `hoja_der` y la central con las fórmulas de la derecha. Descartado: numerar hojas `_1`, `_2`, `_3`
+  — taller y el cierre central hablan de izquierda y derecha.
 - **El vendedor no agrega materiales a la composición del paquete** (2026-10-14). Lo que se pide
   seguido (traba de seguridad) el técnico lo suma como grupo opcional secundario, arrancando sacado,
   y entra en despiece, peso y cantidad de la línea. Lo puntual va como línea suelta del presupuesto,
@@ -303,7 +350,14 @@ paquetes es como busca el vendedor (Ventana → corrediza 2 hojas, corrediza 3 h
 pocos y ya se separan por fijo/porcentual y comercial; sumarla después es trivial. Subcategorías,
 recién si una categoría se llena.
 
-**En insumos, la categoría (libre) va separada del tipo (fijo: vidrio, cámara, perfil, otro).** El
+**La línea de perfiles va en el nombre del paquete, y el buscador del vendedor toma palabras en
+cualquier orden** (2026-10-14): *Corrediza 2 hojas — Modena*, que *modena corr* encuentra; el resumen
+de la línea del presupuesto muestra el nombre entero, así una Herrero entre Modenas se ve al revisar.
+Por qué: con 3 líneas × 6 tipos el vendedor elegía entre tres corredizas parecidas en cada abertura.
+Descartado: un campo Línea (otra clasificación que mantener), categorías por línea (un solo nivel,
+se pierde buscar por tipo) y deducirla de los perfiles (hay paquetes que mezclan).
+
+**En insumos, la categoría (libre) va separada del tipo (fijo: vidrio, cámara, panel, perfil, otro).** El
 tipo lo usa el sistema (armado de DVH, corte, color) y no se toca desde la pantalla; la categoría solo
 ordena y agrupa, y mezcla tipos: "Vidrios" tiene vidrios y cámaras porque se compran a varias
 vidrierías y aumentan juntos. Si el sistema mirara la categoría, renombrarla rompería el cálculo.
@@ -464,8 +518,20 @@ y una propuesta a discutir, no decidida.
 21. ~~**Montos, % y reglas de servicios en tabla aparte.**~~ → *Monto, %, mínimo… van en tablas
     propias* (El motor va en Postgres).
 
-*Menores:* peso sin desperdicio (38 kg pasarían a 41 → rueda doble) · "duplicar grupo" con 3 hojas no
-alcanza con `_izq`→`_der` · pieza más larga que la barra: avisar · volver al automático tras pisar
-una medida · opción que vuelve: ¿default o primera válida? (la ficha dice las dos) · panel ciego en el
-paño · casos de prueba guardados en Probar · redondeo del largo de corte (750,5 mm) · filtro por línea
-de perfiles para el vendedor.
+*Menores*
+
+22. ~~**Peso sin desperdicio.**~~ → *El peso es de lo que queda puesto* (Paquetes, en *El sistema pone
+    una variable de peso por grupo*).
+23. ~~**"Duplicar grupo" con 3 hojas.**~~ → *"Duplicar grupo" pide qué reemplazar y por qué*
+    (Paquetes).
+24. ~~**Pieza más larga que la barra.**~~ → *Una pieza más larga que la barra da aviso* (Paquetes).
+25. ~~**Volver al automático.**~~ → *Una medida del vendedor puede traer un valor por defecto por
+    fórmula* (Paquetes).
+26. ~~**Opción que vuelve.**~~ → *Lo elegido se guarda; lo que entra se calcula* (Paquetes).
+27. ~~**Panel ciego en el paño.**~~ → *La composición de un paño es vidrios y cámaras, o un panel
+    solo* (Paquetes).
+28. ~~**Casos de prueba guardados en Probar.**~~ → *El paquete guarda casos de prueba* (Paquetes).
+29. ~~**Redondeo del largo de corte.**~~ → *El largo de cada pieza y cada lado de un paño se
+    redondean al mm, hacia abajo* (Paquetes).
+30. ~~**Filtro por línea de perfiles.**~~ → *La línea de perfiles va en el nombre del paquete*
+    (Categorías).

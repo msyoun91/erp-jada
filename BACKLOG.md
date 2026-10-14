@@ -23,7 +23,7 @@ todavía en el orden: Stock y la licitación de Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
-  `decisiones/catalogo.md`. Siguiente: los *Menores* de la auditoría (en *Pendiente*); después,
+  `decisiones/catalogo.md`. Auditoría resuelta (en *Pendiente*). Siguiente:
   entes, relaciones, acciones, eventos y el árbol de vistas y funciones.
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
