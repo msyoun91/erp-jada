@@ -23,7 +23,8 @@ todavía en el orden: Stock y la licitación de Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
-  `decisiones/catalogo.md`.
+  `decisiones/catalogo.md`. Siguiente: los *Menores* de la auditoría (en *Pendiente*); después,
+  entes, relaciones, acciones, eventos y el árbol de vistas y funciones.
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
   producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
@@ -34,11 +35,25 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   abre (propuesta: la etapa guarda su dirección de entrega).
   Los descuentos son de Presupuestos, no de Catálogo (que da el precio de lista, igual para todos):
   por presupuesto o línea, con la función "aplicar descuento"; el tope, al fichar Presupuestos.
+  La cantidad es de la línea (precio de una abertura × cantidad) y lo que se hace una vez por pedido
+  (traslado, flete, preparación) es un cargo del presupuesto entero, no de cada línea
+  (`decisiones/catalogo.md` → *La cantidad es de la línea*). No se envía con una línea sin precio (insumo o servicio sin costo: `decisiones/catalogo.md` →
+  *Sin costo no es $ 0*).
+  Hasta enviarse, la línea sigue a la última versión publicada del paquete y al costo de hoy (con
+  aviso si el paquete cambió); al enviar, se congela (`decisiones/catalogo.md` → *El técnico edita un
+  borrador*).
+  La línea nueva propone el color y el vidrio de la anterior: en el catálogo no tienen default
+  (`decisiones/catalogo.md` → *El default es obligatorio solo en lo secundario*).
+  Los avisos de la línea quedan marcados y al enviar o aprobar se listan para confirmar, sin frenar;
+  queda quién confirmó (`decisiones/catalogo.md` → *El aviso es parte del resultado de la línea*).
+  Una línea suelta puede referirse a otra (*Traba × 4 — para V4*) para que taller sepa a qué abertura
+  va (`decisiones/catalogo.md` → *El vendedor no agrega materiales*).
 - **Stock** (decidido al fichar Catálogo, 2026-09-29): módulo propio, no parte de Catálogo. Lleva
   existencias y movimientos de los insumos del catálogo; su persona principal es depósito/logística.
   Quien presupuesta ve el stock del insumo sin poder tocarlo.
 - **Compras** (ídem): dueño del costo del insumo, no Catálogo. El costo es de reposición (lo que
-  costaría comprarlo hoy), en su moneda (ARS, US$, €), con historial; se convierte con el oficial BNA
+  costaría comprarlo hoy), en su moneda (ARS, US$, €), con historial, cargado como se cotiza (por
+  unidad, presentación o kg: `decisiones/catalogo.md` → *El costo se carga como se cotiza*); se convierte con el oficial BNA
   venta. Catálogo lo lee para calcular el precio de venta; el técnico no lo ve. Tabla propia, no
   columna del insumo: RLS filtra filas, no columnas. El aumento se aplica por categoría del catálogo o
   por insumo, en % o monto fijo, con motivo (`decisiones/catalogo.md` → *Categorías*). La cotización
