@@ -116,6 +116,17 @@ final** (Presupuestos: es donde se cargan las medidas).
   compra: el kit no se parte en cuerpo y contracierre. Descartado: cargarlo en el marco (no se
   mecaniza) y que una alternativa ponga varias variables (`cierre_central` + `lado`) — se lee mejor,
   pero es una extensión nueva para lo que resuelve un código 0/1/2.
+- **Todo lo que carga el vendedor tiene default** (2026-10-14). Opción: el técnico marca la
+  alternativa por defecto (sin marca, la primera); si su condición no se cumple, la primera que se
+  ofrezca. Medida: el default por fórmula de arriba, o un número fijo. Grupo opcional: arranca puesto
+  o sacado (mosquitero: no).
+- **Cada medida, opción o grupo opcional es principal o secundaria** (2026-10-14). El vendedor ve las
+  principales; las secundarias quedan en "Más opciones", que plegado ya muestra qué entra (*herraje
+  izq: Manija plateada · mosquitero: no*). Una secundaria sin default no se puede guardar, como una
+  fórmula mal escrita. Si una restricción avisa sobre una secundaria, el aviso se ve y "Más opciones"
+  se abre solo. Por qué: el vendedor cotiza lo común sin recorrer cada herraje y abre el resto cuando
+  el cliente lo pide. Descartado: que sea principal según una condición (herraje principal solo con
+  `cierre` = 0) — más lógica para lo que ya resuelve el plegado.
 - **El peso es para logística y condiciona herrajes** (2026-10-14): ej., pasado cierto peso de hoja
   va rueda doble.
 - ~~Una opción puede tomar su insumo por una variable calculada~~ → *Materiales condicionales*.
