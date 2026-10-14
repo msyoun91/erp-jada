@@ -194,7 +194,9 @@ función `INVOKER` no podría calcular, y hacerlo en TypeScript exigiría `servi
 explícita a `SECURITY INVOKER`, acotada a esta función.
 
 **Las fórmulas se validan al guardar y se evalúan en la base**: solo números, variables del paquete,
-`+ − × ÷`, paréntesis y funciones de una lista (redondear, máximo, mínimo). Descartado: el motor en
+`+ − × ÷`, paréntesis y funciones de una lista (redondear, máximo, mínimo). **Coma decimal y punto
+y coma entre argumentos, como Excel en castellano** (`* 1,15`, `redondear(ancho / 1000; 0)`); el punto
+decimal también se acepta, para que pegar `1.15` no sea un error. Descartado: el motor en
 TypeScript del ERP viejo — más rico (reglas, simulador, grafo), pero eso quedó para después.
 
 ## Ficha del módulo (borrador)
