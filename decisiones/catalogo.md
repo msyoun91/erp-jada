@@ -70,6 +70,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   máximo del canal) y el vendedor arma la composición al presupuestar (simple, DVH, TVH: vidrios +
   cámaras); el sistema saca m² por vidrio y ml de separador. Si la composición supera el espesor del
   canal, **advierte, no frena** (como las restricciones). Después: reglas, simulador, grafo.
+- **Un perfil se carga por piezas: nombre, cantidad y largo por fórmula** (2026-10-14), ej. marco:
+  2 travesaños de `ancho` y 2 jambas de `alto`, a 45°. Los ml salen de sumar las piezas, no de otra
+  fórmula: una sola fuente, y "Probar paquete" muestra el despiece para taller (piezas a cortar en
+  mm, con el color elegido, y la medida de cada vidrio por paño) para que el técnico lo verifique.
 - **La composición del vidrio es por paño** (2026-10-14): todos arrancan con la misma y el vendedor
   cambia solo el que difiere ("usar en todos" copia una a las demás). Una puerta con fijo superior
   laminado y hoja en DVH, o un paño bajo de seguridad, se cobra bien sin armar otro paquete. El
