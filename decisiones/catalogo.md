@@ -68,6 +68,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   material del paquete cambia por el elegido.
 - **El peso es para logística y condiciona herrajes** (2026-10-14): ej., pasado cierto peso de hoja
   va rueda doble.
+- **Una opción puede tomar su insumo por una variable calculada** (2026-10-14): "si `peso_hoja` > 40
+  kg → rueda doble". El sistema la elige y muestra por qué ("Rueda doble — por peso: 48 kg"); el
+  vendedor puede cambiarla y ve el aviso, no lo frena (como las restricciones). Es el único tipo de
+  regla del primer tramo; las reglas generales siguen para después.
 - Un insumo suelto se precia como un paquete de una línea: costo + servicios comerciales generales.
 - **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
@@ -145,9 +149,7 @@ Entes, relaciones, acciones, eventos: pendientes
 
 ## Pendiente
 
-1. Herraje por peso: ¿el sistema lo cambia solo o le avisa al vendedor? Es una regla condicional,
-   que estaba para después.
-2. Unidad de comercialización (barra de 6 m): ¿para qué se usa?
-3. Fórmulas: descuentos y desperdicio.
-4. Entes, relaciones, acciones, eventos; árbol de vistas y funciones; delegables y reglas entre
+1. Unidad de comercialización (barra de 6 m): ¿para qué se usa?
+2. Fórmulas: descuentos y desperdicio.
+3. Entes, relaciones, acciones, eventos; árbol de vistas y funciones; delegables y reglas entre
    permisos. Con eso la ficha se aprueba.
