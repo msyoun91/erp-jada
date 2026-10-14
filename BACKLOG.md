@@ -38,7 +38,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Compras** (ídem): dueño del costo del insumo, no Catálogo. El costo es de reposición (lo que
   costaría comprarlo hoy), en su moneda (ARS, US$, €), con historial; se convierte con el oficial BNA
   venta. Catálogo lo lee para calcular el precio de venta; el técnico no lo ve. Tabla propia, no
-  columna del insumo: RLS filtra filas, no columnas. Arranca mínimo (costos) antes de Presupuestos;
+  columna del insumo: RLS filtra filas, no columnas. El aumento se aplica por categoría del catálogo o
+  por insumo, en % o monto fijo, con motivo (`decisiones/catalogo.md` → *Categorías*). Arranca mínimo (costos) antes de Presupuestos;
   después suma la licitación —varias ofertas por insumo, con precio, plazo y fecha, y una elegida—,
   que al elegir actualiza el costo. Los proveedores son empresas de Contactos
   (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*).

@@ -23,7 +23,7 @@ final** (Presupuestos: es donde se cargan las medidas).
 - Perfiles, tornillos, burletes, vidrios, silicona.
 - Datos: nombre, **unidad de compra** (ml, kg o unidad — cada insumo una), peso por unidad (para el
   peso de la abertura), unidad de comercialización / presentación (ej: barra de 6 m) — su uso exacto
-  sigue pendiente —, clasificación (perfiles, vidrios, accesorios, herrajes…).
+  sigue pendiente —, **tipo** y **categoría** (ver *Categorías*).
 - **"Se vende suelto"**: solo los marcados le aparecen al vendedor como producto. Lo marca
   administración (a confirmar).
 - Sin costo: el costo de reposición vive en Compras, con su moneda (ARS, US$, €).
@@ -68,6 +68,23 @@ final** (Presupuestos: es donde se cargan las medidas).
   servicio del catálogo y le pone cantidad fija o por variable (soldadura × 4); el monto no se ve.
   **Cada servicio va en un grupo**, como los materiales: si el vendedor saca un grupo opcional
   (mosquitero), su mano de obra sale con él.
+
+## Categorías (2026-10-14)
+
+**Insumos y paquetes tienen categorías que crea el usuario, de un solo nivel; servicios, no.** En
+paquetes es como busca el vendedor (Ventana → corrediza 2 hojas, corrediza 3 hojas). Servicios son
+pocos y ya se separan por fijo/porcentual y comercial; sumarla después es trivial. Subcategorías,
+recién si una categoría se llena.
+
+**En insumos, la categoría (libre) va separada del tipo (fijo: vidrio, cámara, perfil, otro).** El
+tipo lo usa el sistema (armado de DVH, corte, color) y no se toca desde la pantalla; la categoría solo
+ordena y agrupa, y mezcla tipos: "Vidrios" tiene vidrios y cámaras porque se compran a varias
+vidrierías y aumentan juntos. Si el sistema mirara la categoría, renombrarla rompería el cálculo.
+
+**El aumento de costo se aplica por categoría o por insumo, en % o monto fijo, con motivo e
+historial** — como en los dos ERP viejos (`erp_old` `lista_precios/AumentoModal.tsx`, `erp_old_2`
+`precios/ActualizacionMasivaModal.tsx`). No por proveedor: a cada categoría le venden varios. Como el
+costo vive en Compras, la acción es de Compras y usa la categoría del catálogo.
 
 ## Precio de venta
 
