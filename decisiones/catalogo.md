@@ -98,6 +98,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   generales siguen para después.
   Por qué: la rueda no es una preferencia del cliente, la decide la medida; dejarla al vendedor
   permitía armar una abertura que no anda.
+- **La condición se carga en casillas, no se escribe** (2026-10-14): variable, comparación (> ≥ < ≤ =)
+  y valor. Un material puede tener varias y entra si se cumplen todas ("ancho > 2000 y alto > 1800").
+  Descartado: escribirla como fórmula (`ancho > 2000 y alto > 1800`) — obliga al motor en Postgres a
+  interpretar comparaciones y y/o, y el técnico puede escribir algo que no se entiende.
 - **Cada material dice si suma al peso** (2026-10-14). Por defecto suma; el técnico lo apaga en el
   material que no debe contar. Así la rueda queda fuera del peso del grupo: el peso que la elige no
   cambia según qué rueda salga (si no, una condición sobre el peso dependería de sí misma). **Solo
