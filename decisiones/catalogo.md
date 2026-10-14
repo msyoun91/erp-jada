@@ -21,7 +21,8 @@ final** (Presupuestos: es donde se cargan las medidas).
 ### Insumos — qué compramos y usamos para trabajar
 
 - Perfiles, tornillos, burletes, vidrios, silicona.
-- Datos: nombre, **unidad de compra** (ml, kg o unidad — cada insumo una), peso por unidad (para el
+- Datos: nombre, **unidad de compra** (ml, m², kg o unidad — cada insumo una; m² para vidrio y tela
+  mosquitera, que la vidriería cobra y el paquete usa por superficie), peso por unidad (para el
   peso de la abertura y logística), unidad de comercialización / presentación (ej: barra de 6 m),
   **tipo** y **categoría** (ver *Categorías*).
 - **La presentación sirve para vender suelto y para comprar, no para el paquete** (2026-10-14). Suelto
