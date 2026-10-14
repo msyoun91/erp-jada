@@ -105,8 +105,22 @@ Precio        insumos + servicios — se calcula en Presupuestos, con las medida
 ```
 
 Cotización: oficial BNA venta de USD y EUR, automática con corrección manual (como `erp_old`: dolarapi,
-ventana 10–15 h, cierre del día, lo manual no lo pisa el automático; `erp_old_2`: monedapi.ar). Dónde
-vive: a decidir (la usan Compras, Catálogo y Presupuestos).
+ventana 10–15 h, cierre del día, lo manual no lo pisa el automático; `erp_old_2`: monedapi.ar).
+
+**La cotización es una vista de Compras, no un módulo** (2026-10-14). Una tabla, una pantalla y una
+persona (administración la corrige); Compras es dueño de los costos en moneda extranjera y Catálogo y
+Presupuestos solo la leen, como leen el costo. Si crece (más monedas, índices), se separa.
+
+## El motor va en Postgres (2026-10-14)
+
+**El precio lo calcula una función de Postgres `SECURITY DEFINER` que devuelve el precio y nunca el
+costo.** RLS filtra filas, no columnas: el vendedor no puede leer la tabla de costos, así que una
+función `INVOKER` no podría calcular, y hacerlo en TypeScript exigiría `service_role`. Excepción
+explícita a `SECURITY INVOKER`, acotada a esta función.
+
+**Las fórmulas se validan al guardar y se evalúan en la base**: solo números, variables del paquete,
+`+ − × ÷`, paréntesis y funciones de una lista (redondear, máximo, mínimo). Descartado: el motor en
+TypeScript del ERP viejo — más rico (reglas, simulador, grafo), pero eso quedó para después.
 
 ## Ficha del módulo (borrador)
 
@@ -135,7 +149,5 @@ Entes, relaciones, acciones, eventos: pendientes
    que estaba para después.
 2. Unidad de comercialización (barra de 6 m): ¿para qué se usa?
 3. Fórmulas: descuentos y desperdicio.
-4. El motor, ¿en Postgres (regla de `CLAUDE.md`) o excepción explícita en TypeScript como el ERP viejo?
-5. Dónde vive la cotización.
-6. Entes, relaciones, acciones, eventos; árbol de vistas y funciones; delegables y reglas entre
+4. Entes, relaciones, acciones, eventos; árbol de vistas y funciones; delegables y reglas entre
    permisos. Con eso la ficha se aprueba.

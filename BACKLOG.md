@@ -39,7 +39,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   costaría comprarlo hoy), en su moneda (ARS, US$, €), con historial; se convierte con el oficial BNA
   venta. Catálogo lo lee para calcular el precio de venta; el técnico no lo ve. Tabla propia, no
   columna del insumo: RLS filtra filas, no columnas. El aumento se aplica por categoría del catálogo o
-  por insumo, en % o monto fijo, con motivo (`decisiones/catalogo.md` → *Categorías*). Arranca mínimo (costos) antes de Presupuestos;
+  por insumo, en % o monto fijo, con motivo (`decisiones/catalogo.md` → *Categorías*). La cotización
+  (USD y EUR) es una vista de Compras (`decisiones/catalogo.md` → *Precio de venta*). Arranca mínimo
+  (costos y cotización) antes de Presupuestos;
   después suma la licitación —varias ofertas por insumo, con precio, plazo y fecha, y una elegida—,
   que al elegir actualiza el costo. Los proveedores son empresas de Contactos
   (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*).
