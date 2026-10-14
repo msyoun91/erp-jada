@@ -116,9 +116,13 @@ final** (Presupuestos: es donde se cargan las medidas).
   que no puede hacer nada.
 - **El sistema pone una variable de peso por grupo** (2026-10-14): `peso_hojas`, `peso_vidriado`…,
   suma de los materiales del grupo que suman al peso (cantidad × peso del insumo). El técnico arma con
-  ellas el peso que necesita: `peso_hoja = (peso_hojas + peso_vidriado) / 2`. Descartado: calcular el
-  peso a mano en la fórmula (ml × kg/ml + m² × espesor × 2,5) — repite el peso del insumo y queda
-  viejo si cambia.
+  ellas el peso que necesita. Descartado: calcular el peso a mano en la fórmula (ml × kg/ml + m² ×
+  espesor × 2,5) — repite el peso del insumo y queda viejo si cambia.
+- **El sistema también pone el peso de cada paño** (`peso_pano_izq`, `peso_pano_der`), porque la
+  composición es por paño y el promedio de las hojas puede esconder la pesada. El técnico usa la más
+  pesada: `peso_hoja = peso_hojas / 2 + maximo(peso_pano_izq; peso_pano_der)`, y las dos hojas llevan
+  la rueda que pide esa. Descartado: un grupo por hoja — exacto, pero duplica los materiales del
+  paquete; el costo del atajo es, a lo sumo, una rueda doble en una hoja liviana.
 - Un insumo suelto se precia como un paquete de una línea: costo + servicios por categoría y generales.
 - **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
