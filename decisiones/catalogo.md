@@ -106,7 +106,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   material que no debe contar. Así la rueda queda fuera del peso del grupo: el peso que la elige no
   cambia según qué rueda salga (si no, una condición sobre el peso dependería de sí misma). **Solo
   saca el material del peso de su grupo: el peso de la abertura, para logística, suma todo.** Un
-  herraje pesado que mire el peso dejaría mal el flete.
+  herraje pesado que mire el peso dejaría mal el flete. **Un material que mira el peso (por condición
+  o fórmula) no puede sumar al peso del grupo: el paquete no se guarda así**, como una fórmula mal
+  escrita. Es un error de armado y lo corrige el técnico; descartado: ignorarlo y avisar al vendedor,
+  que no puede hacer nada.
 - **El sistema pone una variable de peso por grupo** (2026-10-14): `peso_hojas`, `peso_vidriado`…,
   suma de los materiales del grupo que suman al peso (cantidad × peso del insumo). El técnico arma con
   ellas el peso que necesita: `peso_hoja = (peso_hojas + peso_vidriado) / 2`. Descartado: calcular el
