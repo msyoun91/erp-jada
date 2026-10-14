@@ -95,11 +95,21 @@ final** (Presupuestos: es donde se cargan las medidas).
   Descartado: que cada alternativa le "ajuste" la variable (−5 mm al ancho de hoja) — el ajuste
   quedaría escondido en la opción y la fórmula de `ancho_hoja` no diría la verdad.
 - **Una medida del vendedor puede traer un valor por defecto por fórmula** (2026-10-14), para hojas
-  asimétricas: `ancho_hoja_izq` propone `ancho / 2 + 25 - desc_manija` y el vendedor la pisa solo si
-  hace falta; `ancho_hoja_der` es calculada (`ancho - ancho_hoja_izq + 50 - 2 × desc_manija`). Si la
-  pisó, se respeta aunque cambie `ancho`; si no, se recalcula. Las piezas y los paños se cargan por
-  hoja. Descartado: un paquete "asimétrico" aparte — repite todos los materiales para el 10% de los
-  casos.
+  asimétricas: `ancho_hoja_izq` propone `ancho / 2 + 25 - desc_herraje_izq` y el vendedor la pisa
+  solo si hace falta; `ancho_hoja_der` es calculada (`ancho - ancho_hoja_izq + 50 - desc_herraje_izq -
+  desc_herraje_der`). Si la pisó, se respeta aunque cambie `ancho`; si no, se recalcula. Las piezas y
+  los paños se cargan por hoja. Descartado: un paquete "asimétrico" aparte — repite todos los
+  materiales para el 10% de los casos.
+- **Los herrajes de cierre son una opción por hoja, y una alternativa puede llevar condiciones**
+  (2026-10-14). La corrediza cierra con un cierre central o con un herraje en cada hoja, que pueden
+  ser distintos (manija en una, cierre embutido en la otra) y el lado importa para taller. El
+  vendedor elige "Cierre: central / por hoja" (opción que pone `cierre_central` 1 o 0) y el herraje
+  de cada hoja (`herraje_izq`, `herraje_der`, cada uno con su `desc_herraje_*`). Cada alternativa
+  se ofrece si se cumplen sus condiciones, en las mismas casillas que los materiales condicionales:
+  manijas y cierres con `cierre_central` = 0; tiradores y "sin herraje" con `cierre_central` = 1.
+  Por hoja siempre lleva herraje; con central es configurable. Si la elegida deja de ofrecerse, pasa
+  a la primera válida. Descartado: una opción que oculta a otra — es un concepto nuevo, y las
+  condiciones y las variables de opción ya existían.
 - **El peso es para logística y condiciona herrajes** (2026-10-14): ej., pasado cierto peso de hoja
   va rueda doble.
 - ~~Una opción puede tomar su insumo por una variable calculada~~ → *Materiales condicionales*.
