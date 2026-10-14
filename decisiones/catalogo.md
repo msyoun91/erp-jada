@@ -70,6 +70,11 @@ final** (Presupuestos: es donde se cargan las medidas).
   máximo del canal) y el vendedor arma la composición al presupuestar (simple, DVH, TVH: vidrios +
   cámaras); el sistema saca m² por vidrio y ml de separador. Si la composición supera el espesor del
   canal, **advierte, no frena** (como las restricciones). Después: reglas, simulador, grafo.
+- **Un color se ofrece solo si todos los insumos con color del paquete lo tienen** (2026-10-14). Si
+  al perfil hoja le falta el blanco, la ventana no se ofrece en blanco: el técnico ve qué falta y el
+  vendedor no ve ese color hasta que se cargue el equivalente. Los insumos sin color (felpa, vidrio)
+  no cuentan. Descartado: dejar el insumo en natural con aviso — una ventana blanca con una hoja
+  natural no se vende — y frenar el presupuesto, que lleva el problema al vendedor.
 - **Lo que carga el vendedor lo define el paquete** (2026-10-14), no es un juego fijo de ancho, alto y
   cantidad: el técnico declara cada variable del vendedor. Puede ser una **medida** (número, con sus
   restricciones) o una **opción** entre insumos (manija plateada o marrón): el técnico marca un
