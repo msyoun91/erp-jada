@@ -65,7 +65,7 @@ final** (Presupuestos: es donde se cargan las medidas).
   4 × $ 5.000 (ver *La cantidad es de la línea*).
 - **El % de un servicio del paquete no incluye vidrio, cámara ni panel** (2026-10-14): va sobre perfiles,
   herrajes y accesorios del grupo, separados por el tipo del insumo. El trabajo con el vidrio es un
-  servicio fijo por m² (*Colocación de vidrio* × `m2_pano_izq`), con condición sobre `espesor_pano_*`
+  servicio fijo por m² (*Colocación de vidrio* × `superficie_pano_izq`), con condición sobre `espesor_pano_*`
   si un DVH lleva más; el margen sobre el vidrio sigue por categoría (Vidrios 10 %). Por qué: con un
   laminado 3× más caro, la mano de obra del 15 % subía $ 9.000 por la misma hoja. El panel ciego,
   igual: se compra hecho y se coloca como un vidrio. Descartado: casilla
@@ -127,7 +127,7 @@ final** (Presupuestos: es donde se cargan las medidas).
   5). ml y m² quedan con decimales. Lo que se usa en fracción va en otra unidad (silicona en ml, no
   ½ cartucho).
 - **El largo de cada pieza y cada lado de un paño se redondean al mm, hacia abajo** (2026-10-14), y
-  con ese número sale todo: despiece, ml cobrados, peso, `m2_pano_*`, `perimetro_pano_*` y el aviso
+  con ese número sale todo: despiece, ml cobrados, peso, `superficie_pano_*`, `perimetro_pano_*` y el aviso
   de barra. Las variables intermedias (`ancho_hoja_izq`) no se redondean: solo lo que se corta o se
   pide. Por qué: con 1501 de ancho la hoja daba 772,5 mm y taller y vidriería redondeaban cada uno a
   su manera; hacia abajo, porque medio mm de menos entra y de más no. Descartado: redondear las
@@ -151,9 +151,20 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **La composición de un paño es vidrios y cámaras, o un panel solo** (2026-10-14). Panel es un tipo
   fijo de insumo, por m², con espesor y peso por m² como el vidrio; el vendedor lo elige por paño y el
   técnico puede dejarlo como composición por defecto (puerta: DVH arriba, panel abajo). Así el paño
-  da `espesor_pano_*`, `peso_pano_*` y `m2_pano_*`, y burlete, contravidrio y colocación entran sin
+  da `espesor_pano_*`, `peso_pano_*` y `superficie_pano_*`, y burlete, contravidrio y colocación entran sin
   nada nuevo. Por defecto es *de la ventana* (puerta negra, panel negro). Por qué: como material por
   fórmula el paño quedaba sin espesor y sin burlete, y no se podía cambiar a vidrio.
+- **En la composición, lo que elige el vendedor se filtra y lo que declara el técnico cuenta como
+  material fijo** (2026-10-14). El selector del paño ofrece solo vidrios, cámaras y paneles activos y,
+  si son *de la ventana*, en el color de la ventana (en blanco no aparece un panel sin blanco). La
+  composición por defecto cuenta como material fijo: su panel sin blanco saca el blanco del paquete;
+  su laminado dado de baja deja el paquete sin ofrecer hasta que el técnico lo reemplace. Lo ya elegido
+  en una línea sin enviar que queda sin color o de baja deja la línea sin precio con el motivo (*Panel
+  ciego PAN-01: no viene en negro mate, cambiá la composición del paño hoja izquierda*); lo enviado no
+  cambia. Por qué: el panel se elige entre todos los del catálogo, así que con la regla de las
+  alternativas cualquier panel sin blanco sacaba el blanco de toda abertura con paños. Descartado:
+  reemplazarlo solo por la composición por defecto — el vendedor armó ese paño a propósito y se
+  cotizaría otra cosa sin aviso.
 - **Cada pieza de la composición se cobra en su unidad** (2026-10-14). Hoy vidrios y cámaras se
   compran sueltos a la vidriería, con el armado del DVH incluido en su precio: la cámara es un insumo
   por m² y se cobra por el m² del paño (DVH 4+12+4 de 1,4 m² → 1,4 m² de float 4, de cámara 12 y de
@@ -163,7 +174,8 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **Un color se ofrece solo si todos los insumos *de la ventana* del paquete lo tienen** (2026-10-14). Si
   al perfil hoja le falta el blanco, la ventana no se ofrece en blanco: el técnico ve qué falta y el
   vendedor no ve ese color hasta que se cargue el equivalente, sea material fijo, alternativa o
-  condicional. Los sin color y los de herrajes no cuentan. Descartado: dejar el insumo en natural con aviso — una ventana blanca con una hoja
+  condicional (la composición del paño, ver *En la composición, lo que elige el vendedor se filtra*).
+  Los sin color y los de herrajes no cuentan. Descartado: dejar el insumo en natural con aviso — una ventana blanca con una hoja
   natural no se vende — y frenar el presupuesto, que lleva el problema al vendedor.
 - **El insumo declara su color: sin color, de la ventana o de herrajes** (2026-10-14). *Sin color*
   (felpa, tornillos, vidrio) no cambia. *De la ventana* (perfiles, tapas a la vista) va en el color de
@@ -198,7 +210,7 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **Un insumo dado de baja cuenta como que no está** (2026-10-14): material fijo o condicional → el
   paquete no se ofrece hasta que el técnico lo reemplace; alternativa → deja de ofrecerse y entra lo
   que dice *Lo elegido se guarda* (Paquetes); variante de la ventana → ese color no se ofrece; variante de herrajes → color base con
-  aviso. La baja no se frena: antes de confirmar muestra dónde se usa (*12 paquetes: 3 dejan de
+  aviso; vidrio, cámara o panel → *En la composición, lo que elige el vendedor se filtra*. La baja no se frena: antes de confirmar muestra dónde se usa (*12 paquetes: 3 dejan de
   ofrecerse, 9 pierden una alternativa*) y el técnico ve esos paquetes marcados. Lo enviado no cambia:
   guarda su versión. Por qué: si no, se sigue cotizando un perfil que ya no se consigue.
 - **La variante de color solo tiene código, nombre y costo; lo físico es del insumo base**
@@ -216,6 +228,13 @@ final** (Presupuestos: es donde se cargan las medidas).
   desc_manija`. Así lo que cambia una medida se ve en la fórmula de esa medida, en un solo lugar.
   Descartado: que cada alternativa le "ajuste" la variable (−5 mm al ancho de hoja) — el ajuste
   quedaría escondido en la opción y la fórmula de `ancho_hoja` no diría la verdad.
+- **Una opción puede poner varias variables: cada alternativa carga un valor en cada una, y lo que no
+  carga vale 0** (2026-10-14). El herraje pone `desc_herraje_izq` (manija 3, embutida 5, cierre 0,
+  tirador 5) y `embutido_izq` (embutida 1); el *Mecanizado de embutido* entra si `embutido_izq` = 1.
+  Por qué: con una sola variable no había cómo hacerlo entrar — `desc_herraje_izq` = 5 también lo
+  metía con el tirador. Descartado: un código por posición con `elegir(herraje_izq; 3; 5; 0; 5; 0)`
+  — reordenar las alternativas rompe las fórmulas sin que se note; y una condición sobre qué insumo
+  entró — tipo de condición nuevo.
 - **Una medida del vendedor puede traer un valor por defecto por fórmula** (2026-10-14), para hojas
   asimétricas: `ancho_hoja_izq` propone `ancho / 2 + 25 - desc_herraje_izq` y el vendedor la pisa
   solo si hace falta; `ancho_hoja_der` es calculada (`ancho - ancho_hoja_izq + 50 - desc_herraje_izq -
@@ -240,8 +259,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   condicional: en `hoja_izq` si `cierre` = 1, en `hoja_der` si `cierre` = 2. El lado lo pide el
   cliente. Así taller lo ve en su hoja y la mano de obra y el peso suman ahí. Un insumo es lo que se
   compra: el kit no se parte en cuerpo y contracierre. Descartado: cargarlo en el marco (no se
-  mecaniza) y que una alternativa ponga varias variables (`cierre_central` + `lado`) — se lee mejor,
-  pero es una extensión nueva para lo que resuelve un código 0/1/2.
+  mecaniza). Sigue con un código 0/1/2: una variable alcanza. ~~Que una alternativa ponga varias
+  variables~~ → *Una opción puede poner varias variables*.
 - ~~Todo lo que carga el vendedor tiene default~~ → *El default es obligatorio solo en lo secundario*.
 - **El default es obligatorio solo en lo secundario** (2026-10-14). Opción: el técnico marca la
   alternativa por defecto; si su condición no se cumple, la primera que se ofrezca (*Lo elegido se
@@ -283,7 +302,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   interpretar comparaciones y y/o, y el técnico puede escribir algo que no se entiende.
 - **Un servicio del paquete también puede llevar condiciones**, en las mismas casillas (2026-10-14):
   "mano de obra extra si `alto` > 2400"; el mecanizado del embutido entra si `embutido_izq` = 1, que
-  pone la alternativa embutida de la opción del herraje (las demás, 0). El despiece dice por qué
+  pone la alternativa embutida de la opción del herraje (las demás, 0: *Una opción puede poner varias
+  variables*). El despiece dice por qué
   entró. Puede mirar el peso: un servicio no suma al peso. Descartado: que la alternativa traiga su
   servicio — enganche nuevo para lo que ya resuelven la variable de opción y la condición.
 - **Cada material dice si suma al peso** (2026-10-14). Por defecto suma; el técnico lo apaga en el
@@ -312,9 +332,16 @@ final** (Presupuestos: es donde se cargan las medidas).
   vendedor elija las guías — puede poner mosquitero con marco de 2 — y un paquete aparte con
   mosquitero, que repite todo por un perfil.
 - **El sistema también pone el peso de cada paño** (`peso_pano_izq`, `peso_pano_der`), porque la
-  composición es por paño, **y su `m2_pano_*`, `perimetro_pano_*` (mm) y `espesor_pano_*`** (total de
-  la composición: 20 en un 4+12+4) (2026-10-14). Con ellas se condiciona el burlete y el contravidrio
-  al espesor y se cobra la colocación por m² sin rehacer la medida del paño en cada fórmula.
+  composición es por paño, **y su `superficie_pano_*` (mm²), `perimetro_pano_*` (mm) y
+  `espesor_pano_*`** (total de la composición: 20 en un 4+12+4) (2026-10-14). Con ellas se condiciona
+  el burlete y el contravidrio al espesor y se cobra la colocación por m² sin rehacer la medida del
+  paño en cada fórmula.
+- **La superficie del paño va en mm², como toda variable** (2026-10-14): paño de 712 × 1000 →
+  `superficie_pano_izq` = 712.000; *Colocación de vidrio* × `superficie_pano_izq` → 0,712 m². Por qué:
+  como `m2_pano_*` en m², el sistema la volvía a pasar a m² y la colocación cobraba un millonésimo.
+  Una condición sobre la superficie se escribe en mm² (`superficie_pano_izq > 2000000`): es rara, las
+  que se usan son espesor y peso. Descartado: `m2_pano_*` como excepción en m² — hay que acordarse de
+  qué variable no está en mm, y el olvido no se nota.
 - ~~El técnico usa la hoja más pesada (`peso_hojas / 2 + maximo(...)`)~~ → *Un grupo por hoja*.
 - **Un grupo por hoja** (2026-10-14): `hoja_izq`, `hoja_der`, cada uno con sus materiales y su peso
   (`peso_total_hoja_izq = peso_hoja_izq + peso_pano_izq`). Cada hoja lleva la rueda que pide su peso,
