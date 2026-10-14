@@ -25,7 +25,7 @@ final** (Presupuestos: es donde se cargan las medidas).
   peso de la abertura), unidad de comercialización / presentación (ej: barra de 6 m) — su uso exacto
   sigue pendiente —, **tipo** y **categoría** (ver *Categorías*).
 - **"Se vende suelto"**: solo los marcados le aparecen al vendedor como producto. Lo marca
-  administración (a confirmar).
+  administración.
 - Sin costo: el costo de reposición vive en Compras, con su moneda (ARS, US$, €).
 - Ente: sí (vinculable a proveedores vía `contactos_vinculos`; declara el rol `proveedor`).
 
@@ -40,7 +40,7 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **No hay margen:** el precio de venta es insumos a costo + servicios. La ganancia está en los
   servicios comerciales.
 - Servicios comerciales: **generales**, se suman a todo paquete y a todo insumo suelto; administración
-  puede quitarlos o cambiarles el % en un paquete (quién hace la excepción: a confirmar).
+  puede quitarlos o cambiarles el % en un paquete.
 
 ### Paquetes — cómo se arma y cuánto lleva
 
@@ -60,7 +60,14 @@ final** (Presupuestos: es donde se cargan las medidas).
   paquete como el mockup — el mismo perfil se remapearía en cada plantilla y los mapeos podrían
   contradecirse. Y **vidrios compuestos**: el paquete define cada paño (medidas por variable, espesor
   máximo del canal) y el vendedor arma la composición al presupuestar (simple, DVH, TVH: vidrios +
-  cámaras); el sistema saca m² por vidrio y ml de separador. Después: reglas, simulador, grafo.
+  cámaras); el sistema saca m² por vidrio y ml de separador. Si la composición supera el espesor del
+  canal, **advierte, no frena** (como las restricciones). Después: reglas, simulador, grafo.
+- **Lo que carga el vendedor lo define el paquete** (2026-10-14), no es un juego fijo de ancho, alto y
+  cantidad: el técnico declara cada variable del vendedor. Puede ser una **medida** (número, con sus
+  restricciones) o una **opción** entre insumos (rueda simple o doble): el vendedor elige y el
+  material del paquete cambia por el elegido.
+- **El peso es para logística y condiciona herrajes** (2026-10-14): ej., pasado cierto peso de hoja
+  va rueda doble.
 - Un insumo suelto se precia como un paquete de una línea: costo + servicios comerciales generales.
 - **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
@@ -124,12 +131,11 @@ Entes, relaciones, acciones, eventos: pendientes
 
 ## Pendiente
 
-1. Vidrios: si la composición supera el espesor máximo del canal, ¿advierte o frena?
-2. Peso y unidad de comercialización: confirmar el uso (peso de la abertura; ¿barra para vender
-   suelto?; ¿logística?).
-3. Fórmulas: qué medidas carga el vendedor, condiciones, descuentos y desperdicio.
-4. Confirmar: excepciones de comerciales y "se vende suelto" los hace administración.
-5. El motor, ¿en Postgres (regla de `CLAUDE.md`) o excepción explícita en TypeScript como el ERP viejo?
-6. Dónde vive la cotización.
-7. Entes, relaciones, acciones, eventos; árbol de vistas y funciones; delegables y reglas entre
+1. Herraje por peso: ¿el sistema lo cambia solo o le avisa al vendedor? Es una regla condicional,
+   que estaba para después.
+2. Unidad de comercialización (barra de 6 m): ¿para qué se usa?
+3. Fórmulas: descuentos y desperdicio.
+4. El motor, ¿en Postgres (regla de `CLAUDE.md`) o excepción explícita en TypeScript como el ERP viejo?
+5. Dónde vive la cotización.
+6. Entes, relaciones, acciones, eventos; árbol de vistas y funciones; delegables y reglas entre
    permisos. Con eso la ficha se aprueba.
