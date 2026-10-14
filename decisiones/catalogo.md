@@ -103,13 +103,19 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **Los herrajes de cierre son una opción por hoja, y una alternativa puede llevar condiciones**
   (2026-10-14). La corrediza cierra con un cierre central o con un herraje en cada hoja, que pueden
   ser distintos (manija en una, cierre embutido en la otra) y el lado importa para taller. El
-  vendedor elige "Cierre: central / por hoja" (opción que pone `cierre_central` 1 o 0) y el herraje
-  de cada hoja (`herraje_izq`, `herraje_der`, cada uno con su `desc_herraje_*`). Cada alternativa
-  se ofrece si se cumplen sus condiciones, en las mismas casillas que los materiales condicionales:
-  manijas y cierres con `cierre_central` = 0; tiradores y "sin herraje" con `cierre_central` = 1.
-  Por hoja siempre lleva herraje; con central es configurable. Si la elegida deja de ofrecerse, pasa
-  a la primera válida. Descartado: una opción que oculta a otra — es un concepto nuevo, y las
-  condiciones y las variables de opción ya existían.
+  vendedor elige "Cierre" (opción que pone `cierre`: 0 por hoja, 1 central con cuerpo a la izquierda,
+  2 a la derecha) y el herraje de cada hoja (`herraje_izq`, `herraje_der`, cada uno con su
+  `desc_herraje_*`). Cada alternativa se ofrece si se cumplen sus condiciones, en las mismas casillas
+  que los materiales condicionales: manijas y cierres con `cierre` = 0; tiradores y "sin herraje" con
+  `cierre` ≥ 1. Por hoja siempre lleva herraje; con central es configurable. Si la elegida deja de
+  ofrecerse, pasa a la primera válida. Descartado: una opción que oculta a otra — es un concepto
+  nuevo, y las condiciones y las variables de opción ya existían.
+- **El cierre central es un kit y entra en la hoja que lleva el cuerpo** (2026-10-14), como material
+  condicional: en `hoja_izq` si `cierre` = 1, en `hoja_der` si `cierre` = 2. El lado lo pide el
+  cliente. Así taller lo ve en su hoja y la mano de obra y el peso suman ahí. Un insumo es lo que se
+  compra: el kit no se parte en cuerpo y contracierre. Descartado: cargarlo en el marco (no se
+  mecaniza) y que una alternativa ponga varias variables (`cierre_central` + `lado`) — se lee mejor,
+  pero es una extensión nueva para lo que resuelve un código 0/1/2.
 - **El peso es para logística y condiciona herrajes** (2026-10-14): ej., pasado cierto peso de hoja
   va rueda doble.
 - ~~Una opción puede tomar su insumo por una variable calculada~~ → *Materiales condicionales*.
