@@ -70,6 +70,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   máximo del canal) y el vendedor arma la composición al presupuestar (simple, DVH, TVH: vidrios +
   cámaras); el sistema saca m² por vidrio y ml de separador. Si la composición supera el espesor del
   canal, **advierte, no frena** (como las restricciones). Después: reglas, simulador, grafo.
+- **La composición del vidrio es por paño** (2026-10-14): todos arrancan con la misma y el vendedor
+  cambia solo el que difiere ("usar en todos" copia una a las demás). Una puerta con fijo superior
+  laminado y hoja en DVH, o un paño bajo de seguridad, se cobra bien sin armar otro paquete. El
+  separador sale del perímetro de cada paño, uno por cámara.
 - **Un color se ofrece solo si todos los insumos con color del paquete lo tienen** (2026-10-14). Si
   al perfil hoja le falta el blanco, la ventana no se ofrece en blanco: el técnico ve qué falta y el
   vendedor no ve ese color hasta que se cargue el equivalente. Los insumos sin color (felpa, vidrio)
