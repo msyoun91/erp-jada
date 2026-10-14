@@ -115,6 +115,7 @@ Servicio %    % (administración) × suma de insumos de su grupo; mínimo (admin
               por servicio en el paquete, sobre la suma de sus grupos
 Comerciales   generales, con excepción por paquete (administración)
 Precio        insumos + servicios — se calcula en Presupuestos, con las medidas
+Descuento     no es de Catálogo: va en Presupuestos (BACKLOG.md), sobre el precio de lista
 ```
 
 Cotización: oficial BNA venta de USD y EUR, automática con corrección manual (como `erp_old`: dolarapi,
@@ -158,6 +159,5 @@ Entes, relaciones, acciones, eventos: pendientes
 
 ## Pendiente
 
-1. Descuentos: ¿en Presupuestos o en Catálogo?
-2. Entes, relaciones, acciones, eventos; árbol de vistas y funciones; delegables y reglas entre
+1. Entes, relaciones, acciones, eventos; árbol de vistas y funciones; delegables y reglas entre
    permisos. Con eso la ficha se aprueba.

@@ -32,6 +32,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   obra lista sus presupuestos con su estado actual. Los contactos operativos (capataz, quien recibe)
   se vinculan al presupuesto. A decidir: cómo ve logística el nombre y la dirección de una obra que no
   abre (propuesta: la etapa guarda su dirección de entrega).
+  Los descuentos son de Presupuestos, no de Catálogo (que da el precio de lista, igual para todos):
+  por presupuesto o línea, con la función "aplicar descuento"; el tope, al fichar Presupuestos.
 - **Stock** (decidido al fichar Catálogo, 2026-09-29): módulo propio, no parte de Catálogo. Lleva
   existencias y movimientos de los insumos del catálogo; su persona principal es depósito/logística.
   Quien presupuesta ve el stock del insumo sin poder tocarlo.
