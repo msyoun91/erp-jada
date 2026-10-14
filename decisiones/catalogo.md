@@ -75,6 +75,11 @@ final** (Presupuestos: es donde se cargan las medidas).
   material del paquete y le carga las alternativas; el vendedor elige y el material cambia por el
   elegido. **Cada alternativa usa la fórmula del material o trae la suya** (una manija de dos puntos
   de fijación lleva otros tornillos).
+- **Una opción puede poner una variable que usan las fórmulas** (2026-10-14): la manija define
+  `desc_manija` (plateada 3, marrón 0, embutida 5) y el técnico escribe `ancho_hoja = ancho / 2 + 25 -
+  desc_manija`. Así lo que cambia una medida se ve en la fórmula de esa medida, en un solo lugar.
+  Descartado: que cada alternativa le "ajuste" la variable (−5 mm al ancho de hoja) — el ajuste
+  quedaría escondido en la opción y la fórmula de `ancho_hoja` no diría la verdad.
 - **El peso es para logística y condiciona herrajes** (2026-10-14): ej., pasado cierto peso de hoja
   va rueda doble.
 - ~~Una opción puede tomar su insumo por una variable calculada~~ → *Materiales condicionales*.
