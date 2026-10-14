@@ -37,3 +37,6 @@ Thumbs.db
 
 # Vercel
 .vercel/
+
+# Estado de sesión (mod sesion-erp)
+.claude/retomar.md

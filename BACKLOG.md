@@ -37,7 +37,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   por presupuesto o línea, con la función "aplicar descuento"; el tope, al fichar Presupuestos.
   La cantidad es de la línea (precio de una abertura × cantidad) y lo que se hace una vez por pedido
   (traslado, flete, preparación) es un cargo del presupuesto entero, no de cada línea
-  (`decisiones/catalogo.md` → *La cantidad es de la línea*). No se envía con una línea sin precio (insumo o servicio sin costo: `decisiones/catalogo.md` →
+  (`decisiones/catalogo.md` → *La cantidad es de la línea*). El cargo es un renglón libre:
+  descripción y monto que calcula el vendedor, sin servicio del catálogo (`decisiones/catalogo.md` →
+  *Entes*). No se envía con una línea sin precio (insumo o servicio sin costo: `decisiones/catalogo.md` →
   *Sin costo no es $ 0*).
   Hasta enviarse, la línea sigue a la última versión publicada del paquete y al costo de hoy (con
   aviso si el paquete cambió); al enviar, se congela (`decisiones/catalogo.md` → *El técnico edita un

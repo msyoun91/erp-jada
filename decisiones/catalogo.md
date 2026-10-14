@@ -471,6 +471,19 @@ decimal también se acepta, para que pegar `1.15` no sea un error, **salvo segui
 cifras**: `2.400` se rechaza al guardar (*¿2400 o 2,4?*), que si no queda en 2,4 mm. Descartado: el motor en
 TypeScript del ERP viejo — más rico (reglas, simulador, grafo), pero eso quedó para después.
 
+## Entes (2026-10-14)
+
+**Dos entes: insumo y paquete.** Son lo que otro módulo usa: Compras costea el insumo, Stock lleva sus
+existencias, Contactos le vincula el proveedor, y la línea del presupuesto apunta a un paquete o a un
+insumo suelto. Lo demás es parte de un ente o configuración: la variante de color es del insumo (Compras
+la costea por FK); la versión es del paquete (la línea congelada la guarda por FK, el chip muestra el
+paquete); grupos, piezas, materiales, variables, opciones y casos de prueba son el interior del paquete;
+categorías, montos, % y reglas de servicios son configuración.
+
+**El servicio no es ente: vive solo dentro del catálogo** (paquetes y reglas). Un cargo del presupuesto
+(flete, traslado) no sale de servicios: es un renglón libre, con descripción y monto que calcula el
+vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un servicio, alcanza una FK.
+
 ## Ficha del módulo (borrador)
 
 ```
@@ -489,7 +502,10 @@ Personas
 ├── Depósito             — ve insumos · — · no ve costos, paquetes ni precios
 ├── Compras              — NO usa Catálogo · ve los insumos desde Compras, para costearlos
 └── Taller               — NO usa Catálogo · ve el despiece ya procesado, por plantillas
-Entes, relaciones, acciones, eventos: pendientes
+Entes
+├── insumo   — dueño, estado, ruta y submódulo: pendientes
+└── paquete  — ídem
+Relaciones, acciones, eventos: pendientes
 ```
 
 ## Pendiente
@@ -562,3 +578,171 @@ y una propuesta a discutir, no decidida.
     redondean al mm, hacia abajo* (Paquetes).
 30. ~~**Filtro por línea de perfiles.**~~ → *La línea de perfiles va en el nombre del paquete*
     (Categorías).
+
+## Ficha del módulo — v2, desde cero (borrador, 2026-10-14)
+
+Se arma de nuevo, de a un punto, sin partir del borrador anterior; al terminar se comparan.
+
+```
+Módulo: catálogo
+Objetivo: definir qué se puede vender y la base de cómputo de su precio — los datos y las fórmulas
+          que el presupuestador usa para calcular el precio de cada ítem
+Personas
+├── Técnico         — insumos, servicios y paquetes, sin plata · crea y edita los tres (la parte
+│                     técnica); en paquetes escribe fórmulas y despieces, verifica que funcionen y
+│                     los manda a aprobar · no ve plata
+├── Administración  — ve todo, con costos (de Compras); prueba paquetes con medidas y ve el precio ·
+│                     aprueba paquetes; crea categorías, pone márgenes y montos
+│                     de servicios, marca qué insumo se vende suelto y en qué unidad; habilita a cada
+│                     cliente empresa qué ve y si ve precios · —
+│                     (los costos los carga en Compras, fuera del catálogo)
+├── Vendedor        — NO usa el módulo: por el presupuestador elige paquetes aprobados e insumos
+│                     sueltos y ve su precio · — · no ve despiece, costo ni margen
+├── Producción      — NO usa el módulo: el módulo de producción guarda medidas y configuración y
+│                     pide el despiece cuando lo necesita · — · no ve plata ni fórmulas
+└── Cliente empresa — NO usa el módulo: por el presupuestador de erp-cliente elige lo que administración
+                      le habilitó; ve el precio solo si se lo habilitó · — · no ve despiece, costo ni margen
+Entes
+├── paquete — dueño creado_por (solo dato) · estado por versión: borrador · para aprobar · aprobada · lo señalan la línea del presupuesto y la orden de producción
+└── insumo  — dueño creado_por (solo dato) · sin estado (solo activo), sin versiones · lo señalan la línea del presupuesto (suelto), Compras, Stock y Contactos
+Relaciones (del catálogo)
+├── versión del paquete → insumos y servicios con sus fórmulas — interior del paquete, no puente entre entes
+└── empresa cliente (Contactos) → categorías o subcategorías habilitadas + ve precio — configuración, FK a la empresa
+Relaciones (de otros módulos, apuntan al catálogo)
+├── insumo ← proveedor (Contactos) · costo (Compras) · existencias (Stock)
+├── versión del paquete o insumo suelto ← línea del presupuesto (Presupuestos)
+└── versión del paquete ← orden de producción, con medidas y herrajes (Producción)
+Acciones
+├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · aprobar · rechazar (con motivo)
+│            · versión nueva · probar con medidas · poner margen · mover de subcategoría · dar de baja · reactivar
+├── insumo: crear · editar · marcar suelto y unidad · dar de baja · reactivar
+├── servicio: crear · editar · poner monto, % y mínimo · dar de baja · reactivar
+├── categorías: crear · renombrar · dar de baja (administración)
+└── clientes: habilitar categoría o subcategoría · ve precio sí/no (administración)
+Eventos que emite
+├── paquete: estado de la versión (para aprobar · rechazada → borrador · aprobada) — aviso a administración
+│            y al técnico; la primera aprobada avisa a vendedores del producto nuevo
+├── paquete: baja — aviso a vendedores de que sale de venta
+├── insumo: baja — aviso al técnico: "reemplazar Marco 70 mm: 15 paquetes incompletos"
+└── servicio: ninguno (no es ente; su baja se ve en los paquetes incompletos)
+Eventos que consume
+└── ninguno
+```
+
+```
+Módulo: Catálogo
+├── Insumos (vista)                              — técnico, administración
+│   ├── catalogo_insumos_editar (funcion)        — técnico: crear y editar
+│   └── catalogo_insumos_administrar (funcion)   — administración: ve costos, suelto y unidad,
+│                                                  categorías, baja y reactivar
+├── Servicios (vista)                            — técnico, administración
+│   ├── catalogo_servicios_editar (funcion)      — técnico: crear y editar
+│   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo, categorías, baja
+├── Paquetes (vista)                             — técnico, administración
+│   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores, versión nueva, mandar a aprobar,
+│   │                                              reemplazar material, probar sin plata
+│   └── catalogo_paquetes_administrar (funcion)  — administración: aprobar y rechazar, margen, probar
+│                                                  con plata, categorías, mover, baja
+└── Clientes (vista)                             — administración
+    └── catalogo_clientes_habilitar (funcion)    — administración: qué ve cada empresa y si ve precio
+Reglas entre permisos: ninguna. _editar y _administrar pueden coexistir en la misma persona.
+```
+
+Decidido en la v2:
+
+- **El costo sigue fuera del catálogo, en Compras** (como en la v1). Administración lo carga allá; el
+  catálogo lo lee para calcular. El técnico no ve plata.
+- **Hay margen, y lo pone administración** — la v1 decía *No hay margen* (ganancia solo en servicios).
+  Diferencia a resolver al comparar las dos fichas.
+- **Tres vistas: Insumos · Servicios · Paquetes.**
+  - *Insumos*: los materiales que se pueden usar o vender. Todo insumo está en una subcategoría; las
+    categorías las crea administración. Administración decide si se vende suelto y en qué unidad:
+    m², metro lineal, unidad o kg.
+  - *Servicios*: lo no material. Porcentual con monto mínimo, o fijo (corte, manipulación del material).
+  - *Paquetes*: donde están las fórmulas, armadas con insumos y servicios. En categorías que crea
+    administración (Ventanas PVC → Corrediza 2 hojas, Corrediza 3 hojas).
+- **Categorías en dos niveles fijos, en las tres vistas**: categoría → subcategoría → ítem (Perfiles
+  PVC → Marcos → Marco corrediza 70 mm · Ventanas → Ventanas PVC → Corrediza 2 hojas). Cada ítem está
+  en una subcategoría. No se anida más. Servicios también, por decisión del usuario, aunque sean pocos
+  (propuesta descartada: lista plana con búsqueda y filtro fijo/porcentual).
+- ~~**El técnico crea, administración completa la plata y aprueba — en insumos, servicios y
+  paquetes.**~~ → *Solo el paquete se aprueba*.
+- **Al presupuestador le sale el precio, nunca el costo ni el despiece.** El vendedor elige entre
+  paquetes aprobados e insumos marcados sueltos; lo que esté sin aprobar no aparece.
+- **El despiece no se guarda: se calcula cuando se pide.** Quien lo usa guarda solo las entradas
+  (paquete, ancho, alto, configuración de herrajes) y pide el despiece al catálogo. Una sola función del
+  catálogo evalúa las fórmulas: la llaman producción, el presupuestador (para el precio) y la prueba del
+  técnico. Si cada módulo evaluara por su cuenta, la regla viviría en dos lugares.
+- **Consecuencia: una fórmula aprobada no se edita.** Si el despiece se recalcula cuando se pide, cambiar
+  `ancho − 6` por `ancho − 8` después de vendida cambiaría la ventana vendida. Editar crea una versión
+  nueva, y lo guardado apunta a la versión (*Estados*).
+- **Cada cliente empresa ve lo que administración le habilita, y el precio es opcional por cliente.**
+  Nace sin nada habilitado. Se habilita por categoría o subcategoría, no por ítem: lo que se aprueba
+  después en una subcategoría habilitada lo ve solo (una categoría incluye sus subcategorías futuras).
+  De los insumos ve solo los sueltos. Ve lo mismo que el vendedor: nunca despiece, costo ni margen. Sin
+  precio, el cliente arma el pedido con medidas y el precio lo pone el vendedor. Descartado: marcar ítem
+  por ítem (cada producto nuevo obliga a tocar cada cliente).
+- **Dos entes: paquete e insumo.** Son lo que otro módulo señala. El servicio no es ente: nadie de afuera
+  lo elige, lo suma la función de precio. La versión es parte del paquete (lo guardado apunta a la versión,
+  el chip muestra el paquete); categorías y habilitaciones de clientes son configuración.
+- **Lo que no está en el catálogo es un renglón libre del presupuesto** (flete, algo que no vale la pena
+  cargar): descripción y monto a mano. No sale de servicios.
+- **El catálogo es compartido: no nace privado.** Todo técnico ve y edita los borradores de cualquier
+  otro; quien tiene la vista ve todo lo de esa vista. `creado_por` es un dato, no da visibilidad.
+  Excepción a *Todo ente nace privado* (`GUIDE_ENTES.md` §2.4): el catálogo es de la empresa y entre
+  técnicos no hay competencia que proteger. Descartado: borrador privado hasta mandarlo a aprobar
+  (suma compartir y transferir sin necesidad).
+- **El estado es de cada versión del paquete: borrador · para aprobar · aprobada.** La vigente (última
+  aprobada) se calcula, no se guarda. Mientras v2 está en borrador o en revisión se sigue vendiendo v1.
+  Rechazar vuelve a borrador con motivo obligatorio. Dar de baja el paquete lo saca de la venta; lo que
+  apunta a sus versiones se sigue calculando.
+- ~~**Un borrador puede usar insumos y servicios sin aprobar, pero no se manda a aprobar hasta que todos
+  lo estén.**~~ → *Solo el paquete se aprueba*.
+- **Producción puede elegir con qué versión aprobada fabrica**, no solo con la que se vendió. El catálogo
+  le ofrece solo las versiones aprobadas del paquete y calcula el despiece de la que elija. Cambiar de
+  versión cambia los materiales, no el precio: el precio es del presupuesto. Por eso cada versión dice qué
+  cambió, obligatorio al mandarla a aprobar ("v2: agrega burlete inferior en la hoja").
+- **El insumo no se versiona: una corrección se edita en el mismo insumo.** Las fórmulas leen el peso,
+  así que corregirlo recalcula las órdenes viejas — y eso se quiere: el dato viejo estaba mal. Antes de
+  guardar, quien corrige ve a cuántos paquetes y órdenes abiertas toca. **Un producto distinto es un insumo
+  nuevo** (alta del nuevo, baja del viejo, versión nueva de los paquetes). Por qué no inmutable: corregir
+  un perfil usado en 15 paquetes obligaba a 15 versiones y a mudar costo, stock y proveedor, para un dato
+  que casi nunca cambia. El paquete sí se versiona porque cambiar una fórmula es diseño, no corrección.
+- **El servicio se edita directo, como el insumo.** No está en el despiece: corregirlo cambia precios, no
+  órdenes.
+- **Los cambios de plata de administración rigen al instante, sin aprobación**: montos, %, mínimos,
+  márgenes, suelto y unidad de venta. El catálogo calcula siempre con los valores de hoy; cuándo se
+  congela el precio de un presupuesto lo decide Presupuestos. Cada cambio queda registrado (quién,
+  cuándo, valor anterior y nuevo).
+- **El catálogo no apunta a ningún otro módulo salvo la empresa cliente**: solo es dueño del interior de
+  los paquetes y de las habilitaciones de clientes. Los demás le apuntan. Se puede construir antes que
+  Compras, Stock y Producción.
+- **Solo el paquete se aprueba** (revertido para insumo y servicio, 2026-10-14). El técnico crea y edita
+  insumos y servicios sin aprobación; administración completa la plata. Insumo y servicio no tienen
+  estado, solo `activo`. El freno queda donde importa: un insumo nuevo no se vende suelto hasta que
+  administración lo marca, y un paquete que lo usa no llega al vendedor hasta que administración lo
+  aprueba probándolo con plata — ahí ve si falta un costo o un monto. Descartado: el mismo circuito de
+  aprobación en las tres vistas (trabajo doble para administración sobre datos que el paquete ya revisa).
+- **Dar de baja es de administración, en las tres vistas**: dejar de vender es una decisión comercial.
+  El técnico puede pedirlo, no hacerlo.
+- **La subcategoría la elige el técnico al crear; administración puede moverla después.**
+- **Dar de baja un insumo o un servicio deja "incompletos" los paquetes que lo usan: dejan de venderse.**
+  Incompleto se calcula (la versión vigente usa algo dado de baja), no se guarda. En el catálogo dice
+  "falta reemplazar: Marco corrediza 70 mm"; el vendedor y el cliente no lo ven; las órdenes que ya
+  apuntan a esa versión siguen calculando su despiece. Descartado: seguir vendiéndolo con aviso.
+- **El técnico reemplaza por material o por paquete.** Por material: "reemplazar Marco 70 mm por Marco 72
+  mm" crea una versión borrador en cada paquete que lo usa, con el qué cambió ya escrito. Por paquete: a
+  mano, cuando el material nuevo obliga a tocar una fórmula. Las dos terminan en versión nueva y
+  aprobación.
+- **Administración aprueba varias versiones juntas con checkbox, viendo qué cambió de verdad.** Cada fila
+  muestra el texto del técnico (el porqué), los cambios que detecta el sistema entre versiones (insumos
+  que entran o salen, fórmulas modificadas) y el precio antes y después a la medida de referencia del
+  paquete. El texto solo no alcanza: dice lo que el técnico cree que cambió. Cada paquete tiene una
+  medida de referencia que carga el técnico (la misma con que prueba el despiece).
+- **El producto nuevo se avisa al aprobarse la primera versión, no en el alta.** El alta ocurre cuando el
+  técnico abre el borrador: avisar ahí a los vendedores sería avisar de algo que no se vende. "Incompleto"
+  no emite (se calcula); lo que lo causa sí: la baja del insumo.
+- **La plata va atada a las funciones `_administrar`**: sin una, esa vista no muestra costos, montos,
+  márgenes ni precios. El técnico, con la vista y `_editar`, nunca ve plata.
+- **`_editar` y `_administrar` pueden coexistir**: en una empresa chica la misma persona es técnico y
+  administración. Descartado: excluirlas para que nadie apruebe su propio paquete (obliga a dos personas).
