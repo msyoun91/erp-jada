@@ -66,7 +66,7 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **El % de un servicio del paquete no incluye vidrio, cámara ni panel** (2026-10-14): va sobre perfiles,
   herrajes y accesorios del grupo, separados por el tipo del insumo. El trabajo con el vidrio es un
   servicio fijo por m² (*Colocación de vidrio* × `superficie_pano_izq`), con condición sobre `espesor_pano_*`
-  si un DVH lleva más; el margen sobre el vidrio sigue por categoría (Vidrios 10 %). Por qué: con un
+  si un DVH lleva más; el servicio comercial sobre el vidrio sigue por categoría (Vidrios 10 %). Por qué: con un
   laminado 3× más caro, la mano de obra del 15 % subía $ 9.000 por la misma hoja. El panel ciego,
   igual: se compra hecho y se coloca como un vidrio. Descartado: casilla
   "incluye vidrio" por servicio — no hay caso que lo pida.
@@ -592,16 +592,16 @@ Personas
 │                     técnica); en paquetes escribe fórmulas y despieces, verifica que funcionen y
 │                     los manda a aprobar · no ve plata
 ├── Administración  — ve todo, con costos (de Compras); prueba paquetes con medidas y ve el precio ·
-│                     aprueba paquetes; crea categorías, pone márgenes y montos
+│                     aprueba paquetes; crea categorías, pone montos, % y mínimos
 │                     de servicios, marca qué insumo se vende suelto y en qué unidad; habilita a cada
 │                     cliente empresa qué ve y si ve precios · —
 │                     (los costos los carga en Compras, fuera del catálogo)
 ├── Vendedor        — NO usa el módulo: por el presupuestador elige paquetes aprobados e insumos
-│                     sueltos y ve su precio · — · no ve despiece, costo ni margen
+│                     sueltos y ve su precio · — · no ve despiece, costo ni servicios
 ├── Producción      — NO usa el módulo: el módulo de producción guarda medidas y configuración y
 │                     pide el despiece cuando lo necesita · — · no ve plata ni fórmulas
 └── Cliente empresa — NO usa el módulo: por el presupuestador de erp-cliente elige lo que administración
-                      le habilitó; ve el precio solo si se lo habilitó · — · no ve despiece, costo ni margen
+                      le habilitó; ve el precio solo si se lo habilitó · — · no ve despiece, costo ni servicios
 Entes
 ├── paquete — dueño creado_por (solo dato) · estado por versión: borrador · para aprobar · aprobada · lo señalan la línea del presupuesto y la orden de producción
 └── insumo  — dueño creado_por (solo dato) · sin estado (solo activo), sin versiones · lo señalan la línea del presupuesto (suelto), Compras, Stock y Contactos
@@ -614,7 +614,7 @@ Relaciones (de otros módulos, apuntan al catálogo)
 └── versión del paquete ← orden de producción, con medidas y herrajes (Producción)
 Acciones
 ├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · aprobar · rechazar (con motivo)
-│            · versión nueva · probar con medidas · poner margen · mover de subcategoría · dar de baja · reactivar
+│            · versión nueva · probar con medidas · mover de subcategoría · dar de baja · reactivar
 ├── insumo: crear · editar · marcar suelto y unidad · dar de baja · reactivar
 ├── servicio: crear · editar · poner monto, % y mínimo · dar de baja · reactivar
 ├── categorías: crear · renombrar · dar de baja (administración)
@@ -641,7 +641,7 @@ Módulo: Catálogo
 ├── Paquetes (vista)                             — técnico, administración
 │   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores, versión nueva, mandar a aprobar,
 │   │                                              reemplazar material, probar sin plata
-│   └── catalogo_paquetes_administrar (funcion)  — administración: aprobar y rechazar, margen, probar
+│   └── catalogo_paquetes_administrar (funcion)  — administración: aprobar y rechazar, probar
 │                                                  con plata, categorías, mover, baja
 └── Clientes (vista)                             — administración
     └── catalogo_clientes_habilitar (funcion)    — administración: qué ve cada empresa y si ve precio
@@ -652,8 +652,8 @@ Decidido en la v2:
 
 - **El costo sigue fuera del catálogo, en Compras** (como en la v1). Administración lo carga allá; el
   catálogo lo lee para calcular. El técnico no ve plata.
-- **Hay margen, y lo pone administración** — la v1 decía *No hay margen* (ganancia solo en servicios).
-  Diferencia a resolver al comparar las dos fichas.
+- ~~**Hay margen, y lo pone administración.**~~ → *No hay margen* de la v1 (*Servicios*), confirmado al
+  comparar (2026-10-14): la ganancia está en los servicios comerciales.
 - **Tres vistas: Insumos · Servicios · Paquetes.**
   - *Insumos*: los materiales que se pueden usar o vender. Todo insumo está en una subcategoría; las
     categorías las crea administración. Administración decide si se vende suelto y en qué unidad:
@@ -679,7 +679,7 @@ Decidido en la v2:
 - **Cada cliente empresa ve lo que administración le habilita, y el precio es opcional por cliente.**
   Nace sin nada habilitado. Se habilita por categoría o subcategoría, no por ítem: lo que se aprueba
   después en una subcategoría habilitada lo ve solo (una categoría incluye sus subcategorías futuras).
-  De los insumos ve solo los sueltos. Ve lo mismo que el vendedor: nunca despiece, costo ni margen. Sin
+  De los insumos ve solo los sueltos. Ve lo mismo que el vendedor: nunca despiece, costo ni servicios. Sin
   precio, el cliente arma el pedido con medidas y el precio lo pone el vendedor. Descartado: marcar ítem
   por ítem (cada producto nuevo obliga a tocar cada cliente).
 - **Dos entes: paquete e insumo.** Son lo que otro módulo señala. El servicio no es ente: nadie de afuera
@@ -711,7 +711,7 @@ Decidido en la v2:
 - **El servicio se edita directo, como el insumo.** No está en el despiece: corregirlo cambia precios, no
   órdenes.
 - **Los cambios de plata de administración rigen al instante, sin aprobación**: montos, %, mínimos,
-  márgenes, suelto y unidad de venta. El catálogo calcula siempre con los valores de hoy; cuándo se
+  suelto y unidad de venta. El catálogo calcula siempre con los valores de hoy; cuándo se
   congela el precio de un presupuesto lo decide Presupuestos. Cada cambio queda registrado (quién,
   cuándo, valor anterior y nuevo).
 - **El catálogo no apunta a ningún otro módulo salvo la empresa cliente**: solo es dueño del interior de
@@ -742,7 +742,7 @@ Decidido en la v2:
 - **El producto nuevo se avisa al aprobarse la primera versión, no en el alta.** El alta ocurre cuando el
   técnico abre el borrador: avisar ahí a los vendedores sería avisar de algo que no se vende. "Incompleto"
   no emite (se calcula); lo que lo causa sí: la baja del insumo.
-- **La plata va atada a las funciones `_administrar`**: sin una, esa vista no muestra costos, montos,
-  márgenes ni precios. El técnico, con la vista y `_editar`, nunca ve plata.
+- **La plata va atada a las funciones `_administrar`**: sin una, esa vista no muestra costos, montos
+  ni precios. El técnico, con la vista y `_editar`, nunca ve plata.
 - **`_editar` y `_administrar` pueden coexistir**: en una empresa chica la misma persona es técnico y
   administración. Descartado: excluirlas para que nadie apruebe su propio paquete (obliga a dos personas).
