@@ -24,7 +24,7 @@ final** (Presupuestos: es donde se cargan las medidas).
 - Datos: nombre, **unidad de compra** (ml, m², kg o unidad — cada insumo una; m² para vidrio y tela
   mosquitera, que la vidriería cobra y el paquete usa por superficie), peso por unidad (para el
   peso de la abertura y logística), unidad de comercialización / presentación (ej: barra de 6 m),
-  **tipo** y **categoría** (ver *Categorías*).
+  **categoría** (ver *Categorías*). Sin tipo fijo (*Sin tipo fijo de insumo*, ficha v2).
 - **La presentación sirve para vender suelto y para comprar, no para el paquete** (2026-10-14). Suelto
   se vende por presentación entera (2 barras = 12 ml × costo), no por fracción. Compras compra barras
   enteras y Taller podrá calcular cuántas salen del despiece. En el paquete el insumo va en su unidad
@@ -63,8 +63,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   servicio en el paquete**, sobre la suma de sus grupos, no en cada grupo (mano de obra 15 %, mín $ 5.000).
   Como el paquete calcula una abertura, el mínimo es **por ventana**: 4 chicas de $ 3.000 cobran
   4 × $ 5.000 (ver *La cantidad es de la línea*).
-- **El % de un servicio del paquete no incluye vidrio, cámara ni panel** (2026-10-14): va sobre perfiles,
-  herrajes y accesorios del grupo, separados por el tipo del insumo. El trabajo con el vidrio es un
+- **El % de un servicio del paquete no incluye lo que entra por un paño (vidrio, cámara, panel)**
+  (2026-10-14): va sobre perfiles, herrajes y accesorios del grupo. El trabajo con el vidrio es un
   servicio fijo por m² (*Colocación de vidrio* × `superficie_pano_izq`), con condición sobre `espesor_pano_*`
   si un DVH lleva más; el servicio comercial sobre el vidrio sigue por categoría (Vidrios 10 %). Por qué: con un
   laminado 3× más caro, la mano de obra del 15 % subía $ 9.000 por la misma hoja. El panel ciego,
@@ -148,14 +148,14 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **La composición del vidrio es por paño** (2026-10-14): todos arrancan con la misma y el vendedor
   cambia solo el que difiere ("usar en todos" copia una a las demás). Una puerta con fijo superior
   laminado y hoja en DVH, o un paño bajo de seguridad, se cobra bien sin armar otro paquete.
-- **La composición de un paño es vidrios y cámaras, o un panel solo** (2026-10-14). Panel es un tipo
-  fijo de insumo, por m², con espesor y peso por m² como el vidrio; el vendedor lo elige por paño y el
-  técnico puede dejarlo como composición por defecto (puerta: DVH arriba, panel abajo). Así el paño
+- **El panel ciego entra por la composición del paño, como el vidrio** (2026-10-14). Es un insumo por
+  m², con espesor y peso por m² como el vidrio; el vendedor lo elige en el paño donde su subcategoría
+  es elegible y el técnico puede dejarlo como composición por defecto (puerta: DVH arriba, panel abajo). Así el paño
   da `espesor_pano_*`, `peso_pano_*` y `superficie_pano_*`, y burlete, contravidrio y colocación entran sin
   nada nuevo. Por defecto es *de la ventana* (puerta negra, panel negro). Por qué: como material por
   fórmula el paño quedaba sin espesor y sin burlete, y no se podía cambiar a vidrio.
 - **En la composición, lo que elige el vendedor se filtra y lo que declara el técnico cuenta como
-  material fijo** (2026-10-14). El selector del paño ofrece solo vidrios, cámaras y paneles activos y,
+  material fijo** (2026-10-14). El selector del paño ofrece solo los insumos activos de sus subcategorías elegibles y,
   si son *de la ventana*, en el color de la ventana (en blanco no aparece un panel sin blanco). La
   composición por defecto cuenta como material fijo: su panel sin blanco saca el blanco del paquete;
   su laminado dado de baja deja el paquete sin ofrecer hasta que el técnico lo reemplace. Lo ya elegido
@@ -181,8 +181,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   (felpa, tornillos, vidrio) no cambia. *De la ventana* (perfiles, tapas a la vista) va en el color de
   la ventana y sin el equivalente ese color no se ofrece (*ART-2410 sin negro mate*). *De herrajes*
   (manijas, cierres, kit central) sigue al color de herrajes de la línea; si no lo tiene, va en su
-  color base y no bloquea. Por defecto sale del tipo (perfil y panel: de la ventana; el resto: sin color) y el
-  técnico lo cambia. Por qué: un perfil recién cargado sin variantes parecía "sin color" como la felpa
+  color base y no bloquea. Sin default: el técnico la elige al crear el
+  insumo (antes salía del tipo, descartado en la v2). Por qué: un perfil recién cargado sin variantes parecía "sin color" como la felpa
   y salía natural en una ventana negra; y el kit central plateado, que va en blanco y en negro, sacaba
   el blanco de toda la corrediza. Descartado: deducirlo solo del tipo — "otro" mezcla manijas y
   tornillos; y reglas de color por clase de material (fijo, alternativa, condicional) — sacados los
@@ -210,11 +210,11 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **Un insumo dado de baja cuenta como que no está** (2026-10-14): material fijo o condicional → el
   paquete no se ofrece hasta que el técnico lo reemplace; alternativa → deja de ofrecerse y entra lo
   que dice *Lo elegido se guarda* (Paquetes); variante de la ventana → ese color no se ofrece; variante de herrajes → color base con
-  aviso; vidrio, cámara o panel → *En la composición, lo que elige el vendedor se filtra*. La baja no se frena: antes de confirmar muestra dónde se usa (*12 paquetes: 3 dejan de
+  aviso; elegido en un paño → *En la composición, lo que elige el vendedor se filtra*. La baja no se frena: antes de confirmar muestra dónde se usa (*12 paquetes: 3 dejan de
   ofrecerse, 9 pierden una alternativa*) y el técnico ve esos paquetes marcados. Lo enviado no cambia:
   guarda su versión. Por qué: si no, se sigue cotizando un perfil que ya no se consigue.
 - **La variante de color solo tiene código, nombre y costo; lo físico es del insumo base**
-  (2026-10-14): peso, unidad, presentación, desperdicio, tipo, categoría y su clase de color no se cargan
+  (2026-10-14): peso, unidad, presentación, desperdicio, categoría y su clase de color no se cargan
   en la variante. El $/kg del negro se multiplica por el kg/ml del natural. Por qué: el negro con peso
   0 bajaba la hoja de 43 a 30 kg y salía con rueda simple, y su costo por kg quedaba sin costo.
   Descartado: desperdicio por variante — la barra que se corta es la misma.
@@ -372,22 +372,14 @@ final** (Presupuestos: es donde se cargan las medidas).
 
 ## Categorías (2026-10-14)
 
-**Insumos y paquetes tienen categorías que crea el usuario, de un solo nivel; servicios, no.** En
-paquetes es como busca el vendedor (Ventana → corrediza 2 hojas, corrediza 3 hojas). Servicios son
-pocos y ya se separan por fijo/porcentual y comercial; sumarla después es trivial. Subcategorías,
-recién si una categoría se llena.
+~~**Insumos y paquetes tienen categorías que crea el usuario, de un solo nivel; servicios, no.**~~ →
+*Categorías en dos niveles fijos, en las tres vistas* (ficha v2).
 
-**La línea de perfiles va en el nombre del paquete, y el buscador del vendedor toma palabras en
-cualquier orden** (2026-10-14): *Corrediza 2 hojas — Modena*, que *modena corr* encuentra; el resumen
-de la línea del presupuesto muestra el nombre entero, así una Herrero entre Modenas se ve al revisar.
-Por qué: con 3 líneas × 6 tipos el vendedor elegía entre tres corredizas parecidas en cada abertura.
-Descartado: un campo Línea (otra clasificación que mantener), categorías por línea (un solo nivel,
-se pierde buscar por tipo) y deducirla de los perfiles (hay paquetes que mezclan).
+~~**La línea de perfiles va en el nombre del paquete, y el buscador del vendedor toma palabras en
+cualquier orden**~~ → *En paquetes, la subcategoría es la línea de perfiles* (ficha v2, 2026-10-19).
 
-**En insumos, la categoría (libre) va separada del tipo (fijo: vidrio, cámara, panel, perfil, otro).** El
-tipo lo usa el sistema (armado de DVH, corte, color) y no se toca desde la pantalla; la categoría solo
-ordena y agrupa, y mezcla tipos: "Vidrios" tiene vidrios y cámaras porque se compran a varias
-vidrierías y aumentan juntos. Si el sistema mirara la categoría, renombrarla rompería el cálculo.
+~~**En insumos, la categoría (libre) va separada del tipo (fijo: vidrio, cámara, panel, perfil,
+otro).**~~ → *Sin tipo fijo de insumo* (ficha v2, 2026-10-20).
 
 **El aumento de costo se aplica por categoría o por insumo, en % o monto fijo, con motivo e
 historial** — como en los dos ERP viejos (`erp_old` `lista_precios/AumentoModal.tsx`, `erp_old_2`
@@ -423,7 +415,7 @@ insumo.
 Insumo        cantidad (técnico, fija o fórmula) × (1 + desperdicio del insumo) × costo de reposición
               (Compras) → a pesos, oficial BNA venta
 Servicio fijo cantidad (técnico) × monto (administración)
-Servicio %    % (administración) × suma de insumos de su grupo sin vidrio ni cámara; mínimo (administración) una vez
+Servicio %    % (administración) × suma de insumos de su grupo, sin lo que entra por un paño; mínimo (administración) una vez
               por servicio en el paquete, sobre la suma de sus grupos
 Por categoría % (administración) sobre los insumos que alcanza; gana la regla más específica
               (ver *Servicios por categoría*)
@@ -484,34 +476,18 @@ categorías, montos, % y reglas de servicios son configuración.
 (flete, traslado) no sale de servicios: es un renglón libre, con descripción y monto que calcula el
 vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un servicio, alcanza una FK.
 
-## Ficha del módulo (borrador)
+## ~~Ficha del módulo (borrador)~~
 
-```
-Módulo: catalogo
-Objetivo: definir qué compramos (insumos), qué hacemos (servicios) y cómo se combinan en lo que vendemos
-          (paquetes), para que un presupuesto se arme eligiendo un paquete o un insumo suelto y cargando
-          sus medidas.
-Personas
-├── Técnico / ingeniería — ve insumos, servicios (sin montos) y paquetes · crea insumos y servicios,
-│                          arma paquetes (quien tenga la función, no la persona) · no ve costos ni
-│                          precios
-├── Administración       — ve todo, con costos (de Compras) y precios · pone montos, % y mínimos de
-│                          servicios, reglas por categoría y excepciones, "se vende suelto" · —
-├── Vendedor             — ve paquetes (despiece sin precios), insumos sueltos y precio de venta
-│                          · los elige al presupuestar (en Presupuestos) · no ve costos
-├── Depósito             — ve insumos · — · no ve costos, paquetes ni precios
-├── Compras              — NO usa Catálogo · ve los insumos desde Compras, para costearlos
-└── Taller               — NO usa Catálogo · ve el despiece ya procesado, por plantillas
-Entes
-├── insumo   — dueño, estado, ruta y submódulo: pendientes
-└── paquete  — ídem
-Relaciones, acciones, eventos: pendientes
-```
+→ *Ficha del módulo — v2*.
 
 ## Pendiente
 
-- **Para aprobar la ficha:** entes, relaciones, acciones, eventos; árbol de vistas y funciones;
-  delegables y reglas entre permisos.
+- **Para aprobar la ficha v2** (entes, relaciones, acciones, eventos y árbol ya están en borrador):
+  - Servicios por categoría con dos niveles: ¿la regla va solo por categoría (Ventanas 30 %) o también
+    por subcategoría (Modena 35 %)?
+  - *"Publicar" crea la versión* (Paquetes) frente a la aprobación de la v2: qué corre al mandar a
+    aprobar y qué al aprobar (casos de prueba, aviso *el paquete cambió* en la línea).
+  - Delegables.
 
 ### Auditoría (2026-10-14) — resolver de a uno, en orden
 
@@ -551,8 +527,8 @@ y una propuesta a discutir, no decidida.
 
 17. ~~**Ancho y alto con default.**~~ → *El default es obligatorio solo en lo secundario* (Paquetes).
 18. ~~**El aviso se pierde.**~~ → *El aviso es parte del resultado de la línea* (Paquetes).
-19. ~~**Mano de obra % sobre el vidrio.**~~ → *El % de un servicio del paquete no incluye vidrio ni
-    cámara* (Servicios).
+19. ~~**Mano de obra % sobre el vidrio.**~~ → *El % de un servicio del paquete no incluye lo que entra
+    por un paño* (Servicios).
 20. ~~**Extra fuera del paquete.**~~ → *El vendedor no agrega materiales a la composición del
     paquete* (Paquetes).
 
@@ -571,17 +547,19 @@ y una propuesta a discutir, no decidida.
 25. ~~**Volver al automático.**~~ → *Una medida del vendedor puede traer un valor por defecto por
     fórmula* (Paquetes).
 26. ~~**Opción que vuelve.**~~ → *Lo elegido se guarda; lo que entra se calcula* (Paquetes).
-27. ~~**Panel ciego en el paño.**~~ → *La composición de un paño es vidrios y cámaras, o un panel
-    solo* (Paquetes).
+27. ~~**Panel ciego en el paño.**~~ → *El panel ciego entra por la composición del paño, como el
+    vidrio* (Paquetes).
 28. ~~**Casos de prueba guardados en Probar.**~~ → *El paquete guarda casos de prueba* (Paquetes).
 29. ~~**Redondeo del largo de corte.**~~ → *El largo de cada pieza y cada lado de un paño se
     redondean al mm, hacia abajo* (Paquetes).
-30. ~~**Filtro por línea de perfiles.**~~ → *La línea de perfiles va en el nombre del paquete*
-    (Categorías).
+30. ~~**Filtro por línea de perfiles.**~~ → *En paquetes, la subcategoría es la línea de perfiles*
+    (ficha v2).
 
 ## Ficha del módulo — v2, desde cero (borrador, 2026-10-14)
 
-Se arma de nuevo, de a un punto, sin partir del borrador anterior; al terminar se comparan.
+Se armó de nuevo, sin partir del borrador anterior, y es la vigente. No se compara punto por punto con
+lo anterior (2026-10-20): lo de arriba sigue valiendo salvo donde la v2 dice otra cosa, y lo que choca
+se corrige cuando aparece.
 
 ```
 Módulo: catálogo
@@ -660,11 +638,29 @@ Decidido en la v2:
     m², metro lineal, unidad o kg.
   - *Servicios*: lo no material. Porcentual con monto mínimo, o fijo (corte, manipulación del material).
   - *Paquetes*: donde están las fórmulas, armadas con insumos y servicios. En categorías que crea
-    administración (Ventanas PVC → Corrediza 2 hojas, Corrediza 3 hojas).
+    administración (Ventanas → Modena → Corrediza 2 hojas, Corrediza 3 hojas).
 - **Categorías en dos niveles fijos, en las tres vistas**: categoría → subcategoría → ítem (Perfiles
-  PVC → Marcos → Marco corrediza 70 mm · Ventanas → Ventanas PVC → Corrediza 2 hojas). Cada ítem está
+  PVC → Marcos → Marco corrediza 70 mm · Ventanas → Modena → Corrediza 2 hojas). Cada ítem está
   en una subcategoría. No se anida más. Servicios también, por decisión del usuario, aunque sean pocos
   (propuesta descartada: lista plana con búsqueda y filtro fijo/porcentual).
+- **En paquetes, la subcategoría es la línea de perfiles** (2026-10-19): Ventanas → Modena → Corrediza
+  2 hojas, Corrediza 3 hojas; Ventanas → Herrero → Corrediza 2 hojas. La línea sale del nombre. Por qué:
+  es lo único que el buscador por nombre no da — habilitar a un cliente empresa solo Modena. Para no
+  perder lo que daba la línea en el nombre (v1, *Categorías*): el buscador del vendedor busca también
+  en la subcategoría (*modena corr* encuentra) y la línea del presupuesto muestra subcategoría y nombre
+  (*Modena · Corrediza 2 hojas*), así una Herrero entre Modenas se ve al revisar. Descartado:
+  subcategoría por material (Ventanas → Aluminio) o por tipo (Ventanas → Corredizas) con la línea en el
+  nombre — administración no podría habilitar una sola línea.
+- **Sin tipo fijo de insumo: cada paño ofrece las subcategorías que marca el técnico** (2026-10-20).
+  En cada paño del paquete el técnico marca las subcategorías elegibles (Vidrios → Float, Vidrios →
+  Cámaras; en el paño bajo de una puerta, también Paneles → Ciegos) y el vendedor arma la composición
+  con sus insumos activos: un *Float 5 mm* nuevo en Vidrios → Float aparece solo en todos esos paños.
+  Lo demás que hacía el tipo ya tiene dueño: cobrar por m² o ml lo dice la unidad del insumo; el % de
+  los servicios del paquete deja afuera lo que entra por un paño; el corte por piezas lo decide el
+  técnico al cargar el material; la clase de color se elige al crear el insumo, sin default. Por qué:
+  un concepto menos, y el paño apunta a la subcategoría, no a su nombre — renombrarla no rompe nada.
+  Se pierde "vidrios y cámaras, o un panel solo": panel + cámara no se frena, solo avisa si supera el
+  espesor del canal. Descartado: el tipo fijo de la v1 (vidrio, cámara, panel, perfil, otro).
 - ~~**El técnico crea, administración completa la plata y aprueba — en insumos, servicios y
   paquetes.**~~ → *Solo el paquete se aprueba*.
 - **Al presupuestador le sale el precio, nunca el costo ni el despiece.** El vendedor elige entre
