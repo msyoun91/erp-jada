@@ -1074,4 +1074,7 @@ Decidido en la v2:
   despieza esa versión aunque el paquete esté de baja (la Banderola con sobrante del perfil
   discontinuado). Descartado: la versión enviada con plata de hoy (v3 a $ 653.750): cotiza lo que
   el catálogo ya no vende, con el último costo de algo que ya no se compra. Por línea o entero, y
-  quién puede mantener, al fichar Presupuestos (`BACKLOG.md`).
+  quién puede mantener, al fichar Presupuestos (`BACKLOG.md`). Sin versiones de %, costos ni
+  cotización: la línea guarda su precio, y si se quiere ver de dónde salió, una foto completa al
+  enviar, con la cotización del día (`BACKLOG.md` → Presupuestos). Recalcular lo enviado por fecha
+  pedía versionar las tres cosas y un motor que calcule igual que entonces.

@@ -51,6 +51,11 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   actualiza (vuelve a la vigente con los de hoy). A decidir: por línea o el presupuesto entero, y quién
   puede mantener —con costos viejos es un descuento implícito, como el de arriba— (`decisiones/catalogo.md` →
   *Un presupuesto enviado se mantiene o se actualiza*).
+  Sin versiones de %, costos ni cotización: alcanza el precio copiado. A decidir: foto completa al
+  enviar —cada renglón con cantidad, desperdicio, costo, cotización BNA del día y % con su regla— para
+  ver de dónde salió el precio y compararlo con hoy sin recalcular. Tiene costos: tabla propia que
+  solo lee quien ve costos, escrita por la base al enviar (rama de Presupuestos en la función de
+  cálculo), no por el vendedor.
   La línea nueva propone el color y el vidrio de la anterior: en el catálogo no tienen default
   (`decisiones/catalogo.md` → *El default es obligatorio solo en lo secundario*).
   Los avisos de la línea quedan marcados y al enviar o aprobar se listan para confirmar, sin frenar;
