@@ -482,9 +482,11 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
 
 - **Para aprobar la ficha v2** (entes, relaciones, acciones, eventos y árbol ya están en borrador):
   - ~~Delegables~~ (2026-10-21): en el árbol y en *Se delegan las vistas y lo del técnico*.
-  - Servicios: sumar a las acciones y a `catalogo_servicios_administrar` las reglas por categoría o
-    subcategoría y las excepciones por paquete (*Servicios por categoría*), y que el técnico ve qué
-    recibe el paquete por categoría, sin el %.
+  - ~~Servicios por categoría en las acciones~~ (2026-10-21): en Acciones, en el árbol y en *Reglas y
+    excepciones se cargan desde el servicio*.
+  - Presupuesto enviado (2026-10-21): un cambio de % o de costo (Compras) no lo toca solo; se decide
+    mantenerlo o actualizarlo. Falta qué versión del paquete calcula al actualizar: la rama del
+    vendedor hoy calcula solo la vigente.
   - ~~Lo que la v1 tenía y la v2 no~~ (2026-10-21), los doce resueltos: el 1 (la baja: *La baja
     depende de cómo se usa lo que se da de baja* y siguientes), el 2 (despiece y vendedor: *Precio y
     despiece se habilitan por separado*), el 3 (unidad del suelto: *El suelto se vende por
@@ -577,7 +579,8 @@ Objetivo: definir qué se puede vender y la base de cómputo de su precio — lo
 Personas
 ├── Técnico         — insumos, servicios y paquetes, sin plata · crea y edita los tres (la parte
 │                     técnica); en paquetes escribe fórmulas y despieces, verifica que funcionen y
-│                     los manda a aprobar · no ve plata
+│                     los manda a aprobar; ve qué servicios recibe cada paquete por regla, sin el %
+│                     · no ve plata
 ├── Administración  — ve todo, con costos (de Compras); prueba paquetes con medidas y ve el precio ·
 │                     aprueba paquetes; crea categorías y colores, carga las variantes de color,
 │                     pone montos, % y mínimos
@@ -619,6 +622,9 @@ Acciones
 │           reemplazo opcional) · reactivar · cargar variantes de color, en uno o en varios a la vez
 │           · dar de baja o reactivar una variante (administración)
 ├── servicio: crear · editar · poner monto, % y mínimo · dar de baja · reactivar
+│             · regla (solo porcentuales): aplicar a todo, o a una categoría o subcategoría de
+│               paquetes o de insumos, con su % · cambiar el % · quitarla
+│             · excepción: otro % para un paquete · quitarla
 ├── categorías: crear · renombrar · dar de baja (administración)
 ├── colores: crear · renombrar · dar de baja · reactivar (administración)
 └── clientes: habilitar categoría o subcategoría · ve precio sí/no (administración)
@@ -645,7 +651,8 @@ Módulo: Catálogo
 ├── Servicios (vista, catalogo_servicios)        — técnico, administración
 │   ├── catalogo_servicios_editar (funcion)      — técnico: crear y editar
 │   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo (y el filtro sin
-│                                                  monto), categorías, baja y reactivar
+│                                                  monto), reglas y excepciones por paquete,
+│                                                  categorías, baja y reactivar
 ├── Paquetes (vista, catalogo_paquetes)          — técnico, administración
 │   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores, versión nueva, mandar a aprobar,
 │   │                                              reemplazar material, volver al borrador, probar sin plata
@@ -1050,3 +1057,12 @@ Decidido en la v2:
   le da a uno nuevo *Paquetes* + `catalogo_paquetes_editar` sin pasar por el admin: arma borradores
   y manda a aprobar. Los `_administrar` (aprobar, poner a la venta, costos, montos y %) y *Clientes*
   entera los asigna el admin: la vista sola ya dice qué empresa ve precio. Como en Contactos y Obras.
+- **Reglas y excepciones se cargan desde el servicio; el paquete solo muestra lo que recibe**
+  (2026-10-21). En *Comercialización*: General 30 % · Ventanas → Modena 35 % · Vidrios → Laminados
+  15 % · excepción Corrediza económica 20 %, todo con `catalogo_servicios_administrar`. En el
+  paquete, *Lo que recibe por categoría* es de lectura: el técnico ve *Comercialización — por
+  Ventanas → Modena*, sin el %; administración, con el % y la regla. Antes de guardar se ve el
+  alcance (*Ventanas → Modena 35 %: 18 paquetes · 2 con excepción no cambian*); como la regla no está
+  en la versión, rige al instante y no avisa, como un costo de Compras. Por qué: los % de un servicio
+  en un solo lugar y una sola función. Descartado: la excepción desde el paquete (los % repartidos en
+  dos pantallas y en `catalogo_paquetes_administrar`).
