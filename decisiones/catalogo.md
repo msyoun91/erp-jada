@@ -187,17 +187,17 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **El insumo declara su color: sin color, de la ventana o de herrajes** (2026-10-14). *Sin color*
   (felpa, tornillos, vidrio) no cambia. *De la ventana* (perfiles, tapas a la vista) va en el color de
   la ventana y sin el equivalente ese color no se ofrece (*ART-2410 sin negro mate*). *De herrajes*
-  (manijas, cierres, kit central) sigue al color de herrajes de la línea; si no lo tiene, va en su
+  (manijas, cierres) sigue al color de herrajes de la línea; si no lo tiene, va en su
   color base y no bloquea. Sin default: el técnico la elige al crear el
   insumo (antes salía del tipo, descartado en la v2). Por qué: un perfil recién cargado sin variantes parecía "sin color" como la felpa
-  y salía natural en una ventana negra; y el kit central plateado, que va en blanco y en negro, sacaba
-  el blanco de toda la corrediza. Descartado: deducirlo solo del tipo — "otro" mezcla manijas y
+  y salía natural en una ventana negra; y un herraje que solo viene plateado, que va en blanco y en
+  negro, sacaba el blanco de toda la corrediza. Descartado: deducirlo solo del tipo — "otro" mezcla manijas y
   tornillos; y reglas de color por clase de material (fijo, alternativa, condicional) — sacados los
   herrajes, la regla estricta ya no bloquea de más.
 - **El color de herrajes es una opción secundaria de la línea, por defecto "como la ventana"**
   (2026-10-14): lo normal es negro en ventana negra, pero el cliente lo cambia. Uno por línea, no por
-  herraje. El plegado dice lo que no se pudo (*herrajes: negro · kit central: plateado (no hay en
-  negro)*). La opción del vendedor elige el modelo (manija, embutida, cierre central); el color sale
+  herraje. El plegado dice lo que no se pudo (*herrajes: negro · manija: plateado (no hay en
+  negro)*). La opción del vendedor elige el modelo (manija, embutida, tirador); el color sale
   de acá.
 - ~~**El técnico edita un borrador y "Publicar" crea la versión que ve el vendedor**~~ → *Mandar a
   aprobar frena; aprobar pone a la venta* (ficha v2, 2026-10-21).
@@ -239,22 +239,16 @@ final** (Presupuestos: es donde se cargan las medidas).
   cambiar `ancho` (pierde la pisada a propósito) y un aviso (no hay nada mal). Las piezas y
   los paños se cargan por hoja. Descartado: un paquete "asimétrico" aparte — repite todos los
   materiales para el 10% de los casos.
-- **Los herrajes de cierre son una opción por hoja, y una alternativa puede llevar condiciones**
-  (2026-10-14). La corrediza cierra con un cierre central o con un herraje en cada hoja, que pueden
-  ser distintos (manija en una, cierre embutido en la otra) y el lado importa para taller. El
-  vendedor elige "Cierre" (opción que pone `cierre`: 0 por hoja, 1 central con cuerpo a la izquierda,
-  2 a la derecha) y el herraje de cada hoja (`herraje_izq`, `herraje_der`, cada uno con su
-  `desc_herraje_*`). Cada alternativa se ofrece si se cumplen sus condiciones, en las mismas casillas
-  que los materiales condicionales: manijas y cierres con `cierre` = 0; tiradores y "sin herraje" (*Sin material*, ficha v2) con
-  `cierre` ≥ 1. Por hoja siempre lleva herraje; con central es configurable. Si la elegida deja de
-  ofrecerse, entra lo que dice *Lo elegido se guarda*. Descartado: una opción que oculta a otra — es un concepto
-  nuevo, y las condiciones y las variables de opción ya existían.
-- **El cierre central es un kit y entra en la hoja que lleva el cuerpo** (2026-10-14), como material
-  condicional: en `hoja_izq` si `cierre` = 1, en `hoja_der` si `cierre` = 2. El lado lo pide el
-  cliente. Así taller lo ve en su hoja y la mano de obra y el peso suman ahí. Un insumo es lo que se
-  compra: el kit no se parte en cuerpo y contracierre. Descartado: cargarlo en el marco (no se
-  mecaniza). Sigue con un código 0/1/2: una variable alcanza. ~~Que una alternativa ponga varias
-  variables~~ → *Una opción puede poner varias variables*.
+- **El herraje es una opción por hoja, y una alternativa puede llevar condiciones** (2026-10-14).
+  Cada hoja lleva el suyo y pueden ser distintos (manija en una, cierre embutido en la otra): el lado
+  importa para taller. El vendedor elige el herraje de cada hoja (`herraje_izq`, `herraje_der`, cada
+  uno con su `desc_herraje_*`). Cada alternativa se ofrece si se cumplen sus condiciones, en las
+  mismas casillas que los materiales condicionales (el *Vidrio interior* solo con cámara: *El DVH son
+  opciones por capa*). Si la elegida deja de ofrecerse, entra lo que dice *Lo elegido se guarda*.
+  Descartado: una opción que oculta a otra — es un concepto nuevo, y las condiciones y las variables
+  de opción ya existían.
+- ~~**El cierre central es un kit y entra en la hoja que lleva el cuerpo**~~ → *El cierre central no
+  tiene decisiones propias* (ficha v2, 2026-10-21).
 - ~~Todo lo que carga el vendedor tiene default~~ → *El default es obligatorio solo en lo secundario*.
 - **El default es obligatorio solo en lo secundario** (2026-10-14). Opción: el técnico marca la
   alternativa por defecto; si su condición no se cumple, la primera que se ofrezca (*Lo elegido se
@@ -268,9 +262,9 @@ final** (Presupuestos: es donde se cargan las medidas).
   ventanas se cotizaba 1000 y tenía precio, así que nadie lo veía.
 - **Lo elegido se guarda; lo que entra se calcula** (2026-10-14). La línea guarda la alternativa
   que eligió el vendedor y entra: lo elegido si se ofrece; si no, el default si se ofrece; si no, la
-  primera que se ofrezca. Nada se sobrescribe. Por qué: embutido → cierre central (entra tirador) →
-  vuelta a `cierre` = 0 perdía el embutido, y la ficha decía "primera válida" en un lado y "default"
-  en otro. Igual que la medida pisada: se respeta lo elegido y se muestra lo que entra hoy. Vale
+  primera que se ofrezca. Nada se sobrescribe. Por qué: vidrio interior Float 5 → sin cámara (entra
+  *Sin material*) → vuelta a Cámara 12 perdía el Float 5, y la ficha decía "primera válida" en un
+  lado y "default" en otro. Igual que la medida pisada: se respeta lo elegido y se muestra lo que entra hoy. Vale
   cuando lo causa la misma línea; si lo deja de ofrecer el catálogo, *Lo que el catálogo deja de
   ofrecer deja la línea sin precio* (ficha v2, 2026-10-21).
 - **Cada medida, opción o grupo opcional es principal o secundaria** (2026-10-14). El vendedor ve las
@@ -278,8 +272,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   izq: Manija · mosquitero: no*). Una medida secundaria sin default no se puede publicar, como una
   fórmula mal escrita (una opción siempre tiene la primera alternativa). Si una restricción avisa sobre una secundaria, el aviso se ve y "Más opciones"
   se abre solo. Por qué: el vendedor cotiza lo común sin recorrer cada herraje y abre el resto cuando
-  el cliente lo pide. Descartado: que sea principal según una condición (herraje principal solo con
-  `cierre` = 0) — más lógica para lo que ya resuelve el plegado.
+  el cliente lo pide. Descartado: que sea principal según una condición — más lógica para lo que ya
+  resuelve el plegado.
 - ~~**El peso es para logística y condiciona herrajes**~~ → *El peso es del insumo y condiciona
   herrajes; la abertura no da peso* (ficha v2).
 - ~~Una opción puede tomar su insumo por una variable calculada~~ → *Materiales condicionales*.
@@ -344,7 +338,7 @@ final** (Presupuestos: es donde se cargan las medidas).
   (*`desc_herraje_cen` ⚠ no existe*). Se confirma igual: es borrador, y una variable que no existe es
   fórmula mal escrita, que no se publica. Por qué: con 3 hojas el `_izq` → `_der` fijo daba dos
   `hoja_der` y la central con las fórmulas de la derecha. Descartado: numerar hojas `_1`, `_2`, `_3`
-  — taller y el cierre central hablan de izquierda y derecha.
+  — taller habla de izquierda y derecha.
 - **El vendedor no agrega materiales a la composición del paquete** (2026-10-14). Lo que se pide
   seguido (traba de seguridad) el técnico lo suma como grupo opcional secundario, arrancando sacado,
   y entra en despiece, peso y cantidad de la línea. Lo puntual va como línea suelta del presupuesto,
@@ -423,12 +417,12 @@ Descuento     no es de Catálogo: va en Presupuestos (BACKLOG.md), sobre el prec
 
 **Sin costo no es $ 0: la línea queda sin precio** (2026-10-14). El costo de un insumo (Compras) o el
 monto de un servicio (administración) puede faltar, pero no vale 0: un 0 se rechaza. Si en la línea
-entra algo sin costo, el motor no da precio y dice qué falta (*sin precio: falta costear Kit cierre
-central*); cuenta solo lo que entra (con cierre por hoja el kit no está y hay precio). El presupuesto
+entra algo sin costo, el motor no da precio y dice qué falta (*sin precio: falta costear Rueda
+doble*); cuenta solo lo que entra (con hojas de hasta 40 kg va la simple y hay precio). El presupuesto
 se arma igual pero no se envía con una línea sin precio. Compras y administración ven la lista "sin
-costo y en uso" con los paquetes donde está. Por qué: con $ 0 la corrediza con cierre central salía
-sin el kit y el precio parecía normal. Descartado: no ofrecer la alternativa (el vendedor no sabe por
-qué falta) y avisar cobrando $ 0.
+costo y en uso" con los paquetes donde está. Por qué: con $ 0 la corrediza de hojas pesadas salía
+sin la rueda doble y el precio parecía normal. Descartado: no ofrecer lo que no tiene costo (el
+vendedor no sabe por qué falta) y avisar cobrando $ 0.
 
 Cotización: oficial BNA venta de USD y EUR, automática con corrección manual (como `erp_old`: dolarapi,
 ventana 10–15 h, cierre del día, lo manual no lo pisa el automático; `erp_old_2`: monedapi.ar).
@@ -724,7 +718,7 @@ Decidido en la v2:
 - **Al presupuestador le sale el precio, nunca el costo ni el despiece.** El vendedor elige entre
   paquetes aprobados e insumos marcados sueltos; lo que esté sin aprobar no aparece.
 - **Precio y despiece se habilitan por separado; avisos y plegado van a todos** (2026-10-21). La
-  función devuelve cuatro partes: precio, avisos, plegado (*herrajes: negro · kit central: plateado
+  función devuelve cuatro partes: precio, avisos, plegado (*herrajes: negro · manija: plateado
   (no hay en negro)*) y despiece (piezas con largo y ángulos, medida de cada vidrio y por qué entró
   cada material). El vendedor ve precio, avisos y plegado; el cliente empresa, lo mismo, con precio
   solo si se lo habilitaron; el técnico en Probar y producción, todo menos el precio; administración,
@@ -849,11 +843,10 @@ Decidido en la v2:
 - **Una opción puede tener "Sin material"** (2026-10-21): una alternativa sin insumo (*Sin herraje*)
   que nunca se da de baja. Si se dan de baja todas las alternativas con material, la opción ofrece solo
   esa y el paquete se sigue vendiendo, con aviso al técnico (*Corrediza 2 hojas: herraje hoja izq solo
-  ofrece Sin herraje*); sin ella, queda incompleto (Puerta rebatible sin cerradura). Es el "sin herraje"
-  de *Los herrajes de cierre son una opción por hoja*, hecho general. Como toda alternativa puede llevar
-  condiciones y poner variables, pero **con condición no salva al paquete**: si en alguna combinación
-  no queda nada que ofrecer, incompleto (sin manijas y con `cierre` = 0, la corrediza no tiene herraje
-  por hoja). Por qué: es lo que pasa con un material condicional dado de baja, y así un paquete no se
+  ofrece Sin herraje*); sin ella, queda incompleto (Puerta rebatible sin cerradura). Como toda
+  alternativa puede llevar condiciones y poner variables, pero **con condición no salva al paquete**:
+  si en alguna combinación no queda nada que ofrecer, incompleto (sin Floats, con cámara el *Vidrio
+  interior* no tiene qué ofrecer). Por qué: es lo que pasa con un material condicional dado de baja, y así un paquete no se
   vende con unas opciones sí y con otras no.
 - **La baja de un insumo puede designar su reemplazo, y corre "Reemplazar material"** (2026-10-21).
   Opcional (sin reemplazo rige *La baja depende de cómo se usa*) y de la misma unidad (ml por ml); lo
@@ -980,21 +973,21 @@ Decidido en la v2:
   administración, y con `_administrar` daba de baja, marcaba suelto, aprobaba y veía el % de los
   servicios. Con qué permiso Compras lee el insumo: *Stock y Compras leen la tabla del insumo*.
 - **Lo que falta costear se ve en filtros, y lo que entra sin plata se marca al aprobar**
-  (2026-10-21). En Compras, la lista *sin costo y en uso*, con dónde se usa cada insumo (*Kit cierre
-  central — 3 paquetes: Corrediza 2 hojas, Corrediza 3 hojas, Puerta corrediza*; *Burlete 9 mm gris
+  (2026-10-21). En Compras, la lista *sin costo y en uso*, con dónde se usa cada insumo (*Rueda
+  doble — 3 paquetes: Corrediza 2 hojas, Corrediza 3 hojas, Puerta corrediza*; *Burlete 9 mm gris
   — 1 paquete · se vende suelto*). En uso es lo que se vende hoy: la vigente de un paquete activo o el
   insumo suelto. El dónde se usa lo da una función del catálogo, la misma del alcance de la baja, y
   Compras la lee. Administración tiene el mismo filtro en Insumos (`catalogo_insumos_administrar`,
   que ya ve costos) y *sin monto* en Servicios (`catalogo_servicios_administrar`: *Mecanizado de
   embutido · sin monto · 3 paquetes*); el técnico no ve ninguno. En pendientes se marca lo que entra
-  sin plata (*entra Kit cierre central (sin costo) · Mecanizado de embutido (sin monto)*), sin frenar
+  sin plata (*entra Rueda doble (sin costo) · Mecanizado de embutido (sin monto)*), sin frenar
   la aprobación: el freno es la línea sin precio, que no se envía. Por qué: con el caso de referencia
-  en cierre por hoja, la v4 se aprobaba con precio normal y el faltante lo encontraba el vendedor dos
+  en hojas livianas, la v4 se aprobaba con precio normal y el faltante lo encontraba el vendedor dos
   semanas después. Son filtros de vistas que ya existen: ni vista ni función nueva.
 - **Un insumo puede traer sus servicios, y entran con él en todo paquete** (2026-10-21). En la
   *Manija embutida* el técnico carga una vez *lleva Mecanizado de embutido × 1 por unidad*: donde la
   manija entra, entra el mecanizado, en su mismo grupo, y el despiece dice por qué (*Mecanizado de
-  embutido — por Manija embutida (hoja izq)*). Si el vendedor elige cierre por hoja, no entra. La
+  embutido — por Manija embutida (hoja izq)*). Si el vendedor elige otra manija, no entra. La
   cantidad es la puesta del insumo, sin desperdicio (5,98 ml de burlete → 5,98 ml de *Colocación de
   burlete*). Solo servicios fijos: el % por insumo ya es la regla por categoría. Solo en paquetes: la
   manija vendida suelta no lo lleva. Sin excepción por paquete: si en una puerta viene mecanizada de
@@ -1067,7 +1060,7 @@ Decidido en la v2:
     de cómo se usa lo que se da de baja*; en la lista, es darlo de baja en todos los insumos.
   - El técnico no crea colores ni carga variantes, pero al crear el insumo elige si es *sin color*
     (felpa) o, si es *de la ventana* o *de herrajes*, su color base de la lista, obligatorio: el
-    Marco corrediza 80 mm (ART-2420) es natural; el kit central, plateado. Si el color no está en la
+    Marco corrediza 80 mm (ART-2420) es natural; la manija, plateada. Si el color no está en la
     lista, se lo pide a administración. El insumo sale solo en su color base hasta que
     administración le cargue los demás. Por qué: el código ya es ese color, como el peso es dato del
     insumo; sin color base, el paquete que lo usa no se ofrece en ningún color y el técnico no puede
@@ -1155,13 +1148,12 @@ Decidido en la v2:
   materiales × `superficie_pano_izq` con las mismas medidas: *Vidrio* (Float 4 default, Float 5,
   Laminado 3+3); *Cámara* (*Sin cámara* como *Sin material* y default, Cámara 9, Cámara 12; las
   cámaras ponen `dvh_izq` = 1); *Vidrio interior* (Float 4 y Float 5 con `dvh_izq` = 1, *Sin
-  material* con `dvh_izq` = 0), como manijas y tiradores con `cierre`. El despiece da cada capa con
+  material* con `dvh_izq` = 0). El despiece da cada capa con
   su medida (*Float 4 mm — 713 × 1002* · *Cámara 12 — 713 × 1002* · *Float 4 mm — 713 × 1002*) y las
   tres suman al peso de la hoja. La cámara sigue por m², con el armado en el precio de la vidriería;
   si se arma en fábrica, versión nueva con separador × `perimetro_pano_izq` y sellador. Un TVH suma
   otro par cámara + vidrio, en las líneas que lo admiten. **Una opción que en ese momento solo
-  ofrece *Sin material* no se muestra**, sea cual sea (con cierre central y `herraje_der` solo en
-  *Sin herraje*, tampoco): no hay qué elegir. Por qué: el DVH se arma con las piezas de los
+  ofrece *Sin material* no se muestra**, sea de vidrio o de herraje: no hay qué elegir. Por qué: el DVH se arma con las piezas de los
   herrajes, sin nada propio del vidrio. Descartado: el DVH como un insumo (cada combinación un
   insumo, con su costo en Compras) y una opción de varias capas (el paño por otra puerta).
 - **Las opciones hermanas arrancan juntas y el vendedor las separa si hace falta** (2026-10-21). El
@@ -1181,7 +1173,7 @@ Decidido en la v2:
     mismo.
   - **Los defaults son par uno del otro** (*Embutida* a la izq, *Manija* a la der); si no, o si las
     alternativas difieren, no se manda a aprobar.
-  - **Si el par no se ofrece en la hermana** (una condición lo saca, como el cierre central), entra
+  - **Si el par no se ofrece en la hermana** (lo saca una condición o el color), entra
     lo que dice *Lo elegido se guarda*.
 
   Por qué: como antes con los paños, todas arrancan iguales y se cambia la que difiere; con un
@@ -1231,7 +1223,7 @@ Decidido en la v2:
   administración lo da de baja: las 6 quedan sin precio con el motivo (*Laminado 3+3: dado de baja,
   elegí otro vidrio*) y no se envían hasta que el vendedor elija. Vale para toda opción, vidrio o
   herraje, y para todo lo que viene del catálogo: baja del insumo o de su variante, o el insumo que
-  sale de la subcategoría. Si lo causa la misma línea (pasa a cierre central, o cambia el color y
+  sale de la subcategoría. Si lo causa la misma línea (saca la cámara, o cambia el color y
   PAN-01 no viene en blanco), entra el default o la primera que se ofrezca, y volver atrás devuelve
   lo elegido. Lo enviado no cambia. Por qué: pasando solas al default, las 6 bajaban de precio y se
   enviaban en Float 4 sin que nadie notara que el cliente pidió laminado; lo que hace el vendedor en
@@ -1255,3 +1247,8 @@ Decidido en la v2:
   el olvido cobra de más sin que se note) y marca por insumo (se olvida en el próximo vidrio). Si un
   servicio necesita incluir una categoría marcada, la marca pasa a ser por servicio; hoy no hay
   caso.
+- **El cierre central no tiene decisiones propias: lo arma el técnico con lo que ya existe**
+  (2026-10-21). Si una línea lo lleva, es un material condicional y alternativas con condición, como
+  cualquier otra cosa; Tirador y Sin herraje son alternativas comunes del herraje. Por qué: no pide
+  nada que el motor no tenga, y la opción `cierre` (0/1/2) y dónde va el kit decían cómo se carga un
+  producto, no reglas del módulo.
