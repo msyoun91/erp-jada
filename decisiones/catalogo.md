@@ -481,7 +481,7 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
 ## Pendiente
 
 - **Para aprobar la ficha v2** (entes, relaciones, acciones, eventos y árbol ya están en borrador):
-  - Delegables.
+  - ~~Delegables~~ (2026-10-21): en el árbol y en *Se delegan las vistas y lo del técnico*.
   - Servicios: sumar a las acciones y a `catalogo_servicios_administrar` las reglas por categoría o
     subcategoría y las excepciones por paquete (*Servicios por categoría*), y que el técnico ve qué
     recibe el paquete por categoría, sin el %.
@@ -655,6 +655,11 @@ Módulo: Catálogo
 │                                                  baja y reactivar
 └── Clientes (vista, catalogo_clientes)          — administración
     └── catalogo_clientes_habilitar (funcion)    — administración: qué ve cada empresa y si ve precio
+Delegables
+├── sí — catalogo_insumos · catalogo_insumos_editar · catalogo_servicios · catalogo_servicios_editar
+│        · catalogo_paquetes · catalogo_paquetes_editar
+└── no — catalogo_insumos_administrar · catalogo_servicios_administrar · catalogo_paquetes_administrar
+         · catalogo_clientes · catalogo_clientes_habilitar
 Reglas entre permisos: ninguna. _editar y _administrar pueden coexistir en la misma persona.
 Permisos de otros módulos que mira el catálogo (cada uno entra con su módulo): Presupuestos y
 erp-cliente → precio de la vigente · Producción → despiece de las aprobadas · Stock y Compras →
@@ -1041,3 +1046,7 @@ Decidido en la v2:
   tampoco ven el chip del paquete: la línea muestra lo que da la función de cálculo. Por qué: chip y
   buscador para Compras piden que `entes.submodulo` acepte varias vistas y una ruta según quién mira,
   un cambio de core que hoy nadie necesita; si Compras los pide, se decide al ficharlo (`BACKLOG.md`).
+- **Se delegan las vistas y lo del técnico; lo de administración, no** (2026-10-21). El jefe técnico
+  le da a uno nuevo *Paquetes* + `catalogo_paquetes_editar` sin pasar por el admin: arma borradores
+  y manda a aprobar. Los `_administrar` (aprobar, poner a la venta, costos, montos y %) y *Clientes*
+  entera los asigna el admin: la vista sola ya dice qué empresa ve precio. Como en Contactos y Obras.
