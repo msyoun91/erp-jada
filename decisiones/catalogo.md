@@ -490,12 +490,10 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
     depende de cómo se usa lo que se da de baja* y siguientes), el 2 (despiece y vendedor: *Precio y
     despiece se habilitan por separado*), el 3 (unidad del suelto: *El suelto se vende por
     presentación o por unidad del insumo*), el 4 (depósito: *Depósito no usa el catálogo*), el 5
-    (Compras: *Compras no usa el catálogo*), el 6 (listas: *Lo que falta costear se ve en filtros*) y
+    (Compras: *Compras no usa el catálogo*), el 6 (listas: *Lo que falta costear se ve en filtros*),
     el 7 (permisos de afuera: *La función de cálculo decide qué parte ve cada uno* y *Stock y Compras
-    leen la tabla del insumo*), los siete en la ficha v2. Del 8, ya están la lista de colores, las
-    variantes y sus acciones (*Los colores son de administración*).
-    8. Color base del insumo: el Marco 70 mm (ART-2410) es natural; ¿quién elige ese color de la
-       lista al crear el insumo?
+    leen la tabla del insumo*) y el 8 (variante de color: *Los colores son de administración*), los
+    ocho en la ficha v2.
     9. Aumento de costo por categoría (Compras): falta "categoría ← aumento (Compras)".
     10. Peso de la abertura para logística: nadie lo recibe (¿lo ve el vendedor para el flete?).
     11. Casos de prueba: faltan en Acciones; quién los guarda y si son del paquete o de la versión.
@@ -613,9 +611,10 @@ Acciones
 ├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · volver al borrador · aprobar
 │            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
 │            · mover de subcategoría · dar de baja · reactivar
-├── insumo: crear · editar · cargar los servicios que lleva · marcar suelto (por presentación o por
-│           unidad) · dar de baja (con reemplazo opcional) · reactivar · cargar variantes de color, en
-│           uno o en varios a la vez · dar de baja o reactivar una variante (administración)
+├── insumo: crear (sin color, o de la ventana o de herrajes con su color base) · editar · cargar los
+│           servicios que lleva · marcar suelto (por presentación o por unidad) · dar de baja (con
+│           reemplazo opcional) · reactivar · cargar variantes de color, en uno o en varios a la vez
+│           · dar de baja o reactivar una variante (administración)
 ├── servicio: crear · editar · poner monto, % y mínimo · dar de baja · reactivar
 ├── categorías: crear · renombrar · dar de baja (administración)
 ├── colores: crear · renombrar · dar de baja · reactivar (administración)
@@ -993,8 +992,13 @@ Decidido en la v2:
     ese color, el paquete pasa a ofrecerlo sin aprobación. Sin costo, la línea sale sin precio y
     Compras lo ve en *sin costo y en uso*. Dar de baja un color en un insumo sigue *La baja depende
     de cómo se usa lo que se da de baja*; en la lista, es darlo de baja en todos los insumos.
-  - El técnico no toca colores: el perfil que crea sale solo en su color base hasta que
-    administración le cargue los demás.
+  - El técnico no crea colores ni carga variantes, pero al crear el insumo elige si es *sin color*
+    (felpa) o, si es *de la ventana* o *de herrajes*, su color base de la lista, obligatorio: el
+    Marco corrediza 80 mm (ART-2420) es natural; el kit central, plateado. Si el color no está en la
+    lista, se lo pide a administración. El insumo sale solo en su color base hasta que
+    administración le cargue los demás. Por qué: el código ya es ese color, como el peso es dato del
+    insumo; sin color base, el paquete que lo usa no se ofrece en ningún color y el técnico no puede
+    ni probarlo.
   - El costo de cada color, las existencias por color y la línea suelta en un color apuntan al
     insumo o a su variante; el proveedor, al insumo.
 

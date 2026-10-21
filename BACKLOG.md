@@ -24,8 +24,8 @@ todavía en el orden: Stock y la licitación de Compras.
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
   `decisiones/catalogo.md` → *Ficha del módulo — v2*, la vigente. Siguiente: lo que falta para
-  aprobarla (*Pendiente*), de a un punto; sigue el 8 de lo que la v1 tenía y la v2 no (variante de
-  color: falta quién elige el color base del insumo). Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
+  aprobarla (*Pendiente*), de a un punto; sigue el 9 de lo que la v1 tenía y la v2 no (aumento de
+  costo por categoría). Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
   (`decisiones/catalogo.md` → *La función de cálculo decide qué parte ve cada uno*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
