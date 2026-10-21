@@ -196,12 +196,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   aprobar frena; aprobar pone a la venta* (ficha v2, 2026-10-21).
 - ~~**El paquete guarda casos de prueba, y al publicar muestra qué cambia en cada uno**~~ → *Los
   casos de prueba corren cuando alguien los mira; uno es el de referencia* (ficha v2, 2026-10-21).
-- **Un insumo dado de baja cuenta como que no está** (2026-10-14): material fijo o condicional → el
-  paquete no se ofrece hasta que el técnico lo reemplace; alternativa → deja de ofrecerse y entra lo
-  que dice *Lo elegido se guarda* (Paquetes); variante de la ventana → ese color no se ofrece; variante de herrajes → color base con
-  aviso; elegido en un paño → *En la composición, lo que elige el vendedor se filtra*. La baja no se frena: antes de confirmar muestra dónde se usa (*12 paquetes: 3 dejan de
-  ofrecerse, 9 pierden una alternativa*) y el técnico ve esos paquetes marcados. Lo enviado no cambia:
-  guarda su versión. Por qué: si no, se sigue cotizando un perfil que ya no se consigue.
+- ~~**Un insumo dado de baja cuenta como que no está**~~ → *La baja depende de cómo se usa lo que se
+  da de baja* (ficha v2, 2026-10-21).
 - **La variante de color solo tiene código, nombre y costo; lo físico es del insumo base**
   (2026-10-14): peso, unidad, presentación, desperdicio, categoría y su clase de color no se cargan
   en la variante. El $/kg del negro se multiplica por el kg/ml del natural. Por qué: el negro con peso
@@ -240,7 +236,7 @@ final** (Presupuestos: es donde se cargan las medidas).
   vendedor elige "Cierre" (opción que pone `cierre`: 0 por hoja, 1 central con cuerpo a la izquierda,
   2 a la derecha) y el herraje de cada hoja (`herraje_izq`, `herraje_der`, cada uno con su
   `desc_herraje_*`). Cada alternativa se ofrece si se cumplen sus condiciones, en las mismas casillas
-  que los materiales condicionales: manijas y cierres con `cierre` = 0; tiradores y "sin herraje" con
+  que los materiales condicionales: manijas y cierres con `cierre` = 0; tiradores y "sin herraje" (*Sin material*, ficha v2) con
   `cierre` ≥ 1. Por hoja siempre lleva herraje; con central es configurable. Si la elegida deja de
   ofrecerse, entra lo que dice *Lo elegido se guarda*. Descartado: una opción que oculta a otra — es un concepto
   nuevo, y las condiciones y las variables de opción ya existían.
@@ -482,7 +478,26 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
 - **Para aprobar la ficha v2** (entes, relaciones, acciones, eventos y árbol ya están en borrador):
   - Delegables.
   - Servicios: sumar a las acciones y a `catalogo_servicios_administrar` las reglas por categoría o
-    subcategoría y las excepciones por paquete (*Servicios por categoría*).
+    subcategoría y las excepciones por paquete (*Servicios por categoría*), y que el técnico ve qué
+    recibe el paquete por categoría, sin el %.
+  - Lo que la v1 tenía y la v2 no (2026-10-21), de a uno y en orden. El 1 (la baja) ya está: *La baja
+    depende de cómo se usa lo que se da de baja* y siguientes (ficha v2).
+    2. Despiece y vendedor: la v2 dice que no lo ve; *El motor va en Postgres* dice "despiece, avisos y
+       precio a quien ve precios". Separar: avisos y plegado de la línea sí, despiece no.
+    3. Unidad del suelto: la v1 vende la presentación entera y la unidad es del insumo (las fórmulas
+       dependen de ella); la v2 deja que administración elija m², ml, unidad o kg, y rige al instante.
+    4. Depósito: falta en Personas (¿"NO usa el módulo: ve los insumos desde Stock"?).
+    5. Compras: en la v1 es persona aparte (costea, ve "sin costo y en uso"); la v2 la junta con
+       administración.
+    6. Lista "sin costo y en uso" (insumos) y "sin monto" (servicios): sin vista ni función.
+    7. Quién ve precio fuera del catálogo: qué permiso mira la función de precio para el vendedor
+       (precio sin despiece), producción (despiece sin precio) y el cliente (precio si se lo habilitaron).
+    8. Variante de color: Compras la costea por FK, Stock y el suelto en color también; falta en
+       Relaciones, y sus acciones (agregar, dar de baja: ¿de administración?).
+    9. Aumento de costo por categoría (Compras): falta "categoría ← aumento (Compras)".
+    10. Peso de la abertura para logística: nadie lo recibe (¿lo ve el vendedor para el flete?).
+    11. Casos de prueba: faltan en Acciones; quién los guarda y si son del paquete o de la versión.
+    12. Entes: faltan ruta, submódulo, datos y roles (insumo: `{proveedor}`).
 
 ### Auditoría (2026-10-14) — resolver de a uno, en orden
 
@@ -512,8 +527,8 @@ y una propuesta a discutir, no decidida.
 12. ~~**Servicios sin condiciones.**~~ → *Un servicio del paquete también puede llevar condiciones*
     (Paquetes).
 13. ~~**Ángulo por material.**~~ → *Cada pieza lleva un ángulo por extremo* (Paquetes).
-14. ~~**Insumo dado de baja en paquetes.**~~ → *Un insumo dado de baja cuenta como que no está*
-    (Paquetes).
+14. ~~**Insumo dado de baja en paquetes.**~~ → *La baja depende de cómo se usa lo que se da de baja*
+    (ficha v2).
 15. ~~**Cuándo llega una edición al vendedor.**~~ → *Mandar a aprobar frena; aprobar pone a la venta*
     (ficha v2).
 16. ~~**Ciclos.**~~ → *Nada depende de sí mismo* (Paquetes).
@@ -555,7 +570,7 @@ y una propuesta a discutir, no decidida.
 
 Se armó de nuevo, sin partir del borrador anterior, y es la vigente. No se compara punto por punto con
 lo anterior (2026-10-20): lo de arriba sigue valiendo salvo donde la v2 dice otra cosa, y lo que choca
-se corrige cuando aparece.
+se corrige cuando aparece. Lo que la v1 tenía y la v2 no, listado el 2026-10-21, está en *Pendiente*.
 
 ```
 Módulo: catálogo
@@ -588,9 +603,9 @@ Relaciones (de otros módulos, apuntan al catálogo)
 └── versión del paquete ← orden de producción, con medidas y herrajes (Producción)
 Acciones
 ├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · volver al borrador · aprobar
-│            · rechazar (con motivo) · versión nueva · probar con medidas · mover de subcategoría
-│            · dar de baja · reactivar
-├── insumo: crear · editar · marcar suelto y unidad · dar de baja · reactivar
+│            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
+│            · mover de subcategoría · dar de baja · reactivar
+├── insumo: crear · editar · marcar suelto y unidad · dar de baja (con reemplazo opcional) · reactivar
 ├── servicio: crear · editar · poner monto, % y mínimo · dar de baja · reactivar
 ├── categorías: crear · renombrar · dar de baja (administración)
 └── clientes: habilitar categoría o subcategoría · ve precio sí/no (administración)
@@ -598,7 +613,8 @@ Eventos que emite
 ├── paquete: estado de la versión (para aprobar · vuelta al borrador · rechazada → borrador · aprobada)
 │            — aviso a administración y al técnico; la primera aprobada avisa a vendedores del producto nuevo
 ├── paquete: baja — aviso a vendedores de que sale de venta
-├── insumo: baja — aviso al técnico: "reemplazar Marco 70 mm: 15 paquetes incompletos"
+├── insumo: baja — aviso al técnico con el alcance: "Marco 70 mm: 3 paquetes incompletos · 9 pierden
+│            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"
 └── servicio: ninguno (no es ente; su baja se ve en los paquetes incompletos)
 Eventos que consume
 └── ninguno
@@ -609,15 +625,16 @@ Módulo: Catálogo
 ├── Insumos (vista)                              — técnico, administración
 │   ├── catalogo_insumos_editar (funcion)        — técnico: crear y editar
 │   └── catalogo_insumos_administrar (funcion)   — administración: ve costos, suelto y unidad,
-│                                                  categorías, baja y reactivar
+│                                                  categorías, baja (con reemplazo) y reactivar
 ├── Servicios (vista)                            — técnico, administración
 │   ├── catalogo_servicios_editar (funcion)      — técnico: crear y editar
 │   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo, categorías, baja
+│                                                  y reactivar
 ├── Paquetes (vista)                             — técnico, administración
 │   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores, versión nueva, mandar a aprobar,
 │   │                                              reemplazar material, volver al borrador, probar sin plata
 │   └── catalogo_paquetes_administrar (funcion)  — administración: aprobar y rechazar, probar
-│                                                  con plata, categorías, mover, baja
+│                                                  con plata, categorías, mover, baja y reactivar
 └── Clientes (vista)                             — administración
     └── catalogo_clientes_habilitar (funcion)    — administración: qué ve cada empresa y si ve precio
 Reglas entre permisos: ninguna. _editar y _administrar pueden coexistir en la misma persona.
@@ -719,10 +736,58 @@ Decidido en la v2:
 - **Dar de baja es de administración, en las tres vistas**: dejar de vender es una decisión comercial.
   El técnico puede pedirlo, no hacerlo.
 - **La subcategoría la elige el técnico al crear; administración puede moverla después.**
-- **Dar de baja un insumo o un servicio deja "incompletos" los paquetes que lo usan: dejan de venderse.**
-  Incompleto se calcula (la versión vigente usa algo dado de baja), no se guarda. En el catálogo dice
-  "falta reemplazar: Marco corrediza 70 mm"; el vendedor y el cliente no lo ven; las órdenes que ya
-  apuntan a esa versión siguen calculando su despiece. Descartado: seguir vendiéndolo con aviso.
+- ~~**Dar de baja un insumo o un servicio deja "incompletos" los paquetes que lo usan: dejan de
+  venderse.**~~ → *La baja depende de cómo se usa lo que se da de baja* (2026-10-21).
+- **La baja depende de cómo se usa lo que se da de baja** (2026-10-21). *Incompleto* es uno de los
+  casos: el paquete deja de venderse; se calcula (la vigente usa algo dado de baja), no se guarda; en
+  el catálogo dice *falta reemplazar: Marco corrediza 70 mm*, y el vendedor y el cliente no lo ven.
+  - Insumo como material fijo, condicional o composición por defecto de un paño → incompleto.
+  - Como alternativa → solo ella deja de ofrecerse y entra lo que dice *Lo elegido se guarda*; si era
+    la última de la opción, incompleto, salvo *Sin material*.
+  - Variante de la ventana → ese color no se ofrece; variante de herrajes → color base con aviso.
+  - Elegido en un paño → *En la composición, lo que elige el vendedor se filtra*.
+  - Servicio cargado en el paquete, fijo o condicional (Soldadura × 4, Mecanizado de embutido) →
+    incompleto.
+  - Servicio aplicado por regla (general, categoría, subcategoría, excepción) → nada queda incompleto:
+    deja de cobrarse al instante en todo lo que alcanzaba (la Modena de $ 600.000 pasa a $ 460.000 sin
+    Comercialización). Sus reglas no se borran: reactivarlo vuelve a cobrar con las mismas.
+
+  Reactivar devuelve a la venta lo que quedó incompleto por esa baja. Lo enviado no cambia y las
+  órdenes siguen calculando el despiece de su versión. Por qué: lo que ya no se consigue no se cotiza,
+  pero con *incompleto* para todo la baja de la Manija embutida sacaba de venta 15 corredizas que se
+  venden con manija; y la regla de un servicio no está en la versión del paquete. Descartado: frenar la
+  baja de un servicio con reglas activas (un freno más, y la confirmación ya muestra el alcance); y
+  seguir vendiendo un paquete incompleto con aviso, salvo con el reemplazo en curso (*La baja de un
+  insumo puede designar su reemplazo*).
+- **Toda baja de algo en uso muestra el alcance antes de confirmar** (2026-10-21), deje o no algo
+  incompleto: *Manija embutida: 3 paquetes dejan de venderse · 15 pierden una alternativa · 2 quedan
+  solo con Sin herraje*; *Comercialización: se deja de cobrar en 120 paquetes y 40 insumos sueltos*.
+  La baja no se frena. La de un insumo avisa al técnico con las mismas cifras y deja los paquetes
+  marcados; la de un servicio no avisa (no es ente y no emite): el técnico ve marcados los incompletos.
+- **Una opción puede tener "Sin material"** (2026-10-21): una alternativa sin insumo (*Sin herraje*)
+  que nunca se da de baja. Si se dan de baja todas las alternativas con material, la opción ofrece solo
+  esa y el paquete se sigue vendiendo, con aviso al técnico (*Corrediza 2 hojas: herraje hoja izq solo
+  ofrece Sin herraje*); sin ella, queda incompleto (Puerta rebatible sin cerradura). Es el "sin herraje"
+  de *Los herrajes de cierre son una opción por hoja*, hecho general. Como toda alternativa puede llevar
+  condiciones y poner variables, pero **con condición no salva al paquete**: si en alguna combinación
+  no queda nada que ofrecer, incompleto (sin manijas y con `cierre` = 0, la corrediza no tiene herraje
+  por hoja). Por qué: es lo que pasa con un material condicional dado de baja, y así un paquete no se
+  vende con unas opciones sí y con otras no.
+- **La baja de un insumo puede designar su reemplazo, y corre "Reemplazar material"** (2026-10-21).
+  Opcional (sin reemplazo rige *La baja depende de cómo se usa*) y de la misma unidad (ml por ml); lo
+  elige administración, que da la baja. Abre la ventana de *"Reemplazar material"* con los dos
+  cargados: los paquetes que lo usan, todos marcados; cada marcado recibe el reemplazo en su versión
+  abierta, con el qué cambió escrito (*reemplaza Hoja corrediza 40 mm por Hoja corrediza 42 mm
+  (baja)*), y el técnico revisa, corrige fórmulas y manda a aprobar; el desmarcado sigue *La baja
+  depende de cómo se usa*. **No se aprueba solo**: lo que hay que corregir no se ve en las diferencias
+  de los casos (HOJ-42 con 2 mm más de solape pide `+ 27` en `ancho_hoja_izq`; sin tocar la fórmula
+  las piezas no cambian, y administración aprobaría hojas cortas). **Mientras la versión abierta tiene
+  el reemplazo, la vigente se vende como si el viejo siguiera activo**, venga de la baja o de
+  *"Reemplazar material"*. Lo vendido sobre la vigente se fabrica con la nueva (*Producción puede
+  elegir con qué versión aprobada fabrica*); hasta aprobar se cotiza con el costo del viejo. Lo que el
+  reemplazo cambia solo (más peso → rueda doble, un color que no tiene) se ve en los casos de prueba al
+  mandar a aprobar y en pendientes. Descartado: aprobar las versiones al confirmar la baja (sin revisión
+  técnica) y que dejen de venderse hasta aprobar (se pierden ventas en el medio).
 - ~~**El técnico reemplaza por material o por paquete.**~~ → *"Reemplazar material" es un solo botón
   de Paquetes* (2026-10-21).
 - **Administración aprueba varias versiones juntas con checkbox, viendo qué cambió de verdad.** Cada fila
@@ -773,7 +838,8 @@ Decidido en la v2:
   (*reemplaza Marco corrediza 70 mm por Marco 72 mm*) y se suma al que hubiera. Lo que el material
   nuevo obliga a cambiar en un paquete (una fórmula) se corrige en su borrador; después cada uno se
   manda a aprobar. El aviso de baja (*falta reemplazar: Marco corrediza 70 mm*) abre la misma ventana
-  con el material actual cargado. Por qué: con una versión abierta por paquete, el reemplazo no puede
+  con el material actual cargado; la baja con reemplazo, con los dos (*La baja de un insumo puede
+  designar su reemplazo*). Por qué: con una versión abierta por paquete, el reemplazo no puede
   crear otra. Descartado: saltear los que están para aprobar y avisar (queda a mano y, con la baja,
   el paquete queda incompleto).
 - **El producto nuevo se avisa al aprobarse la primera versión, no en el alta.** El alta ocurre cuando el
