@@ -218,7 +218,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   quedaría escondido en la opción y la fórmula de `ancho_hoja` no diría la verdad.
 - **Una opción puede poner varias variables: cada alternativa carga un valor en cada una, y lo que no
   carga vale 0** (2026-10-14). El herraje pone `desc_herraje_izq` (manija 3, embutida 5, cierre 0,
-  tirador 5) y `embutido_izq` (embutida 1); el *Mecanizado de embutido* entra si `embutido_izq` = 1.
+  tirador 5) y `embutido_izq` (embutida 1); ~~el *Mecanizado de embutido* entra si `embutido_izq` = 1~~
+  → lo trae la *Manija embutida* (*Un insumo puede traer sus servicios*, ficha v2, 2026-10-21).
   Por qué: con una sola variable no había cómo hacerlo entrar — `desc_herraje_izq` = 5 también lo
   metía con el tirador. Descartado: un código por posición con `elegir(herraje_izq; 3; 5; 0; 5; 0)`
   — reordenar las alternativas rompe las fórmulas sin que se note; y una condición sobre qué insumo
@@ -289,11 +290,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   Descartado: escribirla como fórmula (`ancho > 2000 y alto > 1800`) — obliga al motor en Postgres a
   interpretar comparaciones y y/o, y el técnico puede escribir algo que no se entiende.
 - **Un servicio del paquete también puede llevar condiciones**, en las mismas casillas (2026-10-14):
-  "mano de obra extra si `alto` > 2400"; el mecanizado del embutido entra si `embutido_izq` = 1, que
-  pone la alternativa embutida de la opción del herraje (las demás, 0: *Una opción puede poner varias
-  variables*). El despiece dice por qué
-  entró. Puede mirar el peso: un servicio no suma al peso. Descartado: que la alternativa traiga su
-  servicio — enganche nuevo para lo que ya resuelven la variable de opción y la condición.
+  "mano de obra extra si `alto` > 2400". ~~El mecanizado del embutido entra si `embutido_izq` = 1~~ →
+  lo trae la manija (*Un insumo puede traer sus servicios*, ficha v2). El despiece dice por qué
+  entró. Puede mirar el peso: un servicio no suma al peso. ~~Descartado: que la alternativa traiga su
+  servicio~~ → *Un insumo puede traer sus servicios* (2026-10-21).
 - **Cada material dice si suma al peso** (2026-10-14). Por defecto suma; el técnico lo apaga en el
   material que no debe contar. Así la rueda queda fuera del peso del grupo: el peso que la elige no
   cambia según qué rueda salga (si no, una condición sobre el peso dependería de sí misma). **Solo
@@ -411,6 +411,8 @@ insumo.
 Insumo        cantidad (técnico, fija o fórmula) × (1 + desperdicio del insumo) × costo de reposición
               (Compras) → a pesos, oficial BNA venta
 Servicio fijo cantidad (técnico) × monto (administración)
+Por insumo    cantidad puesta del insumo (sin desperdicio) × lo que lleva por unidad (técnico) × monto
+              (administración) — ver *Un insumo puede traer sus servicios*
 Servicio %    % (administración) × suma de insumos de su grupo, sin lo que entra por un paño; mínimo (administración) una vez
               por servicio en el paquete, sobre la suma de sus grupos
 Por categoría % (administración) sobre los insumos que alcanza; gana la regla más específica
@@ -468,7 +470,7 @@ la costea por FK); la versión es del paquete (la línea congelada la guarda por
 paquete); grupos, piezas, materiales, variables, opciones y casos de prueba son el interior del paquete;
 categorías, montos, % y reglas de servicios son configuración.
 
-**El servicio no es ente: vive solo dentro del catálogo** (paquetes y reglas). Un cargo del presupuesto
+**El servicio no es ente: vive solo dentro del catálogo** (paquetes, reglas y los insumos que lo traen). Un cargo del presupuesto
 (flete, traslado) no sale de servicios: es un renglón libre, con descripción y monto que calcula el
 vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un servicio, alcanza una FK.
 
@@ -498,6 +500,9 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
     10. Peso de la abertura para logística: nadie lo recibe (¿lo ve el vendedor para el flete?).
     11. Casos de prueba: faltan en Acciones; quién los guarda y si son del paquete o de la versión.
     12. Entes: faltan ruta, submódulo, datos y roles (insumo: `{proveedor}`).
+  - Baja de un servicio que trae un insumo (*Un insumo puede traer sus servicios*): ¿deja incompletos
+    los paquetes donde entra el insumo, como el servicio cargado en el paquete, o deja de cobrarse,
+    como el de una regla?
 
 ### Auditoría (2026-10-14) — resolver de a uno, en orden
 
@@ -610,8 +615,8 @@ Acciones
 ├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · volver al borrador · aprobar
 │            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
 │            · mover de subcategoría · dar de baja · reactivar
-├── insumo: crear · editar · marcar suelto (por presentación o por unidad) · dar de baja (con reemplazo
-│           opcional) · reactivar
+├── insumo: crear · editar · cargar los servicios que lleva · marcar suelto (por presentación o por
+│           unidad) · dar de baja (con reemplazo opcional) · reactivar
 ├── servicio: crear · editar · poner monto, % y mínimo · dar de baja · reactivar
 ├── categorías: crear · renombrar · dar de baja (administración)
 └── clientes: habilitar categoría o subcategoría · ve precio sí/no (administración)
@@ -621,6 +626,8 @@ Eventos que emite
 ├── paquete: baja — aviso a vendedores de que sale de venta
 ├── insumo: baja — aviso al técnico con el alcance: "Marco 70 mm: 3 paquetes incompletos · 9 pierden
 │            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"
+├── insumo: cambian los servicios que lleva — aviso a administración con el alcance: "Manija embutida:
+│            suma Mecanizado de embutido en 15 paquetes"
 └── servicio: ninguno (no es ente; su baja se ve en los paquetes incompletos)
 Eventos que consume
 └── ninguno
@@ -629,7 +636,7 @@ Eventos que consume
 ```
 Módulo: Catálogo
 ├── Insumos (vista)                              — técnico, administración
-│   ├── catalogo_insumos_editar (funcion)        — técnico: crear y editar
+│   ├── catalogo_insumos_editar (funcion)        — técnico: crear y editar, con los servicios que lleva
 │   └── catalogo_insumos_administrar (funcion)   — administración: ve costos (y el filtro sin costo y en
 │                                                  uso), suelto y cómo se vende, categorías, baja (con
 │                                                  reemplazo) y reactivar
@@ -907,3 +914,18 @@ Decidido en la v2:
   la aprobación: el freno es la línea sin precio, que no se envía. Por qué: con el caso de referencia
   en cierre por hoja, la v4 se aprobaba con precio normal y el faltante lo encontraba el vendedor dos
   semanas después. Son filtros de vistas que ya existen: ni vista ni función nueva.
+- **Un insumo puede traer sus servicios, y entran con él en todo paquete** (2026-10-21). En la
+  *Manija embutida* el técnico carga una vez *lleva Mecanizado de embutido × 1 por unidad*: donde la
+  manija entra, entra el mecanizado, en su mismo grupo, y el despiece dice por qué (*Mecanizado de
+  embutido — por Manija embutida (hoja izq)*). Si el vendedor elige cierre por hoja, no entra. La
+  cantidad es la puesta del insumo, sin desperdicio (5,98 ml de burlete → 5,98 ml de *Colocación de
+  burlete*). Solo servicios fijos: el % por insumo ya es la regla por categoría. Solo en paquetes: la
+  manija vendida suelta no lo lleva. Sin excepción por paquete: si en una puerta viene mecanizada de
+  fábrica, es otro insumo. El técnico no ve el monto. Como el insumo no se versiona, rige al instante
+  en las vigentes: antes de guardar se ve el alcance (*Manija embutida: suma Mecanizado de embutido
+  en 15 paquetes · en 3 ya está cargado a mano: se cobraría dos veces*) y administración recibe aviso.
+  Por qué: "la manija lleva mecanizado" es un dato de la manija; con `embutido_izq` y la condición se
+  cargaba en cada hoja de cada paquete, y el olvido en uno lo vendía sin mecanizar con un precio que
+  parecía normal. Descartado: que entre solo en versiones nuevas (cada versión guardaría qué servicios
+  traía cada insumo: el dato repetido otra vez). Queda en *Pendiente* qué hace la baja de un servicio
+  que trae un insumo.
