@@ -24,8 +24,8 @@ todavía en el orden: Stock y la licitación de Compras.
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
   `decisiones/catalogo.md` → *Ficha del módulo — v2*, la vigente. Siguiente: lo que falta para
-  aprobarla (*Pendiente*), de a un punto; sigue el 9 de lo que la v1 tenía y la v2 no (aumento de
-  costo por categoría). Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
+  aprobarla (*Pendiente*), de a un punto; sigue el 10 de lo que la v1 tenía y la v2 no (peso de
+  la abertura para logística). Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
   (`decisiones/catalogo.md` → *La función de cálculo decide qué parte ve cada uno*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
@@ -72,7 +72,10 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   filtros*). Su vista se suma a la lectura del insumo y a la función del dónde se usa (*Stock y
   Compras leen la tabla del insumo*). Tabla propia, no
   columna del insumo: RLS filtra filas, no columnas. El aumento se aplica por categoría del catálogo o
-  por insumo, en % o monto fijo, con motivo (`decisiones/catalogo.md` → *Categorías*). La cotización
+  por insumo, en % o monto fijo, con motivo e historial, como en los dos ERP viejos (`erp_old`
+  `lista_precios/AumentoModal.tsx`, `erp_old_2` `precios/ActualizacionMasivaModal.tsx`); no por
+  proveedor: a cada categoría le venden varios. Es de Compras, no del catálogo: lee las categorías
+  como lee el insumo (`decisiones/catalogo.md` → *Stock y Compras leen la tabla del insumo*). La cotización
   (USD y EUR) es una vista de Compras (`decisiones/catalogo.md` → *Precio de venta*). Arranca mínimo
   (costos y cotización) antes de Presupuestos;
   después suma la licitación —varias ofertas por insumo, con precio, plazo y fecha, y una elegida—,

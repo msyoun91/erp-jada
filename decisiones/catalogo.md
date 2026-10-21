@@ -370,10 +370,8 @@ cualquier orden**~~ → *En paquetes, la subcategoría es la línea de perfiles*
 ~~**En insumos, la categoría (libre) va separada del tipo (fijo: vidrio, cámara, panel, perfil,
 otro).**~~ → *Sin tipo fijo de insumo* (ficha v2, 2026-10-20).
 
-**El aumento de costo se aplica por categoría o por insumo, en % o monto fijo, con motivo e
-historial** — como en los dos ERP viejos (`erp_old` `lista_precios/AumentoModal.tsx`, `erp_old_2`
-`precios/ActualizacionMasivaModal.tsx`). No por proveedor: a cada categoría le venden varios. Como el
-costo vive en Compras, la acción es de Compras y usa la categoría del catálogo.
+~~**El aumento de costo se aplica por categoría o por insumo, en % o monto fijo, con motivo e
+historial**~~ → no es del catálogo: es de Compras (`BACKLOG.md` → Compras, 2026-10-21).
 
 ## Servicios por categoría (2026-10-14)
 
@@ -493,8 +491,8 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
     (Compras: *Compras no usa el catálogo*), el 6 (listas: *Lo que falta costear se ve en filtros*),
     el 7 (permisos de afuera: *La función de cálculo decide qué parte ve cada uno* y *Stock y Compras
     leen la tabla del insumo*) y el 8 (variante de color: *Los colores son de administración*), los
-    ocho en la ficha v2.
-    9. Aumento de costo por categoría (Compras): falta "categoría ← aumento (Compras)".
+    ocho en la ficha v2. El 9 (aumento de costo por categoría) no es del catálogo: es una acción de
+    Compras sobre sus costos, que lee las categorías como lee el insumo (`BACKLOG.md` → Compras).
     10. Peso de la abertura para logística: nadie lo recibe (¿lo ve el vendedor para el flete?).
     11. Casos de prueba: faltan en Acciones; quién los guarda y si son del paquete o de la versión.
     12. Entes: faltan ruta, submódulo, datos y roles (insumo: `{proveedor}`).
