@@ -495,7 +495,7 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
     ocho en la ficha v2. El 9 (aumento de costo por categoría) no es del catálogo: es una acción de
     Compras sobre sus costos, que lee las categorías como lee el insumo (`BACKLOG.md` → Compras).
     El 10 (peso de la abertura para logística) sale: *El peso es del insumo y condiciona herrajes*.
-    11. Casos de prueba: faltan en Acciones; quién los guarda y si son del paquete o de la versión.
+    El 11 (casos de prueba), en Acciones y en *Los casos de prueba son del paquete*.
     12. Entes: faltan ruta, submódulo, datos y roles (insumo: `{proveedor}`).
 ### Auditoría (2026-10-14) — resolver de a uno, en orden
 
@@ -610,6 +610,8 @@ Acciones
 ├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · volver al borrador · aprobar
 │            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
 │            · mover de subcategoría · dar de baja · reactivar
+│            · casos de prueba: guardar desde Probar (nuevo o pisando uno) · renombrar · marcar
+│              referencia · dar de baja
 ├── insumo: crear (sin color, o de la ventana o de herrajes con su color base) · editar · cargar los
 │           servicios que lleva · marcar suelto (por presentación o por unidad) · dar de baja (con
 │           reemplazo opcional) · reactivar · cargar variantes de color, en uno o en varios a la vez
@@ -645,8 +647,10 @@ Módulo: Catálogo
 ├── Paquetes (vista)                             — técnico, administración
 │   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores, versión nueva, mandar a aprobar,
 │   │                                              reemplazar material, volver al borrador, probar sin plata
+│   │                                              y guardar casos de prueba
 │   └── catalogo_paquetes_administrar (funcion)  — administración: aprobar y rechazar, probar
-│                                                  con plata, categorías, mover, baja y reactivar
+│                                                  con plata y guardar casos de prueba, categorías, mover,
+│                                                  baja y reactivar
 └── Clientes (vista)                             — administración
     └── catalogo_clientes_habilitar (funcion)    — administración: qué ve cada empresa y si ve precio
 Reglas entre permisos: ninguna. _editar y _administrar pueden coexistir en la misma persona.
@@ -865,6 +869,16 @@ Decidido en la v2:
   de 8 campos en cada edición termina en probar uno, y lo roto lo encuentra el vendedor; medida de
   referencia y caso eran dos conceptos para lo mismo. Descartado: resultado esperado por caso (habría
   que cargar el despiece entero a mano).
+- **Los casos de prueba son del paquete, no de la versión, y los guarda quien prueba** (2026-10-21).
+  La Corrediza 2 hojas tiene *Referencia 1500 × 1100*, *Grande 3000 × 1800* y *Chica 600 × 600 con
+  mosquitero*: el técnico los encuentra en la v5 y, al mandarla a aprobar, cada uno corre en la v4 y
+  en la v5. Los guardan desde Probar el técnico (`catalogo_paquetes_editar`) y administración
+  (`catalogo_paquetes_administrar`), que suma el *Balcón 2400 × 2200* que vio en un presupuesto: un
+  caso no tiene plata. Si se da de baja la referencia, no se manda a aprobar hasta marcar otra. Se
+  tocan aunque haya una versión para aprobar, porque no son parte de lo que se aprueba: si cambia la
+  referencia, a administración le cambian las cifras que mira. Por qué: comparar pide correr el mismo
+  caso en dos versiones; siendo de la versión, la v5 copiaría los de la v4 y uno nuevo no tendría
+  contra qué compararse. Descartado: congelarlos mientras haya una versión para aprobar.
 - **Cada paquete tiene como mucho una versión abierta (borrador o para aprobar)** (2026-10-21).
   Mientras haya una, "versión nueva" no crea otra: muestra la abierta (*v4 · Marcos · agrega burlete
   inferior en la hoja*). Si está en borrador, cualquier técnico la edita y suma su cambio al texto;
