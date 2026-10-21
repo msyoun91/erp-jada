@@ -26,8 +26,9 @@ final** (Presupuestos: es donde se cargan las medidas).
   peso de la abertura y logística), unidad de comercialización / presentación (ej: barra de 6 m),
   **categoría** (ver *Categorías*). Sin tipo fijo (*Sin tipo fijo de insumo*, ficha v2).
 - **La presentación sirve para vender suelto y para comprar, no para el paquete** (2026-10-14). Suelto
-  se vende por presentación entera (2 barras = 12 ml × costo), no por fracción. Compras compra barras
-  enteras y Taller podrá calcular cuántas salen del despiece. En el paquete el insumo va en su unidad
+  se vende por presentación entera (2 barras = 12 ml × costo) o por unidad del insumo, según elija
+  administración (*El suelto se vende por presentación o por unidad del insumo*, ficha v2). Compras
+  compra barras enteras y Taller podrá calcular cuántas salen del despiece. En el paquete el insumo va en su unidad
   (ml); el sobrante de barra entra por el desperdicio.
 - **El costo se carga como se cotiza y el sistema lo pasa a la unidad del insumo** (2026-10-14).
   Compras dice por qué es el monto: por unidad del insumo ($ 5.000 / ml), por presentación
@@ -46,7 +47,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   queda puesta); el desperdicio sale solo del insumo, se aplica para cobrar sobre la cantidad y no
   toca el despiece (taller corta 1500, no 1650) ni el peso (*El sistema pone una variable de peso por
   grupo*). Suelto no lleva desperdicio: se cobra la presentación
-  entera (2 barras = 12 ml, no 12,96). Por qué: un `× 1,10` en la fórmula se sumaba al 8 % (18,8 %).
+  entera (2 barras = 12 ml, no 12,96) o la cantidad pedida (1,4 m² de Float, no 1,47). Por qué:
+  un `× 1,10` en la fórmula se sumaba al 8 % (18,8 %).
 - **"Se vende suelto"**: solo los marcados le aparecen al vendedor como producto. Lo marca
   administración.
 - Sin costo: el costo de reposición vive en Compras, con su moneda (ARS, US$, €).
@@ -348,7 +350,7 @@ final** (Presupuestos: es donde se cargan las medidas).
   referida a la línea que acompaña (*Traba × 4 — para V4*). Descartado: agregados dentro de la línea —
   mecanismo nuevo que mete en la abertura material que nadie del lado técnico validó.
 - Un insumo suelto se precia como un paquete de una línea: costo + servicios por categoría y generales,
-  sin desperdicio (se cobra la presentación entera).
+  sin desperdicio (*El suelto se vende por presentación o por unidad del insumo*, ficha v2).
 - **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
   sandbox, auditoría). **Se le suma una pestaña Servicios** al lado de Materiales: el técnico elige el
@@ -482,10 +484,9 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
     subcategoría y las excepciones por paquete (*Servicios por categoría*), y que el técnico ve qué
     recibe el paquete por categoría, sin el %.
   - Lo que la v1 tenía y la v2 no (2026-10-21), de a uno y en orden. Ya están el 1 (la baja: *La baja
-    depende de cómo se usa lo que se da de baja* y siguientes) y el 2 (despiece y vendedor: *Precio y
-    despiece se habilitan por separado*), los dos en la ficha v2.
-    3. Unidad del suelto: la v1 vende la presentación entera y la unidad es del insumo (las fórmulas
-       dependen de ella); la v2 deja que administración elija m², ml, unidad o kg, y rige al instante.
+    depende de cómo se usa lo que se da de baja* y siguientes), el 2 (despiece y vendedor: *Precio y
+    despiece se habilitan por separado*) y el 3 (unidad del suelto: *El suelto se vende por
+    presentación o por unidad del insumo*), los tres en la ficha v2.
     4. Depósito: falta en Personas (¿"NO usa el módulo: ve los insumos desde Stock"?).
     5. Compras: en la v1 es persona aparte (costea, ve "sin costo y en uso"); la v2 la junta con
        administración.
@@ -582,8 +583,8 @@ Personas
 │                     los manda a aprobar · no ve plata
 ├── Administración  — ve todo, con costos (de Compras); prueba paquetes con medidas y ve el precio ·
 │                     aprueba paquetes; crea categorías, pone montos, % y mínimos
-│                     de servicios, marca qué insumo se vende suelto y en qué unidad; habilita a cada
-│                     cliente empresa qué ve y si ve precios · —
+│                     de servicios, marca qué insumo se vende suelto, por presentación o por
+│                     unidad; habilita a cada cliente empresa qué ve y si ve precios · —
 │                     (los costos los carga en Compras, fuera del catálogo)
 ├── Vendedor        — NO usa el módulo: por el presupuestador elige paquetes aprobados e insumos
 │                     sueltos y ve su precio · — · no ve despiece, costo ni servicios
@@ -605,7 +606,8 @@ Acciones
 ├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · volver al borrador · aprobar
 │            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
 │            · mover de subcategoría · dar de baja · reactivar
-├── insumo: crear · editar · marcar suelto y unidad · dar de baja (con reemplazo opcional) · reactivar
+├── insumo: crear · editar · marcar suelto (por presentación o por unidad) · dar de baja (con reemplazo
+│           opcional) · reactivar
 ├── servicio: crear · editar · poner monto, % y mínimo · dar de baja · reactivar
 ├── categorías: crear · renombrar · dar de baja (administración)
 └── clientes: habilitar categoría o subcategoría · ve precio sí/no (administración)
@@ -624,7 +626,7 @@ Eventos que consume
 Módulo: Catálogo
 ├── Insumos (vista)                              — técnico, administración
 │   ├── catalogo_insumos_editar (funcion)        — técnico: crear y editar
-│   └── catalogo_insumos_administrar (funcion)   — administración: ve costos, suelto y unidad,
+│   └── catalogo_insumos_administrar (funcion)   — administración: ve costos, suelto y cómo se vende,
 │                                                  categorías, baja (con reemplazo) y reactivar
 ├── Servicios (vista)                            — técnico, administración
 │   ├── catalogo_servicios_editar (funcion)      — técnico: crear y editar
@@ -648,8 +650,9 @@ Decidido en la v2:
   comparar (2026-10-14): la ganancia está en los servicios comerciales.
 - **Tres vistas: Insumos · Servicios · Paquetes.**
   - *Insumos*: los materiales que se pueden usar o vender. Todo insumo está en una subcategoría; las
-    categorías las crea administración. Administración decide si se vende suelto y en qué unidad:
-    m², metro lineal, unidad o kg.
+    categorías las crea administración. Administración decide si se vende suelto, y si por
+    presentación o por unidad del insumo (*El suelto se vende por presentación o por unidad del
+    insumo*).
   - *Servicios*: lo no material. Porcentual con monto mínimo, o fijo (corte, manipulación del material).
   - *Paquetes*: donde están las fórmulas, armadas con insumos y servicios. En categorías que crea
     administración (Ventanas → Modena → Corrediza 2 hojas, Corrediza 3 hojas).
@@ -732,9 +735,22 @@ Decidido en la v2:
 - **El servicio se edita directo, como el insumo.** No está en el despiece: corregirlo cambia precios, no
   órdenes.
 - **Los cambios de plata de administración rigen al instante, sin aprobación**: montos, %, mínimos,
-  suelto y unidad de venta. El catálogo calcula siempre con los valores de hoy; cuándo se
+  suelto y cómo se vende. El catálogo calcula siempre con los valores de hoy; cuándo se
   congela el precio de un presupuesto lo decide Presupuestos. Cada cambio queda registrado (quién,
   cuándo, valor anterior y nuevo).
+- **El suelto se vende por presentación o por unidad del insumo; lo elige administración**
+  (2026-10-21). Al marcar un insumo como suelto elige una de las dos, obligatoria y sin default:
+  *Marco corrediza 70 mm* por presentación (2 barras = 12 ml × costo); *Float 4 mm* por unidad del
+  insumo (1,4 m² cortado), y el *Burlete* de rollo también (15 ml). La unidad del insumo sigue siendo
+  del técnico y esto no la cambia: de ella dependen las fórmulas y la conversión del costo. En los
+  dos casos va sin desperdicio (el Float cortado se cobra por el m² real, como en la composición). El
+  cambio rige al instante, pero la línea sin enviar no se convierte: queda sin precio con el motivo
+  (*Marco corrediza 70 mm: ahora se vende por ml, revisá la cantidad*), como con el color o la baja;
+  lo enviado no cambia. Por qué: con la unidad libre de la v2 (m², ml, unidad o kg), pasar el marco
+  de ml a kg rompía las fórmulas de sus paquetes, y la presentación entera de la v1 no sirve para el
+  vidrio cortado. El kg no es unidad de venta: el perfil cotizado por kg se lleva en barras.
+  Descartado: convertir la cantidad de la línea (de ml a barras no da exacto: 7 ml = 1,17 barras, y
+  redondear cotiza otra cosa sin avisar).
 - **El catálogo no apunta a ningún otro módulo salvo la empresa cliente**: solo es dueño del interior de
   los paquetes y de las habilitaciones de clientes. Los demás le apuntan. Se puede construir antes que
   Compras, Stock y Producción.

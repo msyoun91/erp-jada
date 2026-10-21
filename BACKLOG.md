@@ -24,8 +24,8 @@ todavía en el orden: Stock y la licitación de Compras.
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
   `decisiones/catalogo.md` → *Ficha del módulo — v2*, la vigente. Siguiente: lo que falta para
-  aprobarla (*Pendiente*), de a un punto; sigue el 3 de lo que la v1 tenía y la v2 no (unidad del
-  suelto).
+  aprobarla (*Pendiente*), de a un punto; sigue el 4 de lo que la v1 tenía y la v2 no (depósito en
+  Personas).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
   producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
@@ -41,7 +41,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (`decisiones/catalogo.md` → *La cantidad es de la línea*). El cargo es un renglón libre:
   descripción y monto que calcula el vendedor, sin servicio del catálogo (`decisiones/catalogo.md` →
   *Entes*). No se envía con una línea sin precio (insumo o servicio sin costo: `decisiones/catalogo.md` →
-  *Sin costo no es $ 0*).
+  *Sin costo no es $ 0*). La cantidad de un insumo suelto va en lo que administración eligió (barras o
+  ml); si lo cambia, la línea sin enviar queda sin precio hasta revisar la cantidad
+  (`decisiones/catalogo.md` → *El suelto se vende por presentación o por unidad del insumo*).
   Hasta enviarse, la línea sigue a la versión vigente (última aprobada) del paquete y al costo de hoy
   (con aviso si el paquete cambió, con el texto del técnico); al enviar, se congela
   (`decisiones/catalogo.md` → *Mandar a aprobar frena; aprobar pone a la venta*).
