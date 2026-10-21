@@ -882,8 +882,8 @@ Decidido en la v2:
 - ~~**El técnico reemplaza por material o por paquete.**~~ → *"Reemplazar material" es un solo botón
   de Paquetes* (2026-10-21).
 - **Administración aprueba varias versiones juntas con checkbox, viendo qué cambió de verdad.** Cada fila
-  muestra el texto del técnico (el porqué), los cambios que detecta el sistema entre versiones (insumos
-  que entran o salen, fórmulas modificadas) y el precio antes y después en el caso de referencia del
+  muestra el texto del técnico (el porqué), los cambios que detecta el sistema entre versiones (*Cuenta
+  como cambio todo lo que está en la versión*) y el precio antes y después en el caso de referencia del
   paquete (*Los casos de prueba corren cuando alguien los mira*). El texto solo no alcanza: dice lo
   que el técnico cree que cambió.
 - **Mandar a aprobar frena; aprobar pone a la venta** (2026-10-21). Reemplaza a "Publicar" de la v1.
@@ -942,6 +942,18 @@ Decidido en la v2:
   (la orden de la v3 que hoy saldría con rueda doble) sin depender de que el texto lo diga todo.
   Descartado: comparar dos versiones cualquiera (v3 contra v6 se lee de v4 a v6) y precio en el
   historial (la plata se mira al aprobar).
+- **Cuenta como cambio todo lo que está en la versión** (2026-10-21): variables (medidas del vendedor,
+  calculadas, opciones con sus alternativas), grupos, materiales (cantidad o fórmula, condición,
+  piezas con largo y ángulos, si suma al peso), servicios con su cantidad, restricciones y paños
+  (medidas, espesor máximo, subcategorías, composición por defecto). Se muestra por pestaña, solo lo
+  que cambió, con antes → después (*Restricciones: ancho máx. 2400 mm · frena → avisa*). No entra lo
+  que no es de la versión: nombre y subcategoría del paquete, casos de prueba, reglas y excepciones de
+  servicios, datos del insumo, plata. Es una sola comparación para el historial y para pendientes, y
+  sin plata: técnico y administración ven lo mismo. Por qué: la v5 de la Corrediza económica decía
+  *baja el umbral de rueda doble a 35 kg* y en el mismo borrador la restricción de ancho pasó a
+  avisar; con solo insumos y fórmulas se aprobaba sin verla y se vendía lo que la línea no soporta.
+  Descartado: solo lo que cambia el resultado de los casos (frena → avisa no cambia un caso dentro
+  del límite).
 - **"Reemplazar material" es un solo botón de Paquetes: masivo, con los paquetes a elegir, y cada
   borrador se ajusta después a mano** (2026-10-21). Dos buscadores (material actual y nuevo) y la
   tabla de los paquetes que usan el actual, todos marcados: el técnico desmarca los que no quiere
