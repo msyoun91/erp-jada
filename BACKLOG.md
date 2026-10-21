@@ -24,8 +24,9 @@ todavía en el orden: Stock y la licitación de Compras.
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
   `decisiones/catalogo.md` → *Ficha del módulo — v2*, la vigente. Siguiente: lo que falta para
-  aprobarla (*Pendiente*), de a un punto; sigue el 7 de lo que la v1 tenía y la v2 no (quién ve
-  precio fuera del catálogo).
+  aprobarla (*Pendiente*), de a un punto; sigue el 8 de lo que la v1 tenía y la v2 no (variante de
+  color). Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
+  (`decisiones/catalogo.md` → *La función de cálculo decide qué parte ve cada uno*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
   producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
@@ -53,17 +54,23 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   queda quién confirmó (`decisiones/catalogo.md` → *El aviso es parte del resultado de la línea*).
   Una línea suelta puede referirse a otra (*Traba × 4 — para V4*) para que taller sepa a qué abertura
   va (`decisiones/catalogo.md` → *El vendedor no agrega materiales*).
+  El permiso que arma líneas suma su rama a la función de cálculo del catálogo: precio, avisos y
+  plegado de la vigente (`decisiones/catalogo.md` → *La función de cálculo decide qué parte ve cada
+  uno*).
 - **Stock** (decidido al fichar Catálogo, 2026-09-29): módulo propio, no parte de Catálogo. Lleva
   existencias y movimientos de los insumos del catálogo; su persona principal es depósito/logística.
   Quien presupuesta ve el stock del insumo sin poder tocarlo. Depósito no usa Catálogo: ve el insumo
   (nombre, presentación, color) desde Stock (`decisiones/catalogo.md` → *Depósito no usa el catálogo*).
+  Su vista se suma a la lectura del insumo del catálogo; las existencias, en tabla propia con FK
+  (`decisiones/catalogo.md` → *Stock y Compras leen la tabla del insumo*).
 - **Compras** (ídem): dueño del costo del insumo, no Catálogo. El costo es de reposición (lo que
   costaría comprarlo hoy), en su moneda (ARS, US$, €), con historial, cargado como se cotiza (por
   unidad, presentación o kg: `decisiones/catalogo.md` → *El costo se carga como se cotiza*); se convierte con el oficial BNA
   venta. Catálogo lo lee para calcular el precio de venta; el técnico no lo ve. Quien compra no usa
   Catálogo: ve el insumo con sus existencias de Stock desde Compras (`decisiones/catalogo.md` →
   *Compras no usa el catálogo*), con la lista "sin costo y en uso" (*Lo que falta costear se ve en
-  filtros*). Tabla propia, no
+  filtros*). Su vista se suma a la lectura del insumo y a la función del dónde se usa (*Stock y
+  Compras leen la tabla del insumo*). Tabla propia, no
   columna del insumo: RLS filtra filas, no columnas. El aumento se aplica por categoría del catálogo o
   por insumo, en % o monto fijo, con motivo (`decisiones/catalogo.md` → *Categorías*). La cotización
   (USD y EUR) es una vista de Compras (`decisiones/catalogo.md` → *Precio de venta*). Arranca mínimo

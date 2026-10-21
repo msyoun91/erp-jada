@@ -450,7 +450,7 @@ costo** (2026-10-14). `servicios` guarda solo lo que ve el técnico (nombre, uni
 comercial); si el 15 % fuera columna de `servicios` o la excepción columna de `paquetes`, el técnico
 los leería por API. Como la función de precio es `DEFINER` y salta RLS, **verifica adentro quién
 llama**: precio y despiece por separado, avisos y plegado a todos (*Precio y despiece se habilitan
-por separado*, ficha v2). Quién ve cada parte se define en el árbol de vistas y funciones. Descartado: una vista que oculte
+por separado*, ficha v2). Quién ve cada parte, y de qué versiones: *La función de cálculo decide qué parte ve cada uno* (ficha v2). Descartado: una vista que oculte
 columnas — segunda puerta a la misma tabla, y un `select` olvidado sobre la base filtra todo.
 
 **Las fórmulas se validan al guardar y se evalúan en la base**: solo números, variables del paquete,
@@ -489,11 +489,9 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
     depende de cómo se usa lo que se da de baja* y siguientes), el 2 (despiece y vendedor: *Precio y
     despiece se habilitan por separado*), el 3 (unidad del suelto: *El suelto se vende por
     presentación o por unidad del insumo*), el 4 (depósito: *Depósito no usa el catálogo*), el 5
-    (Compras: *Compras no usa el catálogo*) y el 6 (listas: *Lo que falta costear se ve en filtros*),
-    los seis en la ficha v2.
-    7. Quién ve precio fuera del catálogo: qué permiso mira la función de precio para el vendedor
-       (precio sin despiece), producción (despiece sin precio) y el cliente (precio si se lo habilitaron);
-       y con qué permiso Stock y Compras leen el insumo.
+    (Compras: *Compras no usa el catálogo*), el 6 (listas: *Lo que falta costear se ve en filtros*) y
+    el 7 (permisos de afuera: *La función de cálculo decide qué parte ve cada uno* y *Stock y Compras
+    leen la tabla del insumo*), los siete en la ficha v2.
     8. Variante de color: Compras la costea por FK, Stock y el suelto en color también; falta en
        Relaciones, y sus acciones (agregar, dar de baja: ¿de administración?).
     9. Aumento de costo por categoría (Compras): falta "categoría ← aumento (Compras)".
@@ -648,6 +646,9 @@ Módulo: Catálogo
 └── Clientes (vista)                             — administración
     └── catalogo_clientes_habilitar (funcion)    — administración: qué ve cada empresa y si ve precio
 Reglas entre permisos: ninguna. _editar y _administrar pueden coexistir en la misma persona.
+Permisos de otros módulos que mira el catálogo (cada uno entra con su módulo): Presupuestos y
+erp-cliente → precio de la vigente · Producción → despiece de las aprobadas · Stock y Compras →
+leer el insumo.
 ```
 
 Decidido en la v2:
@@ -697,10 +698,10 @@ Decidido en la v2:
   solo si se lo habilitaron; el técnico en Probar y producción, todo menos el precio; administración,
   todo. Un aviso va tal cual aunque nombre una pieza (*Travesaño marco 6500 mm: más largo que la
   barra de 6000 mm*): el vendedor lo necesita para cotizar barra especial o empalme, y un largo
-  suelto no muestra las fórmulas. Qué permiso habilita cada parte: *Pendiente*, punto 7. Por qué:
-  *El motor va en Postgres* daba el despiece a quien ve precios, y el vendedor ve precio sin
-  despiece y producción despiece sin precio. Descartado: un texto sin la pieza para vendedor y
-  cliente (cada aviso del sistema escrito dos veces).
+  suelto no muestra las fórmulas. Qué permiso habilita cada parte: *La función de cálculo decide
+  qué parte ve cada uno*. Por qué: *El motor va en Postgres* daba el despiece a quien ve precios, y
+  el vendedor ve precio sin despiece y producción despiece sin precio. Descartado: un texto sin la
+  pieza para vendedor y cliente (cada aviso del sistema escrito dos veces).
 - **El despiece no se guarda: se calcula cuando se pide.** Quien lo usa guarda solo las entradas
   (paquete, ancho, alto, configuración de herrajes) y pide el despiece al catálogo. Una sola función del
   catálogo evalúa las fórmulas: la llaman producción, el presupuestador (para el precio) y la prueba del
@@ -890,7 +891,7 @@ Decidido en la v2:
   barras de Marco 70 mm negro mate le alcanza con nombre, presentación y color, y siempre los mira
   junto a las existencias. Corrige la v1, que le daba la vista Insumos: esa vista es para crear y
   editar, y suma desperdicio, peso y dónde se usa, que no necesita. Con qué permiso Stock lee el
-  insumo: *Pendiente*, punto 7, como el vendedor y producción.
+  insumo: *Stock y Compras leen la tabla del insumo*.
 - **Compras no usa el catálogo: ve el insumo desde Compras, con sus existencias de Stock, y ahí lo
   costea** (2026-10-21). Para cargar *Marco corrediza 70 mm negro mate: $ 32.000 / barra* o
   *Perfiles PVC +8 %* le alcanza con nombre, unidad, presentación con su contenido, peso, variantes
@@ -899,7 +900,7 @@ Decidido en la v2:
   propio). Administración sigue viendo costos en el catálogo; si la misma persona compra y
   administra, tiene los dos permisos. Por qué: juntas, quien solo compra quedaba como
   administración, y con `_administrar` daba de baja, marcaba suelto, aprobaba y veía el % de los
-  servicios. Con qué permiso Compras lee el insumo: *Pendiente*, punto 7.
+  servicios. Con qué permiso Compras lee el insumo: *Stock y Compras leen la tabla del insumo*.
 - **Lo que falta costear se ve en filtros, y lo que entra sin plata se marca al aprobar**
   (2026-10-21). En Compras, la lista *sin costo y en uso*, con dónde se usa cada insumo (*Kit cierre
   central — 3 paquetes: Corrediza 2 hojas, Corrediza 3 hojas, Puerta corrediza*; *Burlete 9 mm gris
@@ -928,3 +929,43 @@ Decidido en la v2:
   traía cada insumo: el dato repetido otra vez). La baja de un servicio que trae un insumo no deja
   nada incompleto: deja de cobrarse, como el de una regla, que tampoco está en la versión del paquete
   (*La baja depende de cómo se usa lo que se da de baja*).
+- **La función de cálculo decide qué parte ve cada uno y qué versiones calcula, también fuera del
+  catálogo** (2026-10-21). Mira los permisos del catálogo y los de los módulos que la llaman; cada
+  uno suma su rama al construirse, como las de `entes`, y hoy existen las dos del catálogo. Con dos
+  permisos se suman partes y versiones; sin ninguno, error.
+  - `catalogo_paquetes_editar` (técnico, en Probar) → avisos, plegado y despiece de cualquier
+    versión, borradores incluidos.
+  - `catalogo_paquetes_administrar` → todo, de cualquier versión.
+  - Vendedor, con el permiso de Presupuestos que arma líneas (se nombra al fichar Presupuestos) →
+    precio, avisos y plegado, solo de la vigente de un paquete a la venta.
+  - Producción, con su permiso de órdenes (al fichar Producción) → avisos, plegado y despiece de
+    cualquier versión aprobada, aunque el paquete esté de baja.
+  - Cliente empresa, por su empresa (al fichar erp-cliente) → avisos y plegado de la vigente en lo
+    que tiene habilitado, y el precio si se lo habilitaron.
+
+  Con la Corrediza 2 hojas (v3 aprobada, v4 vigente, v5 en borrador): el vendedor pide 1500 × 1100
+  sobre la v4 y recibe $ 600.000, avisos y plegado, sin despiece; la v5 por API le da error.
+  Producción pide la orden hecha con la v3: despiece y avisos, sin precio. El técnico prueba la v5:
+  todo menos el precio. El mismo permiso le abre al vendedor y al cliente lo que eligen —lo que está
+  a la venta y las opciones de cada paquete (medidas, alternativas, paños, colores)— por funciones
+  del catálogo, sin fórmulas; nunca las tablas. Por qué: qué versión calcula cada uno sale de reglas
+  del catálogo (vigente, a la venta, incompleto, habilitación); si cada módulo envolviera la función
+  con su permiso, Presupuestos tendría que saber qué está a la venta y la regla quedaría en dos
+  lugares. La lista la escribe una vez el módulo del ente (`decisiones/global/entes.md` → *Ver un
+  registro no es trabajarlo*). Descartado: una vista del catálogo para el vendedor (le aparece un
+  módulo que no usa, y no hay función sin vista).
+- **Stock y Compras leen la tabla del insumo del catálogo; lo suyo va en tablas propias con FK**
+  (2026-10-21). Hay una sola tabla de insumos. Compras guarda el costo (`insumo_id` → $ 32.000 /
+  barra) y Stock las existencias (`insumo_id` + negro mate → 20 barras), sin copiar nombre,
+  presentación ni color. La policy de lectura del insumo, de sus variantes de color y de las
+  categorías suma la vista de Stock y la de Compras, cada una al construirse su módulo. Leen la fila
+  entera, desperdicio y peso incluidos: no tiene plata (el costo está en Compras; montos y % en
+  tablas propias). Paquetes, fórmulas y servicios están en tablas que piden las vistas del catálogo:
+  depósito pide los paquetes por API y recibe 0 filas. El *dónde se usa* de *sin costo y en uso* es
+  la función del catálogo, con la rama de Compras. **Todo lo que Compras compra y Stock cuenta es un
+  insumo del catálogo, y el alta es del técnico**: no manejan nada que no vaya a un paquete o se
+  venda suelto (confirmado por el usuario). Por qué: con copias, corregir el peso en el catálogo deja
+  viejas las otras; con costo o existencias en la fila del insumo, el técnico los leería (RLS filtra
+  filas, no columnas). Descartado: una función que devuelva solo las columnas de cada uno (segunda
+  puerta a la tabla para ocultar datos que no son sensibles) y una tabla de insumos común, sin dueño
+  (el alta igual es del técnico, y suma un módulo).
