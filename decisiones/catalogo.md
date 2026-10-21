@@ -480,7 +480,7 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
 
 ## Pendiente
 
-- **Para aprobar la ficha v2** (entes, relaciones, acciones, eventos y árbol ya están en borrador):
+- ~~**Para aprobar la ficha v2**~~ — aprobada el 2026-10-21:
   - ~~Delegables~~ (2026-10-21): en el árbol y en *Se delegan las vistas y lo del técnico*.
   - ~~Servicios por categoría en las acciones~~ (2026-10-21): en Acciones, en el árbol y en *Reglas y
     excepciones se cargan desde el servicio*.
@@ -564,7 +564,7 @@ y una propuesta a discutir, no decidida.
 30. ~~**Filtro por línea de perfiles.**~~ → *En paquetes, la subcategoría es la línea de perfiles*
     (ficha v2).
 
-## Ficha del módulo — v2, desde cero (borrador, 2026-10-14)
+## Ficha del módulo — v2, desde cero (aprobada 2026-10-21)
 
 Se armó de nuevo, sin partir del borrador anterior, y es la vigente. No se compara punto por punto con
 lo anterior (2026-10-20): lo de arriba sigue valiendo salvo donde la v2 dice otra cosa, y lo que choca

@@ -22,9 +22,8 @@ Orden: Contactos y Obras → **Catálogo** → Compras (costos) → Presupuestos
 todavía en el orden: Stock y la licitación de Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
-- **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
-  `decisiones/catalogo.md` → *Ficha del módulo — v2*, la vigente. Siguiente: aprobarla, sin
-  pendientes desde 2026-10-21, y el SQL. Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
+- **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha aprobada
+  (2026-10-21): `decisiones/catalogo.md` → *Ficha del módulo — v2*. Siguiente: el SQL. Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
   (`decisiones/catalogo.md` → *La función de cálculo decide qué parte ve cada uno*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
