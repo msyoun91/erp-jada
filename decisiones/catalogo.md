@@ -500,10 +500,6 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
     10. Peso de la abertura para logística: nadie lo recibe (¿lo ve el vendedor para el flete?).
     11. Casos de prueba: faltan en Acciones; quién los guarda y si son del paquete o de la versión.
     12. Entes: faltan ruta, submódulo, datos y roles (insumo: `{proveedor}`).
-  - Baja de un servicio que trae un insumo (*Un insumo puede traer sus servicios*): ¿deja incompletos
-    los paquetes donde entra el insumo, como el servicio cargado en el paquete, o deja de cobrarse,
-    como el de una regla?
-
 ### Auditoría (2026-10-14) — resolver de a uno, en orden
 
 Caso base: corrediza 2 hojas 1500 × 1100, negro mate, DVH, 4 iguales. Cada punto: el caso que falla
@@ -785,11 +781,13 @@ Decidido en la v2:
     la última de la opción, incompleto, salvo *Sin material*.
   - Variante de la ventana → ese color no se ofrece; variante de herrajes → color base con aviso.
   - Elegido en un paño → *En la composición, lo que elige el vendedor se filtra*.
-  - Servicio cargado en el paquete, fijo o condicional (Soldadura × 4, Mecanizado de embutido) →
-    incompleto.
-  - Servicio aplicado por regla (general, categoría, subcategoría, excepción) → nada queda incompleto:
-    deja de cobrarse al instante en todo lo que alcanzaba (la Modena de $ 600.000 pasa a $ 460.000 sin
-    Comercialización). Sus reglas no se borran: reactivarlo vuelve a cobrar con las mismas.
+  - Servicio cargado en el paquete, fijo o condicional (Soldadura × 4, mano de obra extra si `alto` >
+    2400) → incompleto.
+  - Servicio aplicado por regla (general, categoría, subcategoría, excepción) o que trae un insumo
+    (2026-10-21) → nada queda incompleto: deja de cobrarse al instante en todo lo que alcanzaba (la
+    Modena de $ 600.000 pasa a $ 460.000 sin Comercialización; la Manija embutida entra sin
+    Mecanizado de embutido). Sus reglas y los insumos que lo traen no se borran: reactivarlo vuelve a
+    cobrar con los mismos.
 
   Reactivar devuelve a la venta lo que quedó incompleto por esa baja. Lo enviado no cambia y las
   órdenes siguen calculando el despiece de su versión. Por qué: lo que ya no se consigue no se cotiza,
@@ -927,5 +925,6 @@ Decidido en la v2:
   Por qué: "la manija lleva mecanizado" es un dato de la manija; con `embutido_izq` y la condición se
   cargaba en cada hoja de cada paquete, y el olvido en uno lo vendía sin mecanizar con un precio que
   parecía normal. Descartado: que entre solo en versiones nuevas (cada versión guardaría qué servicios
-  traía cada insumo: el dato repetido otra vez). Queda en *Pendiente* qué hace la baja de un servicio
-  que trae un insumo.
+  traía cada insumo: el dato repetido otra vez). La baja de un servicio que trae un insumo no deja
+  nada incompleto: deja de cobrarse, como el de una regla, que tampoco está en la versión del paquete
+  (*La baja depende de cómo se usa lo que se da de baja*).
