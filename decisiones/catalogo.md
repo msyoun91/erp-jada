@@ -491,9 +491,10 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
     presentación o por unidad del insumo*), el 4 (depósito: *Depósito no usa el catálogo*), el 5
     (Compras: *Compras no usa el catálogo*), el 6 (listas: *Lo que falta costear se ve en filtros*) y
     el 7 (permisos de afuera: *La función de cálculo decide qué parte ve cada uno* y *Stock y Compras
-    leen la tabla del insumo*), los siete en la ficha v2.
-    8. Variante de color: Compras la costea por FK, Stock y el suelto en color también; falta en
-       Relaciones, y sus acciones (agregar, dar de baja: ¿de administración?).
+    leen la tabla del insumo*), los siete en la ficha v2. Del 8, ya están relaciones y acciones (*El
+    técnico agrega un color al insumo*).
+    8. Lista de colores: el negro mate del marco y el de la hoja tienen que ser el mismo color para
+       saber si el paquete se ofrece en negro mate, y en la v2 nadie crea la lista.
     9. Aumento de costo por categoría (Compras): falta "categoría ← aumento (Compras)".
     10. Peso de la abertura para logística: nadie lo recibe (¿lo ve el vendedor para el flete?).
     11. Casos de prueba: faltan en Acciones; quién los guarda y si son del paquete o de la versión.
@@ -602,15 +603,17 @@ Relaciones (del catálogo)
 ├── versión del paquete → insumos y servicios con sus fórmulas — interior del paquete, no puente entre entes
 └── empresa cliente (Contactos) → categorías o subcategorías habilitadas + ve precio — configuración, FK a la empresa
 Relaciones (de otros módulos, apuntan al catálogo)
-├── insumo ← proveedor (Contactos) · costo (Compras) · existencias (Stock)
-├── versión del paquete o insumo suelto ← línea del presupuesto (Presupuestos)
+├── insumo ← proveedor (Contactos)
+├── insumo o su variante de color ← costo (Compras) · existencias (Stock)
+├── versión del paquete o insumo suelto (con su variante) ← línea del presupuesto (Presupuestos)
 └── versión del paquete ← orden de producción, con medidas y herrajes (Producción)
 Acciones
 ├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · volver al borrador · aprobar
 │            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
 │            · mover de subcategoría · dar de baja · reactivar
-├── insumo: crear · editar · cargar los servicios que lleva · marcar suelto (por presentación o por
-│           unidad) · dar de baja (con reemplazo opcional) · reactivar
+├── insumo: crear · editar (con sus variantes de color) · cargar los servicios que lleva · marcar
+│           suelto (por presentación o por unidad) · dar de baja (con reemplazo opcional) · dar de baja
+│           o reactivar una variante (administración) · reactivar
 ├── servicio: crear · editar · poner monto, % y mínimo · dar de baja · reactivar
 ├── categorías: crear · renombrar · dar de baja (administración)
 └── clientes: habilitar categoría o subcategoría · ve precio sí/no (administración)
@@ -622,6 +625,8 @@ Eventos que emite
 │            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"
 ├── insumo: cambian los servicios que lleva — aviso a administración con el alcance: "Manija embutida:
 │            suma Mecanizado de embutido en 15 paquetes"
+├── insumo: color nuevo — aviso a administración con el alcance: "Marco 70 mm en blanco: Corrediza 2 hojas
+│            y Corrediza 3 hojas se ofrecen en blanco"
 └── servicio: ninguno (no es ente; su baja se ve en los paquetes incompletos)
 Eventos que consume
 └── ninguno
@@ -631,9 +636,10 @@ Eventos que consume
 Módulo: Catálogo
 ├── Insumos (vista)                              — técnico, administración
 │   ├── catalogo_insumos_editar (funcion)        — técnico: crear y editar, con los servicios que lleva
+│   │                                              y sus variantes de color
 │   └── catalogo_insumos_administrar (funcion)   — administración: ve costos (y el filtro sin costo y en
 │                                                  uso), suelto y cómo se vende, categorías, baja (con
-│                                                  reemplazo) y reactivar
+│                                                  reemplazo) y reactivar, también de una variante
 ├── Servicios (vista)                            — técnico, administración
 │   ├── catalogo_servicios_editar (funcion)      — técnico: crear y editar
 │   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo (y el filtro sin
@@ -969,3 +975,15 @@ Decidido en la v2:
   filas, no columnas). Descartado: una función que devuelva solo las columnas de cada uno (segunda
   puerta a la tabla para ocultar datos que no son sensibles) y una tabla de insumos común, sin dueño
   (el alta igual es del técnico, y suma un módulo).
+- **El técnico agrega un color al insumo; darlo de baja o reactivarlo es de administración**
+  (2026-10-21). Agregar el blanco al *Marco corrediza 70 mm* (ART-2410-BL) es editar el insumo
+  (`catalogo_insumos_editar`), como su alta: código y nombre son datos técnicos. Vale al instante,
+  porque el insumo no se versiona: si el marco era el único insumo *de la ventana* sin blanco, la
+  Corrediza 2 hojas y la 3 hojas se ofrecen en blanco sin aprobación. Antes de guardar se ve el
+  alcance y administración recibe aviso, como cuando cambian los servicios que lleva un insumo; si
+  falta el costo, la línea sale sin precio y Compras lo ve en *sin costo y en uso*. Dar de baja el
+  negro mate es dejar de venderlo (`catalogo_insumos_administrar`): alcance antes de confirmar y el
+  efecto de *La baja depende de cómo se usa lo que se da de baja*; el técnico puede pedirlo. La
+  variante guarda código y nombre; el costo de cada color, las existencias por color y la línea
+  suelta en un color apuntan al insumo o a su variante, y el proveedor, al insumo. Por qué: sin el
+  aviso, un color sale a la venta sin que administración, que aprueba, se entere.
