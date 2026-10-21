@@ -23,8 +23,8 @@ todavía en el orden: Stock y la licitación de Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
-  `decisiones/catalogo.md` → *Ficha del módulo — v2*, la vigente. Siguiente: lo que falta para
-  aprobarla (*Pendiente*), de a un punto: qué versión calcula el vendedor al actualizar un presupuesto enviado. Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
+  `decisiones/catalogo.md` → *Ficha del módulo — v2*, la vigente. Siguiente: aprobarla, sin
+  pendientes desde 2026-10-21, y el SQL. Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
   (`decisiones/catalogo.md` → *La función de cálculo decide qué parte ve cada uno*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
@@ -47,6 +47,10 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   Hasta enviarse, la línea sigue a la versión vigente (última aprobada) del paquete y al costo de hoy
   (con aviso si el paquete cambió, con el texto del técnico); al enviar, se congela
   (`decisiones/catalogo.md` → *Mandar a aprobar frena; aprobar pone a la venta*).
+  Enviado, se mantiene (el precio enviado entero, con los costos y % de entonces: hay sobrante) o se
+  actualiza (vuelve a la vigente con los de hoy). A decidir: por línea o el presupuesto entero, y quién
+  puede mantener —con costos viejos es un descuento implícito, como el de arriba— (`decisiones/catalogo.md` →
+  *Un presupuesto enviado se mantiene o se actualiza*).
   La línea nueva propone el color y el vidrio de la anterior: en el catálogo no tienen default
   (`decisiones/catalogo.md` → *El default es obligatorio solo en lo secundario*).
   Los avisos de la línea quedan marcados y al enviar o aprobar se listan para confirmar, sin frenar;

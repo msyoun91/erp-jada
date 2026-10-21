@@ -484,9 +484,7 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
   - ~~Delegables~~ (2026-10-21): en el árbol y en *Se delegan las vistas y lo del técnico*.
   - ~~Servicios por categoría en las acciones~~ (2026-10-21): en Acciones, en el árbol y en *Reglas y
     excepciones se cargan desde el servicio*.
-  - Presupuesto enviado (2026-10-21): un cambio de % o de costo (Compras) no lo toca solo; se decide
-    mantenerlo o actualizarlo. Falta qué versión del paquete calcula al actualizar: la rama del
-    vendedor hoy calcula solo la vigente.
+  - ~~Presupuesto enviado~~ (2026-10-21): en *Un presupuesto enviado se mantiene o se actualiza*.
   - ~~Lo que la v1 tenía y la v2 no~~ (2026-10-21), los doce resueltos: el 1 (la baja: *La baja
     depende de cómo se usa lo que se da de baja* y siguientes), el 2 (despiece y vendedor: *Precio y
     despiece se habilitan por separado*), el 3 (unidad del suelto: *El suelto se vende por
@@ -1066,3 +1064,14 @@ Decidido en la v2:
   en la versión, rige al instante y no avisa, como un costo de Compras. Por qué: los % de un servicio
   en un solo lugar y una sola función. Descartado: la excepción desde el paquete (los % repartidos en
   dos pantallas y en `catalogo_paquetes_administrar`).
+- **Un presupuesto enviado se mantiene o se actualiza; actualizar vuelve a la vigente** (2026-10-21).
+  Un cambio de costo (Compras) o de % no lo toca solo. Mantener deja el precio enviado entero, con
+  los costos y % de entonces: la Corrediza sigue en $ 600.000 porque hay sobrante comprado al costo
+  viejo. Actualizar es como si la línea no se hubiera enviado: la vigente con costos y % de hoy (v3
+  → v4, $ 667.250, con el aviso del técnico); si el paquete salió de venta, queda sin precio hasta
+  reemplazarlo. Sin mezcla (costo viejo con % nuevo). La función no cambia: el vendedor calcula solo
+  la vigente, la línea mantenida no se recalcula (lleva su precio copiado y su versión) y producción
+  despieza esa versión aunque el paquete esté de baja (la Banderola con sobrante del perfil
+  discontinuado). Descartado: la versión enviada con plata de hoy (v3 a $ 653.750): cotiza lo que
+  el catálogo ya no vende, con el último costo de algo que ya no se compra. Por línea o entero, y
+  quién puede mantener, al fichar Presupuestos (`BACKLOG.md`).
