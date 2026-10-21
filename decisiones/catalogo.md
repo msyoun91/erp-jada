@@ -192,21 +192,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   herraje. El plegado dice lo que no se pudo (*herrajes: negro · kit central: plateado (no hay en
   negro)*). La opción del vendedor elige el modelo (manija, embutida, cierre central); el color sale
   de acá.
-- **El técnico edita un borrador y "Publicar" crea la versión que ve el vendedor** (2026-10-14). El
-  borrador se guarda a medias y Probar lo usa; lo que antes "no se guardaba" (fórmula mal escrita,
-  material que mira el peso y suma al peso, secundaria sin default) ahora no se publica. Un
-  presupuesto sin enviar sigue a la última versión publicada, como sigue al costo de hoy, con aviso en
-  la línea (*el paquete cambió: v3 → v4*); se congela al enviar. Por qué: la rueda doble guardada sin
-  su condición cotizaba las dos ruedas mientras el técnico terminaba. Descartado: que la línea quede
-  en la v3 hasta actualizarla a mano — saldría con lo que el técnico ya corrigió.
-- **El paquete guarda casos de prueba, y al publicar muestra qué cambia en cada uno** (2026-10-14).
-  Un caso es lo que carga el vendedor (medidas, opciones, composición por paño, color), con nombre;
-  se guarda desde Probar y se carga con un clic. "Publicar" corre los casos con el borrador y con la
-  versión publicada y lista las diferencias sin precios: materiales que entran o salen, piezas,
-  cantidades, avisos (*"3000 hoja pisada": rueda simple → doble (hoja der) · Travesaño hoja der 1460 →
-  1510 mm*). Una opción que ya no existe sigue *Lo elegido se guarda* y se marca. Por qué: cargar a
-  mano 4 casos de 8 campos en cada edición termina en probar uno, y lo roto lo encuentra el vendedor.
-  Descartado: resultado esperado por caso — habría que cargar el despiece entero a mano.
+- ~~**El técnico edita un borrador y "Publicar" crea la versión que ve el vendedor**~~ → *Mandar a
+  aprobar frena; aprobar pone a la venta* (ficha v2, 2026-10-21).
+- ~~**El paquete guarda casos de prueba, y al publicar muestra qué cambia en cada uno**~~ → *Los
+  casos de prueba corren cuando alguien los mira; uno es el de referencia* (ficha v2, 2026-10-21).
 - **Un insumo dado de baja cuenta como que no está** (2026-10-14): material fijo o condicional → el
   paquete no se ofrece hasta que el técnico lo reemplace; alternativa → deja de ofrecerse y entra lo
   que dice *Lo elegido se guarda* (Paquetes); variante de la ventana → ese color no se ofrece; variante de herrajes → color base con
@@ -491,9 +480,9 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
 ## Pendiente
 
 - **Para aprobar la ficha v2** (entes, relaciones, acciones, eventos y árbol ya están en borrador):
-  - *"Publicar" crea la versión* (Paquetes) frente a la aprobación de la v2: qué corre al mandar a
-    aprobar y qué al aprobar (casos de prueba, aviso *el paquete cambió* en la línea).
   - Delegables.
+  - Servicios: sumar a las acciones y a `catalogo_servicios_administrar` las reglas por categoría o
+    subcategoría y las excepciones por paquete (*Servicios por categoría*).
 
 ### Auditoría (2026-10-14) — resolver de a uno, en orden
 
@@ -525,8 +514,8 @@ y una propuesta a discutir, no decidida.
 13. ~~**Ángulo por material.**~~ → *Cada pieza lleva un ángulo por extremo* (Paquetes).
 14. ~~**Insumo dado de baja en paquetes.**~~ → *Un insumo dado de baja cuenta como que no está*
     (Paquetes).
-15. ~~**Cuándo llega una edición al vendedor.**~~ → *El técnico edita un borrador y "Publicar" crea
-    la versión* (Paquetes).
+15. ~~**Cuándo llega una edición al vendedor.**~~ → *Mandar a aprobar frena; aprobar pone a la venta*
+    (ficha v2).
 16. ~~**Ciclos.**~~ → *Nada depende de sí mismo* (Paquetes).
 
 *Vendedor*
@@ -555,7 +544,8 @@ y una propuesta a discutir, no decidida.
 26. ~~**Opción que vuelve.**~~ → *Lo elegido se guarda; lo que entra se calcula* (Paquetes).
 27. ~~**Panel ciego en el paño.**~~ → *El panel ciego entra por la composición del paño, como el
     vidrio* (Paquetes).
-28. ~~**Casos de prueba guardados en Probar.**~~ → *El paquete guarda casos de prueba* (Paquetes).
+28. ~~**Casos de prueba guardados en Probar.**~~ → *Los casos de prueba corren cuando alguien los
+    mira* (ficha v2).
 29. ~~**Redondeo del largo de corte.**~~ → *El largo de cada pieza y cada lado de un paño se
     redondean al mm, hacia abajo* (Paquetes).
 30. ~~**Filtro por línea de perfiles.**~~ → *En paquetes, la subcategoría es la línea de perfiles*
@@ -597,15 +587,16 @@ Relaciones (de otros módulos, apuntan al catálogo)
 ├── versión del paquete o insumo suelto ← línea del presupuesto (Presupuestos)
 └── versión del paquete ← orden de producción, con medidas y herrajes (Producción)
 Acciones
-├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · aprobar · rechazar (con motivo)
-│            · versión nueva · probar con medidas · mover de subcategoría · dar de baja · reactivar
+├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · volver al borrador · aprobar
+│            · rechazar (con motivo) · versión nueva · probar con medidas · mover de subcategoría
+│            · dar de baja · reactivar
 ├── insumo: crear · editar · marcar suelto y unidad · dar de baja · reactivar
 ├── servicio: crear · editar · poner monto, % y mínimo · dar de baja · reactivar
 ├── categorías: crear · renombrar · dar de baja (administración)
 └── clientes: habilitar categoría o subcategoría · ve precio sí/no (administración)
 Eventos que emite
-├── paquete: estado de la versión (para aprobar · rechazada → borrador · aprobada) — aviso a administración
-│            y al técnico; la primera aprobada avisa a vendedores del producto nuevo
+├── paquete: estado de la versión (para aprobar · vuelta al borrador · rechazada → borrador · aprobada)
+│            — aviso a administración y al técnico; la primera aprobada avisa a vendedores del producto nuevo
 ├── paquete: baja — aviso a vendedores de que sale de venta
 ├── insumo: baja — aviso al técnico: "reemplazar Marco 70 mm: 15 paquetes incompletos"
 └── servicio: ninguno (no es ente; su baja se ve en los paquetes incompletos)
@@ -624,7 +615,7 @@ Módulo: Catálogo
 │   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo, categorías, baja
 ├── Paquetes (vista)                             — técnico, administración
 │   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores, versión nueva, mandar a aprobar,
-│   │                                              reemplazar material, probar sin plata
+│   │                                              reemplazar material, volver al borrador, probar sin plata
 │   └── catalogo_paquetes_administrar (funcion)  — administración: aprobar y rechazar, probar
 │                                                  con plata, categorías, mover, baja
 └── Clientes (vista)                             — administración
@@ -732,15 +723,59 @@ Decidido en la v2:
   Incompleto se calcula (la versión vigente usa algo dado de baja), no se guarda. En el catálogo dice
   "falta reemplazar: Marco corrediza 70 mm"; el vendedor y el cliente no lo ven; las órdenes que ya
   apuntan a esa versión siguen calculando su despiece. Descartado: seguir vendiéndolo con aviso.
-- **El técnico reemplaza por material o por paquete.** Por material: "reemplazar Marco 70 mm por Marco 72
-  mm" crea una versión borrador en cada paquete que lo usa, con el qué cambió ya escrito. Por paquete: a
-  mano, cuando el material nuevo obliga a tocar una fórmula. Las dos terminan en versión nueva y
-  aprobación.
+- ~~**El técnico reemplaza por material o por paquete.**~~ → *"Reemplazar material" es un solo botón
+  de Paquetes* (2026-10-21).
 - **Administración aprueba varias versiones juntas con checkbox, viendo qué cambió de verdad.** Cada fila
   muestra el texto del técnico (el porqué), los cambios que detecta el sistema entre versiones (insumos
-  que entran o salen, fórmulas modificadas) y el precio antes y después a la medida de referencia del
-  paquete. El texto solo no alcanza: dice lo que el técnico cree que cambió. Cada paquete tiene una
-  medida de referencia que carga el técnico (la misma con que prueba el despiece).
+  que entran o salen, fórmulas modificadas) y el precio antes y después en el caso de referencia del
+  paquete (*Los casos de prueba corren cuando alguien los mira*). El texto solo no alcanza: dice lo
+  que el técnico cree que cambió.
+- **Mandar a aprobar frena; aprobar pone a la venta** (2026-10-21). Reemplaza a "Publicar" de la v1.
+  El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles (fórmula
+  mal escrita, ciclo, secundaria sin default, material que mira el peso y suma al peso): si falla
+  uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
+  aprobar, la versión pasa a ser la vigente y la ve el vendedor. Un presupuesto sin enviar sigue a la
+  vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4 · agrega
+  burlete inferior en la hoja*); al enviar, se congela. Por qué: con aprobación, mandar no puede
+  cambiar lo que se vende. Descartado: que la línea quede en la versión vieja hasta actualizarla a
+  mano (v1). Diagrama: https://claude.ai/artifact/BLhKnFktuJWyEpHGQedVoa
+- **Lo que está para aprobar no se edita: el técnico lo vuelve al borrador** (2026-10-21). "Volver al
+  borrador" saca la versión de la revisión sin perder nada y sigue siendo la misma (v4, no v5: nunca
+  se aprobó). Se corrige y se vuelve a mandar: corren otra vez los controles y el texto de qué cambió
+  se puede ajustar. Administración deja de verla en pendientes y recibe aviso; el vendedor sigue con
+  la vigente. Por qué: lo que administración revisa no cambia mientras lo revisa. Descartado: el
+  nombre "Revertir" (se lee como volver a la versión anterior o deshacer los cambios).
+- **Los casos de prueba corren cuando alguien los mira; uno es el de referencia** (2026-10-21).
+  Reemplaza a los casos que corría "Publicar" en la v1. Un caso es lo que carga el vendedor (medidas,
+  opciones, composición por paño, color), con nombre; se guarda desde Probar y se carga con un clic.
+  Uno se marca *referencia* (reemplaza a la medida de referencia): sin él no se manda a aprobar. El
+  resultado no se guarda, como el despiece. Al mandar a aprobar, el técnico ve las diferencias de
+  cada caso contra la vigente, sin precios (materiales que entran o salen, piezas, cantidades, avisos:
+  *"Grande 3000 × 1800": rueda simple → doble (hoja der) · Travesaño hoja der 1460 → 1510 mm*), y
+  confirma. Administración, en pendientes, ve las mismas con precio antes y después; la fila muestra
+  el del caso de referencia. En la primera versión no hay antes: cada caso con su despiece y precio.
+  Una opción que ya no existe sigue *Lo elegido se guarda* y se marca. Por qué: cargar a mano 4 casos
+  de 8 campos en cada edición termina en probar uno, y lo roto lo encuentra el vendedor; medida de
+  referencia y caso eran dos conceptos para lo mismo. Descartado: resultado esperado por caso (habría
+  que cargar el despiece entero a mano).
+- **Cada paquete tiene como mucho una versión abierta (borrador o para aprobar)** (2026-10-21).
+  Mientras haya una, "versión nueva" no crea otra: muestra la abierta (*v4 · Marcos · agrega burlete
+  inferior en la hoja*). Si está en borrador, cualquier técnico la edita y suma su cambio al texto;
+  si está para aprobar, la vuelve al borrador o espera. Por qué: con dos borradores que parten de la
+  v3, aprobar la v4 (burlete) y después la v5 (rueda doble) deja vigente una versión sin el burlete, y
+  nadie lo nota. Descartado: borradores en paralelo (obliga a combinarlos).
+- **"Reemplazar material" es un solo botón de Paquetes: masivo, con los paquetes a elegir, y cada
+  borrador se ajusta después a mano** (2026-10-21). Dos buscadores (material actual y nuevo) y la
+  tabla de los paquetes que usan el actual, todos marcados: el técnico desmarca los que no quiere
+  tocar y ve qué pasa en cada uno antes de confirmar. Sin versión abierta, crea un borrador; con
+  borrador, se suma a él; para aprobar, vuelve al borrador y se suma (aviso a administración). Si la
+  versión abierta ya no usa el material, dice *ya no lo usa* y no se toca. El qué cambió va escrito
+  (*reemplaza Marco corrediza 70 mm por Marco 72 mm*) y se suma al que hubiera. Lo que el material
+  nuevo obliga a cambiar en un paquete (una fórmula) se corrige en su borrador; después cada uno se
+  manda a aprobar. El aviso de baja (*falta reemplazar: Marco corrediza 70 mm*) abre la misma ventana
+  con el material actual cargado. Por qué: con una versión abierta por paquete, el reemplazo no puede
+  crear otra. Descartado: saltear los que están para aprobar y avisar (queda a mano y, con la baja,
+  el paquete queda incompleto).
 - **El producto nuevo se avisa al aprobarse la primera versión, no en el alta.** El alta ocurre cuando el
   técnico abre el borrador: avisar ahí a los vendedores sería avisar de algo que no se vende. "Incompleto"
   no emite (se calcula); lo que lo causa sí: la baja del insumo.

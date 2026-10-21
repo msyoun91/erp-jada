@@ -42,9 +42,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   descripción y monto que calcula el vendedor, sin servicio del catálogo (`decisiones/catalogo.md` →
   *Entes*). No se envía con una línea sin precio (insumo o servicio sin costo: `decisiones/catalogo.md` →
   *Sin costo no es $ 0*).
-  Hasta enviarse, la línea sigue a la última versión publicada del paquete y al costo de hoy (con
-  aviso si el paquete cambió); al enviar, se congela (`decisiones/catalogo.md` → *El técnico edita un
-  borrador*).
+  Hasta enviarse, la línea sigue a la versión vigente (última aprobada) del paquete y al costo de hoy
+  (con aviso si el paquete cambió, con el texto del técnico); al enviar, se congela
+  (`decisiones/catalogo.md` → *Mandar a aprobar frena; aprobar pone a la venta*).
   La línea nueva propone el color y el vidrio de la anterior: en el catálogo no tienen default
   (`decisiones/catalogo.md` → *El default es obligatorio solo en lo secundario*).
   Los avisos de la línea quedan marcados y al enviar o aprobar se listan para confirmar, sin frenar;
