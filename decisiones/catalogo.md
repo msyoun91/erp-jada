@@ -104,7 +104,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   paño negativo que restaba vidrio, y un aviso no impedía vender lo que la línea no soporta. El
   trabajo especial fuera de línea pasa por el técnico.
 - **El aviso es parte del resultado de la línea** (2026-10-14), con el precio, el despiece y por qué
-  entró cada material: no algo que se ve una vez al cargar. Presupuestos lo deja marcado en la línea
+  entró cada material (cada persona ve su parte: *Precio y despiece se habilitan por separado*, ficha
+  v2): no algo que se ve una vez al cargar. Presupuestos lo deja marcado en la línea
   y lo lista al enviar o aprobar, para confirmarlo sin frenar. Por qué: *más de 1800 de alto conviene
   reforzada* se veía al cargar y quien enviaba no se enteraba. Descartado: aceptarlo línea por línea —
   es un freno más, y para eso está "frena".
@@ -444,8 +445,8 @@ explícita a `SECURITY INVOKER`, acotada a esta función.
 costo** (2026-10-14). `servicios` guarda solo lo que ve el técnico (nombre, unidad, fijo/porcentual,
 comercial); si el 15 % fuera columna de `servicios` o la excepción columna de `paquetes`, el técnico
 los leería por API. Como la función de precio es `DEFINER` y salta RLS, **verifica adentro quién
-llama**: despiece, avisos y precio a quien ve precios; sin precio al resto (el técnico en Probar).
-Quién ve precios se define en el árbol de vistas y funciones. Descartado: una vista que oculte
+llama**: precio y despiece por separado, avisos y plegado a todos (*Precio y despiece se habilitan
+por separado*, ficha v2). Quién ve cada parte se define en el árbol de vistas y funciones. Descartado: una vista que oculte
 columnas — segunda puerta a la misma tabla, y un `select` olvidado sobre la base filtra todo.
 
 **Las fórmulas se validan al guardar y se evalúan en la base**: solo números, variables del paquete,
@@ -480,10 +481,9 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
   - Servicios: sumar a las acciones y a `catalogo_servicios_administrar` las reglas por categoría o
     subcategoría y las excepciones por paquete (*Servicios por categoría*), y que el técnico ve qué
     recibe el paquete por categoría, sin el %.
-  - Lo que la v1 tenía y la v2 no (2026-10-21), de a uno y en orden. El 1 (la baja) ya está: *La baja
-    depende de cómo se usa lo que se da de baja* y siguientes (ficha v2).
-    2. Despiece y vendedor: la v2 dice que no lo ve; *El motor va en Postgres* dice "despiece, avisos y
-       precio a quien ve precios". Separar: avisos y plegado de la línea sí, despiece no.
+  - Lo que la v1 tenía y la v2 no (2026-10-21), de a uno y en orden. Ya están el 1 (la baja: *La baja
+    depende de cómo se usa lo que se da de baja* y siguientes) y el 2 (despiece y vendedor: *Precio y
+    despiece se habilitan por separado*), los dos en la ficha v2.
     3. Unidad del suelto: la v1 vende la presentación entera y la unidad es del insumo (las fórmulas
        dependen de ella); la v2 deja que administración elija m², ml, unidad o kg, y rige al instante.
     4. Depósito: falta en Personas (¿"NO usa el módulo: ve los insumos desde Stock"?).
@@ -679,6 +679,17 @@ Decidido en la v2:
   paquetes.**~~ → *Solo el paquete se aprueba*.
 - **Al presupuestador le sale el precio, nunca el costo ni el despiece.** El vendedor elige entre
   paquetes aprobados e insumos marcados sueltos; lo que esté sin aprobar no aparece.
+- **Precio y despiece se habilitan por separado; avisos y plegado van a todos** (2026-10-21). La
+  función devuelve cuatro partes: precio, avisos, plegado (*herrajes: negro · kit central: plateado
+  (no hay en negro)*) y despiece (piezas con largo y ángulos, medida de cada paño y por qué entró
+  cada material). El vendedor ve precio, avisos y plegado; el cliente empresa, lo mismo, con precio
+  solo si se lo habilitaron; el técnico en Probar y producción, todo menos el precio; administración,
+  todo. Un aviso va tal cual aunque nombre una pieza (*Travesaño marco 6500 mm: más largo que la
+  barra de 6000 mm*): el vendedor lo necesita para cotizar barra especial o empalme, y un largo
+  suelto no muestra las fórmulas. Qué permiso habilita cada parte: *Pendiente*, punto 7. Por qué:
+  *El motor va en Postgres* daba el despiece a quien ve precios, y el vendedor ve precio sin
+  despiece y producción despiece sin precio. Descartado: un texto sin la pieza para vendedor y
+  cliente (cada aviso del sistema escrito dos veces).
 - **El despiece no se guarda: se calcula cuando se pide.** Quien lo usa guarda solo las entradas
   (paquete, ancho, alto, configuración de herrajes) y pide el despiece al catálogo. Una sola función del
   catálogo evalúa las fórmulas: la llaman producción, el presupuestador (para el precio) y la prueba del
