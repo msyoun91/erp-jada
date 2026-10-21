@@ -149,6 +149,29 @@ final** (Presupuestos: es donde se cargan las medidas).
   lado (`= 5.980 mm → 5,98 ml`) y Probar las dos cifras. Por qué: todas las variables ya están en
   mm, así que una fórmula escrita sin pensar en unidades da justo lo que el sistema espera.
   Descartado: escribir en la unidad del insumo (`/ 1000`) — olvidarlo cobra 1000× y no se nota.
+- **Cada variable declara su unidad, y la fórmula de cada material y servicio tiene que dar la suya**
+  (2026-10-21). El técnico elige ml, m², kg o unidad al crear una medida del vendedor, una variable
+  de opción o una calculada, obligatoria y sin default; las del sistema ya la traen (`peso_*` kg,
+  `superficie_pano_*` m², `perimetro_pano_*` y `espesor_pano_*` ml, `con_<grupo>` unidad). El valor
+  sigue en mm y mm² (*Las fórmulas trabajan en mm*): la unidad dice qué mide, no cambia la cuenta. El
+  parser que valida la fórmula al guardar saca también su unidad: largo × largo = m², m² ÷ largo =
+  ml, largo ÷ largo = unidad, unidad × algo = ese algo; un número suma o resta en la unidad del otro
+  lado (`ancho − 6`) y multiplica o divide sin cambiarla (`× 1,15`, `/ 2`); `redondear` la conserva y
+  `máximo`/`mínimo` piden la misma en todo. Lo que no da una de las cuatro (ml × kg) es fórmula mal
+  escrita. Si no coincide con la del insumo o el servicio, no se manda a aprobar, y en el borrador se
+  marca en el campo (*`= 850.000 mm² · Felpa va por ml`*): *Tela mosquitera* (m²) ×
+  `perimetro_hoja_izq` da ml; *Felpa* (ml) × `ancho_hoja_izq × alto_hoja` da m²; *Tornillo* (unidad) ×
+  `alto` da ml. La fórmula de una calculada, y el default de una medida, también tienen que dar lo que
+  declaran, **salvo unidad, que acepta cualquiera**: es como se dice "una cada 600 mm". *Grampa* ×
+  `redondear.mas(alto / 600; 0)` frena (da ml); se carga `fijaciones_jamba` con esa fórmula,
+  declarada unidad, y la usan grampas, tornillos y tarugos. El largo de cada pieza tiene que dar ml,
+  y un material por piezas da ml: *Marco corrediza 70 mm* dado de alta por unidad frena (*va por
+  unidad y las piezas dan ml*), en vez de cobrar 5.200 barras. Una cantidad fija no se controla: ya
+  está en la unidad del insumo. Por qué: la conversión pasa a la unidad del insumo lo que dé la fórmula sin
+  preguntar qué mide; la tela por perímetro cobraba 0,0038 m² y la Corrediza salía $ 591.000 en vez
+  de $ 600.000 sin que el técnico ni administración lo notaran. Descartado: controlar solo la
+  cantidad que es una variable sola — la mayoría de las fórmulas se escriben en el material y
+  quedaban afuera de un control que parece cubrir todo.
 - **La composición del vidrio es por paño** (2026-10-14): todos arrancan con la misma y el vendedor
   cambia solo el que difiere ("usar en todos" copia una a las demás). Una puerta con fijo superior
   laminado y hoja en DVH, o un paño bajo de seguridad, se cobra bien sin armar otro paquete.
@@ -761,6 +784,16 @@ Decidido en la v2:
   nuevo** (alta del nuevo, baja del viejo, versión nueva de los paquetes). Por qué no inmutable: corregir
   un perfil usado en 15 paquetes obligaba a 15 versiones y a mudar costo, stock y proveedor, para un dato
   que casi nunca cambia. El paquete sí se versiona porque cambiar una fórmula es diseño, no corrección.
+- **La unidad del insumo queda fija desde que entra en un paquete o se vende suelto** (2026-10-21).
+  Antes se corrige libre (el error de carga recién hecho). Desde que está en alguna versión de un
+  paquete, borradores incluidos, o marcado suelto, no se edita y el campo dice por qué (*Felpa 7×5:
+  en 20 paquetes · para otra unidad, insumo nuevo*); Compras y Stock suman su condición (costo o
+  existencias cargados) al construirse. Otra unidad es un producto distinto: insumo nuevo y baja del
+  viejo, y en cada borrador el control de unidad marca las fórmulas a corregir (*Cada variable
+  declara su unidad*). Por qué: el insumo no se versiona, así que pasar la felpa de ml a unidad
+  hacía que las 20 vigentes, ya aprobadas, calcularan 5.980 felpas en vez de 5,98 ml, y las órdenes
+  viejas el mismo despiece; la presentación y el costo quedaban en la unidad anterior. Descartado:
+  permitirlo mostrando el alcance — cambia precio y despiece de versiones aprobadas sin revisión.
 - **El servicio se edita directo, como el insumo.** No está en el despiece: corregirlo cambia precios, no
   órdenes.
 - **Los cambios de plata de administración rigen al instante, sin aprobación**: montos, %, mínimos,
@@ -855,8 +888,8 @@ Decidido en la v2:
   que el técnico cree que cambió.
 - **Mandar a aprobar frena; aprobar pone a la venta** (2026-10-21). Reemplaza a "Publicar" de la v1.
   El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles (fórmula
-  mal escrita, ciclo, secundaria sin default, material que mira el peso y suma al peso): si falla
-  uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
+  mal escrita, ciclo, secundaria sin default, material que mira el peso y suma al peso, unidad que
+  no coincide): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
   aprobar, la versión pasa a ser la vigente y la ve el vendedor. Un presupuesto sin enviar sigue a la
   vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4 · agrega
   burlete inferior en la hoja*); al enviar, se congela. Por qué: con aprobación, mandar no puede
