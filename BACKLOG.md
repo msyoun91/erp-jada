@@ -24,8 +24,8 @@ todavía en el orden: Stock y la licitación de Compras.
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
   `decisiones/catalogo.md` → *Ficha del módulo — v2*, la vigente. Siguiente: lo que falta para
-  aprobarla (*Pendiente*), de a un punto; sigue el 4 de lo que la v1 tenía y la v2 no (depósito en
-  Personas).
+  aprobarla (*Pendiente*), de a un punto; sigue el 5 de lo que la v1 tenía y la v2 no (Compras como
+  persona aparte).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
   producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
@@ -55,7 +55,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   va (`decisiones/catalogo.md` → *El vendedor no agrega materiales*).
 - **Stock** (decidido al fichar Catálogo, 2026-09-29): módulo propio, no parte de Catálogo. Lleva
   existencias y movimientos de los insumos del catálogo; su persona principal es depósito/logística.
-  Quien presupuesta ve el stock del insumo sin poder tocarlo.
+  Quien presupuesta ve el stock del insumo sin poder tocarlo. Depósito no usa Catálogo: ve el insumo
+  (nombre, presentación, color) desde Stock (`decisiones/catalogo.md` → *Depósito no usa el catálogo*).
 - **Compras** (ídem): dueño del costo del insumo, no Catálogo. El costo es de reposición (lo que
   costaría comprarlo hoy), en su moneda (ARS, US$, €), con historial, cargado como se cotiza (por
   unidad, presentación o kg: `decisiones/catalogo.md` → *El costo se carga como se cotiza*); se convierte con el oficial BNA

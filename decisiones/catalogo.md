@@ -485,9 +485,9 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
     recibe el paquete por categoría, sin el %.
   - Lo que la v1 tenía y la v2 no (2026-10-21), de a uno y en orden. Ya están el 1 (la baja: *La baja
     depende de cómo se usa lo que se da de baja* y siguientes), el 2 (despiece y vendedor: *Precio y
-    despiece se habilitan por separado*) y el 3 (unidad del suelto: *El suelto se vende por
-    presentación o por unidad del insumo*), los tres en la ficha v2.
-    4. Depósito: falta en Personas (¿"NO usa el módulo: ve los insumos desde Stock"?).
+    despiece se habilitan por separado*), el 3 (unidad del suelto: *El suelto se vende por
+    presentación o por unidad del insumo*) y el 4 (depósito: *Depósito no usa el catálogo*), los
+    cuatro en la ficha v2.
     5. Compras: en la v1 es persona aparte (costea, ve "sin costo y en uso"); la v2 la junta con
        administración.
     6. Lista "sin costo y en uso" (insumos) y "sin monto" (servicios): sin vista ni función.
@@ -588,6 +588,8 @@ Personas
 │                     (los costos los carga en Compras, fuera del catálogo)
 ├── Vendedor        — NO usa el módulo: por el presupuestador elige paquetes aprobados e insumos
 │                     sueltos y ve su precio · — · no ve despiece, costo ni servicios
+├── Depósito        — NO usa el módulo: en Stock ve cada insumo (nombre, presentación, color) junto
+│                     a sus existencias · — · no ve paquetes, fórmulas ni precios
 ├── Producción      — NO usa el módulo: el módulo de producción guarda medidas y configuración y
 │                     pide el despiece cuando lo necesita · — · no ve plata ni fórmulas
 └── Cliente empresa — NO usa el módulo: por el presupuestador de erp-cliente elige lo que administración
@@ -876,3 +878,8 @@ Decidido en la v2:
   ni precios. El técnico, con la vista y `_editar`, nunca ve plata.
 - **`_editar` y `_administrar` pueden coexistir**: en una empresa chica la misma persona es técnico y
   administración. Descartado: excluirlas para que nadie apruebe su propio paquete (obliga a dos personas).
+- **Depósito no usa el catálogo: ve el insumo desde Stock** (2026-10-21). Para contar y guardar 20
+  barras de Marco 70 mm negro mate le alcanza con nombre, presentación y color, y siempre los mira
+  junto a las existencias. Corrige la v1, que le daba la vista Insumos: esa vista es para crear y
+  editar, y suma desperdicio, peso y dónde se usa, que no necesita. Con qué permiso Stock lee el
+  insumo: *Pendiente*, punto 7, como el vendedor y producción.
