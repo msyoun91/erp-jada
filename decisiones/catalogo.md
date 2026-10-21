@@ -22,9 +22,10 @@ final** (Presupuestos: es donde se cargan las medidas).
 
 - Perfiles, tornillos, burletes, vidrios, silicona.
 - Datos: nombre, **unidad de compra** (ml, m², kg o unidad — cada insumo una; m² para vidrio y tela
-  mosquitera, que la vidriería cobra y el paquete usa por superficie), peso por unidad (para el
-  peso de la abertura y logística), unidad de comercialización / presentación (ej: barra de 6 m),
-  **categoría** (ver *Categorías*). Sin tipo fijo (*Sin tipo fijo de insumo*, ficha v2).
+  mosquitera, que la vidriería cobra y el paquete usa por superficie), peso por unidad (para
+  condicionar herrajes y pasar el costo por kg a la unidad), unidad de comercialización /
+  presentación (ej: barra de 6 m), **categoría** (ver *Categorías*). Sin tipo fijo (*Sin tipo fijo
+  de insumo*, ficha v2).
 - **La presentación sirve para vender suelto y para comprar, no para el paquete** (2026-10-14). Suelto
   se vende por presentación entera (2 barras = 12 ml × costo) o por unidad del insumo, según elija
   administración (*El suelto se vende por presentación o por unidad del insumo*, ficha v2). Compras
@@ -274,8 +275,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   se abre solo. Por qué: el vendedor cotiza lo común sin recorrer cada herraje y abre el resto cuando
   el cliente lo pide. Descartado: que sea principal según una condición (herraje principal solo con
   `cierre` = 0) — más lógica para lo que ya resuelve el plegado.
-- **El peso es para logística y condiciona herrajes** (2026-10-14): ej., pasado cierto peso de hoja
-  va rueda doble.
+- ~~**El peso es para logística y condiciona herrajes**~~ → *El peso es del insumo y condiciona
+  herrajes; la abertura no da peso* (ficha v2).
 - ~~Una opción puede tomar su insumo por una variable calculada~~ → *Materiales condicionales*.
 - **Materiales condicionales: los pone el sistema, el vendedor no elige** (2026-10-14). Un material
   puede llevar una condición sobre cualquier variable (medida o calculada): "si `ancho` > 1500 → se
@@ -297,10 +298,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   servicio~~ → *Un insumo puede traer sus servicios* (2026-10-21).
 - **Cada material dice si suma al peso** (2026-10-14). Por defecto suma; el técnico lo apaga en el
   material que no debe contar. Así la rueda queda fuera del peso del grupo: el peso que la elige no
-  cambia según qué rueda salga (si no, una condición sobre el peso dependería de sí misma). **Solo
-  saca el material del peso de su grupo: el peso de la abertura, para logística, suma todo.** Un
-  herraje pesado que mire el peso dejaría mal el flete. ~~Un material que mira el peso no puede sumar
-  al peso del grupo~~ → *Nada depende de sí mismo*.
+  cambia según qué rueda salga (si no, una condición sobre el peso dependería de sí misma).
+  ~~**Solo saca el material del peso de su grupo: el peso de la abertura, para logística, suma
+  todo.**~~ → la abertura no da peso (*El peso es del insumo y condiciona herrajes*, ficha v2).
+  ~~Un material que mira el peso no puede sumar al peso del grupo~~ → *Nada depende de sí mismo*.
 - **Nada depende de sí mismo: un paquete con un ciclo no se publica** (2026-10-14). El sistema arma
   las dependencias (fórmulas, defaults, condiciones, variables de opción y de peso) y el mensaje
   muestra la cadena (*`ancho_hoja_izq` → `ancho_hoja_der` → `ancho_hoja_izq`*); en el borrador se
@@ -312,7 +313,7 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **El sistema pone una variable de peso por grupo** (2026-10-14): `peso_hoja_izq`, `peso_marco`…,
   suma de los materiales del grupo que suman al peso (cantidad × peso del insumo). El técnico arma con
   ellas el peso que necesita. **El peso es de lo que queda puesto: cantidad sin desperdicio**, en
-  grupos, paños y el peso de la abertura para logística — el sobrante queda en taller y no viaja. Por
+  grupos y paños — el sobrante queda en taller, no en la hoja. Por
   qué: una hoja de 38 kg (aluminio 14 + paño 24) con desperdicio pasaba a 40,3 y salía con rueda doble. Descartado: calcular el peso a mano en la fórmula (ml × kg/ml + m² ×
   espesor × 2,5) — repite el peso del insumo y queda viejo si cambia.
 - **Cada grupo opcional pone `con_<grupo>`: 1 si el vendedor lo puso, 0 si no** (2026-10-14), como
@@ -493,7 +494,7 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
     leen la tabla del insumo*) y el 8 (variante de color: *Los colores son de administración*), los
     ocho en la ficha v2. El 9 (aumento de costo por categoría) no es del catálogo: es una acción de
     Compras sobre sus costos, que lee las categorías como lee el insumo (`BACKLOG.md` → Compras).
-    10. Peso de la abertura para logística: nadie lo recibe (¿lo ve el vendedor para el flete?).
+    El 10 (peso de la abertura para logística) sale: *El peso es del insumo y condiciona herrajes*.
     11. Casos de prueba: faltan en Acciones; quién los guarda y si son del paquete o de la versión.
     12. Entes: faltan ruta, submódulo, datos y roles (insumo: `{proveedor}`).
 ### Auditoría (2026-10-14) — resolver de a uno, en orden
@@ -1004,3 +1005,11 @@ Decidido en la v2:
   pedido suyo hecho por fuera del sistema; con todo en administración no hace falta aviso. La lista
   evita que un "Negro Mate" de más saque el negro mate de un paquete sin que nadie se entere.
   Descartado: que el técnico cargue las variantes con aviso a administración (el primer planteo).
+- **El peso es del insumo y condiciona herrajes; la abertura no da peso** (2026-10-21). El técnico
+  lo carga al dar de alta el insumo (Marco corrediza 70 mm: 0,85 kg/ml; Float 4 mm: 10 kg/m²) y
+  sirve para dos cosas: las variables de peso de grupos y paños, con las que entra la rueda doble si
+  `peso_total_hoja_izq` > 40 kg, y el costo que Compras cotiza por kg ($ 8.000 / kg × 0,85 kg/ml =
+  $ 6.800 / ml). El peso de la abertura entera, que la v1 sumaba para logística, sale: nadie lo
+  recibía. "Suma al peso" sigue, para que la rueda no dependa de sí misma. Si el flete o logística
+  lo piden, la función lo suma de los grupos y entra como una parte más con su rama: no falta
+  ningún dato.
