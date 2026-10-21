@@ -24,8 +24,8 @@ todavía en el orden: Stock y la licitación de Compras.
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
   `decisiones/catalogo.md` → *Ficha del módulo — v2*, la vigente. Siguiente: lo que falta para
-  aprobarla (*Pendiente*), de a un punto; sigue el 12 de lo que la v1 tenía y la v2 no (entes:
-  ruta, submódulo, datos y roles). Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
+  aprobarla (*Pendiente*), de a un punto: delegables y las reglas de servicios por categoría en las
+  acciones. Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
   (`decisiones/catalogo.md` → *La función de cálculo decide qué parte ve cada uno*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
@@ -80,7 +80,10 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (costos y cotización) antes de Presupuestos;
   después suma la licitación —varias ofertas por insumo, con precio, plazo y fecha, y una elegida—,
   que al elegir actualiza el costo. Los proveedores son empresas de Contactos
-  (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*).
+  (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*). Sin la vista Insumos,
+  el insumo no es ente para quien solo compra: vincula el proveedor desde Compras, sin chip ni
+  buscador en Contactos; si los quiere, se decide al fichar Compras (`decisiones/catalogo.md` →
+  *Paquete e insumo se registran con su vista*).
 - **Post-venta**: módulo aislado para su equipo. La unidad (1°C, local, casa) se arma después,
   eligiendo ítems del presupuesto aprobado ("estas 4 ventanas → 1°C"); si un ítem agrupa varias
   unidades, se lleva ítem y cantidad. Una obra de un solo dueño es una unidad con todo. Propietarios e

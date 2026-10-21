@@ -485,7 +485,7 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
   - Servicios: sumar a las acciones y a `catalogo_servicios_administrar` las reglas por categoría o
     subcategoría y las excepciones por paquete (*Servicios por categoría*), y que el técnico ve qué
     recibe el paquete por categoría, sin el %.
-  - Lo que la v1 tenía y la v2 no (2026-10-21), de a uno y en orden. Ya están el 1 (la baja: *La baja
+  - ~~Lo que la v1 tenía y la v2 no~~ (2026-10-21), los doce resueltos: el 1 (la baja: *La baja
     depende de cómo se usa lo que se da de baja* y siguientes), el 2 (despiece y vendedor: *Precio y
     despiece se habilitan por separado*), el 3 (unidad del suelto: *El suelto se vende por
     presentación o por unidad del insumo*), el 4 (depósito: *Depósito no usa el catálogo*), el 5
@@ -495,8 +495,8 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
     ocho en la ficha v2. El 9 (aumento de costo por categoría) no es del catálogo: es una acción de
     Compras sobre sus costos, que lee las categorías como lee el insumo (`BACKLOG.md` → Compras).
     El 10 (peso de la abertura para logística) sale: *El peso es del insumo y condiciona herrajes*.
-    El 11 (casos de prueba), en Acciones y en *Los casos de prueba son del paquete*.
-    12. Entes: faltan ruta, submódulo, datos y roles (insumo: `{proveedor}`).
+    El 11 (casos de prueba), en Acciones y en *Los casos de prueba son del paquete*. El 12 (ruta,
+    submódulo, datos y roles), en Entes y en *Paquete e insumo se registran con su vista*.
 ### Auditoría (2026-10-14) — resolver de a uno, en orden
 
 Caso base: corrediza 2 hojas 1500 × 1100, negro mate, DVH, 4 iguales. Cada punto: el caso que falla
@@ -597,7 +597,9 @@ Personas
                       le habilitó; ve el precio solo si se lo habilitó · — · no ve despiece, costo ni servicios
 Entes
 ├── paquete — dueño creado_por (solo dato) · estado por versión: borrador · para aprobar · aprobada · lo señalan la línea del presupuesto y la orden de producción
+│             · datos {nombre} · ruta /catalogo/paquetes/{id} (abre la vigente) · submódulo catalogo_paquetes · roles {}
 └── insumo  — dueño creado_por (solo dato) · sin estado (solo activo), sin versiones · lo señalan la línea del presupuesto (suelto), Compras, Stock y Contactos
+              · datos {codigo, nombre} · ruta /catalogo/insumos/{id} · submódulo catalogo_insumos · roles {proveedor}
 Relaciones (del catálogo)
 ├── versión del paquete → insumos y servicios con sus fórmulas — interior del paquete, no puente entre entes
 └── empresa cliente (Contactos) → categorías o subcategorías habilitadas + ve precio — configuración, FK a la empresa
@@ -635,23 +637,23 @@ Eventos que consume
 
 ```
 Módulo: Catálogo
-├── Insumos (vista)                              — técnico, administración
+├── Insumos (vista, catalogo_insumos)            — técnico, administración
 │   ├── catalogo_insumos_editar (funcion)        — técnico: crear y editar, con los servicios que lleva
 │   └── catalogo_insumos_administrar (funcion)   — administración: ve costos (y el filtro sin costo y en
 │                                                  uso), suelto y cómo se vende, categorías, colores y
 │                                                  variantes, baja (con reemplazo) y reactivar
-├── Servicios (vista)                            — técnico, administración
+├── Servicios (vista, catalogo_servicios)        — técnico, administración
 │   ├── catalogo_servicios_editar (funcion)      — técnico: crear y editar
 │   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo (y el filtro sin
 │                                                  monto), categorías, baja y reactivar
-├── Paquetes (vista)                             — técnico, administración
+├── Paquetes (vista, catalogo_paquetes)          — técnico, administración
 │   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores, versión nueva, mandar a aprobar,
 │   │                                              reemplazar material, volver al borrador, probar sin plata
 │   │                                              y guardar casos de prueba
 │   └── catalogo_paquetes_administrar (funcion)  — administración: aprobar y rechazar, probar
 │                                                  con plata y guardar casos de prueba, categorías, mover,
 │                                                  baja y reactivar
-└── Clientes (vista)                             — administración
+└── Clientes (vista, catalogo_clientes)          — administración
     └── catalogo_clientes_habilitar (funcion)    — administración: qué ve cada empresa y si ve precio
 Reglas entre permisos: ninguna. _editar y _administrar pueden coexistir en la misma persona.
 Permisos de otros módulos que mira el catálogo (cada uno entra con su módulo): Presupuestos y
@@ -1027,3 +1029,15 @@ Decidido en la v2:
   recibía. "Suma al peso" sigue, para que la rueda no dependa de sí misma. Si el flete o logística
   lo piden, la función lo suma de los grupos y entra como una parte más con su rama: no falta
   ningún dato.
+- **Paquete e insumo se registran con su vista; para quien solo compra, el insumo no es ente**
+  (2026-10-21). Paquete: datos `{nombre}`, ruta `/catalogo/paquetes/{id}` (abre la vigente),
+  submódulo `catalogo_paquetes`, sin roles; chip *Modena · Corrediza 2 hojas*. Insumo: datos
+  `{codigo, nombre}` (depósito y Compras hablan por código), ruta `/catalogo/insumos/{id}`, submódulo
+  `catalogo_insumos`, roles `{proveedor}`; chip *ART-2410 · Marco 70 mm*. Como el ente existe solo
+  para quien tiene su vista (RLS de `entes`), quien solo compra no ve en *Aluar* el chip *proveedor
+  de: ART-2410 · Marco 70 mm* ni encuentra el insumo en el buscador de Contactos: lo vincula desde
+  Compras. El rol lo valida un trigger `DEFINER` que lee `entes` igual, y quién vincula lo dice la
+  rama del catálogo en `trabaja_registro`, a la que Compras suma su permiso. Vendedor y producción
+  tampoco ven el chip del paquete: la línea muestra lo que da la función de cálculo. Por qué: chip y
+  buscador para Compras piden que `entes.submodulo` acepte varias vistas y una ruta según quién mira,
+  un cambio de core que hoy nadie necesita; si Compras los pide, se decide al ficharlo (`BACKLOG.md`).
