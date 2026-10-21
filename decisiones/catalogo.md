@@ -486,9 +486,9 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
   - Lo que la v1 tenía y la v2 no (2026-10-21), de a uno y en orden. Ya están el 1 (la baja: *La baja
     depende de cómo se usa lo que se da de baja* y siguientes), el 2 (despiece y vendedor: *Precio y
     despiece se habilitan por separado*), el 3 (unidad del suelto: *El suelto se vende por
-    presentación o por unidad del insumo*), el 4 (depósito: *Depósito no usa el catálogo*) y el 5
-    (Compras: *Compras no usa el catálogo*), los cinco en la ficha v2.
-    6. Lista "sin costo y en uso" (insumos) y "sin monto" (servicios): sin vista ni función.
+    presentación o por unidad del insumo*), el 4 (depósito: *Depósito no usa el catálogo*), el 5
+    (Compras: *Compras no usa el catálogo*) y el 6 (listas: *Lo que falta costear se ve en filtros*),
+    los seis en la ficha v2.
     7. Quién ve precio fuera del catálogo: qué permiso mira la función de precio para el vendedor
        (precio sin despiece), producción (despiece sin precio) y el cliente (precio si se lo habilitaron);
        y con qué permiso Stock y Compras leen el insumo.
@@ -630,12 +630,13 @@ Eventos que consume
 Módulo: Catálogo
 ├── Insumos (vista)                              — técnico, administración
 │   ├── catalogo_insumos_editar (funcion)        — técnico: crear y editar
-│   └── catalogo_insumos_administrar (funcion)   — administración: ve costos, suelto y cómo se vende,
-│                                                  categorías, baja (con reemplazo) y reactivar
+│   └── catalogo_insumos_administrar (funcion)   — administración: ve costos (y el filtro sin costo y en
+│                                                  uso), suelto y cómo se vende, categorías, baja (con
+│                                                  reemplazo) y reactivar
 ├── Servicios (vista)                            — técnico, administración
 │   ├── catalogo_servicios_editar (funcion)      — técnico: crear y editar
-│   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo, categorías, baja
-│                                                  y reactivar
+│   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo (y el filtro sin
+│                                                  monto), categorías, baja y reactivar
 ├── Paquetes (vista)                             — técnico, administración
 │   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores, versión nueva, mandar a aprobar,
 │   │                                              reemplazar material, volver al borrador, probar sin plata
@@ -894,3 +895,15 @@ Decidido en la v2:
   administra, tiene los dos permisos. Por qué: juntas, quien solo compra quedaba como
   administración, y con `_administrar` daba de baja, marcaba suelto, aprobaba y veía el % de los
   servicios. Con qué permiso Compras lee el insumo: *Pendiente*, punto 7.
+- **Lo que falta costear se ve en filtros, y lo que entra sin plata se marca al aprobar**
+  (2026-10-21). En Compras, la lista *sin costo y en uso*, con dónde se usa cada insumo (*Kit cierre
+  central — 3 paquetes: Corrediza 2 hojas, Corrediza 3 hojas, Puerta corrediza*; *Burlete 9 mm gris
+  — 1 paquete · se vende suelto*). En uso es lo que se vende hoy: la vigente de un paquete activo o el
+  insumo suelto. El dónde se usa lo da una función del catálogo, la misma del alcance de la baja, y
+  Compras la lee. Administración tiene el mismo filtro en Insumos (`catalogo_insumos_administrar`,
+  que ya ve costos) y *sin monto* en Servicios (`catalogo_servicios_administrar`: *Mecanizado de
+  embutido · sin monto · 3 paquetes*); el técnico no ve ninguno. En pendientes se marca lo que entra
+  sin plata (*entra Kit cierre central (sin costo) · Mecanizado de embutido (sin monto)*), sin frenar
+  la aprobación: el freno es la línea sin precio, que no se envía. Por qué: con el caso de referencia
+  en cierre por hoja, la v4 se aprobaba con precio normal y el faltante lo encontraba el vendedor dos
+  semanas después. Son filtros de vistas que ya existen: ni vista ni función nueva.

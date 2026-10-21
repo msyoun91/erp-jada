@@ -24,8 +24,8 @@ todavía en el orden: Stock y la licitación de Compras.
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha en curso:
   `decisiones/catalogo.md` → *Ficha del módulo — v2*, la vigente. Siguiente: lo que falta para
-  aprobarla (*Pendiente*), de a un punto; sigue el 6 de lo que la v1 tenía y la v2 no (listas "sin
-  costo y en uso" y "sin monto").
+  aprobarla (*Pendiente*), de a un punto; sigue el 7 de lo que la v1 tenía y la v2 no (quién ve
+  precio fuera del catálogo).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
   producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
@@ -62,7 +62,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   unidad, presentación o kg: `decisiones/catalogo.md` → *El costo se carga como se cotiza*); se convierte con el oficial BNA
   venta. Catálogo lo lee para calcular el precio de venta; el técnico no lo ve. Quien compra no usa
   Catálogo: ve el insumo con sus existencias de Stock desde Compras (`decisiones/catalogo.md` →
-  *Compras no usa el catálogo*). Tabla propia, no
+  *Compras no usa el catálogo*), con la lista "sin costo y en uso" (*Lo que falta costear se ve en
+  filtros*). Tabla propia, no
   columna del insumo: RLS filtra filas, no columnas. El aumento se aplica por categoría del catálogo o
   por insumo, en % o monto fijo, con motivo (`decisiones/catalogo.md` → *Categorías*). La cotización
   (USD y EUR) es una vista de Compras (`decisiones/catalogo.md` → *Precio de venta*). Arranca mínimo
