@@ -930,6 +930,18 @@ Decidido en la v2:
   si está para aprobar, la vuelve al borrador o espera. Por qué: con dos borradores que parten de la
   v3, aprobar la v4 (burlete) y después la v5 (rueda doble) deja vigente una versión sin el burlete, y
   nadie lo nota. Descartado: borradores en paralelo (obliga a combinarlos).
+- **El paquete muestra su historial versión por versión, como apoyo del técnico** (2026-10-21). Cada
+  versión dice qué cambió respecto de la anterior: el texto del técnico, los cambios que detecta el
+  sistema (los de pendientes, sin precio) y su recorrido en una línea (*v5 · baja el umbral de rueda
+  doble a 35 kg · `rueda_hoja_izq`: `peso > 40` → `peso > 35` · mandada 12/09 (Marcos) → rechazada
+  13/09 (Laura: falta probar el caso grande) → mandada 15/09 → aprobada 15/09 (Laura)*). La abierta
+  encabeza la lista con lo que lleva cambiado. Lo ven técnico y administración con la vista Paquetes.
+  No se guarda una copia: los cambios se calculan desde las versiones, que no cambian al aprobarse, y
+  cada una parte de la anterior (*una versión abierta por paquete*); el recorrido sale de los eventos
+  de estado, con el motivo del rechazo. Por qué: le explica al técnico por qué el paquete es como es
+  (la orden de la v3 que hoy saldría con rueda doble) sin depender de que el texto lo diga todo.
+  Descartado: comparar dos versiones cualquiera (v3 contra v6 se lee de v4 a v6) y precio en el
+  historial (la plata se mira al aprobar).
 - **"Reemplazar material" es un solo botón de Paquetes: masivo, con los paquetes a elegir, y cada
   borrador se ajusta después a mano** (2026-10-21). Dos buscadores (material actual y nuevo) y la
   tabla de los paquetes que usan el actual, todos marcados: el técnico desmarca los que no quiere
