@@ -393,9 +393,17 @@ categoría de paquete (Ventanas 30 %) o por categoría de insumo (Vidrios 10 %).
 y alcanza a todo paquete o insumo de esa categoría, también al insumo suelto. Reemplaza a los
 comerciales generales con excepción por paquete: son el caso de una regla general.
 
-**Si una línea cae en dos reglas del mismo servicio, gana la más específica, no se suman:** categoría
-del insumo › excepción del paquete › categoría del paquete › general. Sumar cobraría dos veces el
-mismo servicio sobre el mismo vidrio de una ventana.
+**Si una línea cae en dos reglas del mismo servicio, gana la más específica, no se suman:**
+subcategoría del insumo › categoría del insumo › excepción del paquete › subcategoría del paquete ›
+categoría del paquete › general. Sumar cobraría dos veces el mismo servicio sobre el mismo vidrio de
+una ventana. Dos servicios distintos sí se suman (Float suelto: Comercialización 10 % + Manipulación 5 %).
+
+**La regla apunta a una categoría o a una subcategoría, como la habilitación de clientes**
+(2026-10-21). Ventanas → Modena 35 %, Ventanas → Herrero 22 %, Vidrios → Laminados 15 %; un paquete
+nuevo en Modena nace con el 35 %. Apunta al lugar del árbol, no al nombre: Puertas → Modena no toma la
+de Ventanas → Modena (Modena en las dos son dos reglas). Por qué: en paquetes la subcategoría es la
+línea de perfiles, y ahí cambia el margen; solo por categoría, cada Modena era una excepción a mano y
+la nueva nacía en 30 %. Descartado: regla solo por categoría, más excepciones por paquete.
 
 **La excepción del paquete reemplaza a su categoría y a la general, no a la del insumo** (2026-10-14).
 Ventanas 30 %, Vidrios 10 %, "Corrediza económica" bajada a 20 %: su vidrio sigue en 10 %. Por qué:
@@ -483,8 +491,6 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
 ## Pendiente
 
 - **Para aprobar la ficha v2** (entes, relaciones, acciones, eventos y árbol ya están en borrador):
-  - Servicios por categoría con dos niveles: ¿la regla va solo por categoría (Ventanas 30 %) o también
-    por subcategoría (Modena 35 %)?
   - *"Publicar" crea la versión* (Paquetes) frente a la aprobación de la v2: qué corre al mandar a
     aprobar y qué al aprobar (casos de prueba, aviso *el paquete cambió* en la línea).
   - Delegables.
