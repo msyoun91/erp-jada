@@ -486,13 +486,12 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
   - Lo que la v1 tenía y la v2 no (2026-10-21), de a uno y en orden. Ya están el 1 (la baja: *La baja
     depende de cómo se usa lo que se da de baja* y siguientes), el 2 (despiece y vendedor: *Precio y
     despiece se habilitan por separado*), el 3 (unidad del suelto: *El suelto se vende por
-    presentación o por unidad del insumo*) y el 4 (depósito: *Depósito no usa el catálogo*), los
-    cuatro en la ficha v2.
-    5. Compras: en la v1 es persona aparte (costea, ve "sin costo y en uso"); la v2 la junta con
-       administración.
+    presentación o por unidad del insumo*), el 4 (depósito: *Depósito no usa el catálogo*) y el 5
+    (Compras: *Compras no usa el catálogo*), los cinco en la ficha v2.
     6. Lista "sin costo y en uso" (insumos) y "sin monto" (servicios): sin vista ni función.
     7. Quién ve precio fuera del catálogo: qué permiso mira la función de precio para el vendedor
-       (precio sin despiece), producción (despiece sin precio) y el cliente (precio si se lo habilitaron).
+       (precio sin despiece), producción (despiece sin precio) y el cliente (precio si se lo habilitaron);
+       y con qué permiso Stock y Compras leen el insumo.
     8. Variante de color: Compras la costea por FK, Stock y el suelto en color también; falta en
        Relaciones, y sus acciones (agregar, dar de baja: ¿de administración?).
     9. Aumento de costo por categoría (Compras): falta "categoría ← aumento (Compras)".
@@ -585,11 +584,14 @@ Personas
 │                     aprueba paquetes; crea categorías, pone montos, % y mínimos
 │                     de servicios, marca qué insumo se vende suelto, por presentación o por
 │                     unidad; habilita a cada cliente empresa qué ve y si ve precios · —
-│                     (los costos los carga en Compras, fuera del catálogo)
+│                     (los costos los carga Compras, en su módulo)
 ├── Vendedor        — NO usa el módulo: por el presupuestador elige paquetes aprobados e insumos
 │                     sueltos y ve su precio · — · no ve despiece, costo ni servicios
 ├── Depósito        — NO usa el módulo: en Stock ve cada insumo (nombre, presentación, color) junto
 │                     a sus existencias · — · no ve paquetes, fórmulas ni precios
+├── Compras         — NO usa el módulo: en Compras ve cada insumo (nombre, unidad, presentación con
+│                     su contenido, peso, variantes de color, categoría) con sus existencias de
+│                     Stock, y ahí lo costea · — · no ve paquetes, fórmulas, servicios ni precios
 ├── Producción      — NO usa el módulo: el módulo de producción guarda medidas y configuración y
 │                     pide el despiece cuando lo necesita · — · no ve plata ni fórmulas
 └── Cliente empresa — NO usa el módulo: por el presupuestador de erp-cliente elige lo que administración
@@ -883,3 +885,12 @@ Decidido en la v2:
   junto a las existencias. Corrige la v1, que le daba la vista Insumos: esa vista es para crear y
   editar, y suma desperdicio, peso y dónde se usa, que no necesita. Con qué permiso Stock lee el
   insumo: *Pendiente*, punto 7, como el vendedor y producción.
+- **Compras no usa el catálogo: ve el insumo desde Compras, con sus existencias de Stock, y ahí lo
+  costea** (2026-10-21). Para cargar *Marco corrediza 70 mm negro mate: $ 32.000 / barra* o
+  *Perfiles PVC +8 %* le alcanza con nombre, unidad, presentación con su contenido, peso, variantes
+  de color y categoría; paquetes, fórmulas, servicios y precio no los necesita. Vuelve la persona de
+  la v1, que la v2 había juntado con administración, y coincide con Compras en Contactos (equipo
+  propio). Administración sigue viendo costos en el catálogo; si la misma persona compra y
+  administra, tiene los dos permisos. Por qué: juntas, quien solo compra quedaba como
+  administración, y con `_administrar` daba de baja, marcaba suelto, aprobaba y veía el % de los
+  servicios. Con qué permiso Compras lee el insumo: *Pendiente*, punto 7.
