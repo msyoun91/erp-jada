@@ -66,13 +66,9 @@ final** (Presupuestos: es donde se cargan las medidas).
   servicio en el paquete**, sobre la suma de sus grupos, no en cada grupo (mano de obra 15 %, mín $ 5.000).
   Como el paquete calcula una abertura, el mínimo es **por ventana**: 4 chicas de $ 3.000 cobran
   4 × $ 5.000 (ver *La cantidad es de la línea*).
-- **El % de un servicio del paquete no incluye lo que entra por un paño (vidrio, cámara, panel)**
-  (2026-10-14): va sobre perfiles, herrajes y accesorios del grupo. El trabajo con el vidrio es un
-  servicio fijo por m² (*Colocación de vidrio* × `superficie_pano_izq`), con condición sobre `espesor_pano_*`
-  si un DVH lleva más; el servicio comercial sobre el vidrio sigue por categoría (Vidrios 10 %). Por qué: con un
-  laminado 3× más caro, la mano de obra del 15 % subía $ 9.000 por la misma hoja. El panel ciego,
-  igual: se compra hecho y se coloca como un vidrio. Descartado: casilla
-  "incluye vidrio" por servicio — no hay caso que lo pida.
+- ~~**El % de un servicio del paquete no incluye lo que entra por un paño (vidrio, cámara, panel)**~~
+  → *El % de los servicios del paquete deja afuera las categorías de insumos que marca
+  administración* (ficha v2, 2026-10-21).
 - Montos, % y mínimos los pone **administración**; el técnico no los ve.
 - **No hay margen:** el precio de venta es insumos a costo + servicios. La ganancia está en los
   servicios comerciales.
@@ -94,12 +90,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   igual). **La equivalencia vive en el insumo**, una sola vez (ART-2301 en negro mate es ART-2301-NM),
   y la usan todos los paquetes; el paquete solo dice qué colores ofrece. Descartado: mapear en cada
   paquete como el mockup — el mismo perfil se remapearía en cada plantilla y los mapeos podrían
-  contradecirse. Y **vidrios compuestos**: el paquete define cada paño (medidas por variable, espesor
-  máximo del canal) y el vendedor arma la composición al presupuestar (simple, DVH, TVH: vidrios +
-  cámaras); el sistema saca la cantidad de cada vidrio y cada cámara. Si la composición supera el espesor del
-  canal, **advierte, no frena** (como una restricción que avisa). Después: reglas, simulador, grafo.
+  contradecirse. ~~Y **vidrios compuestos**~~ → *El DVH son opciones por capa* (ficha v2,
+  2026-10-21). Después: reglas, simulador, grafo.
 - **Lo imposible deja la línea sin precio** (2026-10-14), como un insumo sin costo: se arma pero no
-  se envía. El sistema frena solo pieza o paño ≤ 0 y cantidad < 0 (0 vale: no lleva); el mensaje dice
+  se envía. El sistema frena solo pieza o medida de vidrio ≤ 0 y cantidad < 0 (0 vale: no lleva); el mensaje dice
   qué falla y, si viene de una medida pisada, ofrece volver al automático (*hoja der mide −56 mm:
   hoja izq pisada en 900*). **Cada restricción del técnico avisa o frena** (por defecto avisa): frena
   lo que no se fabrica (*Corrediza económica: más de 2400 de ancho el perfil no aguanta, usar
@@ -115,7 +109,7 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **Un perfil se carga por piezas: nombre, cantidad y largo por fórmula** (2026-10-14), ej. marco:
   2 travesaños de `ancho` y 2 jambas de `alto`, a 45°. Los ml salen de sumar las piezas, no de otra
   fórmula: una sola fuente, y "Probar paquete" muestra el despiece para taller (piezas a cortar en
-  mm, con el color elegido, y la medida de cada vidrio por paño) para que el técnico lo verifique.
+  mm, con el color elegido, y la medida de cada vidrio) para que el técnico lo verifique.
 - **Cada pieza lleva un ángulo por extremo, por defecto 90° / 90°** (2026-10-14). El mismo perfil
   hoja da travesaños a 45/45 y un travesaño intermedio a 90/90, y un parante puede ir 45/90. El
   despiece dice *Travesaño intermedio × 1 — 1270 mm — 90/90*. Por qué: con un ángulo por material el
@@ -131,8 +125,9 @@ final** (Presupuestos: es donde se cargan las medidas).
   5). ml y m² quedan con decimales. Lo que se usa en fracción va en otra unidad (silicona en ml, no
   ½ cartucho).
 - **El largo de cada pieza y cada lado de un paño se redondean al mm, hacia abajo** (2026-10-14), y
-  con ese número sale todo: despiece, ml cobrados, peso, `superficie_pano_*`, `perimetro_pano_*` y el aviso
-  de barra. Las variables intermedias (`ancho_hoja_izq`) no se redondean: solo lo que se corta o se
+  con ese número sale todo: despiece, ml cobrados, peso y el aviso de barra. El vidrio cobra y pesa
+  por su variable de superficie, sin redondear; se redondean sus medidas del despiece (*El vidrio
+  cobra por una variable de superficie*, ficha v2). Las variables intermedias (`ancho_hoja_izq`) no se redondean: solo lo que se corta o se
   pide. Por qué: con 1501 de ancho la hoja daba 772,5 mm y taller y vidriería redondeaban cada uno a
   su manera; hacia abajo, porque medio mm de menos entra y de más no. Descartado: redondear las
   variables intermedias — el error se acumula cuando una medida sale de otra.
@@ -152,7 +147,7 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **Cada variable declara su unidad, y la fórmula de cada material y servicio tiene que dar la suya**
   (2026-10-21). El técnico elige ml, m², kg o unidad al crear una medida del vendedor, una variable
   de opción o una calculada, obligatoria y sin default; las del sistema ya la traen (`peso_*` kg,
-  `superficie_pano_*` m², `perimetro_pano_*` y `espesor_pano_*` ml, `con_<grupo>` unidad). El valor
+  `espesor_*` ml, `con_<grupo>` unidad). El valor
   sigue en mm y mm² (*Las fórmulas trabajan en mm*): la unidad dice qué mide, no cambia la cuenta. El
   parser que valida la fórmula al guardar saca también su unidad: largo × largo = m², m² ÷ largo =
   ml, largo ÷ largo = unidad, unidad × algo = ese algo; un número suma o resta en la unidad del otro
@@ -172,36 +167,21 @@ final** (Presupuestos: es donde se cargan las medidas).
   de $ 600.000 sin que el técnico ni administración lo notaran. Descartado: controlar solo la
   cantidad que es una variable sola — la mayoría de las fórmulas se escriben en el material y
   quedaban afuera de un control que parece cubrir todo.
-- **La composición del vidrio es por paño** (2026-10-14): todos arrancan con la misma y el vendedor
-  cambia solo el que difiere ("usar en todos" copia una a las demás). Una puerta con fijo superior
-  laminado y hoja en DVH, o un paño bajo de seguridad, se cobra bien sin armar otro paquete.
-- **El panel ciego entra por la composición del paño, como el vidrio** (2026-10-14). Es un insumo por
-  m², con espesor y peso por m² como el vidrio; el vendedor lo elige en el paño donde su subcategoría
-  es elegible y el técnico puede dejarlo como composición por defecto (puerta: DVH arriba, panel abajo). Así el paño
-  da `espesor_pano_*`, `peso_pano_*` y `superficie_pano_*`, y burlete, contravidrio y colocación entran sin
-  nada nuevo. Por defecto es *de la ventana* (puerta negra, panel negro). Por qué: como material por
-  fórmula el paño quedaba sin espesor y sin burlete, y no se podía cambiar a vidrio.
-- **En la composición, lo que elige el vendedor se filtra y lo que declara el técnico cuenta como
-  material fijo** (2026-10-14). El selector del paño ofrece solo los insumos activos de sus subcategorías elegibles y,
-  si son *de la ventana*, en el color de la ventana (en blanco no aparece un panel sin blanco). La
-  composición por defecto cuenta como material fijo: su panel sin blanco saca el blanco del paquete;
-  su laminado dado de baja deja el paquete sin ofrecer hasta que el técnico lo reemplace. Lo ya elegido
-  en una línea sin enviar que queda sin color o de baja deja la línea sin precio con el motivo (*Panel
-  ciego PAN-01: no viene en negro mate, cambiá la composición del paño hoja izquierda*); lo enviado no
-  cambia. Por qué: el panel se elige entre todos los del catálogo, así que con la regla de las
-  alternativas cualquier panel sin blanco sacaba el blanco de toda abertura con paños. Descartado:
-  reemplazarlo solo por la composición por defecto — el vendedor armó ese paño a propósito y se
-  cotizaría otra cosa sin aviso.
-- **Cada pieza de la composición se cobra en su unidad** (2026-10-14). Hoy vidrios y cámaras se
-  compran sueltos a la vidriería, con el armado del DVH incluido en su precio: la cámara es un insumo
-  por m² y se cobra por el m² del paño (DVH 4+12+4 de 1,4 m² → 1,4 m² de float 4, de cámara 12 y de
-  float 4). Si se arma en fábrica, la cámara pasa a un separador por ml, que sale del perímetro, y el
-  sellador entra como material por perímetro: se cambia el insumo, no el paquete. Sin mínimo por paño
-  por ahora: se cobra el m² real.
+- ~~**La composición del vidrio es por paño**~~ → *Las opciones hermanas arrancan juntas* (ficha v2,
+  2026-10-21).
+- ~~**El panel ciego entra por la composición del paño, como el vidrio**~~ → es una alternativa más,
+  como el vidrio (*El vidrio es un material de la hoja con una opción*, *El espesor lo pone el
+  sistema desde el insumo*, *Las alternativas se filtran por color*, ficha v2, 2026-10-21).
+- ~~**En la composición, lo que elige el vendedor se filtra y lo que declara el técnico cuenta como
+  material fijo**~~ → *Las alternativas se filtran por color* y *Lo que el catálogo deja de ofrecer
+  deja la línea sin precio* (ficha v2, 2026-10-21).
+- ~~**Cada pieza de la composición se cobra en su unidad**~~ → *El DVH son opciones por capa* (ficha
+  v2, 2026-10-21).
 - **Un color se ofrece solo si todos los insumos *de la ventana* del paquete lo tienen** (2026-10-14). Si
   al perfil hoja le falta el blanco, la ventana no se ofrece en blanco: el técnico ve qué falta y el
-  vendedor no ve ese color hasta que se cargue el equivalente, sea material fijo, alternativa o
-  condicional (la composición del paño, ver *En la composición, lo que elige el vendedor se filtra*).
+  vendedor no ve ese color hasta que se cargue el equivalente, sea material fijo o condicional. Una
+  alternativa sin el color solo deja de ofrecerse en ese color (*Las alternativas se filtran por
+  color*, ficha v2, 2026-10-21).
   Los sin color y los de herrajes no cuentan. Descartado: dejar el insumo en natural con aviso — una ventana blanca con una hoja
   natural no se vende — y frenar el presupuesto, que lleva el problema al vendedor.
 - **El insumo declara su color: sin color, de la ventana o de herrajes** (2026-10-14). *Sin color*
@@ -283,14 +263,16 @@ final** (Presupuestos: es donde se cargan las medidas).
   (mosquitero: no). **Una principal sin default arranca vacía y es obligatoria**: la línea queda sin
   precio con *Falta alto*; una secundaria sin default toma la primera alternativa si es opción, y si
   es medida no se publica. Ancho y alto van siempre sin default; el color de la ventana es principal y
-  sin default; el vidrio del primer paño es principal y el técnico decide si lo lleva (float 4 en una
+  sin default; la opción de vidrio es principal y el técnico decide si lleva default (float 4 en una
   línea que casi siempre va así). Por qué: con 1000 por defecto, el alto olvidado en una de 6
   ventanas se cotizaba 1000 y tenía precio, así que nadie lo veía.
 - **Lo elegido se guarda; lo que entra se calcula** (2026-10-14). La línea guarda la alternativa
   que eligió el vendedor y entra: lo elegido si se ofrece; si no, el default si se ofrece; si no, la
   primera que se ofrezca. Nada se sobrescribe. Por qué: embutido → cierre central (entra tirador) →
   vuelta a `cierre` = 0 perdía el embutido, y la ficha decía "primera válida" en un lado y "default"
-  en otro. Igual que la medida pisada: se respeta lo elegido y se muestra lo que entra hoy.
+  en otro. Igual que la medida pisada: se respeta lo elegido y se muestra lo que entra hoy. Vale
+  cuando lo causa la misma línea; si lo deja de ofrecer el catálogo, *Lo que el catálogo deja de
+  ofrecer deja la línea sin precio* (ficha v2, 2026-10-21).
 - **Cada medida, opción o grupo opcional es principal o secundaria** (2026-10-14). El vendedor ve las
   principales; las secundarias quedan en "Más opciones", que plegado ya muestra qué entra (*herraje
   izq: Manija · mosquitero: no*). Una medida secundaria sin default no se puede publicar, como una
@@ -328,7 +310,7 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **Nada depende de sí mismo: un paquete con un ciclo no se publica** (2026-10-14). El sistema arma
   las dependencias (fórmulas, defaults, condiciones, variables de opción y de peso) y el mensaje
   muestra la cadena (*`ancho_hoja_izq` → `ancho_hoja_der` → `ancho_hoja_izq`*); en el borrador se
-  marca al editar. La rueda que mira `peso_total_hoja_izq` y suma a `peso_hoja_izq` es un caso: el
+  marca al editar. La rueda que mira `peso_hoja_izq` y suma a él es un caso: el
   técnico le apaga "suma al peso". El refuerzo del marco que mira el peso de la hoja no cierra ciclo y
   suma. Por qué: la regla solo del peso dejaba pasar defaults cruzados que cuelgan el cálculo y
   frenaba el refuerzo sin motivo. Es error de armado y lo corrige el técnico; descartado: avisar al
@@ -336,7 +318,7 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **El sistema pone una variable de peso por grupo** (2026-10-14): `peso_hoja_izq`, `peso_marco`…,
   suma de los materiales del grupo que suman al peso (cantidad × peso del insumo). El técnico arma con
   ellas el peso que necesita. **El peso es de lo que queda puesto: cantidad sin desperdicio**, en
-  grupos y paños — el sobrante queda en taller, no en la hoja. Por
+  los grupos — el sobrante queda en taller, no en la hoja. Por
   qué: una hoja de 38 kg (aluminio 14 + paño 24) con desperdicio pasaba a 40,3 y salía con rueda doble. Descartado: calcular el peso a mano en la fórmula (ml × kg/ml + m² ×
   espesor × 2,5) — repite el peso del insumo y queda viejo si cambia.
 - **Cada grupo opcional pone `con_<grupo>`: 1 si el vendedor lo puso, 0 si no** (2026-10-14), como
@@ -344,20 +326,14 @@ final** (Presupuestos: es donde se cargan las medidas).
   guías si `con_mosquitero` = 0 y 3 guías si = 1. Los grupos fijos no la ponen. Descartado: que el
   vendedor elija las guías — puede poner mosquitero con marco de 2 — y un paquete aparte con
   mosquitero, que repite todo por un perfil.
-- **El sistema también pone el peso de cada paño** (`peso_pano_izq`, `peso_pano_der`), porque la
-  composición es por paño, **y su `superficie_pano_*` (mm²), `perimetro_pano_*` (mm) y
-  `espesor_pano_*`** (total de la composición: 20 en un 4+12+4) (2026-10-14). Con ellas se condiciona
-  el burlete y el contravidrio al espesor y se cobra la colocación por m² sin rehacer la medida del
-  paño en cada fórmula.
-- **La superficie del paño va en mm², como toda variable** (2026-10-14): paño de 712 × 1000 →
-  `superficie_pano_izq` = 712.000; *Colocación de vidrio* × `superficie_pano_izq` → 0,712 m². Por qué:
-  como `m2_pano_*` en m², el sistema la volvía a pasar a m² y la colocación cobraba un millonésimo.
-  Una condición sobre la superficie se escribe en mm² (`superficie_pano_izq > 2000000`): es rara, las
-  que se usan son espesor y peso. Descartado: `m2_pano_*` como excepción en m² — hay que acordarse de
-  qué variable no está en mm, y el olvido no se nota.
+- ~~**El sistema también pone el peso de cada paño, y su superficie, perímetro y espesor**~~ → *El
+  vidrio es un material de la hoja con una opción, como el herraje* (ficha v2, 2026-10-21).
+- ~~**La superficie del paño va en mm², como toda variable**~~ → la escribe el técnico como calculada
+  y vale en mm², como toda variable (*Las fórmulas trabajan en mm*; *El vidrio es un material de la
+  hoja con una opción*, ficha v2, 2026-10-21).
 - ~~El técnico usa la hoja más pesada (`peso_hojas / 2 + maximo(...)`)~~ → *Un grupo por hoja*.
 - **Un grupo por hoja** (2026-10-14): `hoja_izq`, `hoja_der`, cada uno con sus materiales y su peso
-  (`peso_total_hoja_izq = peso_hoja_izq + peso_pano_izq`). Cada hoja lleva la rueda que pide su peso,
+  (`peso_hoja_izq`, con el vidrio). Cada hoja lleva la rueda que pide su peso,
   y el despiece sale por hoja, como se arma en taller. Por qué: con hojas asimétricas el `/2` le
   restaba aluminio a la ancha, justo la que puede pedir rueda doble; y como las piezas ya son por
   hoja, separar grupos casi no duplica. Lo repetido (felpa, rueda, manija) se alivia con **"duplicar
@@ -436,7 +412,7 @@ Insumo        cantidad (técnico, fija o fórmula) × (1 + desperdicio del insum
 Servicio fijo cantidad (técnico) × monto (administración)
 Por insumo    cantidad puesta del insumo (sin desperdicio) × lo que lleva por unidad (técnico) × monto
               (administración) — ver *Un insumo puede traer sus servicios*
-Servicio %    % (administración) × suma de insumos de su grupo, sin lo que entra por un paño; mínimo (administración) una vez
+Servicio %    % (administración) × suma de insumos de su grupo, sin las categorías marcadas fuera del %; mínimo (administración) una vez
               por servicio en el paquete, sobre la suma de sus grupos
 Por categoría % (administración) sobre los insumos que alcanza; gana la regla más específica
               (ver *Servicios por categoría*)
@@ -503,6 +479,21 @@ vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un se
 
 ## Pendiente
 
+- ~~**Vidrio como opción**~~ (2026-10-21), resueltos los ocho:
+  1. ~~**El paño sale.**~~ → *El vidrio es un material de la hoja con una opción, como el herraje*
+     (ficha v2).
+  2. ~~**Medidas del vidrio para la vidriería.**~~ → *El vidrio cobra por una variable de superficie
+     y lleva sus medidas para el despiece* (ficha v2).
+  3. ~~**DVH.**~~ → *El DVH son opciones por capa, con lo que ya existe* (ficha v2).
+  4. ~~**El mismo vidrio en varias hojas.**~~ → *Las opciones hermanas arrancan juntas y el vendedor
+     las separa si hace falta* (ficha v2).
+  5. ~~**Espesor.**~~ → *El espesor lo pone el sistema desde el insumo: `espesor_<opción>`* (ficha
+     v2).
+  6. ~~**Vidrio nuevo.**~~ → *Una opción puede ofrecer subcategorías enteras* (ficha v2).
+  7. ~~**Color del panel como alternativa.**~~ → *Las alternativas se filtran por color* y *Lo que
+     el catálogo deja de ofrecer deja la línea sin precio* (ficha v2).
+  8. ~~**El % de los servicios del paquete sin el vidrio.**~~ → *El % de los servicios del paquete
+     deja afuera las categorías de insumos que marca administración* (ficha v2).
 - ~~**Para aprobar la ficha v2**~~ — aprobada el 2026-10-21:
   - ~~Delegables~~ (2026-10-21): en el árbol y en *Se delegan las vistas y lo del técnico*.
   - ~~Servicios por categoría en las acciones~~ (2026-10-21): en Acciones, en el árbol y en *Reglas y
@@ -646,6 +637,7 @@ Acciones
 │             · regla (solo porcentuales): aplicar a todo, o a una categoría o subcategoría de
 │               paquetes o de insumos, con su % · cambiar el % · quitarla
 │             · excepción: otro % para un paquete · quitarla
+│             · categoría de insumos fuera del % de los servicios del paquete: marcar · desmarcar
 ├── categorías: crear · renombrar · dar de baja (administración)
 ├── colores: crear · renombrar · dar de baja · reactivar (administración)
 └── clientes: habilitar categoría o subcategoría · ve precio sí/no (administración)
@@ -673,6 +665,7 @@ Módulo: Catálogo
 │   ├── catalogo_servicios_editar (funcion)      — técnico: crear y editar
 │   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo (y el filtro sin
 │                                                  monto), reglas y excepciones por paquete,
+│                                                  categorías fuera del % de los servicios del paquete,
 │                                                  categorías, baja y reactivar
 ├── Paquetes (vista, catalogo_paquetes)          — técnico, administración
 │   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores, versión nueva, mandar a aprobar,
@@ -720,23 +713,19 @@ Decidido en la v2:
   (*Modena · Corrediza 2 hojas*), así una Herrero entre Modenas se ve al revisar. Descartado:
   subcategoría por material (Ventanas → Aluminio) o por tipo (Ventanas → Corredizas) con la línea en el
   nombre — administración no podría habilitar una sola línea.
-- **Sin tipo fijo de insumo: cada paño ofrece las subcategorías que marca el técnico** (2026-10-20).
-  En cada paño del paquete el técnico marca las subcategorías elegibles (Vidrios → Float, Vidrios →
-  Cámaras; en el paño bajo de una puerta, también Paneles → Ciegos) y el vendedor arma la composición
-  con sus insumos activos: un *Float 5 mm* nuevo en Vidrios → Float aparece solo en todos esos paños.
-  Lo demás que hacía el tipo ya tiene dueño: cobrar por m² o ml lo dice la unidad del insumo; el % de
-  los servicios del paquete deja afuera lo que entra por un paño; el corte por piezas lo decide el
-  técnico al cargar el material; la clase de color se elige al crear el insumo, sin default. Por qué:
-  un concepto menos, y el paño apunta a la subcategoría, no a su nombre — renombrarla no rompe nada.
-  Se pierde "vidrios y cámaras, o un panel solo": panel + cámara no se frena, solo avisa si supera el
-  espesor del canal. Descartado: el tipo fijo de la v1 (vidrio, cámara, panel, perfil, otro).
+- **Sin tipo fijo de insumo** (2026-10-20). ~~Cada paño ofrece las subcategorías que marca el
+  técnico~~ → *Una opción puede ofrecer subcategorías enteras* (2026-10-21). Lo que hacía el tipo ya
+  tiene dueño: cobrar por m² o ml lo dice la unidad del insumo; el % de los servicios del paquete
+  deja afuera las categorías que marca administración; el corte por piezas lo decide el técnico al cargar el
+  material; la clase de color se elige al crear el insumo, sin default. Por qué: un concepto menos.
+  Descartado: el tipo fijo de la v1 (vidrio, cámara, panel, perfil, otro).
 - ~~**El técnico crea, administración completa la plata y aprueba — en insumos, servicios y
   paquetes.**~~ → *Solo el paquete se aprueba*.
 - **Al presupuestador le sale el precio, nunca el costo ni el despiece.** El vendedor elige entre
   paquetes aprobados e insumos marcados sueltos; lo que esté sin aprobar no aparece.
 - **Precio y despiece se habilitan por separado; avisos y plegado van a todos** (2026-10-21). La
   función devuelve cuatro partes: precio, avisos, plegado (*herrajes: negro · kit central: plateado
-  (no hay en negro)*) y despiece (piezas con largo y ángulos, medida de cada paño y por qué entró
+  (no hay en negro)*) y despiece (piezas con largo y ángulos, medida de cada vidrio y por qué entró
   cada material). El vendedor ve precio, avisos y plegado; el cliente empresa, lo mismo, con precio
   solo si se lo habilitaron; el técnico en Probar y producción, todo menos el precio; administración,
   todo. Un aviso va tal cual aunque nombre una pieza (*Travesaño marco 6500 mm: más largo que la
@@ -805,7 +794,7 @@ Decidido en la v2:
   *Marco corrediza 70 mm* por presentación (2 barras = 12 ml × costo); *Float 4 mm* por unidad del
   insumo (1,4 m² cortado), y el *Burlete* de rollo también (15 ml). La unidad del insumo sigue siendo
   del técnico y esto no la cambia: de ella dependen las fórmulas y la conversión del costo. En los
-  dos casos va sin desperdicio (el Float cortado se cobra por el m² real, como en la composición). El
+  dos casos va sin desperdicio (el Float cortado se cobra por el m² real, como en el paquete). El
   cambio rige al instante, pero la línea sin enviar no se convierte: queda sin precio con el motivo
   (*Marco corrediza 70 mm: ahora se vende por ml, revisá la cantidad*), como con el color o la baja;
   lo enviado no cambia. Por qué: con la unidad libre de la v2 (m², ml, unidad o kg), pasar el marco
@@ -830,11 +819,13 @@ Decidido en la v2:
 - **La baja depende de cómo se usa lo que se da de baja** (2026-10-21). *Incompleto* es uno de los
   casos: el paquete deja de venderse; se calcula (la vigente usa algo dado de baja), no se guarda; en
   el catálogo dice *falta reemplazar: Marco corrediza 70 mm*, y el vendedor y el cliente no lo ven.
-  - Insumo como material fijo, condicional o composición por defecto de un paño → incompleto.
-  - Como alternativa → solo ella deja de ofrecerse y entra lo que dice *Lo elegido se guarda*; si era
-    la última de la opción, incompleto, salvo *Sin material*.
-  - Variante de la ventana → ese color no se ofrece; variante de herrajes → color base con aviso.
-  - Elegido en un paño → *En la composición, lo que elige el vendedor se filtra*.
+  - Insumo como material fijo o condicional → incompleto.
+  - Como alternativa, suelta o por subcategoría → solo ella deja de ofrecerse, y la línea sin enviar
+    que la tenía elegida queda sin precio (*Lo que el catálogo deja de ofrecer deja la línea sin
+    precio*); si era la última de la opción, incompleto, salvo *Sin material*.
+  - Variante de la ventana → en un material fijo o condicional, ese color no se ofrece; en una
+    alternativa, ella no se ofrece en ese color (*Las alternativas se filtran por color*); variante
+    de herrajes → color base con aviso.
   - Servicio cargado en el paquete, fijo o condicional (Soldadura × 4, mano de obra extra si `alto` >
     2400) → incompleto.
   - Servicio aplicado por regla (general, categoría, subcategoría, excepción) o que trae un insumo
@@ -889,7 +880,8 @@ Decidido en la v2:
 - **Mandar a aprobar frena; aprobar pone a la venta** (2026-10-21). Reemplaza a "Publicar" de la v1.
   El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles (fórmula
   mal escrita, ciclo, secundaria sin default, material que mira el peso y suma al peso, unidad que
-  no coincide): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
+  no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
+  una alternativa): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
   aprobar, la versión pasa a ser la vigente y la ve el vendedor. Un presupuesto sin enviar sigue a la
   vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4 · agrega
   burlete inferior en la hoja*); al enviar, se congela. Por qué: con aprobación, mandar no puede
@@ -903,7 +895,7 @@ Decidido en la v2:
   nombre "Revertir" (se lee como volver a la versión anterior o deshacer los cambios).
 - **Los casos de prueba corren cuando alguien los mira; uno es el de referencia** (2026-10-21).
   Reemplaza a los casos que corría "Publicar" en la v1. Un caso es lo que carga el vendedor (medidas,
-  opciones, composición por paño, color), con nombre; se guarda desde Probar y se carga con un clic.
+  opciones, color), con nombre; se guarda desde Probar y se carga con un clic.
   Uno se marca *referencia* (reemplaza a la medida de referencia): sin él no se manda a aprobar. El
   resultado no se guarda, como el despiece. Al mandar a aprobar, el técnico ve las diferencias de
   cada caso contra la vigente, sin precios (materiales que entran o salen, piezas, cantidades, avisos:
@@ -944,8 +936,7 @@ Decidido en la v2:
   historial (la plata se mira al aprobar).
 - **Cuenta como cambio todo lo que está en la versión** (2026-10-21): variables (medidas del vendedor,
   calculadas, opciones con sus alternativas), grupos, materiales (cantidad o fórmula, condición,
-  piezas con largo y ángulos, si suma al peso), servicios con su cantidad, restricciones y paños
-  (medidas, espesor máximo, subcategorías, composición por defecto). Se muestra por pestaña, solo lo
+  piezas con largo y ángulos, si suma al peso), servicios con su cantidad y restricciones. Se muestra por pestaña, solo lo
   que cambió, con antes → después (*Restricciones: ancho máx. 2400 mm · frena → avisa*). No entra lo
   que no es de la versión: nombre y subcategoría del paquete, casos de prueba, reglas y excepciones de
   servicios, datos del insumo, plata. Es una sola comparación para el historial y para pendientes, y
@@ -1034,7 +1025,7 @@ Decidido en la v2:
   sobre la v4 y recibe $ 600.000, avisos y plegado, sin despiece; la v5 por API le da error.
   Producción pide la orden hecha con la v3: despiece y avisos, sin precio. El técnico prueba la v5:
   todo menos el precio. El mismo permiso le abre al vendedor y al cliente lo que eligen —lo que está
-  a la venta y las opciones de cada paquete (medidas, alternativas, paños, colores)— por funciones
+  a la venta y las opciones de cada paquete (medidas, alternativas, colores)— por funciones
   del catálogo, sin fórmulas; nunca las tablas. Por qué: qué versión calcula cada uno sale de reglas
   del catálogo (vigente, a la venta, incompleto, habilitación); si cada módulo envolviera la función
   con su permiso, Presupuestos tendría que saber qué está a la venta y la regla quedaría en dos
@@ -1090,8 +1081,8 @@ Decidido en la v2:
   Descartado: que el técnico cargue las variantes con aviso a administración (el primer planteo).
 - **El peso es del insumo y condiciona herrajes; la abertura no da peso** (2026-10-21). El técnico
   lo carga al dar de alta el insumo (Marco corrediza 70 mm: 0,85 kg/ml; Float 4 mm: 10 kg/m²) y
-  sirve para dos cosas: las variables de peso de grupos y paños, con las que entra la rueda doble si
-  `peso_total_hoja_izq` > 40 kg, y el costo que Compras cotiza por kg ($ 8.000 / kg × 0,85 kg/ml =
+  sirve para dos cosas: las variables de peso de los grupos, con las que entra la rueda doble si
+  `peso_hoja_izq` > 40 kg, y el costo que Compras cotiza por kg ($ 8.000 / kg × 0,85 kg/ml =
   $ 6.800 / ml). El peso de la abertura entera, que la v1 sumaba para logística, sale: nadie lo
   recibía. "Suma al peso" sigue, para que la rueda no dependa de sí misma. Si el flete o logística
   lo piden, la función lo suma de los grupos y entra como una parte más con su rama: no falta
@@ -1135,3 +1126,132 @@ Decidido en la v2:
   cotización: la línea guarda su precio, y si se quiere ver de dónde salió, una foto completa al
   enviar, con la cotización del día (`BACKLOG.md` → Presupuestos). Recalcular lo enviado por fecha
   pedía versionar las tres cosas y un motor que calcule igual que entonces.
+- **El vidrio es un material de la hoja con una opción, como el herraje; el paño sale** (2026-10-21).
+  El técnico escribe las medidas del paño como calculadas, cada una con su unidad: `ancho_pano_izq =
+  ancho_hoja_izq − 62` (ml), `alto_pano_izq = alto − 98` (ml), `superficie_pano_izq =
+  ancho_pano_izq × alto_pano_izq` (m²), `perimetro_pano_izq = 2 × (ancho_pano_izq + alto_pano_izq)`
+  (ml). En `hoja_izq` va *Float 4 mm* × `superficie_pano_izq` (0,714 m² en 1500 × 1100), marcado
+  opción *Vidrio* con alternativas Float 4 (default), Float 5 y Laminado 3+3; *Burlete* ×
+  `perimetro_pano_izq` y *Colocación de vidrio* × `superficie_pano_izq` entran como cualquier material
+  o servicio. El vidrio suma al peso de su hoja: `peso_hoja_izq` trae sus 7,1 kg y la rueda doble lo
+  mira directo. Salen el paño como objeto (medidas, espesor máximo, subcategorías elegibles,
+  composición por defecto), las variables que ponía el sistema (`superficie_pano_*`,
+  `perimetro_pano_*`, `espesor_pano_*`, `peso_pano_*`, y con ellas `peso_total_hoja_*`), la
+  composición libre del vendedor y "usar en todos". Por qué: un solo mecanismo para todo lo que elige
+  el vendedor, y el técnico decide qué vidrios acepta cada línea. Lo que abrió, resuelto en las
+  decisiones que siguen (*Pendiente* → *Vidrio como opción*).
+- **El vidrio cobra por una variable de superficie y lleva sus medidas para el despiece**
+  (2026-10-21). Lo que se cobra y el peso salen de la variable: *Float 4 mm* ×
+  `superficie_pano_izq`. Además, un material por m² puede llevar ancho y alto por fórmula (cada uno
+  da ml), solo para el despiece: `ancho_pano_izq` y `alto_pano_izq`, cada lado redondeado al mm
+  hacia abajo. En 1501 × 1100 el despiece dice *Float 4 mm — 0,715 m² — 713 × 1002 mm*. Las medidas
+  son del material, para todas sus alternativas, y una medida ≤ 0 frena como una pieza. Por qué:
+  producción pide el vidrio cortado con la medida del sistema; si la calculara por su cuenta, la
+  fórmula del paño quedaría en dos lugares. Superficie y medidas pueden no coincidir si el técnico
+  cambia una sola: el despiece las muestra juntas. Descartado, por decisión del usuario: el vidrio
+  por piezas con los m² sacados de las medidas, como los ml del perfil. También: solo la variable
+  (el despiece quedaba en m²).
+- **El DVH son opciones por capa, con lo que ya existe** (2026-10-21). En `hoja_izq`, tres
+  materiales × `superficie_pano_izq` con las mismas medidas: *Vidrio* (Float 4 default, Float 5,
+  Laminado 3+3); *Cámara* (*Sin cámara* como *Sin material* y default, Cámara 9, Cámara 12; las
+  cámaras ponen `dvh_izq` = 1); *Vidrio interior* (Float 4 y Float 5 con `dvh_izq` = 1, *Sin
+  material* con `dvh_izq` = 0), como manijas y tiradores con `cierre`. El despiece da cada capa con
+  su medida (*Float 4 mm — 713 × 1002* · *Cámara 12 — 713 × 1002* · *Float 4 mm — 713 × 1002*) y las
+  tres suman al peso de la hoja. La cámara sigue por m², con el armado en el precio de la vidriería;
+  si se arma en fábrica, versión nueva con separador × `perimetro_pano_izq` y sellador. Un TVH suma
+  otro par cámara + vidrio, en las líneas que lo admiten. **Una opción que en ese momento solo
+  ofrece *Sin material* no se muestra**, sea cual sea (con cierre central y `herraje_der` solo en
+  *Sin herraje*, tampoco): no hay qué elegir. Por qué: el DVH se arma con las piezas de los
+  herrajes, sin nada propio del vidrio. Descartado: el DVH como un insumo (cada combinación un
+  insumo, con su costo en Compras) y una opción de varias capas (el paño por otra puerta).
+- **Las opciones hermanas arrancan juntas y el vendedor las separa si hace falta** (2026-10-21). El
+  técnico marca como hermanas opciones de distintos grupos: *Vidrio hoja izq* y *Vidrio hoja der*,
+  lo mismo *Cámara* y *Vidrio interior*, y sirve igual para herrajes. Tienen los mismos insumos como
+  alternativas, cada una con las fórmulas de su grupo. Juntas, el vendedor ve un selector (*Vidrio:
+  Float 4*) que vale para todas: pone Cámara 12 una vez y queda en las dos hojas. "Distinto por
+  hoja" las separa en un selector cada una (fijo laminado y hoja en DVH en una puerta); "usar en
+  todas" las vuelve a juntar con la elegida. Plegado: *vidrio: Float 4* juntas, *vidrio: hoja izq
+  Laminado 3+3 · hoja der Float 4* separadas.
+  - **Cada alternativa tiene su par en las hermanas; por defecto, ella misma.** El técnico carga
+    Manija ↔ Embutida en los herrajes de la corrediza: juntas, el vendedor pone Manija en la hoja
+    izq (venga de Sin herraje o de Tirador) y la der pasa sola a Embutida; Tirador queda en las dos.
+    Con "distinto por hoja" cada una es independiente (Manija en las dos). El par es de ida y vuelta
+    (Embutida en cualquier hoja pone Manija en la otra) y es del paquete, en la versión, no del
+    insumo: otra línea puede no tener pares. El vidrio es el mismo mecanismo con cada par igual a sí
+    mismo.
+  - **Los defaults son par uno del otro** (*Embutida* a la izq, *Manija* a la der); si no, o si las
+    alternativas difieren, no se manda a aprobar.
+  - **Si el par no se ofrece en la hermana** (una condición lo saca, como el cierre central), entra
+    lo que dice *Lo elegido se guarda*.
+
+  Por qué: como antes con los paños, todas arrancan iguales y se cambia la que difiere; con un
+  selector por hoja y un botón para copiar, olvidar el botón cotizaba una hoja en DVH y otra simple,
+  más barata, sin que nada lo frene. Descartado: una opción para varios materiales (la corrediza no
+  podía tener hojas distintas), la derecha "como la izquierda" (una hoja manda sobre la otra) y el
+  botón solo.
+- **El espesor lo pone el sistema desde el insumo: `espesor_<opción>`** (2026-10-21). Es un dato
+  opcional de cualquier insumo, en mm (Float 4 mm: 4 · Cámara 12: 12 · Panel ciego: 24). Por cada
+  opción el sistema pone el del insumo que entró (*Sin material* = 0), como pone `peso_<grupo>`, y el
+  técnico arma lo que necesita: `espesor_pano_izq = espesor_vidrio_izq + espesor_camara_izq +
+  espesor_vidrio_interior_izq` (ml), 20 en un 4+12+4. El burlete entra por condición sobre esa
+  variable y el canal es una restricción que avisa (máximo 24: *Laminado 5+5 + Cámara 12 + Float 4:
+  26 mm*). El vidrio interior puede mirar `espesor_camara_izq` > 0 en vez de un `dvh_izq`. Si una
+  alternativa de una opción cuyo espesor se usa no lo tiene, no se manda a aprobar; mientras alguna
+  versión lo use, se corrige pero no se borra, y corregirlo rige al instante, como el peso. Por qué:
+  el espesor es del vidrio, no del paquete; puesto por la alternativa, el 4 del Float 4 se tipeaba en
+  cada paquete y un 5 cambiaba el burlete sin que nadie lo viera. Descartado: que lo ponga la
+  alternativa, como `desc_herraje_*` (ese sí depende de la línea).
+- **Una opción puede ofrecer subcategorías enteras, insumos sueltos o las dos cosas** (2026-10-21).
+  *Vidrio: todo Vidrios → Float, más Laminado 3+3*: un Float nuevo entra solo en todas las vigentes,
+  sin versión ni aprobación; un laminado nuevo no. Lo que entra por subcategoría usa la fórmula y las
+  medidas del material (solo un suelto trae las suyas), es par de sí mismo (los pares van entre
+  sueltos: Manija ↔ Embutida) y toma las condiciones que lleve la subcategoría. Las hermanas ofrecen
+  lo mismo, subcategorías y sueltos; si no, no se manda a aprobar. **Lo que entra solo se ofrece si
+  cumple lo que pide el paquete**: la unidad de la fórmula y el espesor, si la opción lo usa; si no,
+  no se ofrece y el técnico lo ve en el insumo (*Laminado 4+4: sin espesor · no se ofrece en 12
+  paquetes*). Sin costo se ofrece y la línea queda sin precio (*Sin costo no es $ 0*). Lo que entra
+  solo no es cambio de versión, como un color nuevo. Por qué: el vidrio nuevo llegaba a los 40
+  paquetes que ofrecen vidrio sin 40 borradores ni 40 aprobaciones; el filtro, porque un vidrio dado
+  de alta por ml o sin espesor entraba a una vigente cuyo control de *mandar a aprobar* ya había
+  pasado. Contra aceptada: puede entrar en una línea donde no cabe en el canal, y solo avisa.
+  Descartado: solo alternativas sueltas, con "agregar alternativa" masivo en la ventana de
+  *Reemplazar material* (versión y aprobación por paquete).
+- **Las alternativas se filtran por color** (2026-10-21). En la Puerta rebatible, *Paño bajo*
+  ofrece todo Paneles → Ciegos más Float 4; en blanco, PAN-01 (sin blanco) no se ofrece y PAN-02 y
+  Float 4 sí. **Un color sale del paquete solo si** le falta a un material fijo o condicional *de la
+  ventana*, o si una opción queda sin nada que ofrecer en ese color (sin *Sin material*), como en
+  "con condición no salva al paquete". Si el default no viene en ese color, entra la primera que se
+  ofrezca (*Lo elegido se guarda*). Vale para toda alternativa *de la ventana*: con la Hoja 42
+  reforzada sin blanco, en blanco se ofrece solo la Hoja 40. Por qué: con la regla anterior una
+  alternativa sin el color sacaba ese color del paquete, y con subcategorías enteras un panel nuevo
+  sin blanco se lo sacaba a todas las puertas sin que nadie lo notara. Descartado: que el default
+  cuente como material fijo (lo hacía la composición por defecto del paño).
+- **Lo que el catálogo deja de ofrecer deja la línea sin precio; lo que cambia la misma línea sigue
+  *Lo elegido se guarda*** (2026-10-21). Presupuesto sin enviar con 6 corredizas en Laminado 3+3 y
+  administración lo da de baja: las 6 quedan sin precio con el motivo (*Laminado 3+3: dado de baja,
+  elegí otro vidrio*) y no se envían hasta que el vendedor elija. Vale para toda opción, vidrio o
+  herraje, y para todo lo que viene del catálogo: baja del insumo o de su variante, o el insumo que
+  sale de la subcategoría. Si lo causa la misma línea (pasa a cierre central, o cambia el color y
+  PAN-01 no viene en blanco), entra el default o la primera que se ofrezca, y volver atrás devuelve
+  lo elegido. Lo enviado no cambia. Por qué: pasando solas al default, las 6 bajaban de precio y se
+  enviaban en Float 4 sin que nadie notara que el cliente pidió laminado; lo que hace el vendedor en
+  su línea, en cambio, lo está viendo. Es lo que ya pasaba con el suelto, el color y el paño.
+  Descartado: *Lo elegido se guarda* también para la baja (lo que decía *La baja depende de cómo se
+  usa* para el herraje).
+- **El % de los servicios del paquete deja afuera las categorías de insumos que marca
+  administración** (2026-10-21). En Servicios, con `catalogo_servicios_administrar`, al lado de las
+  reglas: *Fuera del % de los servicios del paquete: Vidrios · Paneles*. Una categoría marcada
+  incluye sus subcategorías futuras (*Vidrios → Templados*, creada después, entra sola), como la
+  habilitación de clientes. En la hoja izq de la Corrediza Modena (perfiles $ 45.000, herrajes
+  $ 15.000), la mano de obra del 15 % da $ 9.000 con Float 4 ($ 20.000) o con Laminado 3+3
+  ($ 60.000); con el vidrio adentro daba $ 12.000 y $ 18.000. Probar lo dice (*Mano de obra 15 % —
+  sobre $ 60.000 · Float 4 afuera: Vidrios*). El trabajo con el vidrio va como servicio fijo por m²
+  (*Colocación de vidrio* × `superficie_pano_izq`) y lo comercial por su regla (Vidrios 10 %). Como
+  una regla, antes de guardar se ve el alcance (*Motores fuera del %: 6 paquetes*), rige al instante
+  y no avisa. Es general: el sistema no sabe qué es un vidrio (la *Persiana con motor* marca
+  *Motores*: $ 22.500 de mano de obra por el mismo trabajo). Por qué: sin paño, el vidrio es un
+  material más del grupo y el % lo incluía; marcado una vez, un vidrio nuevo queda bien sin que
+  nadie haga nada. Descartado: casilla por material en cada paquete (240 casillas en 40 paquetes, y
+  el olvido cobra de más sin que se note) y marca por insumo (se olvida en el próximo vidrio). Si un
+  servicio necesita incluir una categoría marcada, la marca pasa a ser por servicio; hoy no hay
+  caso.
