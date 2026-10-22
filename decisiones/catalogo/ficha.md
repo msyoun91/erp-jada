@@ -7,8 +7,7 @@ sigue valiendo quedó en los archivos por tema (2026-10-22).
 
 ```
 Módulo: catálogo
-Objetivo: definir qué se puede vender y cómo se calcula — los insumos que Compras costea y Stock
-          cuenta, y las fórmulas que dan el precio al presupuestador y el despiece a producción
+Objetivo: definir qué se compra y qué se vende, y cómo se calculan su precio y su despiece
 Personas
 ├── Técnico         — insumos, servicios y paquetes, sin plata · crea y edita los tres (la parte
 │                     técnica); en un insumo en uso, propone lo que cambia el cálculo; en paquetes
@@ -35,9 +34,9 @@ Personas
                       le habilitó; ve el precio solo si se lo habilitó · — · no ve despiece, costo ni servicios
 Entes
 ├── paquete — dueño creado_por (solo dato) · estado por versión: borrador · para aprobar · aprobada · descartada · lo señalan la línea del presupuesto y la orden de producción
-│             · datos {nombre} · ruta /catalogo/paquetes/{id} (abre la vigente) · submódulo catalogo_paquetes · roles {}
+│             · datos {nombre} · ruta /catalogo/paquetes/{id} (abre la vigente) · submódulo catalogo_paquetes · roles {} · disparos {}
 └── insumo  — dueño creado_por (solo dato) · sin estado (solo activo), sin versiones; un cambio de cálculo pendiente a la vez · lo señalan la línea del presupuesto (suelto), Compras, Stock y Contactos
-              · datos {codigo, nombre} · ruta /catalogo/insumos/{id} · submódulo catalogo_insumos · roles {proveedor}
+              · datos {codigo, nombre} · ruta /catalogo/insumos/{id} · submódulo catalogo_insumos · roles {proveedor} · disparos {}
 Relaciones (del catálogo)
 ├── versión del paquete → insumos y servicios con sus fórmulas — interior del paquete, no puente entre entes
 └── empresa cliente (Contactos) → categorías o subcategorías habilitadas + ve precio — configuración, FK a la empresa
@@ -240,6 +239,10 @@ leer el insumo.
   tampoco ven el chip del paquete: la línea muestra lo que da la función de cálculo. Por qué: chip y
   buscador para Compras piden que `entes.submodulo` acepte varias vistas y una ruta según quién mira,
   un cambio de core que hoy nadie necesita; si Compras los pide, se decide al ficharlo (`BACKLOG.md`).
+  **Sin disparos** (2026-10-22), como Tareas: ninguna persona pide una plantilla de Tareas sobre el
+  catálogo, y disparar pide las ramas `_de` de `etiqueta_registro` y `relacionados_de_registro`. Si
+  aparece el caso (*al aprobarse un producto nuevo → sacar fotos*), se suma en `entes` con sus ramas:
+  los eventos ya se emiten. Descartado: `{alta, estado}` por si acaso.
 - **Versión y cambio de cálculo emiten con trigger propio, con el id del paquete o del insumo**
   (2026-10-22). `paquetes` lleva el genérico, `emitir_eventos_registro('paquete')`: alta, baja,
   reactivación. Las versiones emiten solo al cambiar de estado (abrir un borrador no emite; la v1 nace con
