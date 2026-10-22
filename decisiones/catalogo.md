@@ -35,7 +35,7 @@ final** (Presupuestos: es donde se cargan las medidas).
   Compras dice por qué es el monto: por unidad del insumo ($ 5.000 / ml), por presentación
   ($ 30.000 / barra → ÷ 6 = $ 5.000 / ml) o por kg ($ 8.000 / kg × 0,85 kg/ml = $ 6.800 / ml). Para
   eso **la presentación lleva su contenido en la unidad del insumo** (barra = 6 ml, caja = 100
-  unidades). La pantalla muestra la conversión; si falta el dato (por kg sin peso cargado) queda sin
+  unidades). La pantalla muestra la conversión; si falta el dato (por kg con peso 0) queda sin
   costo (*Sin costo no es $ 0*). El costo por kg es de cada variante de color (el negro mate no vale
   lo que el natural). Por qué: la barra cargada como ml cobraba 6× el perfil, y el $/ml hecho a mano
   queda viejo cuando cambia el kg.
@@ -553,10 +553,8 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 11. ~~**Editar el insumo cambia precio y despiece al instante, y solo lo ve quien edita.**~~ → en uso,
     espera a administración, servicios que trae incluidos (2026-10-21): en *Lo que cambia el cálculo
     de un insumo en uso espera a administración*.
-12. **Peso que falta.** Lo que entra por subcategoría se filtra por unidad y espesor, no por peso. Un
-    Float 6 sin peso entra en 40 vigentes y la hoja de 45 kg sale con rueda simple. Igual una
-    alternativa suelta al mandar a aprobar. Propuesta: peso obligatorio en el insumo (0 explícito vale,
-    vacío no), como *Sin costo no es $ 0*.
+12. ~~**Peso que falta.**~~ → obligatorio en el alta, 0 explícito vale; el costo por kg pide peso
+    mayor que 0 (2026-10-21): en *El peso es del insumo y condiciona herrajes*.
 13. **Desperdicio vacío.** No dice si es obligatorio; si vacío cuenta 0, el perfil olvidado cobra 8 %
     menos en todo. Propuesta: obligatorio, con 0 explícito (felpa).
 14. **Servicio que trae un insumo, en otra unidad.** *Lleva X por unidad* multiplica la cantidad puesta
@@ -1355,7 +1353,13 @@ Decidido en la v2:
   $ 6.800 / ml). El peso de la abertura entera, que la v1 sumaba para logística, sale: nadie lo
   recibía. "Suma al peso" sigue, para que la rueda no dependa de sí misma. Si el flete o logística
   lo piden, la función lo suma de los grupos y entra como una parte más con su rama: no falta
-  ningún dato.
+  ningún dato. **Es obligatorio en el alta: 0 explícito vale, vacío no** (2026-10-21). Tornillos o
+  silicona van con 0 (no se cuentan). El costo por kg pide peso mayor que 0: con 0, Compras no lo
+  cotiza por kg. Por qué: vacío contaba 0 sin decirlo; un *Float 6 mm* sin peso entraba por
+  subcategoría en 40 vigentes, la hoja de 45 kg salía con rueda simple y, por kg, costaba $ 0.
+  Contra aceptada: quien no sabe el peso y pone 0 vuelve a la rueda simple. Descartado: guardarlo
+  vacío y dejarlo fuera de la venta hasta cargarlo (un filtro más en lo que entra por subcategoría y
+  un control más en *mandar a aprobar*, contra una sola regla en la tabla).
 - **Paquete e insumo se registran con su vista; para quien solo compra, el insumo no es ente**
   (2026-10-21). Paquete: datos `{nombre}`, ruta `/catalogo/paquetes/{id}` (abre la vigente),
   submódulo `catalogo_paquetes`, sin roles; chip *Modena · Corrediza 2 hojas*. Insumo: datos
