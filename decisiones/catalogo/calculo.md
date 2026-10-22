@@ -73,7 +73,8 @@ sobre la base filtra todo.
 - **Producción puede elegir con qué versión aprobada fabrica**, no solo con la que se vendió. El catálogo
   le ofrece solo las versiones aprobadas del paquete y calcula el despiece de la que elija. Cambiar de
   versión cambia los materiales, no el precio: el precio es del presupuesto. Por eso cada versión dice qué
-  cambió, obligatorio al mandarla a aprobar ("v2: agrega burlete inferior en la hoja").
+  cambió ("v2: agrega burlete inferior en la hoja"; sin él no se manda: `versiones.md` → *Mandar a
+  aprobar frena*).
 - **Producción usa una versión solo si cubre lo vendido** (2026-10-22): toda medida, opción y grupo
   guardado en la orden existe en ella (por nombre) y toda principal sin default suya tiene valor
   guardado; lo secundario nuevo entra con su default (el burlete de la v4, la mejora por la que se

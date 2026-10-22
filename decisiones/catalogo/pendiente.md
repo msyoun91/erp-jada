@@ -13,17 +13,10 @@ categoría*. **3. El máximo de la medida y la restricción que frena** (2026-10
 su mensaje y la restricción es una condición: `opciones.md` → *Toda medida del vendedor lleva mínimo
 y máximo*; `motor.md` → *Cada restricción del técnico avisa o frena*. **4. `servicios.comercial` sin
 regla que lo use** (2026-10-22) → se saca: `servicios.md` → *"Comercial" es una forma de nombrarlos*.
+**5. Los controles de mandar a aprobar están repartidos** (2026-10-22) → una sola lista, que suma
+incompleto, referencia y texto, y aprobar corre la misma: `versiones.md` → *Mandar a aprobar frena*.
 
-5. **Los controles de mandar a aprobar están repartidos.** A la lista de *Mandar a aprobar frena*
-   (`versiones.md`) le faltan tres frenos que se decidieron en otras decisiones:
-   - sin caso de *referencia* (*Los casos de prueba corren cuando alguien los mira*);
-   - sin el texto de qué cambió (`calculo.md` → *Producción puede elegir con qué versión aprobada
-     fabrica*: "obligatorio al mandarla a aprobar");
-   - incompleto: *Aprobar vuelve a correr los controles y el incompleto* lo da por corrido al mandar.
-
-   Caso: Marcos manda la v5 de la Corrediza con la Felpa X, que ya está de baja. ¿Se manda y la frena
-   Laura al aprobar, o no se manda? Propuesta: *Mandar a aprobar frena* tiene la única lista y suma
-   los tres; al mandar, lo incompleto frena igual que al aprobar.
+No queda ninguno.
 
 ## Auditoría v2 (2026-10-21) — lo que queda
 

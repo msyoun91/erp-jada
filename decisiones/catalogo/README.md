@@ -1,8 +1,8 @@
 # Decisiones — módulo catálogo
 
 > **Estado (2026-10-22): ficha v2 aprobada (2026-10-21), sin SQL.** La auditoría v2 cerró todo lo que
-> cambia tablas. Antes del SQL sin plata quedan los choques entre la v1 y la v2 (`pendiente.md` →
-> *Choques*), de a uno con el usuario. Lo que cambie se corrige acá primero. Leer este índice y después
+> cambia tablas y los choques entre la v1 y la v2 quedaron resueltos (2026-10-22). Sigue el SQL sin
+> plata. Lo que cambie se corrige acá primero. Leer este índice y después
 > solo el archivo del tema.
 
 Pasado de `decisiones/catalogo.md` a esta carpeta el 2026-10-22 (copia en

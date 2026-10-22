@@ -27,7 +27,12 @@ que una baja hace con las versiones, en `bajas.md`; los eventos de estado, en `f
 
 - **Mandar a aprobar frena; aprobar pone a la venta** (2026-10-21). Reemplaza a "Publicar" de la v1.
   El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles; si falla
-  uno, no se manda. Esta es la lista (⚠ choque 5, `pendiente.md`):
+  uno, no se manda. Esta es la única lista; las demás decisiones la apuntan, y aprobar corre la misma:
+  - incompleto (`bajas.md` → *La baja depende de cómo se usa lo que se da de baja*): *usa Felpa X, de
+    baja desde el 20/10*;
+  - sin caso de referencia (*Los casos de prueba corren cuando alguien los mira*);
+  - sin el texto de qué cambió, también en la primera versión, que dice qué es (*Corrediza 2 hojas
+    Herrero, línea nueva*);
   - fórmula mal escrita (`motor.md` → *Las fórmulas se validan al guardar*) y ciclo (*Nada depende de
     sí mismo*);
   - medida secundaria sin default y medida principal con default (`opciones.md` → *Una medida
@@ -49,7 +54,10 @@ que una baja hace con las versiones, en `bajas.md`; los eventos de estado, en `f
   sigue a la vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4
   · agrega burlete inferior en la hoja*); al enviar, se congela. Por qué: con aprobación, mandar no
   puede cambiar lo que se vende. Descartado: que la línea quede en la versión vieja hasta actualizarla
-  a mano (v1). Diagrama: https://claude.ai/artifact/BLhKnFktuJWyEpHGQedVoa
+  a mano (v1). Incompleto, referencia y texto, en la lista desde el 2026-10-22: la v5 con la Felpa X
+  de baja se mandaba y la frenaba Laura al aprobar, cuando el sistema ya lo sabía al mandar; y los
+  otros dos frenos estaban escritos solo en su decisión. Diagrama:
+  https://claude.ai/artifact/BLhKnFktuJWyEpHGQedVoa
 - **Lo que está para aprobar no se edita: el técnico lo vuelve al borrador** (2026-10-21). "Volver al
   borrador" saca la versión de la revisión sin perder nada y sigue siendo la misma (v4, no v5: nunca
   se aprobó). Se corrige y se vuelve a mandar: corren otra vez los controles y el texto de qué cambió
@@ -62,8 +70,9 @@ que una baja hace con las versiones, en `bajas.md`; los eventos de estado, en `f
   paquete (*Los casos de prueba corren cuando alguien los mira*). El texto solo no alcanza: dice lo
   que el técnico cree que cambió. Lo que entra sin plata se marca sin frenar (`precio.md` → *Lo que
   falta costear se ve en filtros*).
-- **Aprobar vuelve a correr los controles y el incompleto** (2026-10-22). Si falla uno, no se
-  aprueba: la fila de pendientes dice por qué (*v5: usa Felpa X, de baja desde el 20/10*), el
+- **Aprobar vuelve a correr los controles y el incompleto** (2026-10-22): la lista de *Mandar a
+  aprobar frena*, no una propia. Desde que se mandó solo cambian una baja y el caso de referencia, que
+  se toca aunque haya una versión para aprobar. Si falla uno, no se aprueba: la fila de pendientes dice por qué (*v5: usa Felpa X, de baja desde el 20/10*), el
   checkbox no la toma y la vigente sigue; administración la rechaza con ese motivo escrito. El alcance
   de una baja suma las versiones para aprobar que la usan (*la usa la v5 de Corrediza 2 hojas, para
   aprobar: no se va a poder aprobar*). Por qué: la Felpa X dada de baja sin reemplazo entre mandar y

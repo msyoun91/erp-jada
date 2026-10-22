@@ -26,9 +26,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha aprobada
   (2026-10-21): `decisiones/catalogo/ficha.md`. *Auditoría v2*: resuelto todo lo que cambia tablas
   (2026-10-22). Pasado a carpeta por tema el 2026-10-22 (`decisiones/catalogo/README.md`; backup en
-  `obsoletos/backup-docs-2026-10-22/`). Siguiente: los choques entre v1 y v2
-  (`decisiones/catalogo/pendiente.md` → *Choques*), de a uno con el usuario; resueltos del 1 al 4,
-  sigue el 5, "los controles de mandar a aprobar están repartidos". Después, el SQL sin plata. Lo de
+  `obsoletos/backup-docs-2026-10-22/`). Choques entre v1 y v2
+  resueltos (2026-10-22). Siguiente: el SQL sin plata. Lo de
   Compras mínimo (19, 34) y lo de pantallas (29, 31, 44, 35, 50, 54–58) sigue en `pendiente.md` → *Auditoría v2*, para su fase. Producción y erp-cliente,
   al fichar, suman su rama a la función de cálculo del catálogo (`decisiones/catalogo/calculo.md` →
   *La función de cálculo decide qué parte ve cada uno*).
