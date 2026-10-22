@@ -24,7 +24,7 @@ todavía en el orden: Stock y la licitación de Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha aprobada
-  (2026-10-21): `decisiones/catalogo.md` → *Ficha del módulo — v2*. Siguiente: *Pendiente* → *Auditoría v2* (de a un punto, en su orden: primero lo que cambia tablas; 1–18, 49, 43, 48, 33, 32, 36, 26, 27, 46, 47, 20, 21, 22, 24, 25 y 23 resueltos, sigue el 30), después el SQL. Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
+  (2026-10-21): `decisiones/catalogo.md` → *Ficha del módulo — v2*. Siguiente: *Pendiente* → *Auditoría v2* (de a un punto, en su orden: primero lo que cambia tablas; 1–18, 49, 43, 48, 33, 32, 36, 26, 27, 46, 47, 20, 21, 22, 24, 25, 23 y 30 resueltos, sigue el 28), después el SQL. Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
   (`decisiones/catalogo.md` → *La función de cálculo decide qué parte ve cada uno*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en

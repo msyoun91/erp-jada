@@ -677,13 +677,11 @@ referencias entre puntos.
     mismas alternativas sin hermanar avisan (2026-10-22): en *"Duplicar grupo" pide qué reemplazar*.
 23. ~~**Hermanas juntas que no van iguales.**~~ → plegado separado con el motivo y aviso en la línea
     (2026-10-22): en *Las opciones hermanas arrancan juntas* → *Si el par no se ofrece en la hermana*.
+30. ~~**Sin herraje en silencio.**~~ → se esconde solo si lo dejan condiciones; por bajas o color, plegado
+    y aviso (2026-10-22): en *El DVH son opciones por capa* → *Una opción que solo ofrece Sin material*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-30. **Sin herraje en silencio.** Con todas las manijas de baja la opción ofrece solo *Sin herraje*, y
-    "una opción que solo ofrece Sin material no se muestra": las corredizas se venden sin manija y el
-    plegado no lo dice. Propuesta: lo que queda en Sin material por condición (vidrio interior sin
-    cámara) no se muestra; por bajas, sí, en el plegado (*herraje hoja izq: sin herraje (no hay otro)*).
 28. **Clase de color y color base editables.** Pasar a *sin color* un insumo con 4 variantes costeadas y
     existencias por color, o el base de natural a negro, recolorea costo y stock. Propuesta: quedan fijos
     desde que tiene variantes o está en una versión, como la unidad.
@@ -1573,7 +1571,10 @@ Decidido en la v2:
   tres suman al peso de la hoja. La cámara sigue por m², con el armado en el precio de la vidriería;
   si se arma en fábrica, versión nueva con separador × `perimetro_pano_izq` y sellador. Un TVH suma
   otro par cámara + vidrio, en las líneas que lo admiten. **Una opción que en ese momento solo
-  ofrece *Sin material* no se muestra**, sea de vidrio o de herraje: no hay qué elegir. Por qué: el DVH se arma con las piezas de los
+  ofrece *Sin material* no se muestra**, sea de vidrio o de herraje: no hay qué elegir. **Solo si lo
+  dejan condiciones del técnico** (2026-10-22): si lo dejan bajas o el color, el plegado lo dice
+  (*herraje hoja izq: sin herraje (no hay otro)* · *(no hay en blanco)*) y la línea lleva un aviso;
+  con las dos manijas de baja, las corredizas se vendían sin manija y nada lo decía. Por qué: el DVH se arma con las piezas de los
   herrajes, sin nada propio del vidrio. Descartado: el DVH como un insumo (cada combinación un
   insumo, con su costo en Compras) y una opción de varias capas (el paño por otra puerta).
 - **Las opciones hermanas arrancan juntas y el vendedor las separa si hace falta** (2026-10-21). El
