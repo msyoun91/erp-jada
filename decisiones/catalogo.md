@@ -623,12 +623,11 @@ referencias entre puntos.
     casos y sin las excepciones de % (2026-10-22): en *Duplicar crea un paquete nuevo*.
 26. ~~**Producción no puede caer en *Lo elegido se guarda*.**~~ → lo vendido aunque esté de baja, o
     error con lo que falta (2026-10-22): en *Para producción entra lo vendido o error*.
+27. ~~**Producción elige una versión con otras entradas.**~~ → solo las que cubren lo vendido; el
+    renombre ya no pasa por el 49 (2026-10-22): en *Producción usa una versión solo si cubre lo vendido*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-27. **Producción elige una versión con otras entradas.** La orden de la v3 se fabrica con la v5, que
-    suma `alto_banderola` (principal, sin default) o renombró `ancho_hoja_izq`. Propuesta: solo se
-    ofrecen las versiones cuyas entradas cubre lo guardado; si no, el despiece dice qué falta.
 46. **"Con condición no salva al paquete" no se calcula en general.** Saber si en alguna combinación una
     opción queda sin nada es finito con colores y opciones, no con `ancho > 1500` sobre calculadas.
     Propuesta: el incompleto estático mira solo condiciones sobre opciones y color; lo que depende de
@@ -1047,6 +1046,14 @@ Decidido en la v2:
   insumo*). Es una rama de la función de cálculo. Por qué: la orden de julio con Manija Roma, dada de
   baja en septiembre, se despiezaba con la Embutida del default; en el presupuesto lo frena la línea
   sin precio, en la orden nada.
+- **Producción usa una versión solo si cubre lo vendido** (2026-10-22): toda medida, opción y grupo
+  guardado en la orden existe en ella (por nombre) y toda principal sin default suya tiene valor
+  guardado; lo secundario nuevo entra con su default (el burlete de la v4, la mejora por la que se
+  elige). El catálogo da, para una orden, sus versiones aprobadas con cuál cubre y por qué no las
+  otras (*v5: falta alto_banderola · no tiene mosquitero*), y producción ofrece solo las que cubren.
+  La vendida siempre cubre; sus bajas, en *Para producción entra lo vendido o error*. Por qué: la
+  orden de la v3 con mosquitero, fabricada con la v5 (banderola principal sin default, sin
+  mosquitero), salía con *Falta* o un alto inventado y sin el mosquitero que pagó el cliente.
 - **El insumo no se versiona: una corrección se edita en el mismo insumo.** Las fórmulas leen el peso,
   así que corregirlo recalcula las órdenes viejas — y eso se quiere: el dato viejo estaba mal. En uso, la
   corrección espera a administración (*Lo que cambia el cálculo de un insumo en uso espera a
