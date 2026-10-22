@@ -617,13 +617,11 @@ referencias entre puntos.
     insumo, y la versión o el cambio en el detalle (2026-10-22): en *Entes*.
 33. ~~**¿A qué técnico?**~~ → a todos los que tienen la función; técnico hay uno (2026-10-22): en
     *Entes* → *Los avisos van a quienes tienen la función*.
+32. ~~**Un borrador abandonado bloquea el paquete.**~~ → *descartar borrador*, que pasa los reemplazos
+    de una baja a la versión que sigue (2026-10-22): en *El borrador se descarta*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-32. **Un borrador abandonado bloquea el paquete.** Una versión abierta por paquete y no hay *descartar*.
-    La v5 a medias de Marcos (fórmula rota, de vacaciones) recibe el reemplazo de la baja y no se puede
-    mandar hasta arreglarla. Propuesta: *descartar borrador* y la antigüedad en la lista (*v5 · borrador
-    de Marcos · hace 34 días*).
 36. **Duplicar paquete.** No hay. La Corrediza 2 hojas Herrero se arma de cero aunque sea la Modena con
     otros perfiles, y con la subcategoría como línea es lo de todos los días. Propuesta: paquete nuevo
     con la v1 en borrador copiada de la vigente o de la abierta, y sus casos; después *Reemplazar
@@ -858,7 +856,7 @@ Personas
 └── Cliente empresa — NO usa el módulo: por el presupuestador de erp-cliente elige lo que administración
                       le habilitó; ve el precio solo si se lo habilitó · — · no ve despiece, costo ni servicios
 Entes
-├── paquete — dueño creado_por (solo dato) · estado por versión: borrador · para aprobar · aprobada · lo señalan la línea del presupuesto y la orden de producción
+├── paquete — dueño creado_por (solo dato) · estado por versión: borrador · para aprobar · aprobada · descartada · lo señalan la línea del presupuesto y la orden de producción
 │             · datos {nombre} · ruta /catalogo/paquetes/{id} (abre la vigente) · submódulo catalogo_paquetes · roles {}
 └── insumo  — dueño creado_por (solo dato) · sin estado (solo activo), sin versiones; un cambio de cálculo pendiente a la vez · lo señalan la línea del presupuesto (suelto), Compras, Stock y Contactos
               · datos {codigo, nombre} · ruta /catalogo/insumos/{id} · submódulo catalogo_insumos · roles {proveedor}
@@ -872,7 +870,8 @@ Relaciones (de otros módulos, apuntan al catálogo)
 │   ← línea del presupuesto (Presupuestos)
 └── versión del paquete ← orden de producción, con lo que cargó el vendedor (Producción)
 Acciones
-├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · volver al borrador · aprobar
+├── paquete: crear · editar borrador · descartar borrador · mandar a aprobar (con qué cambió)
+│            · volver al borrador · aprobar
 │            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
 │            · mover de subcategoría · dar de baja · reactivar
 │            · casos de prueba: guardar desde Probar (nuevo o pisando uno) · renombrar · marcar
@@ -894,7 +893,8 @@ Acciones
 ├── colores: crear · renombrar · dar de baja · reactivar (administración)
 └── clientes: habilitar categoría o subcategoría · ve precio sí/no (administración)
 Eventos que emite
-├── paquete: estado de la versión (para aprobar · vuelta al borrador · rechazada → borrador · aprobada)
+├── paquete: estado de la versión (para aprobar · vuelta al borrador · rechazada → borrador · aprobada
+│            · descartada)
 │            — aviso a administración y al técnico; la primera aprobada avisa a vendedores del producto nuevo
 ├── paquete: baja — aviso a vendedores de que sale de venta
 ├── insumo: baja — aviso al técnico con el alcance: "Marco 70 mm: 3 paquetes incompletos · 9 pierden
@@ -923,7 +923,7 @@ Módulo: Catálogo
 │                                                  categorías fuera del % de los servicios del paquete,
 │                                                  categorías, baja y reactivar
 ├── Paquetes (vista, catalogo_paquetes)          — técnico, administración
-│   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores, versión nueva, mandar a aprobar,
+│   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores (y descartarlos), versión nueva, mandar a aprobar,
 │   │                                              reemplazar material, volver al borrador, probar sin plata
 │   │                                              y guardar casos de prueba
 │   └── catalogo_paquetes_administrar (funcion)  — administración: aprobar y rechazar, probar
@@ -1240,6 +1240,16 @@ Decidido en la v2:
   si está para aprobar, la vuelve al borrador o espera. Por qué: con dos borradores que parten de la
   v3, aprobar la v4 (burlete) y después la v5 (rueda doble) deja vigente una versión sin el burlete, y
   nadie lo nota. Descartado: borradores en paralelo (obliga a combinarlos).
+- **El borrador se descarta, y lo que trae de una baja pasa a la versión que sigue** (2026-10-22). El
+  técnico descarta la abierta en borrador: pasa a `descartada` (estado, así el historial la registra
+  por el evento: *v5 · descartada 22/10*) y la próxima arranca de la vigente con el número que sigue
+  (v6). Si traía reemplazos de una baja, descartar abre la v6 con esos pares viejo → nuevo ya puestos:
+  sin ellos la vigente queda con el insumo dado de baja y deja de venderse. Los de *"Reemplazar
+  material"* sobre un insumo activo se van con el resto. Para aprobar no se descarta (vuelve antes al
+  borrador), y sin vigente tampoco: eso es dar de baja el paquete. La lista muestra la antigüedad de
+  la abierta (*v5 · borrador · hace 5 meses*). Por qué: la v5 de marzo con `rueda_hoja_izq` a medio
+  escribir recibía en agosto la Hoja 42 de la baja, y para mandarla había que terminar o deshacer a
+  mano lo de la rueda; mientras, la v4 se vendía con la Hoja 40 al costo viejo, sin plazo.
 - **El paquete muestra su historial versión por versión, como apoyo del técnico** (2026-10-21). Cada
   versión dice qué cambió respecto de la anterior: el texto del técnico, los cambios que detecta el
   sistema (los de pendientes, sin precio) y su recorrido en una línea (*v5 · baja el umbral de rueda
