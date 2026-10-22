@@ -85,7 +85,7 @@ Eventos que emite
 ├── insumo: cambio de cálculo (para aprobar · retirado · aprobado · rechazado) — para aprobar, aviso
 │            a administración con el alcance: "Marco 70 mm: desperdicio 8 → 80 % · 40 paquetes";
 │            retirado, aviso a administración; aprobado o rechazado (con motivo), aviso al técnico
-└── servicio: ninguno (no es ente; su baja se ve en los paquetes incompletos)
+└── servicio: ninguno (no es ente); su baja avisa al técnico sin evento, como la del insumo
 Eventos que consume
 └── ninguno
 ```
@@ -266,17 +266,26 @@ leer el insumo.
   - Baja de un insumo (apunta al insumo), al técnico: la cifra la da al leer la función del alcance de
     la baja (*Felpa X: 3 incompletos · 12 borradores con el reemplazo*) y desaparece cuando no queda
     nada incompleto por esa baja ni borradores con su reemplazo sin aprobar.
+  - Baja de un servicio (apunta al servicio), al técnico, con o sin reemplazo: *Soldadura de marco:
+    25 borradores con el reemplazo · lo traen 2 insumos*; desaparece cuando no queda nada incompleto
+    por esa baja, ni borradores con su reemplazo sin aprobar, ni insumos activos que lo traigan. Sin
+    evento, porque el servicio no es ente: lo escribe un trigger sobre la baja con `notificar()`, como
+    los de `usuario_submodulos`.
   - Cambio de cálculo (apunta al cambio): *para aprobar*, a administración, desaparece al aprobarse,
     rechazarse o retirarse; *retirado*, a administración; *aprobado* o *rechazado* (con motivo), al
     técnico.
 
   Por qué: Marcos volvía la v5 al borrador y la campanita de Laura seguía con *v5 para aprobar*; el
-  aviso de la Felpa X decía *3 incompletos* un mes después de arreglarlos. Descartado: que todos queden
-  hasta leerlos (pendientes que ya no lo son, y lo que espera se mezcla con lo demás). Toca: el SQL del
+  aviso de la Felpa X decía *3 incompletos* un mes después de arreglarlos; y la baja de *Soldadura de
+  marco* con reemplazo dejaba 25 borradores sin que Marcos se enterara, porque nada quedaba incompleto.
+  Descartado: que todos queden hasta leerlos (pendientes que ya no lo son, y lo que espera se mezcla
+  con lo demás); hacer ente al servicio para que emita (fila en `entes` y siete funciones de core por
+  un aviso); y avisar la del servicio solo con reemplazo (sin él, el técnico sale a buscar los
+  incompletos y con el insumo no). Toca: el SQL del
   catálogo (`tipo_notificacion`, el CHECK de `entidad` y su rama en `notificaciones_listar`).
 - **El producto nuevo se avisa al aprobarse la primera versión, no en el alta.** El alta ocurre cuando el
   técnico abre el borrador: avisar ahí a los vendedores sería avisar de algo que no se vende. "Incompleto"
-  no emite (se calcula); lo que lo causa sí: la baja del insumo.
+  no emite (se calcula); lo que lo causa avisa: la baja del insumo o del servicio.
 - **Los avisos a vendedores entran con Presupuestos y los resuelve una función del catálogo**
   (2026-10-22). *Producto nuevo* y *sale de venta* van a quienes tienen el permiso de Presupuestos que
   arma líneas, que se nombra al ficharlo; en el SQL sin plata no hay aviso a vendedores, y los eventos

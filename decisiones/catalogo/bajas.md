@@ -39,9 +39,9 @@ entra lo vendido o error*.
   solo con Sin herraje*; *Comercialización: se deja de cobrar en 120 paquetes y 40 insumos sueltos*.
   Suma los casos de prueba que quedan sin nada que ofrecer (*Lo que depende de medidas se resuelve en
   la línea*) y las versiones para aprobar que la usan (`versiones.md` → *Aprobar vuelve a correr los
-  controles y el incompleto*). La baja no se frena. La de un insumo avisa al técnico con las mismas
-  cifras y deja los paquetes marcados; la de un servicio no avisa (no es ente y no emite): el técnico
-  ve marcados los incompletos.
+  controles y el incompleto*). La baja no se frena. La de un insumo o un servicio avisa al técnico
+  con las mismas cifras y deja los paquetes marcados; la del servicio, sin evento, porque no es ente
+  (`ficha.md` → *Cada aviso dice a qué apunta y cuándo desaparece*).
 - **Lo que depende de medidas se resuelve en la línea** (2026-10-22). El incompleto del paquete
   recorre solo combinaciones de opciones y color, que son finitas; una condición que lee una medida,
   directo o por una calculada, cuenta como que puede cumplirse, y su alternativa cubre. Si con las
