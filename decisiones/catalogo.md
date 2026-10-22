@@ -662,12 +662,11 @@ referencias entre puntos.
     el rechazo de `2.400` (2026-10-22): en *El valor de la casilla se carga en la unidad en que se piensa*.
 21. ~~**Medida sin límites.**~~ → mínimo y máximo obligatorios para mandar a aprobar; fuera de rango
     frena (2026-10-22): en *Toda medida del vendedor lleva mínimo y máximo*.
+22. ~~**Vidrio sin medidas.**~~ → ancho y alto obligatorios en todo material por m² para mandar a
+    aprobar (2026-10-22): en *El vidrio cobra por una variable de superficie y lleva sus medidas*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-22. **Vidrio sin medidas.** Las medidas de un material por m² son opcionales ("puede llevar"): sin ellas
-    el despiece dice *Float 4 — 0,715 m²*, producción no lo puede pedir y el ≤ 0 no frena (dos lados
-    negativos dan superficie positiva). Propuesta: un material por m² lleva medidas para mandar a aprobar.
 24. **Pares con tres hojas.** "Embutida en cualquier hoja pone Manija en la otra" supone dos. En la
     Corrediza 3 hojas, ¿Manija en la izq pone Embutida en la central y en la der? Propuesta: pares solo
     entre dos hermanas; con más, cada una par de sí misma.
@@ -1248,7 +1247,7 @@ Decidido en la v2:
   El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles (fórmula
   mal escrita, ciclo, secundaria sin default, medida principal con default, unidad que no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
   una alternativa, servicio a mano que ya trae un insumo del grupo, medida del vendedor sin mínimo o
-  máximo): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
+  máximo, material por m² sin ancho o alto): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
   aprobar, la versión pasa a ser la vigente y la ve el vendedor. Un presupuesto sin enviar sigue a la
   vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4 · agrega
   burlete inferior en la hoja*); al enviar, se congela. Por qué: con aprobación, mandar no puede
@@ -1553,8 +1552,9 @@ Decidido en la v2:
   decisiones que siguen (*Pendiente* → *Vidrio como opción*).
 - **El vidrio cobra por una variable de superficie y lleva sus medidas para el despiece**
   (2026-10-21). Lo que se cobra y el peso salen de la variable: *Float 4 mm* ×
-  `superficie_pano_izq`. Además, un material por m² puede llevar ancho y alto por fórmula (cada uno
-  da ml), solo para el despiece: `ancho_pano_izq` y `alto_pano_izq`, cada lado redondeado al mm
+  `superficie_pano_izq`. Además, un material por m² lleva ancho y alto por fórmula (cada uno da ml;
+  ~~puede llevar~~ → obligatorios para mandar a aprobar, 2026-10-22: todo lo que va por m² en una
+  abertura se corta, y sin ellas el despiece decía *Float 4 mm — 0,715 m²*), solo para el despiece: `ancho_pano_izq` y `alto_pano_izq`, cada lado redondeado al mm
   hacia abajo. En 1501 × 1100 el despiece dice *Float 4 mm — 0,715 m² — 713 × 1002 mm*. Las medidas
   son del material, para todas sus alternativas, y una medida ≤ 0 frena como una pieza. Por qué:
   producción pide el vidrio cortado con la medida del sistema; si la calculara por su cuenta, la
