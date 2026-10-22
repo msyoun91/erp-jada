@@ -24,7 +24,7 @@ todavía en el orden: Stock y la licitación de Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha aprobada
-  (2026-10-21): `decisiones/catalogo.md` → *Ficha del módulo — v2*. Siguiente: *Pendiente* → *Auditoría v2* (de a un punto, en su orden: primero lo que cambia tablas; 1–17, 49 y 43 resueltos, sigue el 48), después el SQL. Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
+  (2026-10-21): `decisiones/catalogo.md` → *Ficha del módulo — v2*. Siguiente: *Pendiente* → *Auditoría v2* (de a un punto, en su orden: primero lo que cambia tablas; 1–18, 49 y 43 resueltos, sigue el 48), después el SQL. Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
   (`decisiones/catalogo.md` → *La función de cálculo decide qué parte ve cada uno*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
@@ -89,7 +89,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   `lista_precios/AumentoModal.tsx`, `erp_old_2` `precios/ActualizacionMasivaModal.tsx`); no por
   proveedor: a cada categoría le venden varios. Es de Compras, no del catálogo: lee las categorías
   como lee el insumo (`decisiones/catalogo.md` → *Stock y Compras leen la tabla del insumo*). La cotización
-  (USD y EUR) es una vista de Compras (`decisiones/catalogo.md` → *Precio de venta*). Arranca mínimo
+  (USD y EUR) es una vista de Compras (`decisiones/catalogo.md` → *Precio de venta*), con la fecha del
+  BNA y aviso a administración si el automático falla (*La cotización vale por su fecha del BNA*). Arranca mínimo
   (costos y cotización) antes de Presupuestos;
   después suma la licitación —varias ofertas por insumo, con precio, plazo y fecha, y una elegida—,
   que al elegir actualiza el costo. Los proveedores son empresas de Contactos
