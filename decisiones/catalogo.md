@@ -88,7 +88,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   Taller — se carga desde ya aunque Taller no exista) y **colores** (el vendedor elige el color y cada
   insumo se cambia solo por su equivalente en ese color; el que no tiene color, como la felpa, queda
   igual). **La equivalencia vive en el insumo**, una sola vez (ART-2301 en negro mate es ART-2301-NM),
-  y la usan todos los paquetes; el paquete solo dice qué colores ofrece. Descartado: mapear en cada
+  y la usan todos los paquetes; ~~el paquete solo dice qué colores ofrece~~ → los colores del paquete
+  se calculan de sus insumos (*Los colores son de administración*, 2026-10-21). Descartado: mapear en cada
   paquete como el mockup — el mismo perfil se remapearía en cada plantilla y los mapeos podrían
   contradecirse. ~~Y **vidrios compuestos**~~ → *El DVH son opciones por capa* (ficha v2,
   2026-10-21). Después: reglas, simulador, grafo.
@@ -516,11 +517,8 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 
 1. ~~**Quién carga el costo.**~~ → Compras (2026-10-21): corregido en *El costo sigue fuera del
    catálogo, en Compras*.
-2. **¿El paquete dice qué colores ofrece?** *Paquetes* (v1): "el paquete solo dice qué colores
-   ofrece"; *Los colores son de administración*: el último insumo que recibe el bronce pone el paquete
-   en bronce sin aprobación, o sea que se calcula. Calculado, no hay cómo no vender la Modena en bronce
-   si todos sus perfiles lo tienen. Propuesta: tachar lo de la v1 y aceptar la contra, o colores
-   excluidos por paquete (administración, fuera de la versión).
+2. ~~**¿El paquete dice qué colores ofrece?**~~ → no, se calculan (2026-10-21): en *Los colores son
+   de administración*, y tachado lo de la v1 en *Paquetes*.
 3. **"Material que mira el peso y suma al peso" sigue en los controles** de *Mandar a aprobar frena*,
    pero *Nada depende de sí mismo* lo reemplazó y deja pasar el refuerzo del marco que mira
    `peso_hoja_izq` y suma a `peso_marco`. Leído literal, lo frena. Propuesta: sacarlo; lo cubre "ciclo".
@@ -1301,6 +1299,10 @@ Decidido en la v2:
     los que ya lo tienen y los sin color. Todo o nada, en una función de Postgres: un código que
     choca se marca en la tabla antes de confirmar. El alcance se ve una vez para toda la carga
     (*Bronce: Corrediza 2 hojas y Corrediza 3 hojas se ofrecen en bronce · 15 variantes sin costo*).
+  - El paquete no guarda sus colores: ofrece cada color que tienen todos sus insumos *de la
+    ventana*. Cargar la variante es decidir venderlo, y el alcance de la carga lo muestra antes de
+    confirmar; colores excluidos por paquete, recién con un caso real (un perfil compartido que
+    pone en bronce una línea que no se vende así).
   - Vale al instante, porque el insumo no se versiona: si era el único insumo *de la ventana* sin
     ese color, el paquete pasa a ofrecerlo sin aprobación. Sin costo, la línea sale sin precio y
     Compras lo ve en *sin costo y en uso*. Dar de baja un color en un insumo sigue *La baja depende
