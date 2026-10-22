@@ -47,6 +47,10 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   Hasta enviarse, la línea sigue a la versión vigente (última aprobada) del paquete y al costo de hoy
   (con aviso si el paquete cambió, con el texto del técnico); al enviar, se congela
   (`decisiones/catalogo.md` → *Mandar a aprobar frena; aprobar pone a la venta*).
+  A decidir: la línea sin precio porque la versión nueva sacó la alternativa (`decisiones/catalogo.md` →
+  *Lo que el catálogo deja de ofrecer*) puede seguir en la última que la ofrecía, "verificado con
+  taller" (quién y qué, obligatorio), con aviso fijo y confirmación al enviar; producción la fabrica
+  con esa versión. Y si vale también para un insumo de baja con existencias (*Manija Roma: quedan 10*).
   Enviado, se mantiene (el precio enviado entero, con los costos y % de entonces: hay sobrante) o se
   actualiza (vuelve a la vigente con los de hoy). A decidir: por línea o el presupuesto entero, y quién
   puede mantener —con costos viejos es un descuento implícito, como el de arriba— (`decisiones/catalogo.md` →
