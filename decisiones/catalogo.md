@@ -2,7 +2,9 @@
 
 **Estado (2026-10-21): ficha v2 aprobada, sin SQL.** Antes del SQL, *Pendiente* → *Auditoría v2*, de
 a un punto. Referencia del motor de paquetes: `C:\dev\Archivos antiguos\spec_plantillas_5.md` (módulo
-Plantillas del ERP viejo) y `plan_plantillas.md` — se adapta, no se copia.
+Plantillas del ERP viejo) y `plan_plantillas.md` — se adapta, no se copia. Al 2026-10-21: casos en
+diagrama, con los puntos abiertos marcados, https://claude.ai/artifact/BhPaBVCNWDBZnH62Pjthzu · demo
+de la ficha v2, https://claude.ai/artifact/GcnZbyVggBmEVYKehoE7pu.
 
 ## Un solo módulo con tres vistas: Insumos · Servicios · Paquetes (2026-09-29)
 
@@ -522,7 +524,12 @@ Sobre la ficha v2 y lo de arriba que sigue valiendo. Caso base: Corrediza 2 hoja
 negro mate, DVH 4+12+4, 4 iguales; Marcos es técnico y Laura, administración. Cada punto: el caso que
 falla y una propuesta a discutir, no decidida. Los escenarios del final encadenan varios.
 
-*El texto se contradice*
+**Orden (2026-10-21):** primero lo que cambia tablas, triggers o la función de cálculo, que hay que
+tener cerrado antes del SQL sin plata; después lo que entra con Compras mínimo y la rama de plata; al
+final lo que se resuelve en la pantalla. Los números no cambian: los usan los escenarios y las
+referencias entre puntos.
+
+*Resueltos*
 
 1. ~~**Quién carga el costo.**~~ → Compras (2026-10-21): corregido en *El costo sigue fuera del
    catálogo, en Compras*.
@@ -549,9 +556,6 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 10. ~~**Menores de texto.**~~ → corregidos en su lugar (2026-10-21): título de la variante, *El motor
     va en Postgres*, lo que se guarda de la línea, Relaciones, el mockup, el kg y *fuera del %* en
     categorías. El vidrio en `BACKLOG.md`: gana lo de la línea anterior si se ofrece; si no, el default.
-
-*Cobra mal sin que nadie se entere*
-
 11. ~~**Editar el insumo cambia precio y despiece al instante, y solo lo ve quien edita.**~~ → en uso,
     espera a administración, servicios que trae incluidos (2026-10-21): en *Lo que cambia el cálculo
     de un insumo en uso espera a administración*.
@@ -567,16 +571,43 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
     lo trae un insumo (2026-10-21): en *El servicio se edita directo*.
 17. ~~**Montos fijos y mínimos que envejecen.**~~ → antigüedad a la vista y aumento masivo en %
     (2026-10-21): en *Servicios muestra hace cuánto cambió cada monto y mínimo*.
-18. **Cotización pegada.** Si el automático cae, todo lo de US$ sale con la de hace semanas sin decirlo;
-    y "lo manual no lo pisa el automático" no dice hasta cuándo. Propuesta: lo manual vale para el día;
-    sin cotización del día hábil, aviso a administración, y pasados N días la línea queda sin precio.
-    Va con Compras.
-19. **IVA.** No aparece en ninguna decisión. Si Compras carga una cotización con IVA y otra sin, unos
-    insumos salen 21 % arriba. Propuesta: costo neto (al fichar Compras), precio del catálogo neto, el
-    IVA en Presupuestos.
 
-*Arma mal (técnico, taller, producción)*
+*Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
+49. **Qué guarda "lo elegido".** Líneas, órdenes y casos cruzan versiones: nombre de variable u opción e
+    insumo. Renombrar en la v5 deja *Falta*; reemplazar el insumo lo pierde. Propuesta: definir la
+    clave, y que *Reemplazar material* lleve el par viejo → nuevo a lo elegido.
+43. **La versión nueva que saca una alternativa.** *Lo que el catálogo deja de ofrecer* nombra bajas y
+    subcategorías, no la v5 que saca el Laminado: la línea sin enviar con Laminado, ¿sin precio o
+    default? Propuesta: sin precio, como las otras.
+48. **Eventos.** El estado del paquete vive en la versión, y el del *cambio de cálculo* del insumo (11),
+    en el cambio: el trigger genérico emitiría con el id de la versión o del cambio. Propuesta: trigger
+    propio en versiones con `paquete_id` y en cambios con `insumo_id` (como `tareas_emitir_asignado`).
+33. **¿A qué técnico?** Rechazo, vuelta al borrador, baja con alcance, *solo Sin herraje*: "aviso al
+    técnico", y el paquete lo editan varios (`creado_por` es solo dato). Propuesta: el rechazo, a quien
+    mandó; lo de bajas, a todos los que tienen `catalogo_paquetes_editar`.
+32. **Un borrador abandonado bloquea el paquete.** Una versión abierta por paquete y no hay *descartar*.
+    La v5 a medias de Marcos (fórmula rota, de vacaciones) recibe el reemplazo de la baja y no se puede
+    mandar hasta arreglarla. Propuesta: *descartar borrador* y la antigüedad en la lista (*v5 · borrador
+    de Marcos · hace 34 días*).
+36. **Duplicar paquete.** No hay. La Corrediza 2 hojas Herrero se arma de cero aunque sea la Modena con
+    otros perfiles, y con la subcategoría como línea es lo de todos los días. Propuesta: paquete nuevo
+    con la v1 en borrador copiada de la vigente o de la abierta, y sus casos; después *Reemplazar
+    material* solo sobre él.
+26. **Producción no puede caer en *Lo elegido se guarda*.** La orden vendida con Manija Roma, dada de
+    baja después (o su variante negra, o movida de subcategoría), se despieza con el default y taller
+    arma otra manija. En el presupuesto lo frena la línea sin precio; en producción no hay regla.
+    Propuesta: para producción, lo elegido aunque esté de baja (es lo vendido) o error; nunca otro insumo.
+27. **Producción elige una versión con otras entradas.** La orden de la v3 se fabrica con la v5, que
+    suma `alto_banderola` (principal, sin default) o renombró `ancho_hoja_izq`. Propuesta: solo se
+    ofrecen las versiones cuyas entradas cubre lo guardado; si no, el despiece dice qué falta.
+46. **"Con condición no salva al paquete" no se calcula en general.** Saber si en alguna combinación una
+    opción queda sin nada es finito con colores y opciones, no con `ancho > 1500` sobre calculadas.
+    Propuesta: el incompleto estático mira solo condiciones sobre opciones y color; lo que depende de
+    medidas se resuelve por línea (*herraje hoja izq: nada que ofrecer*, sin precio).
+47. **Grafo de ciclos.** La lista de *Nada depende de sí mismo* es anterior a `espesor_<opción>` y a las
+    condiciones de alternativas y subcategorías (el espesor depende de la alternativa, que puede mirar el
+    peso, que incluye el vidrio). Sumarlas.
 20. **Casillas en otra unidad.** Condiciones y restricciones toman el valor crudo, en mm y mm².
     *Laminado si `superficie_pano_izq` > 2* (pensado en m²) es siempre verdad: 0,714 m² son 714.000 mm².
     *Ancho máx. 2,4* frena todo, y `2.400` en una casilla no tiene el rechazo de las fórmulas.
@@ -588,10 +619,6 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 22. **Vidrio sin medidas.** Las medidas de un material por m² son opcionales ("puede llevar"): sin ellas
     el despiece dice *Float 4 — 0,715 m²*, producción no lo puede pedir y el ≤ 0 no frena (dos lados
     negativos dan superficie positiva). Propuesta: un material por m² lleva medidas para mandar a aprobar.
-23. **Hermanas juntas que no van iguales.** Juntas en *Laminado 5+5*; una condición no lo ofrece en la
-    hoja der, que toma el default por *Lo elegido se guarda*, y el plegado sigue diciendo *vidrio:
-    Laminado 5+5*. Propuesta: aviso en la línea y plegado separado (*hoja der: Float 4 — Laminado 5+5 no
-    va en esta hoja*).
 24. **Pares con tres hojas.** "Embutida en cualquier hoja pone Manija en la otra" supone dos. En la
     Corrediza 3 hojas, ¿Manija en la izq pone Embutida en la central y en la der? Propuesta: pares solo
     entre dos hermanas; con más, cada una par de sí misma.
@@ -599,59 +626,20 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
     DVH una vez pone las dos de afuera y la central sale Float 4, más barata. Propuesta: la copia entra
     como hermana de la original, y un control avisa opciones con las mismas alternativas en distintos
     grupos sin hermanar.
-26. **Producción no puede caer en *Lo elegido se guarda*.** La orden vendida con Manija Roma, dada de
-    baja después (o su variante negra, o movida de subcategoría), se despieza con el default y taller
-    arma otra manija. En el presupuesto lo frena la línea sin precio; en producción no hay regla.
-    Propuesta: para producción, lo elegido aunque esté de baja (es lo vendido) o error; nunca otro insumo.
-27. **Producción elige una versión con otras entradas.** La orden de la v3 se fabrica con la v5, que
-    suma `alto_banderola` (principal, sin default) o renombró `ancho_hoja_izq`. Propuesta: solo se
-    ofrecen las versiones cuyas entradas cubre lo guardado; si no, el despiece dice qué falta.
-28. **Clase de color y color base editables.** Pasar a *sin color* un insumo con 4 variantes costeadas y
-    existencias por color, o el base de natural a negro, recolorea costo y stock. Propuesta: quedan fijos
-    desde que tiene variantes o está en una versión, como la unidad.
-
-*Depende de que alguien se acuerde*
-
-29. **Lo que se avisa una vez.** Incompleto por una baja, *solo ofrece Sin herraje*, *Laminado 4+4: no
-    se ofrece en 12 paquetes* (solo si abre el insumo), el reemplazo sin mandar
-    (31), el borrador viejo (32): una campanita y después nada. Propuesta: filtro *a revisar* en
-    Paquetes e Insumos, calculado al leer, como el "a revisar" de las plantillas de Tareas. Sin tabla ni
-    trigger.
+23. **Hermanas juntas que no van iguales.** Juntas en *Laminado 5+5*; una condición no lo ofrece en la
+    hoja der, que toma el default por *Lo elegido se guarda*, y el plegado sigue diciendo *vidrio:
+    Laminado 5+5*. Propuesta: aviso en la línea y plegado separado (*hoja der: Float 4 — Laminado 5+5 no
+    va en esta hoja*).
 30. **Sin herraje en silencio.** Con todas las manijas de baja la opción ofrece solo *Sin herraje*, y
     "una opción que solo ofrece Sin material no se muestra": las corredizas se venden sin manija y el
     plegado no lo dice. Propuesta: lo que queda en Sin material por condición (vidrio interior sin
     cámara) no se muestra; por bajas, sí, en el plegado (*herraje hoja izq: sin herraje (no hay otro)*).
-31. **El reemplazo que nunca se manda.** Marcos reemplaza en 12 paquetes y manda 9. Las otras 3
-    vigentes siguen "como si el viejo siguiera activo", sin plazo: al último costo de algo que ya no se
-    compra, y producción solo tiene versiones aprobadas, que usan el viejo. Propuesta: marca *a revisar*
-    con antigüedad y aviso a administración a los N días.
-32. **Un borrador abandonado bloquea el paquete.** Una versión abierta por paquete y no hay *descartar*.
-    La v5 a medias de Marcos (fórmula rota, de vacaciones) recibe el reemplazo de la baja y no se puede
-    mandar hasta arreglarla. Propuesta: *descartar borrador* y la antigüedad en la lista (*v5 · borrador
-    de Marcos · hace 34 días*).
-33. **¿A qué técnico?** Rechazo, vuelta al borrador, baja con alcance, *solo Sin herraje*: "aviso al
-    técnico", y el paquete lo editan varios (`creado_por` es solo dato). Propuesta: el rechazo, a quien
-    mandó; lo de bajas, a todos los que tienen `catalogo_paquetes_editar`.
-34. **Compras no se entera.** Lo que falta costear está en un filtro; si nadie lo abre, lo encuentra el
-    vendedor. Propuesta: al aprobarse una versión que trae algo sin costo, aviso a Compras (su rama, al
-    ficharlo).
-35. **El cliente lee los mensajes del técnico.** Las restricciones se escriben pensando en el vendedor
-    (*usar reforzada, deja más margen*) y el cliente empresa las ve tal cual. Propuesta: el editor dice
-    "lo ven vendedor y cliente".
-
-*Falta un flujo*
-
-36. **Duplicar paquete.** No hay. La Corrediza 2 hojas Herrero se arma de cero aunque sea la Modena con
-    otros perfiles, y con la subcategoría como línea es lo de todos los días. Propuesta: paquete nuevo
-    con la v1 en borrador copiada de la vigente o de la abierta, y sus casos; después *Reemplazar
-    material* solo sobre él.
+28. **Clase de color y color base editables.** Pasar a *sin color* un insumo con 4 variantes costeadas y
+    existencias por color, o el base de natural a negro, recolorea costo y stock. Propuesta: quedan fijos
+    desde que tiene variantes o está en una versión, como la unidad.
 37. **Reemplazar o dar de baja un servicio.** Dar de baja *Soldadura* (en 25 paquetes) los deja
     incompletos al instante, sin reemplazo ni "como si siguiera activo"; *Reemplazar material* busca
     insumos. Propuesta: el mismo botón y la misma baja con reemplazo, para servicios.
-38. **Mover un insumo de subcategoría.** No dice quién. Cambia plata y oferta: la regla (Laminados 15 %
-    → Float 10 %), lo que entra por subcategoría (40 paquetes más, o líneas sin precio) y lo que ve cada
-    cliente. Propuesta: administración, con alcance; y mover un paquete (Modena → Herrero) también
-    muestra el suyo (% que cambia, clientes que dejan de verlo).
 39. **Dar de baja una categoría con cosas adentro.** ¿Y los 12 Float de *Vidrios → Float*, las opciones
     que la ofrecen, sus reglas, los clientes habilitados? Propuesta: no se da de baja con ítems activos;
     y *reactivar*, que categorías no tiene y colores sí.
@@ -659,52 +647,62 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
     reactivar, ¿vuelve también la variante que Laura había dado de baja aparte? ¿Y si es el color base
     de un insumo? Propuesta: la baja de la lista no toca variantes, solo deja de ofrecerse; no se da de
     baja un color que es base de un insumo activo.
-41. **Renombrar el paquete.** No está en Acciones ni en la versión. Propuesta: administración, como mover.
 42. **Aprobar lo que ya no se vende.** Los controles corren al mandar. Si entre mandar y aprobar se da de
     baja un insumo fijo de la v5, la vigente nueva nace incompleta y la Corrediza sale de venta aunque la
     v4 estaba bien. Propuesta: al aprobar, lo que la dejaría incompleta se marca en pendientes y no se
     aprueba.
-43. **La versión nueva que saca una alternativa.** *Lo que el catálogo deja de ofrecer* nombra bajas y
-    subcategorías, no la v5 que saca el Laminado: la línea sin enviar con Laminado, ¿sin precio o
-    default? Propuesta: sin precio, como las otras.
-44. **El trabajo especial.** "Pasa por el técnico", sin decir cómo: la corrediza económica de 2500 frena,
-    va como renglón libre y producción recibe una línea sin despiece. Propuesta: decidir si es un
-    paquete especial (¿subcategoría sin clientes?) o queda fuera, y decirlo.
 45. **Clientes fusionados o que no se ven.** Contactos fusiona dos empresas y no toca lo que apunta a la
     que se va: las habilitaciones quedan en la inactiva. Y las empresas son del equipo que las carga:
     Laura puede no ver la que tiene que habilitar. Propuesta: trigger del catálogo en la fusión (como
     Obras con las comisiones, `sql/146`) y la vista Clientes lista por función, no por la RLS de
     Contactos.
-
-*Para el SQL*
-
-46. **"Con condición no salva al paquete" no se calcula en general.** Saber si en alguna combinación una
-    opción queda sin nada es finito con colores y opciones, no con `ancho > 1500` sobre calculadas.
-    Propuesta: el incompleto estático mira solo condiciones sobre opciones y color; lo que depende de
-    medidas se resuelve por línea (*herraje hoja izq: nada que ofrecer*, sin precio).
-47. **Grafo de ciclos.** La lista de *Nada depende de sí mismo* es anterior a `espesor_<opción>` y a las
-    condiciones de alternativas y subcategorías (el espesor depende de la alternativa, que puede mirar el
-    peso, que incluye el vidrio). Sumarlas.
-48. **Eventos.** El estado del paquete vive en la versión, y el del *cambio de cálculo* del insumo (11),
-    en el cambio: el trigger genérico emitiría con el id de la versión o del cambio. Propuesta: trigger
-    propio en versiones con `paquete_id` y en cambios con `insumo_id` (como `tareas_emitir_asignado`).
-49. **Qué guarda "lo elegido".** Líneas, órdenes y casos cruzan versiones: nombre de variable u opción e
-    insumo. Renombrar en la v5 deja *Falta*; reemplazar el insumo lo pierde. Propuesta: definir la
-    clave, y que *Reemplazar material* lleve el par viejo → nuevo a lo elegido.
-
-*Menores*
-
-50. "ml" también se lee mililitro: la silicona cargada pensando en el cartucho de 300 ml cobra metros
-    de cordón como mililitros. La pantalla dice "m lineal".
+41. **Renombrar el paquete.** No está en Acciones ni en la versión. Propuesta: administración, como mover.
+38. **Mover un insumo de subcategoría.** No dice quién. Cambia plata y oferta: la regla (Laminados 15 %
+    → Float 10 %), lo que entra por subcategoría (40 paquetes más, o líneas sin precio) y lo que ve cada
+    cliente. Propuesta: administración, con alcance; y mover un paquete (Modena → Herrero) también
+    muestra el suyo (% que cambia, clientes que dejan de verlo).
 51. La cantidad de piezas por fórmula (travesaños intermedios = `alto / 1000`): ¿se redondea para
     arriba como lo que va por unidad?
 52. ¿Vale una excepción de 0 % (*este paquete sin comercialización*) con "un 0 se rechaza"? ¿El mínimo
     de un porcentual es obligatorio, o vacío es sin mínimo?
 53. Un material por piezas sin presentación no tiene aviso de barra: pedirla para cargar piezas.
+
+*Con Compras mínimo y la rama de plata*
+
+18. **Cotización pegada.** Si el automático cae, todo lo de US$ sale con la de hace semanas sin decirlo;
+    y "lo manual no lo pisa el automático" no dice hasta cuándo. Propuesta: lo manual vale para el día;
+    sin cotización del día hábil, aviso a administración, y pasados N días la línea queda sin precio.
+    Va con Compras.
+19. **IVA.** No aparece en ninguna decisión. Si Compras carga una cotización con IVA y otra sin, unos
+    insumos salen 21 % arriba. Propuesta: costo neto (al fichar Compras), precio del catálogo neto, el
+    IVA en Presupuestos.
+34. **Compras no se entera.** Lo que falta costear está en un filtro; si nadie lo abre, lo encuentra el
+    vendedor. Propuesta: al aprobarse una versión que trae algo sin costo, aviso a Compras (su rama, al
+    ficharlo).
+
+*Con las pantallas: no cambian tablas*
+
+29. **Lo que se avisa una vez.** Incompleto por una baja, *solo ofrece Sin herraje*, *Laminado 4+4: no
+    se ofrece en 12 paquetes* (solo si abre el insumo), el reemplazo sin mandar
+    (31), el borrador viejo (32): una campanita y después nada. Propuesta: filtro *a revisar* en
+    Paquetes e Insumos, calculado al leer, como el "a revisar" de las plantillas de Tareas. Sin tabla ni
+    trigger.
+31. **El reemplazo que nunca se manda.** Marcos reemplaza en 12 paquetes y manda 9. Las otras 3
+    vigentes siguen "como si el viejo siguiera activo", sin plazo: al último costo de algo que ya no se
+    compra, y producción solo tiene versiones aprobadas, que usan el viejo. Propuesta: marca *a revisar*
+    con antigüedad y aviso a administración a los N días.
+44. **El trabajo especial.** "Pasa por el técnico", sin decir cómo: la corrediza económica de 2500 frena,
+    va como renglón libre y producción recibe una línea sin despiece. Propuesta: decidir si es un
+    paquete especial (¿subcategoría sin clientes?) o queda fuera, y decirlo.
+35. **El cliente lee los mensajes del técnico.** Las restricciones se escriben pensando en el vendedor
+    (*usar reforzada, deja más margen*) y el cliente empresa las ve tal cual. Propuesta: el editor dice
+    "lo ven vendedor y cliente".
 54. Al cliente con precio, el motivo *falta costear Rueda doble* es interno: *lo cotiza tu vendedor*.
 55. `/catalogo/paquetes/{id}` abre la vigente: sin aprobada, la abierta.
 56. La calculada declarada unidad acepta cualquier fórmula: `fijaciones_jamba = alto` (sin `/ 600`)
     pasa y da 1100 grampas. Probar marca lo que va por unidad y da más de 100 por abertura.
+50. "ml" también se lee mililitro: la silicona cargada pensando en el cartucho de 300 ml cobra metros
+    de cordón como mililitros. La pantalla dice "m lineal".
 57. Color nuevo, categoría nueva, pedir una baja: el técnico lo pide "por fuera". Es un pedido de
     Tareas; decirlo.
 58. Para Presupuestos: la línea sin enviar cuyo precio cambió desde que se cargó (el cliente ya escuchó
