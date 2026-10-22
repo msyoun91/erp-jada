@@ -559,9 +559,8 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
     mayor que 0 (2026-10-21): en *El peso es del insumo y condiciona herrajes*.
 13. ~~**Desperdicio vacío.**~~ → obligatorio en el alta, 0 explícito vale, como el peso (2026-10-21):
     en *El desperdicio es un % del insumo*.
-14. **Servicio que trae un insumo, en otra unidad.** *Lleva X por unidad* multiplica la cantidad puesta
-    del insumo sin pedir que coincidan: el Float (m²) que trae *Sellado perimetral* (ml) cobra m² como
-    ml. Propuesta: el servicio que trae un insumo va en su misma unidad.
+14. ~~**Servicio que trae un insumo, en otra unidad.**~~ → solo de la misma unidad que el insumo
+    (2026-10-21): en *Un insumo puede traer sus servicios*.
 15. **El doble cobro avisado queda.** El alcance dice *en 3 ya está cargado a mano: se cobraría dos
     veces*, pero guardar no lo corrige. Propuesta: el mismo servicio por el insumo y a mano en un grupo
     es control de *mandar a aprobar* y marca *a revisar* (29).
@@ -1260,7 +1259,11 @@ Decidido en la v2:
   manija entra, entra el mecanizado, en su mismo grupo, y el despiece dice por qué (*Mecanizado de
   embutido — por Manija embutida (hoja izq)*). Si el vendedor elige otra manija, no entra. La
   cantidad es la puesta del insumo, sin desperdicio (5,98 ml de burlete → 5,98 ml de *Colocación de
-  burlete*). Solo servicios fijos: el % por insumo ya es la regla por categoría. Solo en paquetes: la
+  burlete*). Solo servicios fijos: el % por insumo ya es la regla por categoría. **Solo de la misma
+  unidad que el insumo** (2026-10-21): al cargarlo se eligen entre los de su unidad. El *Sellado
+  perimetral* (ml) no lo trae el *Float 4 mm* (m²), que cobraba 0,714 ml de un perímetro de 3,44: va
+  en cada paquete con su fórmula de perímetro. Descartado: un factor de ml por m² (el perímetro no es
+  proporcional a la superficie). Solo en paquetes: la
   manija vendida suelta no lo lleva. Sin excepción por paquete: si en una puerta viene mecanizada de
   fábrica, es otro insumo. El técnico no ve el monto. Como el insumo no se versiona, entra en las
   vigentes sin versión nueva; en uso, cuando lo aprueba administración (*Lo que cambia el cálculo de
