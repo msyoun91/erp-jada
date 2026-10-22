@@ -538,11 +538,9 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 7. ~~**Cambiar de unidad choca con el reemplazo "de la misma unidad".**~~ → el reemplazo acepta otra
    unidad (2026-10-21), en *La baja de un insumo puede designar su reemplazo* y en *"Reemplazar
    material" es un solo botón*.
-8. **El reemplazo de la baja lo decide administración con una herramienta del técnico.** La baja
-   (`catalogo_insumos_administrar`) abre *Reemplazar material* (`catalogo_paquetes_editar`) con los
-   paquetes marcados: Laura, sin `_editar`, elige qué paquetes lo reciben. Propuesta: la baja solo
-   designa el reemplazo y lo recibe toda versión que use el viejo; desmarcar es del técnico después. O:
-   la baja con reemplazo pide también `_editar`.
+8. ~~**El reemplazo de la baja lo decide administración con una herramienta del técnico.**~~ → lo
+   reciben todos los paquetes, sin desmarcar (2026-10-21), en *La baja de un insumo puede designar su
+   reemplazo*.
 9. **El catálogo sí depende de Compras.** "No apunta a ningún otro módulo" y "se puede construir antes
    que Compras", pero el precio, *probar con plata*, la marca *sin costo* en pendientes y los costos en
    Insumos leen el costo y la cotización, que son de Compras. Propuesta: el SQL del catálogo arranca con
@@ -1093,16 +1091,18 @@ Decidido en la v2:
   si en alguna combinación no queda nada que ofrecer, incompleto (sin Floats, con cámara el *Vidrio
   interior* no tiene qué ofrecer). Por qué: es lo que pasa con un material condicional dado de baja, y así un paquete no se
   vende con unas opciones sí y con otras no.
-- **La baja de un insumo puede designar su reemplazo, y corre "Reemplazar material"** (2026-10-21).
-  Opcional (sin reemplazo rige *La baja depende de cómo se usa*) y de cualquier unidad; lo elige
-  administración, que da la baja. ~~De la misma unidad~~ (2026-10-21): la felpa que pasa de ml a
-  unidad no tenía salida y sus 20 paquetes quedaban incompletos al instante; con otra unidad, el
-  control de unidad frena cada borrador hasta corregir la fórmula, y la ventana lo dice antes de
-  confirmar (*otra unidad: las 20 fórmulas se corrigen a mano antes de mandar*). Abre la ventana de *"Reemplazar material"* con los dos
-  cargados: los paquetes que lo usan, todos marcados; cada marcado recibe el reemplazo en su versión
-  abierta, con el qué cambió escrito (*reemplaza Hoja corrediza 40 mm por Hoja corrediza 42 mm
-  (baja)*), y el técnico revisa, corrige fórmulas y manda a aprobar; el desmarcado sigue *La baja
-  depende de cómo se usa*. **No se aprueba solo**: lo que hay que corregir no se ve en las diferencias
+- **La baja de un insumo puede designar su reemplazo, y lo reciben todos los paquetes que lo usan**
+  (2026-10-21). Opcional (sin reemplazo rige *La baja depende de cómo se usa*) y de cualquier unidad;
+  lo elige administración, que da la baja. Cada paquete lo recibe en su versión abierta, como con
+  *"Reemplazar material"*, con el qué cambió escrito (*reemplaza Hoja corrediza 40 mm por Hoja
+  corrediza 42 mm (baja)*); el técnico revisa, corrige fórmulas —o en ese paquete pone otro— y manda a
+  aprobar. Antes de confirmar se ve el alcance (*Hoja 40 → Hoja 42: 12 paquetes la reciben en su
+  borrador*; con otra unidad, *las 12 fórmulas se corrigen a mano antes de mandar*).
+  ~~De la misma unidad~~ (2026-10-21): la felpa que pasa de ml a unidad no tenía salida y sus 20
+  paquetes quedaban incompletos al instante; el control de unidad ya frena cada borrador hasta
+  corregir la fórmula. ~~Abre "Reemplazar material" con los paquetes a desmarcar~~ (2026-10-21):
+  Laura, sin `catalogo_paquetes_editar`, decidía qué paquete salía de venta; qué se compra es de
+  administración, cómo entra en cada paquete es del técnico. **No se aprueba solo**: lo que hay que corregir no se ve en las diferencias
   de los casos (HOJ-42 con 2 mm más de solape pide `+ 27` en `ancho_hoja_izq`; sin tocar la fórmula
   las piezas no cambian, y administración aprobaría hojas cortas). **Mientras la versión abierta tiene
   el reemplazo, la vigente se vende como si el viejo siguiera activo**, venga de la baja o de
@@ -1195,8 +1195,8 @@ Decidido en la v2:
   (*reemplaza Marco corrediza 70 mm por Marco 72 mm*) y se suma al que hubiera. Lo que el material
   nuevo obliga a cambiar en un paquete (una fórmula) se corrige en su borrador; después cada uno se
   manda a aprobar. El aviso de baja (*falta reemplazar: Marco corrediza 70 mm*) abre la misma ventana
-  con el material actual cargado; la baja con reemplazo, con los dos (*La baja de un insumo puede
-  designar su reemplazo*). Por qué: con una versión abierta por paquete, el reemplazo no puede
+  con el material actual cargado; la baja con reemplazo no la abre: lo pone en todos (*La baja de un
+  insumo puede designar su reemplazo*). Por qué: con una versión abierta por paquete, el reemplazo no puede
   crear otra. Descartado: saltear los que están para aprobar y avisar (queda a mano y, con la baja,
   el paquete queda incompleto).
 - **El producto nuevo se avisa al aprobarse la primera versión, no en el alta.** El alta ocurre cuando el
