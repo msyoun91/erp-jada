@@ -118,7 +118,9 @@ Delegables
 │        · catalogo_paquetes · catalogo_paquetes_editar
 └── no — catalogo_insumos_administrar · catalogo_servicios_administrar · catalogo_paquetes_administrar
          · catalogo_clientes · catalogo_clientes_habilitar
-Reglas entre permisos: ninguna. _editar y _administrar pueden coexistir en la misma persona.
+Reglas entre permisos (requiere): catalogo_insumos, catalogo_servicios y catalogo_paquetes, cada una
+las otras dos · catalogo_clientes → catalogo_paquetes. _editar y _administrar pueden coexistir en la
+misma persona.
 Permisos de otros módulos que mira el catálogo (cada uno entra con su módulo): Presupuestos y
 erp-cliente → precio de la vigente · Producción → despiece de las aprobadas · Stock y Compras →
 leer el insumo.
@@ -191,9 +193,21 @@ leer el insumo.
 - **`_editar` y `_administrar` pueden coexistir**: en una empresa chica la misma persona es técnico y
   administración. Descartado: excluirlas para que nadie apruebe su propio paquete (obliga a dos personas).
 - **Se delegan las vistas y lo del técnico; lo de administración, no** (2026-10-21). El jefe técnico
-  le da a uno nuevo *Paquetes* + `catalogo_paquetes_editar` sin pasar por el admin: arma borradores
-  y manda a aprobar. Los `_administrar` (aprobar, poner a la venta, costos, montos y %) y *Clientes*
-  entera los asigna el admin: la vista sola ya dice qué empresa ve precio. Como en Contactos y Obras.
+  le da a uno nuevo las tres vistas + `catalogo_paquetes_editar` sin pasar por el admin: arma
+  borradores y manda a aprobar. Los `_administrar` (aprobar, poner a la venta, costos, montos y %) y
+  *Clientes* entera los asigna el admin: la vista sola ya dice qué empresa ve precio. Como en Contactos
+  y Obras.
+- **Las tres vistas van juntas: Insumos, Servicios y Paquetes se requieren entre sí, y Clientes
+  requiere Paquetes** (2026-10-22). Seis filas `requiere` en `submodulo_reglas` y una más; cada tabla
+  la sigue leyendo su vista. Cada pantalla muestra filas de las otras dos: Paquetes arma con insumos y
+  servicios; Insumos dice en qué paquetes está cada uno y qué servicios trae; Servicios pone reglas por
+  categoría de paquete y de insumo y excepciones por paquete; Clientes habilita categorías de los dos.
+  Nadie usa una sin las otras, y sin `_administrar` ninguna muestra plata. Como `tareas_mision` →
+  `tareas_ver`. Por qué: el nuevo con *Paquetes* + `catalogo_paquetes_editar` abría el borrador de la
+  Corrediza 2 hojas, iba a sumar *Felpa 7×5* y el buscador de insumos salía vacío. Descartado: leer
+  con cualquier vista del catálogo (quitar Insumos no quitaría leer insumos, y la policy de cada tabla
+  listaría tres vistas, cinco con Stock y Compras) y reglas finas por función (siete u ocho filas para
+  separar pantallas que nadie usa por separado).
 
 ## Entes
 
