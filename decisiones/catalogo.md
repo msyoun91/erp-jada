@@ -137,6 +137,13 @@ final** (Presupuestos: es donde se cargan las medidas).
   = 4,4 → 5 tornillos. Por abertura y antes del desperdicio (5 con 5 % se cobran 5,25; el despiece dice
   5). ml y m² quedan con decimales. Lo que se usa en fracción va en otra unidad (silicona en ml, no
   ½ cartucho).
+- **La cantidad de piezas lleva el redondeo escrito en la fórmula** (2026-10-22): tiene que dar
+  entero por construcción (un número entero, un redondeo, o sumas, restas y productos de eso, directo
+  o por una calculada); si no, no se manda a aprobar. Travesaños intermedios: `redondear.mas(alto /
+  1000; 0) − 1` da 0, 1, 1 y 2 con 900, 1100, 2000 y 2100 de alto. Por qué: `alto / 1000` da 1,1
+  barras, y ninguna dirección automática acierta (para arriba sobra una en los cuatro; para abajo
+  falla en 2000), mientras que en tornillos lo correcto es para arriba. Lo decide el técnico, que
+  sabe cómo se arma. Descartado: redondear solo, como lo que va por unidad.
 - **El largo de cada pieza y cada lado de un paño se redondean al mm, hacia abajo** (2026-10-14), y
   con ese número sale todo: despiece, ml cobrados, peso y el aviso de barra. El vidrio cobra y pesa
   por su variable de superficie, sin redondear; se redondean sus medidas del despiece (*El vidrio
@@ -695,11 +702,11 @@ referencias entre puntos.
     (2026-10-22): en *El nombre del paquete lo corrige el técnico*.
 38. ~~**Mover un insumo de subcategoría.**~~ → el técnico sin uso o hasta la primera aprobada; después
     administración con alcance (2026-10-22): en *La subcategoría la elige el técnico al crear*.
+51. ~~Cantidad de piezas por fórmula.~~ → el redondeo va escrito; si no da entero, no se manda
+    (2026-10-22): en *La cantidad de piezas lleva el redondeo escrito en la fórmula*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-51. La cantidad de piezas por fórmula (travesaños intermedios = `alto / 1000`): ¿se redondea para
-    arriba como lo que va por unidad?
 52. ¿Vale una excepción de 0 % (*este paquete sin comercialización*) con "un 0 se rechaza"? ¿El mínimo
     de un porcentual es obligatorio, o vacío es sin mínimo?
 53. Un material por piezas sin presentación no tiene aviso de barra: pedirla para cargar piezas.
@@ -1289,7 +1296,8 @@ Decidido en la v2:
   El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles (fórmula
   mal escrita, ciclo, secundaria sin default, medida principal con default, unidad que no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
   una alternativa, servicio a mano que ya trae un insumo del grupo, medida del vendedor sin mínimo o
-  máximo, material por m² sin ancho o alto, par entre tres o más hermanas): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
+  máximo, material por m² sin ancho o alto, par entre tres o más hermanas, cantidad de piezas que no
+  da entero): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
   aprobar, la versión pasa a ser la vigente y la ve el vendedor. Un presupuesto sin enviar sigue a la
   vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4 · agrega
   burlete inferior en la hoja*); al enviar, se congela. Por qué: con aprobación, mandar no puede
