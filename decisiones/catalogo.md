@@ -478,6 +478,14 @@ costo y en uso" con los paquetes donde está. Por qué: con $ 0 la corrediza de 
 sin la rueda doble y el precio parecía normal. Descartado: no ofrecer lo que no tiene costo (el
 vendedor no sabe por qué falta) y avisar cobrando $ 0.
 
+**El 0 se rechaza donde vacío es "falta"; en reglas y excepciones vale, y el mínimo vacío es sin
+mínimo** (2026-10-22). Se rechaza en el costo del insumo, el monto de un servicio fijo y el % propio
+de un porcentual cargado en un paquete. Una regla o excepción nunca falta (sin ella rige la de
+arriba), así que su 0 es a propósito: *Corrediza económica: Comercialización 0 %*, *Vidrios → Float
+0 %*. El mínimo de un porcentual es opcional: es un piso, no parte del precio; vacío es sin mínimo y
+el 0 no se acepta (una sola forma de decirlo). Por qué: el 0 % de la económica tenía que cargarse
+como 0,01 %, y un mínimo leído como "falta" dejaba sin precio toda línea con Comercialización.
+
 Cotización: oficial BNA venta de USD y EUR, automática con corrección manual (como `erp_old`: dolarapi,
 ventana 10–15 h, cierre del día, lo manual no lo pisa el automático ese día; `erp_old_2`: monedapi.ar).
 
@@ -704,11 +712,11 @@ referencias entre puntos.
     administración con alcance (2026-10-22): en *La subcategoría la elige el técnico al crear*.
 51. ~~Cantidad de piezas por fórmula.~~ → el redondeo va escrito; si no da entero, no se manda
     (2026-10-22): en *La cantidad de piezas lleva el redondeo escrito en la fórmula*.
+52. ~~0 % y mínimo de un porcentual.~~ → el 0 vale en reglas y excepciones; mínimo opcional, vacío es
+    sin mínimo (2026-10-22): en *Precio de venta* → *El 0 se rechaza donde vacío es "falta"*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-52. ¿Vale una excepción de 0 % (*este paquete sin comercialización*) con "un 0 se rechaza"? ¿El mínimo
-    de un porcentual es obligatorio, o vacío es sin mínimo?
 53. Un material por piezas sin presentación no tiene aviso de barra: pedirla para cargar piezas.
 
 *Con Compras mínimo y la rama de plata*
