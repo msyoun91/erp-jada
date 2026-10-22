@@ -563,10 +563,8 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
     (2026-10-21): en *Un insumo puede traer sus servicios*.
 15. ~~**El doble cobro avisado queda.**~~ → se cobra una vez, el del insumo, y *mandar a aprobar* frena
     hasta sacar el manual (2026-10-21): en *Un insumo puede traer sus servicios*.
-16. **Unidad y tipo de un servicio en uso.** Solo la unidad del insumo queda fija. *Colocación de
-    burlete* de ml a unidad cobra 5.980 colocaciones; un fijo pasado a porcentual deja su cantidad sin
-    sentido, y un porcentual pasado a fijo, sus reglas. Propuesta: unidad y fijo/porcentual quedan fijos
-    desde que está en una versión o una regla; otra cosa es un servicio nuevo.
+16. ~~**Unidad y tipo de un servicio en uso.**~~ → fijos desde que está en una versión, en una regla o
+    lo trae un insumo (2026-10-21): en *El servicio se edita directo*.
 17. **Montos fijos y mínimos que envejecen.** El costo lo pone al día Compras y el % lo acompaña;
     *Soldadura $ 1.500* y el mínimo de $ 5.000 quedan como Laura los cargó en marzo. Propuesta:
     Servicios muestra cuándo cambió cada monto (*hace 7 meses*) y un aumento masivo de montos y mínimos
@@ -1037,8 +1035,15 @@ Decidido en la v2:
   en vez de 6 lo dejaba a un décimo sin que el técnico lo pudiera ver. Descartado: que rija al
   instante mostrando el alcance y avisando a administración (entre guardar y leer el aviso se envían
   presupuestos con el error) y topes fijos (arbitrarios por material).
-- **El servicio se edita directo, como el insumo.** No está en el despiece: corregirlo cambia precios, no
-  órdenes.
+- **El servicio se edita directo.** No está en el despiece: corregirlo cambia precios, no
+  órdenes. **Unidad y tipo (fijo o porcentual) quedan fijos desde que está en una versión, borradores
+  incluidos, en una regla o lo trae un insumo** (2026-10-21), como la unidad del insumo: antes se
+  corrigen libres, y después el campo dice por qué (*Colocación de burlete: en 20 paquetes · para otra
+  unidad, servicio nuevo*). Otra unidad u otro tipo es un servicio nuevo y la baja del viejo. Por qué:
+  *Colocación de burlete* de ml a unidad cobraba 5.980 colocaciones en 20 vigentes; un fijo pasado a
+  porcentual dejaba su cantidad sin sentido, y un porcentual pasado a fijo, sus reglas. Con los dos
+  fijos al técnico le queda el nombre, así que el servicio no necesita el freno del insumo (*Lo que
+  cambia el cálculo de un insumo en uso espera a administración*).
 - **Los cambios de plata de administración rigen al instante, sin aprobación**: montos, %, mínimos,
   suelto y cómo se vende. El catálogo calcula siempre con los valores de hoy; cuándo se
   congela el precio de un presupuesto lo decide Presupuestos. Cada cambio queda registrado (quién,
