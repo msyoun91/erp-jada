@@ -565,10 +565,8 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
     hasta sacar el manual (2026-10-21): en *Un insumo puede traer sus servicios*.
 16. ~~**Unidad y tipo de un servicio en uso.**~~ → fijos desde que está en una versión, en una regla o
     lo trae un insumo (2026-10-21): en *El servicio se edita directo*.
-17. **Montos fijos y mínimos que envejecen.** El costo lo pone al día Compras y el % lo acompaña;
-    *Soldadura $ 1.500* y el mínimo de $ 5.000 quedan como Laura los cargó en marzo. Propuesta:
-    Servicios muestra cuándo cambió cada monto (*hace 7 meses*) y un aumento masivo de montos y mínimos
-    en %, como el de Compras sobre costos.
+17. ~~**Montos fijos y mínimos que envejecen.**~~ → antigüedad a la vista y aumento masivo en %
+    (2026-10-21): en *Servicios muestra hace cuánto cambió cada monto y mínimo*.
 18. **Cotización pegada.** Si el automático cae, todo lo de US$ sale con la de hace semanas sin decirlo;
     y "lo manual no lo pisa el automático" no dice hasta cuándo. Propuesta: lo manual vale para el día;
     sin cotización del día hábil, aviso a administración, y pasados N días la línea queda sin precio.
@@ -857,7 +855,8 @@ Acciones
 │           · dar de baja o reactivar una variante (administración)
 │           · en uso, cambio de cálculo (desperdicio, peso, contenido, espesor, servicios que lleva):
 │             proponer · retirar · aprobar · rechazar con motivo (administración)
-├── servicio: crear · editar · poner monto, % y mínimo · dar de baja · reactivar
+├── servicio: crear · editar · poner monto, % y mínimo · aumentar montos y mínimos en % (por
+│             categoría o marcados, con motivo) · dar de baja · reactivar
 │             · regla (solo porcentuales): aplicar a todo, o a una categoría o subcategoría de
 │               paquetes o de insumos, con su % · cambiar el % · quitarla
 │             · excepción: otro % para un paquete · quitarla
@@ -892,7 +891,7 @@ Módulo: Catálogo
 ├── Servicios (vista, catalogo_servicios)        — técnico, administración
 │   ├── catalogo_servicios_editar (funcion)      — técnico: crear y editar
 │   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo (y el filtro sin
-│                                                  monto), reglas y excepciones por paquete,
+│                                                  monto y el aumento en %), reglas y excepciones por paquete,
 │                                                  categorías fuera del % de los servicios del paquete,
 │                                                  categorías, baja y reactivar
 ├── Paquetes (vista, catalogo_paquetes)          — técnico, administración
@@ -1048,6 +1047,15 @@ Decidido en la v2:
   suelto y cómo se vende. El catálogo calcula siempre con los valores de hoy; cuándo se
   congela el precio de un presupuesto lo decide Presupuestos. Cada cambio queda registrado (quién,
   cuándo, valor anterior y nuevo).
+- **Servicios muestra hace cuánto cambió cada monto y mínimo, y administración los aumenta en masa**
+  (2026-10-21). *Soldadura $ 1.500 · hace 7 meses*, ordenable; sale del registro de cambios. El
+  aumento es en %, por categoría o subcategoría de servicios o marcando servicios, con motivo; antes
+  de confirmar se ve cada monto antes → después. Toca montos fijos y mínimos, no el % de los
+  porcentuales, que ya sigue al costo. Es el aumento de Compras sobre costos (`BACKLOG.md` →
+  Compras). Por qué: Compras pone al día el costo y el % lo acompaña, pero los montos y mínimos
+  cargados en marzo seguían igual en octubre sin que la pantalla lo dijera. Descartado: montos en
+  US$ (el dólar no sigue a la mano de obra) e indexados (un sistema genérico para un aumento cada
+  tanto).
 - **El suelto se vende por presentación o por unidad del insumo; lo elige administración**
   (2026-10-21). Al marcar un insumo como suelto elige una de las dos, obligatoria y sin default:
   *Marco corrediza 70 mm* por presentación (2 barras = 12 ml × costo); *Float 4 mm* por unidad del
