@@ -675,13 +675,11 @@ referencias entre puntos.
     (2026-10-22): en *Las opciones hermanas arrancan juntas* → *Los pares van solo entre dos hermanas*.
 25. ~~**"Duplicar grupo" no copia la hermandad.**~~ → la copia entra como hermana de la original, y las
     mismas alternativas sin hermanar avisan (2026-10-22): en *"Duplicar grupo" pide qué reemplazar*.
+23. ~~**Hermanas juntas que no van iguales.**~~ → plegado separado con el motivo y aviso en la línea
+    (2026-10-22): en *Las opciones hermanas arrancan juntas* → *Si el par no se ofrece en la hermana*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-23. **Hermanas juntas que no van iguales.** Juntas en *Laminado 5+5*; una condición no lo ofrece en la
-    hoja der, que toma el default por *Lo elegido se guarda*, y el plegado sigue diciendo *vidrio:
-    Laminado 5+5*. Propuesta: aviso en la línea y plegado separado (*hoja der: Float 4 — Laminado 5+5 no
-    va en esta hoja*).
 30. **Sin herraje en silencio.** Con todas las manijas de baja la opción ofrece solo *Sin herraje*, y
     "una opción que solo ofrece Sin material no se muestra": las corredizas se venden sin manija y el
     plegado no lo dice. Propuesta: lo que queda en Sin material por condición (vidrio interior sin
@@ -1602,7 +1600,11 @@ Decidido en la v2:
   - **Los defaults son par uno del otro** (*Embutida* a la izq, *Manija* a la der); si no, o si las
     alternativas difieren, no se manda a aprobar.
   - **Si el par no se ofrece en la hermana** (lo saca una condición o el color), entra
-    lo que dice *Lo elegido se guarda*.
+    lo que dice *Lo elegido se guarda*. **Y se ve** (2026-10-22): el plegado las separa con el motivo
+    (*vidrio: hoja izq Laminado 5+5 · hoja der Float 4 (Laminado 5+5 no va en esta hoja)*) y la línea
+    lleva un aviso; el selector sigue junto y lo elegido no cambia. Por qué: con la der en 950 y el
+    laminado hasta 900, el plegado decía *vidrio: Laminado 5+5* y una hoja iba con float común.
+    Descartado: la línea sin precio hasta separarlas (el sistema sabe armarla).
 
   Por qué: como antes con los paños, todas arrancan iguales y se cambia la que difiere; con un
   selector por hoja y un botón para copiar, olvidar el botón cotizaba una hoja en DVH y otra simple,
