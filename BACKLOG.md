@@ -27,8 +27,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (2026-10-21): `decisiones/catalogo/ficha.md`. *Auditoría v2*: resuelto todo lo que cambia tablas
   (2026-10-22). Pasado a carpeta por tema el 2026-10-22 (`decisiones/catalogo/README.md`; backup en
   `obsoletos/backup-docs-2026-10-22/`). Siguiente: los choques entre v1 y v2
-  (`decisiones/catalogo/pendiente.md` → *Choques*), de a uno con el usuario; resueltos el 1 y el 2,
-  sigue el 3, "el máximo de la medida y la restricción que frena". Después, el SQL sin plata. Lo de
+  (`decisiones/catalogo/pendiente.md` → *Choques*), de a uno con el usuario; resueltos del 1 al 3,
+  sigue el 4, "`servicios.comercial` sin regla que lo use". Después, el SQL sin plata. Lo de
   Compras mínimo (19, 34) y lo de pantallas (29, 31, 44, 35, 50, 54–58) sigue en `pendiente.md` → *Auditoría v2*, para su fase. Producción y erp-cliente,
   al fichar, suman su rama a la función de cálculo del catálogo (`decisiones/catalogo/calculo.md` →
   *La función de cálculo decide qué parte ve cada uno*).

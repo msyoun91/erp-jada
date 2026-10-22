@@ -16,10 +16,15 @@ color, en `colores.md`.
   secundaria, de cualquier unidad; se cargan como las casillas (`motor.md` → *El valor de la casilla
   se carga en la unidad en que se piensa*) y sin ellos no se manda a aprobar. Fuera de rango la línea
   queda sin precio con el error típico a la vista (*ancho entre 600 y 3000 mm — cargaste 150: ¿en
-  cm?*). Las restricciones quedan para avisos y combinaciones (ancho × alto); un "no aguanta más de
-  2400" es el máximo del ancho (⚠ choque 3, `pendiente.md`). Por qué: 150 × 110 en cm en una corrediza
-  sin restricciones da vidrio positivo y cotizaba una ventana de 15 cm; 15000 cotizaba millones, y el
-  cliente empresa no lo nota. Descartado: el rango como restricción optativa (lo que hoy nadie carga).
+  cm?*). Un "no aguanta más de 2400" es el máximo del ancho, no una restricción (`motor.md` → *Cada
+  restricción del técnico avisa o frena*). **Cada tope puede llevar un mensaje del técnico, que se
+  suma al típico** (2026-10-22), uno el mínimo y otro el máximo: *ancho entre 600 y 2400 mm —
+  cargaste 2500 · más de 2400 el perfil no aguanta, usar reforzada*. Por qué: 150 × 110 en cm en una
+  corrediza sin restricciones da vidrio positivo y cotizaba una ventana de 15 cm; 15000 cotizaba
+  millones, y el cliente empresa no lo nota. El mensaje, porque como máximo se perdía el *usar
+  reforzada* que el técnico escribía para el vendedor; uno por tope, porque uno por rango salía
+  también con 400. Descartado: el rango como restricción optativa (lo que hoy nadie carga) y el tope
+  que frena como restricción aparte (dos topes sobre el ancho, 3000 y 2400, y el 3000 no hace nada).
 - **Una medida del vendedor puede traer un valor por defecto por fórmula** (2026-10-14), para hojas
   asimétricas: `ancho_hoja_izq` propone `ancho / 2 + 25 - desc_herraje_izq` y el vendedor la pisa
   solo si hace falta; `ancho_hoja_der` es calculada (`ancho - ancho_hoja_izq + 50 - desc_herraje_izq -

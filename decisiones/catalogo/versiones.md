@@ -108,17 +108,17 @@ que una baja hace con las versiones, en `bajas.md`; los eventos de estado, en `f
 
 ## Qué cambió
 
-- **Cuenta como cambio todo lo que está en la versión** (2026-10-21): variables (medidas del vendedor,
-  calculadas, opciones con sus alternativas en orden), grupos, materiales (cantidad o fórmula, condición,
-  piezas con largo y ángulos, si suma al peso), servicios con su cantidad y restricciones. Se muestra
-  por pestaña, solo lo que cambió, con antes → después (*Restricciones: ancho máx. 2400 mm · frena →
-  avisa*, ⚠ choque 3). No entra lo que no es de la versión: nombre y subcategoría del paquete, casos
+- **Cuenta como cambio todo lo que está en la versión** (2026-10-21): variables (medidas del vendedor
+  con sus topes y mensajes, calculadas, opciones con sus alternativas en orden), grupos, materiales
+  (cantidad o fórmula, condición, piezas con largo y ángulos, si suma al peso), servicios con su
+  cantidad y restricciones. Se muestra por pestaña, solo lo que cambió, con antes → después (*Medidas:
+  ancho máx. 2400 → 3000 mm*). No entra lo que no es de la versión: nombre y subcategoría del paquete, casos
   de prueba, reglas y excepciones de servicios, datos del insumo, plata. Es una sola comparación para
   el historial y para pendientes, y sin plata: técnico y administración ven lo mismo. Por qué: la v5
-  de la Corrediza económica decía *baja el umbral de rueda doble a 35 kg* y en el mismo borrador la
-  restricción de ancho pasó a avisar; con solo insumos y fórmulas se aprobaba sin verla y se vendía lo
-  que la línea no soporta. Descartado: solo lo que cambia el resultado de los casos (frena → avisa no
-  cambia un caso dentro del límite). **El orden de las alternativas cuenta** (2026-10-22): sin default,
+  de la Corrediza económica decía *baja el umbral de rueda doble a 35 kg* y en el mismo borrador el
+  máximo del ancho pasó de 2400 a 3000; con solo insumos y fórmulas se aprobaba sin verlo y se vendía
+  lo que la línea no soporta. Descartado: solo lo que cambia el resultado de los casos (subir el
+  máximo no cambia un caso dentro del límite). **El orden de las alternativas cuenta** (2026-10-22): sin default,
   o con un default que no se ofrece, entra la primera que se ofrezca (`opciones.md` → *Lo elegido se
   guarda*). Push subido arriba en la v5 hacía arrancar en Push las líneas nuevas de *herraje hoja
   izq* sin que nadie lo marcara; el comparador lo muestra (*Manija, Cerradura, Push → Push, Manija,

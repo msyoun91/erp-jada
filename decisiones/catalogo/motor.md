@@ -11,8 +11,8 @@ coeficiente**. El técnico pone *cuánto* (soldadura × 4, perfil = 2×ancho + 2
 Compras ponen *cuánto vale*; el sistema multiplica. Es el motor paramétrico del ERP viejo, recortado
 (2026-10-14): variables que carga el vendedor y calculadas, grupos (con opcionales, ej: mosquitero),
 materiales con cantidad fija o calculada, **servicios con cantidad** (nuevo: la spec vieja no los
-tenía), peso, versiones, **restricciones** (mín./máx. de una variable con su mensaje: avisan o frenan, *Lo
-imposible deja la línea sin precio*; ⚠ choque 3, `pendiente.md`), **corte** por pieza (ángulo: 90°, 45°; no cambia el precio,
+tenía), peso, versiones, **restricciones** (condición con su mensaje: avisan o frenan, *Cada
+restricción del técnico avisa o frena*), **corte** por pieza (ángulo: 90°, 45°; no cambia el precio,
 es para el despiece de producción — se carga desde ya aunque Producción no exista) y **colores** (el
 vendedor elige el color y cada insumo se cambia solo por su equivalente: `colores.md`). Lo que quedó
 afuera del ERP viejo (reglas generales, simulador, grafo): `calculo.md` → *El motor va en Postgres*.
@@ -189,11 +189,17 @@ paquete, cada servicio va en un grupo*).
   además de la medida fuera de rango (`opciones.md` → *Toda medida del vendedor lleva mínimo y
   máximo*); el mensaje dice qué falla y, si viene de una medida pisada, ofrece volver al automático
   (*hoja der mide −56 mm: hoja izq pisada en 900*). **Cada restricción del técnico avisa o frena**
-  (por defecto avisa): frena lo que no se fabrica (*Corrediza económica: más de 2400 de ancho el
-  perfil no aguanta, usar reforzada*), avisa lo que se fabrica pero no conviene (⚠ choque 3,
-  `pendiente.md`). Por qué: el ancho cargado en cm (150) daba un vidrio de medida negativa que restaba
-  m², y un aviso no impedía vender lo que la línea no soporta. El trabajo especial fuera de línea
-  pasa por el técnico (`pendiente.md` → 44).
+  (por defecto avisa): frena lo que no se fabrica (*`superficie_hoja` > 2 m²: la hoja no aguanta*),
+  avisa lo que se fabrica pero no conviene (*`alto` > 1800: conviene reforzada*). **La restricción es
+  una condición con su mensaje** (2026-10-22): se carga en casillas como la de un material
+  (*Condiciones*) y, si tiene varias, vale cuando se cumplen todas. Sirve para combinaciones (varias
+  casillas, o una calculada como `superficie_hoja`), calculadas y avisos; el tope que frena sobre una
+  sola medida del vendedor es su máximo o su mínimo, con su mensaje (`opciones.md` → *Toda medida del
+  vendedor lleva mínimo y máximo*). El sistema no lo controla: queda como regla. Por qué: el ancho
+  cargado en cm (150) daba un vidrio de medida negativa que restaba m², y un aviso no impedía vender
+  lo que la línea no soporta. La condición, porque como mín./máx. de una variable la restricción ponía
+  un segundo tope sobre la medida que ya tiene el suyo. El trabajo especial fuera de línea pasa por el
+  técnico (`pendiente.md` → 44).
 - **El aviso es parte del resultado de la línea** (2026-10-14), con el precio, el despiece y por qué
   entró cada material (cada persona ve su parte: `calculo.md` → *Precio y despiece se habilitan por
   separado*): no algo que se ve una vez al cargar. Presupuestos lo deja marcado en la línea y lo lista

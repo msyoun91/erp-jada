@@ -9,21 +9,10 @@ Resueltos (el texto del choque, en git): **1. Secundaria sin default** (2026-10-
 la primera y solo frena la medida: `opciones.md` → *Una medida secundaria lleva default; una
 principal, no*; el orden de las alternativas, en `versiones.md` → *Cuenta como cambio*. **2. Mínimo
 de un porcentual por regla** (2026-10-22) → por regla no hay mínimo: `servicios.md` → *Servicios por
-categoría*.
+categoría*. **3. El máximo de la medida y la restricción que frena** (2026-10-22) → cada tope lleva
+su mensaje y la restricción es una condición: `opciones.md` → *Toda medida del vendedor lleva mínimo
+y máximo*; `motor.md` → *Cada restricción del técnico avisa o frena*.
 
-3. **El máximo de la medida y la restricción que frena.** *Toda medida del vendedor lleva mínimo y
-   máximo* (`opciones.md`, 2026-10-22) dice: "las restricciones quedan para avisos y combinaciones;
-   un 'no aguanta más de 2400' es el máximo del ancho". Fuera de rango, el mensaje es el típico
-   (*ancho entre 600 y 3000 mm — cargaste 150: ¿en cm?*). Pero la v1 define la restricción como
-   "mín./máx. de una variable con su mensaje" (`motor.md` → *Qué es un paquete*), y *Lo imposible
-   deja la línea sin precio* (`motor.md`) da como ejemplo de restricción que frena *Corrediza económica: más de 2400
-   de ancho el perfil no aguanta, usar reforzada*. Y *Cuenta como cambio* (`versiones.md`) usa
-   *Restricciones: ancho máx. 2400 mm · frena → avisa*. Caso: como máximo del ancho, la Corrediza
-   económica de 2500 dice *ancho entre 600 y 2400 mm*, y se pierde el *usar reforzada* que el técnico
-   escribió para el vendedor. Propuesta: el máximo y el mínimo pueden llevar un mensaje del técnico,
-   que se suma al típico (*ancho entre 600 y 2400 mm · más de 2400 el perfil no aguanta, usar
-   reforzada*). Los dos ejemplos pasan a una combinación (*ancho × alto > 4 m²: la hoja no aguanta*) y
-   al máximo (*Medidas: ancho máx. 2400 → 3000 mm*).
 4. **`servicios.comercial` sin regla que lo use.** *El motor va en Postgres* (`calculo.md`) lista lo
    que guarda `servicios`: nombre, unidad, fijo/porcentual y *comercial*. La v1 separa los comerciales
    (comercialización, manipulación) de los demás servicios. Desde *No hay margen* y *Servicios por
