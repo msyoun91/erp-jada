@@ -561,9 +561,8 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
     en *El desperdicio es un % del insumo*.
 14. ~~**Servicio que trae un insumo, en otra unidad.**~~ → solo de la misma unidad que el insumo
     (2026-10-21): en *Un insumo puede traer sus servicios*.
-15. **El doble cobro avisado queda.** El alcance dice *en 3 ya está cargado a mano: se cobraría dos
-    veces*, pero guardar no lo corrige. Propuesta: el mismo servicio por el insumo y a mano en un grupo
-    es control de *mandar a aprobar* y marca *a revisar* (29).
+15. ~~**El doble cobro avisado queda.**~~ → se cobra una vez, el del insumo, y *mandar a aprobar* frena
+    hasta sacar el manual (2026-10-21): en *Un insumo puede traer sus servicios*.
 16. **Unidad y tipo de un servicio en uso.** Solo la unidad del insumo queda fija. *Colocación de
     burlete* de ml a unidad cobra 5.980 colocaciones; un fijo pasado a porcentual deja su cantidad sin
     sentido, y un porcentual pasado a fijo, sus reglas. Propuesta: unidad y fijo/porcentual quedan fijos
@@ -618,7 +617,7 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 *Depende de que alguien se acuerde*
 
 29. **Lo que se avisa una vez.** Incompleto por una baja, *solo ofrece Sin herraje*, *Laminado 4+4: no
-    se ofrece en 12 paquetes* (solo si abre el insumo), el doble cobro (15), el reemplazo sin mandar
+    se ofrece en 12 paquetes* (solo si abre el insumo), el reemplazo sin mandar
     (31), el borrador viejo (32): una campanita y después nada. Propuesta: filtro *a revisar* en
     Paquetes e Insumos, calculado al leer, como el "a revisar" de las plantillas de Tareas. Sin tabla ni
     trigger.
@@ -1143,7 +1142,7 @@ Decidido en la v2:
 - **Mandar a aprobar frena; aprobar pone a la venta** (2026-10-21). Reemplaza a "Publicar" de la v1.
   El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles (fórmula
   mal escrita, ciclo, secundaria sin default, medida principal con default, unidad que no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
-  una alternativa): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
+  una alternativa, servicio a mano que ya trae un insumo del grupo): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
   aprobar, la versión pasa a ser la vigente y la ve el vendedor. Un presupuesto sin enviar sigue a la
   vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4 · agrega
   burlete inferior en la hoja*); al enviar, se congela. Por qué: con aprobación, mandar no puede
@@ -1268,7 +1267,14 @@ Decidido en la v2:
   fábrica, es otro insumo. El técnico no ve el monto. Como el insumo no se versiona, entra en las
   vigentes sin versión nueva; en uso, cuando lo aprueba administración (*Lo que cambia el cálculo de
   un insumo en uso espera a administración*). Antes de proponerlo se ve el alcance (*Manija embutida:
-  suma Mecanizado de embutido en 15 paquetes · en 3 ya está cargado a mano: se cobraría dos veces*).
+  suma Mecanizado de embutido en 15 paquetes · en 3 ya está cargado a mano: se cobra una vez, el de la
+  manija*). **Si el mismo servicio entra en un grupo por un insumo y a mano, se cobra una vez: el del
+  insumo** (2026-10-21). El despiece lo dice (*Mecanizado de embutido (a mano): no se cobra, lo trae
+  Manija embutida (hoja izq)*) y *mandar a aprobar* frena hasta sacar el manual. Por qué: aprobado el
+  cambio, las 3 vigentes cobraban dos mecanizados hasta aprobarse una versión nueva de cada una.
+  Contra aceptada: un manual que era por otra cosa (la cerradura embutida de la misma hoja) deja de
+  cobrarse; se ve en el alcance y en el precio antes → después, y lo correcto es que la cerradura
+  traiga el suyo.
   Por qué: "la manija lleva mecanizado" es un dato de la manija; con `embutido_izq` y la condición se
   cargaba en cada hoja de cada paquete, y el olvido en uno lo vendía sin mecanizar con un precio que
   parecía normal. Descartado: que entre solo en versiones nuevas (cada versión guardaría qué servicios
