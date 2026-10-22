@@ -664,12 +664,11 @@ referencias entre puntos.
     frena (2026-10-22): en *Toda medida del vendedor lleva mínimo y máximo*.
 22. ~~**Vidrio sin medidas.**~~ → ancho y alto obligatorios en todo material por m² para mandar a
     aprobar (2026-10-22): en *El vidrio cobra por una variable de superficie y lleva sus medidas*.
+24. ~~**Pares con tres hojas.**~~ → solo entre dos hermanas; con más, cada una par de sí misma
+    (2026-10-22): en *Las opciones hermanas arrancan juntas* → *Los pares van solo entre dos hermanas*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-24. **Pares con tres hojas.** "Embutida en cualquier hoja pone Manija en la otra" supone dos. En la
-    Corrediza 3 hojas, ¿Manija en la izq pone Embutida en la central y en la der? Propuesta: pares solo
-    entre dos hermanas; con más, cada una par de sí misma.
 25. **"Duplicar grupo" no copia la hermandad.** `hoja_izq` → `hoja_cen` deja *Vidrio hoja cen* suelto:
     DVH una vez pone las dos de afuera y la central sale Float 4, más barata. Propuesta: la copia entra
     como hermana de la original, y un control avisa opciones con las mismas alternativas en distintos
@@ -1247,7 +1246,7 @@ Decidido en la v2:
   El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles (fórmula
   mal escrita, ciclo, secundaria sin default, medida principal con default, unidad que no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
   una alternativa, servicio a mano que ya trae un insumo del grupo, medida del vendedor sin mínimo o
-  máximo, material por m² sin ancho o alto): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
+  máximo, material por m² sin ancho o alto, par entre tres o más hermanas): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
   aprobar, la versión pasa a ser la vigente y la ve el vendedor. Un presupuesto sin enviar sigue a la
   vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4 · agrega
   burlete inferior en la hoja*); al enviar, se congela. Por qué: con aprobación, mandar no puede
@@ -1589,6 +1588,12 @@ Decidido en la v2:
     (Embutida en cualquier hoja pone Manija en la otra) y es del paquete, en la versión, no del
     insumo: otra línea puede no tener pares. El vidrio es el mismo mecanismo con cada par igual a sí
     mismo.
+  - **Los pares van solo entre dos hermanas** (2026-10-22). Con tres o más, cada alternativa es par de
+    sí misma: juntas van todas iguales y lo distinto va con "distinto por hoja"; un par entre tres o
+    más no se manda a aprobar (*los pares van entre dos hermanas: herraje (3 hojas)*). Por qué: en la
+    Corrediza 3 hojas, Manija en la izq podía poner Embutida en las otras dos o alternar, y Embutida
+    en la central no tenía "la otra". Descartado: el par a todas las demás, alternado por orden
+    (adivinan cómo se arma la línea) y una tabla por hermana (mecanismo nuevo sin caso).
   - **Los defaults son par uno del otro** (*Embutida* a la izq, *Manija* a la der); si no, o si las
     alternativas difieren, no se manda a aprobar.
   - **Si el par no se ofrece en la hermana** (lo saca una condición o el color), entra
