@@ -288,7 +288,7 @@ Construido en `sql/068` (`db_schema/core.md`):
   propio del módulo (`tareas_emitir_asignado`, `sql/115`).
 - Un estado que vive en una tabla hija (la versión del paquete, el cambio de cálculo del insumo) emite
   `estado` con un trigger propio, con el id del ente y la fila hija en el `detalle`
-  (`decisiones/catalogo.md` → *Entes*).
+  (`decisiones/catalogo/ficha.md` → *Versión y cambio de cálculo emiten con trigger propio*).
 
 ## 3. UI de un ente
 
