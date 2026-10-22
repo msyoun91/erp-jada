@@ -679,12 +679,11 @@ referencias entre puntos.
     (2026-10-22): en *Las opciones hermanas arrancan juntas* → *Si el par no se ofrece en la hermana*.
 30. ~~**Sin herraje en silencio.**~~ → se esconde solo si lo dejan condiciones; por bajas o color, plegado
     y aviso (2026-10-22): en *El DVH son opciones por capa* → *Una opción que solo ofrece Sin material*.
+28. ~~**Clase de color y color base editables.**~~ → fijos como la unidad, desde variantes, versión o
+    suelto (2026-10-22): en *Clase de color y color base quedan fijos como la unidad*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-28. **Clase de color y color base editables.** Pasar a *sin color* un insumo con 4 variantes costeadas y
-    existencias por color, o el base de natural a negro, recolorea costo y stock. Propuesta: quedan fijos
-    desde que tiene variantes o está en una versión, como la unidad.
 37. **Reemplazar o dar de baja un servicio.** Dar de baja *Soldadura* (en 25 paquetes) los deja
     incompletos al instante, sin reemplazo ni "como si siguiera activo"; *Reemplazar material* busca
     insumos. Propuesta: el mismo botón y la misma baja con reemplazo, para servicios.
@@ -1092,6 +1091,13 @@ Decidido en la v2:
   hacía que las 20 vigentes, ya aprobadas, calcularan 5.980 felpas en vez de 5,98 ml, y las órdenes
   viejas el mismo despiece; la presentación y el costo quedaban en la unidad anterior. Descartado:
   permitirlo mostrando el alcance — cambia precio y despiece de versiones aprobadas sin revisión.
+- **Clase de color y color base quedan fijos como la unidad** (2026-10-22): desde que el insumo tiene
+  variantes, está en una versión (borradores incluidos) o se vende suelto; antes, libres. El campo
+  dice por qué (*Marco 80: 3 variantes · en 12 paquetes*) y la salida es insumo nuevo y baja con
+  reemplazo; Compras y Stock suman su condición al construirse. Se editan solo en Insumos: el paquete
+  no guarda colores. Por qué: el base de natural a negro dejaba dos negros (base y -NM), sacaba el
+  natural de 12 paquetes y leía como negro el costo y las existencias del natural; a *sin color*, las
+  variantes quedaban colgando y las corredizas ofrecían colores en los que el marco no existe.
 - **Lo que cambia el cálculo de un insumo en uso espera a administración** (2026-10-21). Desperdicio,
   peso, contenido de la presentación, espesor y servicios que trae: con el insumo en uso (*Lo que
   falta costear se ve en filtros*: la vigente de un paquete activo, también lo que entra por
