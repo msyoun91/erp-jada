@@ -619,13 +619,11 @@ referencias entre puntos.
     *Entes* → *Los avisos van a quienes tienen la función*.
 32. ~~**Un borrador abandonado bloquea el paquete.**~~ → *descartar borrador*, que pasa los reemplazos
     de una baja a la versión que sigue (2026-10-22): en *El borrador se descarta*.
+36. ~~**Duplicar paquete.**~~ → paquete nuevo con la v1 en borrador, copia de cualquier versión, con sus
+    casos y sin las excepciones de % (2026-10-22): en *Duplicar crea un paquete nuevo*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-36. **Duplicar paquete.** No hay. La Corrediza 2 hojas Herrero se arma de cero aunque sea la Modena con
-    otros perfiles, y con la subcategoría como línea es lo de todos los días. Propuesta: paquete nuevo
-    con la v1 en borrador copiada de la vigente o de la abierta, y sus casos; después *Reemplazar
-    material* solo sobre él.
 26. **Producción no puede caer en *Lo elegido se guarda*.** La orden vendida con Manija Roma, dada de
     baja después (o su variante negra, o movida de subcategoría), se despieza con el default y taller
     arma otra manija. En el presupuesto lo frena la línea sin precio; en producción no hay regla.
@@ -870,7 +868,7 @@ Relaciones (de otros módulos, apuntan al catálogo)
 │   ← línea del presupuesto (Presupuestos)
 └── versión del paquete ← orden de producción, con lo que cargó el vendedor (Producción)
 Acciones
-├── paquete: crear · editar borrador · descartar borrador · mandar a aprobar (con qué cambió)
+├── paquete: crear · duplicar · editar borrador · descartar borrador · mandar a aprobar (con qué cambió)
 │            · volver al borrador · aprobar
 │            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
 │            · mover de subcategoría · dar de baja · reactivar
@@ -923,7 +921,7 @@ Módulo: Catálogo
 │                                                  categorías fuera del % de los servicios del paquete,
 │                                                  categorías, baja y reactivar
 ├── Paquetes (vista, catalogo_paquetes)          — técnico, administración
-│   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores (y descartarlos), versión nueva, mandar a aprobar,
+│   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores (y descartarlos), duplicar, versión nueva, mandar a aprobar,
 │   │                                              reemplazar material, volver al borrador, probar sin plata
 │   │                                              y guardar casos de prueba
 │   └── catalogo_paquetes_administrar (funcion)  — administración: aprobar y rechazar, probar
@@ -1288,6 +1286,16 @@ Decidido en la v2:
   insumo puede designar su reemplazo*). Por qué: con una versión abierta por paquete, el reemplazo no puede
   crear otra. Descartado: saltear los que están para aprobar y avisar (queda a mano y, con la baja,
   el paquete queda incompleto).
+- **Duplicar crea un paquete nuevo con la v1 en borrador, copia de la versión que se mira**
+  (2026-10-22). El técnico duplica la vigente, la abierta o una del historial; elige nombre y
+  subcategoría. Copia todo lo de la versión (variables, grupos con hermandad y pares, materiales y
+  fórmulas, servicios, restricciones) y los casos de prueba con el de referencia; no copia las
+  excepciones de % (de administración y de ese paquete) ni el historial, que arranca en la v1 con
+  *duplicado de Modena · Corrediza 2 hojas v4*. Se adapta con *"Reemplazar material"* sobre él solo y
+  las fórmulas a mano; los controles corren al mandar. La copia queda independiente. Por qué: con la
+  subcategoría como línea de perfiles, la Corrediza 2 hojas Herrero es la Modena con otros perfiles y
+  se armaba de cero (9 variables, 22 materiales, hermanas y pares, 5 casos). Descartado: un paquete
+  base del que heredan las líneas (una capa más, y su cambio movería varias sin aprobar cada una).
 - **El producto nuevo se avisa al aprobarse la primera versión, no en el alta.** El alta ocurre cuando el
   técnico abre el borrador: avisar ahí a los vendedores sería avisar de algo que no se vende. "Incompleto"
   no emite (se calcula); lo que lo causa sí: la baja del insumo.
