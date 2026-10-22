@@ -687,13 +687,11 @@ referencias entre puntos.
     reactiva (2026-10-22): en *Una categoría o subcategoría con ítems activos no se da de baja*.
 40. ~~**Un color de la lista dado de baja y reactivado.**~~ → no toca variantes, deja de ofrecerse;
     también el base (2026-10-22): en *Los colores son de administración*.
+42. ~~**Aprobar lo que ya no se vende.**~~ → aprobar vuelve a correr controles e incompleto; el alcance
+    de la baja lo anticipa (2026-10-22): en *Aprobar vuelve a correr los controles y el incompleto*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-42. **Aprobar lo que ya no se vende.** Los controles corren al mandar. Si entre mandar y aprobar se da de
-    baja un insumo fijo de la v5, la vigente nueva nace incompleta y la Corrediza sale de venta aunque la
-    v4 estaba bien. Propuesta: al aprobar, lo que la dejaría incompleta se marca en pendientes y no se
-    aprueba.
 45. **Clientes fusionados o que no se ven.** Contactos fusiona dos empresas y no toca lo que apunta a la
     que se va: las habilitaciones quedan en la inactiva. Y las empresas son del equipo que las carga:
     Laura puede no ver la que tiene que habilitar. Propuesta: trigger del catálogo en la fusión (como
@@ -1262,6 +1260,13 @@ Decidido en la v2:
   como cambio todo lo que está en la versión*) y el precio antes y después en el caso de referencia del
   paquete (*Los casos de prueba corren cuando alguien los mira*). El texto solo no alcanza: dice lo
   que el técnico cree que cambió.
+- **Aprobar vuelve a correr los controles y el incompleto** (2026-10-22). Si falla uno, no se
+  aprueba: la fila de pendientes dice por qué (*v5: usa Felpa X, de baja desde el 20/10*), el
+  checkbox no la toma y la vigente sigue; administración la rechaza con ese motivo escrito. El alcance
+  de una baja suma las versiones para aprobar que la usan (*la usa la v5 de Corrediza 2 hojas, para
+  aprobar: no se va a poder aprobar*). Por qué: la Felpa X dada de baja sin reemplazo entre mandar y
+  aprobar dejaba vigente una v5 incompleta y la Corrediza salía de venta aunque la v4 estaba bien; la
+  baja con reemplazo ya la vuelve al borrador.
 - **Mandar a aprobar frena; aprobar pone a la venta** (2026-10-21). Reemplaza a "Publicar" de la v1.
   El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles (fórmula
   mal escrita, ciclo, secundaria sin default, medida principal con default, unidad que no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
