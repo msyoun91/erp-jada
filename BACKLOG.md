@@ -18,7 +18,8 @@ Los cinco tramos están cerrados (estado y tests en el encabezado de `decisiones
 
 ## Módulos que siguen
 
-Orden: Contactos y Obras → **Catálogo** → Compras (costos) → Presupuestos → Post-venta. Sin lugar
+Orden: Contactos y Obras → **Catálogo** sin plata → Compras mínimo (costo y cotización) → precio del
+catálogo (`decisiones/catalogo.md` → *El catálogo no apunta con FK*) → Presupuestos → Post-venta. Sin lugar
 todavía en el orden: Stock y la licitación de Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:

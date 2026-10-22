@@ -541,10 +541,8 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 8. ~~**El reemplazo de la baja lo decide administración con una herramienta del técnico.**~~ → lo
    reciben todos los paquetes, sin desmarcar (2026-10-21), en *La baja de un insumo puede designar su
    reemplazo*.
-9. **El catálogo sí depende de Compras.** "No apunta a ningún otro módulo" y "se puede construir antes
-   que Compras", pero el precio, *probar con plata*, la marca *sin costo* en pendientes y los costos en
-   Insumos leen el costo y la cotización, que son de Compras. Propuesta: el SQL del catálogo arranca con
-   las dos tablas mínimas de Compras (costo y cotización), o Compras mínimo va junto; y corregir la frase.
+9. ~~**El catálogo sí depende de Compras.**~~ → SQL en tres partes (2026-10-21), en *El catálogo no
+   apunta con FK a otro módulo* y en el orden de `BACKLOG.md`.
 10. **Menores de texto.** El título *La variante de color solo tiene código, nombre y costo* (v2:
     código y color de la lista). *El motor va en Postgres*: "nunca el costo" (a administración le da
     las bases: *sobre $ 60.000*). "Configuración de herrajes" y "medidas y herrajes": se guarda todo lo
@@ -1039,9 +1037,13 @@ Decidido en la v2:
   vidrio cortado. El kg no es unidad de venta: el perfil cotizado por kg se lleva en barras.
   Descartado: convertir la cantidad de la línea (de ml a barras no da exacto: 7 ml = 1,17 barras, y
   redondear cotiza otra cosa sin avisar).
-- **El catálogo no apunta a ningún otro módulo salvo la empresa cliente**: solo es dueño del interior de
-  los paquetes y de las habilitaciones de clientes. Los demás le apuntan. Se puede construir antes que
-  Compras, Stock y Producción.
+- **El catálogo no apunta con FK a otro módulo salvo la empresa cliente**: solo es dueño del interior de
+  los paquetes y de las habilitaciones de clientes. Los demás le apuntan. ~~Se puede construir antes que
+  Compras~~ (2026-10-21): para el precio lee costo y cotización de Compras —probar con plata, *sin
+  costo*, los costos en Insumos—. El SQL va en tres partes: catálogo sin plata (insumos, servicios,
+  paquetes, versiones, fórmulas, despiece, controles, probar sin precio), Compras mínimo (su ficha,
+  costo y cotización) y la rama de plata de la función de cálculo. Stock y Producción, después.
+  Descartado: crear las tablas de Compras en el SQL del catálogo (tablas de un módulo sin ficha).
 - **Solo el paquete se aprueba** (revertido para insumo y servicio, 2026-10-14). El técnico crea y edita
   insumos y servicios sin aprobación; administración completa la plata. Insumo y servicio no tienen
   estado, solo `activo`. El freno queda donde importa: un insumo nuevo no se vende suelto hasta que
