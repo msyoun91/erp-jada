@@ -494,6 +494,19 @@ categorías, montos, % y reglas de servicios son configuración.
 (flete, traslado) no sale de servicios: es un renglón libre, con descripción y monto que calcula el
 vendedor (`BACKLOG.md` → Presupuestos). Si algún día un cargo apunta a un servicio, alcanza una FK.
 
+**Versión y cambio de cálculo emiten con trigger propio, con el id del paquete o del insumo**
+(2026-10-22). `paquetes` lleva el genérico, `emitir_eventos_registro('paquete')`: alta, baja,
+reactivación. Las versiones emiten solo al cambiar de estado (abrir un borrador no emite; la v1 nace con
+el alta): `('paquete', paquete_id, 'estado', {estado, anterior, version, motivo})`, con `motivo` solo
+en el rechazo, que es lo que lo distingue de volver al borrador. Los cambios de cálculo, al nacer y al
+cambiar de estado: `('insumo', insumo_id, 'estado', {estado, anterior, cambio_id, motivo})`, con
+`para_aprobar · aprobado · rechazado · retirado`; `estado` aunque el insumo no tenga, para no sumar al
+enum. Por qué: el genérico emite con el `id` de la fila, y la v5 (fila 87) del paquete 12 avisaba del
+"paquete 87" y daba un alta falsa por versión; el número de versión va en el detalle porque el
+historial arma de ahí el recorrido de cada una (*El paquete muestra su historial versión por
+versión*). Descartado: un argumento más en el genérico para la columna del id (seguiría emitiendo alta
+por versión). Toca: el SQL del catálogo y `GUIDE_ENTES.md` §2.8.
+
 ## ~~Ficha del módulo (borrador)~~
 
 → *Ficha del módulo — v2*.
@@ -593,12 +606,11 @@ referencias entre puntos.
 18. ~~**Cotización pegada.**~~ → fecha del BNA, lo manual vale su día; el cálculo advierte a los 3 días
     y da sin precio a los 5 corridos, y el automático que falla avisa a administración (2026-10-22): en
     *Precio de venta* → *La cotización vale por su fecha del BNA*.
+48. ~~**Eventos.**~~ → trigger propio en versiones y en cambios de cálculo, con el id del paquete o del
+    insumo, y la versión o el cambio en el detalle (2026-10-22): en *Entes*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-48. **Eventos.** El estado del paquete vive en la versión, y el del *cambio de cálculo* del insumo (11),
-    en el cambio: el trigger genérico emitiría con el id de la versión o del cambio. Propuesta: trigger
-    propio en versiones con `paquete_id` y en cambios con `insumo_id` (como `tareas_emitir_asignado`).
 33. **¿A qué técnico?** Rechazo, vuelta al borrador, baja con alcance, *solo Sin herraje*: "aviso al
     técnico", y el paquete lo editan varios (`creado_por` es solo dato). Propuesta: el rechazo, a quien
     mandó; lo de bajas, a todos los que tienen `catalogo_paquetes_editar`.
