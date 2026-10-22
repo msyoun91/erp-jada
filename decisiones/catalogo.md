@@ -42,7 +42,9 @@ final** (Presupuestos: es donde se cargan las medidas).
 - **El desperdicio es un % del insumo, uno solo para todos los paquetes** (2026-10-14): perfil 8 %
   (6,60 ml → se cobran 7,13), vidrio 5 % sobre m², felpa 0 %. Lo carga el técnico con lo que informa
   taller (el parámetro del que sale no hace falta en esta fase): es cantidad, no precio. Un paquete no
-  desperdicia más que otro. Descartado: % por paquete — el mismo perfil tendría 8 % en uno y 10 % en otro.
+  desperdicia más que otro. **Es obligatorio en el alta: 0 explícito vale, vacío no** (2026-10-21),
+  como el peso: vacío contaba 0 y el perfil olvidado cobraba 8 % menos en todo, con el despiece bien,
+  así que nadie lo veía. Descartado: % por paquete — el mismo perfil tendría 8 % en uno y 10 % en otro.
 - **La fórmula dice lo que queda puesto; el desperdicio, lo que se tira** (2026-10-14). Fórmulas y
   largos de pieza llevan la medida real (el `× 1,15` de la felpa vale: da vuelta en las esquinas y
   queda puesta); el desperdicio sale solo del insumo, se aplica para cobrar sobre la cantidad y no
@@ -555,8 +557,8 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
     de un insumo en uso espera a administración*.
 12. ~~**Peso que falta.**~~ → obligatorio en el alta, 0 explícito vale; el costo por kg pide peso
     mayor que 0 (2026-10-21): en *El peso es del insumo y condiciona herrajes*.
-13. **Desperdicio vacío.** No dice si es obligatorio; si vacío cuenta 0, el perfil olvidado cobra 8 %
-    menos en todo. Propuesta: obligatorio, con 0 explícito (felpa).
+13. ~~**Desperdicio vacío.**~~ → obligatorio en el alta, 0 explícito vale, como el peso (2026-10-21):
+    en *El desperdicio es un % del insumo*.
 14. **Servicio que trae un insumo, en otra unidad.** *Lleva X por unidad* multiplica la cantidad puesta
     del insumo sin pedir que coincidan: el Float (m²) que trae *Sellado perimetral* (ml) cobra m² como
     ml. Propuesta: el servicio que trae un insumo va en su misma unidad.
