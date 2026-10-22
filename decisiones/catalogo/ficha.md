@@ -114,10 +114,10 @@ Módulo: Catálogo
 ├── Paquetes (vista, catalogo_paquetes)          — técnico, administración
 │   ├── catalogo_paquetes_editar (funcion)       — técnico: borradores (y descartarlos), duplicar, versión nueva, mandar a aprobar,
 │   │                                              reemplazar material, volver al borrador, probar sin plata
-│   │                                              y guardar casos de prueba; renombrar y mover hasta la
+│   │                                              y casos de prueba; renombrar y mover hasta la
 │   │                                              primera aprobada
 │   └── catalogo_paquetes_administrar (funcion)  — administración: aprobar y rechazar, probar
-│                                                  con plata y guardar casos de prueba, categorías, renombrar, mover,
+│                                                  con plata y casos de prueba, categorías, renombrar, mover,
 │                                                  baja y reactivar
 └── Clientes (vista, catalogo_clientes)          — administración
     └── catalogo_clientes_habilitar (funcion)    — administración: qué ve cada empresa y si ve precio

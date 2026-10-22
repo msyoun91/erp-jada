@@ -109,7 +109,8 @@ que una baja hace con las versiones, en `bajas.md`; los eventos de estado, en `f
   mosquitero*: el técnico los encuentra en la v5 y, al mandarla a aprobar, cada uno corre en la v4 y
   en la v5. Los guardan desde Probar el técnico (`catalogo_paquetes_editar`) y administración
   (`catalogo_paquetes_administrar`), que suma el *Balcón 2400 × 2200* que vio en un presupuesto: un
-  caso no tiene plata. Si se da de baja la referencia, no se manda a aprobar hasta marcar otra. Se
+  caso no tiene plata. Los dos los manejan enteros —renombrar, marcar la referencia, dar de baja—,
+  sin dueño de cada caso, como el resto del catálogo (2026-10-22). Si se da de baja la referencia, no se manda a aprobar hasta marcar otra. Se
   tocan aunque haya una versión para aprobar, porque no son parte de lo que se aprueba: si cambia la
   referencia, a administración le cambian las cifras que mira. Por qué: comparar pide correr el mismo
   caso en dos versiones; siendo de la versión, la v5 copiaría los de la v4 y uno nuevo no tendría
