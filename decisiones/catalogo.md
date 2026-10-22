@@ -856,17 +856,19 @@ se corrige cuando aparece. Lo que la v1 tenía y la v2 no, listado el 2026-10-21
 
 ```
 Módulo: catálogo
-Objetivo: definir qué se puede vender y la base de cómputo de su precio — los datos y las fórmulas
-          que el presupuestador usa para calcular el precio de cada ítem
+Objetivo: definir qué se puede vender y cómo se calcula — los insumos que Compras costea y Stock
+          cuenta, y las fórmulas que dan el precio al presupuestador y el despiece a producción
 Personas
 ├── Técnico         — insumos, servicios y paquetes, sin plata · crea y edita los tres (la parte
-│                     técnica); en paquetes escribe fórmulas y despieces, verifica que funcionen y
-│                     los manda a aprobar; ve qué servicios recibe cada paquete por regla, sin el %
-│                     · no ve plata
+│                     técnica); en un insumo en uso, propone lo que cambia el cálculo; en paquetes
+│                     escribe fórmulas y despieces, verifica que funcionen y los manda a aprobar;
+│                     ve qué servicios recibe cada paquete por regla, sin el % · no ve plata
 ├── Administración  — ve todo, con costos (de Compras); prueba paquetes con medidas y ve el precio ·
-│                     aprueba paquetes; crea categorías y colores, carga las variantes de color,
-│                     pone montos, % y mínimos
-│                     de servicios, marca qué insumo se vende suelto, por presentación o por
+│                     aprueba o rechaza paquetes y cambios de cálculo de insumos en uso; da de baja
+│                     y reactiva en las tres vistas (insumos y servicios, con reemplazo); renombra
+│                     y mueve lo que ya se vende; crea categorías y colores, carga las variantes de
+│                     color; pone montos, % y mínimos de servicios, sus reglas y excepciones, y los
+│                     aumenta en %; marca qué insumo se vende suelto, por presentación o por
 │                     unidad; habilita a cada cliente empresa qué ve y si ve precios · —
 │                     (los costos los carga Compras, en su módulo)
 ├── Vendedor        — NO usa el módulo: por el presupuestador elige paquetes aprobados e insumos
@@ -926,9 +928,9 @@ Eventos que emite
 ├── paquete: baja — aviso a vendedores de que sale de venta
 ├── insumo: baja — aviso al técnico con el alcance: "Marco 70 mm: 3 paquetes incompletos · 9 pierden
 │            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"
-├── insumo: cambio de cálculo (para aprobar · aprobado · rechazado) — para aprobar, aviso a
-│            administración con el alcance: "Marco 70 mm: desperdicio 8 → 80 % · 40 paquetes"; aprobado
-│            o rechazado (con motivo), aviso al técnico
+├── insumo: cambio de cálculo (para aprobar · retirado · aprobado · rechazado) — para aprobar, aviso
+│            a administración con el alcance: "Marco 70 mm: desperdicio 8 → 80 % · 40 paquetes";
+│            retirado, aviso a administración; aprobado o rechazado (con motivo), aviso al técnico
 └── servicio: ninguno (no es ente; su baja se ve en los paquetes incompletos)
 Eventos que consume
 └── ninguno
@@ -1138,7 +1140,7 @@ Decidido en la v2:
   referencia de cada paquete y del suelto antes → después (*Corrediza 2 hojas Modena $ 412.000 →
   $ 453.000*): aprueba y rige desde ahí, o rechaza con motivo y avisa al técnico. Uno
   pendiente por insumo, como la versión abierta del paquete: se retira y se propone otro, no se edita
-  mientras se revisa. Va aparte de la fila del insumo, así cálculo, Compras y Stock leen el vigente.
+  mientras se revisa; retirarlo avisa a administración, como volver al borrador. Va aparte de la fila del insumo, así cálculo, Compras y Stock leen el vigente.
   Lo que no está en uso se corrige libre, como la unidad; Producción suma sus órdenes abiertas al
   ficharse. Si técnico y administración son la misma persona, aprueba su propio cambio (*`_editar` y
   `_administrar` pueden coexistir*). Por qué: el insumo no se versiona y el técnico no ve plata: 80 en
