@@ -683,12 +683,11 @@ referencias entre puntos.
     suelto (2026-10-22): en *Clase de color y color base quedan fijos como la unidad*.
 37. ~~**Reemplazar o dar de baja un servicio.**~~ → baja con reemplazo y el mismo botón, para los
     paquetes que lo cargan (2026-10-22): en *La baja de un servicio también puede designar su reemplazo*.
+39. ~~**Dar de baja una categoría con cosas adentro.**~~ → con ítems activos no; vacía sí, y se
+    reactiva (2026-10-22): en *Una categoría o subcategoría con ítems activos no se da de baja*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-39. **Dar de baja una categoría con cosas adentro.** ¿Y los 12 Float de *Vidrios → Float*, las opciones
-    que la ofrecen, sus reglas, los clientes habilitados? Propuesta: no se da de baja con ítems activos;
-    y *reactivar*, que categorías no tiene y colores sí.
 40. **Un color de la lista dado de baja y reactivado.** "Darlo de baja en todos los insumos": al
     reactivar, ¿vuelve también la variante que Laura había dado de baja aparte? ¿Y si es el color base
     de un insumo? Propuesta: la baja de la lista no toca variantes, solo deja de ofrecerse; no se da de
@@ -901,7 +900,7 @@ Acciones
 │             · regla (solo porcentuales): aplicar a todo, o a una categoría o subcategoría de
 │               paquetes o de insumos, con su % · cambiar el % · quitarla
 │             · excepción: otro % para un paquete · quitarla
-├── categorías: crear · renombrar · dar de baja (administración)
+├── categorías: crear · renombrar · dar de baja (vacía) · reactivar (administración)
 │               · de insumos, fuera del % de los servicios del paquete: marcar · desmarcar (desde
 │                 Servicios, al lado de las reglas)
 ├── colores: crear · renombrar · dar de baja · reactivar (administración)
@@ -974,6 +973,14 @@ Decidido en la v2:
   PVC → Marcos → Marco corrediza 70 mm · Ventanas → Modena → Corrediza 2 hojas). Cada ítem está
   en una subcategoría. No se anida más. Servicios también, por decisión del usuario, aunque sean pocos
   (propuesta descartada: lista plana con búsqueda y filtro fijo/porcentual).
+- **Una categoría o subcategoría con ítems activos no se da de baja; vacía sí, y se reactiva**
+  (2026-10-22). Frena con la lista (*Vidrios → Float: 12 insumos activos — movelos o dalos de baja
+  primero*); en una categoría cuentan todas sus subcategorías. Vacía, lo que la nombra (opciones que
+  la ofrecen, reglas, marca fuera del %, clientes habilitados) queda sin efecto y se ve en el alcance
+  antes de confirmar (*la ofrecen 3 opciones · 1 regla · 2 clientes*); el editor del paquete dice
+  *(de baja)*. Reactivar (administración) la devuelve con todo eso. No se crean ni se mueven ítems a
+  una de baja. Por qué: dar de baja *Vidrios → Float* con 12 Float adentro, o *Ventanas → Modena* con
+  6 corredizas, no decía si seguían ofreciéndose ni qué pasaba con opciones, reglas y clientes.
 - **En paquetes, la subcategoría es la línea de perfiles** (2026-10-19): Ventanas → Modena → Corrediza
   2 hojas, Corrediza 3 hojas; Ventanas → Herrero → Corrediza 2 hojas. La línea sale del nombre. Por qué:
   es lo único que el buscador por nombre no da — habilitar a un cliente empresa solo Modena. Para no
