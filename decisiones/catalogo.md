@@ -550,11 +550,9 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 
 *Cobra mal sin que nadie se entere*
 
-11. **Editar el insumo cambia precio y despiece al instante, y solo lo ve quien edita.** Los servicios
-    que trae avisan a administración; desperdicio, peso, contenido de la presentación y espesor, no.
-    Marcos tipea 80 en vez de 8 en el desperdicio del Marco 70 y las Modenas suben 66 %; 8,5 kg/ml en
-    vez de 0,85 y todas salen con rueda doble. Propuesta: esos campos muestran el alcance con el caso de
-    referencia antes → después y avisan a administración, como los servicios que trae.
+11. ~~**Editar el insumo cambia precio y despiece al instante, y solo lo ve quien edita.**~~ → en uso,
+    espera a administración, servicios que trae incluidos (2026-10-21): en *Lo que cambia el cálculo
+    de un insumo en uso espera a administración*.
 12. **Peso que falta.** Lo que entra por subcategoría se filtra por unidad y espesor, no por peso. Un
     Float 6 sin peso entra en 40 vigentes y la hoja de 45 kg sale con rueda simple. Igual una
     alternativa suelta al mandar a aprobar. Propuesta: peso obligatorio en el insumo (0 explícito vale,
@@ -693,10 +691,9 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 47. **Grafo de ciclos.** La lista de *Nada depende de sí mismo* es anterior a `espesor_<opción>` y a las
     condiciones de alternativas y subcategorías (el espesor depende de la alternativa, que puede mirar el
     peso, que incluye el vidrio). Sumarlas.
-48. **Eventos.** *Cambian los servicios que lleva* no es ningún `tipo_evento` (el servicio no es ente), y
-    el estado vive en la versión: el trigger genérico emitiría con el id de la versión. Propuesta:
-    trigger propio en versiones con `paquete_id` (como `tareas_emitir_asignado`); lo de servicios,
-    campanita directa o `dato`.
+48. **Eventos.** El estado del paquete vive en la versión, y el del *cambio de cálculo* del insumo (11),
+    en el cambio: el trigger genérico emitiría con el id de la versión o del cambio. Propuesta: trigger
+    propio en versiones con `paquete_id` y en cambios con `insumo_id` (como `tareas_emitir_asignado`).
 49. **Qué guarda "lo elegido".** Líneas, órdenes y casos cruzan versiones: nombre de variable u opción e
     insumo. Renombrar en la v5 deja *Falta*; reemplazar el insumo lo pierde. Propuesta: definir la
     clave, y que *Reemplazar material* lleve el par viejo → nuevo a lo elegido.
@@ -841,7 +838,7 @@ Personas
 Entes
 ├── paquete — dueño creado_por (solo dato) · estado por versión: borrador · para aprobar · aprobada · lo señalan la línea del presupuesto y la orden de producción
 │             · datos {nombre} · ruta /catalogo/paquetes/{id} (abre la vigente) · submódulo catalogo_paquetes · roles {}
-└── insumo  — dueño creado_por (solo dato) · sin estado (solo activo), sin versiones · lo señalan la línea del presupuesto (suelto), Compras, Stock y Contactos
+└── insumo  — dueño creado_por (solo dato) · sin estado (solo activo), sin versiones; un cambio de cálculo pendiente a la vez · lo señalan la línea del presupuesto (suelto), Compras, Stock y Contactos
               · datos {codigo, nombre} · ruta /catalogo/insumos/{id} · submódulo catalogo_insumos · roles {proveedor}
 Relaciones (del catálogo)
 ├── versión del paquete → insumos y servicios con sus fórmulas — interior del paquete, no puente entre entes
@@ -862,6 +859,8 @@ Acciones
 │           servicios que lleva · marcar suelto (por presentación o por unidad) · dar de baja (con
 │           reemplazo opcional) · reactivar · cargar variantes de color, en uno o en varios a la vez
 │           · dar de baja o reactivar una variante (administración)
+│           · en uso, cambio de cálculo (desperdicio, peso, contenido, espesor, servicios que lleva):
+│             proponer · retirar · aprobar · rechazar con motivo (administración)
 ├── servicio: crear · editar · poner monto, % y mínimo · dar de baja · reactivar
 │             · regla (solo porcentuales): aplicar a todo, o a una categoría o subcategoría de
 │               paquetes o de insumos, con su % · cambiar el % · quitarla
@@ -877,8 +876,9 @@ Eventos que emite
 ├── paquete: baja — aviso a vendedores de que sale de venta
 ├── insumo: baja — aviso al técnico con el alcance: "Marco 70 mm: 3 paquetes incompletos · 9 pierden
 │            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"
-├── insumo: cambian los servicios que lleva — aviso a administración con el alcance: "Manija embutida:
-│            suma Mecanizado de embutido en 15 paquetes"
+├── insumo: cambio de cálculo (para aprobar · aprobado · rechazado) — para aprobar, aviso a
+│            administración con el alcance: "Marco 70 mm: desperdicio 8 → 80 % · 40 paquetes"; aprobado
+│            o rechazado (con motivo), aviso a quien lo propuso
 └── servicio: ninguno (no es ente; su baja se ve en los paquetes incompletos)
 Eventos que consume
 └── ninguno
@@ -887,10 +887,12 @@ Eventos que consume
 ```
 Módulo: Catálogo
 ├── Insumos (vista, catalogo_insumos)            — técnico, administración
-│   ├── catalogo_insumos_editar (funcion)        — técnico: crear y editar, con los servicios que lleva
+│   ├── catalogo_insumos_editar (funcion)        — técnico: crear y editar, con los servicios que lleva;
+│   │                                              en uso, lo que cambia el cálculo lo propone
 │   └── catalogo_insumos_administrar (funcion)   — administración: ve costos (y el filtro sin costo y en
-│                                                  uso), suelto y cómo se vende, categorías, colores y
-│                                                  variantes, baja (con reemplazo) y reactivar
+│                                                  uso), aprobar o rechazar cambios de cálculo, suelto y
+│                                                  cómo se vende, categorías, colores y variantes, baja
+│                                                  (con reemplazo) y reactivar
 ├── Servicios (vista, catalogo_servicios)        — técnico, administración
 │   ├── catalogo_servicios_editar (funcion)      — técnico: crear y editar
 │   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo (y el filtro sin
@@ -1001,8 +1003,9 @@ Decidido en la v2:
   versión cambia los materiales, no el precio: el precio es del presupuesto. Por eso cada versión dice qué
   cambió, obligatorio al mandarla a aprobar ("v2: agrega burlete inferior en la hoja").
 - **El insumo no se versiona: una corrección se edita en el mismo insumo.** Las fórmulas leen el peso,
-  así que corregirlo recalcula las órdenes viejas — y eso se quiere: el dato viejo estaba mal. Antes de
-  guardar, quien corrige ve a cuántos paquetes y órdenes abiertas toca. **Un producto distinto es un insumo
+  así que corregirlo recalcula las órdenes viejas — y eso se quiere: el dato viejo estaba mal. En uso, la
+  corrección espera a administración (*Lo que cambia el cálculo de un insumo en uso espera a
+  administración*). **Un producto distinto es un insumo
   nuevo** (alta del nuevo, baja del viejo, versión nueva de los paquetes). Por qué no inmutable: corregir
   un perfil usado en 15 paquetes obligaba a 15 versiones y a mudar costo, stock y proveedor, para un dato
   que casi nunca cambia. El paquete sí se versiona porque cambiar una fórmula es diseño, no corrección.
@@ -1016,6 +1019,26 @@ Decidido en la v2:
   hacía que las 20 vigentes, ya aprobadas, calcularan 5.980 felpas en vez de 5,98 ml, y las órdenes
   viejas el mismo despiece; la presentación y el costo quedaban en la unidad anterior. Descartado:
   permitirlo mostrando el alcance — cambia precio y despiece de versiones aprobadas sin revisión.
+- **Lo que cambia el cálculo de un insumo en uso espera a administración** (2026-10-21). Desperdicio,
+  peso, contenido de la presentación, espesor y servicios que trae: con el insumo en uso (*Lo que
+  falta costear se ve en filtros*: la vigente de un paquete activo, también lo que entra por
+  subcategoría, o el insumo suelto), el técnico no los guarda, los propone. Antes de confirmar ve las
+  diferencias del caso de referencia de cada vigente que lo usa, sin plata y agrupadas (*40 paquetes:
+  Marco 70 a cobrar 7,13 → 11,88 ml*; *12 paquetes: rueda simple → doble*); el contenido no cambia el
+  despiece y dice *cambia el costo en 40 paquetes: lo revisa administración*. Hasta aprobarse, todo
+  calcula con el valor vigente y el campo muestra el pendiente (*desperdicio 8 % · pendiente 80 %
+  (Marcos)*). Administración recibe aviso y lo ve en Insumos, filtro *para aprobar*, con el precio de
+  referencia de cada paquete y del suelto antes → después (*Corrediza 2 hojas Modena $ 412.000 →
+  $ 453.000*): aprueba y rige desde ahí, o rechaza con motivo y avisa a quien lo propuso. Uno
+  pendiente por insumo, como la versión abierta del paquete: se retira y se propone otro, no se edita
+  mientras se revisa. Va aparte de la fila del insumo, así cálculo, Compras y Stock leen el vigente.
+  Lo que no está en uso se corrige libre, como la unidad; Producción suma sus órdenes abiertas al
+  ficharse. Si técnico y administración son la misma persona, aprueba su propio cambio (*`_editar` y
+  `_administrar` pueden coexistir*). Por qué: el insumo no se versiona y el técnico no ve plata: 80 en
+  vez de 8 de desperdicio subía el Marco 70 un 66 % en 40 paquetes al instante, y una barra de 60 ml
+  en vez de 6 lo dejaba a un décimo sin que el técnico lo pudiera ver. Descartado: que rija al
+  instante mostrando el alcance y avisando a administración (entre guardar y leer el aviso se envían
+  presupuestos con el error) y topes fijos (arbitrarios por material).
 - **El servicio se edita directo, como el insumo.** No está en el despiece: corregirlo cambia precios, no
   órdenes.
 - **Los cambios de plata de administración rigen al instante, sin aprobación**: montos, %, mínimos,
@@ -1239,9 +1262,10 @@ Decidido en la v2:
   cantidad es la puesta del insumo, sin desperdicio (5,98 ml de burlete → 5,98 ml de *Colocación de
   burlete*). Solo servicios fijos: el % por insumo ya es la regla por categoría. Solo en paquetes: la
   manija vendida suelta no lo lleva. Sin excepción por paquete: si en una puerta viene mecanizada de
-  fábrica, es otro insumo. El técnico no ve el monto. Como el insumo no se versiona, rige al instante
-  en las vigentes: antes de guardar se ve el alcance (*Manija embutida: suma Mecanizado de embutido
-  en 15 paquetes · en 3 ya está cargado a mano: se cobraría dos veces*) y administración recibe aviso.
+  fábrica, es otro insumo. El técnico no ve el monto. Como el insumo no se versiona, entra en las
+  vigentes sin versión nueva; en uso, cuando lo aprueba administración (*Lo que cambia el cálculo de
+  un insumo en uso espera a administración*). Antes de proponerlo se ve el alcance (*Manija embutida:
+  suma Mecanizado de embutido en 15 paquetes · en 3 ya está cargado a mano: se cobraría dos veces*).
   Por qué: "la manija lleva mecanizado" es un dato de la manija; con `embutido_izq` y la condición se
   cargaba en cada hoja de cada paquete, y el olvido en uno lo vendía sin mecanizar con un precio que
   parecía normal. Descartado: que entre solo en versiones nuevas (cada versión guardaría qué servicios
