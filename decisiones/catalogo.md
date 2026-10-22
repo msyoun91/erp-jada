@@ -571,15 +571,14 @@ referencias entre puntos.
     lo trae un insumo (2026-10-21): en *El servicio se edita directo*.
 17. ~~**Montos fijos y mínimos que envejecen.**~~ → antigüedad a la vista y aumento masivo en %
     (2026-10-21): en *Servicios muestra hace cuánto cambió cada monto y mínimo*.
+49. ~~**Qué guarda "lo elegido".**~~ → el nombre, fijo desde que se aprueba, y el insumo, con el par
+    viejo → nuevo del reemplazo (2026-10-22): en *Lo guardado cruza versiones por nombre y por insumo*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-49. **Qué guarda "lo elegido".** Líneas, órdenes y casos cruzan versiones: nombre de variable u opción e
-    insumo. Renombrar en la v5 deja *Falta*; reemplazar el insumo lo pierde. Propuesta: definir la
-    clave, y que *Reemplazar material* lleve el par viejo → nuevo a lo elegido.
 43. **La versión nueva que saca una alternativa.** *Lo que el catálogo deja de ofrecer* nombra bajas y
     subcategorías, no la v5 que saca el Laminado: la línea sin enviar con Laminado, ¿sin precio o
-    default? Propuesta: sin precio, como las otras.
+    default? Propuesta: sin precio, como las otras. Con el par de un reemplazo no llega acá (49).
 48. **Eventos.** El estado del paquete vive en la versión, y el del *cambio de cálculo* del insumo (11),
     en el cambio: el trigger genérico emitiría con el id de la versión o del cambio. Propuesta: trigger
     propio en versiones con `paquete_id` y en cambios con `insumo_id` (como `tareas_emitir_asignado`).
@@ -967,6 +966,22 @@ Decidido en la v2:
 - **Consecuencia: una fórmula aprobada no se edita.** Si el despiece se recalcula cuando se pide, cambiar
   `ancho − 6` por `ancho − 8` después de vendida cambiaría la ventana vendida. Editar crea una versión
   nueva, y lo guardado apunta a la versión (*Estados*).
+- **Lo guardado cruza versiones por nombre y por insumo** (2026-10-22). La línea sin enviar (sigue a
+  la vigente), la orden (*Producción puede elegir con qué versión aprobada fabrica*) y los casos de
+  prueba guardan cada medida, opción y grupo por su nombre, y la alternativa elegida por su insumo.
+  **El nombre queda fijo desde que está en una versión aprobada**, como la unidad del servicio (*El
+  servicio se edita directo*); en un borrador que nunca se aprobó, se renombra libre. Sacar una
+  variable y crear otra es otra cosa: lo guardado cae en *Lo elegido se guarda* (default o *Falta*),
+  con el aviso de que el paquete cambió. **El reemplazo deja en la versión el par viejo → nuevo**
+  (*"Reemplazar material"* y la baja con reemplazo; si en ese paquete el técnico puso otro, el par
+  apunta a ese): si lo guardado es el viejo y la versión tiene el par, entra el nuevo como elegido.
+  Los pares se encadenan (la orden de la v3 fabricada con la v5 pasa por los de la v4 y la v5) y lo
+  guardado no se toca. Por qué: con `ancho_hoja_izq` renombrado en la v5, las corredizas pisadas en
+  900 volvían al automático 925 sin *Falta*; con la Manija Roma dada de baja con reemplazo, las
+  líneas quedaban sin precio aunque el catálogo sabía cuál era la otra, y el caso de prueba mostraba
+  *→ Embutida* (el default) en vez de *→ Manija Roma II*. Descartado: una clave interna estable que
+  la versión nueva copia (renombrar libre a cambio de una columna más y lo guardado ilegible, para
+  algo cosmético).
 - **Cada cliente empresa ve lo que administración le habilita, y el precio es opcional por cliente.**
   Nace sin nada habilitado. Se habilita por categoría o subcategoría, no por ítem: lo que se aprueba
   después en una subcategoría habilitada lo ve solo (una categoría incluye sus subcategorías futuras).
@@ -1224,7 +1239,8 @@ Decidido en la v2:
   un insumo puede designar su reemplazo*). Sin versión abierta, crea un borrador; con
   borrador, se suma a él; para aprobar, vuelve al borrador y se suma (aviso a administración). Si la
   versión abierta ya no usa el material, dice *ya no lo usa* y no se toca. El qué cambió va escrito
-  (*reemplaza Marco corrediza 70 mm por Marco 72 mm*) y se suma al que hubiera. Lo que el material
+  (*reemplaza Marco corrediza 70 mm por Marco 72 mm*) y se suma al que hubiera; el par viejo → nuevo
+  queda en la versión (*Lo guardado cruza versiones por nombre y por insumo*). Lo que el material
   nuevo obliga a cambiar en un paquete (una fórmula) se corrige en su borrador; después cada uno se
   manda a aprobar. El aviso de baja (*falta reemplazar: Marco corrediza 70 mm*) abre la misma ventana
   con el material actual cargado; la baja con reemplazo no la abre: lo pone en todos (*La baja de un
