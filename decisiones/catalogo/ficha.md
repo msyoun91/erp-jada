@@ -3,7 +3,8 @@
 ## Ficha del módulo — v2 (aprobada 2026-10-21)
 
 Se armó de nuevo, sin partir del borrador de la v1 (2026-10-14), y es la vigente. Lo de la v1 que
-sigue valiendo quedó en los archivos por tema (2026-10-22).
+sigue valiendo quedó en los archivos por tema (2026-10-22). Quién hace cada acción lo dice solo el
+árbol de permisos; las acciones no lo repiten (2026-10-22).
 
 ```
 Módulo: catálogo
@@ -50,28 +51,26 @@ Acciones
 ├── paquete: crear · duplicar · editar borrador · descartar borrador · mandar a aprobar (con qué cambió)
 │            · volver al borrador · aprobar
 │            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
-│            · renombrar (técnico hasta la primera aprobada; después administración)
-│            · mover de subcategoría (ídem) · dar de baja · reactivar
+│            · renombrar · mover de subcategoría · dar de baja · reactivar
 │            · casos de prueba: guardar desde Probar (nuevo o pisando uno) · renombrar · marcar
 │              referencia · dar de baja
 ├── insumo: crear (sin color, o de la ventana o de herrajes con su color base) · editar · cargar los
 │           servicios que lleva · marcar suelto (por presentación o por unidad) · dar de baja (con
 │           reemplazo opcional) · reactivar · cargar variantes de color, en uno o en varios a la vez
-│           · dar de baja o reactivar una variante (administración)
-│           · mover de subcategoría (técnico sin uso; en uso, administración)
-│           · renombrar o cambiar el código (ídem)
+│           · dar de baja o reactivar una variante · mover de subcategoría
+│           · renombrar o cambiar el código
 │           · en uso, cambio de cálculo (desperdicio, peso, contenido, espesor, servicios que lleva):
-│             proponer · retirar · aprobar · rechazar con motivo (administración)
+│             proponer · retirar · aprobar · rechazar con motivo
 ├── servicio: crear · editar · poner monto, % y mínimo · aumentar montos y mínimos en % (por
 │             categoría o marcados, con motivo) · dar de baja (con reemplazo opcional) · reactivar
 │             · regla (solo porcentuales): aplicar a todo, o a una categoría o subcategoría de
 │               paquetes o de insumos, con su % · cambiar el % · quitarla
 │             · excepción: otro % para un paquete · quitarla
-├── categorías: crear · renombrar · dar de baja (vacía) · reactivar (administración)
+├── categorías: crear · renombrar · dar de baja (vacía) · reactivar
 │               · de insumos, fuera del % de los servicios del paquete: marcar · desmarcar (desde
 │                 Servicios, al lado de las reglas)
-├── colores: crear · renombrar · dar de baja · reactivar (administración)
-└── clientes: habilitar categoría o subcategoría · ve precio sí/no (administración)
+├── colores: crear · renombrar · dar de baja · reactivar
+└── clientes: habilitar categoría o subcategoría · ve precio sí/no
 Eventos que emite
 ├── paquete: estado de la versión (para aprobar · vuelta al borrador · rechazada → borrador · aprobada
 │            · descartada)
