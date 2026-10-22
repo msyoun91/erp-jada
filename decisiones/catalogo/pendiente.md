@@ -11,15 +11,9 @@ principal, no*; el orden de las alternativas, en `versiones.md` → *Cuenta como
 de un porcentual por regla** (2026-10-22) → por regla no hay mínimo: `servicios.md` → *Servicios por
 categoría*. **3. El máximo de la medida y la restricción que frena** (2026-10-22) → cada tope lleva
 su mensaje y la restricción es una condición: `opciones.md` → *Toda medida del vendedor lleva mínimo
-y máximo*; `motor.md` → *Cada restricción del técnico avisa o frena*.
+y máximo*; `motor.md` → *Cada restricción del técnico avisa o frena*. **4. `servicios.comercial` sin
+regla que lo use** (2026-10-22) → se saca: `servicios.md` → *"Comercial" es una forma de nombrarlos*.
 
-4. **`servicios.comercial` sin regla que lo use.** *El motor va en Postgres* (`calculo.md`) lista lo
-   que guarda `servicios`: nombre, unidad, fijo/porcentual y *comercial*. La v1 separa los comerciales
-   (comercialización, manipulación) de los demás servicios. Desde *No hay margen* y *Servicios por
-   categoría*, ninguna decisión lee esa marca: un comercial es un porcentual por regla como cualquier
-   otro. Caso: el técnico marca *Comercialización* como comercial, o se olvida, y no cambia nada.
-   Propuesta: sacar la columna; "comercial" queda como forma de hablar. Si sirve para algo (¿el
-   cliente con precio no ve los comerciales separados?), decirlo.
 5. **Los controles de mandar a aprobar están repartidos.** A la lista de *Mandar a aprobar frena*
    (`versiones.md`) le faltan tres frenos que se decidieron en otras decisiones:
    - sin caso de *referencia* (*Los casos de prueba corren cuando alguien los mira*);

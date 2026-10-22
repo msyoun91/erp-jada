@@ -27,8 +27,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (2026-10-21): `decisiones/catalogo/ficha.md`. *Auditoría v2*: resuelto todo lo que cambia tablas
   (2026-10-22). Pasado a carpeta por tema el 2026-10-22 (`decisiones/catalogo/README.md`; backup en
   `obsoletos/backup-docs-2026-10-22/`). Siguiente: los choques entre v1 y v2
-  (`decisiones/catalogo/pendiente.md` → *Choques*), de a uno con el usuario; resueltos del 1 al 3,
-  sigue el 4, "`servicios.comercial` sin regla que lo use". Después, el SQL sin plata. Lo de
+  (`decisiones/catalogo/pendiente.md` → *Choques*), de a uno con el usuario; resueltos del 1 al 4,
+  sigue el 5, "los controles de mandar a aprobar están repartidos". Después, el SQL sin plata. Lo de
   Compras mínimo (19, 34) y lo de pantallas (29, 31, 44, 35, 50, 54–58) sigue en `pendiente.md` → *Auditoría v2*, para su fase. Producción y erp-cliente,
   al fichar, suman su rama a la función de cálculo del catálogo (`decisiones/catalogo/calculo.md` →
   *La función de cálculo decide qué parte ve cada uno*).
@@ -41,7 +41,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   se vinculan al presupuesto. A decidir: cómo ve logística el nombre y la dirección de una obra que no
   abre (propuesta: la etapa guarda su dirección de entrega).
   Los descuentos son de Presupuestos, no de Catálogo (que da el precio de lista, igual para todos):
-  por presupuesto o línea, con la función "aplicar descuento"; el tope, al fichar Presupuestos.
+  por presupuesto o línea, con la función "aplicar descuento"; el tope, al fichar Presupuestos. Si
+  el tope es "no más que lo comercial", vuelve la marca de comercial en `servicios`
+  (`decisiones/catalogo/servicios.md` → *"Comercial" es una forma de nombrarlos*).
   La cantidad es de la línea (precio de una abertura × cantidad) y lo que se hace una vez por pedido
   (traslado, flete, preparación) es un cargo del presupuesto entero, no de cada línea
   (`decisiones/catalogo/motor.md` → *La cantidad es de la línea*). El cargo es un renglón libre:

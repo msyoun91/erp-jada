@@ -1,9 +1,15 @@
 # Catálogo — servicios
 
 Lo que no es material y se cobra: procesamiento, colocación de burlete, soldadura, mano de obra de
-instalación, y los comerciales: comercialización, manipulación (⚠ choque 4, `pendiente.md`). No es
-ente (`ficha.md` → *Entes*). Un servicio entra de tres maneras: cargado en el paquete, por regla, o
-porque lo trae un insumo.
+instalación, y los comerciales: comercialización, manipulación. No es ente (`ficha.md` → *Entes*). Un
+servicio entra de tres maneras: cargado en el paquete, por regla, o porque lo trae un insumo.
+
+**"Comercial" es una forma de nombrarlos, no una marca del servicio** (2026-10-22). Lo comercial
+se ve en cómo se usa (porcentual por regla sobre categorías) y administración lo lee por el nombre
+en el desglose. Por qué: la marca venía de la v1 y, desde *No hay margen* y *Servicios por
+categoría*, nada la leía: marcar Comercialización o no dejaba la Modena en $ 600.000 y lo que ve
+cada uno igual. Puede volver al fichar Presupuestos si el tope del descuento es "no más que lo
+comercial" (`BACKLOG.md` → Presupuestos): un booleano en `servicios` y marcar dos servicios.
 
 - **Fijo o porcentual, cada uno con su unidad** (2026-10-14). **Fijo**: monto por unidad del
   servicio — cada servicio tiene unidad: ml, m² o unidad (soldadura $ 1.500 c/u, colocación de

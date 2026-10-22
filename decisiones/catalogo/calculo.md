@@ -14,8 +14,8 @@ INVOKER`, acotada a esta función. Descartado: el motor en TypeScript del ERP vi
 simulador, grafo), pero eso quedó para después.
 
 **Monto, %, mínimo, reglas por categoría y excepciones por paquete van en tablas propias, como el
-costo** (2026-10-14). `servicios` guarda solo lo que ve el técnico (nombre, unidad, fijo/porcentual,
-comercial — ⚠ choque 4, `pendiente.md`); si el 15 % fuera columna de `servicios` o la excepción
+costo** (2026-10-14). `servicios` guarda solo lo que ve el técnico (nombre, unidad,
+fijo/porcentual; sin marca de comercial: `servicios.md`); si el 15 % fuera columna de `servicios` o la excepción
 columna de `paquetes`, el técnico los leería por API. Como la función de precio es `DEFINER` y salta
 RLS, **verifica adentro quién llama** (*La función de cálculo decide qué parte ve cada uno*).
 Descartado: una vista que oculte columnas — segunda puerta a la misma tabla, y un `select` olvidado
