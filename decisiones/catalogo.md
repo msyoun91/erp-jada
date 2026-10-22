@@ -257,7 +257,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   default por fórmula de arriba, o un número fijo. Grupo opcional: arranca puesto o sacado
   (mosquitero: no). **Una principal sin default arranca vacía y es obligatoria**: la línea queda sin
   precio con *Falta alto*; una secundaria sin default toma la primera alternativa si es opción, y si
-  es medida no se publica. Ancho y alto van siempre sin default; el color de la ventana es principal y
+  es medida no se publica. **Una medida principal no lleva default, ni fijo ni por fórmula**
+  (2026-10-21): con uno no se manda a aprobar. El sistema no sabe cuál es el ancho y cuál el alto, y
+  `alto` principal con 1000 volvía a cotizar el alto olvidado; la que necesita default es secundaria
+  (`ancho_hoja_izq` con su automático, en "Más opciones"). El color de la ventana es principal y
   sin default; la opción de vidrio es principal y el técnico decide si lleva default (float 4 en una
   línea que casi siempre va así). Por qué: con 1000 por defecto, el alto olvidado en una de 6
   ventanas se cotizaba 1000 y tenía precio, así que nadie lo veía.
@@ -529,10 +532,9 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
    Presupuestos.
 5. ~~**Una principal sin default que deja de ofrecerse.**~~ → queda vacía (2026-10-21), en *Lo
    elegido se guarda* y en *Lo que el catálogo deja de ofrecer*.
-6. **"Ancho y alto van siempre sin default" no lo hace cumplir nadie.** Las medidas las declara el
-   técnico y una principal puede llevar default fijo: `alto` = 1000 vuelve a cotizar el alto olvidado
-   (auditoría anterior, 17). Propuesta: una medida principal no lleva default; si lo necesita, es
-   secundaria.
+6. ~~**"Ancho y alto van siempre sin default" no lo hace cumplir nadie.**~~ → una medida principal no
+   lleva default (2026-10-21), en *El default es obligatorio solo en lo secundario* y en los controles
+   de *Mandar a aprobar frena*.
 7. **Cambiar de unidad choca con el reemplazo "de la misma unidad".** Otra unidad es insumo nuevo y
    baja del viejo (*La unidad del insumo queda fija*), pero la baja solo acepta reemplazo de la misma
    unidad: Felpa por ml → Felpa por unidad deja 20 paquetes incompletos al instante. Funciona si antes
@@ -1117,7 +1119,7 @@ Decidido en la v2:
   que el técnico cree que cambió.
 - **Mandar a aprobar frena; aprobar pone a la venta** (2026-10-21). Reemplaza a "Publicar" de la v1.
   El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles (fórmula
-  mal escrita, ciclo, secundaria sin default, unidad que no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
+  mal escrita, ciclo, secundaria sin default, medida principal con default, unidad que no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
   una alternativa): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
   aprobar, la versión pasa a ser la vigente y la ve el vendedor. Un presupuesto sin enviar sigue a la
   vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4 · agrega
