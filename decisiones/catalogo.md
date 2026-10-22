@@ -105,6 +105,14 @@ final** (Presupuestos: es donde se cargan las medidas).
   reforzada*), avisa lo que se fabrica pero no conviene. Por qué: el ancho cargado en cm (150) daba un
   paño negativo que restaba vidrio, y un aviso no impedía vender lo que la línea no soporta. El
   trabajo especial fuera de línea pasa por el técnico.
+- **Toda medida del vendedor lleva mínimo y máximo, y fuera de rango frena** (2026-10-22). Principal o
+  secundaria, de cualquier unidad; se cargan como las casillas (*El valor de la casilla se carga en la
+  unidad en que se piensa*) y sin ellos no se manda a aprobar. Fuera de rango la línea queda sin
+  precio con el error típico a la vista (*ancho entre 600 y 3000 mm — cargaste 150: ¿en cm?*). Las
+  restricciones quedan para avisos y combinaciones (ancho × alto); un "no aguanta más de 2400" es el
+  máximo del ancho. Por qué: 150 × 110 en cm en una corrediza sin restricciones da paño positivo y
+  cotizaba una ventana de 15 cm; 15000 cotizaba millones, y el cliente empresa no lo nota. Descartado:
+  el rango como restricción optativa (lo que hoy nadie carga).
 - **El aviso es parte del resultado de la línea** (2026-10-14), con el precio, el despiece y por qué
   entró cada material (cada persona ve su parte: *Precio y despiece se habilitan por separado*, ficha
   v2): no algo que se ve una vez al cargar. Presupuestos lo deja marcado en la línea
@@ -652,12 +660,11 @@ referencias entre puntos.
     variable nueva del sistema adentro (2026-10-22): en *El grafo de ciclos se arma por tipos de nodo*.
 20. ~~**Casillas en otra unidad.**~~ → largo en mm, superficie en m², con unidad y conversión al lado y
     el rechazo de `2.400` (2026-10-22): en *El valor de la casilla se carga en la unidad en que se piensa*.
+21. ~~**Medida sin límites.**~~ → mínimo y máximo obligatorios para mandar a aprobar; fuera de rango
+    frena (2026-10-22): en *Toda medida del vendedor lleva mínimo y máximo*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-21. **Medida sin límites.** Nada pide mín. y máx. en una medida del vendedor: el ancho en cm (150) en un
-    paquete sin restricciones cotiza una ventana chiquita. Propuesta: toda medida del vendedor lleva
-    mín. y máx. para mandar a aprobar.
 22. **Vidrio sin medidas.** Las medidas de un material por m² son opcionales ("puede llevar"): sin ellas
     el despiece dice *Float 4 — 0,715 m²*, producción no lo puede pedir y el ≤ 0 no frena (dos lados
     negativos dan superficie positiva). Propuesta: un material por m² lleva medidas para mandar a aprobar.
@@ -1240,7 +1247,8 @@ Decidido en la v2:
 - **Mandar a aprobar frena; aprobar pone a la venta** (2026-10-21). Reemplaza a "Publicar" de la v1.
   El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles (fórmula
   mal escrita, ciclo, secundaria sin default, medida principal con default, unidad que no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
-  una alternativa, servicio a mano que ya trae un insumo del grupo): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
+  una alternativa, servicio a mano que ya trae un insumo del grupo, medida del vendedor sin mínimo o
+  máximo): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
   aprobar, la versión pasa a ser la vigente y la ve el vendedor. Un presupuesto sin enviar sigue a la
   vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4 · agrega
   burlete inferior en la hoja*); al enviar, se congela. Por qué: con aprobación, mandar no puede
