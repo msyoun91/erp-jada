@@ -519,9 +519,8 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
    catálogo, en Compras*.
 2. ~~**¿El paquete dice qué colores ofrece?**~~ → no, se calculan (2026-10-21): en *Los colores son
    de administración*, y tachado lo de la v1 en *Paquetes*.
-3. **"Material que mira el peso y suma al peso" sigue en los controles** de *Mandar a aprobar frena*,
-   pero *Nada depende de sí mismo* lo reemplazó y deja pasar el refuerzo del marco que mira
-   `peso_hoja_izq` y suma a `peso_marco`. Leído literal, lo frena. Propuesta: sacarlo; lo cubre "ciclo".
+3. ~~**"Material que mira el peso y suma al peso" sigue en los controles**~~ → sacado de *Mandar a
+   aprobar frena* (2026-10-21); lo cubre "ciclo".
 4. **"Lo que apunta a sus versiones se sigue calculando"** (*El estado es de cada versión*) vale para
    producción y para lo enviado, no para la línea sin enviar: el vendedor solo calcula la vigente de un
    paquete a la venta. Falta qué le pasa a esa línea si el paquete se da de baja o queda incompleto.
@@ -1117,8 +1116,7 @@ Decidido en la v2:
   que el técnico cree que cambió.
 - **Mandar a aprobar frena; aprobar pone a la venta** (2026-10-21). Reemplaza a "Publicar" de la v1.
   El borrador se guarda a medias y Probar lo usa. Al mandar a aprobar corren los controles (fórmula
-  mal escrita, ciclo, secundaria sin default, material que mira el peso y suma al peso, unidad que
-  no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
+  mal escrita, ciclo, secundaria sin default, unidad que no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
   una alternativa): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
   aprobar, la versión pasa a ser la vigente y la ve el vendedor. Un presupuesto sin enviar sigue a la
   vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4 · agrega
