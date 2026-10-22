@@ -507,6 +507,13 @@ historial arma de ahí el recorrido de cada una (*El paquete muestra su historia
 versión*). Descartado: un argumento más en el genérico para la columna del id (seguiría emitiendo alta
 por versión). Toca: el SQL del catálogo y `GUIDE_ENTES.md` §2.8.
 
+**Los avisos van a quienes tienen la función, no a una persona** (2026-10-22). "Al técnico" es a
+todos los que tienen la `_editar` de la vista (`catalogo_paquetes_editar` lo de paquetes y bajas,
+`catalogo_insumos_editar` el cambio de cálculo); "a administración", a los de su `_administrar`. Quien
+actuó no recibe el suyo. Por qué: técnico hay uno, y seguir a quien mandó cada versión o propuso cada
+cambio pide buscar a esa persona para llegar al mismo. Descartado: `creado_por` (es solo dato) y quien
+mandó la versión, sacado del evento `para_aprobar`.
+
 ## ~~Ficha del módulo (borrador)~~
 
 → *Ficha del módulo — v2*.
@@ -608,12 +615,11 @@ referencias entre puntos.
     *Precio de venta* → *La cotización vale por su fecha del BNA*.
 48. ~~**Eventos.**~~ → trigger propio en versiones y en cambios de cálculo, con el id del paquete o del
     insumo, y la versión o el cambio en el detalle (2026-10-22): en *Entes*.
+33. ~~**¿A qué técnico?**~~ → a todos los que tienen la función; técnico hay uno (2026-10-22): en
+    *Entes* → *Los avisos van a quienes tienen la función*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-33. **¿A qué técnico?** Rechazo, vuelta al borrador, baja con alcance, *solo Sin herraje*: "aviso al
-    técnico", y el paquete lo editan varios (`creado_por` es solo dato). Propuesta: el rechazo, a quien
-    mandó; lo de bajas, a todos los que tienen `catalogo_paquetes_editar`.
 32. **Un borrador abandonado bloquea el paquete.** Una versión abierta por paquete y no hay *descartar*.
     La v5 a medias de Marcos (fórmula rota, de vacaciones) recibe el reemplazo de la baja y no se puede
     mandar hasta arreglarla. Propuesta: *descartar borrador* y la antigüedad en la lista (*v5 · borrador
@@ -895,7 +901,7 @@ Eventos que emite
 │            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"
 ├── insumo: cambio de cálculo (para aprobar · aprobado · rechazado) — para aprobar, aviso a
 │            administración con el alcance: "Marco 70 mm: desperdicio 8 → 80 % · 40 paquetes"; aprobado
-│            o rechazado (con motivo), aviso a quien lo propuso
+│            o rechazado (con motivo), aviso al técnico
 └── servicio: ninguno (no es ente; su baja se ve en los paquetes incompletos)
 Eventos que consume
 └── ninguno
@@ -1062,7 +1068,7 @@ Decidido en la v2:
   calcula con el valor vigente y el campo muestra el pendiente (*desperdicio 8 % · pendiente 80 %
   (Marcos)*). Administración recibe aviso y lo ve en Insumos, filtro *para aprobar*, con el precio de
   referencia de cada paquete y del suelto antes → después (*Corrediza 2 hojas Modena $ 412.000 →
-  $ 453.000*): aprueba y rige desde ahí, o rechaza con motivo y avisa a quien lo propuso. Uno
+  $ 453.000*): aprueba y rige desde ahí, o rechaza con motivo y avisa al técnico. Uno
   pendiente por insumo, como la versión abierta del paquete: se retira y se propone otro, no se edita
   mientras se revisa. Va aparte de la fila del insumo, así cálculo, Compras y Stock leen el vigente.
   Lo que no está en uso se corrige libre, como la unidad; Producción suma sus órdenes abiertas al
