@@ -439,17 +439,20 @@ vendedor no sabe por qué falta) y avisar cobrando $ 0.
 Cotización: oficial BNA venta de USD y EUR, automática con corrección manual (como `erp_old`: dolarapi,
 ventana 10–15 h, cierre del día, lo manual no lo pisa el automático ese día; `erp_old_2`: monedapi.ar).
 
-**La cotización vale por su fecha del BNA: aviso a los 3 días, sin precio a los 5** (2026-10-22). Cada
-cotización guarda la fecha del BNA, no la de cuando se trajo; lo manual corrige la de un día y vale ese
-día (al siguiente el automático escribe la suya). Si el automático falla —no responde, o lo que trae
-tiene más de 3 días—, aviso a administración. Con más de 5 días corridos, lo de esa moneda queda sin
-precio con el motivo (*sin precio: cotización USD del 14/08*), como *Sin costo no es $ 0*; lo enviado
-no cambia. La fecha y el aviso, al fichar Compras; el vencimiento, en la rama de plata de la función
-de cálculo. Por qué: la manual de agosto ($ 1.320) seguía valiendo en octubre ($ 1.450), y un
-automático caído o congelado cotizaba con la de hace semanas sin decirlo: $ 180.000 abajo en las 4
-Corredizas. Días corridos y no hábiles para no llevar feriados; 5 cubre Semana Santa (miércoles →
-lunes). Descartado: la última sin aviso, y sin precio desde el primer día sin cotización (frena a los
-vendedores cada lunes antes de las 10 h).
+**La cotización vale por su fecha del BNA: advertencia a los 3 días, sin precio a los 5** (2026-10-22).
+Cada cotización guarda la fecha del BNA, no la de cuando se trajo; lo manual corrige la de un día y vale
+ese día (al siguiente el automático escribe la suya). La función de cálculo, en su rama de plata, mira
+la fecha: con más de 3 días corridos da el precio con advertencia (*cotización USD del 14/08, hace 4
+días*); con más de 5, lo de esa moneda queda sin precio con el motivo (*sin precio: cotización USD del
+14/08*), como *Sin costo no es $ 0*. Las dos se ven en Probar con plata y en la línea; lo enviado no
+cambia. Aparte, si el automático falla —no responde, o lo que trae tiene más de 3 días—, avisa a
+administración: es de Compras, al ficharlo, porque el proceso es el único que sabe que falló. Por qué:
+la manual de agosto ($ 1.320) seguía valiendo en octubre ($ 1.450), y un automático caído o congelado
+cotizaba con la de hace semanas sin decirlo: $ 180.000 abajo en las 4 Corredizas. La advertencia sola no
+alcanza: Probar con plata corre al aprobar, y la línea la ve el vendedor, que no la arregla (como el 34
+de la auditoría v2). Días corridos y no hábiles para no llevar feriados; 5 cubre Semana Santa
+(miércoles → lunes). Descartado: la última sin aviso, y sin precio desde el primer día sin cotización
+(frena a los vendedores cada lunes antes de las 10 h).
 
 **La cotización es una vista de Compras, no un módulo** (2026-10-14). Una tabla, una pantalla y una
 persona (administración la corrige); Compras es dueño de los costos en moneda extranjera y Catálogo y
@@ -587,8 +590,9 @@ referencias entre puntos.
     viejo → nuevo del reemplazo (2026-10-22): en *Lo guardado cruza versiones por nombre y por insumo*.
 43. ~~**La versión nueva que saca una alternativa.**~~ → sin precio, como las otras, también con una
     condición nueva que la deja afuera (2026-10-22): en *Lo que el catálogo deja de ofrecer*.
-18. ~~**Cotización pegada.**~~ → fecha del BNA, lo manual vale su día, aviso a los 3 días y sin precio a
-    los 5 corridos (2026-10-22): en *Precio de venta* → *La cotización vale por su fecha del BNA*.
+18. ~~**Cotización pegada.**~~ → fecha del BNA, lo manual vale su día; el cálculo advierte a los 3 días
+    y da sin precio a los 5 corridos, y el automático que falla avisa a administración (2026-10-22): en
+    *Precio de venta* → *La cotización vale por su fecha del BNA*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
