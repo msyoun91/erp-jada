@@ -5,15 +5,10 @@
 Al pasar a carpeta, lo que la v1 (2026-10-14) y la v2 (2026-10-21) decían distinto sin que una
 reemplazara a la otra. Cada uno está marcado con ⚠ donde aparece. Se resuelven antes del SQL sin plata.
 
-1. **Secundaria sin default.** El título *El default es obligatorio solo en lo secundario*
-   (`opciones.md`) y la lista de controles de *Mandar a aprobar frena* (`versiones.md`) dicen que frena
-   toda secundaria sin default. El cuerpo de esa decisión y el de *Cada medida, opción o grupo
-   opcional es principal o secundaria* dicen otra cosa: la opción secundaria sin default toma la
-   primera alternativa, el grupo opcional siempre arranca puesto o sacado, y solo frena la medida
-   secundaria sin default. Caso: *herraje hoja izq*, secundaria, sin default marcado. ¿La v4 se manda
-   a aprobar y la línea arranca en Manija (la primera), o no se manda? Propuesta (`BACKLOG.md`): la
-   opción toma la primera. El control pasa a decir *medida secundaria sin default*, y el título, *Una
-   medida secundaria lleva default; una principal, no*.
+Resueltos (el texto del choque, en git): **1. Secundaria sin default** (2026-10-22) → la opción toma
+la primera y solo frena la medida: `opciones.md` → *Una medida secundaria lleva default; una
+principal, no*; el orden de las alternativas, en `versiones.md` → *Cuenta como cambio*.
+
 2. **Mínimo de un porcentual que entra por regla.** *Servicios por categoría* (`servicios.md`, v1):
    "el % va sobre los insumos que alcanza la regla y no lleva mínimo". *El 0 se rechaza donde vacío es
    "falta"* (`precio.md`, 2026-10-22): el mínimo de un porcentual es opcional, y el porqué dice que
@@ -128,7 +123,7 @@ cambian: los usan los escenarios y las referencias entre puntos.
 | 3 | "Material que mira el peso y suma al peso" en los controles | sacado; lo cubre el ciclo (`motor.md` → *Nada depende de sí mismo*) |
 | 4 | "Lo que apunta a sus versiones se sigue calculando" | `versiones.md` → *El estado es de cada versión del paquete* |
 | 5 | Una principal sin default que deja de ofrecerse | `opciones.md` → *Lo elegido se guarda*; `bajas.md` → *Lo que el catálogo deja de ofrecer* |
-| 6 | Ancho y alto sin default que nadie hace cumplir | `opciones.md` → *El default es obligatorio solo en lo secundario* |
+| 6 | Ancho y alto sin default que nadie hace cumplir | `opciones.md` → *Una medida secundaria lleva default; una principal, no* |
 | 7, 8 | El reemplazo: otra unidad y quién lo decide | `bajas.md` → *La baja de un insumo puede designar su reemplazo* |
 | 9 | El catálogo sí depende de Compras | `ficha.md` → *El catálogo no apunta con FK a otro módulo* |
 | 10 | Menores de texto | corregidos en su lugar |

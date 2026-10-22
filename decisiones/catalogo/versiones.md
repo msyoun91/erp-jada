@@ -30,8 +30,8 @@ que una baja hace con las versiones, en `bajas.md`; los eventos de estado, en `f
   uno, no se manda. Esta es la lista (⚠ choque 5, `pendiente.md`):
   - fórmula mal escrita (`motor.md` → *Las fórmulas se validan al guardar*) y ciclo (*Nada depende de
     sí mismo*);
-  - secundaria sin default (⚠ choque 1) y medida principal con default (`opciones.md` → *El default
-    es obligatorio solo en lo secundario*);
+  - medida secundaria sin default y medida principal con default (`opciones.md` → *Una medida
+    secundaria lleva default; una principal, no*);
   - medida del vendedor sin mínimo o máximo (`opciones.md` → *Toda medida del vendedor lleva mínimo y
     máximo*);
   - unidad que no coincide (`motor.md` → *Cada variable declara su unidad*);
@@ -109,7 +109,7 @@ que una baja hace con las versiones, en `bajas.md`; los eventos de estado, en `f
 ## Qué cambió
 
 - **Cuenta como cambio todo lo que está en la versión** (2026-10-21): variables (medidas del vendedor,
-  calculadas, opciones con sus alternativas), grupos, materiales (cantidad o fórmula, condición,
+  calculadas, opciones con sus alternativas en orden), grupos, materiales (cantidad o fórmula, condición,
   piezas con largo y ángulos, si suma al peso), servicios con su cantidad y restricciones. Se muestra
   por pestaña, solo lo que cambió, con antes → después (*Restricciones: ancho máx. 2400 mm · frena →
   avisa*, ⚠ choque 3). No entra lo que no es de la versión: nombre y subcategoría del paquete, casos
@@ -118,7 +118,11 @@ que una baja hace con las versiones, en `bajas.md`; los eventos de estado, en `f
   de la Corrediza económica decía *baja el umbral de rueda doble a 35 kg* y en el mismo borrador la
   restricción de ancho pasó a avisar; con solo insumos y fórmulas se aprobaba sin verla y se vendía lo
   que la línea no soporta. Descartado: solo lo que cambia el resultado de los casos (frena → avisa no
-  cambia un caso dentro del límite).
+  cambia un caso dentro del límite). **El orden de las alternativas cuenta** (2026-10-22): sin default,
+  o con un default que no se ofrece, entra la primera que se ofrezca (`opciones.md` → *Lo elegido se
+  guarda*). Push subido arriba en la v5 hacía arrancar en Push las líneas nuevas de *herraje hoja
+  izq* sin que nadie lo marcara; el comparador lo muestra (*Manija, Cerradura, Push → Push, Manija,
+  Cerradura*).
 - **El paquete muestra su historial versión por versión, como apoyo del técnico** (2026-10-21). Cada
   versión dice qué cambió respecto de la anterior: el texto del técnico, los cambios que detecta el
   sistema (los de pendientes, sin precio) y su recorrido en una línea (*v5 · baja el umbral de rueda

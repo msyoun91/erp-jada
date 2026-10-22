@@ -33,12 +33,13 @@ color, en `colores.md`.
 - **Cada medida, opción o grupo opcional es principal o secundaria** (2026-10-14). El vendedor ve las
   principales; las secundarias quedan en "Más opciones", que plegado ya muestra qué entra (*herraje
   izq: Manija · mosquitero: no*). Una medida secundaria sin default no se manda a aprobar, como una
-  fórmula mal escrita (una opción siempre tiene la primera alternativa) (⚠ choque 1, `pendiente.md`).
+  fórmula mal escrita (una opción siempre tiene la primera alternativa).
   Si una restricción avisa sobre una secundaria, el aviso se ve y "Más opciones" se abre solo. Por
   qué: el vendedor cotiza lo común sin recorrer cada herraje y abre el resto cuando el cliente lo
   pide. Descartado: que sea principal según una condición — más lógica para lo que ya resuelve el
   plegado.
-- **El default es obligatorio solo en lo secundario** (2026-10-14) (⚠ choque 1, `pendiente.md`).
+- **Una medida secundaria lleva default; una principal, no** (2026-10-14; título del 2026-10-22: el
+  orden de las alternativas cuenta como cambio, `versiones.md`).
   Opción: el técnico marca la alternativa por defecto; si su condición no se cumple, la primera que
   se ofrezca (*Lo elegido se guarda*). Medida: el default por fórmula de arriba, o un número fijo.
   Grupo opcional: arranca puesto o sacado (mosquitero: no). **Una principal sin default arranca vacía
