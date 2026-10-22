@@ -573,12 +573,11 @@ referencias entre puntos.
     (2026-10-21): en *Servicios muestra hace cuánto cambió cada monto y mínimo*.
 49. ~~**Qué guarda "lo elegido".**~~ → el nombre, fijo desde que se aprueba, y el insumo, con el par
     viejo → nuevo del reemplazo (2026-10-22): en *Lo guardado cruza versiones por nombre y por insumo*.
+43. ~~**La versión nueva que saca una alternativa.**~~ → sin precio, como las otras, también con una
+    condición nueva que la deja afuera (2026-10-22): en *Lo que el catálogo deja de ofrecer*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-43. **La versión nueva que saca una alternativa.** *Lo que el catálogo deja de ofrecer* nombra bajas y
-    subcategorías, no la v5 que saca el Laminado: la línea sin enviar con Laminado, ¿sin precio o
-    default? Propuesta: sin precio, como las otras. Con el par de un reemplazo no llega acá (49).
 48. **Eventos.** El estado del paquete vive en la versión, y el del *cambio de cálculo* del insumo (11),
     en el cambio: el trigger genérico emitiría con el id de la versión o del cambio. Propuesta: trigger
     propio en versiones con `paquete_id` y en cambios con `insumo_id` (como `tareas_emitir_asignado`).
@@ -1540,8 +1539,14 @@ Decidido en la v2:
   *Lo elegido se guarda*** (2026-10-21). Presupuesto sin enviar con 6 corredizas en Laminado 3+3 y
   administración lo da de baja: las 6 quedan sin precio con el motivo (*Laminado 3+3: dado de baja,
   elegí otro vidrio*) y no se envían hasta que el vendedor elija. Vale para toda opción, vidrio o
-  herraje, y para todo lo que viene del catálogo: baja del insumo o de su variante, o el insumo que
-  sale de la subcategoría. Si lo causa la misma línea (saca la cámara, o cambia el color y
+  herraje, y para todo lo que viene del catálogo: baja del insumo o de su variante, el insumo que
+  sale de la subcategoría, **o la versión nueva que lo saca de la opción o le suma una condición que
+  lo deja afuera en esa línea** (2026-10-22): la v5 de la Modena saca Laminado 3+3 (*ya no se ofrece
+  en este paquete (v5), elegí otro vidrio*); con *Laminado solo hasta 1200 de ancho*, las de 1500
+  quedan sin precio y la de 1000 sigue. Con el par de un reemplazo entra el nuevo (*Lo guardado
+  cruza versiones por nombre y por insumo*). Los casos de prueba siguen *Lo elegido se guarda* y se
+  marcan (*Laminado 3+3 → Float 4 (ya no se ofrece)*): así administración ve qué deja de ofrecer la
+  versión. Si lo causa la misma línea (saca la cámara, o cambia el color y
   PAN-01 no viene en blanco), sigue *Lo elegido se guarda* —una principal sin default queda vacía—
   y volver atrás devuelve lo elegido. Lo enviado no cambia. Por qué: pasando solas al default, las 6 bajaban de precio y se
   enviaban en Float 4 sin que nadie notara que el cliente pidió laminado; lo que hace el vendedor en
