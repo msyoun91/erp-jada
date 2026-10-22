@@ -689,14 +689,11 @@ referencias entre puntos.
     también el base (2026-10-22): en *Los colores son de administración*.
 42. ~~**Aprobar lo que ya no se vende.**~~ → aprobar vuelve a correr controles e incompleto; el alcance
     de la baja lo anticipa (2026-10-22): en *Aprobar vuelve a correr los controles y el incompleto*.
+45. ~~**Clientes fusionados o que no se ven.**~~ → trigger en la fusión y Clientes lista por función
+    (2026-10-22): en *Las habilitaciones siguen a la empresa que queda al fusionar*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-45. **Clientes fusionados o que no se ven.** Contactos fusiona dos empresas y no toca lo que apunta a la
-    que se va: las habilitaciones quedan en la inactiva. Y las empresas son del equipo que las carga:
-    Laura puede no ver la que tiene que habilitar. Propuesta: trigger del catálogo en la fusión (como
-    Obras con las comisiones, `sql/146`) y la vista Clientes lista por función, no por la RLS de
-    Contactos.
 41. **Renombrar el paquete.** No está en Acciones ni en la versión. Propuesta: administración, como mover.
 38. **Mover un insumo de subcategoría.** No dice quién. Cambia plata y oferta: la regla (Laminados 15 %
     → Float 10 %), lo que entra por subcategoría (40 paquetes más, o líneas sin precio) y lo que ve cada
@@ -1036,6 +1033,14 @@ Decidido en la v2:
   De los insumos ve solo los sueltos. Ve lo mismo que el vendedor: nunca despiece, costo ni servicios. Sin
   precio, el cliente arma el pedido con medidas y el precio lo pone el vendedor. Descartado: marcar ítem
   por ítem (cada producto nuevo obliga a tocar cada cliente).
+- **Las habilitaciones siguen a la empresa que queda al fusionar, y Clientes lista por función**
+  (2026-10-22). Trigger del catálogo sobre `contactos_empresas` (`AFTER UPDATE OF fusionada_en`,
+  como el de Obras sobre vínculos, `sql/146`): lo de la que se va pasa a la que queda; si las dos
+  tenían, la unión de lo habilitado y el *ve precio* de la que queda (en el choque gana la que queda,
+  como en Contactos). La vista Clientes lista con una función DEFINER id y nombre de toda empresa
+  activa y aprobada para `catalogo_clientes`, sin datos de contacto ni la RLS de Contactos (como
+  `contactos_fusionada`). Por qué: fusionada *Constructora Sur* en *Constructora del Sur SA*, el
+  portal dejaba de ver Ventanas; y Laura no encontraba la empresa que cargó el equipo de Juan.
 - **Dos entes: paquete e insumo.** Son lo que otro módulo señala. El servicio no es ente: nadie de afuera
   lo elige, lo suma la función de precio. La versión es parte del paquete (lo guardado apunta a la versión,
   el chip muestra el paquete); categorías y habilitaciones de clientes son configuración.
