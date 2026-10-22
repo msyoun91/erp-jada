@@ -514,8 +514,8 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 
 *El texto se contradice*
 
-1. **Quién carga el costo.** *El costo sigue fuera del catálogo* dice "Administración lo carga allá";
-   *Compras no usa el catálogo* le devolvió esa tarea a Compras. Propuesta: "Compras lo carga allá".
+1. ~~**Quién carga el costo.**~~ → Compras (2026-10-21): corregido en *El costo sigue fuera del
+   catálogo, en Compras*.
 2. **¿El paquete dice qué colores ofrece?** *Paquetes* (v1): "el paquete solo dice qué colores
    ofrece"; *Los colores son de administración*: el último insumo que recibe el bronce pone el paquete
    en bronce sin aprobación, o sea que se calcula. Calculado, no hay cómo no vender la Modena en bronce
@@ -930,8 +930,8 @@ leer el insumo.
 
 Decidido en la v2:
 
-- **El costo sigue fuera del catálogo, en Compras** (como en la v1). Administración lo carga allá; el
-  catálogo lo lee para calcular. El técnico no ve plata.
+- **El costo sigue fuera del catálogo, en Compras** (como en la v1). Compras lo carga allá
+  (*Compras no usa el catálogo*); el catálogo lo lee para calcular. El técnico no ve plata.
 - ~~**Hay margen, y lo pone administración.**~~ → *No hay margen* de la v1 (*Servicios*), confirmado al
   comparar (2026-10-14): la ganancia está en los servicios comerciales.
 - **Tres vistas: Insumos · Servicios · Paquetes.**
