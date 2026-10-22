@@ -24,7 +24,16 @@ todavía en el orden: Stock y la licitación de Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha aprobada
-  (2026-10-21): `decisiones/catalogo.md` → *Ficha del módulo — v2*. *Auditoría v2*: resuelto todo lo que cambia tablas (2026-10-22). Siguiente: el SQL sin plata. Lo de Compras mínimo (19, 34) y lo de pantallas (29, 31, 44, 35, 50, 54–58) sigue en *Pendiente* → *Auditoría v2*, para su fase. Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
+  (2026-10-21): `decisiones/catalogo.md` → *Ficha del módulo — v2*. *Auditoría v2*: resuelto todo lo que cambia tablas (2026-10-22). Siguiente (2026-10-22): pasar
+  `decisiones/catalogo.md` a `decisiones/catalogo/`, antes del SQL sin plata. Backup en
+  `obsoletos/backup-docs-2026-10-22/`; `README.md` índice y un archivo por tema, como `tareas/` (ficha,
+  insumos, servicios, motor del paquete, versiones y aprobación, bajas y reemplazo, colores, precio,
+  clientes, pendiente); cada regla una sola vez, con el vocabulario de la v2 (*no se publica* → *no se
+  manda a aprobar*); los choques entre v1 y v2 se anotan y se resuelven de a uno con el usuario; los
+  punteros `decisiones/catalogo.md → *…*` de este archivo pasan a los nuevos. Primer choque: "secundaria
+  sin default" (título de *El default es obligatorio solo en lo secundario* y controles de *Mandar a
+  aprobar frena*) contra el cuerpo, que solo frena la medida; la opción toma la primera. Después, el SQL
+  sin plata. Lo de Compras mínimo (19, 34) y lo de pantallas (29, 31, 44, 35, 50, 54–58) sigue en *Pendiente* → *Auditoría v2*, para su fase. Producción y erp-cliente, al fichar, suman su rama a la función de cálculo del catálogo
   (`decisiones/catalogo.md` → *La función de cálculo decide qué parte ve cada uno*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
