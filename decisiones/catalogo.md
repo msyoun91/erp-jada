@@ -691,10 +691,11 @@ referencias entre puntos.
     de la baja lo anticipa (2026-10-22): en *Aprobar vuelve a correr los controles y el incompleto*.
 45. ~~**Clientes fusionados o que no se ven.**~~ → trigger en la fusión y Clientes lista por función
     (2026-10-22): en *Las habilitaciones siguen a la empresa que queda al fusionar*.
+41. ~~**Renombrar el paquete.**~~ → el técnico hasta la primera aprobada; después administración
+    (2026-10-22): en *El nombre del paquete lo corrige el técnico*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-41. **Renombrar el paquete.** No está en Acciones ni en la versión. Propuesta: administración, como mover.
 38. **Mover un insumo de subcategoría.** No dice quién. Cambia plata y oferta: la regla (Laminados 15 %
     → Float 10 %), lo que entra por subcategoría (40 paquetes más, o líneas sin precio) y lo que ve cada
     cliente. Propuesta: administración, con alcance; y mover un paquete (Modena → Herrero) también
@@ -879,6 +880,7 @@ Acciones
 ├── paquete: crear · duplicar · editar borrador · descartar borrador · mandar a aprobar (con qué cambió)
 │            · volver al borrador · aprobar
 │            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
+│            · renombrar (técnico hasta la primera aprobada; después administración)
 │            · mover de subcategoría · dar de baja · reactivar
 │            · casos de prueba: guardar desde Probar (nuevo o pisando uno) · renombrar · marcar
 │              referencia · dar de baja
@@ -933,7 +935,7 @@ Módulo: Catálogo
 │   │                                              reemplazar material, volver al borrador, probar sin plata
 │   │                                              y guardar casos de prueba
 │   └── catalogo_paquetes_administrar (funcion)  — administración: aprobar y rechazar, probar
-│                                                  con plata y guardar casos de prueba, categorías, mover,
+│                                                  con plata y guardar casos de prueba, categorías, renombrar, mover,
 │                                                  baja y reactivar
 └── Clientes (vista, catalogo_clientes)          — administración
     └── catalogo_clientes_habilitar (funcion)    — administración: qué ve cada empresa y si ve precio
@@ -1176,6 +1178,11 @@ Decidido en la v2:
 - **Dar de baja es de administración, en las tres vistas**: dejar de vender es una decisión comercial.
   El técnico puede pedirlo, no hacerlo.
 - **La subcategoría la elige el técnico al crear; administración puede moverla después.**
+- **El nombre del paquete lo corrige el técnico hasta la primera versión aprobada; después lo cambia
+  administración** (2026-10-22), como mover: cambia lo que buscan vendedores y ve el cliente, y las
+  líneas sin enviar lo muestran (apuntan, no copian). No se repite en la subcategoría (índice único
+  parcial `WHERE activo`); no es evento. Por qué: *Corrediza 2 hjoas* se corrige antes de venderse,
+  y pasar a *Corrediza 2 hojas clásica* es una decisión comercial.
 - ~~**Dar de baja un insumo o un servicio deja "incompletos" los paquetes que lo usan: dejan de
   venderse.**~~ → *La baja depende de cómo se usa lo que se da de baja* (2026-10-21).
 - **La baja depende de cómo se usa lo que se da de baja** (2026-10-21). *Incompleto* es uno de los
