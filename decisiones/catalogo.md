@@ -681,12 +681,11 @@ referencias entre puntos.
     y aviso (2026-10-22): en *El DVH son opciones por capa* → *Una opción que solo ofrece Sin material*.
 28. ~~**Clase de color y color base editables.**~~ → fijos como la unidad, desde variantes, versión o
     suelto (2026-10-22): en *Clase de color y color base quedan fijos como la unidad*.
+37. ~~**Reemplazar o dar de baja un servicio.**~~ → baja con reemplazo y el mismo botón, para los
+    paquetes que lo cargan (2026-10-22): en *La baja de un servicio también puede designar su reemplazo*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-37. **Reemplazar o dar de baja un servicio.** Dar de baja *Soldadura* (en 25 paquetes) los deja
-    incompletos al instante, sin reemplazo ni "como si siguiera activo"; *Reemplazar material* busca
-    insumos. Propuesta: el mismo botón y la misma baja con reemplazo, para servicios.
 39. **Dar de baja una categoría con cosas adentro.** ¿Y los 12 Float de *Vidrios → Float*, las opciones
     que la ofrecen, sus reglas, los clientes habilitados? Propuesta: no se da de baja con ítems activos;
     y *reactivar*, que categorías no tiene y colores sí.
@@ -898,7 +897,7 @@ Acciones
 │           · en uso, cambio de cálculo (desperdicio, peso, contenido, espesor, servicios que lleva):
 │             proponer · retirar · aprobar · rechazar con motivo (administración)
 ├── servicio: crear · editar · poner monto, % y mínimo · aumentar montos y mínimos en % (por
-│             categoría o marcados, con motivo) · dar de baja · reactivar
+│             categoría o marcados, con motivo) · dar de baja (con reemplazo opcional) · reactivar
 │             · regla (solo porcentuales): aplicar a todo, o a una categoría o subcategoría de
 │               paquetes o de insumos, con su % · cambiar el % · quitarla
 │             · excepción: otro % para un paquete · quitarla
@@ -1242,6 +1241,15 @@ Decidido en la v2:
   reemplazo cambia solo (más peso → rueda doble, un color que no tiene) se ve en los casos de prueba al
   mandar a aprobar y en pendientes. Descartado: aprobar las versiones al confirmar la baja (sin revisión
   técnica) y que dejen de venderse hasta aprobar (se pierden ventas en el medio).
+- **La baja de un servicio también puede designar su reemplazo, para los paquetes que lo cargan**
+  (2026-10-22). Administración elige otro de monto fijo, de cualquier unidad; cada paquete lo recibe
+  en su versión abierta con el par viejo → nuevo y, mientras tanto, la vigente cobra como si el viejo
+  siguiera activo, a su monto. *"Reemplazar material"* busca también servicios (servicio por servicio).
+  Reglas e insumos que lo traen siguen *deja de cobrarse*, y el alcance los lista (*se deja de cobrar
+  en 3 reglas · lo traen 2 insumos*): administración pasa las reglas, el técnico propone el cambio del
+  insumo. Por qué: unificar *Soldadura de marco* en *Soldadura* dejaba 25 paquetes incompletos al
+  instante y había que abrirlos de a uno. Descartado: mover las reglas solas al nuevo (chocan con las
+  que ya tenga).
 - ~~**El técnico reemplaza por material o por paquete.**~~ → *"Reemplazar material" es un solo botón
   de Paquetes* (2026-10-21).
 - **Administración aprueba varias versiones juntas con checkbox, viendo qué cambió de verdad.** Cada fila
