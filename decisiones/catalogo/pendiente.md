@@ -7,16 +7,10 @@ reemplazara a la otra. Cada uno está marcado con ⚠ donde aparece. Se resuelve
 
 Resueltos (el texto del choque, en git): **1. Secundaria sin default** (2026-10-22) → la opción toma
 la primera y solo frena la medida: `opciones.md` → *Una medida secundaria lleva default; una
-principal, no*; el orden de las alternativas, en `versiones.md` → *Cuenta como cambio*.
+principal, no*; el orden de las alternativas, en `versiones.md` → *Cuenta como cambio*. **2. Mínimo
+de un porcentual por regla** (2026-10-22) → por regla no hay mínimo: `servicios.md` → *Servicios por
+categoría*.
 
-2. **Mínimo de un porcentual que entra por regla.** *Servicios por categoría* (`servicios.md`, v1):
-   "el % va sobre los insumos que alcanza la regla y no lleva mínimo". *El 0 se rechaza donde vacío es
-   "falta"* (`precio.md`, 2026-10-22): el mínimo de un porcentual es opcional, y el porqué dice que
-   "un mínimo leído como 'falta' dejaba sin precio toda línea con Comercialización", que entra por
-   regla. Caso: Comercialización 30 % por Ventanas, con mínimo $ 20.000, en una ventana chica de
-   $ 40.000 de insumos. ¿Cobra $ 12.000 o $ 20.000? Propuesta: el mínimo vale solo para el servicio
-   cargado en un paquete (*Mano de obra 15 %, mín $ 5.000*); por regla no lleva, como dice la v1.
-   El porqué del 22/10 pasa a hablar de una línea con mano de obra.
 3. **El máximo de la medida y la restricción que frena.** *Toda medida del vendedor lleva mínimo y
    máximo* (`opciones.md`, 2026-10-22) dice: "las restricciones quedan para avisos y combinaciones;
    un 'no aguanta más de 2400' es el máximo del ancho". Fuera de rango, el mensaje es el típico

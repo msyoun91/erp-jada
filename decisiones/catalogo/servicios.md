@@ -94,8 +94,12 @@ con la excepción primero, bajar el paquete le subía el vidrio de 10 a 20 % sin
 No se puede bajar el vidrio solo en un paquete; si aparece el caso, excepción paquete × categoría de
 insumo.
 
-- El % va sobre los insumos que alcanza la regla (no sobre servicios) y no lleva mínimo (⚠ choque 2,
-  `pendiente.md`).
+- El % va sobre los insumos que alcanza la regla (no sobre servicios). **Por regla no hay mínimo: el
+  mínimo es del servicio cargado en un paquete**, al lado de su % propio (2026-10-22). Por qué:
+  Comercialización con Ventanas 30 %, Vidrios 10 % y mínimo $ 20.000 cobraba $ 20.000 al Float 4
+  suelto de $ 5.000, y en la ventana chica no se sabía cuál de las dos reglas ponía el piso; el piso
+  de la ventana chica ya lo da la mano de obra (*Mano de obra 15 %, mín $ 5.000*). Descartado: mínimo
+  por regla (otra tabla para un piso que ya existe).
 - Los servicios fijos (soldadura × 4) no van por categoría: su cantidad depende del paquete.
 - Demo: https://claude.ai/artifact/RK1y3Gs42DoNx4h8v7yfzW (pestaña Servicios y "Lo que recibe por
   categoría" en Paquetes).

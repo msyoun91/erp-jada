@@ -15,7 +15,7 @@ Por insumo    cantidad puesta del insumo (sin desperdicio) × lo que lleva por u
 Servicio %    % (administración) × suma de insumos de su grupo, sin las categorías marcadas fuera del %;
               mínimo (administración, opcional) una vez por servicio en el paquete, sobre la suma de
               sus grupos
-Por categoría % (administración) sobre los insumos que alcanza; gana la regla más específica
+Por categoría % (administración) sobre los insumos que alcanza, sin mínimo; gana la regla más específica
               (ver servicios.md → *Servicios por categoría*)
 Precio        insumos + servicios, de una abertura — lo pide Presupuestos con las medidas de la línea
 Línea         precio × cantidad (de la línea, nunca de las fórmulas)
@@ -51,8 +51,8 @@ Descuento     no es de Catálogo: va en Presupuestos (BACKLOG.md), sobre el prec
   arriba), así que su 0 es a propósito: *Corrediza económica: Comercialización 0 %*, *Vidrios → Float
   0 %*. El mínimo de un porcentual es opcional: es un piso, no parte del precio; vacío es sin mínimo y
   el 0 no se acepta (una sola forma de decirlo). Por qué: el 0 % de la económica tenía que cargarse
-  como 0,01 %, y un mínimo leído como "falta" dejaba sin precio toda línea con Comercialización
-  (⚠ choque 2, `pendiente.md`).
+  como 0,01 %, y un mínimo leído como "falta" dejaba sin precio toda línea con mano de obra. Por regla
+  no hay mínimo (`servicios.md` → *Servicios por categoría*).
 - **Lo que falta costear se ve en filtros, y lo que entra sin plata se marca al aprobar**
   (2026-10-21). En Compras, la lista *sin costo y en uso*, con dónde se usa cada insumo (*Rueda
   doble — 3 paquetes: Corrediza 2 hojas, Corrediza 3 hojas, Puerta corrediza*; *Burlete 9 mm gris
