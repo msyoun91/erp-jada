@@ -621,13 +621,11 @@ referencias entre puntos.
     de una baja a la versión que sigue (2026-10-22): en *El borrador se descarta*.
 36. ~~**Duplicar paquete.**~~ → paquete nuevo con la v1 en borrador, copia de cualquier versión, con sus
     casos y sin las excepciones de % (2026-10-22): en *Duplicar crea un paquete nuevo*.
+26. ~~**Producción no puede caer en *Lo elegido se guarda*.**~~ → lo vendido aunque esté de baja, o
+    error con lo que falta (2026-10-22): en *Para producción entra lo vendido o error*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-26. **Producción no puede caer en *Lo elegido se guarda*.** La orden vendida con Manija Roma, dada de
-    baja después (o su variante negra, o movida de subcategoría), se despieza con el default y taller
-    arma otra manija. En el presupuesto lo frena la línea sin precio; en producción no hay regla.
-    Propuesta: para producción, lo elegido aunque esté de baja (es lo vendido) o error; nunca otro insumo.
 27. **Producción elige una versión con otras entradas.** La orden de la v3 se fabrica con la v5, que
     suma `alto_banderola` (principal, sin default) o renombró `ancho_hoja_izq`. Propuesta: solo se
     ofrecen las versiones cuyas entradas cubre lo guardado; si no, el despiece dice qué falta.
@@ -1039,6 +1037,16 @@ Decidido en la v2:
   le ofrece solo las versiones aprobadas del paquete y calcula el despiece de la que elija. Cambiar de
   versión cambia los materiales, no el precio: el precio es del presupuesto. Por eso cada versión dice qué
   cambió, obligatorio al mandarla a aprobar ("v2: agrega burlete inferior en la hoja").
+- **Para producción entra lo vendido o error, nunca otro insumo** (2026-10-22). Si la versión que
+  elige producción tiene la alternativa guardada, entra aunque el insumo, su variante o el color de la
+  lista estén de baja, y el despiece lo marca (*Manija Roma negra (de baja)*): dar de baja es dejar de
+  vender, no de fabricar lo vendido. Si no la tiene (la v5 la sacó, o el insumo se movió a una
+  subcategoría que la opción no ofrece), el despiece da error con lo que falta (*v5 no ofrece Manija
+  Roma en herraje hoja izq*), sin default ni primera; cómo lo resuelve producción, al ficharla. Los
+  pares de reemplazo de la versión elegida valen (*Lo guardado cruza versiones por nombre y por
+  insumo*). Es una rama de la función de cálculo. Por qué: la orden de julio con Manija Roma, dada de
+  baja en septiembre, se despiezaba con la Embutida del default; en el presupuesto lo frena la línea
+  sin precio, en la orden nada.
 - **El insumo no se versiona: una corrección se edita en el mismo insumo.** Las fórmulas leen el peso,
   así que corregirlo recalcula las órdenes viejas — y eso se quiere: el dato viejo estaba mal. En uso, la
   corrección espera a administración (*Lo que cambia el cálculo de un insumo en uso espera a
