@@ -132,7 +132,11 @@ final** (Presupuestos: es donde se cargan las medidas).
   largo que la barra de 6000 mm*. Aviso y no freno: se hace con barra especial o empalme, y lo que no
   se fabrica ya lo frena una restricción del técnico. Por qué: se cobraba 6,5 ml y taller se enteraba
   al cortar, con el presupuesto aprobado. Descartado: la restricción a mano en cada paquete — se
-  olvida y el largo ya está en el insumo.
+  olvida y el largo ya está en el insumo. **Un material por piezas pide presentación en su insumo
+  para mandar a aprobar** (2026-10-22): sin ella no hay con qué comparar y el travesaño de 6500 del
+  *Marco Herrero 60* pasaba sin aviso. Solo lo que va por piezas; en uso, cargarla espera a
+  administración (cambia la conversión del costo). Descartado: presentación obligatoria en el alta
+  de todo insumo (pide un dato a lo que no se corta).
 - **Lo que va por unidad se redondea hacia arriba solo** (2026-10-14), insumo o servicio: `alto / 250`
   = 4,4 → 5 tornillos. Por abertura y antes del desperdicio (5 con 5 % se cobran 5,25; el despiece dice
   5). ml y m² quedan con decimales. Lo que se usa en fracción va en otra unidad (silicona en ml, no
@@ -714,10 +718,11 @@ referencias entre puntos.
     (2026-10-22): en *La cantidad de piezas lleva el redondeo escrito en la fórmula*.
 52. ~~0 % y mínimo de un porcentual.~~ → el 0 vale en reglas y excepciones; mínimo opcional, vacío es
     sin mínimo (2026-10-22): en *Precio de venta* → *El 0 se rechaza donde vacío es "falta"*.
+53. ~~Material por piezas sin presentación.~~ → la pide para mandar a aprobar (2026-10-22): en *Una
+    pieza más larga que la barra da aviso*.
 
-*Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
-
-53. Un material por piezas sin presentación no tiene aviso de barra: pedirla para cargar piezas.
+*Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo* — todos resueltos
+(2026-10-22), arriba.
 
 *Con Compras mínimo y la rama de plata*
 
@@ -1305,7 +1310,7 @@ Decidido en la v2:
   mal escrita, ciclo, secundaria sin default, medida principal con default, unidad que no coincide, hermanas que no ofrecen lo mismo o con defaults que no son par, espesor que falta en
   una alternativa, servicio a mano que ya trae un insumo del grupo, medida del vendedor sin mínimo o
   máximo, material por m² sin ancho o alto, par entre tres o más hermanas, cantidad de piezas que no
-  da entero): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
+  da entero, material por piezas sin presentación): si falla uno, no se manda. Donde la v1 dice "no se publica", se lee "no se manda a aprobar". Recién al
   aprobar, la versión pasa a ser la vigente y la ve el vendedor. Un presupuesto sin enviar sigue a la
   vigente, con aviso en la línea que suma el texto del técnico (*el paquete cambió: v3 → v4 · agrega
   burlete inferior en la hoja*); al enviar, se congela. Por qué: con aprobación, mandar no puede
