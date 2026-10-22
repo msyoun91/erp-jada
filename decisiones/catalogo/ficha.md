@@ -60,6 +60,7 @@ Acciones
 │           reemplazo opcional) · reactivar · cargar variantes de color, en uno o en varios a la vez
 │           · dar de baja o reactivar una variante (administración)
 │           · mover de subcategoría (técnico sin uso; en uso, administración)
+│           · renombrar o cambiar el código (ídem)
 │           · en uso, cambio de cálculo (desperdicio, peso, contenido, espesor, servicios que lleva):
 │             proponer · retirar · aprobar · rechazar con motivo (administración)
 ├── servicio: crear · editar · poner monto, % y mínimo · aumentar montos y mínimos en % (por
@@ -94,12 +95,13 @@ Eventos que consume
 Módulo: Catálogo
 ├── Insumos (vista, catalogo_insumos)            — técnico, administración
 │   ├── catalogo_insumos_editar (funcion)        — técnico: crear y editar, con los servicios que lleva;
-│   │                                              mover sin uso; en uso, lo que cambia el cálculo lo
-│   │                                              propone y lo retira
+│   │                                              mover, renombrar y cambiar el código sin uso; en uso,
+│   │                                              lo que cambia el cálculo lo propone y lo retira
 │   └── catalogo_insumos_administrar (funcion)   — administración: ve costos (y el filtro sin costo y en
 │                                                  uso), aprobar o rechazar cambios de cálculo, suelto y
-│                                                  cómo se vende, mover en uso, categorías, colores y
-│                                                  variantes, baja (con reemplazo) y reactivar
+│                                                  cómo se vende, mover, renombrar y cambiar el código en
+│                                                  uso, categorías, colores y variantes, baja (con
+│                                                  reemplazo) y reactivar
 ├── Servicios (vista, catalogo_servicios)        — técnico, administración
 │   ├── catalogo_servicios_editar (funcion)      — técnico: crear y editar
 │   └── catalogo_servicios_administrar (funcion) — administración: monto, % y mínimo (y el filtro sin

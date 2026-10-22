@@ -30,6 +30,18 @@ se vende suelto (*Lo que falta costear se ve en filtros*, `precio.md`).
   órdenes viejas el mismo despiece; la presentación y el costo quedaban en la unidad anterior.
   Descartado: permitirlo mostrando el alcance — cambia precio y despiece de versiones aprobadas sin
   revisión.
+- **Nombre y código del insumo los corrige el técnico sin uso; en uso, administración** (2026-10-22),
+  como mover (`ficha.md` → *La subcategoría la elige el técnico al crear*) y el nombre del paquete
+  (`versiones.md`). Antes de confirmar se ve el alcance (*Float 4 mm → Float incoloro 4 mm: en 40
+  paquetes · se vende suelto · lo ven 3 clientes*); Compras y Stock suman su condición (costo o
+  existencias cargados) al construirse. Lo que lo nombra apunta, no copia, así que nada queda viejo; no
+  es evento. Por qué: Marcos pasaba *Float 4 mm* (ART-3104) a *Float incoloro 4 mm* (VID-104) y al
+  instante el selector de vidrio de 40 paquetes y el buscador del suelto decían otra cosa a vendedores
+  y clientes, mientras depósito seguía con 30 placas rotuladas ART-3104; la persona administración
+  decía *renombra lo que ya se vende* y la acción no lo tenía. Descartado: libre para el técnico (lo
+  que ve el vendedor cambia sin que administración se entere), fijo como la unidad (un tipeo pediría
+  insumo nuevo y baja con reemplazo) y aprobación como el cambio de cálculo (no cambia precio ni
+  despiece).
 - **La presentación sirve para vender suelto y para comprar, no para el paquete** (2026-10-14). Lleva
   su contenido en la unidad del insumo (barra = 6 ml, caja = 100 unidades: `precio.md` → *El costo se
   carga como se cotiza*). Compras compra barras enteras y producción podrá calcular cuántas salen del
