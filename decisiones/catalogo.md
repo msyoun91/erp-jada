@@ -693,13 +693,11 @@ referencias entre puntos.
     (2026-10-22): en *Las habilitaciones siguen a la empresa que queda al fusionar*.
 41. ~~**Renombrar el paquete.**~~ → el técnico hasta la primera aprobada; después administración
     (2026-10-22): en *El nombre del paquete lo corrige el técnico*.
+38. ~~**Mover un insumo de subcategoría.**~~ → el técnico sin uso o hasta la primera aprobada; después
+    administración con alcance (2026-10-22): en *La subcategoría la elige el técnico al crear*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-38. **Mover un insumo de subcategoría.** No dice quién. Cambia plata y oferta: la regla (Laminados 15 %
-    → Float 10 %), lo que entra por subcategoría (40 paquetes más, o líneas sin precio) y lo que ve cada
-    cliente. Propuesta: administración, con alcance; y mover un paquete (Modena → Herrero) también
-    muestra el suyo (% que cambia, clientes que dejan de verlo).
 51. La cantidad de piezas por fórmula (travesaños intermedios = `alto / 1000`): ¿se redondea para
     arriba como lo que va por unidad?
 52. ¿Vale una excepción de 0 % (*este paquete sin comercialización*) con "un 0 se rechaza"? ¿El mínimo
@@ -881,13 +879,14 @@ Acciones
 │            · volver al borrador · aprobar
 │            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
 │            · renombrar (técnico hasta la primera aprobada; después administración)
-│            · mover de subcategoría · dar de baja · reactivar
+│            · mover de subcategoría (ídem) · dar de baja · reactivar
 │            · casos de prueba: guardar desde Probar (nuevo o pisando uno) · renombrar · marcar
 │              referencia · dar de baja
 ├── insumo: crear (sin color, o de la ventana o de herrajes con su color base) · editar · cargar los
 │           servicios que lleva · marcar suelto (por presentación o por unidad) · dar de baja (con
 │           reemplazo opcional) · reactivar · cargar variantes de color, en uno o en varios a la vez
 │           · dar de baja o reactivar una variante (administración)
+│           · mover de subcategoría (técnico sin uso; en uso, administración)
 │           · en uso, cambio de cálculo (desperdicio, peso, contenido, espesor, servicios que lleva):
 │             proponer · retirar · aprobar · rechazar con motivo (administración)
 ├── servicio: crear · editar · poner monto, % y mínimo · aumentar montos y mínimos en % (por
@@ -1177,7 +1176,14 @@ Decidido en la v2:
   aprobación en las tres vistas (trabajo doble para administración sobre datos que el paquete ya revisa).
 - **Dar de baja es de administración, en las tres vistas**: dejar de vender es una decisión comercial.
   El técnico puede pedirlo, no hacerlo.
-- **La subcategoría la elige el técnico al crear; administración puede moverla después.**
+- **La subcategoría la elige el técnico al crear; administración puede moverla después.** Con quién
+  y cómo (2026-10-22): el técnico mueve libre un insumo que no está en uso y un paquete hasta su
+  primera versión aprobada (es como haberla elegido al crear); después, administración, con el alcance
+  antes de confirmar: *Laminado 4+4: Laminados → Float · % 15 → 10 · entra en 40 paquetes, sale de
+  12 · 3 líneas sin enviar quedan sin precio · lo ven 2 clientes más, lo deja de ver 1*; *Corrediza
+  2 hojas: Modena → Herrero · Comercialización 35 → 22 % · lo dejan de ver 4 clientes, lo empiezan
+  a ver 2*. Por qué: mover cambia a la vez el % por regla, lo que entra por subcategoría y lo que ve
+  cada cliente, y nada decía quién lo hacía.
 - **El nombre del paquete lo corrige el técnico hasta la primera versión aprobada; después lo cambia
   administración** (2026-10-22), como mover: cambia lo que buscan vendedores y ve el cliente, y las
   líneas sin enviar lo muestran (apuntan, no copian). No se repite en la subcategoría (índice único
