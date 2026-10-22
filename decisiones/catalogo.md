@@ -301,6 +301,14 @@ final** (Presupuestos: es donde se cargan las medidas).
   y valor. Un material puede tener varias y entra si se cumplen todas ("ancho > 2000 y alto > 1800").
   Descartado: escribirla como fórmula (`ancho > 2000 y alto > 1800`) — obliga al motor en Postgres a
   interpretar comparaciones y y/o, y el técnico puede escribir algo que no se entiende.
+- **El valor de la casilla se carga en la unidad en que se piensa su variable** (2026-10-22): un largo
+  (ml) en mm, como las medidas y el espesor; una superficie (m²) en m²; el peso en kg; una unidad, tal
+  cual. Se guarda en mm y mm² como todo valor (el motor compara crudo; convierte la pantalla), y la
+  casilla muestra unidad y conversión al lado, como el campo de fórmula (`> 2 m² (2.000.000 mm²)`,
+  `≤ 2,4 mm (0,0024 ml)`). Vale para condiciones y restricciones. `2.400` se rechaza como en las
+  fórmulas (*¿2400 o 2,4?*). Por qué: *Laminado 5+5 si `superficie_pano_izq` > 2*, pensado en m²,
+  era siempre verdad (el paño de la 1500 × 1100 son 714.000 mm²) y todas las corredizas salían con
+  laminado; *ancho máx. 2,4* frenaba todo.
 - **Un servicio del paquete también puede llevar condiciones**, en las mismas casillas (2026-10-14):
   "mano de obra extra si `alto` > 2400". ~~El mecanizado del embutido entra si `embutido_izq` = 1~~ →
   lo trae la manija (*Un insumo puede traer sus servicios*, ficha v2). El despiece dice por qué
@@ -642,14 +650,11 @@ referencias entre puntos.
     *Lo que depende de medidas se resuelve en la línea*.
 47. ~~**Grafo de ciclos.**~~ → por tipos de nodo, con lo que entra en cada opción como nodo y toda
     variable nueva del sistema adentro (2026-10-22): en *El grafo de ciclos se arma por tipos de nodo*.
+20. ~~**Casillas en otra unidad.**~~ → largo en mm, superficie en m², con unidad y conversión al lado y
+    el rechazo de `2.400` (2026-10-22): en *El valor de la casilla se carga en la unidad en que se piensa*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-20. **Casillas en otra unidad.** Condiciones y restricciones toman el valor crudo, en mm y mm².
-    *Laminado si `superficie_pano_izq` > 2* (pensado en m²) es siempre verdad: 0,714 m² son 714.000 mm².
-    *Ancho máx. 2,4* frena todo, y `2.400` en una casilla no tiene el rechazo de las fórmulas.
-    Propuesta: la casilla muestra unidad y conversión como el campo de fórmula, el valor de una variable
-    m² se carga en m², y el mismo rechazo de `2.400`.
 21. **Medida sin límites.** Nada pide mín. y máx. en una medida del vendedor: el ancho en cm (150) en un
     paquete sin restricciones cotiza una ventana chiquita. Propuesta: toda medida del vendedor lleva
     mín. y máx. para mandar a aprobar.
