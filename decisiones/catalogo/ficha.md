@@ -78,7 +78,10 @@ Eventos que emite
 │            — para aprobar y vuelta al borrador, aviso a administración; rechazada, aprobada y
 │            descartada, al técnico; la primera aprobada avisa a vendedores del producto nuevo
 │            (con Presupuestos)
-├── paquete: baja — aviso a vendedores de que sale de venta (con Presupuestos)
+├── paquete: alta — sin aviso (es el borrador de la v1: el producto nuevo se avisa al aprobarla)
+├── paquete: baja · reactivación — con versión aprobada, aviso a vendedores (con Presupuestos): sale
+│            de venta, que desaparece al reactivarse; vuelve a la venta
+├── insumo: alta · reactivación — sin aviso
 ├── insumo: baja — aviso al técnico con el alcance: "Marco 70 mm: 3 paquetes incompletos · 9 pierden
 │            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"; la
 │            cifra se calcula al leer y el aviso desaparece en 0
@@ -244,8 +247,8 @@ leer el insumo.
   aparece el caso (*al aprobarse un producto nuevo → sacar fotos*), se suma en `entes` con sus ramas:
   los eventos ya se emiten. Descartado: `{alta, estado}` por si acaso.
 - **Versión y cambio de cálculo emiten con trigger propio, con el id del paquete o del insumo**
-  (2026-10-22). `paquetes` lleva el genérico, `emitir_eventos_registro('paquete')`: alta, baja,
-  reactivación. Las versiones emiten solo al cambiar de estado (abrir un borrador no emite; la v1 nace con
+  (2026-10-22). `paquetes` e `insumos` llevan el genérico, `emitir_eventos_registro('paquete')` e
+  `('insumo')`: alta, baja, reactivación. Las versiones emiten solo al cambiar de estado (abrir un borrador no emite; la v1 nace con
   el alta): `('paquete', paquete_id, 'estado', {estado, anterior, version, motivo})`, con `motivo` solo
   en el rechazo, que es lo que lo distingue de volver al borrador. Los cambios de cálculo, al nacer y al
   cambiar de estado: `('insumo', insumo_id, 'estado', {estado, anterior, cambio_id, motivo})`, con
@@ -279,22 +282,28 @@ leer el insumo.
   - Cambio de cálculo (apunta al cambio): *para aprobar*, a administración, desaparece al aprobarse,
     rechazarse o retirarse; *retirado*, a administración; *aprobado* o *rechazado* (con motivo), al
     técnico.
+  - Baja de un paquete (apunta al paquete), a vendedores: *sale de venta*, desaparece al
+    reactivarse. Reactivarlo avisa *vuelve a la venta*, el mismo aviso que *producto nuevo* con otro
+    texto. Los dos, solo si tiene una versión aprobada: lo que nunca se vendió no sale ni vuelve.
 
   Por qué: Marcos volvía la v5 al borrador y la campanita de Laura seguía con *v5 para aprobar*; el
-  aviso de la Felpa X decía *3 incompletos* un mes después de arreglarlos; y la baja de *Soldadura de
-  marco* con reemplazo dejaba 25 borradores sin que Marcos se enterara, porque nada quedaba incompleto.
+  aviso de la Felpa X decía *3 incompletos* un mes después de arreglarlos; la baja de *Soldadura de
+  marco* con reemplazo dejaba 25 borradores sin que Marcos se enterara, porque nada quedaba incompleto;
+  y Laura reactivaba el miércoles la *Herrero · Corrediza 2 hojas* que había dado de baja el lunes, y
+  el jueves Pedro leía *sale de venta* y la cotizaba como Modena.
   Descartado: que todos queden hasta leerlos (pendientes que ya no lo son, y lo que espera se mezcla
   con lo demás); hacer ente al servicio para que emita (fila en `entes` y siete funciones de core por
-  un aviso); y avisar la del servicio solo con reemplazo (sin él, el técnico sale a buscar los
-  incompletos y con el insumo no). Toca: el SQL del
+  un aviso); avisar la del servicio solo con reemplazo (sin él, el técnico sale a buscar los
+  incompletos y con el insumo no); y al reactivar, solo borrar el de baja (quien ya lo leyó no se
+  entera de que volvió). Toca: el SQL del
   catálogo (`tipo_notificacion`, el CHECK de `entidad` y su rama en `notificaciones_listar`).
 - **El producto nuevo se avisa al aprobarse la primera versión, no en el alta.** El alta ocurre cuando el
   técnico abre el borrador: avisar ahí a los vendedores sería avisar de algo que no se vende. "Incompleto"
   no emite (se calcula); lo que lo causa avisa: la baja del insumo o del servicio.
 - **Los avisos a vendedores entran con Presupuestos y los resuelve una función del catálogo**
-  (2026-10-22). *Producto nuevo* y *sale de venta* van a quienes tienen el permiso de Presupuestos que
-  arma líneas, que se nombra al ficharlo; en el SQL sin plata no hay aviso a vendedores, y los eventos
-  (primera aprobada, baja) se emiten igual. El texto lo da una función `DEFINER` del catálogo,
+  (2026-10-22). *Producto nuevo*, *sale de venta* y *vuelve a la venta* van a quienes tienen el permiso
+  de Presupuestos que arma líneas, que se nombra al ficharlo; en el SQL sin plata no hay aviso a
+  vendedores, y los eventos (primera aprobada, baja, reactivación) se emiten igual. El texto lo da una función `DEFINER` del catálogo,
   subcategoría y nombre (*Herrero · Corrediza 2 hojas*), solo de los avisos propios, como
   `duplicados_avisos`; el destino es el presupuestador, no `/catalogo/paquetes/{id}`. No abre nada
   nuevo: es el nombre de algo que está o estuvo a la venta. Por qué: la notificación arma el texto con
