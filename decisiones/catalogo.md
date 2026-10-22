@@ -263,7 +263,10 @@ final** (Presupuestos: es donde se cargan las medidas).
   ventanas se cotizaba 1000 y tenía precio, así que nadie lo veía.
 - **Lo elegido se guarda; lo que entra se calcula** (2026-10-14). La línea guarda la alternativa
   que eligió el vendedor y entra: lo elegido si se ofrece; si no, el default si se ofrece; si no, la
-  primera que se ofrezca. Nada se sobrescribe. Por qué: vidrio interior Float 5 → sin cámara (entra
+  primera que se ofrezca. Nada se sobrescribe. Una principal sin default no pasa a la primera: queda
+  vacía, como al arrancar (2026-10-21). El vendedor cambia la Puerta rebatible a blanco, PAN-01 no
+  viene en blanco y la línea queda sin precio con *PAN-01 no viene en blanco: elegí paño bajo*; con
+  la primera, entraba Float 4 mientras él miraba el color. Por qué: vidrio interior Float 5 → sin cámara (entra
   *Sin material*) → vuelta a Cámara 12 perdía el Float 5, y la ficha decía "primera válida" en un
   lado y "default" en otro. Igual que la medida pisada: se respeta lo elegido y se muestra lo que entra hoy. Vale
   cuando lo causa la misma línea; si lo deja de ofrecer el catálogo, *Lo que el catálogo deja de
@@ -524,11 +527,8 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 4. ~~**"Lo que apunta a sus versiones se sigue calculando"**~~ → la vigente de un paquete que no está
    a la venta da sin precio (2026-10-21), en *El estado es de cada versión*; la línea, de
    Presupuestos.
-5. **Una principal sin default que deja de ofrecerse.** *Lo elegido se guarda* manda a "la primera que
-   se ofrezca" (decidido así para PAN-01 al pasar a blanco), y *El default es obligatorio solo en lo
-   secundario* deja vacía la principal sin default porque lo que nadie mira se cotiza mal. En la Puerta
-   rebatible el *Paño bajo* pasa solo a Float 4 si va primero, y el vendedor estaba mirando el color.
-   Propuesta: una principal sin default queda vacía (*Falta paño bajo*).
+5. ~~**Una principal sin default que deja de ofrecerse.**~~ → queda vacía (2026-10-21), en *Lo
+   elegido se guarda* y en *Lo que el catálogo deja de ofrecer*.
 6. **"Ancho y alto van siempre sin default" no lo hace cumplir nadie.** Las medidas las declara el
    técnico y una principal puede llevar default fijo: `alto` = 1000 vuelve a cotizar el alto olvidado
    (auditoría anterior, 17). Propuesta: una medida principal no lleva default; si lo necesita, es
@@ -1472,8 +1472,8 @@ Decidido en la v2:
   elegí otro vidrio*) y no se envían hasta que el vendedor elija. Vale para toda opción, vidrio o
   herraje, y para todo lo que viene del catálogo: baja del insumo o de su variante, o el insumo que
   sale de la subcategoría. Si lo causa la misma línea (saca la cámara, o cambia el color y
-  PAN-01 no viene en blanco), entra el default o la primera que se ofrezca, y volver atrás devuelve
-  lo elegido. Lo enviado no cambia. Por qué: pasando solas al default, las 6 bajaban de precio y se
+  PAN-01 no viene en blanco), sigue *Lo elegido se guarda* —una principal sin default queda vacía—
+  y volver atrás devuelve lo elegido. Lo enviado no cambia. Por qué: pasando solas al default, las 6 bajaban de precio y se
   enviaban en Float 4 sin que nadie notara que el cliente pidió laminado; lo que hace el vendedor en
   su línea, en cambio, lo está viendo. Es lo que ya pasaba con el suelto, el color y el paño.
   Descartado: *Lo elegido se guarda* también para la baja (lo que decía *La baja depende de cómo se
