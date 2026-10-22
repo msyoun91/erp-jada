@@ -319,7 +319,19 @@ final** (Presupuestos: es donde se cargan las medidas).
   técnico le apaga "suma al peso". El refuerzo del marco que mira el peso de la hoja no cierra ciclo y
   suma. Por qué: la regla solo del peso dejaba pasar defaults cruzados que cuelgan el cálculo y
   frenaba el refuerzo sin motivo. Es error de armado y lo corrige el técnico; descartado: avisar al
-  vendedor, que no puede hacer nada.
+  vendedor, que no puede hacer nada. La lista de dependencias se reemplaza por *El grafo de ciclos se
+  arma por tipos de nodo* (2026-10-22).
+- **El grafo de ciclos se arma por tipos de nodo** (2026-10-22). Nodos: cada variable (medida,
+  calculada, `peso_<grupo>`, `con_<grupo>`, `espesor_<opción>`, las que pone una alternativa), cada
+  material condicional y lo que entra en cada opción. Aristas: fórmula y default → las variables que
+  leen; material condicional → las variables de su condición; lo que entra en una opción → las
+  condiciones de sus alternativas y de las subcategorías que ofrece (el color es del vendedor, no es
+  arista); `espesor_<opción>` y lo que pone una alternativa → lo que entra en esa opción;
+  `peso_<grupo>` → los materiales del grupo que suman al peso (condición, cantidad y lo que entra en
+  sus opciones). Restricciones y servicios quedan afuera: nada los lee. Toda variable nueva que ponga
+  el sistema entra con lo que la produce. Por qué: Laminado 5+5 si `peso_hoja_izq` < 40 y el burlete
+  si `espesor_pano_izq` > 20 cerraban *vidrio* → `espesor_vidrio_izq` → `espesor_pano_izq` → burlete →
+  `peso_hoja_izq` → *vidrio*, y la lista del 14/10 no lo veía: la línea colgaba u oscilaba.
 - **El sistema pone una variable de peso por grupo** (2026-10-14): `peso_hoja_izq`, `peso_marco`…,
   suma de los materiales del grupo que suman al peso (cantidad × peso del insumo). El técnico arma con
   ellas el peso que necesita. **El peso es de lo que queda puesto: cantidad sin desperdicio**, en
@@ -628,12 +640,11 @@ referencias entre puntos.
 46. ~~**"Con condición no salva al paquete" no se calcula en general.**~~ → el incompleto recorre
     opciones y color; lo de medidas, en la línea y en los casos del alcance de la baja (2026-10-22): en
     *Lo que depende de medidas se resuelve en la línea*.
+47. ~~**Grafo de ciclos.**~~ → por tipos de nodo, con lo que entra en cada opción como nodo y toda
+    variable nueva del sistema adentro (2026-10-22): en *El grafo de ciclos se arma por tipos de nodo*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-47. **Grafo de ciclos.** La lista de *Nada depende de sí mismo* es anterior a `espesor_<opción>` y a las
-    condiciones de alternativas y subcategorías (el espesor depende de la alternativa, que puede mirar el
-    peso, que incluye el vidrio). Sumarlas.
 20. **Casillas en otra unidad.** Condiciones y restricciones toman el valor crudo, en mm y mm².
     *Laminado si `superficie_pano_izq` > 2* (pensado en m²) es siempre verdad: 0,714 m² son 714.000 mm².
     *Ancho máx. 2,4* frena todo, y `2.400` en una casilla no tiene el rechazo de las fórmulas.
