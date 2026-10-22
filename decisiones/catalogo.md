@@ -521,10 +521,9 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
    de administración*, y tachado lo de la v1 en *Paquetes*.
 3. ~~**"Material que mira el peso y suma al peso" sigue en los controles**~~ → sacado de *Mandar a
    aprobar frena* (2026-10-21); lo cubre "ciclo".
-4. **"Lo que apunta a sus versiones se sigue calculando"** (*El estado es de cada versión*) vale para
-   producción y para lo enviado, no para la línea sin enviar: el vendedor solo calcula la vigente de un
-   paquete a la venta. Falta qué le pasa a esa línea si el paquete se da de baja o queda incompleto.
-   Propuesta: sin precio con el motivo (*Corrediza económica: salió de venta*), como la baja de un insumo.
+4. ~~**"Lo que apunta a sus versiones se sigue calculando"**~~ → la vigente de un paquete que no está
+   a la venta da sin precio (2026-10-21), en *El estado es de cada versión*; la línea, de
+   Presupuestos.
 5. **Una principal sin default que deja de ofrecerse.** *Lo elegido se guarda* manda a "la primera que
    se ofrezca" (decidido así para PAN-01 al pasar a blanco), y *El default es obligatorio solo en lo
    secundario* deja vacía la principal sin default porque lo que nadie mira se cotiza mal. En la Puerta
@@ -998,7 +997,9 @@ Decidido en la v2:
 - **El estado es de cada versión del paquete: borrador · para aprobar · aprobada.** La vigente (última
   aprobada) se calcula, no se guarda. Mientras v2 está en borrador o en revisión se sigue vendiendo v1.
   Rechazar vuelve a borrador con motivo obligatorio. Dar de baja el paquete lo saca de la venta; lo que
-  apunta a sus versiones se sigue calculando.
+  apunta a una versión (lo enviado, las órdenes) se sigue calculando. Pedirle la vigente a un paquete
+  que no está a la venta (de baja o incompleto) da sin precio (*Corrediza 2 hojas: no está a la
+  venta*), sin decir cuál de las dos; qué hace la línea con eso es de Presupuestos (2026-10-21).
 - ~~**Un borrador puede usar insumos y servicios sin aprobar, pero no se manda a aprobar hasta que todos
   lo estén.**~~ → *Solo el paquete se aprueba*.
 - **Producción puede elegir con qué versión aprobada fabrica**, no solo con la que se vendió. El catálogo
