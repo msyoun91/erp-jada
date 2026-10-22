@@ -18,19 +18,15 @@ Los cinco tramos están cerrados (estado y tests en el encabezado de `decisiones
 
 ## Módulos que siguen
 
-Orden: Contactos y Obras → **Catálogo** sin plata → Compras mínimo (costo y cotización) → precio del
-catálogo (`decisiones/catalogo/ficha.md` → *El catálogo no apunta con FK*) → Presupuestos → Post-venta. Sin lugar
-todavía en el orden: Stock y la licitación de Compras.
+Orden: Contactos y Obras → **Catálogo** → Presupuestos → Post-venta. Sin lugar todavía en el orden:
+Stock y Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
-- **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. Ficha aprobada
-  (2026-10-21): `decisiones/catalogo/ficha.md`. *Auditoría v2*: resuelto todo lo que cambia tablas
-  (2026-10-22). Pasado a carpeta por tema el 2026-10-22 (`decisiones/catalogo/README.md`; backup en
-  `obsoletos/backup-docs-2026-10-22/`). Choques entre v1 y v2
-  resueltos (2026-10-22). Siguiente: el SQL sin plata. Lo de
-  Compras mínimo (19, 34) y lo de pantallas (29, 31, 44, 35, 50, 54–58) sigue en `pendiente.md` → *Auditoría v2*, para su fase. Producción y erp-cliente,
-  al fichar, suman su rama a la función de cálculo del catálogo (`decisiones/catalogo/calculo.md` →
-  *La función de cálculo decide qué parte ve cada uno*).
+- **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. **Se arma de cero**
+  (2026-10-22): la v1 y la v2 se descartaron enteras, junto con lo que habían dejado en Presupuestos,
+  Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). La ficha nueva no
+  las lee ni se compara con ellas. Siguiente: `GUIDE_MODULO_NUEVO.md`, arrancando por quién usa el
+  módulo.
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
   producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
@@ -39,78 +35,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   obra lista sus presupuestos con su estado actual. Los contactos operativos (capataz, quien recibe)
   se vinculan al presupuesto. A decidir: cómo ve logística el nombre y la dirección de una obra que no
   abre (propuesta: la etapa guarda su dirección de entrega).
-  Los descuentos son de Presupuestos, no de Catálogo (que da el precio de lista, igual para todos):
-  por presupuesto o línea, con la función "aplicar descuento"; el tope, al fichar Presupuestos. Si
-  el tope es "no más que lo comercial", vuelve la marca de comercial en `servicios`
-  (`decisiones/catalogo/servicios.md` → *"Comercial" es una forma de nombrarlos*).
-  La cantidad es de la línea (precio de una abertura × cantidad) y lo que se hace una vez por pedido
-  (traslado, flete, preparación) es un cargo del presupuesto entero, no de cada línea
-  (`decisiones/catalogo/motor.md` → *La cantidad es de la línea*). El cargo es un renglón libre:
-  descripción y monto que calcula el vendedor, sin servicio del catálogo (`decisiones/catalogo/ficha.md` →
-  *El servicio no es ente*). No se envía con una línea sin precio (insumo o servicio sin costo:
-  `decisiones/catalogo/precio.md` → *Sin costo no es $ 0*). La cantidad de un insumo suelto va en lo
-  que administración eligió (barras o ml); si lo cambia, la línea sin enviar queda sin precio hasta
-  revisar la cantidad (`decisiones/catalogo/insumos.md` → *El suelto se vende por presentación o por
-  unidad del insumo*).
-  Hasta enviarse, la línea sigue a la versión vigente (última aprobada) del paquete y al costo de hoy
-  (con aviso si el paquete cambió, con el texto del técnico); al enviar, se congela
-  (`decisiones/catalogo/versiones.md` → *Mandar a aprobar frena; aprobar pone a la venta*).
-  A decidir: la línea sin precio porque la versión nueva sacó la alternativa (`decisiones/catalogo/bajas.md` →
-  *Lo que el catálogo deja de ofrecer*) puede seguir en la última que la ofrecía, "verificado con
-  taller" (quién y qué, obligatorio), con aviso fijo y confirmación al enviar; producción la fabrica
-  con esa versión. Y si vale también para un insumo de baja con existencias (*Manija Roma: quedan 10*).
-  Enviado, se mantiene (el precio enviado entero, con los costos y % de entonces: hay sobrante) o se
-  actualiza (vuelve a la vigente con los de hoy). A decidir: por línea o el presupuesto entero, y quién
-  puede mantener —con costos viejos es un descuento implícito, como el de arriba— (`decisiones/catalogo/precio.md` →
-  *Un presupuesto enviado se mantiene o se actualiza*).
-  Sin versiones de %, costos ni cotización: alcanza el precio copiado. A decidir: foto completa al
-  enviar —cada renglón con cantidad, desperdicio, costo, cotización BNA del día y % con su regla— para
-  ver de dónde salió el precio y compararlo con hoy sin recalcular. Tiene costos: tabla propia que
-  solo lee quien ve costos, escrita por la base al enviar (rama de Presupuestos en la función de
-  cálculo), no por el vendedor.
-  La línea nueva propone el color y el vidrio de la anterior si el paquete los ofrece; si no, el
-  default (el color no tiene; el vidrio puede tenerlo): en una obra en DVH, la segunda ventana no
-  arranca en Float 4 (`decisiones/catalogo/opciones.md` → *El default es obligatorio solo en lo
-  secundario*).
-  Los avisos de la línea quedan marcados y al enviar o aprobar se listan para confirmar, sin frenar;
-  queda quién confirmó (`decisiones/catalogo/motor.md` → *El aviso es parte del resultado de la línea*).
-  Una línea suelta puede referirse a otra (*Traba × 4 — para V4*) para que taller sepa a qué abertura
-  va (`decisiones/catalogo/motor.md` → *El vendedor no agrega materiales*).
-  El permiso que arma líneas suma su rama a la función de cálculo del catálogo: precio, avisos y
-  plegado de la vigente (`decisiones/catalogo/calculo.md` → *La función de cálculo decide qué parte ve
-  cada uno*). El mismo permiso recibe los avisos de producto nuevo, de baja y de reactivación de un
-  paquete, con el texto de una función del catálogo (`decisiones/catalogo/ficha.md` → *Los avisos a
-  vendedores entran con Presupuestos*).
-- **Stock** (decidido al fichar Catálogo, 2026-09-29): módulo propio, no parte de Catálogo. Lleva
-  existencias y movimientos de los insumos del catálogo; su persona principal es depósito/logística.
-  Quien presupuesta ve el stock del insumo sin poder tocarlo. Depósito no usa Catálogo: ve el insumo
-  (nombre, presentación, color) desde Stock (`decisiones/catalogo/ficha.md` → *Depósito no usa el
-  catálogo*). Su vista se suma a la lectura del insumo del catálogo; las existencias, en tabla propia
-  con FK (`decisiones/catalogo/ficha.md` → *Stock y Compras leen la tabla del insumo*).
-- **Compras** (ídem): dueño del costo del insumo, no Catálogo. El costo es de reposición (lo que
-  costaría comprarlo hoy), en su moneda (ARS, US$, €), con historial, cargado como se cotiza (por
-  unidad, presentación o kg: `decisiones/catalogo/precio.md` → *El costo se carga como se cotiza*); se
-  convierte con el oficial BNA venta. Catálogo lo lee para calcular el precio de venta; el técnico no
-  lo ve. Quien compra no usa Catálogo: ve el insumo con sus existencias de Stock desde Compras
-  (`decisiones/catalogo/ficha.md` → *Compras no usa el catálogo*), con la lista "sin costo y en uso"
-  (`decisiones/catalogo/precio.md` → *Lo que falta costear se ve en filtros*). Su vista se suma a la
-  lectura del insumo y a la función del dónde se usa (`ficha.md` → *Stock y Compras leen la tabla del
-  insumo*). Tabla propia, no
-  columna del insumo: RLS filtra filas, no columnas. El aumento se aplica por categoría del catálogo o
-  por insumo, en % o monto fijo, con motivo e historial, como en los dos ERP viejos (`erp_old`
-  `lista_precios/AumentoModal.tsx`, `erp_old_2` `precios/ActualizacionMasivaModal.tsx`); no por
-  proveedor: a cada categoría le venden varios. Es de Compras, no del catálogo: lee las categorías
-  como lee el insumo (`decisiones/catalogo/ficha.md` → *Stock y Compras leen la tabla del insumo*). La
-  cotización (USD y EUR) es una vista de Compras (`decisiones/catalogo/precio.md` → *La cotización es
-  una vista de Compras*), con la fecha del BNA y aviso a administración si el automático falla (ídem →
-  *La cotización vale por su fecha del BNA*). Arranca mínimo
-  (costos y cotización) antes de Presupuestos;
-  después suma la licitación —varias ofertas por insumo, con precio, plazo y fecha, y una elegida—,
-  que al elegir actualiza el costo. Los proveedores son empresas de Contactos
-  (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*). Sin la vista Insumos,
-  el insumo no es ente para quien solo compra: vincula el proveedor desde Compras, sin chip ni
-  buscador en Contactos; si los quiere, se decide al fichar Compras (`decisiones/catalogo/ficha.md` →
-  *Paquete e insumo se registran con su vista*).
+- **Stock** y **Compras**: sin ficha. Lo que se había decidido para ellos al fichar el catálogo se
+  descartó con él (2026-10-22). Sigue valiendo que los proveedores son empresas de Contactos
+  (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*).
 - **Post-venta**: módulo aislado para su equipo. La unidad (1°C, local, casa) se arma después,
   eligiendo ítems del presupuesto aprobado ("estas 4 ventanas → 1°C"); si un ítem agrupa varias
   unidades, se lleva ítem y cantidad. Una obra de un solo dueño es una unidad con todo. Propietarios e

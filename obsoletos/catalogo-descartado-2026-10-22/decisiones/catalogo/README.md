@@ -13,8 +13,8 @@ cada decisión son las originales: 2026-10-14 es la v1, 2026-10-21 la v2.
 
 Referencias: el motor de paquetes del ERP viejo, `C:\dev\Archivos antiguos\spec_plantillas_5.md` y
 `plan_plantillas.md` (se adapta, no se copia), y su pantalla (`motor.md` → *Pantalla de referencia*).
-Al 2026-10-21: casos en diagrama, con los puntos abiertos marcados,
-https://claude.ai/artifact/BhPaBVCNWDBZnH62Pjthzu · demo de la ficha v2,
+Al 2026-10-22: el módulo entero en diagramas de flujo, con los puntos abiertos marcados,
+https://claude.ai/artifact/BhPaBVCNWDBZnH62Pjthzu · demo interactiva de la ficha v2 (al 2026-10-21),
 https://claude.ai/artifact/GcnZbyVggBmEVYKehoE7pu.
 
 ## Índice
