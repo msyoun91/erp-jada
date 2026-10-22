@@ -46,7 +46,9 @@ cambian: los usan los escenarios y las referencias entre puntos.
 31. **El reemplazo que nunca se manda.** Marcos reemplaza en 12 paquetes y manda 9. Las otras 3
     vigentes siguen "como si el viejo siguiera activo", sin plazo: al último costo de algo que ya no se
     compra, y producción solo tiene versiones aprobadas, que usan el viejo. Propuesta: marca *a revisar*
-    con antigüedad y aviso a administración a los N días.
+    con antigüedad y aviso a administración a los N días. Con la baja con reemplazo, el aviso al
+    técnico queda mientras haya borradores sin aprobar (2026-10-22, `ficha.md` → *Cada aviso dice a
+    qué apunta y cuándo desaparece*); falta *"Reemplazar material"* y el plazo.
 44. **El trabajo especial.** "Pasa por el técnico", sin decir cómo: la corrediza económica de 2500 frena,
     va como renglón libre y producción recibe una línea sin despiece. Propuesta: decidir si es un
     paquete especial (¿subcategoría sin clientes?) o queda fuera, y decirlo.

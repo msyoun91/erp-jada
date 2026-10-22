@@ -75,11 +75,13 @@ Acciones
 Eventos que emite
 ├── paquete: estado de la versión (para aprobar · vuelta al borrador · rechazada → borrador · aprobada
 │            · descartada)
-│            — aviso a administración y al técnico; la primera aprobada avisa a vendedores del producto nuevo
+│            — para aprobar y vuelta al borrador, aviso a administración; rechazada, aprobada y
+│            descartada, al técnico; la primera aprobada avisa a vendedores del producto nuevo
 │            (con Presupuestos)
 ├── paquete: baja — aviso a vendedores de que sale de venta (con Presupuestos)
 ├── insumo: baja — aviso al técnico con el alcance: "Marco 70 mm: 3 paquetes incompletos · 9 pierden
-│            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"
+│            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"; la
+│            cifra se calcula al leer y el aviso desaparece en 0
 ├── insumo: cambio de cálculo (para aprobar · retirado · aprobado · rechazado) — para aprobar, aviso
 │            a administración con el alcance: "Marco 70 mm: desperdicio 8 → 80 % · 40 paquetes";
 │            retirado, aviso a administración; aprobado o rechazado (con motivo), aviso al técnico
@@ -254,6 +256,24 @@ leer el insumo.
   actuó no recibe el suyo. Por qué: técnico hay uno, y seguir a quien mandó cada versión o propuso cada
   cambio pide buscar a esa persona para llegar al mismo. Descartado: `creado_por` (es solo dato) y quien
   mandó la versión, sacado del evento `para_aprobar`.
+- **Cada aviso dice a qué apunta y cuándo desaparece** (2026-10-22). Lo que espera una acción
+  desaparece al resolverse, como `alta_por_aprobar`; lo que cuenta algo se calcula al leer y desaparece
+  en 0, como `hilos_huerfanos`; el resto queda hasta leerlo o descartarlo.
+  - Versión (apunta a la versión): *para aprobar*, a administración, desaparece al aprobarse,
+    rechazarse o volver al borrador; *volvió al borrador*, a administración; *rechazada* (con motivo),
+    *aprobada* y *descartada*, al técnico. *Descartada* no avisa a administración: nunca le llegó (lo
+    que está para aprobar no se descarta).
+  - Baja de un insumo (apunta al insumo), al técnico: la cifra la da al leer la función del alcance de
+    la baja (*Felpa X: 3 incompletos · 12 borradores con el reemplazo*) y desaparece cuando no queda
+    nada incompleto por esa baja ni borradores con su reemplazo sin aprobar.
+  - Cambio de cálculo (apunta al cambio): *para aprobar*, a administración, desaparece al aprobarse,
+    rechazarse o retirarse; *retirado*, a administración; *aprobado* o *rechazado* (con motivo), al
+    técnico.
+
+  Por qué: Marcos volvía la v5 al borrador y la campanita de Laura seguía con *v5 para aprobar*; el
+  aviso de la Felpa X decía *3 incompletos* un mes después de arreglarlos. Descartado: que todos queden
+  hasta leerlos (pendientes que ya no lo son, y lo que espera se mezcla con lo demás). Toca: el SQL del
+  catálogo (`tipo_notificacion`, el CHECK de `entidad` y su rama en `notificaciones_listar`).
 - **El producto nuevo se avisa al aprobarse la primera versión, no en el alta.** El alta ocurre cuando el
   técnico abre el borrador: avisar ahí a los vendedores sería avisar de algo que no se vende. "Incompleto"
   no emite (se calcula); lo que lo causa sí: la baja del insumo.
