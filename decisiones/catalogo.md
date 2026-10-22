@@ -685,13 +685,11 @@ referencias entre puntos.
     paquetes que lo cargan (2026-10-22): en *La baja de un servicio también puede designar su reemplazo*.
 39. ~~**Dar de baja una categoría con cosas adentro.**~~ → con ítems activos no; vacía sí, y se
     reactiva (2026-10-22): en *Una categoría o subcategoría con ítems activos no se da de baja*.
+40. ~~**Un color de la lista dado de baja y reactivado.**~~ → no toca variantes, deja de ofrecerse;
+    también el base (2026-10-22): en *Los colores son de administración*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-40. **Un color de la lista dado de baja y reactivado.** "Darlo de baja en todos los insumos": al
-    reactivar, ¿vuelve también la variante que Laura había dado de baja aparte? ¿Y si es el color base
-    de un insumo? Propuesta: la baja de la lista no toca variantes, solo deja de ofrecerse; no se da de
-    baja un color que es base de un insumo activo.
 42. **Aprobar lo que ya no se vende.** Los controles corren al mandar. Si entre mandar y aprobar se da de
     baja un insumo fijo de la v5, la vigente nueva nace incompleta y la Corrediza sale de venta aunque la
     v4 estaba bien. Propuesta: al aprobar, lo que la dejaría incompleta se marca en pendientes y no se
@@ -1489,7 +1487,14 @@ Decidido en la v2:
   - Vale al instante, porque el insumo no se versiona: si era el único insumo *de la ventana* sin
     ese color, el paquete pasa a ofrecerlo sin aprobación. Sin costo, la línea sale sin precio y
     Compras lo ve en *sin costo y en uso*. Dar de baja un color en un insumo sigue *La baja depende
-    de cómo se usa lo que se da de baja*; en la lista, es darlo de baja en todos los insumos.
+    de cómo se usa lo que se da de baja*; ~~en la lista, es darlo de baja en todos los insumos~~ →
+    **en la lista no toca las variantes: el color deja de ofrecerse, y reactivarlo lo vuelve a
+    ofrecer** (2026-10-22). El color va por línea entera (si un perfil viene en bronce, viene toda la
+    línea), así que la baja de una variante suelta queda para el error de carga. Un color base
+    también se da de baja (*no vendemos más natural*): deja de ofrecerse y el insumo sigue siendo de
+    su color; el alcance lo dice (*Natural: deja de ofrecerse en 30 paquetes · es base de 140
+    insumos*). Por qué: darlo de baja en cada variante obligaba, al reactivar, a decidir cuáles
+    volvían, y no tenía qué hacer con el base.
   - El técnico no crea colores ni carga variantes, pero al crear el insumo elige si es *sin color*
     (felpa) o, si es *de la ventana* o *de herrajes*, su color base de la lista, obligatorio: el
     Marco corrediza 80 mm (ART-2420) es natural; la manija, plateada. Si el color no está en la
