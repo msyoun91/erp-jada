@@ -83,8 +83,9 @@ Eventos que emite
 │            de venta, que desaparece al reactivarse; vuelve a la venta
 ├── insumo: alta · reactivación — sin aviso
 ├── insumo: baja — aviso al técnico con el alcance: "Marco 70 mm: 3 paquetes incompletos · 9 pierden
-│            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"; la
-│            cifra se calcula al leer y el aviso desaparece en 0
+│            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"; las
+│            cifras se calculan al leer y el aviso desaparece sin incompletos ni borradores con el
+│            reemplazo (las alternativas perdidas no lo sostienen)
 ├── insumo: cambio de cálculo (para aprobar · retirado · aprobado · rechazado) — para aprobar, aviso
 │            a administración con el alcance: "Marco 70 mm: desperdicio 8 → 80 % · 40 paquetes";
 │            retirado, aviso a administración; aprobado o rechazado (con motivo), aviso al técnico
@@ -273,7 +274,9 @@ leer el insumo.
     que está para aprobar no se descarta).
   - Baja de un insumo (apunta al insumo), al técnico: la cifra la da al leer la función del alcance de
     la baja (*Felpa X: 3 incompletos · 12 borradores con el reemplazo*) y desaparece cuando no queda
-    nada incompleto por esa baja ni borradores con su reemplazo sin aprobar.
+    nada incompleto por esa baja ni borradores con su reemplazo sin aprobar. Lo que solo informa
+    (*9 pierden una alternativa*) se muestra pero no lo sostiene: esas versiones aprobadas no se
+    editan, así que la cifra no bajaría nunca, y los paquetes quedan marcados (`bajas.md`).
   - Baja de un servicio (apunta al servicio), al técnico, con o sin reemplazo: *Soldadura de marco:
     25 borradores con el reemplazo · lo traen 2 insumos*; desaparece cuando no queda nada incompleto
     por esa baja, ni borradores con su reemplazo sin aprobar, ni insumos activos que lo traigan. Sin
