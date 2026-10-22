@@ -206,7 +206,7 @@ final** (Presupuestos: es donde se cargan las medidas).
   casos de prueba corren cuando alguien los mira; uno es el de referencia* (ficha v2, 2026-10-21).
 - ~~**Un insumo dado de baja cuenta como que no está**~~ → *La baja depende de cómo se usa lo que se
   da de baja* (ficha v2, 2026-10-21).
-- **La variante de color solo tiene código, nombre y costo; lo físico es del insumo base**
+- **La variante de color solo tiene código y color; lo físico es del insumo base**
   (2026-10-14): peso, unidad, presentación, desperdicio, categoría y su clase de color no se cargan
   en la variante. El $/kg del negro se multiplica por el kg/ml del natural. Por qué: el negro con peso
   0 bajaba la hoja de 43 a 30 kg y salía con rueda simple, y su costo por kg quedaba sin costo.
@@ -355,7 +355,8 @@ final** (Presupuestos: es donde se cargan las medidas).
   sin desperdicio (*El suelto se vende por presentación o por unidad del insumo*, ficha v2).
 - **Pantalla de referencia:** `C:\dev\Archivos antiguos\mockup_plantillas_v4.html` (lista con versiones y
   estado; detalle en pestañas: grupos, variables, materiales, restricciones, vidrios, reglas, colores,
-  sandbox, auditoría). **Se le suma una pestaña Servicios** al lado de Materiales: el técnico elige el
+  sandbox, auditoría). *Vidrios* y *colores* no van (2026-10-21): el vidrio es una opción (*El vidrio
+  es un material de la hoja con una opción*) y los colores salen de los insumos (*Los colores son de administración*). **Se le suma una pestaña Servicios** al lado de Materiales: el técnico elige el
   servicio del catálogo y le pone cantidad fija o por variable (soldadura × 4); el monto no se ve.
   **Cada servicio va en un grupo**, como los materiales: si el vendedor saca un grupo opcional
   (mosquitero), su mano de obra sale con él.
@@ -441,7 +442,7 @@ Presupuestos solo la leen, como leen el costo. Si crece (más monedas, índices)
 ## El motor va en Postgres (2026-10-14)
 
 **El precio lo calcula una función de Postgres `SECURITY DEFINER` que devuelve el precio y nunca el
-costo.** RLS filtra filas, no columnas: el vendedor no puede leer la tabla de costos, así que una
+costo a quien no ve costos.** A administración le da también las bases (*sobre $ 60.000*). RLS filtra filas, no columnas: el vendedor no puede leer la tabla de costos, así que una
 función `INVOKER` no podría calcular, y hacerlo en TypeScript exigiría `service_role`. Excepción
 explícita a `SECURITY INVOKER`, acotada a esta función.
 
@@ -543,15 +544,9 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
    reemplazo*.
 9. ~~**El catálogo sí depende de Compras.**~~ → SQL en tres partes (2026-10-21), en *El catálogo no
    apunta con FK a otro módulo* y en el orden de `BACKLOG.md`.
-10. **Menores de texto.** El título *La variante de color solo tiene código, nombre y costo* (v2:
-    código y color de la lista). *El motor va en Postgres*: "nunca el costo" (a administración le da
-    las bases: *sobre $ 60.000*). "Configuración de herrajes" y "medidas y herrajes": se guarda todo lo
-    que carga el vendedor (medidas, pisadas, opciones, hermanas juntas o separadas, color, color de
-    herrajes, grupos opcionales). Relaciones: la línea sin enviar apunta al paquete, no a la versión.
-    El mockup de referencia con pestañas *vidrios* y *colores*. `BACKLOG.md`: "el vidrio no tiene
-    default" (puede tenerlo; ¿gana el default o el de la línea anterior?). "El kg no es unidad de
-    venta" con insumos por kg vendidos por unidad del insumo. *Fuera del %* es general, pero está en las
-    acciones del servicio, "al lado de las reglas".
+10. ~~**Menores de texto.**~~ → corregidos en su lugar (2026-10-21): título de la variante, *El motor
+    va en Postgres*, lo que se guarda de la línea, Relaciones, el mockup, el kg y *fuera del %* en
+    categorías. El vidrio en `BACKLOG.md`: gana lo de la línea anterior si se ofrece; si no, el default.
 
 *Cobra mal sin que nadie se entere*
 
@@ -765,7 +760,7 @@ y una propuesta a discutir, no decidida.
 *Arma mal (técnico y taller)*
 
 9. ~~**Color.**~~ → *El insumo declara su color*, *El color de herrajes* y *La variante de color
-   solo tiene código, nombre y costo* (Paquetes).
+   solo tiene código y color* (Paquetes).
 10. ~~**El paño solo da el peso.**~~ → *El sistema también pone el peso de cada paño* y *Cada pieza
     de la composición se cobra en su unidad* (Paquetes).
 11. ~~**Grupo opcional sin variable.**~~ → *Cada grupo opcional pone `con_<grupo>`* (Paquetes).
@@ -854,8 +849,9 @@ Relaciones (del catálogo)
 Relaciones (de otros módulos, apuntan al catálogo)
 ├── insumo ← proveedor (Contactos)
 ├── insumo o su variante de color ← costo (Compras) · existencias (Stock)
-├── versión del paquete o insumo suelto (con su variante) ← línea del presupuesto (Presupuestos)
-└── versión del paquete ← orden de producción, con medidas y herrajes (Producción)
+├── paquete (sin enviar) o versión del paquete (enviada) o insumo suelto (con su variante)
+│   ← línea del presupuesto (Presupuestos)
+└── versión del paquete ← orden de producción, con lo que cargó el vendedor (Producción)
 Acciones
 ├── paquete: crear · editar borrador · mandar a aprobar (con qué cambió) · volver al borrador · aprobar
 │            · rechazar (con motivo) · versión nueva · reemplazar material · probar con medidas
@@ -870,8 +866,9 @@ Acciones
 │             · regla (solo porcentuales): aplicar a todo, o a una categoría o subcategoría de
 │               paquetes o de insumos, con su % · cambiar el % · quitarla
 │             · excepción: otro % para un paquete · quitarla
-│             · categoría de insumos fuera del % de los servicios del paquete: marcar · desmarcar
 ├── categorías: crear · renombrar · dar de baja (administración)
+│               · de insumos, fuera del % de los servicios del paquete: marcar · desmarcar (desde
+│                 Servicios, al lado de las reglas)
 ├── colores: crear · renombrar · dar de baja · reactivar (administración)
 └── clientes: habilitar categoría o subcategoría · ve precio sí/no (administración)
 Eventos que emite
@@ -968,7 +965,8 @@ Decidido en la v2:
   el vendedor ve precio sin despiece y producción despiece sin precio. Descartado: un texto sin la
   pieza para vendedor y cliente (cada aviso del sistema escrito dos veces).
 - **El despiece no se guarda: se calcula cuando se pide.** Quien lo usa guarda solo las entradas
-  (paquete, ancho, alto, configuración de herrajes) y pide el despiece al catálogo. Una sola función del
+  (paquete y lo que cargó el vendedor: medidas y pisadas, opciones, hermanas juntas o separadas,
+  colores, grupos opcionales) y pide el despiece al catálogo. Una sola función del
   catálogo evalúa las fórmulas: la llaman producción, el presupuestador (para el precio) y la prueba del
   técnico. Si cada módulo evaluara por su cuenta, la regla viviría en dos lugares.
 - **Consecuencia: una fórmula aprobada no se edita.** Si el despiece se recalcula cuando se pide, cambiar
@@ -1034,7 +1032,7 @@ Decidido en la v2:
   (*Marco corrediza 70 mm: ahora se vende por ml, revisá la cantidad*), como con el color o la baja;
   lo enviado no cambia. Por qué: con la unidad libre de la v2 (m², ml, unidad o kg), pasar el marco
   de ml a kg rompía las fórmulas de sus paquetes, y la presentación entera de la v1 no sirve para el
-  vidrio cortado. El kg no es unidad de venta: el perfil cotizado por kg se lleva en barras.
+  vidrio cortado. El perfil cotizado por kg se vende por presentación (barras).
   Descartado: convertir la cantidad de la línea (de ml a barras no da exacto: 7 ml = 1,17 barras, y
   redondear cotiza otra cosa sin avisar).
 - **El catálogo no apunta con FK a otro módulo salvo la empresa cliente**: solo es dueño del interior de

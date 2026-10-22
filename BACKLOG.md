@@ -56,8 +56,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   ver de dónde salió el precio y compararlo con hoy sin recalcular. Tiene costos: tabla propia que
   solo lee quien ve costos, escrita por la base al enviar (rama de Presupuestos en la función de
   cálculo), no por el vendedor.
-  La línea nueva propone el color y el vidrio de la anterior: en el catálogo no tienen default
-  (`decisiones/catalogo.md` → *El default es obligatorio solo en lo secundario*).
+  La línea nueva propone el color y el vidrio de la anterior si el paquete los ofrece; si no, el
+  default (el color no tiene; el vidrio puede tenerlo): en una obra en DVH, la segunda ventana no
+  arranca en Float 4 (`decisiones/catalogo.md` → *El default es obligatorio solo en lo secundario*).
   Los avisos de la línea quedan marcados y al enviar o aprobar se listan para confirmar, sin frenar;
   queda quién confirmó (`decisiones/catalogo.md` → *El aviso es parte del resultado de la línea*).
   Una línea suelta puede referirse a otra (*Traba × 4 — para V4*) para que taller sepa a qué abertura
