@@ -535,11 +535,9 @@ falla y una propuesta a discutir, no decidida. Los escenarios del final encadena
 6. ~~**"Ancho y alto van siempre sin default" no lo hace cumplir nadie.**~~ → una medida principal no
    lleva default (2026-10-21), en *El default es obligatorio solo en lo secundario* y en los controles
    de *Mandar a aprobar frena*.
-7. **Cambiar de unidad choca con el reemplazo "de la misma unidad".** Otra unidad es insumo nuevo y
-   baja del viejo (*La unidad del insumo queda fija*), pero la baja solo acepta reemplazo de la misma
-   unidad: Felpa por ml → Felpa por unidad deja 20 paquetes incompletos al instante. Funciona si antes
-   se corre *Reemplazar material*, que no dice si acepta otra unidad. Propuesta: los dos la aceptan; el
-   control de unidad marca las fórmulas de cada borrador.
+7. ~~**Cambiar de unidad choca con el reemplazo "de la misma unidad".**~~ → el reemplazo acepta otra
+   unidad (2026-10-21), en *La baja de un insumo puede designar su reemplazo* y en *"Reemplazar
+   material" es un solo botón*.
 8. **El reemplazo de la baja lo decide administración con una herramienta del técnico.** La baja
    (`catalogo_insumos_administrar`) abre *Reemplazar material* (`catalogo_paquetes_editar`) con los
    paquetes marcados: Laura, sin `_editar`, elige qué paquetes lo reciben. Propuesta: la baja solo
@@ -1096,8 +1094,11 @@ Decidido en la v2:
   interior* no tiene qué ofrecer). Por qué: es lo que pasa con un material condicional dado de baja, y así un paquete no se
   vende con unas opciones sí y con otras no.
 - **La baja de un insumo puede designar su reemplazo, y corre "Reemplazar material"** (2026-10-21).
-  Opcional (sin reemplazo rige *La baja depende de cómo se usa*) y de la misma unidad (ml por ml); lo
-  elige administración, que da la baja. Abre la ventana de *"Reemplazar material"* con los dos
+  Opcional (sin reemplazo rige *La baja depende de cómo se usa*) y de cualquier unidad; lo elige
+  administración, que da la baja. ~~De la misma unidad~~ (2026-10-21): la felpa que pasa de ml a
+  unidad no tenía salida y sus 20 paquetes quedaban incompletos al instante; con otra unidad, el
+  control de unidad frena cada borrador hasta corregir la fórmula, y la ventana lo dice antes de
+  confirmar (*otra unidad: las 20 fórmulas se corrigen a mano antes de mandar*). Abre la ventana de *"Reemplazar material"* con los dos
   cargados: los paquetes que lo usan, todos marcados; cada marcado recibe el reemplazo en su versión
   abierta, con el qué cambió escrito (*reemplaza Hoja corrediza 40 mm por Hoja corrediza 42 mm
   (baja)*), y el técnico revisa, corrige fórmulas y manda a aprobar; el desmarcado sigue *La baja
@@ -1187,7 +1188,8 @@ Decidido en la v2:
 - **"Reemplazar material" es un solo botón de Paquetes: masivo, con los paquetes a elegir, y cada
   borrador se ajusta después a mano** (2026-10-21). Dos buscadores (material actual y nuevo) y la
   tabla de los paquetes que usan el actual, todos marcados: el técnico desmarca los que no quiere
-  tocar y ve qué pasa en cada uno antes de confirmar. Sin versión abierta, crea un borrador; con
+  tocar y ve qué pasa en cada uno antes de confirmar. El nuevo puede ser de otra unidad (*La baja de
+  un insumo puede designar su reemplazo*). Sin versión abierta, crea un borrador; con
   borrador, se suma a él; para aprobar, vuelve al borrador y se suma (aviso a administración). Si la
   versión abierta ya no usa el material, dice *ya no lo usa* y no se toca. El qué cambió va escrito
   (*reemplaza Marco corrediza 70 mm por Marco 72 mm*) y se suma al que hubiera. Lo que el material
