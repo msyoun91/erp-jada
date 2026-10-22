@@ -378,6 +378,13 @@ final** (Presupuestos: es donde se cargan las medidas).
   fórmula mal escrita, que no se publica. Por qué: con 3 hojas el `_izq` → `_der` fijo daba dos
   `hoja_der` y la central con las fórmulas de la derecha. Descartado: numerar hojas `_1`, `_2`, `_3`
   — taller habla de izquierda y derecha.
+  **Cada opción de la copia entra como hermana de su original** (2026-10-22): *Vidrio hoja cen* se
+  junta con izq y der en un selector; si eran dos con un par que no es el mismo, frena por *Los pares
+  van solo entre dos hermanas*. Opciones con las mismas alternativas en grupos distintos sin hermanar
+  avisan en el borrador y al mandar (*Vidrio banderola y Vidrio hoja: mismas alternativas, no son
+  hermanas*), sin frenar: la banderola con otro default solo se arma sin hermanar. Por qué: la central
+  suelta quedaba en Float 4 mientras el vendedor ponía DVH una vez en las otras dos, más barata y sin
+  que nada lo marque.
 - **El vendedor no agrega materiales a la composición del paquete** (2026-10-14). Lo que se pide
   seguido (traba de seguridad) el técnico lo suma como grupo opcional secundario, arrancando sacado,
   y entra en despiece, peso y cantidad de la línea. Lo puntual va como línea suelta del presupuesto,
@@ -666,13 +673,11 @@ referencias entre puntos.
     aprobar (2026-10-22): en *El vidrio cobra por una variable de superficie y lleva sus medidas*.
 24. ~~**Pares con tres hojas.**~~ → solo entre dos hermanas; con más, cada una par de sí misma
     (2026-10-22): en *Las opciones hermanas arrancan juntas* → *Los pares van solo entre dos hermanas*.
+25. ~~**"Duplicar grupo" no copia la hermandad.**~~ → la copia entra como hermana de la original, y las
+    mismas alternativas sin hermanar avisan (2026-10-22): en *"Duplicar grupo" pide qué reemplazar*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-25. **"Duplicar grupo" no copia la hermandad.** `hoja_izq` → `hoja_cen` deja *Vidrio hoja cen* suelto:
-    DVH una vez pone las dos de afuera y la central sale Float 4, más barata. Propuesta: la copia entra
-    como hermana de la original, y un control avisa opciones con las mismas alternativas en distintos
-    grupos sin hermanar.
 23. **Hermanas juntas que no van iguales.** Juntas en *Laminado 5+5*; una condición no lo ofrece en la
     hoja der, que toma el default por *Lo elegido se guarda*, y el plegado sigue diciendo *vidrio:
     Laminado 5+5*. Propuesta: aviso en la línea y plegado separado (*hoja der: Float 4 — Laminado 5+5 no
