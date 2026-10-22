@@ -76,7 +76,8 @@ Eventos que emite
 ├── paquete: estado de la versión (para aprobar · vuelta al borrador · rechazada → borrador · aprobada
 │            · descartada)
 │            — aviso a administración y al técnico; la primera aprobada avisa a vendedores del producto nuevo
-├── paquete: baja — aviso a vendedores de que sale de venta
+│            (con Presupuestos)
+├── paquete: baja — aviso a vendedores de que sale de venta (con Presupuestos)
 ├── insumo: baja — aviso al técnico con el alcance: "Marco 70 mm: 3 paquetes incompletos · 9 pierden
 │            una alternativa"; con reemplazo, "12 borradores para revisar y mandar a aprobar"
 ├── insumo: cambio de cálculo (para aprobar · retirado · aprobado · rechazado) — para aprobar, aviso
@@ -256,6 +257,17 @@ leer el insumo.
 - **El producto nuevo se avisa al aprobarse la primera versión, no en el alta.** El alta ocurre cuando el
   técnico abre el borrador: avisar ahí a los vendedores sería avisar de algo que no se vende. "Incompleto"
   no emite (se calcula); lo que lo causa sí: la baja del insumo.
+- **Los avisos a vendedores entran con Presupuestos y los resuelve una función del catálogo**
+  (2026-10-22). *Producto nuevo* y *sale de venta* van a quienes tienen el permiso de Presupuestos que
+  arma líneas, que se nombra al ficharlo; en el SQL sin plata no hay aviso a vendedores, y los eventos
+  (primera aprobada, baja) se emiten igual. El texto lo da una función `DEFINER` del catálogo,
+  subcategoría y nombre (*Herrero · Corrediza 2 hojas*), solo de los avisos propios, como
+  `duplicados_avisos`; el destino es el presupuestador, no `/catalogo/paquetes/{id}`. No abre nada
+  nuevo: es el nombre de algo que está o estuvo a la venta. Por qué: la notificación arma el texto con
+  la RLS de quien la lee y el vendedor no lee `catalogo_paquetes` (`calculo.md` → *La función de
+  cálculo decide qué parte ve cada uno*): Laura aprobaba la v1 de la Herrero y la campanita del
+  vendedor no mostraba nada; con la baja, menos. Descartado: copiar el nombre en la notificación
+  (apunta, no copia, y renombrado queda viejo) y darle al vendedor lectura de la tabla de paquetes.
 
 ## Con otros módulos
 

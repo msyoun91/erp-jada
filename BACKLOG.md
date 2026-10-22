@@ -78,7 +78,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   va (`decisiones/catalogo/motor.md` → *El vendedor no agrega materiales*).
   El permiso que arma líneas suma su rama a la función de cálculo del catálogo: precio, avisos y
   plegado de la vigente (`decisiones/catalogo/calculo.md` → *La función de cálculo decide qué parte ve
-  cada uno*).
+  cada uno*). El mismo permiso recibe los avisos de producto nuevo y de baja de un paquete, con el
+  texto de una función del catálogo (`decisiones/catalogo/ficha.md` → *Los avisos a vendedores entran
+  con Presupuestos*).
 - **Stock** (decidido al fichar Catálogo, 2026-09-29): módulo propio, no parte de Catálogo. Lleva
   existencias y movimientos de los insumos del catálogo; su persona principal es depósito/logística.
   Quien presupuesta ve el stock del insumo sin poder tocarlo. Depósito no usa Catálogo: ve el insumo
