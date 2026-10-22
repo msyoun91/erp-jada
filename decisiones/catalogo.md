@@ -625,13 +625,12 @@ referencias entre puntos.
     error con lo que falta (2026-10-22): en *Para producción entra lo vendido o error*.
 27. ~~**Producción elige una versión con otras entradas.**~~ → solo las que cubren lo vendido; el
     renombre ya no pasa por el 49 (2026-10-22): en *Producción usa una versión solo si cubre lo vendido*.
+46. ~~**"Con condición no salva al paquete" no se calcula en general.**~~ → el incompleto recorre
+    opciones y color; lo de medidas, en la línea y en los casos del alcance de la baja (2026-10-22): en
+    *Lo que depende de medidas se resuelve en la línea*.
 
 *Antes del SQL sin plata: cambian tablas, triggers o la función de cálculo*
 
-46. **"Con condición no salva al paquete" no se calcula en general.** Saber si en alguna combinación una
-    opción queda sin nada es finito con colores y opciones, no con `ancho > 1500` sobre calculadas.
-    Propuesta: el incompleto estático mira solo condiciones sobre opciones y color; lo que depende de
-    medidas se resuelve por línea (*herraje hoja izq: nada que ofrecer*, sin precio).
 47. **Grafo de ciclos.** La lista de *Nada depende de sí mismo* es anterior a `espesor_<opción>` y a las
     condiciones de alternativas y subcategorías (el espesor depende de la alternativa, que puede mirar el
     peso, que incluye el vidrio). Sumarlas.
@@ -1172,7 +1171,8 @@ Decidido en la v2:
 - **Toda baja de algo en uso muestra el alcance antes de confirmar** (2026-10-21), deje o no algo
   incompleto: *Manija embutida: 3 paquetes dejan de venderse · 15 pierden una alternativa · 2 quedan
   solo con Sin herraje*; *Comercialización: se deja de cobrar en 120 paquetes y 40 insumos sueltos*.
-  La baja no se frena. La de un insumo avisa al técnico con las mismas cifras y deja los paquetes
+  Suma los casos de prueba que quedan sin nada que ofrecer (*Lo que depende de medidas se resuelve en
+  la línea*). La baja no se frena. La de un insumo avisa al técnico con las mismas cifras y deja los paquetes
   marcados; la de un servicio no avisa (no es ente y no emite): el técnico ve marcados los incompletos.
 - **Una opción puede tener "Sin material"** (2026-10-21): una alternativa sin insumo (*Sin herraje*)
   que nunca se da de baja. Si se dan de baja todas las alternativas con material, la opción ofrece solo
@@ -1181,7 +1181,19 @@ Decidido en la v2:
   alternativa puede llevar condiciones y poner variables, pero **con condición no salva al paquete**:
   si en alguna combinación no queda nada que ofrecer, incompleto (sin Floats, con cámara el *Vidrio
   interior* no tiene qué ofrecer). Por qué: es lo que pasa con un material condicional dado de baja, y así un paquete no se
-  vende con unas opciones sí y con otras no.
+  vende con unas opciones sí y con otras no. "Alguna combinación" es de opciones y color: lo que
+  depende de medidas, en *Lo que depende de medidas se resuelve en la línea* (2026-10-22).
+- **Lo que depende de medidas se resuelve en la línea** (2026-10-22). El incompleto del paquete
+  recorre solo combinaciones de opciones y color, que son finitas; una condición que lee una medida,
+  directo o por una calculada, cuenta como que puede cumplirse, y su alternativa cubre. Si con las
+  medidas de una línea una opción no tiene nada, la línea queda sin precio (*herraje hoja izq: nada
+  que ofrecer con estas medidas*) y el paquete se sigue vendiendo. Para que no lo encuentre el
+  vendedor, el alcance de una baja corre también los casos de prueba de los paquetes que la usan
+  (*Corrediza 2 hojas Modena: caso grande — herraje hoja izq sin nada que ofrecer*). Por qué: con
+  Manija Roma si `ancho_hoja_izq` ≤ 900 y la reforzada (> 900) dada de baja, saber si la hoja puede
+  pasar de 900 pide propagar rangos por fórmulas con `max`, `si` y divisiones, que no se resuelve en
+  general. Descartado: que la condición sobre medidas no cubra (saca de venta la corrediza entera por
+  un tamaño que quizás nadie pide).
 - **La baja de un insumo puede designar su reemplazo, y lo reciben todos los paquetes que lo usan**
   (2026-10-21). Opcional (sin reemplazo rige *La baja depende de cómo se usa*) y de cualquier unidad;
   lo elige administración, que da la baja. Cada paquete lo recibe en su versión abierta, como con
