@@ -24,9 +24,9 @@ Stock y Compras.
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. **Se arma de cero**
   (2026-10-22): la v1 y la v2 se descartaron enteras, junto con lo que habían dejado en Presupuestos,
-  Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). La ficha nueva no
-  las lee ni se compara con ellas. Siguiente: `GUIDE_MODULO_NUEVO.md`, arrancando por quién usa el
-  módulo.
+  Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). Nada de eso vuelve
+  (`decisiones/catalogo.md`). La ficha nueva se arma ahí, punto por punto; siguiente: objetivo y
+  quién usa el módulo.
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
   producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
