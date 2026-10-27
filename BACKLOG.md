@@ -26,15 +26,19 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (2026-10-22): la v1 y la v2 se descartaron enteras, junto con lo que habían dejado en Presupuestos,
   Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). Nada de eso vuelve
   (`decisiones/catalogo.md`). La ficha nueva se arma ahí, punto por punto: objetivo y personas
-  aprobados (2026-10-27); siguiente: los entes, de cero.
+  aprobados, y los servicios en % (2026-10-27); siguiente: lo que queda del precio, después los entes.
 - **Catálogo — reventa de perfiles**, sin caso real todavía: un solo paquete "Perfil suelto" cuya
   fórmula deja el perfil a elegir al presupuestar, no un paquete por perfil. Escala sin trabajo (un
   perfil nuevo del proveedor se vende el mismo día), no copia la misma estructura 200 veces y la lista
   del vendedor sigue corta. Puede convivir con un paquete propio para un perfil especial. Falta decidir
   de qué lista se elige el perfil.
+- **Catálogo — % de un servicio por categoría de paquete**, sin caso real todavía: se construye con
+  la primera categoría que cobre distinto. Sumarlo no cambia nada, porque mientras tanto todos los
+  paquetes usan el % general (`decisiones/catalogo.md` → *Servicios en %*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
-  ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
-  producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
+  ítems del catálogo con el precio copiado, más un renglón por cada mínimo por presupuesto de los
+  servicios en %, que calcula el catálogo (`decisiones/catalogo.md` → *Servicios en %*). Su estado
+  es el operativo (en cotización, aprobado, en producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
   ejecución y el seguimiento comercial al entregar cuelgan del presupuesto, no de la obra. El primer
   presupuesto pasa la obra a `en_cotizacion` y el primero aprobado a `contratada`. La ficha de la
   obra lista sus presupuestos con su estado actual. Los contactos operativos (capataz, quien recibe)
