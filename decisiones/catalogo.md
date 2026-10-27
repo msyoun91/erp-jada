@@ -38,10 +38,17 @@ Entes
 ```
 
 Pendientes de la ficha, en este orden:
+- **Tipos de cambio** (ARS · USD · EUR): dónde viven y cuál se usa. No se pisan (*Un presupuesto se
+  recalcula como era*).
+- **Versiones y aprobación**, propuesta del usuario en discusión: estados borrador · publicado ·
+  obsoleto; Técnica confirma las fórmulas y Administración los %; un gerente que ve todo, precios
+  incluidos, aprueba, y la versión aprobada no se modifica hasta sacar otra. Resuelve que nadie
+  dentro del catálogo vea el precio final (Técnica no ve precios, Administración no ve paquetes: una
+  fórmula olvidada daba un precio creíble que llegaba al vendedor, o directo al cliente por
+  erp-cliente). Abierto: qué confirma Administración, si no ve paquetes y los % son generales; un
+  paso "en revisión" para que no se edite mientras el gerente mira; obsoleto junta reemplazado y
+  dejado de vender.
 - **Entes**, de cero.
-- **Nadie dentro del catálogo ve el precio final de un paquete:** Técnica no ve precios y
-  Administración no ve paquetes, así que una fórmula mal cargada la nota el vendedor. Sin respuesta
-  todavía si se acepta así o si alguien tiene que verlo (un usuario puede tener los dos permisos).
 
 ## Al catálogo entran solo los que definen (2026-10-27)
 
@@ -160,3 +167,15 @@ ni despiece, ni costos, ni desglose de los servicios en %.** Una función del ca
 paquete, las medidas y los opcionales elegidos, lee lo que quien llama no puede abrir y devuelve solo
 el número, como `obras_contar`. Así lo que no ven (*Personas*) no depende de ocultarlo en pantalla. Ven
 el nombre de cada opcional para elegirlo, no su %. El cliente, desde erp-cliente, recibe lo mismo.
+
+## Un presupuesto se recalcula como era (2026-10-27)
+
+**Un presupuesto se recalcula con las condiciones de su fecha: lo que forma el precio no se pisa.**
+Cambiar un costo, un % o un tipo de cambio agrega un valor nuevo con fecha, y el anterior queda; la
+versión publicada de un paquete no se edita, se saca otra. El presupuesto guarda su fecha y la versión
+de cada paquete, y la función del precio usa lo que valía a esa fecha: si el cliente cambia una medida
+en un presupuesto de marzo, se le respeta el precio de marzo.
+
+Se descartó que cada presupuesto guarde copia de los costos y los %: la copia tendría que vivir en el
+catálogo para que el vendedor no la lea, y un paquete sumado a un presupuesto viejo no tendría sus
+insumos en ella.
