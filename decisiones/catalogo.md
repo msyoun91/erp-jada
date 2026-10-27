@@ -38,9 +38,9 @@ Entes
 ```
 
 Pendientes de la ficha, en este orden:
-- **Precio**, lo que queda (los servicios en % ya están: *Servicios en %*): cuál de los precios de
-  los proveedores pasa a ser el costo y quién lo elige; calcularlo al presupuestar sin que vendedor ni
-  cliente vean fórmulas ni costos.
+- **Precio**, lo que queda (el costo y los servicios en % ya están: *El costo del insumo vive en el
+  catálogo*, *Servicios en %*): calcularlo al presupuestar sin que vendedor ni cliente vean fórmulas
+  ni costos.
 - **Entes**, de cero.
 - **Nadie dentro del catálogo ve el precio final de un paquete:** Técnica no ve precios y
   Administración no ve paquetes, así que una fórmula mal cargada la nota el vendedor. Sin respuesta
@@ -90,6 +90,10 @@ tiene muchos por insumo y lee el costo para comparar; el catálogo tiene uno, el
 Compras, el catálogo no podría poner precio hasta que exista Compras, que no tiene ficha. Quién lo
 carga es un permiso, no un lugar: hoy Administración; si alguien de compras tiene que actualizarlo, se
 le da ese permiso, sin copia en Compras.
+
+**Ningún precio de proveedor pasa solo a ser el costo: lo define Administración.** No hay regla que
+elija entre lo que cotizan (el más barato, el último): si tres proveedores cotizan el perfil 20x40, el
+costo es el que carga Administración, y cambia solo cuando lo vuelve a cargar.
 
 Archivos: corrige `decisiones/contactos.md` → *Los proveedores son empresas de Contactos*.
 
