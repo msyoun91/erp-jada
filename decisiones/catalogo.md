@@ -38,9 +38,6 @@ Entes
 ```
 
 Pendientes de la ficha, en este orden:
-- **Precio**, lo que queda (el costo y los servicios en % ya están: *El costo del insumo vive en el
-  catálogo*, *Servicios en %*): calcularlo al presupuestar sin que vendedor ni cliente vean fórmulas
-  ni costos.
 - **Entes**, de cero.
 - **Nadie dentro del catálogo ve el precio final de un paquete:** Técnica no ve precios y
   Administración no ve paquetes, así que una fórmula mal cargada la nota el vendedor. Sin respuesta
@@ -155,3 +152,11 @@ paquete*). La categoría dice qué es el producto, no cuánto se cobra, así que
 el %, como cuando marca las piezas. Administración ve los nombres de las categorías y carga solo las
 excepciones. Una categoría sin % propio usa el general, así ningún paquete queda sin %. Las
 categorías ya existen para el vendedor; el % por categoría espera un caso real (`BACKLOG.md`).
+
+## El precio sale de una función, sin despiece (2026-10-27)
+
+**Vendedor y cliente reciben solo el precio de cada paquete y el renglón del mínimo por presupuesto:
+ni despiece, ni costos, ni desglose de los servicios en %.** Una función del catálogo recibe el
+paquete, las medidas y los opcionales elegidos, lee lo que quien llama no puede abrir y devuelve solo
+el número, como `obras_contar`. Así lo que no ven (*Personas*) no depende de ocultarlo en pantalla. Ven
+el nombre de cada opcional para elegirlo, no su %. El cliente, desde erp-cliente, recibe lo mismo.
