@@ -38,8 +38,10 @@ Entes
 ```
 
 Pendientes de la ficha, en este orden:
-- **Tipos de cambio** (ARS · USD · EUR): dónde viven y cuál se usa. No se pisan (*Un presupuesto se
-  recalcula como era*).
+- **Tipos de cambio**, lo que queda (cuál y dónde ya está: *Tipos de cambio*): cómo se traen
+  (propuesta: el primer presupuesto del día lo pide a MonedAPI y lo guarda, el resto del día usa ese;
+  si no responde, el último guardado; cada valor vale desde que se guardó, no desde el día) y si
+  Administración puede corregir uno.
 - **Versiones y aprobación**, propuesta del usuario en discusión: estados borrador · publicado ·
   obsoleto; Técnica confirma las fórmulas y Administración los %; un gerente que ve todo, precios
   incluidos, aprueba, y la versión aprobada no se modifica hasta sacar otra. Resuelve que nadie
@@ -179,3 +181,15 @@ en un presupuesto de marzo, se le respeta el precio de marzo.
 Se descartó que cada presupuesto guarde copia de los costos y los %: la copia tendría que vivir en el
 catálogo para que el vendedor no la lea, y un paquete sumado a un presupuesto viejo no tendría sus
 insumos en ella.
+
+## Tipos de cambio (2026-10-27)
+
+**Los tipos de cambio viven en el catálogo y salen de MonedAPI, en venta: dólar oficial
+(`monedapi.ar/api/v2/usd/oficial`) y euro oficial (`/api/v2/eur/bna`, el único euro que tiene).** Son
+parte de cómo se calcula el precio y hoy el catálogo es el único que los usa: Compras los va a leer
+de acá, como el costo. Si otro módulo los necesita para algo que no es el precio (ej: pagos), se
+mueven entonces. El enum `moneda` ya existe (Obras: ARS · USD); se le suma EUR.
+
+Para recalcular se usa la copia guardada, nunca MonedAPI: si el servicio desaparece, los presupuestos
+viejos se siguen recalculando. Sin clave ni registro; el euro puede quedar días sin actualizarse
+(el 2026-10-27 seguía el del 20/10).
