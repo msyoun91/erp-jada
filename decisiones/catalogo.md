@@ -38,10 +38,6 @@ Entes
 ```
 
 Pendientes de la ficha, en este orden:
-- **Tipos de cambio**, lo que queda (cuál y dónde ya está: *Tipos de cambio*): cómo se traen
-  (propuesta: el primer presupuesto del día lo pide a MonedAPI y lo guarda, el resto del día usa ese;
-  si no responde, el último guardado; cada valor vale desde que se guardó, no desde el día) y si
-  Administración puede corregir uno.
 - **Versiones y aprobación**, propuesta del usuario en discusión: estados borrador · publicado ·
   obsoleto; Técnica confirma las fórmulas y Administración los %; un gerente que ve todo, precios
   incluidos, aprueba, y la versión aprobada no se modifica hasta sacar otra. Resuelve que nadie
@@ -193,3 +189,17 @@ mueven entonces. El enum `moneda` ya existe (Obras: ARS · USD); se le suma EUR.
 Para recalcular se usa la copia guardada, nunca MonedAPI: si el servicio desaparece, los presupuestos
 viejos se siguen recalculando. Sin clave ni registro; el euro puede quedar días sin actualizarse
 (el 2026-10-27 seguía el del 20/10).
+
+**Se traen cuando hacen falta, sin cron: el primer presupuesto del día los pide a MonedAPI y guarda lo
+que trae; el resto del día usa eso.** Si no responde, se usa el último guardado. Cada valor vale desde
+que se guardó, no desde el día: el que se guarda a las 11:00 no cambia un presupuesto de las 09:40
+hecho con el de ayer.
+
+**Administración puede corregir uno a mano, y lo de MonedAPI entra solo si es más nuevo.** Cada valor
+guarda su fecha: la que dice MonedAPI (`updatedAt`) o la de la carga a mano, y se muestra con ella
+("euro $1.780, del 20/10"). Así el euro del 20/10 que MonedAPI sigue dando no pisa una corrección del
+27/10, ni suma una fila igual cada día.
+
+**Si un tipo de cambio lleva 7 días sin actualizarse, se le avisa a quien puede corregirlo.** Es
+estado, no evento: se calcula al mirar, como `notificaciones_avisos()`, sin cron
+(`decisiones/global/infra.md`).
