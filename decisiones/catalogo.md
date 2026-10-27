@@ -22,10 +22,13 @@ servicios en %).
 Personas                qué ve · qué hace · qué NO ve
 ├── Técnica        — insumos, fórmulas y qué servicios en % hay · carga insumos, define las
 │                    categorías, arma los paquetes (le pone a cada uno su categoría y marca qué
-│                    piezas llevan cada servicio en %), da de baja insumos y paquetes · costos, %
-│                    ni precios
-├── Administración — insumos con su costo y las categorías · carga los costos de insumos y servicios,
-│                    define los servicios en % · paquetes ni fórmulas
+│                    piezas llevan cada servicio en %) y envía cada versión a revisión, da de baja
+│                    insumos y paquetes · costos, % ni precios
+├── Administración — insumos con su costo, las categorías y los tipos de cambio · carga los costos de
+│                    insumos y servicios, define los servicios en %, corrige tipos de cambio ·
+│                    paquetes ni fórmulas
+├── Gerente        — todo: paquetes, fórmulas, costos, % y precios · aprueba o devuelve cada versión
+│                    de un paquete · —
 ├── Vendedor       — NO entra: elige categoría y paquete desde Presupuestos · el precio final ·
 │                    costos, % ni fórmulas
 ├── Cliente        — NO entra: lo mismo que el vendedor, desde erp-cliente
@@ -38,20 +41,15 @@ Entes
 ```
 
 Pendientes de la ficha, en este orden:
-- **Versiones y aprobación**, propuesta del usuario en discusión: estados borrador · publicado ·
-  obsoleto; Técnica confirma las fórmulas y Administración los %; un gerente que ve todo, precios
-  incluidos, aprueba, y la versión aprobada no se modifica hasta sacar otra. Resuelve que nadie
-  dentro del catálogo vea el precio final (Técnica no ve precios, Administración no ve paquetes: una
-  fórmula olvidada daba un precio creíble que llegaba al vendedor, o directo al cliente por
-  erp-cliente). Abierto: qué confirma Administración, si no ve paquetes y los % son generales; un
-  paso "en revisión" para que no se edite mientras el gerente mira; obsoleto junta reemplazado y
-  dejado de vender.
+- **Versiones**, lo que queda (la aprobación ya está: *Versiones y aprobación*): obsoleto junta
+  reemplazado (pasa solo al publicar la siguiente) y dejado de vender (lo decide Técnica); el umbral
+  del aviso de costos; si un cambio de % también avisa.
 - **Entes**, de cero.
 
 ## Al catálogo entran solo los que definen (2026-10-27)
 
-**Técnica y Administración entran al módulo; vendedor, cliente, producción y compras consumen lo que
-el catálogo fija desde su propio módulo.** Si alguien de otro módulo necesita ver algo de acá (ej:
+**Técnica, Administración y el gerente (*Versiones y aprobación*) entran al módulo; vendedor, cliente,
+producción y compras consumen lo que el catálogo fija desde su propio módulo.** Si alguien de otro módulo necesita ver algo de acá (ej:
 producción, las fórmulas), se le da ese permiso a ese usuario: sin persona ni regla nueva. Quien carga
 algo lo da de baja: Técnica, también cuando se decide dejar de vender un paquete.
 
@@ -203,3 +201,28 @@ guarda su fecha: la que dice MonedAPI (`updatedAt`) o la de la carga a mano, y s
 **Si un tipo de cambio lleva 7 días sin actualizarse, se le avisa a quien puede corregirlo.** Es
 estado, no evento: se calcula al mirar, como `notificaciones_avisos()`, sin cron
 (`decisiones/global/infra.md`).
+
+## Versiones y aprobación (2026-10-27)
+
+**Cada paquete tiene versiones; una versión pasa por borrador → en revisión → publicado → obsoleto, y
+la aprueba solo el gerente.** Técnica la envía a revisión y desde ahí no se edita, así el gerente
+aprueba lo que vio. La base no deja enviarla si falta algo (un insumo sin costo, una pieza sin
+fórmulas). El gerente ve el despiece, el precio para las medidas que elige y qué cambió respecto de la
+versión anterior, y la aprueba (publicado) o la devuelve (borrador). La publicada no se modifica: para
+cambiarla se saca otra versión.
+
+Técnica no ve precios y Administración no ve paquetes: una fórmula olvidada daba un precio creíble que
+llegaba al vendedor, o directo al cliente por erp-cliente. El gerente es el único que ve paquete y
+precio juntos, y como los paquetes cambian poco, aprobar cada versión no frena a nadie.
+
+**Administración no confirma nada por paquete.** Los % son generales y tienen su historia; lo que
+podía faltar de su lado, un costo, lo frena la base al enviar.
+
+Se descartaron: aprobar solo si el precio se mueve más de un % (un olvido chico pasa, y con pocos
+cambios se ahorra poco), publicar a prueba para vendedores (un presupuesto puede salir mal antes de la
+revisión) y un segundo técnico sin precios (no ve lo que solo aparece en el precio, como fórmula en
+metros contra costo por barra).
+
+**Los costos no pasan por aprobación, pero al cargarse avisan si se mueven mucho** ("subió 900 %
+respecto del anterior, ¿confirmás?"). Cambian seguido, y un error de tipeo cambiaría el precio de
+todos los paquetes con ese insumo sin que nadie lo revise.
