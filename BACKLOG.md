@@ -25,8 +25,13 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. **Se arma de cero**
   (2026-10-22): la v1 y la v2 se descartaron enteras, junto con lo que habían dejado en Presupuestos,
   Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). Nada de eso vuelve
-  (`decisiones/catalogo.md`). La ficha nueva se arma ahí, punto por punto; siguiente: objetivo y
-  quién usa el módulo.
+  (`decisiones/catalogo.md`). La ficha nueva se arma ahí, punto por punto: objetivo y personas
+  aprobados (2026-10-27); siguiente: los entes, de cero.
+- **Catálogo — reventa de perfiles**, sin caso real todavía: un solo paquete "Perfil suelto" cuya
+  fórmula deja el perfil a elegir al presupuestar, no un paquete por perfil. Escala sin trabajo (un
+  perfil nuevo del proveedor se vende el mismo día), no copia la misma estructura 200 veces y la lista
+  del vendedor sigue corta. Puede convivir con un paquete propio para un perfil especial. Falta decidir
+  de qué lista se elige el perfil.
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado. Su estado es el operativo (en cotización, aprobado, en
   producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
