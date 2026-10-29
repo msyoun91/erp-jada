@@ -20,13 +20,13 @@ Objetivo: definir qué se puede vender y cómo se calcula: los paquetes, cada un
 piezas armadas y las fórmulas de cada una), y su precio (los costos de insumos y servicios, y los
 servicios en %).
 Personas                qué ve · qué hace · qué NO ve
-├── Técnica        — insumos, fórmulas y qué servicios en % hay · carga insumos, define las
-│                    categorías, arma los paquetes (le pone a cada uno su categoría y marca qué
-│                    piezas llevan cada servicio en %) y envía cada versión a revisión, da de baja
-│                    insumos y paquetes · costos, % ni precios
+├── Técnica        — insumos y fórmulas · carga insumos, define las categorías de insumo y de
+│                    paquete, arma los paquetes (le pone a cada uno su categoría) y envía cada
+│                    versión a revisión, da de baja insumos y paquetes · servicios en %, costos ni
+│                    precios
 ├── Administración — insumos con su costo, las categorías y los tipos de cambio · carga los costos de
-│                    insumos y servicios, define los servicios en %, corrige tipos de cambio ·
-│                    paquetes ni fórmulas
+│                    insumos y servicios, define los servicios en % y sobre qué categorías de
+│                    insumo se cobran, corrige tipos de cambio · paquetes ni fórmulas
 ├── Gerente        — todo: paquetes, fórmulas, costos, % y precios · aprueba o devuelve cada versión
 │                    de un paquete · —
 ├── Vendedor       — NO entra: elige categoría y paquete desde Presupuestos · el precio final ·
@@ -41,7 +41,7 @@ Entes
 ```
 
 Pendientes de la ficha:
-- **Entes**, de cero.
+- **Entes**: el insumo ya está (*El insumo*); siguen los demás.
 
 ## Al catálogo entran solo los que definen (2026-10-27)
 
@@ -79,6 +79,29 @@ Paquete: Ventana corrediza
 - **Hoy no se vende nada suelto.** El catálogo de un proveedor alimenta insumos para usar dentro de
   los paquetes. Para cuando revendan perfiles ya hay camino decidido (`BACKLOG.md`).
 
+## El insumo (2026-10-29)
+
+**Cada insumo está en una subcategoría, y cada subcategoría en una categoría (Vidrios → 4mm → Float
+incoloro 4mm, Float bronce 4mm; Herrajes → rueda 80kg → la de cada marca). El insumo tiene su costo,
+peso y unidad de comercialización: mm, m2 o u.** Son categorías de insumo, distintas de las de
+paquete. La unidad de compra es de Compras, como los precios de cada proveedor (*El costo del
+insumo vive en el catálogo*).
+
+**Las categorías y subcategorías de insumo las define Técnica**, como las de paquete: carga los
+insumos y sabe qué es cada uno. Riesgo aceptado: una categoría nueva no cobra ningún servicio en %
+hasta que Administración se la sume (si los vidrios laminados pasan de Vidrios a "Laminados", dejan de
+cobrar la garantía de vidrio). Se descartó que las cree Administración: Técnica le tendría que pedir
+cada categoría nueva.
+
+**El peso por ahora solo se carga: cómo se usa se decide cuando un módulo lo necesite.**
+
+**Las fórmulas se escriben en mm y el sistema pasa el resultado a la unidad de comercialización; el
+costo de un insumo por mm se carga por metro.** Con una ventana de 1.500 × 1.200, el perfil marco da
+5.392 mm y Administración carga $15.000 el metro; el vidrio 4mm se escribe `ancho × alto` y el
+sistema pasa los 1.800.000 mm² a 1,8 m2. Nadie divide a mano. Costo aceptado: la fórmula no dice en
+qué unidad sale, lo dice la unidad del insumo. Se descartó escribir todo en la unidad del insumo
+(`ancho × alto / 1.000.000`, $15 por mm): un olvido multiplicaba el precio por mil o por un millón.
+
 ## El costo del insumo vive en el catálogo (2026-10-27)
 
 **Cada insumo tiene un solo costo, el que se usa para calcular el precio de venta, y vive acá. Los
@@ -106,16 +129,16 @@ al armar el precio.** Cómo entra el de %: *Servicios en %*.
 opcional, y quien presupuesta decide si va. No hay ganancia aparte: va dentro de comercialización.**
 Las bases, en el orden en que se calculan:
 
-1. Todo el despiece (ej: comercialización), o las piezas armadas marcadas con ese servicio (ej:
-   garantía de vidrio).
+1. Todo el despiece (ej: comercialización), o los insumos de ciertas categorías (ej: garantía de
+   vidrio, sobre Vidrios).
 2. El subtotal: el despiece más los del paso 1 (ej: un recargo en la transición del modelo de negocio).
 3. El precio final, despejado para que sea el % exacto (ej: IIBB). Varios se despejan juntos:
    monto / (1 − suma de los %).
 
 ```
 Costo del despiece                                     $200.000
-Garantía de vidrio    5 % de la pieza Vidrio ($60.000)   $3.000
-Manipulación          5 % de la pieza Vidrio             $3.000
+Garantía de vidrio    5 % de los Vidrios ($60.000)       $3.000
+Manipulación          5 % de los Vidrios                 $3.000
 Comercialización     10 % del despiece (mín. $15.000)   $20.000
 Subtotal                                               $226.000
 Transición            4 % del subtotal                   $9.040
@@ -126,30 +149,36 @@ Precio de venta                                        $242.309
 Dentro de un paso ningún servicio se calcula sobre otro: el orden lo dan los pasos, así Administración
 nunca ordena servicios y sacar un opcional solo cambia lo que se calcula después.
 
-**La marca va en la pieza armada, no en el insumo ni en el renglón.** Los insumos no tienen
-clasificación y Administración no ve las piezas: la marca la pone Técnica al armar la pieza (ve el
-nombre del servicio, no su %). El % toma la pieza entera; para cobrarlo sobre un solo material, ese
-material va en su propia pieza. Una pieza sin marcar no cobra el servicio, como una fórmula olvidada.
+~~**La marca va en la pieza armada, no en el insumo ni en el renglón.**~~ Superada el 2026-10-29: los
+insumos ahora tienen categoría (*El insumo*); ver la decisión siguiente.
+
+**Un servicio en % se cobra sobre categorías de insumo, no sobre piezas marcadas (2026-10-29).**
+Administración elige las categorías de cada servicio (garantía de vidrio → Vidrios) y el % toma el
+costo de esos insumos en todo el paquete, en la pieza que estén. Técnica no marca nada ni ve los
+servicios: un paquete nuevo cobra la garantía de su vidrio sin que nadie se acuerde, y ningún material
+va a una pieza propia solo para cobrarle un %. Con la marca en la pieza, un olvido dejaba el servicio
+sin cobrar y solo lo atajaba el gerente. Lo que no da: un servicio sobre una pieza por lo que es y no
+por sus materiales; ese va sobre todo el despiece.
 
 **Un servicio en % puede tener mínimo, y elige si lo compara por paquete o por presupuesto.** Por
 paquete, contra el servicio de cada unidad, y la diferencia queda dentro de su precio. Por
 presupuesto, contra la suma del servicio en todos los ítems, y la diferencia va en un renglón aparte
 que pasa por los pasos siguientes: una obra con muchas piezas chicas no paga el mínimo en cada una.
-Si el servicio no aplica (ninguna pieza marcada, opcional no elegido), no hay mínimo. Los que se
+Si el servicio no aplica (ningún insumo de sus categorías, opcional no elegido), no hay mínimo. Los que se
 despejan no tienen: son el % exacto del precio. La cuenta del presupuesto entero la hace una función
 del catálogo, así la regla vive en un solo lugar.
 
 ```
 Garantía de vidrio 5 %, mínimo $10.000 por presupuesto
-2 Ventanas corredizas   pieza Vidrio $60.000 c/u   →  $6.000
-3 Paños fijos           pieza Vidrio $20.000 c/u   →  $3.000
-1 Puerta ciega          sin pieza marcada          →  no cuenta
+2 Ventanas corredizas   vidrio $60.000 c/u         →  $6.000
+3 Paños fijos           vidrio $20.000 c/u         →  $3.000
+1 Puerta ciega          sin vidrio                 →  no cuenta
 Mínimo de garantía de vidrio            $10.000 − $9.000 = $1.000, en renglón aparte
 ```
 
-**Un servicio en % tiene un % general y, si hace falta, uno distinto por categoría** (*Qué es un
-paquete*). La categoría dice qué es el producto, no cuánto se cobra, así que Técnica clasifica sin ver
-el %, como cuando marca las piezas. Administración ve los nombres de las categorías y carga solo las
+**Un servicio en % tiene un % general y, si hace falta, uno distinto por categoría de paquete**
+(*Qué es un paquete*). La categoría dice qué es el producto, no cuánto se cobra, así que Técnica
+clasifica sin ver el %. Administración ve los nombres de las categorías y carga solo las
 excepciones. Una categoría sin % propio usa el general, así ningún paquete queda sin %. Las
 categorías ya existen para el vendedor; el % por categoría espera un caso real (`BACKLOG.md`).
 
