@@ -40,9 +40,7 @@ Entes
 └── a definir
 ```
 
-Pendientes de la ficha, en este orden:
-- **Versiones**, lo que queda (*Versiones y aprobación*): el umbral del aviso de costos; si un cambio
-  de % también avisa.
+Pendientes de la ficha:
 - **Entes**, de cero.
 
 ## Al catálogo entran solo los que definen (2026-10-27)
@@ -233,3 +231,13 @@ metros contra costo por barra).
 **Los costos no pasan por aprobación, pero al cargarse avisan si se mueven mucho** ("subió 900 %
 respecto del anterior, ¿confirmás?"). Cambian seguido, y un error de tipeo cambiaría el precio de
 todos los paquetes con ese insumo sin que nadie lo revise.
+
+**Tres niveles contra el valor anterior, para subas y bajas: desde 15 % amarillo, desde 25 %
+naranja, desde 50 % rojo. Amarillo y naranja solo marcan y guardan; rojo pide confirmación.** Vale
+igual para el costo de un insumo o servicio fijo y para el % de un servicio, medido contra el %
+anterior (12 → 15 % es +25 %, naranja; 12 → 120 % es ×10, rojo): un % mal cargado mueve el precio de
+todos los paquetes que lo llevan. El cambio se muestra escrito junto al color. Los errores típicos (un cero de más o de
+menos, otra unidad) mueven el costo 5 veces o más y caen en rojo; el amarillo deja ver dígitos
+invertidos ($1.250 → $1.520, +22 %). Que los cambios reales de lista (15–50 %) no pidan confirmar evita
+que se confirme todo sin leer. Un insumo sin costo anterior no avisa. Se descartó un solo umbral
+("doble o mitad"): atajaba los errores grandes pero no mostraba los medianos.
