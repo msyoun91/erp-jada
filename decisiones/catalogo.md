@@ -20,13 +20,14 @@ Objetivo: definir qué se puede vender y cómo se calcula: los paquetes, cada un
 piezas armadas y las fórmulas de cada una), y su precio (los costos de insumos y servicios, y los
 servicios en %).
 Personas                qué ve · qué hace · qué NO ve
-├── Técnica        — insumos y fórmulas · carga insumos, define las categorías de insumo y de
-│                    paquete, arma los paquetes (le pone a cada uno su categoría) y envía cada
-│                    versión a revisión, da de baja insumos y paquetes · servicios en %, costos ni
-│                    precios
-├── Administración — insumos con su costo, las categorías y los tipos de cambio · carga los costos de
-│                    insumos y servicios, define los servicios en % y sobre qué categorías de
-│                    insumo se cobran, corrige tipos de cambio · paquetes ni fórmulas
+├── Técnica        — insumos, servicios fijos y fórmulas · carga insumos, define las categorías
+│                    de insumo y de paquete, arma los paquetes (le pone a cada uno su categoría) y
+│                    envía cada versión a revisión, da de baja insumos y paquetes · servicios en %,
+│                    costos ni precios
+├── Administración — insumos y servicios fijos con su costo, las categorías y los tipos de cambio ·
+│                    carga los costos de insumos, da de alta y de baja los servicios fijos y sus
+│                    categorías, define los servicios en % y sobre qué categorías se cobran,
+│                    corrige tipos de cambio · paquetes ni fórmulas
 ├── Gerente        — todo: paquetes, fórmulas, costos, % y precios · aprueba o devuelve cada versión
 │                    de un paquete · —
 ├── Vendedor       — NO entra: elige categoría y paquete desde Presupuestos · el precio final ·
@@ -41,14 +42,16 @@ Entes
 ```
 
 Pendientes de la ficha:
-- **Entes**: el insumo ya está (*El insumo*); siguen los demás.
+- **Entes**: el insumo y el servicio fijo ya están (*El insumo*, *El servicio fijo*); siguen los
+  demás.
 
 ## Al catálogo entran solo los que definen (2026-10-27)
 
 **Técnica, Administración y el gerente (*Versiones y aprobación*) entran al módulo; vendedor, cliente,
 producción y compras consumen lo que el catálogo fija desde su propio módulo.** Si alguien de otro módulo necesita ver algo de acá (ej:
 producción, las fórmulas), se le da ese permiso a ese usuario: sin persona ni regla nueva. Quien carga
-algo lo da de baja: Técnica, también cuando se decide dejar de vender un paquete.
+algo lo da de baja: Técnica, también cuando se decide dejar de vender un paquete; Administración, los
+servicios fijos (*El servicio fijo*).
 
 ## Qué es un paquete (2026-10-27)
 
@@ -133,6 +136,11 @@ Técnica saca una versión de cada una con la rueda de Marca B → el gerente la
   → Técnica reactiva cada paquete
 ```
 
+**Si la baja de un insumo da de baja algún paquete, el gerente recibe un aviso que apunta a la baja y
+lista los paquetes que salieron de la venta (2026-10-29).** Sin aviso, dejaban de venderse paquetes que
+él aprobó sin que se enterara; la baja de un servicio fijo le avisa igual (*El servicio fijo*). Si
+ninguna versión publicada lo usaba, no avisa: como el renombre, no cambia nada de lo que aprobó.
+
 **El peso por ahora solo se carga: cómo se usa se decide cuando un módulo lo necesite.**
 
 **Las fórmulas se escriben en mm y el sistema pasa el resultado a la unidad de comercialización; el
@@ -141,6 +149,37 @@ costo de un insumo por mm se carga por metro.** Con una ventana de 1.500 × 1.20
 sistema pasa los 1.800.000 mm² a 1,8 m2. Nadie divide a mano. Costo aceptado: la fórmula no dice en
 qué unidad sale, lo dice la unidad del insumo. Se descartó escribir todo en la unidad del insumo
 (`ancho × alto / 1.000.000`, $15 por mm): un olvido multiplicaba el precio por mil o por un millón.
+
+## El servicio fijo (2026-10-29)
+
+**El servicio fijo (Instalación, Soldado) es un ente propio, no un insumo, y sigue las reglas del
+insumo salvo el peso, que no tiene.** Costo y nombre con fecha, unidad de comercialización (la
+instalación por m2, el soldado por u), categoría y unidad que no se editan, y su baja da de baja los
+paquetes que lo usan en su versión publicada (*El insumo*). Una fórmula es un insumo o un servicio
+fijo. Si va en una tabla o en dos se decide en el SQL: las reglas son las mismas y viven una vez.
+
+Se descartó cargarlo como insumo de una categoría "Servicios": se comportaba igual, pero la empresa
+dice "insumos y servicios", Técnica buscaría la Instalación entre los vidrios, el peso quedaba vacío
+para siempre y Compras vería el Soldado, que es propio y no se compra.
+
+**Cada servicio fijo está en una categoría de servicio, y esas categorías las define Administración**,
+no Técnica como las de insumo. Un servicio en % se cobra sobre categorías de insumo o de servicio (ej:
+un seguro de colocación sobre Instalación). Como las crea quien define los %, no corre el riesgo
+aceptado con las de insumo: una categoría nueva que no cobra nada porque Administración no sabía que
+existía.
+
+**Los servicios fijos los da de alta, renombra y da de baja Administración; Técnica los ve sin costo
+y los usa en las fórmulas.** Un servicio nace con su costo y su categoría, de la mano de quien los
+define. Costo aceptado: si a un paquete nuevo le falta un servicio ("Colocación de puerta"), Técnica
+se lo pide a Administración antes de poder usarlo en la fórmula.
+
+**Dar de baja un servicio fijo funciona como la baja del insumo, aviso al gerente incluido (*El
+insumo*), y además le avisa a Técnica. Antes de confirmar, Administración ve cuántos paquetes lo
+usan: el número, no cuáles.** Administración no ve paquetes y Técnica no hizo la baja: sin aviso, el
+vendedor dejaba de ver 8 ventanas sin que nadie supiera por qué. Técnica saca la versión con otro
+servicio, el gerente la aprueba y Técnica reactiva cada paquete. Se descartó que la base no deje darlo
+de baja mientras una versión publicada lo use: se seguía vendiendo una instalación que nadie iba a
+hacer hasta que Técnica cambiara cada paquete.
 
 ## El costo del insumo vive en el catálogo (2026-10-27)
 
@@ -169,8 +208,8 @@ al armar el precio.** Cómo entra el de %: *Servicios en %*.
 opcional, y quien presupuesta decide si va. No hay ganancia aparte: va dentro de comercialización.**
 Las bases, en el orden en que se calculan:
 
-1. Todo el despiece (ej: comercialización), o los insumos de ciertas categorías (ej: garantía de
-   vidrio, sobre Vidrios).
+1. Todo el despiece (ej: comercialización), o los insumos y servicios fijos de ciertas categorías
+   (ej: garantía de vidrio, sobre Vidrios).
 2. El subtotal: el despiece más los del paso 1 (ej: un recargo en la transición del modelo de negocio).
 3. El precio final, despejado para que sea el % exacto (ej: IIBB). Varios se despejan juntos:
    monto / (1 − suma de los %).
@@ -193,8 +232,9 @@ nunca ordena servicios y sacar un opcional solo cambia lo que se calcula despué
 insumos ahora tienen categoría (*El insumo*); ver la decisión siguiente.
 
 **Un servicio en % se cobra sobre categorías de insumo, no sobre piezas marcadas (2026-10-29).**
-Administración elige las categorías de cada servicio (garantía de vidrio → Vidrios) y el % toma el
-costo de esos insumos en todo el paquete, en la pieza que estén. Técnica no marca nada ni ve los
+Administración elige las categorías de cada servicio (garantía de vidrio → Vidrios; también de
+servicio, *El servicio fijo*) y el % toma el costo de esos insumos en todo el paquete, en la pieza
+que estén. Técnica no marca nada ni ve los
 servicios: un paquete nuevo cobra la garantía de su vidrio sin que nadie se acuerde, y ningún material
 va a una pieza propia solo para cobrarle un %. Con la marca en la pieza, un olvido dejaba el servicio
 sin cobrar y solo lo atajaba el gerente. Lo que no da: un servicio sobre una pieza por lo que es y no
@@ -204,7 +244,7 @@ por sus materiales; ese va sobre todo el despiece.
 paquete, contra el servicio de cada unidad, y la diferencia queda dentro de su precio. Por
 presupuesto, contra la suma del servicio en todos los ítems, y la diferencia va en un renglón aparte
 que pasa por los pasos siguientes: una obra con muchas piezas chicas no paga el mínimo en cada una.
-Si el servicio no aplica (ningún insumo de sus categorías, opcional no elegido), no hay mínimo. Los que se
+Si el servicio no aplica (nada de sus categorías, opcional no elegido), no hay mínimo. Los que se
 despejan no tienen: son el % exacto del precio. La cuenta del presupuesto entero la hace una función
 del catálogo, así la regla vive en un solo lugar.
 
@@ -312,7 +352,7 @@ invertidos ($1.250 → $1.520, +22 %). Que los cambios reales de lista (15–50 
 que se confirme todo sin leer. Un insumo sin costo anterior no avisa. Se descartó un solo umbral
 ("doble o mitad"): atajaba los errores grandes pero no mostraba los medianos.
 
-**Cualquier cambio en un servicio en % le avisa al gerente: su %, sus categorías de insumo, su base,
+**Cualquier cambio en un servicio en % le avisa al gerente: su %, sus categorías, su base,
 su mínimo y cómo lo compara, si es opcional, y su alta o baja (2026-10-29).** Rige al instante, como
 el renombre de un insumo (*El insumo*): el aviso apunta al cambio en la historia del servicio ("Ana
 sumó Herrajes a Garantía de vidrio") y el gerente lo revierte si está mal. Un servicio mueve el precio
