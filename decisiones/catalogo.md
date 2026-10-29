@@ -57,7 +57,7 @@ de fórmulas, y cada fórmula es un insumo o un servicio fijo con el cálculo de
 medidas del paquete.** Los nombres son los que usa la empresa.
 
 ```
-Paquete: Ventana corrediza
+Paquete: Ventana corrediza 2 hojas
 ├── Pieza armada: Marco
 │   ├── Fórmula: Perfil marco 20x40 = (ancho − 2) × 2 + (alto − 2) × 2
 │   ├── Fórmula: Escuadra           = 4
@@ -75,19 +75,23 @@ Paquete: Ventana corrediza
   distinto.
 - **Cada paquete tiene una sola categoría, según qué es el producto** (ej: Ventana corrediza → 2
   hojas, 3 hojas; Paño fijo → sus tipos). Las define Técnica y le pone una a cada paquete al armarlo.
-  El vendedor, en Presupuestos, elige primero la categoría y después el paquete.
+  El vendedor, en Presupuestos, elige primero la categoría y después el paquete. Sin subcategoría
+  (Ventanas → Corrediza → 2 hojas), descartada el 2026-10-29 para paquetes e insumos.
 - **Hoy no se vende nada suelto.** El catálogo de un proveedor alimenta insumos para usar dentro de
   los paquetes. Para cuando revendan perfiles ya hay camino decidido (`BACKLOG.md`).
 
 ## El insumo (2026-10-29)
 
-**Cada insumo está en una subcategoría, y cada subcategoría en una categoría (Vidrios → 4mm → Float
-incoloro 4mm, Float bronce 4mm; Herrajes → rueda 80kg → la de cada marca). El insumo tiene su costo,
+~~**Cada insumo está en una subcategoría, y cada subcategoría en una categoría.**~~ Superada el
+2026-10-29: sin subcategoría; ver la decisión siguiente.
+
+**Cada insumo está en una sola categoría, sin subcategoría, como los paquetes (Vidrios → Float
+incoloro 4mm, Float bronce 4mm; Herrajes → las ruedas 80kg de cada marca). El insumo tiene su costo,
 peso y unidad de comercialización: mm, m2 o u.** Son categorías de insumo, distintas de las de
 paquete. La unidad de compra es de Compras, como los precios de cada proveedor (*El costo del
 insumo vive en el catálogo*).
 
-**Las categorías y subcategorías de insumo las define Técnica**, como las de paquete: carga los
+**Las categorías de insumo las define Técnica**, como las de paquete: carga los
 insumos y sabe qué es cada uno. Riesgo aceptado: una categoría nueva no cobra ningún servicio en %
 hasta que Administración se la sume (si los vidrios laminados pasan de Vidrios a "Laminados", dejan de
 cobrar la garantía de vidrio). Se descartó que las cree Administración: Técnica le tendría que pedir
