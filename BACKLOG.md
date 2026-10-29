@@ -28,6 +28,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (`decisiones/catalogo.md`). La ficha nueva se arma ahí, punto por punto: objetivo y personas
   aprobados, servicios en %, precio, tipos de cambio y versiones (2026-10-27), el insumo y el servicio
   fijo (2026-10-29); siguiente: los demás entes.
+- **Monedas**: módulo propio con los tipos de cambio, sacado del catálogo (2026-10-29). Va junto con el
+  Catálogo, que lo lee para convertir; también Compras. Las decisiones ya tomadas están en
+  `decisiones/monedas.md`; falta la ficha (objetivo y personas, `GUIDE_MODULO_NUEVO.md`).
 - **Catálogo — reventa de perfiles**, sin caso real todavía: un solo paquete "Perfil suelto" cuya
   fórmula deja el perfil a elegir al presupuestar, no un paquete por perfil. Escala sin trabajo (un
   perfil nuevo del proveedor se vende el mismo día), no copia la misma estructura 200 veces y la lista
@@ -38,7 +41,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   paquetes usan el % general (`decisiones/catalogo.md` → *Servicios en %*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado, más un renglón por cada mínimo por presupuesto de los
-  servicios en %, que calcula el catálogo (`decisiones/catalogo.md` → *Servicios en %*). Su estado
+  servicios en %, que calcula el catálogo (`decisiones/catalogo.md` → *Servicios en %*). Suma el IVA:
+  el precio del catálogo llega sin IVA (`decisiones/catalogo.md` → *El IVA lo suma Presupuestos*). Su estado
   es el operativo (en cotización, aprobado, en producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
   ejecución y el seguimiento comercial al entregar cuelgan del presupuesto, no de la obra. El primer
   presupuesto pasa la obra a `en_cotizacion` y el primero aprobado a `contratada`. La ficha de la

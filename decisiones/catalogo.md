@@ -24,10 +24,9 @@ Personas                qué ve · qué hace · qué NO ve
 │                    de insumo y de paquete, arma los paquetes (le pone a cada uno su categoría) y
 │                    envía cada versión a revisión, da de baja insumos y paquetes · servicios en %,
 │                    costos ni precios
-├── Administración — insumos y servicios fijos con su costo, las categorías y los tipos de cambio ·
-│                    carga los costos de insumos, da de alta y de baja los servicios fijos y sus
-│                    categorías, define los servicios en % y sobre qué categorías se cobran,
-│                    corrige tipos de cambio · paquetes ni fórmulas
+├── Administración — insumos y servicios fijos con su costo, y las categorías · carga los costos de
+│                    insumos, da de alta y de baja los servicios fijos y sus categorías, define los
+│                    servicios en % y sobre qué categorías se cobran · paquetes ni fórmulas
 ├── Gerente        — todo: paquetes, fórmulas, costos, % y precios · aprueba o devuelve cada versión
 │                    de un paquete · —
 ├── Vendedor       — NO entra: elige categoría y paquete desde Presupuestos · el precio final ·
@@ -44,6 +43,12 @@ Entes
 Pendientes de la ficha:
 - **Entes**: el insumo y el servicio fijo ya están (*El insumo*, *El servicio fijo*); siguen los
   demás.
+- **Árbol de vistas y funciones**: la función que ve y hace todo (con ella se revierte un cambio en un
+  servicio en %), quién edita un insumo que ningún paquete usa, y si las funciones de Técnica y las de
+  Administración se excluyen: un usuario con las dos ve paquete y precio sin pasar por el gerente
+  (2026-10-29).
+- **Editor de paquete**: qué medidas tiene un paquete y su mínimo y máximo, si las fórmulas llevan
+  condicionales o redondeo hacia arriba (barras enteras), y evaluarlas sin SQL dinámico (2026-10-29).
 
 ## Al catálogo entran solo los que definen (2026-10-27)
 
@@ -52,6 +57,10 @@ producción y compras consumen lo que el catálogo fija desde su propio módulo.
 producción, las fórmulas), se le da ese permiso a ese usuario: sin persona ni regla nueva. Quien carga
 algo lo da de baja: Técnica, también cuando se decide dejar de vender un paquete; Administración, los
 servicios fijos (*El servicio fijo*).
+
+**El catálogo guarda el despiece y los precios con fecha; lo que otro módulo hace con eso se decide en
+su ficha (2026-10-29).** Ej: qué fecha lleva cada ítem de un presupuesto, si vence, los descuentos, qué
+nombre de insumo lee Producción, cómo Compras vincula proveedores.
 
 ## Qué es un paquete (2026-10-27)
 
@@ -74,12 +83,22 @@ Paquete: Ventana corrediza 2 hojas
 - **Una fórmula siempre está en una pieza armada.** Lo que es de todo el paquete va en una pieza
   armada propia (Colocación): con dos lugares posibles, cada pantalla y cada cálculo contemplaría los
   dos. Las medidas son del paquete, así que cualquier fórmula calcula con ellas.
+- **La fórmula es el despiece: lo que se corta, sin merma (2026-10-29).** Producción corta con ella
+  (*Personas*): con un 10 % de merma en el perfil marco, la lista de corte diría 5.931 mm en vez de
+  5.392. La merma la pone Administración en el precio, como ella decida: dentro del costo o como
+  servicio en % sobre una categoría. El catálogo ya permite las dos, sin nada propio para la merma.
 - **No se reutilizan piezas armadas entre paquetes.** Habrá pocos paquetes y cada uno se calcula
   distinto.
 - **Cada paquete tiene una sola categoría, según qué es el producto** (ej: Ventana corrediza → 2
   hojas, 3 hojas; Paño fijo → sus tipos). Las define Técnica y le pone una a cada paquete al armarlo.
   El vendedor, en Presupuestos, elige primero la categoría y después el paquete. Sin subcategoría
   (Ventanas → Corrediza → 2 hojas), descartada el 2026-10-29 para paquetes e insumos.
+- **El nombre y la categoría son de la versión: cambiarlos es sacar una versión nueva, que aprueba el
+  gerente (2026-10-29).** Lo que ve el vendedor lo aprobó el gerente, y un presupuesto viejo muestra el
+  nombre de su versión. Cuando exista el % por categoría (`BACKLOG.md`), mover un paquete de categoría
+  ya pasa por el gerente. Se descartó que sean del paquete y se cambien sin aprobación: los
+  presupuestos viejos mostraban el nombre nuevo, y la categoría movería el precio sin que el gerente
+  lo viera.
 - **Hoy no se vende nada suelto.** El catálogo de un proveedor alimenta insumos para usar dentro de
   los paquetes. Para cuando revendan perfiles ya hay camino decidido (`BACKLOG.md`).
 
@@ -100,27 +119,40 @@ hasta que Administración se la sume (si Técnica crea "Laminados" y carga ahí 
 cobra la garantía de vidrio). Se descartó que las cree Administración: Técnica le tendría que pedir
 cada categoría nueva.
 
-**Del insumo cambian el costo y el nombre, cada uno sumando un valor con fecha, y si está activo.
-Categoría, unidad y peso no se editan: si están mal, se carga otro insumo.** El insumo es parte de cada versión
-publicada que lo usa, y la unidad y la categoría cambiarían lo que el gerente aprobó y el precio de
-los presupuestos viejos (la unidad cambia la cuenta; la categoría, qué servicios en % cobra). El
-nombre no cambia el precio: un "Flaot 4mm" se corrige en el momento, sin versión nueva de cada
-paquete.
+**Crear una categoría de insumo les avisa a quienes definen los servicios en % (2026-10-29).** "Técnica
+creó la categoría de insumo Laminados", y Administración decide si la suma a algún servicio. Es un
+aviso común, que se marca leído: no desaparece al sumarla, porque hay categorías que no llevan ningún %
+(Herrajes en la garantía de vidrio). Achica el riesgo aceptado de arriba sin sacarlo.
 
-**Cada nombre queda con su fecha y quién lo puso, como el costo; se muestra el actual y los anteriores
-se ven en el insumo. Si alguna versión publicada lo usa, el gerente recibe un aviso que apunta a ese
-cambio:** "Ana renombró Float 4mm → Float 6mm, en 3 paquetes". El aviso apunta, no copia
-(`decisiones/global/infra.md`): lee el nombre anterior del historial, así cada aviso sigue diciendo lo
-suyo aunque después haya otro cambio. Antes de publicar no avisa: el gerente lee el nombre al aprobar
-la versión.
+~~**Del insumo cambian el costo y el nombre; categoría, unidad y peso no se editan.**~~ Superada el
+2026-10-29; ver la decisión siguiente.
 
-Renombrar a otro producto ("Float 4mm" → "Float 6mm" con el mismo costo) cambia lo que el gerente
-aprobó, y producción cortaría vidrio de 6mm cobrado como de 4mm. El aviso lo detecta, no lo previene:
-rige al instante y el gerente lo revierte. Otro producto va como insumo nuevo. Se descartaron que el
-gerente apruebe cada nombre nuevo (frena un error de tipeo), que la base no deje cambiar los números
-del nombre (pasa "Marca A" → "Marca B") y guardar el nombre anterior en el aviso en vez de en el
-insumo (el historial quedaba escondido en la campanita del gerente, como excepción a la regla de
-notificaciones).
+~~**Cada nombre queda con su fecha, y renombrar un insumo ya publicado le avisa al gerente.**~~ Superada
+el 2026-10-29: con el nombre fijo desde que un paquete usa el insumo, no queda renombre que avisar; ver
+la decisión siguiente.
+
+**Todo dato del insumo se edita mientras ningún paquete lo use, en ninguna versión. Desde que alguno lo
+usa, solo cambian el costo (un valor nuevo con fecha) y si está activo: nombre, categoría, unidad y peso
+quedan fijos, y si están mal se carga otro insumo (2026-10-29).** Mientras nadie lo usa, ningún precio,
+versión ni presupuesto depende de él: un "Flaot 4mm" o un peso de 1,2 en vez de 0,12 se corrigen en el
+momento. Una vez usado, la unidad cambia la cuenta, la categoría qué servicios en % cobra, y el nombre
+es lo que el gerente leyó al aprobar y lo que corta producción: "Float 4mm" → "Float 6mm" con el mismo
+costo hacía cortar vidrio de 6mm cobrado como de 4mm. Costo aceptado: un error de tipeo en el nombre
+de un insumo ya usado pide insumo nuevo, versión nueva de cada paquete que lo usa y aprobación del
+gerente. Sin historial de nombres ni aviso de renombre.
+
+**El nombre de un insumo es único entre los activos (2026-10-29).** Unique parcial `WHERE activo`: el
+nombre de uno de baja se reutiliza. Costo aceptado: el reemplazo de un insumo ya usado, que convive
+con él mientras se aprueban las versiones nuevas, lleva otro nombre ("Perfil 20x40 (mm)"), y como el
+nombre queda fijo, lo lleva para siempre. Se descartó permitir repetidos con un aviso: en el editor,
+Técnica elegía entre dos "Perfil 20x40". El servicio fijo, igual entre los suyos.
+
+**Las categorías (de insumo, de paquete y de servicio) siguen la misma regla: una categoría se edita
+mientras no tenga nada adentro; desde que tiene un insumo, un paquete o un servicio fijo, su nombre
+queda fijo. Se da de baja solo sin nada activo adentro (2026-10-29).** Renombrar "Vidrios" a
+"Herrajes" le mostraba a Administración una garantía de vidrio cobrándose sobre herrajes, y dar de baja
+"Vidrios" con 30 insumos activos los dejaba en una categoría que no existe. Un servicio en % sobre una
+categoría de baja no cobra nada, sin romper nada.
 
 **Dar de baja un insumo da de baja, en la misma operación, cada paquete activo cuya versión publicada
 lo usa.** Lo hace la base, no quien da la baja: ningún paquete queda a la venta con un material que ya
@@ -139,7 +171,13 @@ Técnica saca una versión de cada una con la rueda de Marca B → el gerente la
 **Si la baja de un insumo da de baja algún paquete, el gerente recibe un aviso que apunta a la baja y
 lista los paquetes que salieron de la venta (2026-10-29).** Sin aviso, dejaban de venderse paquetes que
 él aprobó sin que se enterara; la baja de un servicio fijo le avisa igual (*El servicio fijo*). Si
-ninguna versión publicada lo usaba, no avisa: como el renombre, no cambia nada de lo que aprobó.
+ninguna versión publicada lo usaba, no avisa: no cambia nada de lo que aprobó.
+
+**El paquete guarda por qué está de baja: a mano, o el insumo o servicio fijo que lo bajó
+(2026-10-29).** Técnica ve "De baja por: Rueda 80kg Marca A" y sabe cuáles reactivar, sin confundirlos
+con la "Ventana 4 hojas" que dio de baja a propósito en febrero. El aviso al gerente lista los que
+siguen de baja por esa causa, y el que se reactiva sale de la lista. Se descartó no guardarlo: Técnica
+buscaba a mano qué paquetes usaban la rueda, y el aviso no podía decir cuáles bajó esa baja.
 
 **El peso por ahora solo se carga: cómo se usa se decide cuando un módulo lo necesite.**
 
@@ -153,8 +191,9 @@ qué unidad sale, lo dice la unidad del insumo. Se descartó escribir todo en la
 ## El servicio fijo (2026-10-29)
 
 **El servicio fijo (Instalación, Soldado) es un ente propio, no un insumo, y sigue las reglas del
-insumo salvo el peso, que no tiene.** Costo y nombre con fecha, unidad de comercialización (la
-instalación por m2, el soldado por u), categoría y unidad que no se editan, y su baja da de baja los
+insumo salvo el peso, que no tiene.** Costo con fecha, unidad de comercialización (la instalación
+por m2, el soldado por u), todo editable hasta que un paquete lo usa y después solo el costo y si
+está activo, y su baja da de baja los
 paquetes que lo usan en su versión publicada (*El insumo*). Una fórmula es un insumo o un servicio
 fijo. Si va en una tabla o en dos se decide en el SQL: las reglas son las mismas y viven una vez.
 
@@ -196,6 +235,16 @@ costo es el que carga Administración, y cambia solo cuando lo vuelve a cargar.
 
 Archivos: corrige `decisiones/contactos.md` → *Los proveedores son empresas de Contactos*.
 
+**Un insumo nuevo le avisa a quienes cargan costos, y el aviso desaparece cuando tiene costo
+(2026-10-29).** Técnica carga "Float 5mm" el lunes y arma la ventana; sin aviso, Administración se
+enteraba el jueves, cuando la base frenaba el envío por el insumo sin costo. Como `alta_por_aprobar`
+(`db_schema/notificaciones.md`). El servicio fijo nace con su costo y no avisa.
+
+**Un costo rige desde que se carga, sin fecha futura (2026-10-29).** Cuando el proveedor anuncia una
+suba, Administración decide en ese momento si la carga ya. Se descartó "rige desde": un campo más por
+carga, costos que todavía no rigen en la lista, y el aviso de 15/25/50 % sin saber contra cuál
+comparar.
+
 ## Servicios: fijos o en % (2026-10-27)
 
 **Un servicio fijo (ej: el soldado de los perfiles, propio) es una fórmula más: unidades × su costo.
@@ -227,6 +276,9 @@ Precio de venta                                        $242.309
 
 Dentro de un paso ningún servicio se calcula sobre otro: el orden lo dan los pasos, así Administración
 nunca ordena servicios y sacar un opcional solo cambia lo que se calcula después.
+
+**Los % del paso 3 suman menos de 100: la base no deja cargar uno que los lleve a 100 o más
+(2026-10-29).** Con 100 la cuenta divide por cero, y con más da un precio negativo.
 
 ~~**La marca va en la pieza armada, no en el insumo ni en el renglón.**~~ Superada el 2026-10-29: los
 insumos ahora tienen categoría (*El insumo*); ver la decisión siguiente.
@@ -270,11 +322,25 @@ paquete, las medidas y los opcionales elegidos, lee lo que quien llama no puede 
 el número, como `obras_contar`. Así lo que no ven (*Personas*) no depende de ocultarlo en pantalla. Ven
 el nombre de cada opcional para elegirlo, no su %. El cliente, desde erp-cliente, recibe lo mismo.
 
+**La versión y la fecha con que se calcula un precio nunca las elige quien llama (2026-10-29).**
+Vendedor y cliente reciben la versión publicada con los valores de hoy, o al recalcular, los que la
+base lee del presupuesto guardado. El gerente, que ve todo, puede pedir cualquier versión y fecha (para
+aprobar, una en revisión). Si la función aceptara una fecha, un vendedor pedía "marzo" y cotizaba con
+los costos de marzo, y desde erp-cliente se cotizaba un borrador.
+
+## El IVA lo suma Presupuestos (2026-10-29)
+
+**El precio del catálogo es sin IVA: lo suma quien presupuesta, en Presupuestos. Por eso los costos de
+insumos y servicios fijos se cargan sin IVA**: con IVA, el presupuesto lo cobraría dos veces. El IIBB
+del paso 3 se despeja sobre ese precio sin IVA (*Servicios en %*).
+
+Archivos: `BACKLOG.md` → *Presupuestos*.
+
 ## Un presupuesto se recalcula como era (2026-10-27)
 
 **Un presupuesto se recalcula con las condiciones de su fecha: lo que forma el precio no se pisa.**
-Cambiar un costo, un servicio en % (cualquier dato, no solo el %) o un tipo de cambio agrega un valor
-nuevo con fecha, y el anterior queda; la
+Cambiar un costo, un servicio en % (cualquier dato, no solo el %) o un tipo de cambio (en Monedas)
+agrega un valor nuevo con fecha, y el anterior queda; la
 versión publicada de un paquete no se edita, se saca otra. El presupuesto guarda su fecha y la versión
 de cada paquete, y la función del precio usa lo que valía a esa fecha: si el cliente cambia una medida
 en un presupuesto de marzo, se le respeta el precio de marzo.
@@ -283,31 +349,27 @@ Se descartó que cada presupuesto guarde copia de los costos y los %: la copia t
 catálogo para que el vendedor no la lea, y un paquete sumado a un presupuesto viejo no tendría sus
 insumos en ella.
 
-## Tipos de cambio (2026-10-27)
+## Moneda (2026-10-29)
 
-**Los tipos de cambio viven en el catálogo y salen de MonedAPI, en venta: dólar oficial
-(`monedapi.ar/api/v2/usd/oficial`) y euro oficial (`/api/v2/eur/bna`, el único euro que tiene).** Son
-parte de cómo se calcula el precio y hoy el catálogo es el único que los usa: Compras los va a leer
-de acá, como el costo. Si otro módulo los necesita para algo que no es el precio (ej: pagos), se
-mueven entonces. El enum `moneda` ya existe (Obras: ARS · USD); se le suma EUR.
+**El presupuesto elige en qué moneda sale el precio, y el catálogo convierte todo a esa moneda con los
+tipos de cambio de la fecha del presupuesto, que lee de Monedas (`decisiones/monedas.md`), mínimos
+incluidos.** El vendedor marca USD y la ventana
+sale "USD 182" sin que nadie convierta a mano. La función del precio recibe la moneda junto con el
+paquete y las medidas (*El precio sale de una función*).
 
-Para recalcular se usa la copia guardada, nunca MonedAPI: si el servicio desaparece, los presupuestos
-viejos se siguen recalculando. Sin clave ni registro; el euro puede quedar días sin actualizarse
-(el 2026-10-27 seguía el del 20/10).
+**Cada monto que carga Administración lleva su moneda, elegida en cada carga: el costo de un insumo o
+de un servicio fijo y el mínimo de un servicio en %.** Si el proveedor del perfil 20x40 deja de cotizar
+USD 12 y pasa a $18.000, Administración carga los $18.000 y listo; el aviso de 15/25/50 % compara contra
+el anterior pasado a la moneda nueva con el tipo de cambio del día (USD 12 × 1.450 = $17.400 → +3 %,
+sin color). Cada valor guarda su moneda con su fecha, así que los presupuestos viejos no cambian. Entre
+dólar y euro se convierte pasando por el peso. Se descartó la moneda fija en el insumo, como la unidad:
+la unidad cambia la cuenta de lo que el gerente aprobó y la moneda no (USD 12 y $17.400 son el mismo
+costo), y fija obligaba a convertir a mano o a cargar otro insumo, con versión nueva de cada paquete.
 
-**Se traen cuando hacen falta, sin cron: el primer presupuesto del día los pide a MonedAPI y guarda lo
-que trae; el resto del día usa eso.** Si no responde, se usa el último guardado. Cada valor vale desde
-que se guardó, no desde el día: el que se guarda a las 11:00 no cambia un presupuesto de las 09:40
-hecho con el de ayer.
+## ~~Tipos de cambio~~ (2026-10-27)
 
-**Administración puede corregir uno a mano, y lo de MonedAPI entra solo si es más nuevo.** Cada valor
-guarda su fecha: la que dice MonedAPI (`updatedAt`) o la de la carga a mano, y se muestra con ella
-("euro $1.780, del 20/10"). Así el euro del 20/10 que MonedAPI sigue dando no pisa una corrección del
-27/10, ni suma una fila igual cada día.
-
-**Si un tipo de cambio lleva 7 días sin actualizarse, se le avisa a quien puede corregirlo.** Es
-estado, no evento: se calcula al mirar, como `notificaciones_avisos()`, sin cron
-(`decisiones/global/infra.md`).
+Mudados al módulo Monedas el 2026-10-29: `decisiones/monedas.md`. **El catálogo lee de ahí el tipo de
+cambio vigente a la fecha y hora del cálculo, y no guarda ninguno.**
 
 ## Versiones y aprobación (2026-10-27)
 
@@ -317,6 +379,13 @@ aprueba lo que vio. La base no deja enviarla si falta algo (un insumo sin costo 
 sin fórmulas). El gerente ve el despiece, el precio para las medidas que elige y qué cambió respecto de la
 versión anterior, y la aprueba (publicado) o la devuelve (borrador). La publicada no se modifica: para
 cambiarla se saca otra versión.
+
+**Cada paquete tiene una sola versión abierta (borrador o en revisión) a la vez, y Técnica puede
+retirarla de revisión: vuelve a borrador sin pasar por el gerente (2026-10-29).** Con la v3 en revisión
+y una rueda discontinuada, Técnica la retira, le cambia la rueda y la reenvía: el gerente aprueba una
+con los dos cambios, y "qué cambió" se compara siempre contra la publicada. Se descartó tener varias
+abiertas, cada una copiada de la publicada: la v4 salía de la v2 sin el vidrio de la v3, y aprobar las
+dos en orden publicaba la v4 sin él.
 
 **Obsoleto es solo la versión reemplazada: pasa sola cuando se publica la siguiente. Dejar de vender
 es la baja del paquete (`activo = false`), y sus versiones quedan como estaban.** Reactivarlo vuelve a
@@ -353,8 +422,8 @@ que se confirme todo sin leer. Un insumo sin costo anterior no avisa. Se descart
 ("doble o mitad"): atajaba los errores grandes pero no mostraba los medianos.
 
 **Cualquier cambio en un servicio en % le avisa al gerente: su %, sus categorías, su base,
-su mínimo y cómo lo compara, si es opcional, y su alta o baja (2026-10-29).** Rige al instante, como
-el renombre de un insumo (*El insumo*): el aviso apunta al cambio en la historia del servicio ("Ana
+su mínimo y cómo lo compara, si es opcional, y su alta o baja (2026-10-29).** Rige al instante: el
+aviso apunta al cambio en la historia del servicio ("Ana
 sumó Herrajes a Garantía de vidrio") y el gerente lo revierte si está mal. Un servicio mueve el precio
 de todos los paquetes que el gerente aprobó, y los colores solo miden el número del %: sumar Herrajes
 a la garantía de vidrio por error no daba color ni le llegaba a nadie. Los servicios cambian poco, así
