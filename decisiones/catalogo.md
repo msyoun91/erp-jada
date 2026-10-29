@@ -41,9 +41,8 @@ Entes
 ```
 
 Pendientes de la ficha, en este orden:
-- **Versiones**, lo que queda (la aprobación ya está: *Versiones y aprobación*): obsoleto junta
-  reemplazado (pasa solo al publicar la siguiente) y dejado de vender (lo decide Técnica); el umbral
-  del aviso de costos; si un cambio de % también avisa.
+- **Versiones**, lo que queda (*Versiones y aprobación*): el umbral del aviso de costos; si un cambio
+  de % también avisa.
 - **Entes**, de cero.
 
 ## Al catálogo entran solo los que definen (2026-10-27)
@@ -210,6 +209,14 @@ aprueba lo que vio. La base no deja enviarla si falta algo (un insumo sin costo,
 fórmulas). El gerente ve el despiece, el precio para las medidas que elige y qué cambió respecto de la
 versión anterior, y la aprueba (publicado) o la devuelve (borrador). La publicada no se modifica: para
 cambiarla se saca otra versión.
+
+**Obsoleto es solo la versión reemplazada: pasa sola cuando se publica la siguiente. Dejar de vender
+es la baja del paquete (`activo = false`), y sus versiones quedan como estaban.** Reactivarlo vuelve a
+vender su versión publicada sin pasar por el gerente, que ya la aprobó; la base no deja si uno de sus
+insumos está de baja, y entonces va una versión nueva. Con el paquete de baja, aprobar una versión en
+revisión no lo pone a la venta, y los presupuestos que ya lo tienen se recalculan con su versión. Se
+descartó un solo estado obsoleto para las dos cosas: la baja tendría dos formas, y una versión
+aprobada después de dejar de vender volvía a poner el paquete a la venta sin que nadie lo decidiera.
 
 Técnica no ve precios y Administración no ve paquetes: una fórmula olvidada daba un precio creíble que
 llegaba al vendedor, o directo al cliente por erp-cliente. El gerente es el único que ve paquete y

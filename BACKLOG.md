@@ -26,7 +26,7 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (2026-10-22): la v1 y la v2 se descartaron enteras, junto con lo que habían dejado en Presupuestos,
   Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). Nada de eso vuelve
   (`decisiones/catalogo.md`). La ficha nueva se arma ahí, punto por punto: objetivo y personas
-  aprobados, y los servicios en % (2026-10-27); siguiente: lo que queda del precio, después los entes.
+  aprobados, y los servicios en % (2026-10-27); siguiente: los pendientes de la ficha, después los entes.
 - **Catálogo — reventa de perfiles**, sin caso real todavía: un solo paquete "Perfil suelto" cuya
   fórmula deja el perfil a elegir al presupuestar, no un paquete por perfil. Escala sin trabajo (un
   perfil nuevo del proveedor se vende el mismo día), no copia la misma estructura 200 veces y la lista
