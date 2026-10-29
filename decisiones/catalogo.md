@@ -93,9 +93,45 @@ insumo vive en el catálogo*).
 
 **Las categorías de insumo las define Técnica**, como las de paquete: carga los
 insumos y sabe qué es cada uno. Riesgo aceptado: una categoría nueva no cobra ningún servicio en %
-hasta que Administración se la sume (si los vidrios laminados pasan de Vidrios a "Laminados", dejan de
-cobrar la garantía de vidrio). Se descartó que las cree Administración: Técnica le tendría que pedir
+hasta que Administración se la sume (si Técnica crea "Laminados" y carga ahí un vidrio laminado, no
+cobra la garantía de vidrio). Se descartó que las cree Administración: Técnica le tendría que pedir
 cada categoría nueva.
+
+**Del insumo cambian el costo y el nombre, cada uno sumando un valor con fecha, y si está activo.
+Categoría, unidad y peso no se editan: si están mal, se carga otro insumo.** El insumo es parte de cada versión
+publicada que lo usa, y la unidad y la categoría cambiarían lo que el gerente aprobó y el precio de
+los presupuestos viejos (la unidad cambia la cuenta; la categoría, qué servicios en % cobra). El
+nombre no cambia el precio: un "Flaot 4mm" se corrige en el momento, sin versión nueva de cada
+paquete.
+
+**Cada nombre queda con su fecha y quién lo puso, como el costo; se muestra el actual y los anteriores
+se ven en el insumo. Si alguna versión publicada lo usa, el gerente recibe un aviso que apunta a ese
+cambio:** "Ana renombró Float 4mm → Float 6mm, en 3 paquetes". El aviso apunta, no copia
+(`decisiones/global/infra.md`): lee el nombre anterior del historial, así cada aviso sigue diciendo lo
+suyo aunque después haya otro cambio. Antes de publicar no avisa: el gerente lee el nombre al aprobar
+la versión.
+
+Renombrar a otro producto ("Float 4mm" → "Float 6mm" con el mismo costo) cambia lo que el gerente
+aprobó, y producción cortaría vidrio de 6mm cobrado como de 4mm. El aviso lo detecta, no lo previene:
+rige al instante y el gerente lo revierte. Otro producto va como insumo nuevo. Se descartaron que el
+gerente apruebe cada nombre nuevo (frena un error de tipeo), que la base no deje cambiar los números
+del nombre (pasa "Marca A" → "Marca B") y guardar el nombre anterior en el aviso en vez de en el
+insumo (el historial quedaba escondido en la campanita del gerente, como excepción a la regla de
+notificaciones).
+
+**Dar de baja un insumo da de baja, en la misma operación, cada paquete activo cuya versión publicada
+lo usa.** Lo hace la base, no quien da la baja: ningún paquete queda a la venta con un material que ya
+no se consigue. Las versiones en borrador o en revisión que lo usan no cambian, pero la base no deja
+enviarlas ni aprobarlas con ese insumo. Reactivar el insumo no reactiva los paquetes: cada uno vuelve
+cuando Técnica lo reactiva (*Versiones y aprobación*), como cualquier paquete de baja.
+
+```
+Técnica da de baja "Rueda 80kg Marca A"
+Ventana corrediza 2 hojas y 3 hojas (la usan en su versión publicada)  →  de baja
+  El vendedor deja de verlas; los presupuestos que ya las tienen se recalculan con su versión
+Técnica saca una versión de cada una con la rueda de Marca B → el gerente las aprueba
+  → Técnica reactiva cada paquete
+```
 
 **El peso por ahora solo se carga: cómo se usa se decide cuando un módulo lo necesite.**
 
@@ -236,8 +272,8 @@ estado, no evento: se calcula al mirar, como `notificaciones_avisos()`, sin cron
 
 **Cada paquete tiene versiones; una versión pasa por borrador → en revisión → publicado → obsoleto, y
 la aprueba solo el gerente.** Técnica la envía a revisión y desde ahí no se edita, así el gerente
-aprueba lo que vio. La base no deja enviarla si falta algo (un insumo sin costo, una pieza sin
-fórmulas). El gerente ve el despiece, el precio para las medidas que elige y qué cambió respecto de la
+aprueba lo que vio. La base no deja enviarla si falta algo (un insumo sin costo o de baja, una pieza
+sin fórmulas). El gerente ve el despiece, el precio para las medidas que elige y qué cambió respecto de la
 versión anterior, y la aprueba (publicado) o la devuelve (borrador). La publicada no se modifica: para
 cambiarla se saca otra versión.
 
