@@ -233,7 +233,8 @@ el nombre de cada opcional para elegirlo, no su %. El cliente, desde erp-cliente
 ## Un presupuesto se recalcula como era (2026-10-27)
 
 **Un presupuesto se recalcula con las condiciones de su fecha: lo que forma el precio no se pisa.**
-Cambiar un costo, un % o un tipo de cambio agrega un valor nuevo con fecha, y el anterior queda; la
+Cambiar un costo, un servicio en % (cualquier dato, no solo el %) o un tipo de cambio agrega un valor
+nuevo con fecha, y el anterior queda; la
 versión publicada de un paquete no se edita, se saca otra. El presupuesto guarda su fecha y la versión
 de cada paquete, y la función del precio usa lo que valía a esa fecha: si el cliente cambia una medida
 en un presupuesto de marzo, se le respeta el precio de marzo.
@@ -310,3 +311,14 @@ menos, otra unidad) mueven el costo 5 veces o más y caen en rojo; el amarillo d
 invertidos ($1.250 → $1.520, +22 %). Que los cambios reales de lista (15–50 %) no pidan confirmar evita
 que se confirme todo sin leer. Un insumo sin costo anterior no avisa. Se descartó un solo umbral
 ("doble o mitad"): atajaba los errores grandes pero no mostraba los medianos.
+
+**Cualquier cambio en un servicio en % le avisa al gerente: su %, sus categorías de insumo, su base,
+su mínimo y cómo lo compara, si es opcional, y su alta o baja (2026-10-29).** Rige al instante, como
+el renombre de un insumo (*El insumo*): el aviso apunta al cambio en la historia del servicio ("Ana
+sumó Herrajes a Garantía de vidrio") y el gerente lo revierte si está mal. Un servicio mueve el precio
+de todos los paquetes que el gerente aprobó, y los colores solo miden el número del %: sumar Herrajes
+a la garantía de vidrio por error no daba color ni le llegaba a nadie. Los servicios cambian poco, así
+que el aviso no se vuelve ruido; los costos cambian seguido y no le avisan, porque dejaría de leerlos.
+Se descartó que el gerente apruebe cada cambio antes de que rija: Administración lo esperaría para
+cada ajuste. Riesgo aceptado: un presupuesto hecho entre el cambio y la reversión queda con el cambio,
+porque se recalcula como era (*Un presupuesto se recalcula como era*).
