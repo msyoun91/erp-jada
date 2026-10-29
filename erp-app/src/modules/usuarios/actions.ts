@@ -1,8 +1,7 @@
 "use server";
 
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { revalidatePath } from "next/cache";
-import type { Database } from "@/lib/supabase/database.types";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { mensajeError } from "@/lib/utils";
 import { puedeDelegar, puedeGestionarUsuarios } from "./permissions";
@@ -34,13 +33,6 @@ async function adminActual(): Promise<string | null> {
     data: { user },
   } = await supabase.auth.getUser();
   return user?.id ?? null;
-}
-
-function createAdminClient() {
-  return createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
 }
 
 export async function crearUsuario(input: CrearUsuarioForm) {

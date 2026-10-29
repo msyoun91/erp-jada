@@ -145,7 +145,7 @@ SELECT pg_temp.caso('02 A la ve', '1', pg_temp.ve(format(
 -- ============================================================
 SELECT pg_temp.caso('03 JN la cambia a 5000', 'ok', pg_temp.intentar(format(
   'SELECT obras_registrar_comision(%L, NULL, 5000)', pg_temp.id('VM')), 'JN'));
-SELECT pg_temp.caso('03 USD por defecto', 'USD', (
+SELECT pg_temp.caso('03 USD oficial por defecto', 'USD_OFICIAL', (
   SELECT moneda::text FROM obras_comisiones WHERE vinculo_id = pg_temp.id('VM') AND activo));
 SELECT pg_temp.caso('03 dos filas, una activa', '2/1', (
   SELECT count(*)::text || '/' || (count(*) FILTER (WHERE activo))::text

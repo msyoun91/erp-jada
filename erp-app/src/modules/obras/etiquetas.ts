@@ -1,3 +1,4 @@
+import { MONEDAS } from "@/lib/monedas";
 import type { Comision, MotivoPerdida, OrigenObra, TipoObra } from "./types";
 
 export const ORIGEN: Record<OrigenObra, string> = {
@@ -30,5 +31,5 @@ export const MOTIVO: Record<MotivoPerdida, { label: string; ejemplo: string }> =
 
 export function textoComision(c: Pick<Comision, "porcentaje" | "monto" | "moneda">) {
   if (c.porcentaje !== null) return `${c.porcentaje.toLocaleString("es-AR")} %`;
-  return `${c.moneda} ${(c.monto ?? 0).toLocaleString("es-AR")}`;
+  return `${c.moneda ? MONEDAS[c.moneda] : ""} ${(c.monto ?? 0).toLocaleString("es-AR")}`;
 }

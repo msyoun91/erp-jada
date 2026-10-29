@@ -88,3 +88,10 @@ trigger y otra vez en el panel habría quedado duplicada.
 
 Archivos: `sql/110_submodulo_reglas.sql`, `sql/tests/submodulo_reglas.sql`,
 `modules/usuarios/components/PermisosPanel.tsx`, `modules/usuarios/queries.ts` (`getSubmoduloReglas`).
+
+## Lo que ve todo usuario, sin submódulo (2026-10-29)
+
+**Inicio, Perfil, la campanita y los tipos de cambio de la barra de menú los ve todo usuario activo,
+sin vista que lo autorice.** Ninguno muestra datos de otro ni deja hacer nada: la campanita y Perfil
+son de cada uno, y los tipos de cambio son públicos (`decisiones/monedas.md` → *Quién los ve*). Lo que
+cambia algo sigue siendo una función de su módulo.

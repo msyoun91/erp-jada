@@ -717,6 +717,128 @@ export type Database = {
           },
         ]
       }
+      monedas_consultas: {
+        Row: {
+          activo: boolean
+          created_at: string
+          error: string | null
+          forzada: boolean
+          id: string
+          ok: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          error?: string | null
+          forzada: boolean
+          id?: string
+          ok?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          error?: string | null
+          forzada?: boolean
+          id?: string
+          ok?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      monedas_principal: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          id: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          creado_por: string
+          created_at?: string
+          id?: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          id?: string
+          moneda?: Database["public"]["Enums"]["moneda"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monedas_principal_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monedas_tipos_cambio: {
+        Row: {
+          activo: boolean
+          confirmado_por: string | null
+          creado_por: string | null
+          created_at: string
+          fecha: string
+          id: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          origen: Database["public"]["Enums"]["origen_tipo_cambio"]
+          updated_at: string
+          valor: number
+          vigente_desde: string | null
+        }
+        Insert: {
+          activo?: boolean
+          confirmado_por?: string | null
+          creado_por?: string | null
+          created_at?: string
+          fecha: string
+          id?: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          origen: Database["public"]["Enums"]["origen_tipo_cambio"]
+          updated_at?: string
+          valor: number
+          vigente_desde?: string | null
+        }
+        Update: {
+          activo?: boolean
+          confirmado_por?: string | null
+          creado_por?: string | null
+          created_at?: string
+          fecha?: string
+          id?: string
+          moneda?: Database["public"]["Enums"]["moneda"]
+          origen?: Database["public"]["Enums"]["origen_tipo_cambio"]
+          updated_at?: string
+          valor?: number
+          vigente_desde?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monedas_tipos_cambio_confirmado_por_fkey"
+            columns: ["confirmado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monedas_tipos_cambio_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obras: {
         Row: {
           activo: boolean
@@ -2122,6 +2244,96 @@ export type Database = {
         Returns: string
       }
       mi_equipo: { Args: never; Returns: string }
+      monedas_avisos: {
+        Args: never
+        Returns: {
+          aviso: string
+          desde: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          valor: number
+        }[]
+      }
+      monedas_cerrar_consulta: {
+        Args: { p_error: string; p_id: string }
+        Returns: undefined
+      }
+      monedas_confirmar: { Args: { p_id: string }; Returns: undefined }
+      monedas_convertir: {
+        Args: {
+          p_a: Database["public"]["Enums"]["moneda"]
+          p_de: Database["public"]["Enums"]["moneda"]
+          p_en?: string
+          p_monto: number
+        }
+        Returns: number
+      }
+      monedas_corregir: {
+        Args: {
+          p_confirmar_rojo?: boolean
+          p_moneda: Database["public"]["Enums"]["moneda"]
+          p_valor: number
+        }
+        Returns: string
+      }
+      monedas_elegir_principal: {
+        Args: { p_moneda: Database["public"]["Enums"]["moneda"] }
+        Returns: undefined
+      }
+      monedas_formato: { Args: { p_valor: number }; Returns: string }
+      monedas_guardar_monedapi: {
+        Args: {
+          p_fecha: string
+          p_moneda: Database["public"]["Enums"]["moneda"]
+          p_valor: number
+        }
+        Returns: string
+      }
+      monedas_historial: {
+        Args: {
+          p_limite?: number
+          p_moneda: Database["public"]["Enums"]["moneda"]
+        }
+        Returns: {
+          activo: boolean
+          anterior: number
+          cargado_por: string
+          confirmado_por: string
+          fecha: string
+          id: string
+          nivel: string
+          origen: Database["public"]["Enums"]["origen_tipo_cambio"]
+          valor: number
+          vigente_desde: string
+        }[]
+      }
+      monedas_hoy: {
+        Args: never
+        Returns: {
+          fecha: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          ultima_consulta: string
+          valor: number
+        }[]
+      }
+      monedas_principal_actual: {
+        Args: never
+        Returns: Database["public"]["Enums"]["moneda"]
+      }
+      monedas_reservar_consulta: {
+        Args: { p_forzada: boolean }
+        Returns: string
+      }
+      monedas_tipo_cambio: {
+        Args: {
+          p_en?: string
+          p_moneda: Database["public"]["Enums"]["moneda"]
+        }
+        Returns: number
+      }
+      nivel_cambio: {
+        Args: { p_anterior: number; p_nuevo: number }
+        Returns: string
+      }
       normalizar_telefono: { Args: { t: string }; Returns: string }
       normalizar_texto: { Args: { p: string }; Returns: string }
       notificaciones_actores: {
@@ -2545,7 +2757,7 @@ export type Database = {
         | "rechazada"
         | "completada"
         | "cancelada"
-      moneda: "ARS" | "USD"
+      moneda: "ARS" | "USD_OFICIAL" | "USD_BLUE" | "EUR"
       motivo_perdida:
         | "precio"
         | "plazo"
@@ -2561,6 +2773,7 @@ export type Database = {
         | "cliente_anterior"
         | "llamado"
         | "otro"
+      origen_tipo_cambio: "monedapi" | "manual"
       prioridad_tarea: "baja" | "media" | "alta"
       recurrencia_unidad: "dia" | "mes"
       tipo_evento:
@@ -2610,6 +2823,8 @@ export type Database = {
         | "persona_fusionada"
         | "plantilla_disparada"
         | "plantilla_fallida"
+        | "tipo_cambio_corregido"
+        | "tipo_cambio_confirmado"
       tipo_obra:
         | "edificio_residencial"
         | "casa"
@@ -2760,7 +2975,7 @@ export const Constants = {
         "completada",
         "cancelada",
       ],
-      moneda: ["ARS", "USD"],
+      moneda: ["ARS", "USD_OFICIAL", "USD_BLUE", "EUR"],
       motivo_perdida: [
         "precio",
         "plazo",
@@ -2778,6 +2993,7 @@ export const Constants = {
         "llamado",
         "otro",
       ],
+      origen_tipo_cambio: ["monedapi", "manual"],
       prioridad_tarea: ["baja", "media", "alta"],
       recurrencia_unidad: ["dia", "mes"],
       tipo_evento: [
@@ -2828,6 +3044,8 @@ export const Constants = {
         "persona_fusionada",
         "plantilla_disparada",
         "plantilla_fallida",
+        "tipo_cambio_corregido",
+        "tipo_cambio_confirmado",
       ],
       tipo_obra: [
         "edificio_residencial",

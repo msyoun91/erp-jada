@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Contact, Home, ListTodo, UsersRound, LogOut, type LucideIcon } from "lucide-react";
+import { Building2, Coins, Contact, Home, ListTodo, UsersRound, LogOut, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/modules/auth/actions";
@@ -13,6 +13,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   tareas: ListTodo,
   obras: Building2,
   contactos: Contact,
+  monedas: Coins,
 };
 
 export const LABEL_MAP: Record<string, string> = {
@@ -21,6 +22,7 @@ export const LABEL_MAP: Record<string, string> = {
   tareas: "Tareas",
   obras: "Obras",
   contactos: "Contactos",
+  monedas: "Monedas",
 };
 
 type NavItem = { modulo: string; href: string };
@@ -30,15 +32,18 @@ const NAV_ITEMS: NavItem[] = [
   { modulo: "tareas", href: "/tareas" },
   { modulo: "obras", href: "/obras" },
   { modulo: "contactos", href: "/contactos" },
+  { modulo: "monedas", href: "/monedas" },
   { modulo: "usuarios", href: "/usuarios" },
 ];
 
 export function SidebarNav({
   modulosVisibles,
   nombre,
+  tiposCambio,
 }: {
   modulosVisibles: string[];
   nombre: string;
+  tiposCambio: React.ReactNode;
 }) {
   const pathname = usePathname();
   const items = [
@@ -60,6 +65,8 @@ export function SidebarNav({
           );
         })}
       </nav>
+
+      {tiposCambio}
 
       <div className="mt-2 flex items-center gap-2 border-t border-border pt-2">
         {/* El perfil no está en NAV_ITEMS: no es un módulo y no se autoriza

@@ -7,6 +7,7 @@ import { CircleDollarSign, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
+import { MONEDAS } from "@/lib/monedas";
 import { formatFecha } from "@/lib/utils";
 import { registrarComision } from "../actions";
 import { textoComision } from "../etiquetas";
@@ -70,7 +71,7 @@ function ComisionModal({ vinculoId, vigente, onClose }: { vinculoId: string; vig
       vinculo_id: vinculoId,
       tipo: vigente?.monto != null ? "monto" : "porcentaje",
       valor: vigente?.porcentaje ?? vigente?.monto ?? undefined,
-      moneda: vigente?.moneda ?? "USD",
+      moneda: vigente?.moneda === "ARS" ? "ARS" : "USD_OFICIAL",
     },
   });
   const { errors } = formState;
@@ -118,8 +119,8 @@ function ComisionModal({ vinculoId, vigente, onClose }: { vinculoId: string; vig
         {tipo === "monto" && (
           <Campo id="comision-moneda" label="Moneda" requerido>
             <select id="comision-moneda" className={claseInput()} {...register("moneda")}>
-              <option value="USD">USD</option>
-              <option value="ARS">ARS</option>
+              <option value="USD_OFICIAL">{MONEDAS.USD_OFICIAL}</option>
+              <option value="ARS">{MONEDAS.ARS}</option>
             </select>
           </Campo>
         )}

@@ -28,9 +28,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (`decisiones/catalogo.md`). La ficha nueva se arma ahí, punto por punto: objetivo y personas
   aprobados, servicios en %, precio, tipos de cambio y versiones (2026-10-27), el insumo y el servicio
   fijo (2026-10-29); siguiente: los demás entes.
-- **Monedas**: módulo propio con los tipos de cambio, sacado del catálogo (2026-10-29). Va junto con el
-  Catálogo, que lo lee para convertir; también Compras. Las decisiones ya tomadas están en
-  `decisiones/monedas.md`; falta la ficha (objetivo y personas, `GUIDE_MODULO_NUEVO.md`).
+- **Monedas**: construido (2026-10-29, `sql/155`–`156`, `decisiones/monedas.md`). El catálogo y
+  Compras convierten con `monedas_convertir(monto, de, a, fecha)` (`db_schema/monedas.md`). Falta la
+  prueba completa en el navegador con dos usuarios.
 - **Catálogo — reventa de perfiles**, sin caso real todavía: un solo paquete "Perfil suelto" cuya
   fórmula deja el perfil a elegir al presupuestar, no un paquete por perfil. Escala sin trabajo (un
   perfil nuevo del proveedor se vende el mismo día), no copia la misma estructura 200 veces y la lista
@@ -48,7 +48,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   presupuesto pasa la obra a `en_cotizacion` y el primero aprobado a `contratada`. La ficha de la
   obra lista sus presupuestos con su estado actual. Los contactos operativos (capataz, quien recibe)
   se vinculan al presupuesto. A decidir: cómo ve logística el nombre y la dirección de una obra que no
-  abre (propuesta: la etapa guarda su dirección de entrega).
+  abre (propuesta: la etapa guarda su dirección de entrega). También: si un presupuesto en USD blue
+  cobrado en billetes usa el dólar de compra (USD 1.000 al de venta, vendidos a $1.545, dejan $20.000
+  menos que $1.565.000); Monedas hoy guarda solo el de venta (`decisiones/monedas.md` → *Ficha del módulo*).
 - **Stock** y **Compras**: sin ficha. Lo que se había decidido para ellos al fichar el catálogo se
   descartó con él (2026-10-22). Sigue valiendo que los proveedores son empresas de Contactos
   (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*).

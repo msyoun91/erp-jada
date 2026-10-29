@@ -131,7 +131,7 @@ VALUES (pg_temp.id('VO2'), pg_temp.id('Marta2'), 'obra', pg_temp.id('Olivos'), '
 
 INSERT INTO obras_comisiones (vinculo_id, porcentaje, monto, moneda, creado_por)
 VALUES (pg_temp.id('VM1'), 3, NULL, NULL, pg_temp.id('Juan')),
-       (pg_temp.id('VM2'), NULL, 5000, 'USD', pg_temp.id('Juan')),
+       (pg_temp.id('VM2'), NULL, 5000, 'USD_OFICIAL', pg_temp.id('Juan')),
        (pg_temp.id('VR2'), 2, NULL, NULL, pg_temp.id('Juan'));
 
 INSERT INTO contactos_persona_empresa (persona_id, empresa_id, creado_por)
@@ -179,7 +179,7 @@ SELECT pg_temp.caso('02 con los roles sumados', '{decisor,referente}', (
 SELECT pg_temp.caso('02 el otro, desactivado y apuntando al que queda', 'false/true', (
   SELECT activo::text || '/' || (fusionado_en = pg_temp.id('VM2'))::text
   FROM contactos_vinculos WHERE id = pg_temp.id('VM1')));
-SELECT pg_temp.caso('02 comisión vigente: USD 5000', '5000.00 USD', (
+SELECT pg_temp.caso('02 comisión vigente: USD 5000', '5000.00 USD_OFICIAL', (
   SELECT monto::text || ' ' || moneda FROM obras_comisiones WHERE vinculo_id = pg_temp.id('VM2') AND activo));
 SELECT pg_temp.caso('02 el 3 % pasó como historial', '2/1', (
   SELECT count(*)::text || '/' || (count(*) FILTER (WHERE activo))::text

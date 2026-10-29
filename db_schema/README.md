@@ -10,6 +10,7 @@ tablas, columnas o enums, actualizar ese archivo y `database.types.ts`.
 | `notificaciones.md` | `usuario_notificaciones`, `notificar()`, `notificaciones_listar()` |
 | `tareas.md` | hilos, pasos, notas, historial, permisos, visibilidad, reglas de escritura, bajas y cambios de equipo de tareas (`sql/112`–`sql/114`) |
 | `obras.md` | obras, participantes, estados, ver/trabajar/a cargo, `obras_alta` (`sql/126`, `sql/128`) |
+| `monedas.md` | enum `moneda`, tipos de cambio con fecha, moneda principal, consultas a MonedAPI, `monedas_convertir`, `nivel_cambio` (`sql/155`–`sql/157`) |
 | `contactos.md` | personas, empresas, persona ↔ empresa, vínculos con registros, ediciones, accesos, "Ver contacto" (`sql/127`, `sql/128`) |
 
 Esta rama sacó `tareas` y `obras` para rediseñar permisos desde cero (`sql/101`, `sql/102`); sus

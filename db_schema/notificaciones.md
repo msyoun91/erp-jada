@@ -53,6 +53,13 @@ avisos propios): el aprobador no ve la congelada y quien la cargó no ve la rech
 | ídem | `alta_aprobada`, `alta_rechazada`, `alta_es_la_misma` (al responsable; de una empresa, quien la cargó) | nombre; `motivo` = vínculos que no se crearon, el motivo del rechazo o el nombre de la existente | `obra` / `persona` / `empresa` si lo ve (de "es la misma", la existente) |
 | `obras_participantes` | `obra_misma_sumado` (al responsable de la existente) | nombre de la obra; `motivo` = quién se sumó | `obra` |
 
+**Tipos de cambio (`sql/156`).** A quienes tienen `monedas_corregir`, menos quien lo hizo
+(`decisiones/monedas.md` → *Tipos de cambio*). Lo de MonedAPI que entra solo no avisa.
+
+| entidad | tipos | resuelve | `destino` |
+|---|---|---|---|
+| `monedas_tipos_cambio` | `tipo_cambio_corregido` (a mano), `tipo_cambio_confirmado` (un rojo de MonedAPI) | código de la moneda (la campanita lo traduce con `MONEDAS`); `motivo` = "$antes → $después", el anterior leído del historial | `monedas` |
+
 ## Sumar un evento
 
 1. `ALTER TYPE tipo_notificacion ADD VALUE '<tipo>'`, en su propia transacción: el valor no se puede usar antes del commit y `notificaciones_listar` lo castea al crearse.
@@ -69,8 +76,8 @@ avisos propios): el aprobador no ve la congelada y quien la cargó no ve la rech
 |---|---|---|
 | id | uuid PK | |
 | usuario_id | uuid FK → usuarios | destinatario |
-| tipo | enum `tipo_notificacion` | `miembro_nuevo` \| `permiso_otorgado` \| `delegador_designado` \| los veintiuno de tareas \| los ocho de obras y contactos (`sql/132`) |
-| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos`, `tareas`, `tareas_hilos`, `tareas_plantillas` (`sql/151`), `usuarios`, `obras`, `obras_participantes`, `contactos_personas` (`sql/134`), `contactos_empresas` (`sql/138`) |
+| tipo | enum `tipo_notificacion` | `miembro_nuevo` \| `permiso_otorgado` \| `delegador_designado` \| los veintiuno de tareas \| los ocho de obras y contactos (`sql/132`) \| los dos de tipos de cambio (`sql/155`) |
+| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos`, `tareas`, `tareas_hilos`, `tareas_plantillas` (`sql/151`), `usuarios`, `obras`, `obras_participantes`, `contactos_personas` (`sql/134`), `contactos_empresas` (`sql/138`), `monedas_tipos_cambio` (`sql/156`) |
 | entidad_id | uuid | sin FK — apunta a varias tablas |
 | actor_id | uuid FK → usuarios, nullable | quién lo provocó. Null = evento del sistema |
 | leida_at | timestamptz, nullable | |

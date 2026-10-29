@@ -11,6 +11,7 @@ import {
   CircleCheck,
   CirclePlay,
   CircleX,
+  Coins,
   ClipboardList,
   FileWarning,
   Inbox,
@@ -30,6 +31,7 @@ import {
 } from "lucide-react";
 import { LABEL_MAP } from "@/components/layout/SidebarNav";
 import { RightPanel } from "@/components/ui/RightPanel";
+import { MONEDAS } from "@/lib/monedas";
 import { formatFechaHora } from "@/lib/utils";
 import { marcarLeida, marcarTodasLeidas } from "../actions";
 import type { Notificacion, TipoNotificacion } from "../types";
@@ -79,6 +81,8 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   persona_fusionada: Shuffle,
   plantilla_disparada: Zap,
   plantilla_fallida: FileWarning,
+  tipo_cambio_corregido: Coins,
+  tipo_cambio_confirmado: Coins,
 };
 const TEXTO: Record<TipoNotificacion, string> = {
   miembro_nuevo: "Se sumó a tu equipo",
@@ -119,6 +123,8 @@ const TEXTO: Record<TipoNotificacion, string> = {
   persona_fusionada: "se fusionó con la de",
   plantilla_disparada: "Se creó",
   plantilla_fallida: "No pudo crearse el hilo de la plantilla",
+  tipo_cambio_corregido: "Se corrigió a mano el",
+  tipo_cambio_confirmado: "Se confirmó el salto de MonedAPI del",
 };
 const COLOR: Record<TipoNotificacion, string> = {
   miembro_nuevo: "text-brand-500",
@@ -159,6 +165,8 @@ const COLOR: Record<TipoNotificacion, string> = {
   persona_fusionada: "text-brand-500",
   plantilla_disparada: "text-brand-500",
   plantilla_fallida: "text-error-text",
+  tipo_cambio_corregido: "text-warning-text",
+  tipo_cambio_confirmado: "text-warning-text",
 };
 
 // `destino` → ruta. Cada rama de `notificaciones_listar` que devuelva un
@@ -178,13 +186,18 @@ const RUTA: Record<string, (id: string) => string> = {
   empresa: (id) => `/contactos/empresas/${id}`,
   contactos: (id) => `/contactos?responsable=${id}`,
   contactos_por_aprobar: () => "/contactos/por-aprobar",
+  monedas: () => "/monedas",
 };
 
 // `permiso_otorgado` trae el módulo en `destino` y la vista en `etiqueta`: los
 // nombres de vista no repiten el del módulo ("Ver"), así que solos no dicen nada.
+// Los de tipo de cambio traen el código de la moneda (`USD_BLUE`).
 function etiquetaDe(n: Notificacion): string | null {
   if (n.tipo === "permiso_otorgado" && n.destino && n.etiqueta) {
     return `${LABEL_MAP[n.destino] ?? n.destino} · ${n.etiqueta}`;
+  }
+  if (n.tipo.startsWith("tipo_cambio_") && n.etiqueta && n.etiqueta in MONEDAS) {
+    return MONEDAS[n.etiqueta as keyof typeof MONEDAS];
   }
   return n.etiqueta;
 }

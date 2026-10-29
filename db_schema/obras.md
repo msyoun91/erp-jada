@@ -117,7 +117,7 @@ Directo o sistema, como Tareas: quién hace qué vale a `pg_trigger_depth() = 1`
 | vinculo_id | uuid FK → contactos_vinculos | un vínculo de obra, abierto, con rol `referente` (OB036) |
 | porcentaje | numeric(5,2), nullable | > 0 y ≤ 100; "de lo contratado" |
 | monto | numeric(14,2), nullable | > 0. CHECK: exactamente uno de porcentaje y monto |
-| moneda | enum `moneda` (`ARS`\|`USD`), nullable | CHECK: presente sii monto; con monto y sin moneda, la base pone `USD` |
+| moneda | enum `moneda` (`db_schema/monedas.md`), nullable | CHECK: presente sii monto; con monto y sin moneda, la base pone `USD_OFICIAL` (`sql/155`; era `USD`). La UI ofrece `USD_OFICIAL` y `ARS` |
 | creado_por | uuid FK → usuarios | default `auth.uid()` |
 | activo | boolean | unique parcial `(vinculo_id) WHERE activo`: una vigente; las inactivas son el historial |
 | created_at / updated_at | timestamptz | |

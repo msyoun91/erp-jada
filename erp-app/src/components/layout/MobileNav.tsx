@@ -12,10 +12,12 @@ export function MobileNav({
   modulosVisibles,
   nombre,
   notificaciones,
+  tiposCambio,
 }: {
   modulosVisibles: string[];
   nombre: string;
   notificaciones: Notificacion[];
+  tiposCambio: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -64,7 +66,7 @@ export function MobileNav({
             <X size={14} strokeWidth={1.75} />
           </button>
         </div>
-        <SidebarNav modulosVisibles={modulosVisibles} nombre={nombre} />
+        <SidebarNav modulosVisibles={modulosVisibles} nombre={nombre} tiposCambio={tiposCambio} />
       </div>
     </>
   );

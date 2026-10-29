@@ -112,7 +112,7 @@ export const comisionSchema = z
     vinculo_id: idSchema,
     tipo: z.enum(["porcentaje", "monto"]),
     valor: z.number("Ingresá un número").positive("Tiene que ser mayor que cero"),
-    moneda: z.enum(["USD", "ARS"]).default("USD"),
+    moneda: z.enum(["USD_OFICIAL", "ARS"]).default("USD_OFICIAL"),
   })
   .refine((v) => v.tipo !== "porcentaje" || v.valor <= 100, { message: "Máximo 100 %", path: ["valor"] });
 export type ComisionForm = z.input<typeof comisionSchema>;

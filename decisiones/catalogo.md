@@ -351,9 +351,9 @@ insumos en ella.
 
 ## Moneda (2026-10-29)
 
-**El presupuesto elige en qué moneda sale el precio, y el catálogo convierte todo a esa moneda con los
-tipos de cambio de la fecha del presupuesto, que lee de Monedas (`decisiones/monedas.md`), mínimos
-incluidos.** El vendedor marca USD y la ventana
+**El presupuesto elige en qué moneda sale el precio (en USD, también si oficial o blue), y el catálogo
+convierte todo a esa moneda con los tipos de cambio de la fecha del presupuesto, que lee de Monedas
+(`decisiones/monedas.md`), mínimos incluidos.** El vendedor marca USD y la ventana
 sale "USD 182" sin que nadie convierta a mano. La función del precio recibe la moneda junto con el
 paquete y las medidas (*El precio sale de una función*).
 
@@ -361,8 +361,9 @@ paquete y las medidas (*El precio sale de una función*).
 de un servicio fijo y el mínimo de un servicio en %.** Si el proveedor del perfil 20x40 deja de cotizar
 USD 12 y pasa a $18.000, Administración carga los $18.000 y listo; el aviso de 15/25/50 % compara contra
 el anterior pasado a la moneda nueva con el tipo de cambio del día (USD 12 × 1.450 = $17.400 → +3 %,
-sin color). Cada valor guarda su moneda con su fecha, así que los presupuestos viejos no cambian. Entre
-dólar y euro se convierte pasando por el peso. Se descartó la moneda fija en el insumo, como la unidad:
+sin color). Cada valor guarda su moneda con su fecha, así que los presupuestos viejos no cambian. Un
+monto en USD dice además si es oficial o blue, y todo se convierte pasando por el peso, cada monto con
+su dólar (`decisiones/monedas.md` → *Tipos de cambio*). Se descartó la moneda fija en el insumo, como la unidad:
 la unidad cambia la cuenta de lo que el gerente aprobó y la moneda no (USD 12 y $17.400 son el mismo
 costo), y fija obligaba a convertir a mano o a cargar otro insumo, con versión nueva de cada paquete.
 
