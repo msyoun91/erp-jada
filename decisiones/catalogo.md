@@ -10,9 +10,9 @@ este archivo no dice, no está decidido.
 
 ## Ficha del módulo
 
-En armado, punto por punto con el usuario. Objetivo y personas aprobados el 2026-10-27. Entes,
-estados, relaciones, acciones, eventos y el árbol de vistas: sin armar. Los entes se discutieron y se
-descartaron para retomarlos de cero.
+En armado, punto por punto con el usuario. Objetivo y personas aprobados el 2026-10-27; sin entes el
+2026-10-30 (*Sin entes*), con los registros, los avisos y el árbol de vistas y funciones (*Pestañas*).
+Sin `catalogo_ver`: cada pestaña tiene su código, y `/catalogo` abre la primera que el usuario tiene.
 
 ```
 Módulo: catalogo
@@ -36,17 +36,55 @@ Personas                qué ve · qué hace · qué NO ve
 │                    (módulo a hacer) · costos, % ni precios
 └── Compras        — NO entra: ve los insumos y su costo desde Compras (módulo a hacer), para
                      comparar con las cotizaciones · %, precios ni fórmulas
-Entes
-└── a definir
+Entes: ninguno — nada tiene dueño ni chip; lo que ve cada uno lo da el permiso (*Sin entes*)
+Registros
+├── paquete       — por qué está de baja: a mano, o el insumo o servicio fijo que lo bajó
+│   └── versión   — borrador → en revisión → publicado → obsoleto · nombre y categoría · una sola
+│       │           abierta por paquete · el gerente la devuelve con motivo · medidas: a definir
+│       └── pieza armada → fórmula: un insumo o servicio fijo y cuánto lleva según las medidas
+├── insumo        — categoría de insumo, unidad (mm, m2, u) y peso · costo con fecha y moneda ·
+│                   todo se edita hasta que un paquete lo usa; después, solo el costo y si está activo
+├── servicio fijo — como el insumo, sin peso, en una categoría de servicio
+├── categoría     — de paquete y de insumo (las define Técnica), de servicio (Administración) · se
+│                   edita hasta tener algo adentro; de baja, solo sin nada activo adentro
+└── servicio en % — su %, su paso (1: el despiece o ciertas categorías · 2: el subtotal · 3: el precio
+                    final), mínimo con moneda, por paquete o por presupuesto, si es opcional · cada
+                    cambio es un valor nuevo con fecha
+Eventos: ninguno (sin entes). Los avisos van por notificaciones:
+├── insumo nuevo                → quienes cargan costos · desaparece cuando tiene costo
+├── categoría de insumo nueva   → quienes definen los servicios en %
+├── baja de insumo              → gerente, si bajó paquetes: la baja y los que siguen de baja por ella
+├── baja de servicio fijo       → gerente y Técnica, si bajó paquetes
+├── cambio en un servicio en %  → gerente: apunta al cambio en la historia, para revertirlo
+├── cambio revertido            → quien hizo el cambio
+├── versión enviada a revisión  → quienes aprueban · desaparece al aprobarla, devolverla o retirarla
+└── versión aprobada o devuelta → quien la envió · con el motivo si fue devuelta
+
+Catálogo
+├── Paquetes (vista, catalogo_paquetes)          — técnica, gerente, quien revisa cortes: por
+│   │                                              categoría, con versiones y despiece, sin precio
+│   ├── catalogo_armar (funcion)                 — técnica: paquetes y sus categorías, versiones;
+│   │                                              envía, retira, da de baja y reactiva
+│   └── catalogo_aprobar (funcion)               — gerente: "Por revisar", el precio de cualquier
+│                                                  versión, aprueba y devuelve
+├── Insumos (vista, catalogo_insumos)            — técnica, administración, gerente: sin costo
+│   ├── catalogo_cargar (funcion)                — técnica: alta y categorías de insumo, edición
+│   │                                              mientras nadie lo usa, baja y reactivación
+│   └── catalogo_costos (funcion)                — administración, gerente: ve y carga el costo
+├── Servicios fijos (vista, catalogo_fijos)      — técnica, administración, gerente: sin costo
+│   └── catalogo_fijos_editar (funcion)          — administración, gerente: alta con costo, edición
+│                                                  mientras nadie lo usa, costo, baja, categorías
+└── Servicios en % (vista, catalogo_porcentajes) — administración, gerente: con su historia
+    └── catalogo_porcentajes_editar (funcion)    — administración, gerente: alta, cambios, baja y
+                                                   reactivación, revertir
+Delegables
+├── sí — las cuatro vistas · catalogo_armar · catalogo_cargar · catalogo_costos ·
+│        catalogo_fijos_editar · catalogo_porcentajes_editar
+└── no — catalogo_aprobar
+Reglas entre permisos: ninguna, ni requiere ni excluye
 ```
 
 Pendientes de la ficha:
-- **Entes**: el insumo y el servicio fijo ya están (*El insumo*, *El servicio fijo*); siguen los
-  demás.
-- **Árbol de vistas y funciones**: la función que ve y hace todo (con ella se revierte un cambio en un
-  servicio en %), quién edita un insumo que ningún paquete usa, y si las funciones de Técnica y las de
-  Administración se excluyen: un usuario con las dos ve paquete y precio sin pasar por el gerente
-  (2026-10-29).
 - **Editor de paquete**: qué medidas tiene un paquete y su mínimo y máximo, si las fórmulas llevan
   condicionales o redondeo hacia arriba (barras enteras), y evaluarlas sin SQL dinámico (2026-10-29).
 
@@ -61,6 +99,73 @@ servicios fijos (*El servicio fijo*).
 **El catálogo guarda el despiece y los precios con fecha; lo que otro módulo hace con eso se decide en
 su ficha (2026-10-29).** Ej: qué fecha lleva cada ítem de un presupuesto, si vence, los descuentos, qué
 nombre de insumo lee Producción, cómo Compras vincula proveedores.
+
+## Sin entes (2026-10-30)
+
+**El catálogo no tiene entes: paquete, versión, insumo, servicio fijo, categorías y servicios en % son
+registros del módulo, sin dueño, sin privacidad por fila y sin chip.** Lo que ve cada uno lo da el
+permiso, no quién lo cargó: Martín, de Técnica, saca una versión del paquete que armó Lucía.
+Presupuestos, Compras y Producción apuntan con FK directa, el vendedor no entra al catálogo para abrir
+un chip, y los avisos apuntan a cualquier tabla, como los de Monedas. Si una tarea tiene que
+vincularse a un paquete, se lo registra como ente entonces: es sumar, no rehacer.
+
+## Pestañas (2026-10-30)
+
+**Cuatro pestañas, cada una una vista: Paquetes (técnica, gerente), Insumos y Servicios fijos
+(técnica, administración, gerente) y Servicios en % (administración, gerente). Las categorías se
+manejan en la pestaña de lo que contienen.**
+
+**El costo se ve con una función, no con una pestaña: la tabla de costos la pide, y sin ella la base
+no lo da.** Lucía, de Técnica, abre Insumos y ve "Float 4mm · m2 · 10 kg" sin costo; Ana, de
+Administración, ve la misma lista con el costo y lo carga. Se descartó una pestaña Costos solo para
+Administración: repetía la lista de insumos.
+
+**Paquetes tiene dos funciones: armar (Técnica: crea paquetes y categorías de paquete, saca versiones,
+edita el borrador, lo envía y lo retira, da de baja y reactiva) y aprobar (gerente: la lista "Por
+revisar", el precio de cualquier versión con las medidas que elige, aprueba y devuelve). La vista sola
+muestra paquetes y despiece, sin precio ni botones.** Rodrigo, de producción, revisa cortes con la
+vista sola. Armar no se divide: nadie arma paquetes sin poder enviarlos o darlos de baja.
+
+**Insumos tiene dos funciones: cargar (Técnica: da de alta insumos y categorías de insumo, los edita
+mientras ningún paquete los usa, los da de baja y los reactiva) y costos (Administración y gerente: ve
+y carga el costo). Un insumo sin usar lo edita solo quien tiene cargar.** Lucía corrige su "Flaot
+4mm"; Ana, que lo ve al cargarle el costo, le avisa: quien carga algo lo edita y lo da de baja. Se
+descartó que Administración también lo edite mientras nadie lo usa: le cambiaría la categoría, que
+define Técnica. El aviso de insumo nuevo va a quienes tienen costos, gerente incluido, y desaparece con
+el costo.
+
+**Servicios fijos tiene una sola función, fijos (Administración y gerente): da de alta con costo y
+categoría, edita mientras ningún paquete los usa, carga el costo, da de baja y reactiva, y maneja las
+categorías de servicio.** A diferencia del insumo, alta y costo los hace la misma persona y el servicio
+nace con su costo: separarlas sumaba una función que nadie tendría sin la otra.
+
+**Servicios en % tiene una sola función, porcentajes (Administración y gerente): da de alta, cambia
+cualquier dato, da de baja y reactiva, y revierte un cambio de la historia. Revertir es un cambio más:
+un valor nuevo con fecha que deja todo como estaba antes de ese cambio, y le avisa a quien lo hizo.**
+Ana suma Herrajes a la Garantía de vidrio, el gerente lo revierte desde el aviso, y Ana se entera: sin
+aviso, el lunes lo volvía a sumar.
+
+**No hay función que ve y hace todo: no hay registros que alguien con la pestaña no vea (*Sin
+entes*), como en Monedas.** El gerente tiene las cuatro pestañas con aprobar, costos, fijos y
+porcentajes; no necesita armar ni cargar, y si arma, se le da armar (*Ningún permiso excluye a otro*).
+
+**Ningún permiso del catálogo excluye a otro (2026-10-30).** En una empresa chica una persona arma y
+aprueba, o arma y carga costos. Quien tiene armar y aprobar aprueba sus propias versiones: igual pasan
+por "en revisión", donde ve el precio antes de publicar. Riesgo aceptado: nadie más revisa esa versión.
+Se descartó que armar excluya aprobar: obligaba a dos personas donde hay una. Las de Técnica y las de
+Administración tampoco se excluyen: con las dos no se ve ningún precio, que sale solo con aprobar, y
+cada versión pasa por quien aprueba.
+
+**Ningún permiso del catálogo requiere otro: nombre, unidad y categoría de insumos y servicios fijos se
+leen desde cualquier pestaña del catálogo; lo protegido es el costo, que pide su función
+(2026-10-30).** Rodrigo, de producción, con solo Paquetes, ve "Perfil marco 20x40 = 5.392 mm" en el
+despiece. Se descartó que Paquetes requiera Insumos y Servicios fijos: le sumaba dos listas que no
+usa, y una regla para algo que no esconde nada.
+
+**Se delega todo menos aprobar (2026-10-30).** Lucía, delegadora de Técnica, le da a Martín Paquetes
+con armar e Insumos con cargar sin pasar por el admin; el jefe de Administración reparte costos, fijos
+y porcentajes igual. Aprobar es el control del catálogo: delegable, un gerente delegador hacía
+aprobador a cualquiera de su equipo sin que lo decida el admin.
 
 ## Qué es un paquete (2026-10-27)
 
@@ -190,7 +295,7 @@ qué unidad sale, lo dice la unidad del insumo. Se descartó escribir todo en la
 
 ## El servicio fijo (2026-10-29)
 
-**El servicio fijo (Instalación, Soldado) es un ente propio, no un insumo, y sigue las reglas del
+**El servicio fijo (Instalación, Soldado) es un registro propio, no un insumo, y sigue las reglas del
 insumo salvo el peso, que no tiene.** Costo con fecha, unidad de comercialización (la instalación
 por m2, el soldado por u), todo editable hasta que un paquete lo usa y después solo el costo y si
 está activo, y su baja da de baja los
@@ -213,8 +318,9 @@ define. Costo aceptado: si a un paquete nuevo le falta un servicio ("Colocación
 se lo pide a Administración antes de poder usarlo en la fórmula.
 
 **Dar de baja un servicio fijo funciona como la baja del insumo, aviso al gerente incluido (*El
-insumo*), y además le avisa a Técnica. Antes de confirmar, Administración ve cuántos paquetes lo
-usan: el número, no cuáles.** Administración no ve paquetes y Técnica no hizo la baja: sin aviso, el
+insumo*), y además le avisa a Técnica, también solo si bajó algún paquete. Antes de confirmar,
+Administración ve cuántos paquetes lo usan: el número, no cuáles.** Un borrador que lo usa no avisa:
+la base frena el envío (2026-10-30). Administración no ve paquetes y Técnica no hizo la baja: sin aviso, el
 vendedor dejaba de ver 8 ventanas sin que nadie supiera por qué. Técnica saca la versión con otro
 servicio, el gerente la aprueba y Técnica reactiva cada paquete. Se descartó que la base no deje darlo
 de baja mientras una versión publicada lo use: se seguía vendiendo una instalación que nadie iba a
@@ -387,6 +493,18 @@ y una rueda discontinuada, Técnica la retira, le cambia la rueda y la reenvía:
 con los dos cambios, y "qué cambió" se compara siempre contra la publicada. Se descartó tener varias
 abiertas, cada una copiada de la publicada: la v4 salía de la v2 sin el vidrio de la v3, y aprobar las
 dos en orden publicaba la v4 sin él.
+
+**El gerente devuelve una versión con un motivo escrito: la base no deja devolverla sin él
+(2026-10-30).** El motivo queda en la historia de la versión y Técnica lo ve al abrir el borrador ("la
+pieza Hoja sigue con Float 4mm"). Sin él, Lucía tenía la v3 de vuelta en borrador sin saber qué buscar.
+Retirarla de revisión no pide motivo: la retira quien la va a cambiar.
+
+**Enviar una versión a revisión les avisa a quienes aprueban, y el aviso desaparece cuando se
+resuelve: aprobada, devuelta o retirada. Aprobarla o devolverla le avisa a quien la envió, con el
+motivo si fue devuelta (2026-10-30).** Sin aviso, la v3 esperaba hasta que alguien le preguntara al
+gerente, y un paquete bajado por un insumo seguía fuera de la venta hasta que Técnica se acordara de
+mirar si se aprobó la versión nueva. Como `alta_por_aprobar` (`db_schema/notificaciones.md`). No le
+avisa a todo Técnica: Martín no tiene nada que hacer con la v3 de Lucía.
 
 **Obsoleto es solo la versión reemplazada: pasa sola cuando se publica la siguiente. Dejar de vender
 es la baja del paquete (`activo = false`), y sus versiones quedan como estaban.** Reactivarlo vuelve a
