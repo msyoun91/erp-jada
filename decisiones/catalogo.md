@@ -40,11 +40,12 @@ Entes: ninguno — nada tiene dueño ni chip; lo que ve cada uno lo da el permis
 Registros
 ├── paquete       — por qué está de baja: a mano, o el insumo o servicio fijo que lo bajó
 │   └── versión   — borrador → en revisión → publicado → obsoleto · nombre y categoría · una sola
-│       │           abierta por paquete · el gerente la devuelve con motivo · medidas: a definir
+│       │           abierta por paquete · el gerente la devuelve con motivo
 │       └── pieza armada → fórmula: un insumo o servicio fijo y cuánto lleva según las medidas
-├── insumo        — categoría de insumo, unidad (mm, m2, u) y peso · costo con fecha y moneda ·
-│                   todo se edita hasta que un paquete lo usa; después, solo el costo y si está activo
-├── servicio fijo — como el insumo, sin peso, en una categoría de servicio
+├── insumo        — categoría de insumo, unidad (mm, m2, u), peso y espesor · costo con fecha y
+│                   moneda · todo se edita hasta que un paquete lo usa; después, solo el costo y si
+│                   está activo
+├── servicio fijo — como el insumo, sin peso ni espesor, en una categoría de servicio
 ├── categoría     — de paquete y de insumo (las define Técnica), de servicio (Administración) · se
 │                   edita hasta tener algo adentro; de baja, solo sin nada activo adentro
 └── servicio en % — su %, su paso (1: el despiece o ciertas categorías · 2: el subtotal · 3: el precio
@@ -85,8 +86,24 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 ```
 
 Pendientes de la ficha:
-- **Editor de paquete**: qué medidas tiene un paquete y su mínimo y máximo, si las fórmulas llevan
-  condicionales o redondeo hacia arriba (barras enteras), y evaluarlas sin SQL dinámico (2026-10-29).
+- **Editor de paquete**: en dictado del usuario desde el 2026-10-30 (*Editor de paquete*). Sigue:
+  - **Opción sin pareja en un combo**: propuesto que la base no deje enviar la versión si una opción
+    del que elige no tiene pareja (se suma "Perfil marco anodizado" y la hoja no tiene anodizado: el
+    precio salía sin perfil de hoja). Explicado, sin confirmar.
+  - Huecos marcados: el "si no" obligatorio cuando el sistema define el material; si una pieza fija
+    puede usar un material de una opcional; qué toma una referencia a un material con varios renglones
+    (el total, un renglón o la medida de cada pieza); frenar referencias circulares; criterio entre
+    "sin elección" y pieza opcional (propuesto: un material suelto → sin elección, varios juntos →
+    pieza opcional).
+  - Al cerrar el dictado, conciliar: *Qué es un paquete* y el árbol de la ficha (pieza → fórmula),
+    las "medidas" que quedan (función del precio, el gerente, el recálculo), "Felpa = Perfil hoja"
+    frente a medida × cantidad, `BACKLOG.md` → *Presupuestos* (guarda lo escrito, las elecciones y
+    las piezas opcionales) y *reventa de perfiles* (la lista sale del material múltiple), y que el
+    vendedor ve los nombres de las opciones y los mensajes de alerta. Por el color: el costo pasa del
+    insumo a cada variante (*El insumo*, *El costo del insumo vive en el catálogo*, los avisos de
+    insumo nuevo y de 15/25/50 %), y la ficha suma el registro color y, en la versión, los colores que
+    ofrece y el base.
+  - Después: evaluar las fórmulas sin SQL dinámico.
 
 ## Al catálogo entran solo los que definen (2026-10-27)
 
@@ -207,6 +224,125 @@ Paquete: Ventana corrediza 2 hojas
 - **Hoy no se vende nada suelto.** El catálogo de un proveedor alimenta insumos para usar dentro de
   los paquetes. Para cuando revendan perfiles ya hay camino decidido (`BACKLOG.md`).
 
+## Editor de paquete (2026-10-30)
+
+**La pieza armada es un conjunto de materiales calculados mediante fórmulas aritméticas.**
+
+**Variable: un valor que no está ligado a ningún material. Puede estar dentro de una pieza armada o por
+sí sola, fuera de toda pieza armada.** Ancho y alto son variables por sí solas.
+
+**De cada variable se elige si la ingresa el vendedor o no, y una variable puede llevar una fórmula
+aritmética.**
+
+**Una variable que ingresa el vendedor puede tener un predeterminado con fórmula; sin predeterminado
+(ancho, alto) es obligatoria.** En una corrediza asimétrica, `ancho_hoja_1` se predetermina en
+`(ancho + solape) / 2`: con ancho 2.000 aparece 1.025 y, si el vendedor no lo toca, sale simétrica. Lo
+que escribe queda aunque cambie el ancho; si lo borra, vuelve al predeterminado. El presupuesto guarda
+solo lo escrito, así un predeterminado sin tocar se recalcula con el ancho nuevo. Se descartó "0 =
+hojas iguales" con un "si": era una convención que el vendedor tenía que conocer.
+
+**A una variable se le pueden configurar condiciones (if) con comparadores, cada una con un mensaje de
+alerta o un bloqueo. Con un bloqueo no se puede hacer uso del paquete.** Ej: ancho > 1000 → mensaje de
+alerta o bloqueo. **Después del comparador va una operación aritmética** (ej: alto > ancho × 2).
+
+**En toda operación aritmética se puede usar una variable u otro material del paquete: se toma su
+resultado, no su fórmula, y se calcula a partir de él.** Ej: Felpa = Perfil hoja toma los 7.900 mm
+que dio el perfil.
+
+**Toda fórmula (de un material, de una opción o de una variable) puede llevar "si … entonces … si no
+…", con los mismos comparadores de las condiciones, y redondear hacia arriba.** Una puerta con 3
+bisagras hasta 2.100 de alto y 4 si pasa: `si alto > 2100 entonces 4 si no 3`, o una bisagra cada
+700 mm: `redondear_arriba(alto / 700)`. Los "si" se encadenan para más escalones.
+
+**Las fórmulas también llevan `pi` y `arcoseno`, para los arcos: se hacen de medio punto y rebajados
+(2026-10-30).** Un arco rebajado de ancho 1.200 y flecha 200: `radio = flecha / 2 + ancho × ancho /
+(8 × flecha)` da 1.000, el perfil curvo `2 × radio × arcoseno(ancho / (2 × radio))` da 1.287 mm, y el
+vidrio del arco `radio × radio × arcoseno(ancho / (2 × radio)) − ancho / 2 × (radio − flecha)` da
+163.501 mm². El medio punto es el caso flecha = ancho / 2 (arco = `pi × radio`). Sin raíz: el arco
+rebajado no la necesita.
+
+**Cada material lleva su medida, con fórmula, y la cantidad de piezas iguales. Si no necesita medida,
+lleva solo la cantidad.** Las ruedas: cantidad 4, sin fórmula. El perfil del ancho de hoja: medida
+`ancho_hoja` y cantidad 4.
+
+**La medida vacía es solo para insumos y servicios fijos en u; en mm o m2 la base no deja enviar la
+versión.** Un perfil o un vidrio sin medida daban 0 mm o 0 m2, y el precio salía sin ese material sin
+que nadie lo notara.
+
+**El servicio fijo también es material: un material es un insumo o un servicio fijo.**
+
+**Un material es único o múltiple.**
+- **Único:** se selecciona un solo insumo.
+- **Múltiple:** cualquiera de los insumos predeterminados en el paquete puede ocupar su lugar. Cuál lo
+  ocupa se da de dos formas: lo elige el vendedor, o lo define el sistema con condicionales. Cuando
+  elige el vendedor, se puede permitir "sin elección" y, al mismo tiempo, configurar el predeterminado.
+
+**En un material múltiple, cada opción lleva su fórmula; si no tiene, hereda la fórmula general del
+material.**
+
+**Un material múltiple puede seguir la elección de otro: sincronizado o en combo.**
+- **Sincronizado:** con las mismas opciones. El vendedor elige en uno y los sincronizados quedan con
+  la misma. Ej: en una corrediza asimétrica, el Vidrio de Hoja 2 sincronizado con el de Hoja 1.
+- **Combo:** con opciones distintas, emparejadas. Elegir una en uno marca su pareja en el otro. Ej:
+  Contravidrio en combo con Vidrio: Float 4mm → Contravidrio 4mm, Laminado 3+3 → Contravidrio 6mm.
+
+Lo que sigue a otro no se le muestra al vendedor: elige una vez. En la base son un solo mecanismo: el
+sincronizado es un combo donde cada opción tiene por pareja el mismo insumo.
+
+**El color es por paquete: para ofrecer un color, todos los materiales del paquete tienen que tener
+su variante en ese color, o ser de color indistinto, como el tornillo.**
+
+**El color es un dato del insumo, no un insumo más: el insumo tiene variantes de color, cada una con
+su costo.** "Perfil hoja" es un solo insumo con variantes blanco y negro; el paquete lo usa una vez y el
+color se resuelve al calcular. Si el proveedor deja de fabricar el anodizado, se da de baja esa variante
+y el paquete sigue a la venta en los demás colores; como insumo aparte, su baja sacaba de la venta todo
+paquete que lo usara. Todo insumo tiene al menos una variante: el de color indistinto, una sola.
+
+**La versión dice qué colores ofrece: los elige Técnica entre los posibles y los aprueba el gerente.**
+Una variante de color nueva en un insumo no pone a la venta un color que nadie aprobó.
+
+**Las variantes de color se suman y se dan de baja aunque el insumo ya se use: no son de los datos
+fijos, se comportan como el costo.**
+- Sumar un color a un insumo usado no cambia ninguna versión: cada una dice qué colores ofrece. Para
+  vender el color nuevo, versión nueva que lo marque.
+- Quitar un color es dar de baja la variante. Los paquetes dejan de ofrecer ese color; si era el único
+  que ofrecía uno, el paquete sale de la venta, como con la baja de un insumo. Avisa al gerente.
+- Reactivar la variante devuelve el color sin versión nueva: se ofrecen los colores de la versión que
+  tienen todas sus variantes activas, sin guardar nada aparte.
+- Los colores son una lista común (Blanco, Negro, Anodizado), para que el negro del perfil y el del
+  accesorio sean el mismo. La define Técnica, como las categorías.
+- Una variante nueva sin costo le avisa a Administración, como un insumo nuevo, y la base no deja
+  enviar una versión que ofrezca un color con alguna variante sin costo.
+
+**El color base es el predeterminado del paquete: la versión marca uno de sus colores como base, y el
+vendedor ve el paquete con ese color elegido.** Con predeterminado, la elección de color puede ir
+secundaria: si casi todo se vende en blanco, queda plegada en "Más opciones". Si el color base deja de
+ofrecerse, la elección queda sin predeterminado y pasa a primaria: el vendedor elige entre los demás.
+
+**Cada material lleva también las condiciones de alerta o bloqueo, como la variable.**
+
+**La pieza armada puede ser opcional. Las piezas fijas no pueden usar en sus operaciones aritméticas
+variables de las piezas opcionales.**
+
+**Una pieza armada puede elegir si requiere otra pieza opcional, pero no puede elegirse a sí misma.**
+
+**Cada pieza armada lleva sus propias variables: el peso y el espesor de la pieza. El peso se calcula
+siempre: por default cuenta cada material, y Técnica puede optar por que un material no cuente. El
+espesor se calcula solo cuando la pieza armada está marcada para calcularlo, sumando el de sus
+materiales; qué materiales entran en la suma lo define Técnica, como en el peso. La cantidad
+multiplica el espesor.** El peso y el espesor
+de cada material salen del insumo: el insumo suma el espesor a sus datos.
+
+**Lo que toca el vendedor (una variable que ingresa, un material múltiple que elige, una pieza
+opcional) Técnica lo marca primario o secundario. El primario aparece siempre al sumar el paquete; el
+secundario va plegado en "Más opciones", resuelto con su predeterminado. La base deja marcar secundario
+solo lo que tiene predeterminado: lo obligatorio es siempre primario.** Así no se carga al vendedor con
+elecciones: en la corrediza carga ancho, alto y vidrio, y el ancho de hoja 1, el mosquitero y la
+cortina quedan plegados. Si una alerta o un bloqueo salta por algo secundario, el mensaje se ve igual y
+la sección se abre. El cliente, en erp-cliente, ve lo mismo.
+
+**El paquete comienza vacío, y en ese estado no se puede publicar.** Lo frena la base.
+
 ## El insumo (2026-10-29)
 
 ~~**Cada insumo está en una subcategoría, y cada subcategoría en una categoría.**~~ Superada el
@@ -214,7 +350,7 @@ Paquete: Ventana corrediza 2 hojas
 
 **Cada insumo está en una sola categoría, sin subcategoría, como los paquetes (Vidrios → Float
 incoloro 4mm, Float bronce 4mm; Herrajes → las ruedas 80kg de cada marca). El insumo tiene su costo,
-peso y unidad de comercialización: mm, m2 o u.** Son categorías de insumo, distintas de las de
+peso, espesor y unidad de comercialización: mm, m2 o u.** Son categorías de insumo, distintas de las de
 paquete. La unidad de compra es de Compras, como los precios de cada proveedor (*El costo del
 insumo vive en el catálogo*).
 
@@ -237,10 +373,11 @@ el 2026-10-29: con el nombre fijo desde que un paquete usa el insumo, no queda r
 la decisión siguiente.
 
 **Todo dato del insumo se edita mientras ningún paquete lo use, en ninguna versión. Desde que alguno lo
-usa, solo cambian el costo (un valor nuevo con fecha) y si está activo: nombre, categoría, unidad y peso
-quedan fijos, y si están mal se carga otro insumo (2026-10-29).** Mientras nadie lo usa, ningún precio,
+usa, solo cambian el costo (un valor nuevo con fecha) y si está activo: nombre, categoría, unidad, peso y
+espesor quedan fijos, y si están mal se carga otro insumo (2026-10-29).** Mientras nadie lo usa, ningún precio,
 versión ni presupuesto depende de él: un "Flaot 4mm" o un peso de 1,2 en vez de 0,12 se corrigen en el
-momento. Una vez usado, la unidad cambia la cuenta, la categoría qué servicios en % cobra, y el nombre
+momento. Una vez usado, la unidad cambia la cuenta, el peso y el espesor los de cada pieza armada
+(*Editor de paquete*), la categoría qué servicios en % cobra, y el nombre
 es lo que el gerente leyó al aprobar y lo que corta producción: "Float 4mm" → "Float 6mm" con el mismo
 costo hacía cortar vidrio de 6mm cobrado como de 4mm. Costo aceptado: un error de tipeo en el nombre
 de un insumo ya usado pide insumo nuevo, versión nueva de cada paquete que lo usa y aprobación del
@@ -284,7 +421,8 @@ con la "Ventana 4 hojas" que dio de baja a propósito en febrero. El aviso al ge
 siguen de baja por esa causa, y el que se reactiva sale de la lista. Se descartó no guardarlo: Técnica
 buscaba a mano qué paquetes usaban la rueda, y el aviso no podía decir cuáles bajó esa baja.
 
-**El peso por ahora solo se carga: cómo se usa se decide cuando un módulo lo necesite.**
+~~**El peso por ahora solo se carga: cómo se usa se decide cuando un módulo lo necesite.**~~ Superada
+el 2026-10-30: el peso y el espesor del insumo dan los de cada pieza armada (*Editor de paquete*).
 
 **Las fórmulas se escriben en mm y el sistema pasa el resultado a la unidad de comercialización; el
 costo de un insumo por mm se carga por metro.** Con una ventana de 1.500 × 1.200, el perfil marco da
@@ -296,8 +434,8 @@ qué unidad sale, lo dice la unidad del insumo. Se descartó escribir todo en la
 ## El servicio fijo (2026-10-29)
 
 **El servicio fijo (Instalación, Soldado) es un registro propio, no un insumo, y sigue las reglas del
-insumo salvo el peso, que no tiene.** Costo con fecha, unidad de comercialización (la instalación
-por m2, el soldado por u), todo editable hasta que un paquete lo usa y después solo el costo y si
+insumo salvo el peso y el espesor, que no tiene.** Costo con fecha, unidad de comercialización (el soldado
+por u), todo editable hasta que un paquete lo usa y después solo el costo y si
 está activo, y su baja da de baja los
 paquetes que lo usan en su versión publicada (*El insumo*). Una fórmula es un insumo o un servicio
 fijo. Si va en una tabla o en dos se decide en el SQL: las reglas son las mismas y viven una vez.

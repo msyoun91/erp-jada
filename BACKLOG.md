@@ -27,7 +27,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). Nada de eso vuelve
   (`decisiones/catalogo.md`). La ficha nueva se arma ahí, punto por punto: objetivo y personas
   aprobados, servicios en %, precio, tipos de cambio y versiones (2026-10-27), el insumo y el servicio
-  fijo (2026-10-29); siguiente: los demás entes.
+  fijo (2026-10-29), sin entes y el árbol de vistas y funciones (2026-10-30); siguiente: terminar el
+  editor de paquete (`decisiones/catalogo.md` → *Pendientes de la ficha*), con los huecos
+  que quedan; después, el SQL.
 - **Monedas**: construido (2026-10-29, `sql/155`–`156`, `decisiones/monedas.md`). El catálogo y
   Compras convierten con `monedas_convertir(monto, de, a, fecha)` (`db_schema/monedas.md`). Falta la
   prueba completa en el navegador con dos usuarios.
@@ -36,6 +38,10 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   perfil nuevo del proveedor se vende el mismo día), no copia la misma estructura 200 veces y la lista
   del vendedor sigue corta. Puede convivir con un paquete propio para un perfil especial. Falta decidir
   de qué lista se elige el perfil.
+- **Catálogo — dibujo 2D del paquete**, pedido para el futuro (2026-10-30): el editor calcula cuánto
+  lleva cada material, no dónde va cada pieza. Para dibujar, cada pieza armada suma su forma
+  (rectángulo o arco) y su posición, escritas con las mismas fórmulas y variables (el arco arranca en
+  `alto_recto`). Es sumar: las variables que leería el dibujo ya existen.
 - **Catálogo — % de un servicio por categoría de paquete**, sin caso real todavía: se construye con
   la primera categoría que cobre distinto. Sumarlo no cambia nada, porque mientras tanto todos los
   paquetes usan el % general (`decisiones/catalogo.md` → *Servicios en %*).
