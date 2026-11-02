@@ -89,9 +89,8 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 Pendientes de la ficha:
 - **Editor de paquete**: en dictado del usuario desde el 2026-10-30 (*Editor de paquete*). Sigue:
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - Menores: el predeterminado de la pieza opcional (incluida o no), que marcarla secundaria exige;
-      "Único: se selecciona un solo insumo" deja afuera al servicio fijo; datos sin material que
-      Producción necesita (mano de apertura); lo que frena el envío está en unos seis lugares → una
+    - Menores: "Único: se selecciona un solo insumo" deja afuera al servicio fijo; datos sin material
+      que Producción necesita (mano de apertura); lo que frena el envío está en unos seis lugares → una
       sola lista.
   - Al cerrar el dictado, conciliar: *Qué es un paquete* y el árbol de la ficha (pieza → fórmula),
     las "medidas" que quedan (función del precio, el gerente, el recálculo), `BACKLOG.md` →
@@ -384,7 +383,11 @@ La opción bloqueada se sigue viendo, para que el vendedor lea por qué. Si era 
 cambia sola por otra: cambiaría el precio sin que nadie lo note. Lo que sigue a otro también evalúa las
 suyas, y el mensaje le aparece al vendedor.
 
-**La pieza armada puede ser opcional.**
+**La pieza armada puede ser opcional, y entonces lleva su predeterminado: no incluida, o incluida si
+Técnica la marca (2026-11-02).** El Mosquitero viene sin incluir y el vendedor lo suma; el Burlete viene
+incluido y lo saca. Como siempre tiene predeterminado, toda pieza opcional se puede plegar. Una Cortina
+incluida trae el Cajón que requiere, y una pieza que no se ofrece, por una baja o por el color, no viene
+incluida.
 
 **Una fórmula solo puede usar lo que seguro existe cuando se calcula: la base lo revisa al enviar la
 versión y, si no se cumple, no la deja enviar (2026-11-02).** La Cortina con `alto_cajon` y sin el Cajón
