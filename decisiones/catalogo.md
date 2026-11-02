@@ -89,9 +89,7 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 Pendientes de la ficha:
 - **Editor de paquete**: en dictado del usuario desde el 2026-10-30 (*Editor de paquete*). Sigue:
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - Menores: "Único: se selecciona un solo insumo" deja afuera al servicio fijo; datos sin material
-      que Producción necesita (mano de apertura); lo que frena el envío está en unos seis lugares → una
-      sola lista.
+    - Menor: lo que frena el envío está en unos seis lugares → una sola lista.
   - Al cerrar el dictado, conciliar: *Qué es un paquete* y el árbol de la ficha (pieza → fórmula),
     las "medidas" que quedan (función del precio, el gerente, el recálculo), `BACKLOG.md` →
     *Presupuestos* (guarda lo escrito, las elecciones y
@@ -231,6 +229,13 @@ sí sola, fuera de toda pieza armada.** Ancho y alto son variables por sí solas
 **De cada variable se elige si la ingresa el vendedor o no, y una variable puede llevar una fórmula
 aritmética.**
 
+**Una variable que ingresa el vendedor también puede ser una lista de valores con nombre (2026-11-02).**
+La `mano` de una puerta: Izquierda o Derecha. Sin predeterminado es obligatoria, como cualquiera, y sale
+en el despiece con las demás variables. No entra en las cuentas: no cambia el precio ni se usa en
+fórmulas. Se descartó un número (1 = izquierda), una convención que el vendedor tenía que conocer; dos
+insumos a $0, que ensuciaban la lista y el despiece; y una nota en el presupuesto, que se olvida sin que
+nada la frene.
+
 **Una variable que ingresa el vendedor puede tener un predeterminado con fórmula; sin predeterminado
 (ancho, alto) es obligatoria.** En una corrediza asimétrica, `ancho_hoja_1` se predetermina en
 `(ancho + solape) / 2`: con ancho 2.000 aparece 1.025 y, si el vendedor no lo toca, sale simétrica. Lo
@@ -297,8 +302,8 @@ no 600. Si se paga lo que se usa y no la varilla entera, Técnica la carga en mm
 **El servicio fijo también es material: un material es un insumo o un servicio fijo.**
 
 **Un material es único o múltiple.**
-- **Único:** se selecciona un solo insumo.
-- **Múltiple:** cualquiera de los insumos predeterminados en el paquete puede ocupar su lugar. Cuál lo
+- **Único:** se selecciona un solo insumo o servicio fijo.
+- **Múltiple:** cualquiera de los insumos o servicios fijos predeterminados en el paquete puede ocupar su lugar. Cuál lo
   ocupa se da de dos formas: lo elige el vendedor, o lo define el sistema con condicionales. Cuando
   elige el vendedor, se puede permitir "sin elección" y, al mismo tiempo, configurar el predeterminado.
 
