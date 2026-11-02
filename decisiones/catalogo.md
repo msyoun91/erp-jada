@@ -97,8 +97,6 @@ Pendientes de la ficha:
     "sin elección" y pieza opcional (propuesto: un material suelto → sin elección, varios juntos →
     pieza opcional).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Dos formas de salir de la venta**: la opción y la variante de color se calculan y vuelven
-      solas; el paquete bajado por un insumo, `activo = false` y reactivación a mano.
     - **Color con opciones y opcionales**: si el marco del mosquitero opcional solo viene en blanco,
       "todos los materiales" impide ofrecer la ventana en negro. ¿Exige todo, o en negro no se ofrece
       el mosquitero?
@@ -463,7 +461,8 @@ Rueda 80kg, que el sistema elige según el peso   sale de la venta: nadie puede 
   venta con un material que ya no se consigue. Las versiones en borrador o en revisión que usan el insumo
   no cambian, pero la base no deja enviarlas ni aprobarlas con él. Reactivar el insumo no reactiva los
   paquetes: cada uno vuelve cuando Técnica lo reactiva (*Versiones y aprobación*), como cualquier
-  paquete de baja.
+  paquete de baja. Se descartó que el paquete también se calcule y vuelva solo, como la opción y el color
+  (2026-11-02): que vuelva a la venta sigue siendo decisión de Técnica.
 
 ```
 Técnica da de baja "Rueda 80kg Marca A"
