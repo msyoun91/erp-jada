@@ -1,4 +1,4 @@
--- Prototipo que sostiene decisiones/catalogo.md → *Las fórmulas se calculan sin SQL dinámico*: vive en
+-- Prototipo que sostiene decisiones/catalogo/despiece.md → *Las fórmulas se calculan sin SQL dinámico*: vive en
 -- pg_temp y termina en RAISE, así que no deja nada en la base. Las funciones reales salen de acá.
 create function pg_temp.tok(f text) returns text[] language plpgsql as $$
 declare s text := replace(replace(f,'−','-'),'×','*'); t text[];

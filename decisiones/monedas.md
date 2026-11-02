@@ -1,7 +1,7 @@
 # Monedas
 
 **Los tipos de cambio son un módulo propio, fuera del catálogo (2026-10-29).** El catálogo los lee para
-convertir costos y precios (`decisiones/catalogo.md` → *Moneda*), y Compras los va a leer de acá. Las
+convertir costos y precios (`decisiones/catalogo/precio.md` → *Moneda*), y Compras los va a leer de acá. Las
 decisiones de abajo se tomaron en el catálogo (2026-10-27 y 2026-10-29) y se mudaron sin cambios de
 fondo.
 
@@ -94,11 +94,11 @@ guarda su fecha: la que dice MonedAPI (`updatedAt`) o la de la carga a mano, y s
 entre ellos): la corrección a mano y la confirmación de un rojo de MonedAPI (2026-10-29).** "Ana
 corrigió el dólar blue: $1.565 → $1.700": un +8,6 % no da color y sube todo lo que se compra al blue en
 los paquetes que el gerente aprobó, y él o Marta lo revierten. Lo que MonedAPI trae solo no avisa:
-entra todos los días. Como los servicios en % (`decisiones/catalogo.md` → *Versiones y aprobación*). Se
+entra todos los días. Como los servicios en % (`decisiones/catalogo/versiones.md` → *Versiones y aprobación*). Se
 descartó una función `monedas_avisos` solo para el gerente: un permiso más, y Marta, que también puede
 atajar el error, no se enteraba.
 
-**Los tipos de cambio tienen los tres niveles del costo (`decisiones/catalogo.md` → *Versiones y
+**Los tipos de cambio tienen los tres niveles del costo (`decisiones/catalogo/versiones.md` → *Versiones y
 aprobación*) (2026-10-29).** A mano, el rojo pide confirmación: $17.800 en vez de $1.780 multiplicaba
 por 10 todo lo que cuesta en euros, sin color ni aviso. Lo de MonedAPI en rojo (50 % o más) no entra
 solo: se sigue usando el último guardado y Administración recibe un aviso para confirmarlo o

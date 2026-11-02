@@ -333,7 +333,7 @@ rol `proveedor` (`entes.roles` del insumo), no una tabla de Catálogo.** Una emp
 proveedora a la vez; con dos tablas tendría dos fichas. La empresa es del equipo de quien la carga, así
 que comercial y compras no se ven las agendas sin regla nueva. El precio ofrecido y la licitación
 no viven acá: van al módulo Compras (`BACKLOG.md`). El costo del insumo va a Catálogo
-(`decisiones/catalogo.md` → *El costo del insumo vive en el catálogo*, 2026-10-27).
+(`decisiones/catalogo/insumos.md` → *El costo del insumo vive en el catálogo*, 2026-10-27).
 
 Archivos: esta ficha; el rol, al crear el ente insumo en Catálogo.
 

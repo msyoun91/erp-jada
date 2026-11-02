@@ -25,11 +25,11 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. **Se arma de cero**
   (2026-10-22): la v1 y la v2 se descartaron enteras, junto con lo que habían dejado en Presupuestos,
   Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). Nada de eso vuelve
-  (`decisiones/catalogo.md`). La ficha nueva se arma ahí, punto por punto: objetivo y personas
+  (`decisiones/catalogo/README.md`). La ficha nueva se arma ahí, punto por punto: objetivo y personas
   aprobados, servicios en %, precio, tipos de cambio y versiones (2026-10-27), el insumo y el servicio
   fijo (2026-10-29), sin entes y el árbol de vistas y funciones (2026-10-30), el editor de paquete
   y cómo se calculan las fórmulas (2026-11-02); siguiente: aprobar la ficha completa
-  (`decisiones/catalogo.md` → *Pendientes de la ficha*); después, el SQL.
+  (`decisiones/catalogo/README.md` → *Pendientes de la ficha*); después, el SQL.
 - **Monedas**: construido (2026-10-29, `sql/155`–`156`, `decisiones/monedas.md`). El catálogo y
   Compras convierten con `monedas_convertir(monto, de, a, fecha)` (`db_schema/monedas.md`). Falta la
   prueba completa en el navegador con dos usuarios.
@@ -44,14 +44,14 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   `alto_recto`). Es sumar: las variables que leería el dibujo ya existen.
 - **Catálogo — % de un servicio por categoría de paquete**, sin caso real todavía: se construye con
   la primera categoría que cobre distinto. Sumarlo no cambia nada, porque mientras tanto todos los
-  paquetes usan el % general (`decisiones/catalogo.md` → *Servicios en %*).
+  paquetes usan el % general (`decisiones/catalogo/precio.md` → *Servicios en %*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado, más un renglón por cada mínimo por presupuesto de los
-  servicios en %, que calcula el catálogo (`decisiones/catalogo.md` → *Servicios en %*). Cada ítem guarda
+  servicios en %, que calcula el catálogo (`decisiones/catalogo/precio.md` → *Servicios en %*). Cada ítem guarda
   su versión y solo lo que cargó el vendedor: lo escrito, las elecciones, las piezas opcionales y el color;
   el resto lo recalcula el catálogo. El precio llega redondeado, y el ítem lo multiplica por su cantidad.
   Suma el IVA:
-  el precio del catálogo llega sin IVA (`decisiones/catalogo.md` → *El IVA lo suma Presupuestos*). Su estado
+  el precio del catálogo llega sin IVA (`decisiones/catalogo/precio.md` → *El IVA lo suma Presupuestos*). Su estado
   es el operativo (en cotización, aprobado, en producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
   ejecución y el seguimiento comercial al entregar cuelgan del presupuesto, no de la obra. El primer
   presupuesto pasa la obra a `en_cotizacion` y el primero aprobado a `contratada`. La ficha de la

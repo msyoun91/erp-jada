@@ -2,7 +2,7 @@
 -- Ficha y decisiones: decisiones/monedas.md. Esquema: db_schema/monedas.md. Test: sql/tests/monedas.sql.
 --
 -- Toda escritura pasa por funciones: un tipo de cambio vigente no se edita (un presupuesto se
--- recalcula con el de su fecha, decisiones/catalogo.md → Un presupuesto se recalcula como era), y
+-- recalcula con el de su fecha, decisiones/catalogo/precio.md → Un presupuesto se recalcula como era), y
 -- lo de MonedAPI lo guarda solo el servidor con service_role.
 
 -- ============================================================
@@ -91,7 +91,7 @@ GRANT SELECT ON public.monedas_tipos_cambio, public.monedas_principal, public.mo
 -- 3. Lectura: tipo de cambio a una fecha y conversión
 -- ============================================================
 
--- Los tres niveles del costo (decisiones/catalogo.md → Versiones y aprobación), para subas y
+-- Los tres niveles del costo (decisiones/catalogo/versiones.md → Versiones y aprobación), para subas y
 -- bajas. Lo usan Monedas y el catálogo: vive una vez.
 CREATE OR REPLACE FUNCTION public.nivel_cambio(p_anterior numeric, p_nuevo numeric)
 RETURNS text
