@@ -1897,6 +1897,48 @@ export type Database = {
           registro_id: string
         }[]
       }
+      catalogo_condicion_evaluar: {
+        Args: { p_n: Json; p_v: Json }
+        Returns: boolean
+      }
+      catalogo_eleccion_evaluar: {
+        Args: { p_n: Json; p_v: Json }
+        Returns: string
+      }
+      catalogo_formula_aritmetica: {
+        Args: { p_i: number; p_t: string[] }
+        Returns: Json
+      }
+      catalogo_formula_comparacion: {
+        Args: { p_i: number; p_t: string[] }
+        Returns: Json
+      }
+      catalogo_formula_condicion: {
+        Args: { p_i: number; p_t: string[] }
+        Returns: Json
+      }
+      catalogo_formula_evaluar: {
+        Args: { p_n: Json; p_v: Json }
+        Returns: number
+      }
+      catalogo_formula_expresion: {
+        Args: { p_eleccion?: boolean; p_i: number; p_t: string[] }
+        Returns: Json
+      }
+      catalogo_formula_factor: {
+        Args: { p_i: number; p_t: string[] }
+        Returns: Json
+      }
+      catalogo_formula_parsear: {
+        Args: { p_texto: string; p_tipo?: string }
+        Returns: Json
+      }
+      catalogo_formula_termino: {
+        Args: { p_i: number; p_t: string[] }
+        Returns: Json
+      }
+      catalogo_formula_tokens: { Args: { p_texto: string }; Returns: string[] }
+      catalogo_formula_usa: { Args: { p_arbol: Json }; Returns: string[] }
       contactos_auditoria_detalle: {
         Args: { p_dias: number; p_persona?: string; p_usuario?: string }
         Returns: {

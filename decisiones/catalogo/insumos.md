@@ -59,6 +59,9 @@ queda fijo. Se da de baja solo sin nada activo adentro (2026-10-29).** Renombrar
 "Vidrios" con 30 insumos activos los dejaba en una categoría que no existe. Un servicio en % sobre una
 categoría de baja no cobra nada, sin romper nada.
 
+**Las tres categorías van en una sola tabla, con un `tipo`, y la base no deja poner un insumo en una categoría
+de paquete (2026-11-02).** Siguen la misma regla: en tres tablas iguales, se escribiría tres veces.
+
 **En una categoría de paquete, lo de adentro son versiones: su nombre queda fijo desde que se envía una
 versión con ella, y solo la publicada de un paquete activo impide darla de baja (2026-11-02).** La categoría
 es de la versión (*Qué es un paquete*). Un borrador o una descartada no cuentan: Lucía corrige "Mampras"
@@ -154,7 +157,12 @@ nueva que sí pedían otro insumo.
 insumo salvo el peso y el espesor, que no tiene.** Costo con fecha, unidad de comercialización (el soldado
 por u), todo editable hasta que se envía una versión que lo usa y después solo el costo y si
 está activo, y su baja saca de la venta solo lo que no se puede armar sin él (*El insumo*). Un material es
-un insumo o un servicio fijo. Si va en una tabla o en dos se decide en el SQL: las reglas son las mismas y viven una vez.
+un insumo o un servicio fijo.
+
+**Insumos y servicios fijos van en una sola tabla, con un `tipo` (2026-11-02).** Las reglas son las mismas y
+viven una vez, y un material apunta a un solo lugar en vez de tener dos columnas. El Soldado es una fila de tipo
+servicio, con una sola variante sin color y su costo; peso y espesor quedan vacíos. El nombre es único dentro de
+cada tipo, y Compras lee solo los insumos.
 
 Se descartó cargarlo como insumo de una categoría "Servicios": se comportaba igual, pero la empresa
 dice "insumos y servicios", Técnica buscaría la Instalación entre los vidrios, el peso quedaba vacío

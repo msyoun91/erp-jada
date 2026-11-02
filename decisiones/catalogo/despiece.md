@@ -88,7 +88,15 @@ quinientos: leído como 1,5, `ancho > 1.500` daba siempre cierto sin que nadie l
 
 **Un nombre con espacios va entre corchetes: `[Perfil hoja]`.** El editor los pone al elegirlo de la lista.
 
-Medido en la base con la fórmula del vidrio del arco: 0,42 ms al guardar y 0,15 ms al calcular, unos 6 ms
-para un paquete de 40 fórmulas, sin contar la lectura de las tablas. Pasan 31 de 31 casos en
-`sql/tests/catalogo_formulas_prototipo.sql`, que no deja nada en la base y es de donde salen las funciones
-reales. El prototipo todavía no tiene `y` ni `o`: se suman con sus casos al escribir las funciones.
+**Un "si" en medio de una cuenta va entre paréntesis: `(si alto > 2100 entonces 4 si no 3) + 1` (2026-11-02).**
+Sin ellos no se ve dónde termina el "si": en `si a > 1 entonces 2 si no 3 + 1`, el `+ 1` es solo del "si no".
+
+**Una fórmula llega hasta 2.000 caracteres (2026-11-02).** La fórmula más larga de esta carpeta tiene 76. El
+tope evita que un texto enorme ocupe la base al guardarlo.
+
+**`redondear_arriba` ignora lo que pasa del decimal 12 (2026-11-02).** `2 / 3 × 3` da 2,00000000000000000001 por
+cómo se guarda la división, y sin esto subía a 3 en vez de quedar en 2.
+
+Archivos: `sql/158_catalogo_formulas.sql`, con 87 casos en `sql/tests/catalogo_formulas.sql`. Medido en la base
+con la fórmula del vidrio del arco: 0,44 ms al guardar y 0,17 ms al calcular, unos 7 ms para un paquete de 40
+fórmulas, sin contar la lectura de las tablas.

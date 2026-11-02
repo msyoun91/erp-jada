@@ -25,9 +25,23 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. **Se arma de cero**
   (2026-10-22): la v1 y la v2 se descartaron enteras, junto con lo que habían dejado en Presupuestos,
   Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). Nada de eso vuelve
-  (`decisiones/catalogo/README.md`). La ficha nueva está ahí, aprobada completa (2026-11-02). Siguiente:
-  el SQL, empezando por `GUIDE_DB.md` y `decisiones/catalogo/README.md`; las funciones de las fórmulas salen
-  de `sql/tests/catalogo_formulas_prototipo.sql`, sumándole `y` y `o`.
+  (`decisiones/catalogo/README.md`). La ficha nueva está ahí, aprobada completa (2026-11-02). El SQL va por
+  tramos, cada uno con su test, `db_schema/catalogo.md`, `database.types.ts` y su commit; cada enum va con las
+  tablas que lo usan. Hecho: las fórmulas (`sql/158`). **Siguiente:** `sql/159_catalogo_registros.sql`: permisos,
+  categorías, colores, insumos, servicios fijos, variantes, costos y servicios en % con su historia. Después:
+  - `160_catalogo_paquetes`: paquetes, versiones y su contenido, edición solo en borrador, duplicar, versión
+    nueva y datos del insumo que quedan fijos. El árbol de cada fórmula va en una columna generada con
+    `catalogo_formula_parsear`.
+  - `161_catalogo_despiece`: el cálculo, con alertas, bloqueos y casos de prueba. Su test suma lo circular y el
+    orden libre entre fórmulas.
+  - `162_catalogo_ciclo`: qué frena el envío, enviar, retirar, devolver, aprobar y descartar; bajas en cascada,
+    aviso previo y reactivación.
+  - `163_catalogo_precio`: precio, detalle del gerente, mínimos por presupuesto y precios de referencia.
+  - `164_catalogo_avisos_enums` y `165_catalogo_avisos`: los tipos de `tipo_notificacion` van en su propia
+    migración y en el mismo commit que `ICONO`, `TEXTO`, `COLOR` y `RUTA` de `NotificacionesBell`: son `Record`, y
+    sumar el tipo sin ellos rompe `tsc`.
+
+  Paquetes a la venta y su formulario se escriben con Presupuestos.
 - **Monedas**: construido (2026-10-29, `sql/155`–`156`, `decisiones/monedas.md`). El catálogo y
   Compras convierten con `monedas_convertir(monto, de, a, fecha)` (`db_schema/monedas.md`). Falta la
   prueba completa en el navegador con dos usuarios.
