@@ -96,8 +96,6 @@ Pendientes de la ficha:
     "sin elección" y pieza opcional (propuesto: un material suelto → sin elección, varios juntos →
     pieza opcional).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Medidas de corte**: un material en m2 da el área; el vidriero corta 1.452 × 1.152, no 1,67 m2,
-      y el vidrio del arco (163.501 mm²) no se corta con el área. Choca con *La fórmula es el despiece*.
     - **Baja de una opción**: dar de baja el DVH, una de las tres opciones del Vidrio, baja la ventana
       entera (*El insumo*), lo que el color quiso evitar. Y hay dos formas de salir de la venta: la
       variante de color, calculada y que vuelve sola; el insumo, `activo = false` y reactivación a
@@ -299,6 +297,17 @@ rebajado no la necesita.
 lleva solo la cantidad.** Las ruedas: cantidad 4, sin fórmula. El perfil del ancho de hoja: medida
 `ancho_hoja` y cantidad 4.
 
+**Un insumo en m2 lleva dos fórmulas, ancho y alto, en vez de una de área: el sistema las multiplica y
+pasa el resultado a m2. La base no deja enviar la versión sin alguna de las dos (2026-11-02).** El
+vidrio de la hoja lleva `ancho_hoja − 48` y `alto − 48`, y la fila dice 727 × 1.152 mm × 2 = 1,68 m2;
+con el área sola decía 0,84 m2 y el vidriero no podía cortar. El costo y el peso salen del área. Una
+opción con fórmula propia lleva las dos.
+- **Una forma que no es rectángulo suma una fórmula de área propia.** El vidrio del arco: 1.200 × 200,
+  el rectángulo del que sale, con 0,16 m2 (163.501 mm²). Sin ella se calcula el rectángulo entero, 0,24 m2.
+- **Un servicio fijo en m2 lleva solo el área:** no hay nada que cortar.
+- Se descartó un campo de medida de corte junto al área: podían cobrar 1,67 m2 y mandar a cortar otra
+  medida. Tampoco alcanzaban las variables `ancho_vidrio` y `alto_vidrio`: la fila seguía diciendo 0,84 m2.
+
 **La medida vacía es solo para insumos y servicios fijos en u; en mm o m2 la base no deja enviar la
 versión.** Un perfil o un vidrio sin medida daban 0 mm o 0 m2, y el precio salía sin ese material sin
 que nadie lo notara.
@@ -460,8 +469,8 @@ el 2026-10-30: el peso y el espesor del insumo dan los de cada pieza armada (*Ed
 
 **Las fórmulas se escriben en mm y el sistema pasa el resultado a la unidad de comercialización; el
 costo de un insumo por mm se carga por metro.** Con una ventana de 1.500 × 1.200, el perfil marco da
-5.392 mm y Administración carga $15.000 el metro; el vidrio 4mm se escribe `ancho × alto` y el
-sistema pasa los 1.800.000 mm² a 1,8 m2. Nadie divide a mano. Costo aceptado: la fórmula no dice en
+5.392 mm y Administración carga $15.000 el metro; el vidrio 4mm lleva `ancho` y `alto` en sus dos
+fórmulas (*Editor de paquete*) y el sistema pasa los 1.800.000 mm² a 1,8 m2. Nadie divide a mano. Costo aceptado: la fórmula no dice en
 qué unidad sale, lo dice la unidad del insumo. Se descartó escribir todo en la unidad del insumo
 (`ancho × alto / 1.000.000`, $15 por mm): un olvido multiplicaba el precio por mil o por un millón.
 
