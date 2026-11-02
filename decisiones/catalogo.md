@@ -88,8 +88,6 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 
 Pendientes de la ficha:
 - **Editor de paquete**: en dictado del usuario desde el 2026-10-30 (*Editor de paquete*). Sigue:
-  - Hueco marcado: qué toma una referencia a un material con varios renglones (el total, un renglón o
-    la medida de cada pieza).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
     - **Peso y espesor del insumo**: en qué unidad va el peso de uno en mm (¿por metro, como el
       costo?); un DVH sin espesor suma 0 y "espesor > 24 → bloqueo" no salta, como la medida vacía.
@@ -103,8 +101,8 @@ Pendientes de la ficha:
       Producción necesita (mano de apertura); lo que frena el envío está en unos seis lugares → una
       sola lista.
   - Al cerrar el dictado, conciliar: *Qué es un paquete* y el árbol de la ficha (pieza → fórmula),
-    las "medidas" que quedan (función del precio, el gerente, el recálculo), "Felpa = Perfil hoja"
-    frente a medida × cantidad, `BACKLOG.md` → *Presupuestos* (guarda lo escrito, las elecciones y
+    las "medidas" que quedan (función del precio, el gerente, el recálculo), `BACKLOG.md` →
+    *Presupuestos* (guarda lo escrito, las elecciones y
     las piezas opcionales) y *reventa de perfiles* (la lista sale del material múltiple), y que el
     vendedor ve los nombres de las opciones y los mensajes de alerta. Por el color: el costo pasa del
     insumo a cada variante (*El insumo*, *El costo del insumo vive en el catálogo*, los avisos de
@@ -253,8 +251,14 @@ alerta o un bloqueo. Con un bloqueo no se puede hacer uso del paquete.** Ej: anc
 alerta o bloqueo. **Después del comparador va una operación aritmética** (ej: alto > ancho × 2).
 
 **En toda operación aritmética se puede usar una variable u otro material del paquete: se toma su
-resultado, no su fórmula, y se calcula a partir de él.** Ej: Felpa = Perfil hoja toma los 7.900 mm
-que dio el perfil.
+resultado, no su fórmula, y se calcula a partir de él.**
+
+**Un material vale el total de sus filas: dentro de su misma pieza, lo de una pieza; desde otra pieza,
+lo de todo el paquete (2026-11-02).** Con Hoja × 2 y 3.950 mm de Perfil hoja en cada una, `Felpa = Perfil
+hoja` dentro de la Hoja toma 3.950 y el despiece da 3.950 × 2 = 7.900 mm; tomando 7.900, el × 2 daba
+15.800. `Sellador = Perfil hoja` en Colocación toma 7.900. La medida de un solo corte sale de una variable
+(`ancho_hoja`, 775). Un material múltiple vale lo de la opción elegida. La referencia da mm, como toda
+fórmula: un vidrio de 1,68 m2 da 1.680.000 mm².
 
 **Toda fórmula (de un material, de una opción o de una variable) puede llevar "si … entonces … si no
 …", con los mismos comparadores de las condiciones, y redondear hacia arriba.** Una puerta con 3
