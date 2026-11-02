@@ -97,9 +97,6 @@ Pendientes de la ficha:
     "sin elección" y pieza opcional (propuesto: un material suelto → sin elección, varios juntos →
     pieza opcional).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Opciones de otra unidad**: Mosquitero con Tela (m2) y Enrollable (u); heredando `ancho × alto`,
-      el enrollable cobra 1.800.000 u. Falta también la cantidad por opción (rueda simple × 4, tándem
-      × 2).
     - **Referencias a lo que puede faltar**: una opcional que usa variables de otra sin requerirla
       (Cortina con `alto_cajon` y sin Cajón), una variable suelta que usa una opcional, un material
       "sin elección" que otro usa. Y qué hace "requiere": ¿elegir la Cortina marca el Cajón o bloquea?
@@ -312,8 +309,11 @@ que nadie lo notara.
   ocupa se da de dos formas: lo elige el vendedor, o lo define el sistema con condicionales. Cuando
   elige el vendedor, se puede permitir "sin elección" y, al mismo tiempo, configurar el predeterminado.
 
-**En un material múltiple, cada opción lleva su fórmula; si no tiene, hereda la fórmula general del
-material.**
+**En un material múltiple, cada opción puede llevar su medida y su cantidad; la que no trae, la hereda
+del material, cada una por separado. La medida solo se hereda con la misma unidad (2026-11-02).** En el
+Mosquitero, la Tela (m2) hereda 1.500 × 1.200 y el Enrollable (u) no lleva medida: heredándola, cobraba
+1.800.000 u. La Rueda simple hereda la cantidad 4 y la tándem trae 2, que también puede ser una fórmula.
+Una opción de otra unidad en mm o m2 lleva su medida, y la base no deja enviar la versión sin ella.
 
 **Un material múltiple puede seguir la elección de otro: sincronizado o en combo.**
 - **Sincronizado:** con las mismas opciones. El vendedor elige en uno y los sincronizados quedan con
