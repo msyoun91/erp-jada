@@ -88,9 +88,6 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 
 Pendientes de la ficha:
 - **Editor de paquete**: en dictado del usuario desde el 2026-10-30 (*Editor de paquete*). Sigue:
-  - **Opción sin pareja en un combo**: propuesto que la base no deje enviar la versión si una opción
-    del que elige no tiene pareja (se suma "Perfil marco anodizado" y la hoja no tiene anodizado: el
-    precio salía sin perfil de hoja). Explicado, sin confirmar.
   - Huecos marcados: el "si no" obligatorio cuando el sistema define el material; qué toma una
     referencia a un material con varios renglones (el total, un renglón o la medida de cada pieza).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
@@ -312,6 +309,13 @@ Una opción de otra unidad en mm o m2 lleva su medida, y la base no deja enviar 
 
 Lo que sigue a otro no se le muestra al vendedor: elige una vez. En la base son un solo mecanismo: el
 sincronizado es un combo donde cada opción tiene por pareja el mismo insumo.
+
+**Cada opción del que elige tiene pareja en el que la sigue: un insumo, o "ninguna" si Técnica la elige.
+Vacía, la base no deja enviar la versión (2026-11-02).** Si suman el DVH al Vidrio y se olvidan de la
+pareja en el Contravidrio, el precio salía sin contravidrio sin que nadie lo note. Con "ninguna", el DVH
+no da fila de contravidrio ni se cobra, y el vendedor no ve nada de esto. Como el Contravidrio puede no
+estar, ninguna fórmula lo usa (*Una fórmula solo puede usar lo que seguro existe*): esa medida sale de
+una variable.
 
 **El color es por paquete. En un color se deja de ofrecer lo que no se puede armar en ese color, y el
 color solo no se ofrece si el paquete no se puede armar sin eso (2026-11-02).** Un material de color
