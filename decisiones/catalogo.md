@@ -44,7 +44,7 @@ Registros
 │       └── pieza armada → fórmula: un insumo o servicio fijo y cuánto lleva según las medidas
 ├── insumo        — categoría de insumo, unidad (mm, m2, u), peso y espesor · costo con fecha y
 │                   moneda · todo se edita hasta que un paquete lo usa; después, solo el costo y si
-│                   está activo
+│                   está activo, y completar un peso o espesor vacío
 ├── servicio fijo — como el insumo, sin peso ni espesor, en una categoría de servicio
 ├── categoría     — de paquete y de insumo (las define Técnica), de servicio (Administración) · se
 │                   edita hasta tener algo adentro; de baja, solo sin nada activo adentro
@@ -89,8 +89,6 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 Pendientes de la ficha:
 - **Editor de paquete**: en dictado del usuario desde el 2026-10-30 (*Editor de paquete*). Sigue:
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Peso y espesor del insumo**: en qué unidad va el peso de uno en mm (¿por metro, como el
-      costo?); un DVH sin espesor suma 0 y "espesor > 24 → bloqueo" no salta, como la medida vacía.
     - **Errores de cálculo**: flecha 0 divide por cero, ancho 100 en vez de 1.000 da un área negativa
       que baja el precio, flecha > ancho / 2 calcula mal el arco. Propuesto: bloqueo de la base, sin
       que Técnica lo configure.
@@ -465,7 +463,8 @@ la decisión siguiente.
 
 **Todo dato del insumo se edita mientras ningún paquete lo use, en ninguna versión. Desde que alguno lo
 usa, solo cambian el costo (un valor nuevo con fecha) y si está activo: nombre, categoría, unidad, peso y
-espesor quedan fijos, y si están mal se carga otro insumo (2026-10-29).** Mientras nadie lo usa, ningún precio,
+espesor quedan fijos, y si están mal se carga otro insumo (2026-10-29); un peso o espesor vacío se
+completa una vez (*Un peso o espesor vacío no es 0*).** Mientras nadie lo usa, ningún precio,
 versión ni presupuesto depende de él: un "Flaot 4mm" o un peso de 1,2 en vez de 0,12 se corrigen en el
 momento. Una vez usado, la unidad cambia la cuenta, el peso y el espesor los de cada pieza armada
 (*Editor de paquete*), la categoría qué servicios en % cobra, y el nombre
@@ -545,6 +544,16 @@ costo de un insumo por mm se carga por metro.** Con una ventana de 1.500 × 1.20
 fórmulas (*Editor de paquete*) y el sistema pasa los 1.800.000 mm² a 1,8 m2. Nadie divide a mano. Costo aceptado: la fórmula no dice en
 qué unidad sale, lo dice la unidad del insumo. Se descartó escribir todo en la unidad del insumo
 (`ancho × alto / 1.000.000`, $15 por mm): un olvido multiplicaba el precio por mil o por un millón.
+
+**El peso se carga como el costo: kilos por metro, por m2 o por unidad, según la unidad del insumo
+(2026-11-02).** Perfil hoja, 0,7 kg/m; Float 4mm, 10 kg/m2; Rueda, 0,05 kg.
+
+**Un peso o espesor vacío no es 0: si una pieza cuenta ese material y el dato está vacío, la base no deja
+enviar la versión. El dato vacío se completa una vez, aunque el insumo ya se use, y después queda fijo
+(2026-11-02).** Un DVH sin espesor sumaba 0 y "espesor > 24" no saltaba nunca. Un tornillo sin peso no
+frena si Técnica marca que no cuente, y con 0 kg escrito vale. Completarlo no cambia nada aprobado: ninguna
+versión que contara ese dato pudo enviarse sin él. Sin esto, Lucía tenía que crear otro insumo porque un
+borrador ya usaba el DVH.
 
 ## El servicio fijo (2026-10-29)
 
