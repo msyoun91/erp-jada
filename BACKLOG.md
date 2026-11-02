@@ -27,17 +27,17 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). Nada de eso vuelve
   (`decisiones/catalogo.md`). La ficha nueva se arma ahí, punto por punto: objetivo y personas
   aprobados, servicios en %, precio, tipos de cambio y versiones (2026-10-27), el insumo y el servicio
-  fijo (2026-10-29), sin entes y el árbol de vistas y funciones (2026-10-30); siguiente: terminar el
-  editor de paquete (`decisiones/catalogo.md` → *Pendientes de la ficha*), con los huecos
-  que quedan; después, el SQL.
+  fijo (2026-10-29), sin entes y el árbol de vistas y funciones (2026-10-30), el editor de paquete
+  (2026-11-02); siguiente: evaluar las fórmulas sin SQL dinámico (`decisiones/catalogo.md` →
+  *Pendientes de la ficha*); después, el SQL.
 - **Monedas**: construido (2026-10-29, `sql/155`–`156`, `decisiones/monedas.md`). El catálogo y
   Compras convierten con `monedas_convertir(monto, de, a, fecha)` (`db_schema/monedas.md`). Falta la
   prueba completa en el navegador con dos usuarios.
-- **Catálogo — reventa de perfiles**, sin caso real todavía: un solo paquete "Perfil suelto" cuya
-  fórmula deja el perfil a elegir al presupuestar, no un paquete por perfil. Escala sin trabajo (un
-  perfil nuevo del proveedor se vende el mismo día), no copia la misma estructura 200 veces y la lista
-  del vendedor sigue corta. Puede convivir con un paquete propio para un perfil especial. Falta decidir
-  de qué lista se elige el perfil.
+- **Catálogo — reventa de perfiles**, sin caso real todavía: un solo paquete "Perfil suelto" con un
+  material múltiple cuyas opciones son los perfiles, no un paquete por perfil. No copia la misma
+  estructura 200 veces y la lista del vendedor sigue corta. Puede convivir con un paquete propio para
+  un perfil especial. Costo: las opciones son de la versión, así que un perfil nuevo del proveedor pide
+  versión nueva y aprobación del gerente.
 - **Catálogo — dibujo 2D del paquete**, pedido para el futuro (2026-10-30): el editor calcula cuánto
   lleva cada material, no dónde va cada pieza. Para dibujar, cada pieza armada suma su forma
   (rectángulo o arco) y su posición, escritas con las mismas fórmulas y variables (el arco arranca en
@@ -47,7 +47,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   paquetes usan el % general (`decisiones/catalogo.md` → *Servicios en %*).
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado, más un renglón por cada mínimo por presupuesto de los
-  servicios en %, que calcula el catálogo (`decisiones/catalogo.md` → *Servicios en %*). Suma el IVA:
+  servicios en %, que calcula el catálogo (`decisiones/catalogo.md` → *Servicios en %*). Cada ítem guarda
+  su versión y solo lo que cargó el vendedor: lo escrito, las elecciones, las piezas opcionales y el color;
+  el resto lo recalcula el catálogo. Suma el IVA:
   el precio del catálogo llega sin IVA (`decisiones/catalogo.md` → *El IVA lo suma Presupuestos*). Su estado
   es el operativo (en cotización, aprobado, en producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
   ejecución y el seguimiento comercial al entregar cuelgan del presupuesto, no de la obra. El primer

@@ -17,20 +17,21 @@ Sin `catalogo_ver`: cada pestaña tiene su código, y `/catalogo` abre la primer
 ```
 Módulo: catalogo
 Objetivo: definir qué se puede vender y cómo se calcula: los paquetes, cada uno un despiece (sus
-piezas armadas y las fórmulas de cada una), y su precio (los costos de insumos y servicios, y los
+piezas armadas y los materiales de cada una), y su precio (los costos de insumos y servicios, y los
 servicios en %).
 Personas                qué ve · qué hace · qué NO ve
-├── Técnica        — insumos, servicios fijos y fórmulas · carga insumos, define las categorías
-│                    de insumo y de paquete, arma los paquetes (le pone a cada uno su categoría) y
-│                    envía cada versión a revisión, da de baja insumos y paquetes · servicios en %,
-│                    costos ni precios
+├── Técnica        — insumos, servicios fijos y fórmulas · carga insumos y sus colores, define las
+│                    categorías de insumo y de paquete, arma los paquetes (le pone a cada uno su
+│                    categoría) y envía cada versión a revisión, da de baja insumos y paquetes ·
+│                    servicios en %, costos ni precios
 ├── Administración — insumos y servicios fijos con su costo, y las categorías · carga los costos de
 │                    insumos, da de alta y de baja los servicios fijos y sus categorías, define los
 │                    servicios en % y sobre qué categorías se cobran · paquetes ni fórmulas
 ├── Gerente        — todo: paquetes, fórmulas, costos, % y precios · aprueba o devuelve cada versión
 │                    de un paquete · —
-├── Vendedor       — NO entra: elige categoría y paquete desde Presupuestos · el precio final ·
-│                    costos, % ni fórmulas
+├── Vendedor       — NO entra: elige categoría y paquete desde Presupuestos · el precio final, los
+│                    nombres de las opciones y los mensajes de alerta y bloqueo · costos, % ni
+│                    fórmulas
 ├── Cliente        — NO entra: lo mismo que el vendedor, desde erp-cliente
 ├── Producción     — NO entra: ve las piezas y sus medidas, servicios incluidos, desde Producción
 │                    (módulo a hacer) · costos, % ni precios
@@ -40,19 +41,25 @@ Entes: ninguno — nada tiene dueño ni chip; lo que ve cada uno lo da el permis
 Registros
 ├── paquete       — por qué está de baja: a mano, o el insumo o servicio fijo que lo bajó
 │   └── versión   — borrador → en revisión → publicado → obsoleto · nombre y categoría · una sola
-│       │           abierta por paquete · el gerente la devuelve con motivo
-│       └── pieza armada → fórmula: un insumo o servicio fijo y cuánto lleva según las medidas
-├── insumo        — categoría de insumo, unidad (mm, m2, u), peso y espesor · costo con fecha y
-│                   moneda · todo se edita hasta que un paquete lo usa; después, solo el costo y si
-│                   está activo, y completar un peso o espesor vacío
-├── servicio fijo — como el insumo, sin peso ni espesor, en una categoría de servicio
+│       │           abierta por paquete · el gerente la devuelve con motivo · colores que ofrece y
+│       │           el base
+│       ├── variable     — número con fórmula o lista de valores · la ingresa el vendedor o no ·
+│       │                  predeterminado · condiciones
+│       └── pieza armada — cantidad · si es opcional: predeterminado y qué requiere · peso y espesor
+│           └── material — insumo o servicio fijo, único o múltiple · medida y cantidad · condiciones
+├── insumo        — categoría de insumo, unidad (mm, m2, u), peso y espesor · una variante por color,
+│                   cada una con su costo con fecha y moneda · todo se edita hasta que un paquete lo
+│                   usa; después, el costo, las variantes, si está activo, y completar un peso o
+│                   espesor vacío
+├── color         — lista común, la define Técnica
+├── servicio fijo — como el insumo, sin peso, espesor ni color, en una categoría de servicio
 ├── categoría     — de paquete y de insumo (las define Técnica), de servicio (Administración) · se
 │                   edita hasta tener algo adentro; de baja, solo sin nada activo adentro
 └── servicio en % — su %, su paso (1: el despiece o ciertas categorías · 2: el subtotal · 3: el precio
                     final), mínimo con moneda, por paquete o por presupuesto, si es opcional · cada
                     cambio es un valor nuevo con fecha
 Eventos: ninguno (sin entes). Los avisos van por notificaciones:
-├── insumo nuevo                → quienes cargan costos · desaparece cuando tiene costo
+├── insumo o variante nueva     → quienes cargan costos · desaparece cuando tiene costo
 ├── categoría de insumo nueva   → quienes definen los servicios en %
 ├── baja de insumo              → gerente, si sacó algo de la venta: los paquetes que siguen de baja
 │                                 por ella y lo que dejaron de ofrecer
@@ -70,8 +77,9 @@ Catálogo
 │   └── catalogo_aprobar (funcion)               — gerente: "Por revisar", el precio y su detalle
 │                                                  de cualquier versión, aprueba y devuelve
 ├── Insumos (vista, catalogo_insumos)            — técnica, administración, gerente: sin costo
-│   ├── catalogo_cargar (funcion)                — técnica: alta y categorías de insumo, edición
-│   │                                              mientras nadie lo usa, baja y reactivación
+│   ├── catalogo_cargar (funcion)                — técnica: alta, variantes y categorías de insumo,
+│   │                                              colores, edición mientras nadie lo usa, baja y
+│   │                                              reactivación
 │   └── catalogo_costos (funcion)                — administración, gerente: ve y carga el costo
 ├── Servicios fijos (vista, catalogo_fijos)      — técnica, administración, gerente: sin costo
 │   └── catalogo_fijos_editar (funcion)          — administración, gerente: alta con costo, edición
@@ -87,18 +95,7 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 ```
 
 Pendientes de la ficha:
-- **Editor de paquete**: en dictado del usuario desde el 2026-10-30 (*Editor de paquete*). Sigue:
-  - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - Menor: lo que frena el envío está en unos seis lugares → una sola lista.
-  - Al cerrar el dictado, conciliar: *Qué es un paquete* y el árbol de la ficha (pieza → fórmula),
-    las "medidas" que quedan (función del precio, el gerente, el recálculo), `BACKLOG.md` →
-    *Presupuestos* (guarda lo escrito, las elecciones y
-    las piezas opcionales) y *reventa de perfiles* (la lista sale del material múltiple), y que el
-    vendedor ve los nombres de las opciones y los mensajes de alerta. Por el color: el costo pasa del
-    insumo a cada variante (*El insumo*, *El costo del insumo vive en el catálogo*, los avisos de
-    insumo nuevo y de 15/25/50 %), y la ficha suma el registro color y, en la versión, los colores que
-    ofrece y el base.
-  - Después: evaluar las fórmulas sin SQL dinámico.
+- **Fórmulas**: evaluar cómo calcularlas sin SQL dinámico. Después, el SQL.
 
 ## Al catálogo entran solo los que definen (2026-10-27)
 
@@ -182,24 +179,25 @@ aprobador a cualquiera de su equipo sin que lo decida el admin.
 ## Qué es un paquete (2026-10-27)
 
 **Todo lo que se vende es un paquete: un conjunto de piezas armadas. Cada pieza armada es un conjunto
-de fórmulas, y cada fórmula es un insumo o un servicio fijo con el cálculo de cuánto lleva según las
-medidas del paquete.** Los nombres son los que usa la empresa.
+de materiales, y cada material es un insumo o un servicio fijo con las fórmulas de cuánto lleva según
+las variables del paquete (*Editor de paquete*).** Los nombres son los que usa la empresa.
 
 ```
-Paquete: Ventana corrediza 2 hojas
-├── Pieza armada: Marco
-│   ├── Fórmula: Perfil marco 20x40 = (ancho − 2) × 2 + (alto − 2) × 2
-│   ├── Fórmula: Escuadra           = 4
-│   └── Fórmula: Soldado            = 4
-├── Pieza armada: Hoja
+Paquete: Ventana corrediza 2 hojas — variables: ancho, alto
+├── Pieza armada: Marco × 1
+│   ├── Perfil marco 20x40: medida ancho − 2, cantidad 2
+│   ├── Perfil marco 20x40: medida alto − 2, cantidad 2
+│   ├── Escuadra: cantidad 4
+│   └── Soldado: cantidad 4
+├── Pieza armada: Hoja × 2
 │   └── …
-└── Pieza armada: Colocación
-    └── Fórmula: Instalación        = 1
+└── Pieza armada: Colocación × 1
+    └── Instalación: cantidad 1
 ```
 
-- **Una fórmula siempre está en una pieza armada.** Lo que es de todo el paquete va en una pieza
+- **Un material siempre está en una pieza armada.** Lo que es de todo el paquete va en una pieza
   armada propia (Colocación): con dos lugares posibles, cada pantalla y cada cálculo contemplaría los
-  dos. Las medidas son del paquete, así que cualquier fórmula calcula con ellas.
+  dos. Ancho y alto son variables por sí solas, así que cualquier fórmula calcula con ellas.
 - **La fórmula es el despiece: lo que se corta, sin merma (2026-10-29).** Producción corta con ella
   (*Personas*): con un 10 % de merma en el perfil marco, la lista de corte diría 5.931 mm en vez de
   5.392. La merma la pone Administración en el precio, como ella decida: dentro del costo o como
@@ -445,8 +443,8 @@ la sección se abre. El cliente, en erp-cliente, ve lo mismo.
 2026-10-29: sin subcategoría; ver la decisión siguiente.
 
 **Cada insumo está en una sola categoría, sin subcategoría, como los paquetes (Vidrios → Float
-incoloro 4mm, Float bronce 4mm; Herrajes → las ruedas 80kg de cada marca). El insumo tiene su costo,
-peso, espesor y unidad de comercialización: mm, m2 o u.** Son categorías de insumo, distintas de las de
+incoloro 4mm, Float bronce 4mm; Herrajes → las ruedas 80kg de cada marca). El insumo tiene peso, espesor,
+unidad de comercialización (mm, m2 o u) y sus variantes de color, cada una con su costo.** Son categorías de insumo, distintas de las de
 paquete. La unidad de compra es de Compras, como los precios de cada proveedor (*El costo del
 insumo vive en el catálogo*).
 
@@ -597,7 +595,8 @@ hacer hasta que Técnica cambiara cada paquete.
 
 ## El costo del insumo vive en el catálogo (2026-10-27)
 
-**Cada insumo tiene un solo costo, el que se usa para calcular el precio de venta, y vive acá. Los
+**Cada variante de un insumo tiene un solo costo (el de color indistinto, uno solo), el que se usa para
+calcular el precio de venta, y vive acá. Los
 precios que ofrece cada proveedor y las cotizaciones viven en Compras.** Son datos distintos: Compras
 tiene muchos por insumo y lee el costo para comparar; el catálogo tiene uno, el elegido. Si viviera en
 Compras, el catálogo no podría poner precio hasta que exista Compras, que no tiene ficha. Quién lo
@@ -610,7 +609,7 @@ costo es el que carga Administración, y cambia solo cuando lo vuelve a cargar.
 
 Archivos: corrige `decisiones/contactos.md` → *Los proveedores son empresas de Contactos*.
 
-**Un insumo nuevo le avisa a quienes cargan costos, y el aviso desaparece cuando tiene costo
+**Un insumo nuevo le avisa a quienes cargan costos, y el aviso desaparece cuando todas sus variantes tienen costo
 (2026-10-29).** Técnica carga "Float 5mm" el lunes y arma la ventana; sin aviso, Administración se
 enteraba el jueves, cuando la base frenaba el envío por el insumo sin costo. Como `alta_por_aprobar`
 (`db_schema/notificaciones.md`). El servicio fijo nace con su costo y no avisa.
@@ -695,9 +694,11 @@ La función del precio usa el mismo cálculo que el despiece (*El despiece calcu
 
 **Vendedor y cliente reciben solo el precio de cada paquete y el renglón del mínimo por presupuesto:
 ni despiece, ni costos, ni desglose de los servicios en %.** Una función del catálogo recibe el
-paquete, las medidas y los opcionales elegidos, lee lo que quien llama no puede abrir y devuelve solo
+paquete y lo que carga el vendedor (variables, elecciones, piezas opcionales y color) y los servicios en
+% opcionales elegidos, lee lo que quien llama no puede abrir y devuelve solo
 el número, como `obras_contar`. Así lo que no ven (*Personas*) no depende de ocultarlo en pantalla. Ven
-el nombre de cada opcional para elegirlo, no su %. El cliente, desde erp-cliente, recibe lo mismo.
+el nombre de cada servicio opcional para elegirlo, no su %, los nombres de las opciones y los mensajes
+de alerta y bloqueo. El cliente, desde erp-cliente, recibe lo mismo.
 
 **La versión y la fecha con que se calcula un precio nunca las elige quien llama (2026-10-29).**
 Vendedor y cliente reciben la versión publicada con los valores de hoy, o al recalcular, los que la
@@ -766,8 +767,8 @@ Archivos: `BACKLOG.md` → *Presupuestos*.
 **Un presupuesto se recalcula con las condiciones de su fecha: lo que forma el precio no se pisa.**
 Cambiar un costo, un servicio en % (cualquier dato, no solo el %) o un tipo de cambio (en Monedas)
 agrega un valor nuevo con fecha, y el anterior queda; la
-versión publicada de un paquete no se edita, se saca otra. El presupuesto guarda su fecha y la versión
-de cada paquete, y la función del precio usa lo que valía a esa fecha: si el cliente cambia una medida
+versión publicada de un paquete no se edita, se saca otra. El presupuesto guarda su fecha y, de cada
+paquete, la versión y lo que cargó el vendedor, y la función del precio usa lo que valía a esa fecha: si el cliente cambia una medida
 en un presupuesto de marzo, se le respeta el precio de marzo.
 
 Se descartó que cada presupuesto guarde copia de los costos y los %: la copia tendría que vivir en el
@@ -780,9 +781,9 @@ insumos en ella.
 convierte todo a esa moneda con los tipos de cambio de la fecha del presupuesto, que lee de Monedas
 (`decisiones/monedas.md`), mínimos incluidos.** El vendedor marca USD y la ventana
 sale "USD 182" sin que nadie convierta a mano. La función del precio recibe la moneda junto con el
-paquete y las medidas (*El precio sale de una función*).
+paquete y lo que cargó el vendedor (*El precio sale de una función*).
 
-**Cada monto que carga Administración lleva su moneda, elegida en cada carga: el costo de un insumo o
+**Cada monto que carga Administración lleva su moneda, elegida en cada carga: el costo de una variante de insumo o
 de un servicio fijo y el mínimo de un servicio en %.** Si el proveedor del perfil 20x40 deja de cotizar
 USD 12 y pasa a $18.000, Administración carga los $18.000 y listo; el aviso de 15/25/50 % compara contra
 el anterior pasado a la moneda nueva con el tipo de cambio del día (USD 12 × 1.450 = $17.400 → +3 %,
@@ -801,10 +802,22 @@ cambio vigente a la fecha y hora del cálculo, y no guarda ninguno.**
 
 **Cada paquete tiene versiones; una versión pasa por borrador → en revisión → publicado → obsoleto, y
 la aprueba solo el gerente.** Técnica la envía a revisión y desde ahí no se edita, así el gerente
-aprueba lo que vio. La base no deja enviarla si falta algo (un insumo sin costo o de baja, una pieza
-sin fórmulas). El gerente ve el despiece, el precio con su detalle para las medidas que elige y qué cambió
+aprueba lo que vio. La base no deja enviarla si falta algo (*Qué frena el envío*). El gerente ve el despiece, el precio con su detalle para las medidas que elige y qué cambió
 respecto de la versión anterior, y la aprueba (publicado) o la devuelve (borrador). La publicada no se modifica: para
 cambiarla se saca otra versión.
+
+**Qué frena el envío (2026-11-02).** Es la única lista: las decisiones de cada regla explican el porqué,
+y lo que se suma se suma acá. La base lo revisa al enviar y de nuevo al aprobar, porque algo pudo darse
+de baja en el medio.
+- El paquete vacío, o una pieza sin materiales.
+- Un insumo o servicio fijo de baja, o sin costo; un color ofrecido con alguna variante sin costo.
+- Un material en mm o m2 sin su medida: un insumo en m2, sin ancho o sin alto; una opción de otra unidad,
+  sin la suya.
+- Una opción sin pareja en el material que la sigue (vacía; "ninguna" vale).
+- Una fórmula con "si" sin "si no", o un material que define el sistema sin "si no".
+- Una fórmula que usa lo que puede faltar, o una referencia o un requisito circular.
+- Un peso o espesor vacío en un material que la pieza cuenta.
+- Algo marcado secundario sin predeterminado.
 
 **Cada paquete tiene una sola versión abierta (borrador o en revisión) a la vez, y Técnica puede
 retirarla de revisión: vuelve a borrador sin pasar por el gerente (2026-10-29).** Con la v3 en revisión
@@ -851,12 +864,12 @@ todos los paquetes con ese insumo sin que nadie lo revise.
 
 **Tres niveles contra el valor anterior, para subas y bajas: desde 15 % amarillo, desde 25 %
 naranja, desde 50 % rojo. Amarillo y naranja solo marcan y guardan; rojo pide confirmación.** Vale
-igual para el costo de un insumo o servicio fijo y para el % de un servicio, medido contra el %
+igual para el costo de una variante de insumo o de un servicio fijo y para el % de un servicio, medido contra el %
 anterior (12 → 15 % es +25 %, naranja; 12 → 120 % es ×10, rojo): un % mal cargado mueve el precio de
 todos los paquetes que lo llevan. El cambio se muestra escrito junto al color. Los errores típicos (un cero de más o de
 menos, otra unidad) mueven el costo 5 veces o más y caen en rojo; el amarillo deja ver dígitos
 invertidos ($1.250 → $1.520, +22 %). Que los cambios reales de lista (15–50 %) no pidan confirmar evita
-que se confirme todo sin leer. Un insumo sin costo anterior no avisa. Se descartó un solo umbral
+que se confirme todo sin leer. Una variante sin costo anterior no avisa. Se descartó un solo umbral
 ("doble o mitad"): atajaba los errores grandes pero no mostraba los medianos.
 
 **Cualquier cambio en un servicio en % le avisa al gerente: su %, sus categorías, su base,
