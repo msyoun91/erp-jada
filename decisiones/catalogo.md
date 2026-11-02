@@ -89,9 +89,6 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 Pendientes de la ficha:
 - **Editor de paquete**: en dictado del usuario desde el 2026-10-30 (*Editor de paquete*). Sigue:
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Errores de cálculo**: flecha 0 divide por cero, ancho 100 en vez de 1.000 da un área negativa
-      que baja el precio, flecha > ancho / 2 calcula mal el arco. Propuesto: bloqueo de la base, sin
-      que Técnica lo configure.
     - **Medida en u**: varilla roscada por u cortada a 300 mm, cantidad 2: ¿la medida informa el corte
       o multiplica?
     - Menores: el predeterminado de la pieza opcional (incluida o no), que marcarla secundaria exige;
@@ -710,6 +707,15 @@ no solo los 1.287 mm.
 
 **Con un bloqueo, el despiece sale igual, con el mensaje, y el precio no da número.** Técnica ve qué dio
 la cuenta que frenó el paquete, y nadie cotiza con él.
+
+**Si una cuenta no se puede hacer, una medida da 0 o negativa, o una cantidad da negativa, sale "No se
+puede calcular con estas medidas", sin filas ni precio. No se configura (2026-11-02).** Con alto 30 en
+vez de 300, el vidrio de −18 mm bajaba el precio si Técnica olvidaba la condición, y flecha 0 divide por
+cero. Quien ve el despiece lee cuál falló ("Vidrio: la medida dio −18 mm"); el vendedor, solo el mensaje.
+Lo demás lo resuelve lo que ya existe: condiciones como `alto < 300` y `flecha > ancho / 2` (con flecha
+800 la cuenta da un número válido: para la base no es un error) y `redondear_arriba` para las 1,7
+bisagras. Una cantidad 0 es que no lleva: sin fila. Se descartó bloquear las cantidades con decimales:
+el medio pomo se puede cobrar.
 
 **Cada uno recibe una parte de ese cálculo.** Con la vista Paquetes, las filas sin costos. Con
 `catalogo_aprobar`, además el detalle económico: el costo como se cargó (USD 14/m) y el importe de cada
