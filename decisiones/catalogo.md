@@ -54,8 +54,9 @@ Registros
 Eventos: ninguno (sin entes). Los avisos van por notificaciones:
 ├── insumo nuevo                → quienes cargan costos · desaparece cuando tiene costo
 ├── categoría de insumo nueva   → quienes definen los servicios en %
-├── baja de insumo              → gerente, si bajó paquetes: la baja y los que siguen de baja por ella
-├── baja de servicio fijo       → gerente y Técnica, si bajó paquetes
+├── baja de insumo              → gerente, si sacó algo de la venta: los paquetes que siguen de baja
+│                                 por ella y lo que dejaron de ofrecer
+├── baja de servicio fijo       → gerente y Técnica, si sacó algo de la venta
 ├── cambio en un servicio en %  → gerente: apunta al cambio en la historia, para revertirlo
 ├── cambio revertido            → quien hizo el cambio
 ├── versión enviada a revisión  → quienes aprueban · desaparece al aprobarla, devolverla o retirarla
@@ -96,10 +97,8 @@ Pendientes de la ficha:
     "sin elección" y pieza opcional (propuesto: un material suelto → sin elección, varios juntos →
     pieza opcional).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Baja de una opción**: dar de baja el DVH, una de las tres opciones del Vidrio, baja la ventana
-      entera (*El insumo*), lo que el color quiso evitar. Y hay dos formas de salir de la venta: la
-      variante de color, calculada y que vuelve sola; el insumo, `activo = false` y reactivación a
-      mano. Si era el predeterminado de un secundario, queda secundario sin predeterminado.
+    - **Dos formas de salir de la venta**: la opción y la variante de color se calculan y vuelven
+      solas; el paquete bajado por un insumo, `activo = false` y reactivación a mano.
     - **Color con opciones y opcionales**: si el marco del mosquitero opcional solo viene en blanco,
       "todos los materiales" impide ofrecer la ventana en negro. ¿Exige todo, o en negro no se ofrece
       el mosquitero?
@@ -439,11 +438,32 @@ queda fijo. Se da de baja solo sin nada activo adentro (2026-10-29).** Renombrar
 "Vidrios" con 30 insumos activos los dejaba en una categoría que no existe. Un servicio en % sobre una
 categoría de baja no cobra nada, sin romper nada.
 
-**Dar de baja un insumo da de baja, en la misma operación, cada paquete activo cuya versión publicada
-lo usa.** Lo hace la base, no quien da la baja: ningún paquete queda a la venta con un material que ya
-no se consigue. Las versiones en borrador o en revisión que lo usan no cambian, pero la base no deja
-enviarlas ni aprobarlas con ese insumo. Reactivar el insumo no reactiva los paquetes: cada uno vuelve
-cuando Técnica lo reactiva (*Versiones y aprobación*), como cualquier paquete de baja.
+**Dar de baja un insumo saca de la venta solo lo que no se puede armar sin él (2026-11-02). Un paquete
+activo cuya versión publicada lo usa se da de baja, en la misma operación, si el insumo es un material
+único, si era la última opción de su material y este no permite "sin elección", o si lo elige el
+sistema. Si no, el paquete sigue a la venta y se deja de ofrecer lo afectado. En una pieza opcional, lo
+que bajaría el paquete deja de ofrecer solo esa pieza.** La regla anterior bajaba todo paquete que usara
+el insumo: era anterior a las opciones, y el DVH bajaba la ventana con Float y Laminado disponibles.
+
+```
+Técnica da de baja                               En la Ventana corrediza
+DVH, una opción del Vidrio                       no se ofrece más el DVH
+Contravidrio 6mm, en combo con Laminado 3+3      no se ofrece más el Laminado 3+3, sin pareja
+Tela, material único del Mosquitero opcional     no se ofrece más el Mosquitero
+La última opción del Vidrio                      sale de la venta, salvo que permita "sin elección"
+Escuadra, material único de una pieza fija       sale de la venta
+Rueda 80kg, que el sistema elige según el peso   sale de la venta: nadie puede elegir otra
+```
+
+- **Lo que se deja de ofrecer se calcula, sin guardar nada, como el color.** La versión no cambia y se
+  ofrecen las opciones con su insumo y su pareja activos. Reactivar el DVH lo devuelve, sin versión nueva.
+- **Si era el predeterminado, la elección queda sin predeterminado y pasa a primaria**, como con el
+  color base.
+- **Dar de baja el paquete lo hace la base, no quien da la baja del insumo:** ningún paquete queda a la
+  venta con un material que ya no se consigue. Las versiones en borrador o en revisión que usan el insumo
+  no cambian, pero la base no deja enviarlas ni aprobarlas con él. Reactivar el insumo no reactiva los
+  paquetes: cada uno vuelve cuando Técnica lo reactiva (*Versiones y aprobación*), como cualquier
+  paquete de baja.
 
 ```
 Técnica da de baja "Rueda 80kg Marca A"
@@ -456,7 +476,9 @@ Técnica saca una versión de cada una con la rueda de Marca B → el gerente la
 **Si la baja de un insumo da de baja algún paquete, el gerente recibe un aviso que apunta a la baja y
 lista los paquetes que salieron de la venta (2026-10-29).** Sin aviso, dejaban de venderse paquetes que
 él aprobó sin que se enterara; la baja de un servicio fijo le avisa igual (*El servicio fijo*). Si
-ninguna versión publicada lo usaba, no avisa: no cambia nada de lo que aprobó.
+ninguna versión publicada lo usaba, no avisa: no cambia nada de lo que aprobó. También avisa cuando un
+paquete solo deja de ofrecer una opción o una pieza opcional, y dice cuál (2026-11-02): esa oferta
+también la aprobó el gerente.
 
 **El paquete guarda por qué está de baja: a mano, o el insumo o servicio fijo que lo bajó
 (2026-10-29).** Técnica ve "De baja por: Rueda 80kg Marca A" y sabe cuáles reactivar, sin confundirlos
@@ -730,8 +752,8 @@ avisa a todo Técnica: Martín no tiene nada que hacer con la v3 de Lucía.
 
 **Obsoleto es solo la versión reemplazada: pasa sola cuando se publica la siguiente. Dejar de vender
 es la baja del paquete (`activo = false`), y sus versiones quedan como estaban.** Reactivarlo vuelve a
-vender su versión publicada sin pasar por el gerente, que ya la aprobó; la base no deja si uno de sus
-insumos está de baja, y entonces va una versión nueva. Con el paquete de baja, aprobar una versión en
+vender su versión publicada sin pasar por el gerente, que ya la aprobó; la base no deja si no se
+puede armar sin un insumo de baja (*El insumo*), y entonces va una versión nueva. Con el paquete de baja, aprobar una versión en
 revisión no lo pone a la venta, y los presupuestos que ya lo tienen se recalculan con su versión. Se
 descartó un solo estado obsoleto para las dos cosas: la baja tendría dos formas, y una versión
 aprobada después de dejar de vender volvía a poner el paquete a la venta sin que nadie lo decidiera.
