@@ -95,7 +95,7 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 ```
 
 Pendientes de la ficha:
-- **Fórmulas**: evaluar cómo calcularlas sin SQL dinámico. Después, el SQL.
+- **Aprobar la ficha completa.** Después, el SQL.
 
 ## Al catálogo entran solo los que definen (2026-10-27)
 
@@ -753,6 +753,28 @@ lo pide, con qué permiso y qué versión usa se decide en la ficha de cada uno 
 los que definen*).
 
 Ejemplo con datos inventados: https://claude.ai/artifact/6f2trHCaiVTdeqEa7bq4eS
+
+## Las fórmulas se calculan sin SQL dinámico (2026-11-02)
+
+**Técnica escribe la fórmula como texto. Al guardarla, una función de la base la convierte en un árbol y
+se guardan los dos; calcular recorre el árbol, y el texto nunca se ejecuta como SQL.** Lo que no se
+entiende no se guarda. Solo hay números, variables y materiales, + − × /, paréntesis, comparadores, "si …
+entonces … si no …", `redondear_arriba`, `arcoseno` y `pi`: `1; drop table usuarios`, `(select 1)` y
+`pg_sleep(10)` no pasan. Calcular no lee tablas, así que una fórmula no puede leer un costo. Del árbol sale
+además de qué depende cada fórmula, y con eso se revisa lo que puede faltar y lo circular (*Qué frena el
+envío*). Se descartó armar SQL y ejecutarlo: la función del precio lee lo que quien llama no puede abrir,
+y una fórmula mal filtrada leía cualquier cosa. También convertir el texto en TypeScript, que dejaba la
+regla fuera de Postgres, y plv8, una dependencia nueva para lo mismo.
+
+**En una fórmula, el decimal es la coma y el punto no se acepta.** Para la empresa, `1.500` es mil
+quinientos: leído como 1,5, `ancho > 1.500` daba siempre cierto sin que nadie lo notara.
+
+**Un nombre con espacios va entre corchetes: `[Perfil hoja]`.** El editor los pone al elegirlo de la lista.
+
+Medido en la base con la fórmula del vidrio del arco: 0,42 ms al guardar y 0,15 ms al calcular, unos 6 ms
+para un paquete de 40 fórmulas, sin contar la lectura de las tablas. Pasan 31 de 31 casos en
+`sql/tests/catalogo_formulas_prototipo.sql`, que no deja nada en la base y es de donde salen las funciones
+reales.
 
 ## El IVA lo suma Presupuestos (2026-10-29)
 

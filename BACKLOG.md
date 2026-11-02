@@ -28,8 +28,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (`decisiones/catalogo.md`). La ficha nueva se arma ahí, punto por punto: objetivo y personas
   aprobados, servicios en %, precio, tipos de cambio y versiones (2026-10-27), el insumo y el servicio
   fijo (2026-10-29), sin entes y el árbol de vistas y funciones (2026-10-30), el editor de paquete
-  (2026-11-02); siguiente: evaluar las fórmulas sin SQL dinámico (`decisiones/catalogo.md` →
-  *Pendientes de la ficha*); después, el SQL.
+  y cómo se calculan las fórmulas (2026-11-02); siguiente: aprobar la ficha completa
+  (`decisiones/catalogo.md` → *Pendientes de la ficha*); después, el SQL.
 - **Monedas**: construido (2026-10-29, `sql/155`–`156`, `decisiones/monedas.md`). El catálogo y
   Compras convierten con `monedas_convertir(monto, de, a, fecha)` (`db_schema/monedas.md`). Falta la
   prueba completa en el navegador con dos usuarios.
