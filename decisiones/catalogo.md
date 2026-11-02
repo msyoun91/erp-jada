@@ -94,10 +94,6 @@ Pendientes de la ficha:
   - Huecos marcados: el "si no" obligatorio cuando el sistema define el material; qué toma una
     referencia a un material con varios renglones (el total, un renglón o la medida de cada pieza).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Cantidad de la pieza**: en una corrediza de 4 hojas, ¿4 piezas Hoja sincronizadas o una Hoja
-      × 4? Juntas, el peso es el de las cuatro y la rueda se elige mal. Y como la cantidad multiplica
-      el espesor, una Hoja que junta 2 vidrios Laminado 3+3 de 6 mm da 12 mm: "espesor > 24" compara
-      contra el doble del real.
     - **Peso y espesor del insumo**: en qué unidad va el peso de uno en mm (¿por metro, como el
       costo?); un DVH sin espesor suma 0 y "espesor > 24 → bloqueo" no salta, como la medida vacía.
     - **Errores de cálculo**: flecha 0 divide por cero, ancho 100 en vez de 1.000 da un área negativa
@@ -396,6 +392,15 @@ pieza; y una opcional que una fija requiere estaría siempre incluida, así que 
 Cajón"), y destildar el Cajón destilda la Cortina. Si el Cajón no se ofrece, por una baja o por el
 color, tampoco se ofrece la Cortina (2026-11-02).** Se descartó que bloquee: el vendedor tenía que
 adivinar qué le faltaba, y el precio ya incluye los dos.
+
+**La pieza armada lleva su cantidad, con fórmula y 1 por defecto, y lo que tiene adentro es para una
+sola pieza (2026-11-02).** Técnica arma una hoja (Perfil hoja 775 mm × 2, vidrio × 1, rueda × 2) y
+escribe Hoja × 2. El despiece muestra la cantidad total: 775 mm × 4, sin que Rodrigo multiplique. El peso
+y el espesor son de una sola pieza: Hoja × 2 · 16 kg cada una · espesor 6 mm. Juntando las dos hojas
+daba 32 kg y 12 mm, y la rueda y "espesor > 24" comparaban contra el doble. Si las hojas miden distinto
+son dos piezas, con el vidrio sincronizado. Una rueda que se elige por el peso de la hoja no cuenta para
+ese peso: sería circular, y la base lo frena al enviar. Se descartó armar piezas iguales sincronizadas:
+cada fórmula se cargaba dos o cuatro veces, y un arreglo en una sola las dejaba distintas.
 
 **Cada pieza armada lleva sus propias variables: el peso y el espesor de la pieza. El peso se calcula
 siempre: por default cuenta cada material, y Técnica puede optar por que un material no cuente. El
