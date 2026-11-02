@@ -91,16 +91,9 @@ Pendientes de la ficha:
   - **Opción sin pareja en un combo**: propuesto que la base no deje enviar la versión si una opción
     del que elige no tiene pareja (se suma "Perfil marco anodizado" y la hoja no tiene anodizado: el
     precio salía sin perfil de hoja). Explicado, sin confirmar.
-  - Huecos marcados: el "si no" obligatorio cuando el sistema define el material; si una pieza fija
-    puede usar un material de una opcional; qué toma una referencia a un material con varios renglones
-    (el total, un renglón o la medida de cada pieza); frenar referencias circulares; criterio entre
-    "sin elección" y pieza opcional (propuesto: un material suelto → sin elección, varios juntos →
-    pieza opcional).
+  - Huecos marcados: el "si no" obligatorio cuando el sistema define el material; qué toma una
+    referencia a un material con varios renglones (el total, un renglón o la medida de cada pieza).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Referencias a lo que puede faltar**: una opcional que usa variables de otra sin requerirla
-      (Cortina con `alto_cajon` y sin Cajón), una variable suelta que usa una opcional, un material
-      "sin elección" que otro usa. Y qué hace "requiere": ¿elegir la Cortina marca el Cajón o bloquea?
-      ¿Una pieza fija puede requerir una opcional?
     - **Cantidad de la pieza**: en una corrediza de 4 hojas, ¿4 piezas Hoja sincronizadas o una Hoja
       × 4? Juntas, el peso es el de las cuatro y la rueda se elige mal. Y como la cantidad multiplica
       el espesor, una Hoja que junta 2 vidrios Laminado 3+3 de 6 mm da 12 mm: "espesor > 24" compara
@@ -383,10 +376,26 @@ La opción bloqueada se sigue viendo, para que el vendedor lea por qué. Si era 
 cambia sola por otra: cambiaría el precio sin que nadie lo note. Lo que sigue a otro también evalúa las
 suyas, y el mensaje le aparece al vendedor.
 
-**La pieza armada puede ser opcional. Las piezas fijas no pueden usar en sus operaciones aritméticas
-variables de las piezas opcionales.**
+**La pieza armada puede ser opcional.**
 
-**Una pieza armada puede elegir si requiere otra pieza opcional, pero no puede elegirse a sí misma.**
+**Una fórmula solo puede usar lo que seguro existe cuando se calcula: la base lo revisa al enviar la
+versión y, si no se cumple, no la deja enviar (2026-11-02).** La Cortina con `alto_cajon` y sin el Cajón
+no se podía calcular.
+- Una pieza fija o una variable suelta no usa nada de una pieza opcional, ni variables ni materiales.
+- Una pieza opcional usa lo fijo, lo suyo y lo de la opcional que requiere: la Cortina usa `alto_cajon`
+  si requiere el Cajón.
+- Nadie usa un material que permite "sin elección". Si varios materiales pueden faltar juntos, van en
+  una pieza opcional; uno suelto, con "sin elección".
+- No hay referencias circulares: el Perfil no usa la Felpa si la Felpa usa el Perfil.
+
+**Una pieza armada puede requerir otra pieza opcional, pero no a sí misma ni en círculo, y una pieza
+fija no requiere ninguna (2026-11-02).** Si la Cortina y el Cajón se requieren entre sí, son una sola
+pieza; y una opcional que una fija requiere estaría siempre incluida, así que es fija.
+
+**Al vender, elegir la Cortina marca también el Cajón, a la vista y con un aviso ("La Cortina lleva
+Cajón"), y destildar el Cajón destilda la Cortina. Si el Cajón no se ofrece, por una baja o por el
+color, tampoco se ofrece la Cortina (2026-11-02).** Se descartó que bloquee: el vendedor tenía que
+adivinar qué le faltaba, y el precio ya incluye los dos.
 
 **Cada pieza armada lleva sus propias variables: el peso y el espesor de la pieza. El peso se calcula
 siempre: por default cuenta cada material, y Técnica puede optar por que un material no cuente. El
