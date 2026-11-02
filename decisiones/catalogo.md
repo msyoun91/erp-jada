@@ -97,9 +97,6 @@ Pendientes de la ficha:
     "sin elección" y pieza opcional (propuesto: un material suelto → sin elección, varios juntos →
     pieza opcional).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Color con opciones y opcionales**: si el marco del mosquitero opcional solo viene en blanco,
-      "todos los materiales" impide ofrecer la ventana en negro. ¿Exige todo, o en negro no se ofrece
-      el mosquitero?
     - **Condiciones por opción**: Float 4mm hasta 2 m2, Laminado 3+3 hasta 3,5; la condición va en el
       material y bloquea las dos.
     - **Opciones de otra unidad**: Mosquitero con Tela (m2) y Enrollable (u); heredando `ancho × alto`,
@@ -329,8 +326,26 @@ material.**
 Lo que sigue a otro no se le muestra al vendedor: elige una vez. En la base son un solo mecanismo: el
 sincronizado es un combo donde cada opción tiene por pareja el mismo insumo.
 
-**El color es por paquete: para ofrecer un color, todos los materiales del paquete tienen que tener
-su variante en ese color, o ser de color indistinto, como el tornillo.**
+**El color es por paquete. En un color se deja de ofrecer lo que no se puede armar en ese color, y el
+color solo no se ofrece si el paquete no se puede armar sin eso (2026-11-02).** Un material de color
+indistinto, como el tornillo, no afecta. Con la regla anterior, que pedía la variante en todos los
+materiales, un marco de Mosquitero opcional solo en blanco impedía vender la ventana en negro.
+
+```
+Material                                                Ventana en negro
+Marco del Mosquitero opcional, solo blanco              se ofrece, sin el Mosquitero
+Manija: Estándar (blanca y negra), Premium (blanca)     se ofrece, solo con la Estándar
+Vidrio, color indistinto                                se ofrece
+Perfil hoja, material único de pieza fija, solo blanco  no se ofrece en negro
+Manija sin ninguna opción en negro                      no se ofrece, salvo que permita "sin elección"
+Rueda que elige el sistema, alguna sin negro            no se ofrece: nadie puede elegir otra
+```
+
+- **Se calcula, sin guardar nada.** La versión sigue diciendo qué colores ofrece y cuál es el base.
+- **Lo ve quien aprueba.** Al marcar negro, Técnica ve "en negro no se ofrece: Mosquitero, Manija
+  Premium", y el gerente ve lo mismo al aprobar.
+- **Si el vendedor cambia de color después de elegir,** lo que ya no se ofrece se desmarca con un aviso,
+  para que el precio no cambie sin que lo note.
 
 **El color es un dato del insumo, no un insumo más: el insumo tiene variantes de color, cada una con
 su costo.** "Perfil hoja" es un solo insumo con variantes blanco y negro; el paquete lo usa una vez y el
@@ -344,11 +359,13 @@ Una variante de color nueva en un insumo no pone a la venta un color que nadie a
 **Las variantes de color se suman y se dan de baja aunque el insumo ya se use: no son de los datos
 fijos, se comportan como el costo.**
 - Sumar un color a un insumo usado no cambia ninguna versión: cada una dice qué colores ofrece. Para
-  vender el color nuevo, versión nueva que lo marque.
-- Quitar un color es dar de baja la variante. Los paquetes dejan de ofrecer ese color; si era el único
-  que ofrecía uno, el paquete sale de la venta, como con la baja de un insumo. Avisa al gerente.
-- Reactivar la variante devuelve el color sin versión nueva: se ofrecen los colores de la versión que
-  tienen todas sus variantes activas, sin guardar nada aparte.
+  vender el color nuevo, versión nueva que lo marque. Si la versión ya ofrece ese color, lo que no se
+  armaba en él se ofrece solo cuando la variante tiene costo: sin costo, cuenta como que no está.
+- Quitar un color es dar de baja la variante. Los paquetes dejan de ofrecer lo que no se arma sin ella,
+  o ese color; si era el único que ofrecían, el paquete sale de la venta, como con la baja de un
+  insumo. Avisa al gerente.
+- Reactivar la variante devuelve lo que había salido, sin versión nueva: se calcula con las variantes
+  activas, sin guardar nada aparte.
 - Los colores son una lista común (Blanco, Negro, Anodizado), para que el negro del perfil y el del
   accesorio sean el mismo. La define Técnica, como las categorías.
 - Una variante nueva sin costo le avisa a Administración, como un insumo nuevo, y la base no deja
