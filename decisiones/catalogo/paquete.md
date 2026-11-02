@@ -2,7 +2,7 @@
 
 ## Qué es un paquete (2026-10-27)
 
-**Todo lo que se vende es un paquete: un conjunto de piezas armadas. Cada pieza armada es un conjunto
+**Todo lo que se fabrica es un paquete: un conjunto de piezas armadas. Cada pieza armada es un conjunto
 de materiales, y cada material es un insumo o un servicio fijo con las fórmulas de cuánto lleva según
 las variables del paquete (*Editor de paquete*).** Los nombres son los que usa la empresa.
 
@@ -26,15 +26,22 @@ Paquete: Ventana corrediza 2 hojas — variables: ancho, alto
   (*Personas*): con un 10 % de merma en el perfil marco, la lista de corte diría 5.931 mm en vez de
   5.392. La merma la pone Administración en el precio, como ella decida: dentro del costo o como
   servicio en % sobre una categoría. El catálogo ya permite las dos, sin nada propio para la merma.
-- **No se reutilizan piezas armadas entre paquetes.** Habrá pocos paquetes y cada uno se calcula
-  distinto.
+- **No se reutilizan piezas armadas entre paquetes: hay un paquete por combinación, y una compuesta es una
+  sola ventana (2026-11-02).** Una obra real pidió 8: paño fijo, banderola, oscilobatiente, fijo + banderola,
+  fijo + oscilobatiente, fijo + 2 oscilobatientes, corrediza y puerta. Las combinaciones son más o menos
+  siempre las mismas. La hoja oscilobatiente queda en 3 paquetes: corregirla es una versión de cada uno, y se
+  puede olvidar una. Costo aceptado, porque los paquetes cambian poco y duplicar ahorra la primera carga. Se
+  descartó un solo paquete "Ventana de paños": el vendedor tenía que cargar "alto del fijo: 0", y un error
+  afectaba a todas las combinaciones. También compartir piezas entre paquetes: un concepto nuevo, con su
+  propia aprobación, para un problema que todavía no se vio (`BACKLOG.md`).
 - **Un paquete se puede duplicar: `catalogo_armar` crea uno nuevo, con otro nombre y un borrador copiado de
   la versión que se está mirando (2026-11-02).** La Ventana de 3 hojas sale de la de 2 sin recargar sus 40
   fórmulas. Se copia todo lo de la versión; los costos son del insumo. No queda vínculo entre los dos, y el
   borrador se revisa como cualquier otro. Copiar una pieza suelta se ve al diseñar el editor: sus variables
   chocarían con los nombres únicos.
-- **Cada paquete tiene una sola categoría, según qué es el producto** (ej: Ventana corrediza → 2
-  hojas, 3 hojas; Paño fijo → sus tipos). Las define Técnica y le pone una a cada paquete al armarlo.
+- **Cada paquete tiene una sola categoría, según qué es el producto** (ej: Ventanas corredizas →
+  Ventana corrediza 2 hojas, Ventana corrediza 3 hojas; Paños fijos → sus tipos). Las define Técnica y
+  le pone una a cada paquete al armarlo.
   El vendedor, en Presupuestos, elige primero la categoría y después el paquete. Sin subcategoría
   (Ventanas → Corrediza → 2 hojas), descartada el 2026-10-29 para paquetes e insumos.
 - **El nombre y la categoría son de la versión: cambiarlos es sacar una versión nueva, que aprueba el
@@ -43,8 +50,25 @@ Paquete: Ventana corrediza 2 hojas — variables: ancho, alto
   ya pasa por el gerente. Se descartó que sean del paquete y se cambien sin aprobación: los
   presupuestos viejos mostraban el nombre nuevo, y la categoría movería el precio sin que el gerente
   lo viera.
+- **El nombre de un paquete no se repite en todo el catálogo: dos paquetes no pueden tener publicada una
+  versión con el mismo nombre, sin distinguir mayúsculas, aunque uno esté de baja. Si está tomado, la base
+  no deja enviar la versión (2026-11-02).** Martín le pone "Ventana corrediza 2 hojas" a una versión de la
+  Ventana reforzada, el gerente la aprueba porque el despiece está bien, y el vendedor ve dos iguales con
+  precios distintos. Al enviar se compara con lo publicado y lo que está en revisión en otros paquetes; un
+  borrador no cuenta y una versión obsoleta no retiene su nombre. Un paquete de baja sí lo retiene, a
+  diferencia del insumo: suele volver cuando se reemplaza una rueda, y otro con su nombre daría dos iguales
+  al reactivarlo. Unique parcial sobre las versiones publicadas, sin control aparte al reactivar. Costo
+  aceptado: para reutilizar el nombre de un paquete dado de baja a propósito, antes se le saca una versión
+  con otro. Se descartó que no se repita solo dentro de cada categoría: dos "2 hojas" no se distinguían en
+  un aviso, en "Por revisar" ni en un presupuesto.
 - **Hoy no se vende nada suelto.** El catálogo de un proveedor alimenta insumos para usar dentro de
   los paquetes. Para cuando revendan perfiles ya hay camino decidido (`BACKLOG.md`).
+- **Lo que se fabrica siempre es un paquete; lo que no se fabrica no es del catálogo (2026-11-02).** Una
+  ventana de 3.100 con un máximo de 3.000 se hace duplicando el paquete con otro máximo ("Ventana corrediza
+  especial"): el gerente la aprueba y Producción recibe su despiece. Un flete es un renglón libre de
+  Presupuestos (`BACKLOG.md`). Costos aceptados: el vendedor espera a Técnica y al gerente, y la especial
+  queda a la vista de todos los vendedores hasta que Técnica la da de baja. Se descartó usar el renglón
+  libre para la ventana: nadie revisaría las fórmulas y a Producción le llegaría sin despiece.
 
 ## Editor de paquete (2026-10-30)
 
@@ -73,6 +97,19 @@ hojas iguales" con un "si": era una convención que el vendedor tenía que conoc
 **A una variable se le pueden configurar condiciones (if) con comparadores, cada una con un mensaje de
 alerta o un bloqueo. Con un bloqueo no se puede hacer uso del paquete.** Ej: ancho > 1000 → mensaje de
 alerta o bloqueo. **Después del comparador va una operación aritmética** (ej: alto > ancho × 2).
+
+**Una variable numérica que ingresa el vendedor lleva mínimo y máximo, números fijos; sin ellos, la base no
+deja enviar la versión (2026-11-02).** Sin condición sobre `ancho`, un 150 por 1.500 daba todas las medidas
+positivas y un precio mucho más bajo, sin ningún aviso. Fuera de rango bloquea siempre, con un mensaje
+estándar ("El ancho va de 300 a 3.000 mm"), también si el valor sale del predeterminado. Lo que depende de
+otra variable sigue en una condición (`alto > ancho × 2`). No lo llevan las listas de valores ni las variables
+que no carga el vendedor. Se descartó hacer obligatorias las condiciones: en una condición libre, la base no
+puede saber si hay un tope por arriba y otro por abajo.
+
+**Una variable numérica que ingresa el vendedor dice si es una medida (mm) o una cantidad (u); por defecto,
+medida. Solo cambia lo que lee el vendedor: la etiqueta del campo y el mensaje de rango (2026-11-02).**
+"Cantidad de travesaños", de 0 a 3, salía con "(mm)" y "va de 0 a 3 mm". Las fórmulas no cambian: toman el
+número tal cual.
 
 **En toda operación aritmética se puede usar una variable u otro material del paquete: se toma su
 resultado, no su fórmula, y se calcula a partir de él.**
@@ -217,7 +254,8 @@ fijos, se comportan como el costo.**
   insumo. Avisa al gerente.
 - Reactivar la variante devuelve las opciones y los colores que se dejaron de ofrecer, sin versión nueva:
   se calcula con las variantes activas, sin guardar nada aparte. Un paquete que salió de la venta por esa
-  baja no vuelve solo: lo reactiva Técnica, como con la baja de un insumo (2026-11-02).
+  baja no vuelve solo: lo reactiva Técnica, como con la baja de un insumo (2026-11-02). Mientras no se pueda
+  armar en ninguno de los colores que ofrece, la base no deja reactivarlo y dice qué variante falta.
 - Los colores son una lista común (Blanco, Negro, Anodizado), para que el negro del perfil y el del
   accesorio sean el mismo. La define Técnica, y sigue la regla de las categorías (*El insumo*): se edita
   mientras ningún insumo lo use, después su nombre queda fijo, se da de baja solo sin variantes activas y
@@ -228,6 +266,12 @@ fijos, se comportan como el costo.**
   un Tornillo negro se carga otro insumo, con versión nueva de cada paquete que lo use.
 - Una variante nueva sin costo le avisa a Administración, como un insumo nuevo, y la base no deja
   enviar una versión que ofrezca un color con alguna variante sin costo.
+
+**Un herraje de otro color que el paquete es otro insumo, de color indistinto (2026-11-02).** Se vende
+pocas veces: una ventana blanca con manija negra lleva "Manija negra" como opción de la Manija. Costo
+aceptado: la misma manija queda dos veces, con dos costos que pueden quedar distintos. Se descartó un
+segundo color en el paquete: sumaba un dato a la versión, a los casos de prueba y al presupuesto para algo
+poco frecuente.
 
 **El color base es el predeterminado del paquete: la versión marca uno de sus colores como base, y el
 vendedor ve el paquete con ese color elegido.** Con predeterminado, la elección de color puede ir
@@ -280,9 +324,10 @@ cada fórmula se cargaba dos o cuatro veces, y un arreglo en una sola las dejaba
 **Cada pieza armada lleva sus propias variables: el peso y el espesor de la pieza. El peso se calcula
 siempre: por default cuenta cada material, y Técnica puede optar por que un material no cuente. El
 espesor se calcula solo cuando la pieza armada está marcada para calcularlo, sumando el de sus
-materiales; qué materiales entran en la suma lo define Técnica, como en el peso. La cantidad del
-material multiplica el espesor; la de la pieza, no.** El peso y el espesor
-de cada material salen del insumo: el insumo suma el espesor a sus datos.
+materiales. Al revés que en el peso, un material no entra en esa suma salvo que Técnica lo marque
+(2026-11-02). La cantidad del material multiplica el espesor; la de la pieza, no.** El peso y el espesor
+de cada material salen del insumo: el insumo suma el espesor a sus datos. En una hoja solo importa el
+vidrio: contando todo por defecto, el Perfil hoja sin espesor frenaba el envío hasta destildar cada material.
 
 **El servicio fijo nunca cuenta para el peso ni para el espesor, y el editor no muestra esa marca en su
 fila (2026-11-02).** El Soldado del Marco no tiene peso que cargar: contándolo por defecto, frenaba el envío
@@ -299,6 +344,6 @@ secundario va plegado en "Más opciones", resuelto con su predeterminado. La bas
 solo lo que tiene predeterminado: lo obligatorio es siempre primario.** Así no se carga al vendedor con
 elecciones: en la corrediza carga ancho, alto y vidrio, y el ancho de hoja 1, el mosquitero y la
 cortina quedan plegados. Si una alerta o un bloqueo salta por algo secundario, el mensaje se ve igual y
-la sección se abre. El cliente, en erp-cliente, ve lo mismo.
+la sección se abre. Qué ve el cliente se decide al fichar `erp-cliente`.
 
 **El paquete comienza vacío, y en ese estado no se puede publicar.** Lo frena la base.

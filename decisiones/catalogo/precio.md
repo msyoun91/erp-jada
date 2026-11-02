@@ -79,7 +79,8 @@ paquete y lo que carga el vendedor (variables, elecciones, piezas opcionales y c
 % opcionales elegidos, lee lo que quien llama no puede abrir y devuelve solo
 el número, como `obras_contar`. Así lo que no ven (*Personas*) no depende de ocultarlo en pantalla. Ven
 el nombre de cada servicio opcional para elegirlo, no su %, los nombres de las opciones y los mensajes
-de alerta y bloqueo. El cliente, desde erp-cliente, recibe lo mismo.
+de alerta y bloqueo. Qué paquetes ve el cliente, si ve el precio y si elige los servicios opcionales se
+decide al fichar `erp-cliente` (`BACKLOG.md`).
 
 **La versión y la fecha con que se calcula un precio nunca las elige quien llama (2026-10-29).**
 Vendedor y cliente reciben la versión publicada con los valores de hoy, o al recalcular, los que la

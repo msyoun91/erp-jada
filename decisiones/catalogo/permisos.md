@@ -12,6 +12,12 @@ servicios fijos (*El servicio fijo*).
 su ficha (2026-10-29).** Ej: qué fecha lleva cada ítem de un presupuesto, si vence, los descuentos, qué
 nombre de insumo lee Producción, cómo Compras vincula proveedores.
 
+**Cada función que el catálogo ofrece a otro módulo pide el permiso de ese módulo, que se nombra en su
+ficha; hasta entonces, el precio solo se pide con `catalogo_aprobar` y el despiece con `catalogo_paquetes`
+(2026-11-02).** La función del precio lee lo que quien llama no puede abrir: sin esta regla, quedaba abierta
+a cualquiera que la llamara. La de paquetes a la venta y su formulario se escribe con Presupuestos, que
+define su forma (`BACKLOG.md`).
+
 ## Sin entes (2026-10-30)
 
 **El catálogo no tiene entes: paquete, versión, insumo, servicio fijo, categorías y servicios en % son
@@ -23,7 +29,7 @@ vincularse a un paquete, se lo registra como ente entonces: es sumar, no rehacer
 
 ## Pestañas (2026-10-30)
 
-**Cuatro pestañas, cada una una vista: Paquetes (técnica, gerente), Insumos y Servicios fijos
+**Cuatro pestañas, cada una una vista: Paquetes (técnica, gerente, quien revisa cortes), Insumos y Servicios fijos
 (técnica, administración, gerente) y Servicios en % (administración, gerente). Las categorías se
 manejan en la pestaña de lo que contienen.**
 
@@ -33,7 +39,7 @@ Administración, ve la misma lista con el costo y lo carga. Se descartó una pes
 Administración: repetía la lista de insumos.
 
 **Paquetes tiene dos funciones: armar (Técnica: crea paquetes y categorías de paquete, saca versiones,
-edita el borrador, lo envía y lo retira, da de baja y reactiva) y aprobar (gerente: la lista "Por
+edita el borrador, lo envía, lo retira y lo descarta, da de baja y reactiva) y aprobar (gerente: la lista "Por
 revisar", el precio y su detalle de cualquier versión con las medidas que elige, aprueba y devuelve).
 La vista sola muestra paquetes y despiece, sin precio ni botones.** Rodrigo, de producción, revisa cortes con la
 vista sola. Armar no se divide: nadie arma paquetes sin poder enviarlos o darlos de baja.

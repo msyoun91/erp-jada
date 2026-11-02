@@ -59,6 +59,13 @@ queda fijo. Se da de baja solo sin nada activo adentro (2026-10-29).** Renombrar
 "Vidrios" con 30 insumos activos los dejaba en una categoría que no existe. Un servicio en % sobre una
 categoría de baja no cobra nada, sin romper nada.
 
+**En una categoría de paquete, lo de adentro son versiones: su nombre queda fijo desde que se envía una
+versión con ella, y solo la publicada de un paquete activo impide darla de baja (2026-11-02).** La categoría
+es de la versión (*Qué es un paquete*). Un borrador o una descartada no cuentan: Lucía corrige "Mampras"
+mientras solo la use su borrador, y si la única versión enviada se retira o se devuelve, se puede volver a
+renombrar. Una obsoleta fija el nombre, pero no impide la baja: con la Mampara v2 publicada en "Baños",
+"Mamparas" se da de baja aunque la v1 siga ahí. Una en revisión tampoco la impide: frena al aprobarla.
+
 **No se reactiva nada dentro de una categoría o un color de baja: ni un insumo, ni un paquete, ni un
 servicio fijo, ni una variante. La base lo frena y dice qué hay que reactivar primero (2026-11-02).**
 Reactivar el Float 4mm con Vidrios de baja lo dejaba activo en una categoría que no existe.
@@ -113,11 +120,13 @@ no afecta nada, se confirma como cualquier baja. Reactivar el insumo no reactiva
 rueda equivocada dejaba 8 paquetes para reactivar a mano. La cuenta la hace la base con las mismas reglas
 de la baja, sin guardar nada.
 
-**El paquete guarda por qué está de baja: a mano, o el insumo o servicio fijo que lo bajó
-(2026-10-29).** Técnica ve "De baja por: Rueda 80kg Marca A" y sabe cuáles reactivar, sin confundirlos
-con la "Ventana 4 hojas" que dio de baja a propósito en febrero. El aviso al gerente lista los que
-siguen de baja por esa causa, y el que se reactiva sale de la lista. Se descartó no guardarlo: Técnica
-buscaba a mano qué paquetes usaban la rueda, y el aviso no podía decir cuáles bajó esa baja.
+**El paquete guarda por qué está de baja: a mano, o el insumo, la variante o el servicio fijo que lo bajó
+(2026-10-29; la variante, 2026-11-02).** Técnica ve "De baja por: Rueda 80kg Marca A" y sabe cuáles
+reactivar, sin confundirlos con la "Ventana 4 hojas" que dio de baja a propósito en febrero. Con una
+variante dice "De baja por: Perfil hoja · Negro": diciendo solo el insumo, Lucía lo buscaba y lo veía activo
+en Blanco. Si cayeron varias, dice la última. El aviso al gerente lista los que siguen de baja por esa causa,
+y el que se reactiva sale de la lista. Se descartó no guardarlo: Técnica buscaba a mano qué paquetes usaban
+la rueda, y el aviso no podía decir cuáles bajó esa baja.
 
 ~~**El peso por ahora solo se carga: cómo se usa se decide cuando un módulo lo necesite.**~~ Superada
 el 2026-10-30: el peso y el espesor del insumo dan los de cada pieza armada (*Editor de paquete*).
@@ -176,14 +185,23 @@ hacer hasta que Técnica cambiara cada paquete.
 **Cada variante de un insumo tiene un solo costo (el de color indistinto, uno solo), el que se usa para
 calcular el precio de venta, y vive acá. Los
 precios que ofrece cada proveedor y las cotizaciones viven en Compras.** Son datos distintos: Compras
-tiene muchos por insumo y lee el costo para comparar; el catálogo tiene uno, el elegido. Si viviera en
-Compras, el catálogo no podría poner precio hasta que exista Compras, que no tiene ficha. Quién lo
-carga es un permiso, no un lugar: hoy Administración; si alguien de compras tiene que actualizarlo, se
-le da ese permiso, sin copia en Compras.
+tiene muchos por insumo; el catálogo tiene uno, el elegido. Si viviera en Compras, el catálogo no podría
+poner precio hasta que exista Compras, que no tiene ficha.
+
+**Compras no se encarga de costos: manda a presupuestar y lo compara con Administración, sin leer ni cargar
+el costo del catálogo (2026-11-02).** Sofía recibe una cotización de $14.200 el metro y la revisa con Ana,
+que ve los $15.000 del catálogo y decide si carga otro costo. Se descartó darle a Compras una función para
+leer el costo: la ficha lo suponía, pero no es como trabajan.
 
 **Ningún precio de proveedor pasa solo a ser el costo: lo define Administración.** No hay regla que
 elija entre lo que cotizan (el más barato, el último): si tres proveedores cotizan el perfil 20x40, el
 costo es el que carga Administración, y cambia solo cuando lo vuelve a cargar.
+
+**El catálogo no pregunta cómo se compra: Administración carga el costo en la unidad del insumo, como lo
+haya sacado (2026-11-02).** Si el perfil hoja se compra por kilo, 0,7 kg/m a $20.000 son $14.000 el metro; con
+una suba del 8 %, el metro también sube 8 % y alcanza con la carga en bloque. Se descartó que el sistema lo
+calcule desde el kilo: el precio dependería del peso, que carga Técnica y queda fijo, y un peso mal cargado
+movería el precio sin que Administración lo viera. Solo ahorraba la cuenta de la primera carga.
 
 Archivos: corrige `decisiones/contactos.md` → *Los proveedores son empresas de Contactos*.
 

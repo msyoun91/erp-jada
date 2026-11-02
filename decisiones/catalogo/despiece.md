@@ -22,8 +22,9 @@ la cuenta que frenó el paquete, y nadie cotiza con él.
 puede calcular con estas medidas", sin filas ni precio. No se configura (2026-11-02).** Con alto 30 en
 vez de 300, el vidrio de −18 mm bajaba el precio si Técnica olvidaba la condición, y flecha 0 divide por
 cero. Quien ve el despiece lee cuál falló ("Vidrio: la medida dio −18 mm"); el vendedor, solo el mensaje.
-Lo demás lo resuelve lo que ya existe: condiciones como `alto < 300` y `flecha > ancho / 2` (con flecha
-800 la cuenta da un número válido: para la base no es un error) y `redondear_arriba` para las 1,7
+Lo demás lo resuelve lo que ya existe: el mínimo de la variable (`alto` desde 300), condiciones como
+`flecha > ancho / 2` (con flecha 800 la cuenta da un número válido: para la base no es un error) y
+`redondear_arriba` para las 1,7
 bisagras. Una cantidad 0 es que no lleva: sin fila. Se descartó bloquear las cantidades con decimales:
 el medio pomo se puede cobrar.
 

@@ -25,11 +25,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. **Se arma de cero**
   (2026-10-22): la v1 y la v2 se descartaron enteras, junto con lo que habían dejado en Presupuestos,
   Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). Nada de eso vuelve
-  (`decisiones/catalogo/README.md`). La ficha nueva se arma ahí, punto por punto: objetivo y personas
-  aprobados, servicios en %, precio, tipos de cambio y versiones (2026-10-27), el insumo y el servicio
-  fijo (2026-10-29), sin entes y el árbol de vistas y funciones (2026-10-30), el editor de paquete
-  y cómo se calculan las fórmulas (2026-11-02); siguiente: aprobar la ficha completa
-  (`decisiones/catalogo/README.md` → *Pendientes de la ficha*); después, el SQL.
+  (`decisiones/catalogo/README.md`). La ficha nueva está ahí, aprobada completa (2026-11-02). Siguiente:
+  el SQL, empezando por `GUIDE_DB.md` y `decisiones/catalogo/README.md`; las funciones de las fórmulas salen
+  de `sql/tests/catalogo_formulas_prototipo.sql`, sumándole `y` y `o`.
 - **Monedas**: construido (2026-10-29, `sql/155`–`156`, `decisiones/monedas.md`). El catálogo y
   Compras convierten con `monedas_convertir(monto, de, a, fecha)` (`db_schema/monedas.md`). Falta la
   prueba completa en el navegador con dos usuarios.
@@ -38,13 +36,31 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   estructura 200 veces y la lista del vendedor sigue corta. Puede convivir con un paquete propio para
   un perfil especial. Costo: las opciones son de la versión, así que un perfil nuevo del proveedor pide
   versión nueva y aprobación del gerente.
-- **Catálogo — dibujo 2D del paquete**, pedido para el futuro (2026-10-30): el editor calcula cuánto
-  lleva cada material, no dónde va cada pieza. Para dibujar, cada pieza armada suma su forma
-  (rectángulo o arco) y su posición, escritas con las mismas fórmulas y variables (el arco arranca en
-  `alto_recto`). Es sumar: las variables que leería el dibujo ya existen.
+- **Catálogo — dibujo 2D del paquete**, segunda fase (2026-11-02, reemplaza la idea del 2026-10-30 de
+  escribir la posición de cada pieza con fórmulas): el editor calcula cuánto lleva cada material, no dónde
+  va, y eso lo dice Técnica a mano. Cada material suma su ángulo de corte y cada insumo el SVG de su perfil.
+  Técnica arrastra las barras, y un imán las pega cuando sus cortes coinciden o se complementan (ventana
+  triangular). Propuesta: el imán guarda uniones, no coordenadas, para que el dibujo se rearme con cualquier
+  medida. Lo ven todos: Técnica, gerente, quien revisa cortes, vendedor, y Producción y cliente cuando tengan
+  ficha. Propuesta: lo arma una función de la base, también para el editor, y vendedor y cliente reciben solo
+  las formas, sin medidas ni nombres de cada barra: armado en pantalla, el despiece llegaba a su navegador. A
+  decidir, de a un punto: qué es "se complementan"; uniones que no son punta con punta (travesaño, hoja dentro
+  del marco, arcos); qué aporta el SVG, que es el corte del perfil, a un dibujo de frente; cantidades y
+  condiciones; y si dibujar un paquete publicado pide versión nueva.
 - **Catálogo — % de un servicio por categoría de paquete**, sin caso real todavía: se construye con
   la primera categoría que cobre distinto. Sumarlo no cambia nada, porque mientras tanto todos los
   paquetes usan el % general (`decisiones/catalogo/precio.md` → *Servicios en %*).
+- **Catálogo — reemplazar un material en varios paquetes**, sin caso real todavía (2026-11-02): Técnica
+  elige Rueda A y Rueda B, y la base abre un borrador con el cambio en cada paquete que la usa. El gerente
+  aprueba cada uno, y un paquete con una versión abierta queda afuera, en una lista. Usa la misma copia de
+  versión y no cambia tablas. Se construye cuando un reemplazo real resulte pesado.
+- **Catálogo — corregir una fórmula en varios paquetes**, sin caso real todavía (2026-11-02): una misma pieza
+  se repite en varios paquetes (la hoja oscilobatiente en 3), y corregirla es una versión de cada uno, a mano.
+  Se construye cuando un arreglo real resulte pesado (`decisiones/catalogo/paquete.md` → *Qué es un paquete*).
+- **Catálogo — carga inicial**, antes de abrir el módulo (2026-11-02): insumos, variantes y costos desde una
+  planilla, una sola vez y por script, con las mismas reglas de la base que cualquier alta. Los paquetes se
+  arman en el editor y pasan por aprobación. Una pantalla de alta en bloque se suma solo si hace falta
+  seguido. Falta saber de dónde sale hoy la lista de insumos y costos.
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado, más un renglón por cada mínimo por presupuesto de los
   servicios en %, que calcula el catálogo (`decisiones/catalogo/precio.md` → *Servicios en %*). Cada ítem guarda
@@ -60,13 +76,24 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   de cada uno (qué preguntar, predeterminados ya calculados, qué se ofrece) sin leer las tablas del
   catálogo. A decidir: qué versión y fecha lleva un paquete sumado a un presupuesto viejo, y si ahí se
   puede elegir una opción dada de baja después (sin costo a esa fecha, el catálogo no da precio). También:
+  el renglón libre para lo que no se fabrica (flete, visita), con descripción y monto, y quién lo autoriza
+  (`decisiones/catalogo/paquete.md` → *Qué es un paquete*). También: si los vendedores reciben aviso de un
+  paquete nuevo o de uno que sale de la venta (hoy nadie les avisa). También:
   cómo ve logística el nombre y la dirección de una obra que no
   abre (propuesta: la etapa guarda su dirección de entrega). También: si un presupuesto en USD blue
   cobrado en billetes usa el dólar de compra (USD 1.000 al de venta, vendidos a $1.545, dejan $20.000
   menos que $1.565.000); Monedas hoy guarda solo el de venta (`decisiones/monedas.md` → *Ficha del módulo*).
+  También, de una planilla de carpinterías real (2026-11-02): cada renglón lleva designación y ubicación
+  ("V4 · Lavadero"), y la planilla viene en metros con punto, así que el campo de medida del formulario tiene
+  que rechazar `3.00`: sin el punto son 300 mm, y pasan un mínimo de 300.
 - **Stock** y **Compras**: sin ficha. Lo que se había decidido para ellos al fichar el catálogo se
   descartó con él (2026-10-22). Sigue valiendo que los proveedores son empresas de Contactos
-  (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*).
+  (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*). Compras manda a presupuestar
+  y lo compara con Administración, sin leer ni cargar el costo del catálogo
+  (`decisiones/catalogo/insumos.md` → *El costo del insumo vive en el catálogo*).
+- **erp-cliente**: sin ficha, y el portal no abre sin ella. A decidir para el catálogo (2026-11-02): qué
+  paquetes ve cada cliente, si ve el precio y si puede elegir los servicios en % opcionales. Sin esto,
+  una constructora cotizaría todo con precio y, destildando un opcional, vería menos que con el vendedor.
 - **Post-venta**: módulo aislado para su equipo. La unidad (1°C, local, casa) se arma después,
   eligiendo ítems del presupuesto aprobado ("estas 4 ventanas → 1°C"); si un ítem agrupa varias
   unidades, se lleva ítem y cantidad. Una obra de un solo dueño es una unidad con todo. Propietarios e

@@ -20,13 +20,14 @@ de una sección: esta tabla dice en qué archivo está.
 | `insumos.md` | El insumo · El servicio fijo · El costo del insumo vive en el catálogo |
 | `precio.md` | Servicios: fijos o en % · Servicios en % · El precio sale de una función · El IVA lo suma Presupuestos · Un presupuesto se recalcula como era · Moneda · Tipos de cambio |
 | `despiece.md` | El despiece calculado · Las fórmulas se calculan sin SQL dinámico |
-| `versiones.md` | Versiones y aprobación · Qué frena el envío |
+| `versiones.md` | Versiones y aprobación · Qué frena el envío · Casos de prueba |
 
 ## Ficha del módulo
 
-En armado, punto por punto con el usuario. Objetivo y personas aprobados el 2026-10-27; sin entes el
-2026-10-30 (*Sin entes*), con los registros, los avisos y el árbol de vistas y funciones (*Pestañas*).
-Sin `catalogo_ver`: cada pestaña tiene su código, y `/catalogo` abre la primera que el usuario tiene.
+Aprobada completa el 2026-11-02; lo que sigue es el SQL. Objetivo y personas aprobados el 2026-10-27; sin
+entes el 2026-10-30 (*Sin entes*), con los registros, los avisos y el árbol de vistas y funciones
+(*Pestañas*). Sin `catalogo_ver`: cada pestaña tiene su código, y `/catalogo` abre la primera que el usuario
+tiene.
 
 ```
 Módulo: catalogo
@@ -40,28 +41,35 @@ Personas                qué ve · qué hace · qué NO ve
 │                    servicios en %, costos ni precios
 ├── Administración — insumos y servicios fijos con su costo, y las categorías · carga los costos de
 │                    insumos, da de alta y de baja los servicios fijos y sus categorías, define los
-│                    servicios en % y sobre qué categorías se cobran · paquetes ni fórmulas
+│                    servicios en % y sobre qué categorías se cobran · paquetes, fórmulas ni precios
 ├── Gerente        — todo: paquetes, fórmulas, costos, % y precios · aprueba o devuelve cada versión
-│                    de un paquete · —
-├── Vendedor       — NO entra: elige categoría y paquete desde Presupuestos · el precio final, los
-│                    nombres de las opciones y los mensajes de alerta y bloqueo · costos, % ni
-│                    fórmulas
-├── Cliente        — NO entra: lo mismo que el vendedor, desde erp-cliente
-├── Producción     — NO entra, salvo quien revisa cortes, con la vista Paquetes: ve las piezas, sus
-│                    medidas y las variables marcadas, servicios incluidos, desde Producción (módulo
-│                    a hacer) · costos, % ni precios
-├── Compras        — NO entra: ve los insumos y su costo desde Compras (módulo a hacer), para
-│                    comparar con las cotizaciones · %, precios ni fórmulas
+│                    de un paquete, y hace lo mismo que Administración: costos, servicios fijos y
+│                    servicios en %, y revierte los cambios en % · —
+├── Vendedor       — NO entra; desde Presupuestos ve el precio final, los nombres de las opciones y
+│                    de los servicios opcionales, y los mensajes de alerta y bloqueo · elige categoría
+│                    y paquete, carga medidas, elecciones, piezas opcionales, color y servicios
+│                    opcionales · despiece, costos, % ni fórmulas
+├── Cliente        — NO entra: erp-cliente todavía no tiene ficha; lo que vea se decide ahí
+├── Producción     — NO entra: desde Producción (módulo a hacer) recibe las piezas, sus medidas, los
+│                    servicios y las variables marcadas. Quien revisa cortes entra con la vista
+│                    Paquetes y ve todas las variables y las fórmulas · no carga nada · costos, % ni
+│                    precios
+├── Compras        — NO entra: desde Compras (módulo a hacer) manda a presupuestar y lo compara con
+│                    Administración; no se encarga de costos · costos, %, precios ni fórmulas
 ├── Stock          — NO entra: todavía no tiene ficha; lo que lea se decide ahí
 └── Logística      — NO entra: trabaja sobre el presupuesto
 Entes: ninguno — nada tiene dueño ni chip; lo que ve cada uno lo da el permiso (*Sin entes*)
 Registros
-├── paquete       — por qué está de baja: a mano, o el insumo o servicio fijo que lo bajó
-│   └── versión   — borrador → en revisión → publicado → obsoleto · nombre y categoría · una sola
-│       │           abierta por paquete · el gerente la devuelve con motivo · colores que ofrece y
-│       │           el base
-│       ├── variable     — nombre · número con fórmula o lista de valores · la ingresa el vendedor o no ·
-│       │                  predeterminado · condiciones · si pasa a Producción
+├── paquete       — por qué está de baja: a mano, o el insumo, la variante o el servicio fijo que lo bajó
+│   └── versión   — borrador → en revisión → publicado → obsoleto, o borrador → descartado; de en
+│       │           revisión vuelve a borrador si el gerente la devuelve, con motivo, o Técnica la
+│       │           retira · nombre, que no se repite entre paquetes, y categoría · una sola abierta
+│       │           por paquete · colores que ofrece y el base
+│       ├── variable     — nombre · por sí sola o dentro de una pieza armada · número con fórmula o
+│       │                  lista de valores · la ingresa el vendedor o no · predeterminado · si es un
+│       │                  número que ingresa el vendedor: medida (mm) o cantidad (u), mínimo y máximo ·
+│       │                  condiciones · si pasa a Producción
+│       ├── caso         — de prueba, al menos uno: nombre y lo que cargaría un vendedor
 │       └── pieza armada — nombre · cantidad · si es opcional: predeterminado y qué requiere · peso y
 │           │              espesor, y si pasan a Producción
 │           └── material — insumo o servicio fijo, único o múltiple (con nombre) · medida y cantidad ·
@@ -73,15 +81,31 @@ Registros
 ├── color         — lista común, la define Técnica · se edita y se da de baja como las categorías
 ├── servicio fijo — como el insumo, sin peso, espesor ni color, en una categoría de servicio
 ├── categoría     — de paquete y de insumo (las define Técnica), de servicio (Administración) · se
-│                   edita hasta tener algo adentro; de baja, solo sin nada activo adentro
+│                   edita hasta tener algo adentro; de baja, solo sin nada activo adentro · en la de
+│                   paquete, lo de adentro es una versión enviada y lo activo, la publicada de un
+│                   paquete activo
 └── servicio en % — su %, su paso (1: el despiece o ciertas categorías · 2: el subtotal · 3: el precio
                     final), mínimo con moneda, por paquete o por presupuesto, si es opcional · cada
                     cambio es un valor nuevo con fecha
+Relaciones (sin entes: FK directas a registros del catálogo)
+├── Presupuestos → paquete y versión, con lo que cargó el vendedor y su fecha
+├── Producción   → versión; cuál usa se decide en su ficha
+├── Compras      → insumo, sin su costo
+├── Stock        → se decide en su ficha
+└── Catálogo     → Monedas: la moneda de cada monto y el tipo de cambio a la fecha del cálculo
+Lo que ofrece a otros módulos — cada función pide el permiso del módulo que llama, que se nombra en su
+ficha; hasta entonces, el precio solo con catalogo_aprobar y el despiece con catalogo_paquetes
+├── precio de un paquete    — número y mensajes; la versión y la fecha nunca las elige quien llama
+├── mínimos por presupuesto — la cuenta del presupuesto entero, un renglón por mínimo
+├── despiece                — de cualquier versión con lo que le pasen, sin costos
+└── paquetes a la venta y su formulario — qué preguntar, predeterminados y qué se ofrece; se escribe con
+                              Presupuestos
+Acciones: las dice el árbol de vistas y funciones, para no repetirlas
 Eventos: ninguno (sin entes). Los avisos van por notificaciones; gerente es quien tiene catalogo_aprobar
 y Técnica, quien tiene catalogo_armar:
 ├── insumo o variante nueva     → quienes cargan costos · desaparece cuando tiene costo
 ├── categoría de insumo nueva   → quienes definen los servicios en %
-├── baja de insumo              → gerente, si sacó algo de la venta: los paquetes que siguen de baja
+├── baja de insumo o variante   → gerente, si sacó algo de la venta: los paquetes que siguen de baja
 │                                 por ella y lo que dejaron de ofrecer
 ├── baja de servicio fijo       → gerente y Técnica, si sacó algo de la venta
 ├── cambio en un servicio en %  → gerente: apunta al cambio en la historia, para revertirlo
@@ -92,10 +116,12 @@ y Técnica, quien tiene catalogo_armar:
 Catálogo
 ├── Paquetes (vista, catalogo_paquetes)          — técnica, gerente, quien revisa cortes: por
 │   │                                              categoría, con versiones y despiece, sin precio
-│   ├── catalogo_armar (funcion)                 — técnica: paquetes y sus categorías, versiones;
-│   │                                              envía, retira, duplica, da de baja y reactiva
+│   ├── catalogo_armar (funcion)                 — técnica: paquetes y sus categorías, versiones y
+│   │                                              casos de prueba; envía, retira, descarta, duplica,
+│   │                                              da de baja y reactiva
 │   └── catalogo_aprobar (funcion)               — gerente: "Por revisar", el precio y su detalle
-│                                                  de cualquier versión, aprueba y devuelve
+│                                                  de cualquier versión, precios de referencia,
+│                                                  aprueba y devuelve
 ├── Insumos (vista, catalogo_insumos)            — técnica, administración, gerente: sin costo
 │   ├── catalogo_cargar (funcion)                — técnica: alta, variantes y categorías de insumo,
 │   │                                              colores, edición hasta que se envía, baja y
@@ -103,7 +129,8 @@ Catálogo
 │   └── catalogo_costos (funcion)                — administración, gerente: ve y carga el costo
 ├── Servicios fijos (vista, catalogo_fijos)      — técnica, administración, gerente: sin costo
 │   └── catalogo_fijos_editar (funcion)          — administración, gerente: alta con costo, edición
-│                                                  hasta que se envía, costo, baja, categorías
+│                                                  hasta que se envía, costo, baja y reactivación,
+│                                                  categorías
 └── Servicios en % (vista, catalogo_porcentajes) — administración, gerente: con su historia
     └── catalogo_porcentajes_editar (funcion)    — administración, gerente: alta, cambios, baja y
                                                    reactivación, revertir
@@ -114,7 +141,7 @@ Delegables
 Reglas entre permisos: ninguna, ni requiere ni excluye
 ```
 
-Pendientes de la ficha:
-- **Si el perfil se compra por kilo.** Si es así, se evalúa un costo por kilo que use el peso del insumo; si
-  se compra por metro o por barra, no hace falta nada.
-- **Aprobar la ficha completa.** Después, el SQL.
+**El despiece y el precio no se prueban con un producto real antes del SQL (2026-11-02).** Una planilla de
+carpinterías real alcanzó para probar lo que carga el vendedor y cuántos paquetes hacen falta, pero no trae
+materiales ni costos, y el usuario decidió no sumar esos datos. El primer paquete real que se cargue es esa
+prueba: si algo no entra, se corrige la ficha antes de seguir cargando.
