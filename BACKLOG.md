@@ -49,13 +49,18 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   ítems del catálogo con el precio copiado, más un renglón por cada mínimo por presupuesto de los
   servicios en %, que calcula el catálogo (`decisiones/catalogo.md` → *Servicios en %*). Cada ítem guarda
   su versión y solo lo que cargó el vendedor: lo escrito, las elecciones, las piezas opcionales y el color;
-  el resto lo recalcula el catálogo. Suma el IVA:
+  el resto lo recalcula el catálogo. El precio llega redondeado, y el ítem lo multiplica por su cantidad.
+  Suma el IVA:
   el precio del catálogo llega sin IVA (`decisiones/catalogo.md` → *El IVA lo suma Presupuestos*). Su estado
   es el operativo (en cotización, aprobado, en producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
   ejecución y el seguimiento comercial al entregar cuelgan del presupuesto, no de la obra. El primer
   presupuesto pasa la obra a `en_cotizacion` y el primero aprobado a `contratada`. La ficha de la
   obra lista sus presupuestos con su estado actual. Los contactos operativos (capataz, quien recibe)
-  se vinculan al presupuesto. A decidir: cómo ve logística el nombre y la dirección de una obra que no
+  se vinculan al presupuesto. Su ficha define cómo obtiene la lista de paquetes a la venta y el formulario
+  de cada uno (qué preguntar, predeterminados ya calculados, qué se ofrece) sin leer las tablas del
+  catálogo. A decidir: qué versión y fecha lleva un paquete sumado a un presupuesto viejo, y si ahí se
+  puede elegir una opción dada de baja después (sin costo a esa fecha, el catálogo no da precio). También:
+  cómo ve logística el nombre y la dirección de una obra que no
   abre (propuesta: la etapa guarda su dirección de entrega). También: si un presupuesto en USD blue
   cobrado en billetes usa el dólar de compra (USD 1.000 al de venta, vendidos a $1.545, dejan $20.000
   menos que $1.565.000); Monedas hoy guarda solo el de venta (`decisiones/monedas.md` → *Ficha del módulo*).

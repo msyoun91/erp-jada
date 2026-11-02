@@ -33,33 +33,38 @@ Personas                qué ve · qué hace · qué NO ve
 │                    nombres de las opciones y los mensajes de alerta y bloqueo · costos, % ni
 │                    fórmulas
 ├── Cliente        — NO entra: lo mismo que el vendedor, desde erp-cliente
-├── Producción     — NO entra: ve las piezas, sus medidas y las variables marcadas, servicios
-│                    incluidos, desde Producción (módulo a hacer) · costos, % ni precios
-└── Compras        — NO entra: ve los insumos y su costo desde Compras (módulo a hacer), para
-                     comparar con las cotizaciones · %, precios ni fórmulas
+├── Producción     — NO entra, salvo quien revisa cortes, con la vista Paquetes: ve las piezas, sus
+│                    medidas y las variables marcadas, servicios incluidos, desde Producción (módulo
+│                    a hacer) · costos, % ni precios
+├── Compras        — NO entra: ve los insumos y su costo desde Compras (módulo a hacer), para
+│                    comparar con las cotizaciones · %, precios ni fórmulas
+├── Stock          — NO entra: todavía no tiene ficha; lo que lea se decide ahí
+└── Logística      — NO entra: trabaja sobre el presupuesto
 Entes: ninguno — nada tiene dueño ni chip; lo que ve cada uno lo da el permiso (*Sin entes*)
 Registros
 ├── paquete       — por qué está de baja: a mano, o el insumo o servicio fijo que lo bajó
 │   └── versión   — borrador → en revisión → publicado → obsoleto · nombre y categoría · una sola
 │       │           abierta por paquete · el gerente la devuelve con motivo · colores que ofrece y
 │       │           el base
-│       ├── variable     — número con fórmula o lista de valores · la ingresa el vendedor o no ·
+│       ├── variable     — nombre · número con fórmula o lista de valores · la ingresa el vendedor o no ·
 │       │                  predeterminado · condiciones · si pasa a Producción
-│       └── pieza armada — cantidad · si es opcional: predeterminado y qué requiere · peso y espesor,
-│           │              y si pasan a Producción
-│           └── material — insumo o servicio fijo, único o múltiple · medida y cantidad · condiciones
+│       └── pieza armada — nombre · cantidad · si es opcional: predeterminado y qué requiere · peso y
+│           │              espesor, y si pasan a Producción
+│           └── material — insumo o servicio fijo, único o múltiple (con nombre) · medida y cantidad ·
+│                          condiciones
 ├── insumo        — categoría de insumo, unidad (mm, m2, u), peso y espesor · una variante por color,
-│                   cada una con su costo con fecha y moneda · todo se edita hasta que un paquete lo
-│                   usa; después, el costo, las variantes, si está activo, y completar un peso o
-│                   espesor vacío
-├── color         — lista común, la define Técnica
+│                   cada una con su costo con fecha y moneda · todo se edita hasta enviar una versión
+│                   que lo usa; después, el costo, las variantes, si está activo, y completar un peso
+│                   o espesor vacío
+├── color         — lista común, la define Técnica · se edita y se da de baja como las categorías
 ├── servicio fijo — como el insumo, sin peso, espesor ni color, en una categoría de servicio
 ├── categoría     — de paquete y de insumo (las define Técnica), de servicio (Administración) · se
 │                   edita hasta tener algo adentro; de baja, solo sin nada activo adentro
 └── servicio en % — su %, su paso (1: el despiece o ciertas categorías · 2: el subtotal · 3: el precio
                     final), mínimo con moneda, por paquete o por presupuesto, si es opcional · cada
                     cambio es un valor nuevo con fecha
-Eventos: ninguno (sin entes). Los avisos van por notificaciones:
+Eventos: ninguno (sin entes). Los avisos van por notificaciones; gerente es quien tiene catalogo_aprobar
+y Técnica, quien tiene catalogo_armar:
 ├── insumo o variante nueva     → quienes cargan costos · desaparece cuando tiene costo
 ├── categoría de insumo nueva   → quienes definen los servicios en %
 ├── baja de insumo              → gerente, si sacó algo de la venta: los paquetes que siguen de baja
@@ -74,17 +79,17 @@ Catálogo
 ├── Paquetes (vista, catalogo_paquetes)          — técnica, gerente, quien revisa cortes: por
 │   │                                              categoría, con versiones y despiece, sin precio
 │   ├── catalogo_armar (funcion)                 — técnica: paquetes y sus categorías, versiones;
-│   │                                              envía, retira, da de baja y reactiva
+│   │                                              envía, retira, duplica, da de baja y reactiva
 │   └── catalogo_aprobar (funcion)               — gerente: "Por revisar", el precio y su detalle
 │                                                  de cualquier versión, aprueba y devuelve
 ├── Insumos (vista, catalogo_insumos)            — técnica, administración, gerente: sin costo
 │   ├── catalogo_cargar (funcion)                — técnica: alta, variantes y categorías de insumo,
-│   │                                              colores, edición mientras nadie lo usa, baja y
+│   │                                              colores, edición hasta que se envía, baja y
 │   │                                              reactivación
 │   └── catalogo_costos (funcion)                — administración, gerente: ve y carga el costo
 ├── Servicios fijos (vista, catalogo_fijos)      — técnica, administración, gerente: sin costo
 │   └── catalogo_fijos_editar (funcion)          — administración, gerente: alta con costo, edición
-│                                                  mientras nadie lo usa, costo, baja, categorías
+│                                                  hasta que se envía, costo, baja, categorías
 └── Servicios en % (vista, catalogo_porcentajes) — administración, gerente: con su historia
     └── catalogo_porcentajes_editar (funcion)    — administración, gerente: alta, cambios, baja y
                                                    reactivación, revertir
@@ -96,6 +101,8 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 ```
 
 Pendientes de la ficha:
+- **Si el perfil se compra por kilo.** Si es así, se evalúa un costo por kilo que use el peso del insumo; si
+  se compra por metro o por barra, no hace falta nada.
 - **Aprobar la ficha completa.** Después, el SQL.
 
 ## Al catálogo entran solo los que definen (2026-10-27)
@@ -137,27 +144,36 @@ La vista sola muestra paquetes y despiece, sin precio ni botones.** Rodrigo, de 
 vista sola. Armar no se divide: nadie arma paquetes sin poder enviarlos o darlos de baja.
 
 **Insumos tiene dos funciones: cargar (Técnica: da de alta insumos y categorías de insumo, los edita
-mientras ningún paquete los usa, los da de baja y los reactiva) y costos (Administración y gerente: ve
+hasta que se envía una versión que los usa, los da de baja y los reactiva) y costos (Administración y gerente: ve
 y carga el costo). Un insumo sin usar lo edita solo quien tiene cargar.** Lucía corrige su "Flaot
 4mm"; Ana, que lo ve al cargarle el costo, le avisa: quien carga algo lo edita y lo da de baja. Se
 descartó que Administración también lo edite mientras nadie lo usa: le cambiaría la categoría, que
 define Técnica. El aviso de insumo nuevo va a quienes tienen costos, gerente incluido, y desaparece con
 el costo.
 
-**Servicios fijos tiene una sola función, fijos (Administración y gerente): da de alta con costo y
-categoría, edita mientras ningún paquete los usa, carga el costo, da de baja y reactiva, y maneja las
+**Servicios fijos tiene una sola función, `catalogo_fijos_editar` (Administración y gerente): da de alta con costo y
+categoría, edita hasta que se envía una versión que los usa, carga el costo, da de baja y reactiva, y maneja las
 categorías de servicio.** A diferencia del insumo, alta y costo los hace la misma persona y el servicio
 nace con su costo: separarlas sumaba una función que nadie tendría sin la otra.
 
-**Servicios en % tiene una sola función, porcentajes (Administración y gerente): da de alta, cambia
+**Servicios en % tiene una sola función, `catalogo_porcentajes_editar` (Administración y gerente): da de alta, cambia
 cualquier dato, da de baja y reactiva, y revierte un cambio de la historia. Revertir es un cambio más:
 un valor nuevo con fecha que deja todo como estaba antes de ese cambio, y le avisa a quien lo hizo.**
 Ana suma Herrajes a la Garantía de vidrio, el gerente lo revierte desde el aviso, y Ana se entera: sin
 aviso, el lunes lo volvía a sumar.
 
+**Solo se revierte el último cambio de cada servicio, y pasa por los mismos controles que cualquier cambio
+(2026-11-02).** Ana suma Herrajes el lunes y sube el % de 5 a 6 el martes; revertir lo del lunes volvía
+también a 5 % sin que el gerente lo viera. El aviso del lunes dice "hubo otro cambio después" y lleva a la
+historia: se revierte el del martes y después el del lunes. Si volver a un % de paso 3 lleva la suma a 100
+o más, la base no lo deja. Costo aceptado: para sacar solo Herrajes se revierten los dos y se vuelve a
+cargar el 6 %. Se descartó revertir solo los datos de ese cambio: si dos cambios tocaban el mismo dato, no
+quedaba claro a qué valor volver.
+
 **No hay función que ve y hace todo: no hay registros que alguien con la pestaña no vea (*Sin
-entes*), como en Monedas.** El gerente tiene las cuatro pestañas con aprobar, costos, fijos y
-porcentajes; no necesita armar ni cargar, y si arma, se le da armar (*Ningún permiso excluye a otro*).
+entes*), como en Monedas.** El gerente tiene las cuatro pestañas con aprobar, costos,
+`catalogo_fijos_editar` y `catalogo_porcentajes_editar`; no necesita armar ni cargar, y si arma, se le da
+armar (*Ningún permiso excluye a otro*).
 
 **Ningún permiso del catálogo excluye a otro (2026-10-30).** En una empresa chica una persona arma y
 aprueba, o arma y carga costos. Quien tiene armar y aprobar aprueba sus propias versiones: igual pasan
@@ -173,8 +189,8 @@ despiece. Se descartó que Paquetes requiera Insumos y Servicios fijos: le sumab
 usa, y una regla para algo que no esconde nada.
 
 **Se delega todo menos aprobar (2026-10-30).** Lucía, delegadora de Técnica, le da a Martín Paquetes
-con armar e Insumos con cargar sin pasar por el admin; el jefe de Administración reparte costos, fijos
-y porcentajes igual. Aprobar es el control del catálogo: delegable, un gerente delegador hacía
+con armar e Insumos con cargar sin pasar por el admin; el jefe de Administración reparte costos,
+`catalogo_fijos_editar` y `catalogo_porcentajes_editar` igual. Aprobar es el control del catálogo: delegable, un gerente delegador hacía
 aprobador a cualquiera de su equipo sin que lo decida el admin.
 
 ## Qué es un paquete (2026-10-27)
@@ -205,6 +221,11 @@ Paquete: Ventana corrediza 2 hojas — variables: ancho, alto
   servicio en % sobre una categoría. El catálogo ya permite las dos, sin nada propio para la merma.
 - **No se reutilizan piezas armadas entre paquetes.** Habrá pocos paquetes y cada uno se calcula
   distinto.
+- **Un paquete se puede duplicar: `catalogo_armar` crea uno nuevo, con otro nombre y un borrador copiado de
+  la versión que se está mirando (2026-11-02).** La Ventana de 3 hojas sale de la de 2 sin recargar sus 40
+  fórmulas. Se copia todo lo de la versión; los costos son del insumo. No queda vínculo entre los dos, y el
+  borrador se revisa como cualquier otro. Copiar una pieza suelta se ve al diseñar el editor: sus variables
+  chocarían con los nombres únicos.
 - **Cada paquete tiene una sola categoría, según qué es el producto** (ej: Ventana corrediza → 2
   hojas, 3 hojas; Paño fijo → sus tipos). Las define Técnica y le pone una a cada paquete al armarlo.
   El vendedor, en Presupuestos, elige primero la categoría y después el paquete. Sin subcategoría
@@ -256,10 +277,31 @@ hoja` dentro de la Hoja toma 3.950 y el despiece da 3.950 × 2 = 7.900 mm; toman
 (`ancho_hoja`, 775). Un material múltiple vale lo de la opción elegida. La referencia da mm, como toda
 fórmula: un vidrio de 1,68 m2 da 1.680.000 mm².
 
+**Lo que hay en una versión tiene un nombre, y es lo que usan las fórmulas y lee el vendedor (2026-11-02).**
+- **El material único se llama como su insumo o servicio fijo; el múltiple lleva el nombre que le pone
+  Técnica,** que es lo que el vendedor lee al elegir: `Vidrio`, con las opciones Float 4mm y Laminado 3+3.
+  No hay dos múltiples con el mismo nombre en una pieza.
+- **El mismo nombre en varias piezas sigue la regla de arriba.** En una corrediza asimétrica, dentro de
+  Hoja 1 `[Vidrio]` es el de Hoja 1; desde Colocación, la suma de los dos. Para usar uno solo se les ponen
+  nombres distintos ("Vidrio hoja 1"), sin sintaxis nueva.
+- **El nombre de una variable o de una pieza es único en la versión, y una variable no se llama como un
+  material.** Dos `ancho_hoja` no tendrían valor: una variable no se suma como un material.
+- **La variable tiene un solo nombre, y es el que ve el vendedor.** Técnica escribe "Ancho de hoja 1" y
+  la fórmula queda `[Ancho de hoja 1]`; los `ancho_hoja_1` de este archivo lo abrevian. Se descartó un
+  código con una etiqueta aparte: acortaba las fórmulas, pero sumaba un campo y dos nombres que podían
+  quedar distintos.
+- **Piezas, variables, materiales y opciones salen en el orden en que Técnica los deja en el editor.**
+
 **Toda fórmula (de un material, de una opción o de una variable) puede llevar "si … entonces … si no
 …", con los mismos comparadores de las condiciones, y redondear hacia arriba.** Una puerta con 3
 bisagras hasta 2.100 de alto y 4 si pasa: `si alto > 2100 entonces 4 si no 3`, o una bisagra cada
 700 mm: `redondear_arriba(alto / 700)`. Los "si" se encadenan para más escalones.
+
+**Las condiciones y los "si" también llevan `y` y `o`; para mezclarlos, la base pide paréntesis
+(2026-11-02).** `si ancho > 2000 o alto > 2400 entonces Laminado si no Float`, y un bloqueo con `ancho > 2000
+y alto > 2400`, que con un solo comparador no se podía escribir. Sin paréntesis, `a y b o c` podía dar otra
+cosa que la que Técnica quiso. `y` y `o` son palabras reservadas, como `si` y `pi`: una variable que se llame
+así va entre corchetes. Sin `máximo` ni `mínimo`: se escriben con un "si" y no hay un caso que los pida.
 
 **El "si no" es obligatorio: en toda fórmula con "si", y cuando el sistema define un material múltiple,
 donde termina en un insumo o en "ninguno". Sin él, la base no deja enviar la versión (2026-11-02).** Con
@@ -366,10 +408,17 @@ fijos, se comportan como el costo.**
 - Quitar un color es dar de baja la variante. Los paquetes dejan de ofrecer lo que no se arma sin ella,
   o ese color; si era el único que ofrecían, el paquete sale de la venta, como con la baja de un
   insumo. Avisa al gerente.
-- Reactivar la variante devuelve lo que había salido, sin versión nueva: se calcula con las variantes
-  activas, sin guardar nada aparte.
+- Reactivar la variante devuelve las opciones y los colores que se dejaron de ofrecer, sin versión nueva:
+  se calcula con las variantes activas, sin guardar nada aparte. Un paquete que salió de la venta por esa
+  baja no vuelve solo: lo reactiva Técnica, como con la baja de un insumo (2026-11-02).
 - Los colores son una lista común (Blanco, Negro, Anodizado), para que el negro del perfil y el del
-  accesorio sean el mismo. La define Técnica, como las categorías.
+  accesorio sean el mismo. La define Técnica, y sigue la regla de las categorías (*El insumo*): se edita
+  mientras ningún insumo lo use, después su nombre queda fijo, se da de baja solo sin variantes activas y
+  el nombre es único entre los activos (2026-11-02). Renombrar "Negro" a "Negro mate" cambiaba lo que ven
+  vendedor y cliente sin que nadie lo aprobara.
+- **Tener color o ser indistinto queda fijo con la unidad, al enviarse una versión que usa el insumo
+  (2026-11-02).** Sumarle Negro a un Tornillo indistinto podía dejar de ofrecer en blanco una ventana. Para
+  un Tornillo negro se carga otro insumo, con versión nueva de cada paquete que lo use.
 - Una variante nueva sin costo le avisa a Administración, como un insumo nuevo, y la base no deja
   enviar una versión que ofrezca un color con alguna variante sin costo.
 
@@ -424,9 +473,18 @@ cada fórmula se cargaba dos o cuatro veces, y un arreglo en una sola las dejaba
 **Cada pieza armada lleva sus propias variables: el peso y el espesor de la pieza. El peso se calcula
 siempre: por default cuenta cada material, y Técnica puede optar por que un material no cuente. El
 espesor se calcula solo cuando la pieza armada está marcada para calcularlo, sumando el de sus
-materiales; qué materiales entran en la suma lo define Técnica, como en el peso. La cantidad
-multiplica el espesor.** El peso y el espesor
+materiales; qué materiales entran en la suma lo define Técnica, como en el peso. La cantidad del
+material multiplica el espesor; la de la pieza, no.** El peso y el espesor
 de cada material salen del insumo: el insumo suma el espesor a sus datos.
+
+**El servicio fijo nunca cuenta para el peso ni para el espesor, y el editor no muestra esa marca en su
+fila (2026-11-02).** El Soldado del Marco no tiene peso que cargar: contándolo por defecto, frenaba el envío
+por un dato que no existe. En un material múltiple con opciones de los dos tipos, el servicio elegido no
+suma nada, y un insumo elegido cuenta como cualquier otro, con sus datos vacíos frenando el envío.
+
+**En una fórmula, el peso y el espesor se escriben con el nombre de la pieza: `[peso Hoja 1]` y `[espesor
+Hoja 1]` (2026-11-02).** El editor los ofrece en la lista y valen lo de una sola pieza; los `peso_hoja` de
+este archivo lo abrevian. Si la pieza no calcula el espesor, `[espesor Hoja 1]` no existe.
 
 **Lo que toca el vendedor (una variable que ingresa, un material múltiple que elige, una pieza
 opcional) Técnica lo marca primario o secundario. El primario aparece siempre al sumar el paquete; el
@@ -467,17 +525,22 @@ aviso común, que se marca leído: no desaparece al sumarla, porque hay categor�
 el 2026-10-29: con el nombre fijo desde que un paquete usa el insumo, no queda renombre que avisar; ver
 la decisión siguiente.
 
-**Todo dato del insumo se edita mientras ningún paquete lo use, en ninguna versión. Desde que alguno lo
-usa, solo cambian el costo (un valor nuevo con fecha) y si está activo: nombre, categoría, unidad, peso y
-espesor quedan fijos, y si están mal se carga otro insumo (2026-10-29); un peso o espesor vacío se
-completa una vez (*Un peso o espesor vacío no es 0*).** Mientras nadie lo usa, ningún precio,
-versión ni presupuesto depende de él: un "Flaot 4mm" o un peso de 1,2 en vez de 0,12 se corrigen en el
-momento. Una vez usado, la unidad cambia la cuenta, el peso y el espesor los de cada pieza armada
-(*Editor de paquete*), la categoría qué servicios en % cobra, y el nombre
-es lo que el gerente leyó al aprobar y lo que corta producción: "Float 4mm" → "Float 6mm" con el mismo
-costo hacía cortar vidrio de 6mm cobrado como de 4mm. Costo aceptado: un error de tipeo en el nombre
-de un insumo ya usado pide insumo nuevo, versión nueva de cada paquete que lo usa y aprobación del
-gerente. Sin historial de nombres ni aviso de renombre.
+~~**Todo dato del insumo se edita mientras ningún paquete lo use, en ninguna versión.**~~ Superada el
+2026-11-02: el borrador ya no cuenta; ver la decisión siguiente.
+
+**Todo dato del insumo se edita hasta que se envía a revisión una versión que lo usa; el borrador no
+cuenta (2026-11-02). Desde ahí solo cambian el costo (un valor nuevo con fecha) y si está activo: nombre,
+categoría, unidad, peso y espesor quedan fijos, y si están mal se carga otro insumo; un peso o espesor
+vacío se completa una vez (*Un peso o espesor vacío no es 0*).** Hasta ahí, ningún precio aprobado ni
+presupuesto depende de él: un "Flaot 4mm" en 6 filas de un borrador o un peso de 1,2 en vez de 0,12 se
+corrigen en el momento. Si la única versión enviada que lo usa se retira o se devuelve, vuelve a ser
+editable. Después de enviada, la unidad cambia la cuenta, el peso y el espesor los de cada pieza armada
+(*Editor de paquete*), la categoría qué servicios en % cobra, y el nombre es lo que el gerente leyó al
+aprobar y lo que corta producción: "Float 4mm" → "Float 6mm" con el mismo costo hacía cortar vidrio de 6mm
+cobrado como de 4mm. Un borrador que usa un insumo cambiado se revisa igual al enviarlo. Costos aceptados:
+Martín puede cambiar un insumo del borrador de Lucía, y Lucía se entera al abrirlo o al enviarlo; un error
+de tipeo en el nombre de un insumo ya enviado pide insumo nuevo, versión nueva de cada paquete que lo usa
+y aprobación del gerente. Sin historial de nombres ni aviso de renombre.
 
 **El nombre de un insumo es único entre los activos (2026-10-29).** Unique parcial `WHERE activo`: el
 nombre de uno de baja se reutiliza. Costo aceptado: el reemplazo de un insumo ya usado, que convive
@@ -491,6 +554,10 @@ queda fijo. Se da de baja solo sin nada activo adentro (2026-10-29).** Renombrar
 "Herrajes" le mostraba a Administración una garantía de vidrio cobrándose sobre herrajes, y dar de baja
 "Vidrios" con 30 insumos activos los dejaba en una categoría que no existe. Un servicio en % sobre una
 categoría de baja no cobra nada, sin romper nada.
+
+**No se reactiva nada dentro de una categoría o un color de baja: ni un insumo, ni un paquete, ni un
+servicio fijo, ni una variante. La base lo frena y dice qué hay que reactivar primero (2026-11-02).**
+Reactivar el Float 4mm con Vidrios de baja lo dejaba activo en una categoría que no existe.
 
 **Dar de baja un insumo saca de la venta solo lo que no se puede armar sin él (2026-11-02). Un paquete
 activo cuya versión publicada lo usa se da de baja, en la misma operación, si el insumo es un material
@@ -535,6 +602,13 @@ ninguna versión publicada lo usaba, no avisa: no cambia nada de lo que aprobó.
 paquete solo deja de ofrecer una opción o una pieza opcional, y dice cuál (2026-11-02): esa oferta
 también la aprobó el gerente.
 
+**Antes de confirmar la baja de un insumo, una variante o un servicio fijo, se muestra lo que va a pasar
+(2026-11-02).** Quien tiene la vista Paquetes ve "Salen de la venta (8): Ventana 2 hojas, Ventana 3 hojas…
+Dejan de ofrecer (1): Puerta balcón"; quien no la tiene, solo los números (amplía *El servicio fijo*). Si
+no afecta nada, se confirma como cualquier baja. Reactivar el insumo no reactiva los paquetes: sin esto, una
+rueda equivocada dejaba 8 paquetes para reactivar a mano. La cuenta la hace la base con las mismas reglas
+de la baja, sin guardar nada.
+
 **El paquete guarda por qué está de baja: a mano, o el insumo o servicio fijo que lo bajó
 (2026-10-29).** Técnica ve "De baja por: Rueda 80kg Marca A" y sabe cuáles reactivar, sin confundirlos
 con la "Ventana 4 hojas" que dio de baja a propósito en febrero. El aviso al gerente lista los que
@@ -558,17 +632,16 @@ qué unidad sale, lo dice la unidad del insumo. Se descartó escribir todo en la
 enviar la versión. El dato vacío se completa una vez, aunque el insumo ya se use, y después queda fijo
 (2026-11-02).** Un DVH sin espesor sumaba 0 y "espesor > 24" no saltaba nunca. Un tornillo sin peso no
 frena si Técnica marca que no cuente, y con 0 kg escrito vale. Completarlo no cambia nada aprobado: ninguna
-versión que contara ese dato pudo enviarse sin él. Sin esto, Lucía tenía que crear otro insumo porque un
-borrador ya usaba el DVH.
+versión que contara ese dato pudo enviarse sin él. Sin esto, una versión publicada que no lo contaba y una
+nueva que sí pedían otro insumo.
 
 ## El servicio fijo (2026-10-29)
 
 **El servicio fijo (Instalación, Soldado) es un registro propio, no un insumo, y sigue las reglas del
 insumo salvo el peso y el espesor, que no tiene.** Costo con fecha, unidad de comercialización (el soldado
-por u), todo editable hasta que un paquete lo usa y después solo el costo y si
-está activo, y su baja da de baja los
-paquetes que lo usan en su versión publicada (*El insumo*). Una fórmula es un insumo o un servicio
-fijo. Si va en una tabla o en dos se decide en el SQL: las reglas son las mismas y viven una vez.
+por u), todo editable hasta que se envía una versión que lo usa y después solo el costo y si
+está activo, y su baja saca de la venta solo lo que no se puede armar sin él (*El insumo*). Un material es
+un insumo o un servicio fijo. Si va en una tabla o en dos se decide en el SQL: las reglas son las mismas y viven una vez.
 
 Se descartó cargarlo como insumo de una categoría "Servicios": se comportaba igual, pero la empresa
 dice "insumos y servicios", Técnica buscaría la Instalación entre los vidrios, el peso quedaba vacío
@@ -586,7 +659,7 @@ define. Costo aceptado: si a un paquete nuevo le falta un servicio ("Colocación
 se lo pide a Administración antes de poder usarlo en la fórmula.
 
 **Dar de baja un servicio fijo funciona como la baja del insumo, aviso al gerente incluido (*El
-insumo*), y además le avisa a Técnica, también solo si bajó algún paquete. Antes de confirmar,
+insumo*), y además le avisa a Técnica, también solo si sacó algo de la venta. Antes de confirmar,
 Administración ve cuántos paquetes lo usan: el número, no cuáles.** Un borrador que lo usa no avisa:
 la base frena el envío (2026-10-30). Administración no ve paquetes y Técnica no hizo la baja: sin aviso, el
 vendedor dejaba de ver 8 ventanas sin que nadie supiera por qué. Técnica saca la versión con otro
@@ -620,9 +693,20 @@ suba, Administración decide en ese momento si la carga ya. Se descartó "rige d
 carga, costos que todavía no rigen en la lista, y el aviso de 15/25/50 % sin saber contra cuál
 comparar.
 
+**Los costos también se cargan en bloque: Administración filtra por categoría, escribe los valores o un
+"+8 %", y se guardan juntos, cada uno como un valor nuevo con su fecha (2026-11-02).** Con 200 perfiles en 3
+colores, una suba de lista eran 600 cargas. Los avisos de 15/25/50 % siguen fila por fila, y lo rojo se
+confirma de una vez ("12 filas cambian 50 % o más"): un +80 % por +8 % se ve antes de guardar. Es
+`catalogo_costos`, sin permiso nuevo. Pegar desde una planilla se decide al diseñar la pantalla.
+
+**La fecha de cada costo se ve: "hace 9 meses" en la lista, que se ordena por el más viejo, y en el detalle
+del gerente (2026-11-02).** Un Float 4mm en pesos de hace 9 meses daba un precio creíble y equivocado. Sin
+vencimiento automático ni aviso: cualquier plazo sería inventado, porque un costo en USD aguanta más que uno
+en pesos.
+
 ## Servicios: fijos o en % (2026-10-27)
 
-**Un servicio fijo (ej: el soldado de los perfiles, propio) es una fórmula más: unidades × su costo.
+**Un servicio fijo (ej: el soldado de los perfiles, propio) es un material más: unidades × su costo.
 Un servicio en % con mínimo (ej: comercialización) es monetario: no forma parte del despiece y entra
 al armar el precio.** Cómo entra el de %: *Servicios en %*.
 
@@ -734,10 +818,26 @@ Lo demás lo resuelve lo que ya existe: condiciones como `alto < 300` y `flecha 
 bisagras. Una cantidad 0 es que no lleva: sin fila. Se descartó bloquear las cantidades con decimales:
 el medio pomo se puede cobrar.
 
+**Primero se calcula la cantidad: si da 0, el material no tiene fila y no se evalúan ni su medida ni sus
+condiciones, como una opción no elegida. Lo mismo vale para una pieza con cantidad 0 y lo que tiene adentro
+(2026-11-02).** Un vidrio superior con cantidad `si alto > 2100 entonces 1 si no 0` y alto `alto − 2100`,
+con alto 2.000, daba −100 y frenaba la puerta en toda medida normal. Quien usa ese material desde otra
+fórmula recibe 0: si eso deja otra medida en 0, sigue sin poder calcularse, y un Contravidrio superior con
+medida `[Vidrio superior]` lleva el mismo "si" en su cantidad. Con cantidad mayor que 0, una medida de
+−18 mm sigue frenando el cálculo.
+
+**La cuenta no se redondea: filas, servicios en % y conversiones llevan todos sus decimales. Se redondea
+solo el precio final de cada paquete y el renglón del mínimo por presupuesto: en pesos a entero, en USD a
+2 decimales (2026-11-02).** Presupuestos multiplica ese precio por la cantidad: 3 ventanas de $242.309,28
+dan 242.309 × 3 = $726.927, y no $726.927,84, que el cliente no puede sacar con la calculadora. En el
+despiece el redondeo es solo para mostrar: 666,67 mm se lee 667 mm, y un vidrio de 1,675 m2 se lee 1,68
+pero se cobra por 1,675; para cobrar o cortar la medida redonda está `redondear_arriba`. Costo aceptado:
+en el detalle del gerente, las filas redondeadas pueden diferir del total en $1.
+
 **Cada uno recibe una parte de ese cálculo.** Con la vista Paquetes, las filas sin costos. Con
 `catalogo_aprobar`, además el detalle económico: el costo como se cargó (USD 14/m) y el importe de cada
 fila, el subtotal de cada pieza y los servicios en %, paso por paso, hasta el precio de venta. Vendedor
-y cliente, solo el número (*El precio sale de una función*).
+y cliente, solo el número y los mensajes (*El precio sale de una función*).
 
 **El detalle económico lo da `catalogo_aprobar`, no `catalogo_costos`.** El precio ya salía solo con
 aprobar: Lucía con Paquetes y costos ve el despiece y los costos en sus pestañas, pero no el detalle ni
@@ -746,7 +846,7 @@ en el detalle aunque no tenga `catalogo_costos`; hoy no cambia nada, porque el g
 
 **El despiece se pide de cualquier versión, borrador incluido, y sin fecha; el detalle económico, además,
 a cualquier fecha.** La misma versión con las mismas medidas siempre da lo mismo: la enviada o publicada
-no se edita, y los datos del insumo quedan fijos desde que un paquete lo usa. La fecha solo mueve los
+no se edita, y los datos del insumo quedan fijos al enviarla. La fecha solo mueve los
 costos. A diferencia del precio, elegir la versión no abre nada: el despiece no trae costos y la pestaña
 ya las muestra todas (*Sin entes*). Tampoco depende de lo que hoy se vende: la baja del DVH no borra el
 despiece de una versión que lo usa.
@@ -754,9 +854,10 @@ despiece de una versión que lo usa.
 **La pestaña Paquetes abre en la versión publicada y cada versión muestra su estado.** Rodrigo, que
 revisa cortes, no toma un borrador por lo vigente.
 
-**A otros módulos, el catálogo solo les ofrece calcular cualquier versión con lo que le pasen.** Quién
-lo pide, con qué permiso y qué versión usa se decide en la ficha de cada uno (*Al catálogo entran solo
-los que definen*).
+**A otros módulos, el catálogo les ofrece calcular el despiece de cualquier versión con lo que le pasen.
+El precio no: ahí la versión y la fecha nunca las elige quien llama (*El precio sale de una función*).**
+Quién pide el despiece, con qué permiso y qué versión usa se decide en la ficha de cada uno (*Al catálogo
+entran solo los que definen*).
 
 Ejemplo con datos inventados: https://claude.ai/artifact/6f2trHCaiVTdeqEa7bq4eS
 
@@ -764,7 +865,7 @@ Ejemplo con datos inventados: https://claude.ai/artifact/6f2trHCaiVTdeqEa7bq4eS
 
 **Técnica escribe la fórmula como texto. Al guardarla, una función de la base la convierte en un árbol y
 se guardan los dos; calcular recorre el árbol, y el texto nunca se ejecuta como SQL.** Lo que no se
-entiende no se guarda. Solo hay números, variables y materiales, + − × /, paréntesis, comparadores, "si …
+entiende no se guarda. Solo hay números, variables y materiales, + − × /, paréntesis, comparadores, `y`, `o`, "si …
 entonces … si no …", `redondear_arriba`, `arcoseno` y `pi`: `1; drop table usuarios`, `(select 1)` y
 `pg_sleep(10)` no pasan. Calcular no lee tablas, así que una fórmula no puede leer un costo. Del árbol sale
 además de qué depende cada fórmula, y con eso se revisa lo que puede faltar y lo circular (*Qué frena el
@@ -780,7 +881,7 @@ quinientos: leído como 1,5, `ancho > 1.500` daba siempre cierto sin que nadie l
 Medido en la base con la fórmula del vidrio del arco: 0,42 ms al guardar y 0,15 ms al calcular, unos 6 ms
 para un paquete de 40 fórmulas, sin contar la lectura de las tablas. Pasan 31 de 31 casos en
 `sql/tests/catalogo_formulas_prototipo.sql`, que no deja nada en la base y es de donde salen las funciones
-reales.
+reales. El prototipo todavía no tiene `y` ni `o`: se suman con sus casos al escribir las funciones.
 
 ## El IVA lo suma Presupuestos (2026-10-29)
 
@@ -802,6 +903,13 @@ en un presupuesto de marzo, se le respeta el precio de marzo.
 Se descartó que cada presupuesto guarde copia de los costos y los %: la copia tendría que vivir en el
 catálogo para que el vendedor no la lea, y un paquete sumado a un presupuesto viejo no tendría sus
 insumos en ella.
+
+**Sin costo a la fecha pedida, no hay precio: el cálculo nunca toma 0 ni busca el costo más cercano
+(2026-11-02).** A un presupuesto de marzo se le suma en noviembre una Ventana cuya v3 usa el Float 5mm,
+cargado en abril: con $0 el precio salía barato sin que nadie lo notara. El vendedor lee "Este paquete no
+tiene precio a la fecha del presupuesto"; quien tiene `catalogo_aprobar` ve qué insumo falló, también al
+pedir el detalle de una fecha vieja. El despiece no usa costos y sale igual. Qué versión y fecha lleva un
+paquete sumado a un presupuesto viejo lo decide Presupuestos (`BACKLOG.md`).
 
 ## Moneda (2026-10-29)
 
@@ -834,6 +942,13 @@ aprueba lo que vio. La base no deja enviarla si falta algo (*Qué frena el enví
 respecto de la versión anterior, y la aprueba (publicado) o la devuelve (borrador). La publicada no se modifica: para
 cambiarla se saca otra versión.
 
+**Al aprobar, con las medidas que elige el gerente, se ven juntas la versión publicada y la que está en
+revisión, con la misma fecha (2026-11-02).** Las filas que cambian se resaltan: un `ancho − 20` por `ancho −
+2` da 5.320 mm contra 5.392, y sin comparar el gerente veía un solo precio creíble. Con la misma fecha, la
+diferencia sale solo de la versión y no de un costo que subió. Lo que está en una sola versión se indica, y
+una variable obligatoria nueva se pide. Un paquete nuevo muestra solo su precio. Son dos cálculos, sin
+guardar nada. Sin medidas de referencia guardadas: se suman si repetirlas se vuelve pesado.
+
 **Qué frena el envío (2026-11-02).** Es la única lista: las decisiones de cada regla explican el porqué,
 y lo que se suma se suma acá. La base lo revisa al enviar y de nuevo al aprobar, porque algo pudo darse
 de baja en el medio.
@@ -843,9 +958,17 @@ de baja en el medio.
   sin la suya.
 - Una opción sin pareja en el material que la sigue (vacía; "ninguna" vale).
 - Una fórmula con "si" sin "si no", o un material que define el sistema sin "si no".
-- Una fórmula que usa lo que puede faltar, o una referencia o un requisito circular.
+- Una fórmula que usa lo que puede faltar o lo que ya no existe, o una referencia o un requisito circular.
 - Un peso o espesor vacío en un material que la pieza cuenta.
 - Algo marcado secundario sin predeterminado.
+- Un nombre repetido: dos múltiples en una pieza, dos variables o dos piezas en la versión, o una variable
+  que se llama como un material o como el peso o el espesor de una pieza.
+- Un material sin insumo, un múltiple sin opciones o una lista de valores vacía.
+- Un insumo con colores en una versión sin colores ofrecidos. Si todo es de color indistinto, no lleva.
+- Colores ofrecidos sin base, o con una base que no está entre ellos.
+- Un color ofrecido en el que el paquete no se puede armar. Si deja de poder armarse después de publicada,
+  se deja de ofrecer, sin tocar la versión.
+- Una categoría o un color de baja.
 
 **Cada paquete tiene una sola versión abierta (borrador o en revisión) a la vez, y Técnica puede
 retirarla de revisión: vuelve a borrador sin pasar por el gerente (2026-10-29).** Con la v3 en revisión
