@@ -66,8 +66,8 @@ Catálogo
 │   │                                              categoría, con versiones y despiece, sin precio
 │   ├── catalogo_armar (funcion)                 — técnica: paquetes y sus categorías, versiones;
 │   │                                              envía, retira, da de baja y reactiva
-│   └── catalogo_aprobar (funcion)               — gerente: "Por revisar", el precio de cualquier
-│                                                  versión, aprueba y devuelve
+│   └── catalogo_aprobar (funcion)               — gerente: "Por revisar", el precio y su detalle
+│                                                  de cualquier versión, aprueba y devuelve
 ├── Insumos (vista, catalogo_insumos)            — técnica, administración, gerente: sin costo
 │   ├── catalogo_cargar (funcion)                — técnica: alta y categorías de insumo, edición
 │   │                                              mientras nadie lo usa, baja y reactivación
@@ -96,10 +96,6 @@ Pendientes de la ficha:
     "sin elección" y pieza opcional (propuesto: un material suelto → sin elección, varios juntos →
     pieza opcional).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Despiece calculado**: solo está la función del precio. Falta la que devuelve, para un ítem
-      (1.500 × 1.200, negro, Laminado 3+3), cada pieza con insumo, variante, medida y cantidad, sin
-      costo: quién la pide, con qué versión, y si trae variables (radio del arco, ancho de hoja).
-      Propuesto: un solo cálculo, que el precio reusa sumándole los costos.
     - **Medidas de corte**: un material en m2 da el área; el vidriero corta 1.452 × 1.152, no 1,67 m2,
       y el vidrio del arco (163.501 mm²) no se corta con el área. Choca con *La fórmula es el despiece*.
     - **Baja de una opción**: dar de baja el DVH, una de las tres opciones del Vidrio, baja la ventana
@@ -119,7 +115,9 @@ Pendientes de la ficha:
       "sin elección" que otro usa. Y qué hace "requiere": ¿elegir la Cortina marca el Cajón o bloquea?
       ¿Una pieza fija puede requerir una opcional?
     - **Cantidad de la pieza**: en una corrediza de 4 hojas, ¿4 piezas Hoja sincronizadas o una Hoja
-      × 4? Juntas, el peso es el de las cuatro y la rueda se elige mal.
+      × 4? Juntas, el peso es el de las cuatro y la rueda se elige mal. Y como la cantidad multiplica
+      el espesor, una Hoja que junta 2 vidrios Laminado 3+3 de 6 mm da 12 mm: "espesor > 24" compara
+      contra el doble del real.
     - **Peso y espesor del insumo**: en qué unidad va el peso de uno en mm (¿por metro, como el
       costo?); un DVH sin espesor suma 0 y "espesor > 24 → bloqueo" no salta, como la medida vacía.
     - **Errores de cálculo**: flecha 0 divide por cero, ancho 100 en vez de 1.000 da un área negativa
@@ -175,8 +173,8 @@ Administración: repetía la lista de insumos.
 
 **Paquetes tiene dos funciones: armar (Técnica: crea paquetes y categorías de paquete, saca versiones,
 edita el borrador, lo envía y lo retira, da de baja y reactiva) y aprobar (gerente: la lista "Por
-revisar", el precio de cualquier versión con las medidas que elige, aprueba y devuelve). La vista sola
-muestra paquetes y despiece, sin precio ni botones.** Rodrigo, de producción, revisa cortes con la
+revisar", el precio y su detalle de cualquier versión con las medidas que elige, aprueba y devuelve).
+La vista sola muestra paquetes y despiece, sin precio ni botones.** Rodrigo, de producción, revisa cortes con la
 vista sola. Armar no se divide: nadie arma paquetes sin poder enviarlos o darlos de baja.
 
 **Insumos tiene dos funciones: cargar (Técnica: da de alta insumos y categorías de insumo, los edita
@@ -596,6 +594,8 @@ categorías ya existen para el vendedor; el % por categoría espera un caso real
 
 ## El precio sale de una función, sin despiece (2026-10-27)
 
+La función del precio usa el mismo cálculo que el despiece (*El despiece calculado*).
+
 **Vendedor y cliente reciben solo el precio de cada paquete y el renglón del mínimo por presupuesto:
 ni despiece, ni costos, ni desglose de los servicios en %.** Una función del catálogo recibe el
 paquete, las medidas y los opcionales elegidos, lee lo que quien llama no puede abrir y devuelve solo
@@ -607,6 +607,45 @@ Vendedor y cliente reciben la versión publicada con los valores de hoy, o al re
 base lee del presupuesto guardado. El gerente, que ve todo, puede pedir cualquier versión y fecha (para
 aprobar, una en revisión). Si la función aceptara una fecha, un vendedor pedía "marzo" y cotizaba con
 los costos de marzo, y desde erp-cliente se cotizaba un borrador.
+
+## El despiece calculado (2026-11-02)
+
+**El despiece y el precio salen de un solo cálculo. Para un paquete con sus medidas y elecciones,
+devuelve una fila por material (pieza, insumo elegido, color, medida, cantidad y total), todas las
+variables, con el peso y el espesor de cada pieza, y los mensajes de alerta y bloqueo.** Con dos
+cálculos, un arreglo en uno solo cobraba 4 bisagras y mandaba a cortar 3. La pestaña Paquetes ya
+prometía el despiece, así que hace falta desde el primer día y no recién con Producción. Se descartó
+marcar qué variables salen: era otra configuración, y el que curva el perfil necesita el radio (1.000),
+no solo los 1.287 mm.
+
+**Con un bloqueo, el despiece sale igual, con el mensaje, y el precio no da número.** Técnica ve qué dio
+la cuenta que frenó el paquete, y nadie cotiza con él.
+
+**Cada uno recibe una parte de ese cálculo.** Con la vista Paquetes, las filas sin costos. Con
+`catalogo_aprobar`, además el detalle económico: el costo como se cargó (USD 14/m) y el importe de cada
+fila, el subtotal de cada pieza y los servicios en %, paso por paso, hasta el precio de venta. Vendedor
+y cliente, solo el número (*El precio sale de una función*).
+
+**El detalle económico lo da `catalogo_aprobar`, no `catalogo_costos`.** El precio ya salía solo con
+aprobar: Lucía con Paquetes y costos ve el despiece y los costos en sus pestañas, pero no el detalle ni
+el precio. Aprobar no se delega, así que el detalle tampoco. Costo aceptado: quien aprueba ve los costos
+en el detalle aunque no tenga `catalogo_costos`; hoy no cambia nada, porque el gerente tiene las dos.
+
+**El despiece se pide de cualquier versión, borrador incluido, y sin fecha; el detalle económico, además,
+a cualquier fecha.** La misma versión con las mismas medidas siempre da lo mismo: la enviada o publicada
+no se edita, y los datos del insumo quedan fijos desde que un paquete lo usa. La fecha solo mueve los
+costos. A diferencia del precio, elegir la versión no abre nada: el despiece no trae costos y la pestaña
+ya las muestra todas (*Sin entes*). Tampoco depende de lo que hoy se vende: la baja del DVH no borra el
+despiece de una versión que lo usa.
+
+**La pestaña Paquetes abre en la versión publicada y cada versión muestra su estado.** Rodrigo, que
+revisa cortes, no toma un borrador por lo vigente.
+
+**A otros módulos, el catálogo solo les ofrece calcular cualquier versión con lo que le pasen.** Quién
+lo pide, con qué permiso y qué versión usa se decide en la ficha de cada uno (*Al catálogo entran solo
+los que definen*).
+
+Ejemplo con datos inventados: https://claude.ai/artifact/6f2trHCaiVTdeqEa7bq4eS
 
 ## El IVA lo suma Presupuestos (2026-10-29)
 
@@ -657,8 +696,8 @@ cambio vigente a la fecha y hora del cálculo, y no guarda ninguno.**
 **Cada paquete tiene versiones; una versión pasa por borrador → en revisión → publicado → obsoleto, y
 la aprueba solo el gerente.** Técnica la envía a revisión y desde ahí no se edita, así el gerente
 aprueba lo que vio. La base no deja enviarla si falta algo (un insumo sin costo o de baja, una pieza
-sin fórmulas). El gerente ve el despiece, el precio para las medidas que elige y qué cambió respecto de la
-versión anterior, y la aprueba (publicado) o la devuelve (borrador). La publicada no se modifica: para
+sin fórmulas). El gerente ve el despiece, el precio con su detalle para las medidas que elige y qué cambió
+respecto de la versión anterior, y la aprueba (publicado) o la devuelve (borrador). La publicada no se modifica: para
 cambiarla se saca otra versión.
 
 **Cada paquete tiene una sola versión abierta (borrador o en revisión) a la vez, y Técnica puede
