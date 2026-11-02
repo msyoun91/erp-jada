@@ -97,8 +97,6 @@ Pendientes de la ficha:
     "sin elección" y pieza opcional (propuesto: un material suelto → sin elección, varios juntos →
     pieza opcional).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Condiciones por opción**: Float 4mm hasta 2 m2, Laminado 3+3 hasta 3,5; la condición va en el
-      material y bloquea las dos.
     - **Opciones de otra unidad**: Mosquitero con Tela (m2) y Enrollable (u); heredando `ancho × alto`,
       el enrollable cobra 1.800.000 u. Falta también la cantidad por opción (rueda simple × 4, tándem
       × 2).
@@ -377,6 +375,13 @@ secundaria: si casi todo se vende en blanco, queda plegada en "Más opciones". S
 ofrecerse, la elección queda sin predeterminado y pasa a primaria: el vendedor elige entre los demás.
 
 **Cada material lleva también las condiciones de alerta o bloqueo, como la variable.**
+
+**Cada opción de un material múltiple lleva sus propias condiciones, además de las del material, que
+valen para todas. Solo se evalúan las de la opción elegida (2026-11-02).** El Float 4mm llega hasta
+2 m2 y el Laminado 3+3 hasta 3,5: con un vidrio de 2,06 m2, el Float bloquea y el Laminado da precio.
+La opción bloqueada se sigue viendo, para que el vendedor lea por qué. Si era el predeterminado, no se
+cambia sola por otra: cambiaría el precio sin que nadie lo note. Lo que sigue a otro también evalúa las
+suyas, y el mensaje le aparece al vendedor.
 
 **La pieza armada puede ser opcional. Las piezas fijas no pueden usar en sus operaciones aritméticas
 variables de las piezas opcionales.**
