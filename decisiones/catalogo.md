@@ -88,8 +88,8 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 
 Pendientes de la ficha:
 - **Editor de paquete**: en dictado del usuario desde el 2026-10-30 (*Editor de paquete*). Sigue:
-  - Huecos marcados: el "si no" obligatorio cuando el sistema define el material; qué toma una
-    referencia a un material con varios renglones (el total, un renglón o la medida de cada pieza).
+  - Hueco marcado: qué toma una referencia a un material con varios renglones (el total, un renglón o
+    la medida de cada pieza).
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
     - **Peso y espesor del insumo**: en qué unidad va el peso de uno en mm (¿por metro, como el
       costo?); un DVH sin espesor suma 0 y "espesor > 24 → bloqueo" no salta, como la medida vacía.
@@ -260,6 +260,13 @@ que dio el perfil.
 …", con los mismos comparadores de las condiciones, y redondear hacia arriba.** Una puerta con 3
 bisagras hasta 2.100 de alto y 4 si pasa: `si alto > 2100 entonces 4 si no 3`, o una bisagra cada
 700 mm: `redondear_arriba(alto / 700)`. Los "si" se encadenan para más escalones.
+
+**El "si no" es obligatorio: en toda fórmula con "si", y cuando el sistema define un material múltiple,
+donde termina en un insumo o en "ninguno". Sin él, la base no deja enviar la versión (2026-11-02).** Con
+`si peso_hoja > 40 entonces Rueda 80kg`, una hoja de 16 kg quedaba sin rueda y el precio salía más barato
+sin que nadie lo notara. Si ninguna opción sirve para un caso, va una condición de bloqueo en el material
+(`peso_hoja > 80`). Un material que puede dar "ninguno" no lo usa ninguna otra fórmula, como el que
+permite "sin elección".
 
 **Las fórmulas también llevan `pi` y `arcoseno`, para los arcos: se hacen de medio punto y rebajados
 (2026-10-30).** Un arco rebajado de ancho 1.200 y flecha 200: `radio = flecha / 2 + ancho × ancho /
