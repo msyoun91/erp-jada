@@ -89,8 +89,6 @@ Reglas entre permisos: ninguna, ni requiere ni excluye
 Pendientes de la ficha:
 - **Editor de paquete**: en dictado del usuario desde el 2026-10-30 (*Editor de paquete*). Sigue:
   - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
-    - **Medida en u**: varilla roscada por u cortada a 300 mm, cantidad 2: ¿la medida informa el corte
-      o multiplica?
     - Menores: el predeterminado de la pieza opcional (incluida o no), que marcarla secundaria exige;
       "Único: se selecciona un solo insumo" deja afuera al servicio fijo; datos sin material que
       Producción necesita (mano de apertura); lo que frena el envío está en unos seis lugares → una
@@ -292,6 +290,10 @@ opción con fórmula propia lleva las dos.
 **La medida vacía es solo para insumos y servicios fijos en u; en mm o m2 la base no deja enviar la
 versión.** Un perfil o un vidrio sin medida daban 0 mm o 0 m2, y el precio salía sin ese material sin
 que nadie lo notara.
+
+**En un insumo en u, la medida es opcional y solo le dice a Producción cómo cortar: lo que se cobra, y lo
+que vale en otra fórmula, es la cantidad (2026-11-02).** Una varilla roscada en u, 300 mm × 2, son 2 u y
+no 600. Si se paga lo que se usa y no la varilla entera, Técnica la carga en mm: 600 mm.
 
 **El servicio fijo también es material: un material es un insumo o un servicio fijo.**
 
