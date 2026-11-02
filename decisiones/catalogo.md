@@ -95,6 +95,42 @@ Pendientes de la ficha:
     (el total, un renglón o la medida de cada pieza); frenar referencias circulares; criterio entre
     "sin elección" y pieza opcional (propuesto: un material suelto → sin elección, varios juntos →
     pieza opcional).
+  - Huecos de la auditoría del editor contra el objetivo de dar el despiece (2026-10-30), sin decidir:
+    - **Despiece calculado**: solo está la función del precio. Falta la que devuelve, para un ítem
+      (1.500 × 1.200, negro, Laminado 3+3), cada pieza con insumo, variante, medida y cantidad, sin
+      costo: quién la pide, con qué versión, y si trae variables (radio del arco, ancho de hoja).
+      Propuesto: un solo cálculo, que el precio reusa sumándole los costos.
+    - **Medidas de corte**: un material en m2 da el área; el vidriero corta 1.452 × 1.152, no 1,67 m2,
+      y el vidrio del arco (163.501 mm²) no se corta con el área. Choca con *La fórmula es el despiece*.
+    - **Baja de una opción**: dar de baja el DVH, una de las tres opciones del Vidrio, baja la ventana
+      entera (*El insumo*), lo que el color quiso evitar. Y hay dos formas de salir de la venta: la
+      variante de color, calculada y que vuelve sola; el insumo, `activo = false` y reactivación a
+      mano. Si era el predeterminado de un secundario, queda secundario sin predeterminado.
+    - **Color con opciones y opcionales**: si el marco del mosquitero opcional solo viene en blanco,
+      "todos los materiales" impide ofrecer la ventana en negro. ¿Exige todo, o en negro no se ofrece
+      el mosquitero?
+    - **Condiciones por opción**: Float 4mm hasta 2 m2, Laminado 3+3 hasta 3,5; la condición va en el
+      material y bloquea las dos.
+    - **Opciones de otra unidad**: Mosquitero con Tela (m2) y Enrollable (u); heredando `ancho × alto`,
+      el enrollable cobra 1.800.000 u. Falta también la cantidad por opción (rueda simple × 4, tándem
+      × 2).
+    - **Referencias a lo que puede faltar**: una opcional que usa variables de otra sin requerirla
+      (Cortina con `alto_cajon` y sin Cajón), una variable suelta que usa una opcional, un material
+      "sin elección" que otro usa. Y qué hace "requiere": ¿elegir la Cortina marca el Cajón o bloquea?
+      ¿Una pieza fija puede requerir una opcional?
+    - **Cantidad de la pieza**: en una corrediza de 4 hojas, ¿4 piezas Hoja sincronizadas o una Hoja
+      × 4? Juntas, el peso es el de las cuatro y la rueda se elige mal.
+    - **Peso y espesor del insumo**: en qué unidad va el peso de uno en mm (¿por metro, como el
+      costo?); un DVH sin espesor suma 0 y "espesor > 24 → bloqueo" no salta, como la medida vacía.
+    - **Errores de cálculo**: flecha 0 divide por cero, ancho 100 en vez de 1.000 da un área negativa
+      que baja el precio, flecha > ancho / 2 calcula mal el arco. Propuesto: bloqueo de la base, sin
+      que Técnica lo configure.
+    - **Medida en u**: varilla roscada por u cortada a 300 mm, cantidad 2: ¿la medida informa el corte
+      o multiplica?
+    - Menores: el predeterminado de la pieza opcional (incluida o no), que marcarla secundaria exige;
+      "Único: se selecciona un solo insumo" deja afuera al servicio fijo; datos sin material que
+      Producción necesita (mano de apertura); lo que frena el envío está en unos seis lugares → una
+      sola lista.
   - Al cerrar el dictado, conciliar: *Qué es un paquete* y el árbol de la ficha (pieza → fórmula),
     las "medidas" que quedan (función del precio, el gerente, el recálculo), "Felpa = Perfil hoja"
     frente a medida × cantidad, `BACKLOG.md` → *Presupuestos* (guarda lo escrito, las elecciones y
