@@ -33,8 +33,8 @@ Personas                qué ve · qué hace · qué NO ve
 │                    nombres de las opciones y los mensajes de alerta y bloqueo · costos, % ni
 │                    fórmulas
 ├── Cliente        — NO entra: lo mismo que el vendedor, desde erp-cliente
-├── Producción     — NO entra: ve las piezas y sus medidas, servicios incluidos, desde Producción
-│                    (módulo a hacer) · costos, % ni precios
+├── Producción     — NO entra: ve las piezas, sus medidas y las variables marcadas, servicios
+│                    incluidos, desde Producción (módulo a hacer) · costos, % ni precios
 └── Compras        — NO entra: ve los insumos y su costo desde Compras (módulo a hacer), para
                      comparar con las cotizaciones · %, precios ni fórmulas
 Entes: ninguno — nada tiene dueño ni chip; lo que ve cada uno lo da el permiso (*Sin entes*)
@@ -44,8 +44,9 @@ Registros
 │       │           abierta por paquete · el gerente la devuelve con motivo · colores que ofrece y
 │       │           el base
 │       ├── variable     — número con fórmula o lista de valores · la ingresa el vendedor o no ·
-│       │                  predeterminado · condiciones
-│       └── pieza armada — cantidad · si es opcional: predeterminado y qué requiere · peso y espesor
+│       │                  predeterminado · condiciones · si pasa a Producción
+│       └── pieza armada — cantidad · si es opcional: predeterminado y qué requiere · peso y espesor,
+│           │              y si pasan a Producción
 │           └── material — insumo o servicio fijo, único o múltiple · medida y cantidad · condiciones
 ├── insumo        — categoría de insumo, unidad (mm, m2, u), peso y espesor · una variante por color,
 │                   cada una con su costo con fecha y moneda · todo se edita hasta que un paquete lo
@@ -712,9 +713,14 @@ los costos de marzo, y desde erp-cliente se cotizaba un borrador.
 devuelve una fila por material (pieza, insumo elegido, color, medida, cantidad y total), todas las
 variables, con el peso y el espesor de cada pieza, y los mensajes de alerta y bloqueo.** Con dos
 cálculos, un arreglo en uno solo cobraba 4 bisagras y mandaba a cortar 3. La pestaña Paquetes ya
-prometía el despiece, así que hace falta desde el primer día y no recién con Producción. Se descartó
-marcar qué variables salen: era otra configuración, y el que curva el perfil necesita el radio (1.000),
-no solo los 1.287 mm.
+prometía el despiece, así que hace falta desde el primer día y no recién con Producción. Salen todas las
+variables porque el que curva el perfil necesita el radio (1.000), no solo los 1.287 mm.
+
+**Cada variable lleva la marca "pasa a Producción": por defecto pasan todas y Técnica destilda las que no
+sirven, también el peso y el espesor de cada pieza (2026-11-02).** Olvidar destildar da un dato de más; si
+hubiera que tildarlas, faltaba el radio. Es parte de la versión. Solo ordena lo que le llega al módulo
+Producción, no protege: en la pestaña Paquetes se ven todas, para revisar las fórmulas, y ninguna trae
+costos. Las filas de materiales llegan todas.
 
 **Con un bloqueo, el despiece sale igual, con el mensaje, y el precio no da número.** Técnica ve qué dio
 la cuenta que frenó el paquete, y nadie cotiza con él.
