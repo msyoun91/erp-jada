@@ -1,10 +1,10 @@
-# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql` — corridas en Supabase vía MCP)
+# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql` — corridas en Supabase vía MCP)
 
 Ficha y decisiones: `decisiones/catalogo/README.md`. Tests: `sql/tests/catalogo_formulas.sql`,
-`sql/tests/catalogo_registros.sql`.
+`sql/tests/catalogo_registros.sql`, `sql/tests/catalogo_paquetes.sql`.
 
-Paquetes y versiones todavía no: el SQL va por tramos (`BACKLOG.md` → *Catálogo*). Por eso acá falta lo que depende
-de las versiones: los datos del insumo que quedan fijos, las bajas en cascada y los avisos.
+El SQL va por tramos (`BACKLOG.md` → *Catálogo*). Falta el despiece, el ciclo de una versión (qué frena el envío, enviar,
+aprobar, bajas en cascada), el precio y los avisos.
 
 ## Permisos
 
@@ -19,6 +19,7 @@ de las versiones: los datos del insumo que quedan fijos, las bajas en cascada y 
 | insumos y variantes | cualquiera de las cuatro vistas | por `tipo`: `insumo` → cargar, `servicio` → fijos_editar |
 | costos | por `tipo`: `insumo` → `catalogo_costos`, `servicio` → `catalogo_fijos_editar` | lo mismo, solo por `catalogo_costos_cargar` |
 | servicios en % | `catalogo_porcentajes` | `catalogo_porcentajes_editar`, solo por funciones |
+| paquetes, versiones y su contenido | `catalogo_paquetes` | `catalogo_armar`. El estado y el número de una versión, nadie directo |
 
 ## Enums
 
@@ -27,6 +28,8 @@ de las versiones: los datos del insumo que quedan fijos, las bajas en cascada y 
 | `tipo_catalogo` | `paquete` \| `insumo` \| `servicio` | las categorías usan los tres; `catalogo_insumos`, los dos últimos |
 | `unidad_insumo` | `mm` \| `m2` \| `u` | |
 | `alcance_minimo` | `paquete` \| `presupuesto` | contra qué se compara el mínimo de un servicio en % |
+| `estado_version_catalogo` | `borrador` \| `en_revision` \| `publicado` \| `obsoleto` \| `descartado` | |
+| `tipo_material` | `unico` \| `elige_vendedor` \| `elige_sistema` \| `sigue` | |
 
 ## catalogo_categorias
 
@@ -37,8 +40,8 @@ de las versiones: los datos del insumo que quedan fijos, las bajas en cascada y 
 | nombre | text | sin espacios sobrantes. Único por `tipo` entre las activas, sin distinguir mayúsculas |
 | activo, created_at, updated_at | | |
 
-Trigger `catalogo_categorias_validar`: con un insumo adentro, aun de baja, el nombre queda fijo (CA006); con uno activo,
-no se da de baja (CA007). Lo de las categorías de paquete llega con las versiones.
+Trigger `catalogo_categorias_validar` (DEFINER): con un insumo adentro, aun de baja, o con una versión enviada, el nombre
+queda fijo (CA006); con un insumo activo o la versión publicada de un paquete activo, no se da de baja (CA007).
 
 ## catalogo_colores
 
@@ -62,9 +65,11 @@ Insumos y servicios fijos en una sola tabla.
 | con_color | boolean | false: una sola variante, indistinta |
 | activo, created_at, updated_at | | |
 
-CHECK `catalogo_insumos_servicio`: un servicio no lleva peso, espesor ni color. Triggers: `catalogo_insumos_validar` (no
-entra ni se reactiva en una categoría de baja, CA008) y `catalogo_insumos_variantes_alta` / `_cambio` (nace la variante
-indistinta; cambiar `con_color` apaga las del otro tipo).
+CHECK `catalogo_insumos_servicio`: un servicio no lleva peso, espesor ni color. Triggers: `catalogo_insumos_validar`
+(DEFINER: no entra ni se reactiva en una categoría de baja, CA008; usado por una versión enviada, en un material o una
+opción activos, nombre, categoría, unidad y `con_color` quedan fijos y un peso o espesor solo se completa si estaba vacío,
+CA006) y `catalogo_insumos_variantes_alta` / `_cambio` (nace la variante indistinta; cambiar `con_color` apaga las del
+otro tipo).
 
 ## catalogo_variantes
 
@@ -133,8 +138,66 @@ Sin GRANT de INSERT ni UPDATE: un costo no se pisa.
 | `catalogo_porcentaje_empezar()`, `catalogo_porcentaje_registrar(valor, confirmar_rojo)` | INVOKER, sin EXECUTE | exigen el permiso con lock, y son el único camino a la historia: controles e inserción |
 
 **Errores de los registros:** CA003 rojo sin confirmar · CA004 los del paso 3 llegan a 100 · CA005 no es el último cambio ·
-CA006 nombre fijo · CA007 baja con algo activo adentro · CA008 adentro de una categoría o color de baja · CA009 la variante
-no corresponde al insumo · CA010 nombre de servicio en % repetido · CA011 categoría que no es de insumo ni de servicio.
+CA006 nombre o dato fijo · CA007 baja con algo activo adentro · CA008 adentro de una categoría o color de baja · CA009 la
+variante no corresponde al insumo · CA010 nombre de servicio en % repetido · CA011 categoría que no es de insumo ni de servicio.
+
+## Paquetes y versiones
+
+El contenido de un borrador se escribe directo, con RLS y triggers. Alta, versión nueva y duplicar son funciones. El estado
+lo cambian las funciones del ciclo (`sql/162`), junto con lo que frena el envío y la baja del paquete: hasta entonces,
+`catalogo_paquetes` no tiene GRANT de UPDATE. Un borrador puede estar a medias: acá solo se frena lo que no tiene sentido
+en ningún momento.
+
+**`catalogo_paquetes`:** `id`, `activo`, `created_at`, `updated_at`. Por qué está de baja llega con `sql/162`.
+
+**`catalogo_versiones`**
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| paquete_id | uuid FK → paquetes | no se cambia |
+| numero | integer | lo pone el trigger: el siguiente, contando las descartadas. UNIQUE (`paquete_id`, `numero`) |
+| estado | `estado_version_catalogo` | `borrador` por defecto. Sin GRANT |
+| enviada | boolean, generada | `en_revision`, `publicado` u `obsoleto`: lo que fija datos de insumos y categorías |
+| nombre | text | se edita solo en borrador |
+| categoria_id, categoria_tipo | uuid, `tipo_catalogo` generada | FK compuesta → categorías: solo de paquete (23503) |
+| activo, created_at, updated_at | | dejar de vender es la baja del paquete, no de la versión |
+
+Únicos parciales: una abierta por paquete (`borrador`, `en_revision`), una publicada por paquete, y el nombre entre las
+publicadas de todos los paquetes, sin distinguir mayúsculas. Al aprobar, la anterior pasa a obsoleta antes.
+
+**Toda tabla de contenido** lleva `version_id`, `activo`, `created_at` y `updated_at`. `version_id` no se cambia, y lo que
+apunta a otra tabla de contenido es FK compuesta con él: no se apunta a algo de otra versión (23503). Cada fórmula `x`
+tiene su `x_arbol`, generada con `catalogo_formula_parsear`: lo que no se entiende no se guarda (CA001).
+
+| tabla | columnas | se frena al guardar |
+|---|---|---|
+| `catalogo_versiones_colores` | `color_id`, `base` | color repetido, dos bases |
+| `catalogo_piezas` | `nombre`, `orden`, `cantidad` ('1'), `opcional`, `incluida`, `requiere_pieza_id`, `secundario`, `calcula_espesor`, `peso_a_produccion`, `espesor_a_produccion` | nombre repetido en la versión; una fija incluida, secundaria o con requisito; requerirse a sí misma |
+| `catalogo_variables` | `pieza_id` (NULL: suelta), `nombre`, `orden`, `ingresa_vendedor`, `es_lista`, `formula`, `valores`, `valor_predeterminado`, `es_cantidad`, `minimo`, `maximo`, `secundario`, `a_produccion` | nombre repetido en la versión; sin fórmula si no la ingresa el vendedor; lista o mínimo, máximo, cantidad o secundaria si no la ingresa; lista con fórmula, mínimo o cantidad; predeterminado fuera de la lista |
+| `catalogo_materiales` | `pieza_id`, `orden`, `tipo`, `nombre`, `insumo_id`, `medida`, `ancho`, `alto`, `area`, `cantidad` ('1'), `eleccion`, `sin_eleccion`, `sigue_material_id`, `secundario`, `cuenta_peso` (true), `cuenta_espesor` (false) | múltiple repetido en la pieza; `nombre` solo y siempre en el múltiple; `insumo_id` solo en `unico`; `eleccion` solo en `elige_sistema`; `sigue_material_id` solo en `sigue`, y no a sí mismo; `sin_eleccion` y `secundario` solo en `elige_vendedor` |
+| `catalogo_opciones` | `material_id`, `orden`, `insumo_id`, `sigue_opcion_id`, `predeterminada`, `medida`, `ancho`, `alto`, `area`, `cantidad` (lo vacío se hereda) | insumo repetido en el material; dos predeterminadas; dos parejas para una opción; sin insumo ni pareja; una pareja predeterminada |
+| `catalogo_condiciones` | `variable_id`, `material_id` u `opcion_id`, `condicion`, `mensaje`, `bloquea` | no ser de exactamente uno; sin mensaje |
+| `catalogo_casos` | `nombre`, `entrada` (jsonb objeto; su forma la define `sql/161`) | nombre repetido en la versión |
+
+En un material que sigue a otro hay una opción por cada opción de aquel: `sigue_opcion_id` es esa opción e `insumo_id` su
+pareja, NULL si es "ninguna". Sin fila, la pareja está vacía. Los nombres repetidos no distinguen mayúsculas.
+
+**Triggers.** `catalogo_versiones_validar`: pone el número; fuera de borrador, nombre y categoría no cambian (CA012).
+`catalogo_contenido_validar`, en las siete tablas: fuera de borrador no se edita (CA012), con `FOR SHARE` sobre la versión
+para que no entre una edición mientras se envía; lo sacado no vuelve (CA015). `catalogo_contenido_baja`: sacar una pieza
+saca sus variables y materiales; un material, sus opciones y condiciones; una opción, su pareja y sus condiciones; una
+variable, sus condiciones. Lo que requería la pieza o seguía al material queda sin apuntar.
+
+| función | seguridad | qué hace |
+|---|---|---|
+| `catalogo_paquete_alta(nombre, categoria) → uuid` | INVOKER | el paquete con su v1 vacía. Devuelve la versión |
+| `catalogo_version_nueva(paquete, origen = NULL) → uuid` | INVOKER | sin origen, desde la publicada. Otra abierta: CA013. Origen que no está: CA014 |
+| `catalogo_paquete_duplicar(version, nombre) → uuid` | INVOKER | paquete nuevo, v1 copiada de cualquier versión, sin vínculo. Origen que no está: CA014 |
+| `catalogo_version_copiar(origen, paquete, nombre) → uuid` | INVOKER | la copia, solo lo activo. Las fórmulas apuntan por nombre y no cambian. Tiene EXECUTE porque las dos de arriba son INVOKER |
+
+**Errores:** CA012 la versión no está en borrador · CA013 ya hay una versión abierta · CA014 no se encontró de qué versión
+copiar · CA015 lo sacado de un borrador no vuelve.
 
 ## Fórmulas
 

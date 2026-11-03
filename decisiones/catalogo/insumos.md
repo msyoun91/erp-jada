@@ -46,6 +46,11 @@ Martín puede cambiar un insumo del borrador de Lucía, y Lucía se entera al ab
 de tipeo en el nombre de un insumo ya enviado pide insumo nuevo, versión nueva de cada paquete que lo usa
 y aprobación del gerente. Sin historial de nombres ni aviso de renombre.
 
+**El control de los datos fijos mira todas las versiones, aunque quien edita no pueda verlas (2026-11-02).** Ana, de
+Administración, edita un servicio fijo sin tener la vista Paquetes: con RLS, el control no encontraba ninguna versión y la
+dejaba cambiarlo. Por eso los triggers de insumos y categorías son `SECURITY DEFINER`; solo validan, no devuelven nada.
+Archivos: `sql/160`.
+
 **El nombre de un insumo es único entre los activos (2026-10-29).** Unique parcial `WHERE activo`: el
 nombre de uno de baja se reutiliza. Costo aceptado: el reemplazo de un insumo ya usado, que convive
 con él mientras se aprueban las versiones nuevas, lleva otro nombre ("Perfil 20x40 (mm)"), y como el

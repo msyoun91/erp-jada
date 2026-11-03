@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalogo_casos: {
+        Row: {
+          activo: boolean
+          created_at: string
+          entrada: Json
+          id: string
+          nombre: string
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          entrada?: Json
+          id?: string
+          nombre: string
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          entrada?: Json
+          id?: string
+          nombre?: string
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_casos_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogo_categorias: {
         Row: {
           activo: boolean
@@ -64,6 +102,80 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      catalogo_condiciones: {
+        Row: {
+          activo: boolean
+          bloquea: boolean
+          condicion: string
+          condicion_arbol: Json | null
+          created_at: string
+          id: string
+          material_id: string | null
+          mensaje: string
+          opcion_id: string | null
+          updated_at: string
+          variable_id: string | null
+          version_id: string
+        }
+        Insert: {
+          activo?: boolean
+          bloquea?: boolean
+          condicion: string
+          condicion_arbol?: never
+          created_at?: string
+          id?: string
+          material_id?: string | null
+          mensaje: string
+          opcion_id?: string | null
+          updated_at?: string
+          variable_id?: string | null
+          version_id: string
+        }
+        Update: {
+          activo?: boolean
+          bloquea?: boolean
+          condicion?: string
+          condicion_arbol?: never
+          created_at?: string
+          id?: string
+          material_id?: string | null
+          mensaje?: string
+          opcion_id?: string | null
+          updated_at?: string
+          variable_id?: string | null
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_condiciones_material_id_version_id_fkey"
+            columns: ["material_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_materiales"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "catalogo_condiciones_opcion_id_version_id_fkey"
+            columns: ["opcion_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_opciones"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "catalogo_condiciones_variable_id_version_id_fkey"
+            columns: ["variable_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_variables"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "catalogo_condiciones_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       catalogo_costos: {
         Row: {
@@ -160,6 +272,316 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "catalogo_categorias"
             referencedColumns: ["id", "tipo"]
+          },
+        ]
+      }
+      catalogo_materiales: {
+        Row: {
+          activo: boolean
+          alto: string | null
+          alto_arbol: Json | null
+          ancho: string | null
+          ancho_arbol: Json | null
+          area: string | null
+          area_arbol: Json | null
+          cantidad: string
+          cantidad_arbol: Json | null
+          created_at: string
+          cuenta_espesor: boolean
+          cuenta_peso: boolean
+          eleccion: string | null
+          eleccion_arbol: Json | null
+          id: string
+          insumo_id: string | null
+          medida: string | null
+          medida_arbol: Json | null
+          nombre: string | null
+          orden: number
+          pieza_id: string
+          secundario: boolean
+          sigue_material_id: string | null
+          sin_eleccion: boolean
+          tipo: Database["public"]["Enums"]["tipo_material"]
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          activo?: boolean
+          alto?: string | null
+          alto_arbol?: never
+          ancho?: string | null
+          ancho_arbol?: never
+          area?: string | null
+          area_arbol?: never
+          cantidad?: string
+          cantidad_arbol?: never
+          created_at?: string
+          cuenta_espesor?: boolean
+          cuenta_peso?: boolean
+          eleccion?: string | null
+          eleccion_arbol?: never
+          id?: string
+          insumo_id?: string | null
+          medida?: string | null
+          medida_arbol?: never
+          nombre?: string | null
+          orden?: number
+          pieza_id: string
+          secundario?: boolean
+          sigue_material_id?: string | null
+          sin_eleccion?: boolean
+          tipo?: Database["public"]["Enums"]["tipo_material"]
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          activo?: boolean
+          alto?: string | null
+          alto_arbol?: never
+          ancho?: string | null
+          ancho_arbol?: never
+          area?: string | null
+          area_arbol?: never
+          cantidad?: string
+          cantidad_arbol?: never
+          created_at?: string
+          cuenta_espesor?: boolean
+          cuenta_peso?: boolean
+          eleccion?: string | null
+          eleccion_arbol?: never
+          id?: string
+          insumo_id?: string | null
+          medida?: string | null
+          medida_arbol?: never
+          nombre?: string | null
+          orden?: number
+          pieza_id?: string
+          secundario?: boolean
+          sigue_material_id?: string | null
+          sin_eleccion?: boolean
+          tipo?: Database["public"]["Enums"]["tipo_material"]
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_materiales_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_materiales_pieza_id_version_id_fkey"
+            columns: ["pieza_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_piezas"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "catalogo_materiales_sigue_material_id_version_id_fkey"
+            columns: ["sigue_material_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_materiales"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "catalogo_materiales_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogo_opciones: {
+        Row: {
+          activo: boolean
+          alto: string | null
+          alto_arbol: Json | null
+          ancho: string | null
+          ancho_arbol: Json | null
+          area: string | null
+          area_arbol: Json | null
+          cantidad: string | null
+          cantidad_arbol: Json | null
+          created_at: string
+          id: string
+          insumo_id: string | null
+          material_id: string
+          medida: string | null
+          medida_arbol: Json | null
+          orden: number
+          predeterminada: boolean
+          sigue_opcion_id: string | null
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          activo?: boolean
+          alto?: string | null
+          alto_arbol?: never
+          ancho?: string | null
+          ancho_arbol?: never
+          area?: string | null
+          area_arbol?: never
+          cantidad?: string | null
+          cantidad_arbol?: never
+          created_at?: string
+          id?: string
+          insumo_id?: string | null
+          material_id: string
+          medida?: string | null
+          medida_arbol?: never
+          orden?: number
+          predeterminada?: boolean
+          sigue_opcion_id?: string | null
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          activo?: boolean
+          alto?: string | null
+          alto_arbol?: never
+          ancho?: string | null
+          ancho_arbol?: never
+          area?: string | null
+          area_arbol?: never
+          cantidad?: string | null
+          cantidad_arbol?: never
+          created_at?: string
+          id?: string
+          insumo_id?: string | null
+          material_id?: string
+          medida?: string | null
+          medida_arbol?: never
+          orden?: number
+          predeterminada?: boolean
+          sigue_opcion_id?: string | null
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_opciones_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_opciones_material_id_version_id_fkey"
+            columns: ["material_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_materiales"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "catalogo_opciones_sigue_opcion_id_version_id_fkey"
+            columns: ["sigue_opcion_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_opciones"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "catalogo_opciones_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogo_paquetes: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_piezas: {
+        Row: {
+          activo: boolean
+          calcula_espesor: boolean
+          cantidad: string
+          cantidad_arbol: Json | null
+          created_at: string
+          espesor_a_produccion: boolean
+          id: string
+          incluida: boolean
+          nombre: string
+          opcional: boolean
+          orden: number
+          peso_a_produccion: boolean
+          requiere_pieza_id: string | null
+          secundario: boolean
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          activo?: boolean
+          calcula_espesor?: boolean
+          cantidad?: string
+          cantidad_arbol?: never
+          created_at?: string
+          espesor_a_produccion?: boolean
+          id?: string
+          incluida?: boolean
+          nombre: string
+          opcional?: boolean
+          orden?: number
+          peso_a_produccion?: boolean
+          requiere_pieza_id?: string | null
+          secundario?: boolean
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          activo?: boolean
+          calcula_espesor?: boolean
+          cantidad?: string
+          cantidad_arbol?: never
+          created_at?: string
+          espesor_a_produccion?: boolean
+          id?: string
+          incluida?: boolean
+          nombre?: string
+          opcional?: boolean
+          orden?: number
+          peso_a_produccion?: boolean
+          requiere_pieza_id?: string | null
+          secundario?: boolean
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_piezas_requiere_pieza_id_version_id_fkey"
+            columns: ["requiere_pieza_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_piezas"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "catalogo_piezas_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_versiones"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -263,6 +685,87 @@ export type Database = {
           },
         ]
       }
+      catalogo_variables: {
+        Row: {
+          a_produccion: boolean
+          activo: boolean
+          created_at: string
+          es_cantidad: boolean
+          es_lista: boolean
+          formula: string | null
+          formula_arbol: Json | null
+          id: string
+          ingresa_vendedor: boolean
+          maximo: number | null
+          minimo: number | null
+          nombre: string
+          orden: number
+          pieza_id: string | null
+          secundario: boolean
+          updated_at: string
+          valor_predeterminado: string | null
+          valores: string[]
+          version_id: string
+        }
+        Insert: {
+          a_produccion?: boolean
+          activo?: boolean
+          created_at?: string
+          es_cantidad?: boolean
+          es_lista?: boolean
+          formula?: string | null
+          formula_arbol?: never
+          id?: string
+          ingresa_vendedor?: boolean
+          maximo?: number | null
+          minimo?: number | null
+          nombre: string
+          orden?: number
+          pieza_id?: string | null
+          secundario?: boolean
+          updated_at?: string
+          valor_predeterminado?: string | null
+          valores?: string[]
+          version_id: string
+        }
+        Update: {
+          a_produccion?: boolean
+          activo?: boolean
+          created_at?: string
+          es_cantidad?: boolean
+          es_lista?: boolean
+          formula?: string | null
+          formula_arbol?: never
+          id?: string
+          ingresa_vendedor?: boolean
+          maximo?: number | null
+          minimo?: number | null
+          nombre?: string
+          orden?: number
+          pieza_id?: string | null
+          secundario?: boolean
+          updated_at?: string
+          valor_predeterminado?: string | null
+          valores?: string[]
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_variables_pieza_id_version_id_fkey"
+            columns: ["pieza_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_piezas"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "catalogo_variables_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogo_variantes: {
         Row: {
           activo: boolean
@@ -301,6 +804,108 @@ export type Database = {
             columns: ["insumo_id"]
             isOneToOne: false
             referencedRelation: "catalogo_insumos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogo_versiones: {
+        Row: {
+          activo: boolean
+          categoria_id: string
+          categoria_tipo: Database["public"]["Enums"]["tipo_catalogo"] | null
+          created_at: string
+          enviada: boolean | null
+          estado: Database["public"]["Enums"]["estado_version_catalogo"]
+          id: string
+          nombre: string
+          numero: number
+          paquete_id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          categoria_id: string
+          categoria_tipo?: never
+          created_at?: string
+          enviada?: never
+          estado?: Database["public"]["Enums"]["estado_version_catalogo"]
+          id?: string
+          nombre: string
+          numero: number
+          paquete_id: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          categoria_id?: string
+          categoria_tipo?: never
+          created_at?: string
+          enviada?: never
+          estado?: Database["public"]["Enums"]["estado_version_catalogo"]
+          id?: string
+          nombre?: string
+          numero?: number
+          paquete_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_versiones_categoria_id_categoria_tipo_fkey"
+            columns: ["categoria_id", "categoria_tipo"]
+            isOneToOne: false
+            referencedRelation: "catalogo_categorias"
+            referencedColumns: ["id", "tipo"]
+          },
+          {
+            foreignKeyName: "catalogo_versiones_paquete_id_fkey"
+            columns: ["paquete_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_paquetes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogo_versiones_colores: {
+        Row: {
+          activo: boolean
+          base: boolean
+          color_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          activo?: boolean
+          base?: boolean
+          color_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          activo?: boolean
+          base?: boolean
+          color_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_versiones_colores_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_colores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_versiones_colores_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_versiones"
             referencedColumns: ["id"]
           },
         ]
@@ -2285,6 +2890,14 @@ export type Database = {
         }
         Returns: string
       }
+      catalogo_paquete_alta: {
+        Args: { p_categoria: string; p_nombre: string }
+        Returns: string
+      }
+      catalogo_paquete_duplicar: {
+        Args: { p_nombre: string; p_version: string }
+        Returns: string
+      }
       catalogo_porcentaje_activar: {
         Args: { p_activo: boolean; p_id: string }
         Returns: undefined
@@ -2374,6 +2987,14 @@ export type Database = {
       }
       catalogo_variante_sumar: {
         Args: { p_color: string | null; p_insumo: string }
+        Returns: string
+      }
+      catalogo_version_copiar: {
+        Args: { p_nombre: string; p_origen: string; p_paquete: string }
+        Returns: string
+      }
+      catalogo_version_nueva: {
+        Args: { p_origen?: string; p_paquete: string }
         Returns: string
       }
       contactos_auditoria_detalle: {
@@ -3237,6 +3858,12 @@ export type Database = {
         | "rechazada"
         | "completada"
         | "cancelada"
+      estado_version_catalogo:
+        | "borrador"
+        | "en_revision"
+        | "publicado"
+        | "obsoleto"
+        | "descartado"
       moneda: "ARS" | "USD_OFICIAL" | "USD_BLUE" | "EUR"
       motivo_perdida:
         | "precio"
@@ -3265,6 +3892,7 @@ export type Database = {
         | "relacion_alta"
         | "relacion_baja"
         | "transferencia"
+      tipo_material: "unico" | "elige_vendedor" | "elige_sistema" | "sigue"
       tipo_notificacion:
         | "miembro_nuevo"
         | "permiso_otorgado"
@@ -3458,6 +4086,13 @@ export const Constants = {
         "completada",
         "cancelada",
       ],
+      estado_version_catalogo: [
+        "borrador",
+        "en_revision",
+        "publicado",
+        "obsoleto",
+        "descartado",
+      ],
       moneda: ["ARS", "USD_OFICIAL", "USD_BLUE", "EUR"],
       motivo_perdida: [
         "precio",
@@ -3489,6 +4124,7 @@ export const Constants = {
         "relacion_baja",
         "transferencia",
       ],
+      tipo_material: ["unico", "elige_vendedor", "elige_sistema", "sigue"],
       tipo_notificacion: [
         "miembro_nuevo",
         "permiso_otorgado",

@@ -30,10 +30,11 @@ de baja en el medio.
 - Un peso o espesor vacío en un material que la pieza cuenta.
 - Algo marcado secundario sin predeterminado.
 - Una variable numérica que ingresa el vendedor sin mínimo o sin máximo, o con el mínimo mayor que el máximo.
-- Un nombre repetido: dos múltiples en una pieza, dos variables o dos piezas en la versión, una variable
-  que se llama como un material o como el peso o el espesor de una pieza, o el nombre del paquete, ya
-  publicado o en revisión en otro paquete.
-- Un material sin insumo, un múltiple sin opciones o una lista de valores vacía.
+- Un nombre repetido: una variable que se llama como un material o como el peso o el espesor de una pieza, o
+  el nombre del paquete, ya publicado o en revisión en otro paquete. Los que se repiten en una misma tabla no
+  llegan hasta acá (*Lo que nunca tiene sentido se frena al guardar*).
+- Un material sin insumo, un múltiple sin opciones, uno que sigue a otro sin tener a quién o a uno que también
+  sigue, o una lista de valores vacía.
 - Un insumo con colores en una versión sin colores ofrecidos. Si todo es de color indistinto, no lleva.
 - Colores ofrecidos sin base, o con una base que no está entre ellos.
 - Un color ofrecido en el que el paquete no se puede armar. Si deja de poder armarse después de publicada,
@@ -41,6 +42,17 @@ de baja en el medio.
 - Una categoría o un color de baja.
 - Una versión sin casos de prueba; un caso sin una variable obligatoria o con una elección que ya no
   existe; un caso que no se puede calcular (*Casos de prueba*).
+
+**Lo que nunca tiene sentido se frena al guardar, no al enviar (2026-11-02).** Dos piezas, variables o casos
+con el mismo nombre en la versión, dos múltiples con el mismo nombre en una pieza, una pieza fija con requisito o una
+variable sin fórmula que no carga nadie. Lucía lo ve cuando lo hace, y el cálculo de un borrador no tiene que decidir cuál
+de dos `ancho` usar. Esos nombres tampoco distinguen mayúsculas: `Ancho` y `ancho` serían dos que nadie separa a simple
+vista. Lo demás puede quedar a medias en un borrador, y lo frena el envío. Archivos: `sql/160`.
+
+**Sacar algo de un borrador saca lo que depende de ello, y no vuelve: se carga de nuevo (2026-11-02).** Sacar una
+pieza saca sus variables y materiales, y sacar una opción saca su pareja. Una pieza que requería la sacada queda sin
+requisito, y un material que seguía al sacado queda sin a quién seguir, que frena el envío. Reactivar una fila suelta podía
+dejar un material dentro de una pieza sacada. Archivos: `sql/160`.
 
 **Cada paquete tiene una sola versión abierta (borrador o en revisión) a la vez, y Técnica puede
 retirarla de revisión: vuelve a borrador sin pasar por el gerente (2026-10-29).** Con la v3 en revisión

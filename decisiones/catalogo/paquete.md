@@ -87,6 +87,10 @@ fórmulas. Se descartó un número (1 = izquierda), una convención que el vende
 insumos a $0, que ensuciaban la lista y el despiece; y una nota en el presupuesto, que se olvida sin que
 nada la frene.
 
+**Los valores de una lista se guardan en la variable, en orden, y no en una tabla aparte (2026-11-02).** Ninguna
+fórmula los usa, así que nadie necesita apuntarles: un caso o un presupuesto guarda "Izquierda", que no cambia en una
+versión enviada. Archivos: `sql/160`.
+
 **Una variable que ingresa el vendedor puede tener un predeterminado con fórmula; sin predeterminado
 (ancho, alto) es obligatoria.** En una corrediza asimétrica, `ancho_hoja_1` se predetermina en
 `(ancho + solape) / 2`: con ancho 2.000 aparece 1.025 y, si el vendedor no lo toca, sale simétrica. Lo
@@ -207,6 +211,10 @@ Una opción de otra unidad en mm o m2 lleva su medida, y la base no deja enviar 
 Lo que sigue a otro no se le muestra al vendedor: elige una vez. En la base son un solo mecanismo: el
 sincronizado es un combo donde cada opción tiene por pareja el mismo insumo.
 
+**Un material sigue a uno que elige, no a otro que sigue; lo frena el envío (2026-11-02).** Si el Contravidrio y el
+Burlete dependen del Vidrio, los dos apuntan al Vidrio. Sin cadenas no hay círculos que revisar ni un orden que resolver
+al calcular. Archivos: `sql/160`.
+
 **Cada opción del que elige tiene pareja en el que la sigue: un insumo, o "ninguna" si Técnica la elige.
 Vacía, la base no deja enviar la versión (2026-11-02).** Si suman el DVH al Vidrio y se olvidan de la
 pareja en el Contravidrio, el precio salía sin contravidrio sin que nadie lo note. Con "ninguna", el DVH
@@ -306,6 +314,9 @@ no se podía calcular.
 **Una pieza armada puede requerir otra pieza opcional, pero no a sí misma ni en círculo, y una pieza
 fija no requiere ninguna (2026-11-02).** Si la Cortina y el Cajón se requieren entre sí, son una sola
 pieza; y una opcional que una fija requiere estaría siempre incluida, así que es fija.
+
+**Una pieza requiere una sola pieza (2026-11-02).** Ningún caso pide dos, y la cadena sigue valiendo: A requiere B,
+y B requiere C. Una columna alcanza; si aparece un caso real, se pasa a una tabla. Archivos: `sql/160`.
 
 **Al vender, elegir la Cortina marca también el Cajón, a la vista y con un aviso ("La Cortina lleva
 Cajón"), y destildar el Cajón destilda la Cortina. Si el Cajón no se ofrece, por una baja o por el
