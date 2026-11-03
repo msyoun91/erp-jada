@@ -20,7 +20,7 @@ está **por qué** se decidió cada una. Leer solo el archivo que toca la tarea.
 Tocar `components/ui/` o `globals.css`: design system, componentes compartidos, tokens y clases, auditorías de UI app-wide, tipografía.
 
 - Design system
-- Componentes compartidos (`components/ui/`) — `RightPanel` y `Modal` viven en el top layer · `ConfirmModal` · `OverflowMenu` · `ThemeToggle` · `SearchInput` · `FiltroDias`
+- Componentes compartidos (`components/ui/`) — `RightPanel` y `Modal` viven en el top layer · `ConfirmModal` · `OverflowMenu` · `ThemeToggle` · `SearchInput` · `FiltroDias` · `Ayuda`
 - Tokens y clases de `globals.css`
 - Auditorías de UI app-wide — P0 — errores, confirmaciones, foco, boundaries · P1 — responsive y legibilidad · P1 — acciones de fila siempre en `OverflowMenu` · P2 — búsqueda, paginación y contador de resultados
 - DM Sans reemplaza a Barlow Semi Condensed + Plus Jakarta Sans

@@ -4,8 +4,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { Ayuda } from "@/components/ui/Ayuda";
 import { claseInput } from "@/components/ui/Campo";
 import { guardarCondicion } from "../../actions";
+import { EJEMPLO } from "../../ejemplos";
 import { condicionSchema, type Condicion, type CondicionForm } from "../../types";
 import { SacarBoton } from "./Fila";
 
@@ -31,7 +33,9 @@ export function CondicionesLista({
 
   return (
     <section className="flex flex-col gap-2">
-      <h4 className="t-label">Condiciones</h4>
+      <Ayuda de="Condiciones" ejemplo={EJEMPLO.condiciones}>
+        <h4 className="t-label">Condiciones</h4>
+      </Ayuda>
       <p className="t-caption">
         Si se cumple, el vendedor lee el mensaje. Un bloqueo no deja usar el paquete. Ej: alto &gt; ancho × 2.
       </p>

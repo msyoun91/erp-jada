@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { Ayuda } from "@/components/ui/Ayuda";
 import { claseInput } from "@/components/ui/Campo";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { MONEDAS, MONEDAS_LISTA, formatMonto, type Moneda } from "@/lib/monedas";
 import { CLASE_NIVEL, textoCambio } from "@/lib/niveles";
 import { cargarCostos, revisarCostos } from "../actions";
+import { EJEMPLO } from "../ejemplos";
 import { POR_UNIDAD, hace, textoCosto } from "../etiquetas";
 import { costosSchema, type CostosForm, type Costo, type NivelCosto, type Unidad } from "../types";
 
@@ -112,9 +114,11 @@ export function CostosPanel({
               {filas.length > 1 && (
                 <div className="flex flex-wrap items-end gap-2">
                   <div className="flex-1">
-                    <label htmlFor="costos-pct" className="t-label mb-1 block">
-                      Cambiar todos los que tienen costo (%)
-                    </label>
+                    <Ayuda de="Cambiar todos" ejemplo={EJEMPLO.cambiarTodos} className="mb-1">
+                      <label htmlFor="costos-pct" className="t-label">
+                        Cambiar todos los que tienen costo (%)
+                      </label>
+                    </Ayuda>
                     <input
                       id="costos-pct"
                       inputMode="decimal"

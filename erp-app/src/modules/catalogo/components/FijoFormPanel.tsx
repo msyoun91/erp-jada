@@ -7,6 +7,7 @@ import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { MONEDAS, MONEDAS_LISTA, type Moneda } from "@/lib/monedas";
 import { crearFijo, editarFijo } from "../actions";
+import { EJEMPLO } from "../ejemplos";
 import { POR_UNIDAD, UNIDAD } from "../etiquetas";
 import { UNIDADES, fijoSchema, type Categoria, type FijoForm, type Insumo } from "../types";
 
@@ -78,7 +79,7 @@ export function FijoFormPanel({
             ))}
           </select>
         </Campo>
-        <Campo id="fijo-unidad" label="Unidad" requerido error={errors.unidad}>
+        <Campo id="fijo-unidad" label="Unidad" requerido error={errors.unidad} ejemplo={EJEMPLO.unidadFijo}>
           <select id="fijo-unidad" aria-required className={claseInput(errors.unidad)} {...register("unidad")}>
             {UNIDADES.map((u) => (
               <option key={u} value={u}>

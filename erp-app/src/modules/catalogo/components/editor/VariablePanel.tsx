@@ -3,9 +3,11 @@
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { Ayuda } from "@/components/ui/Ayuda";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { guardarVariable } from "../../actions";
+import { EJEMPLO } from "../../ejemplos";
 import { variableSchema, type Condicion, type Pieza, type Variable, type VariableForm } from "../../types";
 import { CondicionesLista } from "./CondicionesLista";
 import { Nombres } from "./Nombres";
@@ -80,7 +82,7 @@ export function VariablePanel({
     >
       <div className="flex flex-col gap-4 overflow-y-auto p-5">
         <form onSubmit={handleSubmit(guardar)} className="flex flex-col gap-4">
-          <Campo id="var-nombre" label="Nombre" requerido error={errors.nombre}>
+          <Campo id="var-nombre" label="Nombre" requerido error={errors.nombre} ejemplo={EJEMPLO.variableNombre}>
             <input id="var-nombre" aria-required className={claseInput(errors.nombre)} {...register("nombre")} />
           </Campo>
           <Campo id="var-pieza" label="Dónde está" error={errors.pieza_id}>
@@ -100,13 +102,15 @@ export function VariablePanel({
           </label>
 
           {ingresa && (
-            <label className="tap-target flex items-start gap-2">
-              <input type="checkbox" className="mt-1" {...register("es_lista")} />
-              <span className="t-body-m">
-                Lista de valores
-                <span className="t-caption block">Como la mano de una puerta. No entra en las cuentas.</span>
-              </span>
-            </label>
+            <Ayuda de="Lista de valores" ejemplo={EJEMPLO.lista}>
+              <label className="tap-target flex items-start gap-2">
+                <input type="checkbox" className="mt-1" {...register("es_lista")} />
+                <span className="t-body-m">
+                  Lista de valores
+                  <span className="t-caption block">Como la mano de una puerta. No entra en las cuentas.</span>
+                </span>
+              </label>
+            </Ayuda>
           )}
 
           {ingresa && lista ? (
@@ -124,6 +128,7 @@ export function VariablePanel({
               label={ingresa ? "Predeterminado, con fórmula (vacío: obligatoria)" : "Fórmula"}
               requerido={!ingresa}
               error={errors.formula}
+              ejemplo={ingresa ? EJEMPLO.predeterminado : EJEMPLO.formula}
             >
               <input
                 id="var-formula"
@@ -137,7 +142,7 @@ export function VariablePanel({
 
           {ingresa && !lista && (
             <>
-              <Campo id="var-es-cantidad" label="Qué es" error={errors.es_cantidad}>
+              <Campo id="var-es-cantidad" label="Qué es" error={errors.es_cantidad} ejemplo={EJEMPLO.queEs}>
                 <select
                   id="var-es-cantidad"
                   className="input"
@@ -169,15 +174,21 @@ export function VariablePanel({
                   />
                 </Campo>
               </div>
-              <p className="t-caption">Fuera de rango bloquea, también si sale del predeterminado.</p>
+              <Ayuda de="Mínimo y máximo" ejemplo={EJEMPLO.rango}>
+                <p className="t-caption">Fuera de rango bloquea, también si sale del predeterminado.</p>
+              </Ayuda>
             </>
           )}
 
           {ingresa && (
-            <label className="tap-target flex items-center gap-2">
-              <input type="checkbox" {...register("secundario")} />
-              <span className="t-body-m">Secundaria: va plegada en &quot;Más opciones&quot; (pide predeterminado)</span>
-            </label>
+            <Ayuda de="Secundaria" ejemplo={EJEMPLO.secundaria}>
+              <label className="tap-target flex items-center gap-2">
+                <input type="checkbox" {...register("secundario")} />
+                <span className="t-body-m">
+                  Secundaria: va plegada en &quot;Más opciones&quot; (pide predeterminado)
+                </span>
+              </label>
+            </Ayuda>
           )}
           <label className="tap-target flex items-center gap-2">
             <input type="checkbox" {...register("a_produccion")} />

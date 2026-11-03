@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { guardarOpcion } from "../../actions";
+import { EJEMPLO } from "../../ejemplos";
 import { opcionSchema, type Condicion, type Opcion, type OpcionForm } from "../../types";
 import { CondicionesLista } from "./CondicionesLista";
 import { InsumoSelect, type InsumosPorId } from "./InsumoSelect";
@@ -52,11 +53,11 @@ export function OpcionPanel({
   }
 
   const formulas = [
-    { campo: "medida", label: "Medida (mm o u)" },
-    { campo: "ancho", label: "Ancho (m2)" },
-    { campo: "alto", label: "Alto (m2)" },
-    { campo: "area", label: "Área, si no es un rectángulo (m2)" },
-    { campo: "cantidad", label: "Cantidad" },
+    { campo: "medida", label: "Medida (mm), para insumos en mm o u", ejemplo: EJEMPLO.opcionMedida },
+    { campo: "ancho", label: "Ancho (mm), para insumos en m2", ejemplo: EJEMPLO.anchoAlto },
+    { campo: "alto", label: "Alto (mm), para insumos en m2", ejemplo: EJEMPLO.anchoAlto },
+    { campo: "area", label: "Área (mm²), solo si no es un rectángulo", ejemplo: EJEMPLO.area },
+    { campo: "cantidad", label: "Cantidad", ejemplo: EJEMPLO.opcionCantidad },
   ] as const;
 
   return (
@@ -87,8 +88,8 @@ export function OpcionPanel({
               <span className="t-body-m">Predeterminada</span>
             </label>
           )}
-          {formulas.map(({ campo, label }) => (
-            <Campo key={campo} id={`opcion-${campo}`} label={label} error={errors[campo]}>
+          {formulas.map(({ campo, label, ejemplo }) => (
+            <Campo key={campo} id={`opcion-${campo}`} label={label} error={errors[campo]} ejemplo={ejemplo}>
               <input id={`opcion-${campo}`} className={`${claseInput(errors[campo])} font-mono`} {...register(campo)} />
             </Campo>
           ))}

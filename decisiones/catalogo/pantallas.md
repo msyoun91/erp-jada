@@ -102,3 +102,14 @@ desde su lista.** La calculadora ya arma la entrada de un vendedor; un formulari
 
 **No se construyó copiar una pieza suelta.** Sus variables chocarían con los nombres únicos (*Qué es un paquete*), y duplicar
 el paquete o sacar una versión nueva desde otra ya ahorran la recarga. Se suma si una carga real lo pide.
+
+## Ejemplos en los campos difíciles (2026-11-03)
+
+**Las fórmulas, los tipos de material, las parejas, las condiciones, la unidad, el peso y espesor, el % en bloque, el paso y
+el mínimo llevan un "?" con un ejemplo (`Ayuda`).** Los textos viven todos en `modules/catalogo/ejemplos.tsx`, con la misma
+ventana corrediza y los números de esta carpeta: si una regla cambia, el ejemplo se corrige en un solo lugar. Las fórmulas de
+ejemplo van sin punto de miles, como las acepta la base (`despiece.md` → *Las fórmulas se calculan sin SQL dinámico*). Los campos simples
+(nombre de un insumo, categoría, moneda) no lo llevan: un "?" en cada campo deja de mirarse.
+
+**En la opción, ancho, alto y área dicen mm, no m2.** Decían "(m2)" por el tipo de insumo que los usa, y se leía como la
+unidad de la fórmula, que siempre da mm. Archivos: `components/editor/OpcionPanel.tsx`.

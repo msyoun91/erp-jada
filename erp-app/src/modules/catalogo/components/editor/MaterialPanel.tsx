@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { Ayuda } from "@/components/ui/Ayuda";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { guardarMaterial, guardarOpcion, sacar } from "../../actions";
+import { EJEMPLO } from "../../ejemplos";
 import { materialSchema, type Contenido, type Material, type MaterialForm, type Opcion } from "../../types";
 import { CondicionesLista } from "./CondicionesLista";
 import { Fila } from "./Fila";
@@ -79,11 +81,12 @@ export function MaterialPanel({
           : tipo === "unico" && insumo?.unidad === "m2"
             ? null
             : "Medida (mm)",
+      ejemplo: EJEMPLO.medida,
     },
-    { campo: "ancho", label: conArea && !esServicio ? "Ancho (mm)" : null },
-    { campo: "alto", label: conArea && !esServicio ? "Alto (mm)" : null },
-    { campo: "area", label: conArea ? "Área (mm²), solo si no es un rectángulo" : null },
-    { campo: "cantidad", label: "Cantidad de piezas iguales" },
+    { campo: "ancho", label: conArea && !esServicio ? "Ancho (mm)" : null, ejemplo: EJEMPLO.anchoAlto },
+    { campo: "alto", label: conArea && !esServicio ? "Alto (mm)" : null, ejemplo: EJEMPLO.anchoAlto },
+    { campo: "area", label: conArea ? "Área (mm²), solo si no es un rectángulo" : null, ejemplo: EJEMPLO.area },
+    { campo: "cantidad", label: "Cantidad de piezas iguales", ejemplo: EJEMPLO.cantidad },
   ] as const;
 
   return (
@@ -101,7 +104,7 @@ export function MaterialPanel({
       >
         <div className="flex flex-col gap-4 overflow-y-auto p-5">
           <form onSubmit={handleSubmit(guardar)} className="flex flex-col gap-4">
-            <Campo id="mat-tipo" label="Tipo" requerido error={errors.tipo}>
+            <Campo id="mat-tipo" label="Tipo" requerido error={errors.tipo} ejemplo={EJEMPLO.tipoMaterial}>
               <select id="mat-tipo" className="input" {...register("tipo")}>
                 {Object.entries(TIPO).map(([valor, label]) => (
                   <option key={valor} value={valor}>
@@ -132,6 +135,7 @@ export function MaterialPanel({
                 label="Regla: termina en una opción o en ninguno"
                 requerido
                 error={errors.eleccion}
+                ejemplo={EJEMPLO.regla}
               >
                 <textarea
                   id="mat-eleccion"
@@ -158,10 +162,12 @@ export function MaterialPanel({
 
             {tipo === "elige_vendedor" && (
               <>
-                <label className="tap-target flex items-center gap-2">
-                  <input type="checkbox" {...register("sin_eleccion")} />
-                  <span className="t-body-m">Permite &quot;sin elección&quot;</span>
-                </label>
+                <Ayuda de="Sin elección" ejemplo={EJEMPLO.sinEleccion}>
+                  <label className="tap-target flex items-center gap-2">
+                    <input type="checkbox" {...register("sin_eleccion")} />
+                    <span className="t-body-m">Permite &quot;sin elección&quot;</span>
+                  </label>
+                </Ayuda>
                 <label className="tap-target flex items-center gap-2">
                   <input type="checkbox" {...register("secundario")} />
                   <span className="t-body-m">Secundario: va plegado en &quot;Más opciones&quot;</span>
@@ -169,9 +175,9 @@ export function MaterialPanel({
               </>
             )}
 
-            {formulas.map(({ campo, label }) =>
+            {formulas.map(({ campo, label, ejemplo }) =>
               label ? (
-                <Campo key={campo} id={`mat-${campo}`} label={label} error={errors[campo]}>
+                <Campo key={campo} id={`mat-${campo}`} label={label} error={errors[campo]} ejemplo={ejemplo}>
                   <input
                     id={`mat-${campo}`}
                     className={`${claseInput(errors[campo])} font-mono`}
@@ -194,10 +200,12 @@ export function MaterialPanel({
                   <input type="checkbox" {...register("cuenta_peso")} />
                   <span className="t-body-m">Cuenta para el peso</span>
                 </label>
-                <label className="tap-target flex items-center gap-2">
-                  <input type="checkbox" {...register("cuenta_espesor")} />
-                  <span className="t-body-m">Cuenta para el espesor</span>
-                </label>
+                <Ayuda de="Cuenta para el espesor" ejemplo={EJEMPLO.cuentaEspesor}>
+                  <label className="tap-target flex items-center gap-2">
+                    <input type="checkbox" {...register("cuenta_espesor")} />
+                    <span className="t-body-m">Cuenta para el espesor</span>
+                  </label>
+                </Ayuda>
               </fieldset>
             )}
           </form>
@@ -301,7 +309,9 @@ function Parejas({
 
   return (
     <section className="flex flex-col gap-2">
-      <h4 className="t-label">Parejas</h4>
+      <Ayuda de="Parejas" ejemplo={EJEMPLO.parejas}>
+        <h4 className="t-label">Parejas</h4>
+      </Ayuda>
       <p className="t-caption">El vendedor elige una vez, en el otro material: esta queda con la pareja.</p>
       <ul className="flex flex-col gap-2">
         {delQueElige.map((o) => {
