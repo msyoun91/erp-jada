@@ -4,10 +4,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Ayuda } from "@/components/ui/Ayuda";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { guardarVersionDatos, marcarColorBase, sumarColorVersion } from "../../actions";
-import { EJEMPLO } from "../../ejemplos";
 import { versionDatosSchema, type Categoria, type Color, type Version, type VersionDatosForm } from "../../types";
 import { SacarBoton } from "./Fila";
 
@@ -76,9 +74,7 @@ export function DatosVersion({
       </form>
 
       <div className="flex flex-col gap-2">
-        <Ayuda de="Colores que ofrece" ejemplo={EJEMPLO.coloresVersion}>
-          <h3 className="t-label">Colores que ofrece</h3>
-        </Ayuda>
+        <h3 className="t-label">Colores que ofrece</h3>
         <p className="t-caption">
           El base viene elegido para el vendedor. En cada color se deja de ofrecer lo que no se arma en él.
         </p>

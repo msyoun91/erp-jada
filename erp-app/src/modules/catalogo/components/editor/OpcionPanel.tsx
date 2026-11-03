@@ -1,13 +1,13 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { guardarOpcion } from "../../actions";
-import { EJEMPLO } from "../../ejemplos";
 import { opcionSchema, type Condicion, type Opcion, type OpcionForm } from "../../types";
+import { CamposMedida } from "./CamposMedida";
 import { CondicionesLista } from "./CondicionesLista";
 import { InsumoSelect, type InsumosPorId } from "./InsumoSelect";
 import { Nombres } from "./Nombres";
@@ -34,13 +34,14 @@ export function OpcionPanel({
   nombres: string[];
   onClose: () => void;
 }) {
-  const { register, handleSubmit, formState } = useForm<OpcionForm>({
+  const { register, handleSubmit, formState, control, getValues } = useForm<OpcionForm>({
     resolver: zodResolver(opcionSchema),
     defaultValues: opcion
       ? { ...opcion, version_id: versionId }
       : { id: null, version_id: versionId, material_id: materialId, orden, insumo_id: "", predeterminada: false },
   });
   const { errors, isSubmitting } = formState;
+  const insumo = insumos.get(useWatch({ control, name: "insumo_id" }) ?? "");
 
   async function guardar(d: OpcionForm) {
     const r = await guardarOpcion(d);
@@ -51,14 +52,6 @@ export function OpcionPanel({
     toast.success("Opción guardada");
     onClose();
   }
-
-  const formulas = [
-    { campo: "medida", label: "Medida (mm, para insumos en mm o u)", ejemplo: EJEMPLO.opcionMedida },
-    { campo: "ancho", label: "Ancho (mm, para insumos en m2)", ejemplo: EJEMPLO.anchoAlto },
-    { campo: "alto", label: "Alto (mm, para insumos en m2)", ejemplo: EJEMPLO.anchoAlto },
-    { campo: "area", label: "Área (mm², solo si no es un rectángulo)", ejemplo: EJEMPLO.area },
-    { campo: "cantidad", label: "Cantidad", ejemplo: EJEMPLO.opcionCantidad },
-  ] as const;
 
   return (
     <RightPanel
@@ -88,11 +81,18 @@ export function OpcionPanel({
               <span className="t-body-m">Predeterminada</span>
             </label>
           )}
-          {formulas.map(({ campo, label, ejemplo }) => (
-            <Campo key={campo} id={`opcion-${campo}`} label={label} error={errors[campo]} ejemplo={ejemplo}>
-              <input id={`opcion-${campo}`} className={`${claseInput(errors[campo])} font-mono`} {...register(campo)} />
-            </Campo>
-          ))}
+          <CamposMedida
+            usados={insumo ? [insumo] : []}
+            conValor={(c) => Boolean(opcion?.[c] || getValues(c))}
+            campo={(c, label) => (
+              <Campo id={`opcion-${c}`} label={label} error={errors[c]}>
+                <input id={`opcion-${c}`} className={`${claseInput(errors[c])} font-mono`} {...register(c)} />
+              </Campo>
+            )}
+          />
+          <Campo id="opcion-cantidad" label="Cantidad" error={errors.cantidad}>
+            <input id="opcion-cantidad" className={`${claseInput(errors.cantidad)} font-mono`} {...register("cantidad")} />
+          </Campo>
           <Nombres nombres={nombres} />
         </form>
         {opcion && <CondicionesLista versionId={versionId} de={{ opcion_id: opcion.id }} condiciones={condiciones} />}

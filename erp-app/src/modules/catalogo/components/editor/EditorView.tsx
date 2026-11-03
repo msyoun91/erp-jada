@@ -15,7 +15,7 @@ import { VariablePanel } from "./VariablePanel";
 type Panel =
   | { tipo: "pieza"; id: string | null }
   | { tipo: "variable"; id: string | null; piezaId: string | null }
-  | { tipo: "material"; id: string | null; piezaId: string };
+  | { tipo: "material"; id: string | null; piezaId: string; sumarOpcion?: boolean };
 
 // Un borrador puede quedar a medias: cada cambio se guarda solo, y lo que falta lo dice "Lo que frena el
 // envío", que la base recalcula con cada guardado.
@@ -248,7 +248,8 @@ export function EditorView({
           contenido={contenido}
           insumos={porId}
           nombres={nombres}
-          onCreado={(id) => setPanel({ tipo: "material", id, piezaId: panel.piezaId })}
+          abrirOpcion={panel.sumarOpcion}
+          onCreado={(id, sumarOpcion) => setPanel({ tipo: "material", id, piezaId: panel.piezaId, sumarOpcion })}
           onClose={() => setPanel(null)}
         />
       )}

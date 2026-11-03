@@ -1,5 +1,3 @@
-import { Ayuda } from "./Ayuda";
-
 type FieldError = { message?: string };
 
 // `.t-label` va en mayúsculas, y "ANCHO (MM)" se lee como megámetros: lo que está entre paréntesis (unidades,
@@ -21,31 +19,19 @@ export function Campo({
   label,
   requerido,
   error,
-  ejemplo,
   children,
 }: {
   id: string;
   label: string;
   requerido?: boolean;
   error?: FieldError;
-  // Con ejemplo, la etiqueta lleva un "?" que lo muestra.
-  ejemplo?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const clase = `t-label ${requerido ? "t-label-req" : ""}`;
   return (
     <div>
-      {ejemplo ? (
-        <Ayuda de={label} ejemplo={ejemplo} className="mb-1">
-          <label htmlFor={id} className={clase}>
-            <Etiqueta texto={label} />
-          </label>
-        </Ayuda>
-      ) : (
-        <label htmlFor={id} className={`${clase} mb-1 block`}>
-          <Etiqueta texto={label} />
-        </label>
-      )}
+      <label htmlFor={id} className={`t-label ${requerido ? "t-label-req" : ""} mb-1 block`}>
+        <Etiqueta texto={label} />
+      </label>
       {children}
       {error && <p className="input-error-text">{error.message}</p>}
     </div>

@@ -102,6 +102,15 @@ cuatro renglones.
 vacía. "Mismas opciones" las llena para el sincronizado.** En la base son un solo mecanismo (*Un material múltiple puede
 seguir la elección de otro*).
 
+**El panel de un material múltiple muestra solo las fórmulas que usan sus opciones; sin opciones, todas, aclaradas.** El
+múltiple no guarda unidad: la tiene cada opción. Con el Vidrio todo en m2, Medida no aparece; un campo que ya tiene un valor
+sigue a la vista, para no esconder un dato. Archivo: `MaterialPanel.tsx`.
+
+**La regla se arma con botones que escriben donde quedó el cursor: palabras, opciones del material y nombres; a mano se
+puede seguir escribiendo.** Había que memorizar las opciones, y un nombre mal escrito recién se veía en lo que frena el
+envío. Se descartó autocompletar (más código, incómodo en el celular) y armarla con listas (una regla anidada igual pide
+texto, y quedaban dos formas de hacer lo mismo). Archivos: `Nombres.tsx`, `MaterialPanel.tsx`.
+
 **El primer color que se suma a una versión queda como base; hacer base a otro apaga el anterior.**
 
 **Los casos de prueba se guardan desde la calculadora de la ficha ("Guardar como caso"), con lo cargado tal cual, y se sacan
@@ -110,16 +119,27 @@ desde su lista.** La calculadora ya arma la entrada de un vendedor; un formulari
 **No se construyó copiar una pieza suelta.** Sus variables chocarían con los nombres únicos (*Qué es un paquete*), y duplicar
 el paquete o sacar una versión nueva desde otra ya ahorran la recarga. Se suma si una carga real lo pide.
 
-## Ejemplos en los campos difíciles (2026-11-03)
+## Sin "?" en los campos (2026-11-03)
 
-**Las fórmulas, los tipos de material, las parejas, las condiciones, la unidad, el peso y espesor, el % en bloque, el paso y
-el mínimo llevan un "?" con un ejemplo (`Ayuda`).** Los textos viven todos en `modules/catalogo/ejemplos.tsx`, con la misma
-ventana corrediza y los números de esta carpeta: si una regla cambia, el ejemplo se corrige en un solo lugar. Las fórmulas de
-ejemplo van sin punto de miles, como las acepta la base (`despiece.md` → *Las fórmulas se calculan sin SQL dinámico*). Los campos simples
-(nombre de un insumo, categoría, moneda) no lo llevan: un "?" en cada campo deja de mirarse.
+**~~Los campos difíciles llevan un "?" con un ejemplo~~: se retiró a pedido del usuario, con `components/ui/Ayuda.tsx` y
+`modules/catalogo/ejemplos.tsx`.** Quedan las aclaraciones que están siempre a la vista en cada formulario. El texto viejo
+queda en git.
 
 **En la opción, ancho, alto y área dicen mm, no m2.** Decían "(m2)" por el tipo de insumo que los usa, y se leía como la
 unidad de la fórmula, que siempre da mm. Archivos: `components/editor/OpcionPanel.tsx`.
+
+## Opciones del material a la vista (2026-11-03)
+
+**Las opciones de un múltiple se ven desde que se elige el tipo, debajo del nombre y antes de la regla; "Sumar opción" guarda
+solo el material si hace falta.** Antes aparecían después de guardar y abajo de todo, y parecía que no había dónde cargarlas.
+Antes de la regla porque la regla nombra opciones, y sus botones ya las muestran. El formulario se parte en dos alrededor de
+la sección: los botones de `Fila` lo enviarían. Archivos: `components/editor/MaterialPanel.tsx`.
+
+**La unidad del insumo decide qué medidas se ven, en el material y en la opción; lo opcional se agrega a pedido.** En u solo la
+cantidad (+ Medida de corte), en mm la medida, en m2 ancho y alto (+ Área), en un servicio en m2 el área (+ Ancho y alto). Lo
+que ya tiene un valor se ve siempre. Todo a pedido dejaba olvidarse un campo obligatorio hasta el envío; todo a la vista
+parecía obligar a cargar ancho y alto en una rueda. Sin opciones todavía, un múltiple no muestra medidas. Archivos:
+`components/editor/CamposMedida.tsx`.
 
 ## Agrupar por categoría (2026-11-03)
 

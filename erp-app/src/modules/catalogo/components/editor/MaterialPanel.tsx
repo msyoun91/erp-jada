@@ -1,20 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Ayuda } from "@/components/ui/Ayuda";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { guardarMaterial, guardarOpcion, sacar } from "../../actions";
 import { formulaAparte } from "../../etiquetas";
-import { EJEMPLO } from "../../ejemplos";
 import { materialSchema, type Contenido, type Material, type MaterialForm, type Opcion } from "../../types";
+import { CamposMedida } from "./CamposMedida";
 import { CondicionesLista } from "./CondicionesLista";
 import { Fila } from "./Fila";
 import { InsumoSelect, type InsumosPorId } from "./InsumoSelect";
-import { Nombres } from "./Nombres";
+import { ArmarRegla, Nombres } from "./Nombres";
 import { OpcionPanel } from "./OpcionPanel";
 
 const TIPO: Record<MaterialForm["tipo"], string> = {
@@ -32,6 +31,7 @@ export function MaterialPanel({
   contenido,
   insumos,
   nombres,
+  abrirOpcion = false,
   onCreado,
   onClose,
 }: {
@@ -42,53 +42,68 @@ export function MaterialPanel({
   contenido: Contenido;
   insumos: InsumosPorId;
   nombres: string[];
-  onCreado: (id: string) => void;
+  // Recién creado con "Sumar opción": el panel se vuelve a montar con el material y sigue en esa opción.
+  abrirOpcion?: boolean;
+  onCreado: (id: string, sumarOpcion: boolean) => void;
   onClose: () => void;
 }) {
-  const [opcion, setOpcion] = useState<Opcion | "nueva" | null>(null);
-  const { register, handleSubmit, control, formState } = useForm<MaterialForm>({
+  const [opcion, setOpcion] = useState<Opcion | "nueva" | null>(abrirOpcion ? "nueva" : null);
+  const regla = useRef<HTMLTextAreaElement | null>(null);
+  const { register, handleSubmit, control, formState, getValues, setValue, reset } = useForm<MaterialForm>({
     resolver: zodResolver(materialSchema),
     defaultValues: material
       ? { ...material, version_id: versionId }
       : { id: null, version_id: versionId, pieza_id: piezaId, orden, tipo: "unico", cantidad: "1", cuenta_peso: true },
   });
   const { errors, isSubmitting } = formState;
+  const { ref: registrarRegla, ...campoRegla } = register("eleccion");
   const [tipo, insumoId] = useWatch({ control, name: ["tipo", "insumo_id"] });
   const insumo = insumos.get(insumoId ?? "");
   const opciones = material ? contenido.opciones.filter((o) => o.material_id === material.id) : [];
-  const conArea = tipo !== "unico" || insumo?.unidad === "m2";
   const esServicio = tipo === "unico" && insumo?.tipo === "servicio";
+
+  // Un múltiple no tiene unidad: la tiene cada opción.
+  const usados =
+    tipo === "unico" ? (insumo ? [insumo] : []) : opciones.flatMap((o) => insumos.get(o.insumo_id ?? "") ?? []);
+
   const seguibles = contenido.materiales.filter(
     (m) => m.id !== material?.id && (m.tipo === "elige_vendedor" || m.tipo === "elige_sistema"),
   );
 
-  async function guardar(d: MaterialForm) {
+  async function grabar(d: MaterialForm) {
     const r = await guardarMaterial(d);
     if (!r.success) {
       toast.error(r.error);
-      return;
+      return null;
     }
     toast.success("Material guardado");
-    if (!material && d.tipo !== "unico") onCreado(r.id);
+    return r.id;
+  }
+
+  async function guardar(d: MaterialForm) {
+    const id = await grabar(d);
+    if (!id) return;
+    if (!material && d.tipo !== "unico") onCreado(id, false);
     else onClose();
   }
 
-  const formulas = [
-    {
-      campo: "medida",
-      label:
-        tipo === "unico" && insumo?.unidad === "u"
-          ? "Medida de corte (mm, opcional: se cobra la cantidad)"
-          : tipo === "unico" && insumo?.unidad === "m2"
-            ? null
-            : "Medida (mm)",
-      ejemplo: EJEMPLO.medida,
-    },
-    { campo: "ancho", label: conArea && !esServicio ? "Ancho (mm)" : null, ejemplo: EJEMPLO.anchoAlto },
-    { campo: "alto", label: conArea && !esServicio ? "Alto (mm)" : null, ejemplo: EJEMPLO.anchoAlto },
-    { campo: "area", label: conArea ? "Área (mm², solo si no es un rectángulo)" : null, ejemplo: EJEMPLO.area },
-    { campo: "cantidad", label: "Cantidad de piezas iguales", ejemplo: EJEMPLO.cantidad },
-  ] as const;
+  // Una opción cuelga de un material guardado y de ese tipo: si todavía no lo está, se guarda solo antes de abrirla.
+  function sumarOpcion() {
+    if (material?.tipo === tipo) {
+      setOpcion("nueva");
+      return;
+    }
+    void handleSubmit(async (d) => {
+      const id = await grabar(d);
+      if (!id) return;
+      if (!material) {
+        onCreado(id, true);
+        return;
+      }
+      reset(getValues());
+      setOpcion("nueva");
+    })();
+  }
 
   return (
     <>
@@ -105,7 +120,7 @@ export function MaterialPanel({
       >
         <div className="flex flex-col gap-4 overflow-y-auto p-5">
           <form onSubmit={handleSubmit(guardar)} className="flex flex-col gap-4">
-            <Campo id="mat-tipo" label="Tipo" requerido error={errors.tipo} ejemplo={EJEMPLO.tipoMaterial}>
+            <Campo id="mat-tipo" label="Tipo" requerido error={errors.tipo}>
               <select id="mat-tipo" className="input" {...register("tipo")}>
                 {Object.entries(TIPO).map(([valor, label]) => (
                   <option key={valor} value={valor}>
@@ -129,92 +144,12 @@ export function MaterialPanel({
                 <input id="mat-nombre" aria-required className={claseInput(errors.nombre)} {...register("nombre")} />
               </Campo>
             )}
-
-            {tipo === "elige_sistema" && (
-              <Campo
-                id="mat-eleccion"
-                label="Regla: termina en una opción o en ninguno"
-                requerido
-                error={errors.eleccion}
-                ejemplo={EJEMPLO.regla}
-              >
-                <textarea
-                  id="mat-eleccion"
-                  rows={3}
-                  placeholder="si [peso Hoja] > 40 entonces [Rueda 80kg] si no [Rueda 40kg]"
-                  className={`${claseInput(errors.eleccion)} font-mono`}
-                  {...register("eleccion")}
-                />
-              </Campo>
-            )}
-
-            {tipo === "sigue" && (
-              <Campo id="mat-sigue" label="Sigue a" requerido error={errors.sigue_material_id}>
-                <select id="mat-sigue" className="input" {...register("sigue_material_id")}>
-                  <option value="">Elegí un material múltiple</option>
-                  {seguibles.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.nombre} · {contenido.piezas.find((p) => p.id === m.pieza_id)?.nombre}
-                    </option>
-                  ))}
-                </select>
-              </Campo>
-            )}
-
-            {tipo === "elige_vendedor" && (
-              <>
-                <Ayuda de="Sin elección" ejemplo={EJEMPLO.sinEleccion}>
-                  <label className="tap-target flex items-center gap-2">
-                    <input type="checkbox" {...register("sin_eleccion")} />
-                    <span className="t-body-m">Permite &quot;sin elección&quot;</span>
-                  </label>
-                </Ayuda>
-                <label className="tap-target flex items-center gap-2">
-                  <input type="checkbox" {...register("secundario")} />
-                  <span className="t-body-m">Secundario: va plegado en &quot;Más opciones&quot;</span>
-                </label>
-              </>
-            )}
-
-            {formulas.map(({ campo, label, ejemplo }) =>
-              label ? (
-                <Campo key={campo} id={`mat-${campo}`} label={label} error={errors[campo]} ejemplo={ejemplo}>
-                  <input
-                    id={`mat-${campo}`}
-                    className={`${claseInput(errors[campo])} font-mono`}
-                    {...register(campo)}
-                  />
-                </Campo>
-              ) : null,
-            )}
-            {tipo !== "unico" && (
-              <p className="t-caption">
-                Las opciones heredan lo que no traen: la medida, solo si tienen la misma unidad.
-              </p>
-            )}
-            <Nombres nombres={nombres} />
-
-            {!esServicio && (
-              <fieldset className="flex flex-col gap-1">
-                <legend className="t-label mb-1">En la pieza</legend>
-                <label className="tap-target flex items-center gap-2">
-                  <input type="checkbox" {...register("cuenta_peso")} />
-                  <span className="t-body-m">Cuenta para el peso</span>
-                </label>
-                <Ayuda de="Cuenta para el espesor" ejemplo={EJEMPLO.cuentaEspesor}>
-                  <label className="tap-target flex items-center gap-2">
-                    <input type="checkbox" {...register("cuenta_espesor")} />
-                    <span className="t-body-m">Cuenta para el espesor</span>
-                  </label>
-                </Ayuda>
-              </fieldset>
-            )}
           </form>
 
-          {material && (material.tipo === "elige_vendedor" || material.tipo === "elige_sistema") && (
+          {(tipo === "elige_vendedor" || tipo === "elige_sistema") && (
             <section className="flex flex-col gap-2">
               <h4 className="t-label">Opciones</h4>
-              {opciones.length === 0 && <p className="t-body-m text-warning-text">Sin opciones todavía.</p>}
+              {opciones.length === 0 && <p className="t-body-m text-warning-text">Todavía no hay ninguna.</p>}
               <ul className="flex flex-col">
                 {opciones.map((o) => (
                   <Fila
@@ -235,11 +170,105 @@ export function MaterialPanel({
                   />
                 ))}
               </ul>
-              <button className="btn btn-secondary btn-sm self-start" onClick={() => setOpcion("nueva")}>
+              <button className="btn btn-secondary btn-sm self-start" onClick={sumarOpcion} disabled={isSubmitting}>
                 Sumar opción
               </button>
             </section>
           )}
+
+          <form onSubmit={handleSubmit(guardar)} className="flex flex-col gap-4">
+            {tipo === "elige_sistema" && (
+              <Campo
+                id="mat-eleccion"
+                label="Regla: termina en una opción o en ninguno"
+                requerido
+                error={errors.eleccion}
+              >
+                <textarea
+                  id="mat-eleccion"
+                  rows={3}
+                  placeholder="si [peso Hoja] > 40 entonces [Rueda 80kg] si no [Rueda 40kg]"
+                  className={`${claseInput(errors.eleccion)} font-mono`}
+                  {...campoRegla}
+                  ref={(el) => {
+                    registrarRegla(el);
+                    regla.current = el;
+                  }}
+                />
+                <ArmarRegla
+                  textarea={regla}
+                  onCambio={(v) => setValue("eleccion", v, { shouldDirty: true })}
+                  opciones={opciones.flatMap((o) => insumos.get(o.insumo_id ?? "")?.nombre ?? [])}
+                  nombres={nombres.filter((n) => n !== material?.nombre)}
+                />
+              </Campo>
+            )}
+
+            {tipo === "sigue" && (
+              <Campo id="mat-sigue" label="Sigue a" requerido error={errors.sigue_material_id}>
+                <select id="mat-sigue" className="input" {...register("sigue_material_id")}>
+                  <option value="">Elegí un material múltiple</option>
+                  {seguibles.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.nombre} · {contenido.piezas.find((p) => p.id === m.pieza_id)?.nombre}
+                    </option>
+                  ))}
+                </select>
+              </Campo>
+            )}
+
+            {tipo === "elige_vendedor" && (
+              <>
+                <label className="tap-target flex items-center gap-2">
+                  <input type="checkbox" {...register("sin_eleccion")} />
+                  <span className="t-body-m">Permite &quot;sin elección&quot;</span>
+                </label>
+                <label className="tap-target flex items-center gap-2">
+                  <input type="checkbox" {...register("secundario")} />
+                  <span className="t-body-m">Secundario: va plegado en &quot;Más opciones&quot;</span>
+                </label>
+              </>
+            )}
+
+            <CamposMedida
+              usados={usados}
+              conValor={(c) => Boolean(material?.[c] || getValues(c))}
+              campo={(c, label) => (
+                <Campo id={`mat-${c}`} label={label} error={errors[c]}>
+                  <input id={`mat-${c}`} className={`${claseInput(errors[c])} font-mono`} {...register(c)} />
+                </Campo>
+              )}
+            />
+            <Campo id="mat-cantidad" label="Cantidad de piezas iguales" error={errors.cantidad}>
+              <input
+                id="mat-cantidad"
+                className={`${claseInput(errors.cantidad)} font-mono`}
+                {...register("cantidad")}
+              />
+            </Campo>
+            {tipo !== "unico" && (
+              <p className="t-caption">
+                {usados.length > 0
+                  ? "Las opciones heredan lo que no traen."
+                  : "Las medidas aparecen al sumar una opción, según su unidad."}
+              </p>
+            )}
+            <Nombres nombres={nombres} />
+
+            {!esServicio && (
+              <fieldset className="flex flex-col gap-1">
+                <legend className="t-label mb-1">En la pieza</legend>
+                <label className="tap-target flex items-center gap-2">
+                  <input type="checkbox" {...register("cuenta_peso")} />
+                  <span className="t-body-m">Cuenta para el peso</span>
+                </label>
+                <label className="tap-target flex items-center gap-2">
+                  <input type="checkbox" {...register("cuenta_espesor")} />
+                  <span className="t-body-m">Cuenta para el espesor</span>
+                </label>
+              </fieldset>
+            )}
+          </form>
 
           {material?.tipo === "sigue" && material.sigue_material_id && (
             <Parejas versionId={versionId} material={material} contenido={contenido} insumos={insumos} />
@@ -314,9 +343,7 @@ function Parejas({
 
   return (
     <section className="flex flex-col gap-2">
-      <Ayuda de="Parejas" ejemplo={EJEMPLO.parejas}>
-        <h4 className="t-label">Parejas</h4>
-      </Ayuda>
+      <h4 className="t-label">Parejas</h4>
       <p className="t-caption">El vendedor elige una vez, en el otro material: esta queda con la pareja.</p>
       <ul className="flex flex-col gap-2">
         {delQueElige.map((o) => {

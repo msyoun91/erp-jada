@@ -3,11 +3,9 @@
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Ayuda } from "@/components/ui/Ayuda";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { crearInsumo, editarInsumo } from "../actions";
-import { EJEMPLO } from "../ejemplos";
 import { POR_UNIDAD, UNIDAD } from "../etiquetas";
 import { UNIDADES, insumoSchema, type Categoria, type Color, type Insumo, type InsumoForm } from "../types";
 
@@ -85,7 +83,7 @@ export function InsumoFormPanel({
             ))}
           </select>
         </Campo>
-        <Campo id="insumo-unidad" label="Unidad" requerido error={errors.unidad} ejemplo={EJEMPLO.unidad}>
+        <Campo id="insumo-unidad" label="Unidad" requerido error={errors.unidad}>
           <select id="insumo-unidad" aria-required className={claseInput(errors.unidad)} {...register("unidad")}>
             {UNIDADES.map((u) => (
               <option key={u} value={u}>
@@ -118,32 +116,26 @@ export function InsumoFormPanel({
             />
           </Campo>
         </div>
-        <Ayuda de="Peso y espesor" ejemplo={EJEMPLO.pesoEspesor}>
-          <p className="t-caption">
-            Vacío no es 0: si una pieza cuenta este dato, la versión no se puede enviar hasta completarlo. Se completa
-            una vez, aunque ya se use.
-          </p>
-        </Ayuda>
+        <p className="t-caption">
+          Vacío no es 0: si una pieza cuenta este dato, la versión no se puede enviar hasta completarlo. Se completa una
+          vez, aunque ya se use.
+        </p>
 
         {insumo ? (
-          <Ayuda de="Tiene colores" ejemplo={EJEMPLO.coloresInsumo}>
-            <label className="tap-target flex items-start gap-2">
-              <input type="checkbox" className="mt-1" {...register("con_color")} />
-              <span className="t-body-m">
-                Tiene colores
-                <span className="t-caption block">
-                  Pasar a colores apaga la variante indistinta; volver a indistinto apaga los colores. Queda fijo cuando
-                  se envía una versión que lo usa.
-                </span>
+          <label className="tap-target flex items-start gap-2">
+            <input type="checkbox" className="mt-1" {...register("con_color")} />
+            <span className="t-body-m">
+              Tiene colores
+              <span className="t-caption block">
+                Pasar a colores apaga la variante indistinta; volver a indistinto apaga los colores. Queda fijo cuando se
+                envía una versión que lo usa.
               </span>
-            </label>
-          </Ayuda>
+            </span>
+          </label>
         ) : (
           <fieldset className="flex flex-col gap-1">
             <legend className="t-label mb-1">Colores</legend>
-            <Ayuda de="Colores" ejemplo={EJEMPLO.coloresInsumo} className="mb-1">
-              <p className="t-caption">Sin ninguno, es de color indistinto: una sola variante.</p>
-            </Ayuda>
+            <p className="t-caption mb-1">Sin ninguno, es de color indistinto: una sola variante.</p>
             {colores
               .filter((c) => c.activo)
               .map((c) => (

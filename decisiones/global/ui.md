@@ -98,14 +98,9 @@ temporal lo va a querer y el componente no sabe nada del módulo: recibe `href`,
 `border-border`, la forma del segmented de relación de la Lista de tareas — antes era
 `btn-primary`, que en el sistema es un botón de acción, no un filtro elegido.
 
-### `Ayuda`
+### ~~`Ayuda`~~
 
-**Un campo difícil lleva un "?" que abre un ejemplo en el renglón de abajo: `components/ui/Ayuda.tsx`, y en `Campo`
-la prop `ejemplo`.** Inline y no popover ni tooltip: en un `RightPanel` no hay lugar al costado, en touch no hay hover, y
-el ejemplo queda a la vista mientras se escribe. Envuelve lo que lleva al lado —la etiqueta, un checkbox, un título— para
-que el "?" no se separe del texto cuando este ocupa dos renglones. El botón es `.icon-btn` achicado a 28px con margen
-negativo, así no agranda la fila de una etiqueta de 12px y en mobile sigue teniendo 44px. Primer uso: catálogo
-(`decisiones/catalogo/pantallas.md` → *Ejemplos en los campos difíciles*).
+Retirado a pedido del usuario (2026-11-03): ver `decisiones/catalogo/pantallas.md` → *Sin "?" en los campos*.
 
 ### `Campo`: lo que va entre paréntesis no va en mayúsculas
 

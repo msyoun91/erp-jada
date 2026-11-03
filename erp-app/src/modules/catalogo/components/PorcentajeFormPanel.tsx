@@ -5,13 +5,11 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Ayuda } from "@/components/ui/Ayuda";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { MONEDAS, MONEDAS_LISTA, type Moneda } from "@/lib/monedas";
 import { guardarPorcentaje } from "../actions";
-import { EJEMPLO } from "../ejemplos";
 import { PASO } from "../etiquetas";
 import { porcentajeSchema, type Categoria, type Porcentaje, type PorcentajeForm } from "../types";
 
@@ -107,7 +105,7 @@ export function PorcentajeFormPanel({
               {...register("porcentaje", { setValueAs: numeroONulo })}
             />
           </Campo>
-          <Campo id="pct-paso" label="Sobre qué se calcula" requerido error={errors.paso} ejemplo={EJEMPLO.paso}>
+          <Campo id="pct-paso" label="Sobre qué se calcula" requerido error={errors.paso}>
             <select
               id="pct-paso"
               aria-required
@@ -148,9 +146,7 @@ export function PorcentajeFormPanel({
           {paso !== 3 && (
             <fieldset className="flex flex-col gap-2">
               <legend className="t-label mb-1">Mínimo</legend>
-              <Ayuda de="Mínimo" ejemplo={EJEMPLO.minimo}>
-                <p className="t-caption">Vacío: sin mínimo.</p>
-              </Ayuda>
+              <p className="t-caption">Vacío: sin mínimo.</p>
               <div className="flex gap-2">
                 <input
                   type="number"
