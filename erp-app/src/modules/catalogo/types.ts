@@ -164,3 +164,241 @@ export type PorcentajeForm = z.input<typeof porcentajeSchema>;
 
 export const revertirSchema = z.object({ valor_id: idSchema, confirmar_rojo: z.boolean().default(false) });
 export type RevertirForm = z.input<typeof revertirSchema>;
+
+// ---------- Paquetes y versiones ----------
+
+export type EstadoVersion = Enums["estado_version_catalogo"];
+export type AccionVersion = Enums["accion_version_catalogo"];
+export type TipoMaterial = Enums["tipo_material"];
+
+export type VersionResumen = {
+  id: string;
+  numero: number;
+  estado: EstadoVersion;
+  nombre: string;
+  categoria_id: string;
+};
+
+export type Paquete = {
+  id: string;
+  activo: boolean;
+  // Por qué está de baja: el insumo o la variante que lo bajó; ninguna de las dos, a mano.
+  baja_por: string | null;
+  versiones: VersionResumen[];
+};
+
+export type ColorVersion = { id: string; color_id: string; nombre: string; base: boolean };
+
+export type FilaHistoriaVersion = {
+  id: string;
+  accion: AccionVersion;
+  motivo: string | null;
+  quien: string | null;
+  created_at: string;
+};
+
+export type Version = VersionResumen & {
+  paquete: Paquete;
+  colores: ColorVersion[];
+  historia: FilaHistoriaVersion[];
+};
+
+type Fila<T extends keyof Tablas> = Tablas[T]["Row"];
+
+export type Pieza = Omit<Fila<"catalogo_piezas">, "cantidad_arbol" | "created_at" | "updated_at" | "version_id">;
+export type Variable = Omit<Fila<"catalogo_variables">, "formula_arbol" | "created_at" | "updated_at" | "version_id">;
+export type Material = Omit<
+  Fila<"catalogo_materiales">,
+  | "medida_arbol"
+  | "ancho_arbol"
+  | "alto_arbol"
+  | "area_arbol"
+  | "cantidad_arbol"
+  | "eleccion_arbol"
+  | "created_at"
+  | "updated_at"
+  | "version_id"
+>;
+export type Opcion = Omit<
+  Fila<"catalogo_opciones">,
+  | "medida_arbol"
+  | "ancho_arbol"
+  | "alto_arbol"
+  | "area_arbol"
+  | "cantidad_arbol"
+  | "created_at"
+  | "updated_at"
+  | "version_id"
+>;
+export type Condicion = Omit<
+  Fila<"catalogo_condiciones">,
+  "condicion_arbol" | "created_at" | "updated_at" | "version_id"
+>;
+export type Caso = { id: string; nombre: string; entrada: Entrada };
+
+export type Contenido = {
+  piezas: Pieza[];
+  variables: Variable[];
+  materiales: Material[];
+  opciones: Opcion[];
+  condiciones: Condicion[];
+  casos: Caso[];
+};
+
+// Lo que cargaría un vendedor (`db_schema/catalogo.md` → *La entrada*). La base revisa la forma (CA017).
+export const entradaSchema = z.object({
+  variables: z.record(z.string(), z.union([z.number(), z.string()])).optional(),
+  elecciones: z.record(z.string(), z.record(z.string(), idSchema.nullable())).optional(),
+  piezas: z.record(z.string(), z.boolean()).optional(),
+  color: idSchema.optional(),
+});
+export type Entrada = z.infer<typeof entradaSchema>;
+
+export type MensajeDespiece = {
+  mensaje: string;
+  bloquea: boolean;
+  variable_id?: string;
+  material_id?: string;
+  opcion_id?: string;
+};
+
+export type FilaDespiece = {
+  pieza_id: string;
+  pieza: string;
+  material_id: string;
+  opcion_id?: string;
+  material: string;
+  insumo_id: string;
+  insumo: string;
+  tipo: TipoInsumo;
+  categoria_id: string;
+  unidad: Unidad;
+  color_id?: string;
+  color?: string;
+  medida?: number;
+  ancho?: number;
+  alto?: number;
+  area?: number;
+  cantidad: number;
+  total: number;
+  // Solo en el detalle del precio.
+  costo?: number;
+  costo_moneda?: Moneda;
+  costo_desde?: string;
+  importe?: number;
+};
+
+export type PiezaDespiece = {
+  id: string;
+  nombre: string;
+  cantidad: number;
+  peso?: number;
+  espesor?: number;
+  peso_a_produccion: boolean;
+  espesor_a_produccion: boolean;
+  subtotal?: number;
+};
+
+export type Despiece = {
+  calculable: boolean;
+  bloqueado: boolean;
+  mensaje: string | null;
+  errores: string[];
+  mensajes: MensajeDespiece[];
+  color: { id: string; nombre: string } | null;
+  variables: { id: string; nombre: string; pieza_id?: string; valor: number | string; a_produccion: boolean }[];
+  piezas: PiezaDespiece[];
+  filas: FilaDespiece[];
+};
+
+export type ServicioPrecio = {
+  porcentaje_id: string;
+  nombre: string;
+  porcentaje: number;
+  paso: number;
+  opcional: boolean;
+  aplica: boolean;
+  categorias: string[];
+  base: number;
+  monto: number;
+  minimo?: number;
+  minimo_moneda?: Moneda;
+  minimo_por?: AlcanceMinimo;
+  minimo_convertido?: number;
+};
+
+// `catalogo_precio_detalle`: el despiece con costos, servicios y precio, para quien aprueba.
+export type PrecioDetalle = Despiece & {
+  moneda: Moneda;
+  fecha: string;
+  costo_despiece: number | null;
+  subtotal: number | null;
+  servicios: ServicioPrecio[];
+  sin_precio: string[];
+  precio_exacto: number | null;
+  precio: number | null;
+};
+
+export type Oferta = {
+  color_id: string | null;
+  color: string | null;
+  armable: boolean;
+  piezas_fuera: string[];
+  opciones_fuera: string[];
+  faltan: string[];
+};
+
+export type CasoCalculado = { caso_id: string; nombre: string; resultado: Despiece };
+
+export const paqueteAltaSchema = z.object({ nombre, categoria_id: z.string().uuid("Elegí una categoría") });
+export type PaqueteAltaForm = z.input<typeof paqueteAltaSchema>;
+
+export const duplicarSchema = z.object({ version_id: idSchema, nombre });
+export type DuplicarForm = z.input<typeof duplicarSchema>;
+
+export const versionNuevaSchema = z.object({ paquete_id: idSchema, origen_id: idSchema });
+export type VersionNuevaForm = z.input<typeof versionNuevaSchema>;
+
+export const devolverSchema = z.object({
+  version_id: idSchema,
+  motivo: z.string().trim().min(1, "Escribí el motivo: Técnica lo lee al abrir el borrador").max(2000),
+});
+export type DevolverForm = z.input<typeof devolverSchema>;
+
+export const calcularSchema = z.object({
+  version_id: idSchema,
+  entrada: entradaSchema,
+  // Solo con `catalogo_aprobar`: el precio y, si la hay, la publicada con la misma entrada y fecha.
+  precio: z
+    .object({
+      moneda,
+      opcionales: z.array(idSchema),
+      comparar_con: idSchema.nullable(),
+    })
+    .nullable(),
+});
+export type CalcularForm = z.input<typeof calcularSchema>;
+
+export type InsumoBasico = {
+  id: string;
+  nombre: string;
+  tipo: TipoInsumo;
+  unidad: Unidad;
+  categoria_id: string;
+  con_color: boolean;
+  activo: boolean;
+};
+
+export type PrecioReferencia = {
+  paquete_id: string;
+  version_id: string;
+  numero: number;
+  nombre: string;
+  caso_id: string;
+  caso: string;
+  precio_desde: number | null;
+  precio_hasta: number | null;
+  cambio: number | null;
+  sin_precio_desde: string[];
+  sin_precio_hasta: string[];
+};

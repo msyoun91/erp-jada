@@ -46,3 +46,29 @@ tocar uno que no se puede.
 
 **El formulario esconde las categorías fuera del paso 1 y el mínimo en el paso 3, y el schema las limpia al guardar.** Cambiar
 de paso y volver no borra lo escrito; lo que no corresponde no llega a la base.
+
+## Paquetes (2026-11-03)
+
+**La lista filtra por categoría y por estado (a la venta, sin publicar, de baja) en vez de agrupar, y cada fila lleva a una
+versión: la abierta si hay, si no la publicada.** Es el mismo patrón que Insumos, con paginado y total. Arriba, para quien
+aprueba, "Por revisar": las versiones en revisión. Archivos: `PaquetesView.tsx`, `PaqueteAltaModal.tsx`.
+
+**El paquete no tiene página propia: su detalle es el de una versión (`/catalogo/paquetes/versiones/<id>`), la ruta de los
+avisos.** Ahí están las otras versiones para saltar entre ellas, la causa de la baja y los botones del paquete (baja,
+reactivación, duplicar), además de los del ciclo de esa versión. Una sola ruta de detalle, la que ya usan los avisos.
+Archivos: `VersionView.tsx`, `VersionAcciones.tsx`.
+
+**El despiece se mira con una calculadora que abre con el primer caso de prueba, y es la misma para la vista sola y para
+quien aprueba: con `catalogo_aprobar` el resultado es el detalle del precio, que incluye el despiece.** Cada cálculo es una
+llamada a la base y no guarda nada. Una versión en revisión se calcula junto a la publicada con la misma entrada y la misma
+fecha, y las filas que cambian, aparecen o faltan se marcan (*Al aprobar…*). Los servicios en % opcionales se tildan desde el
+resultado: el gerente puede no tener la pestaña Servicios en %. Archivos: `Calculadora.tsx`, `DespieceResultado.tsx`,
+`entrada.ts`.
+
+**Los casos de prueba se ven con su resultado (se calcula, bloquea o no se puede, y por qué); se cargan en el editor.**
+
+**Precios de referencia es una página de Paquetes (`/catalogo/paquetes/referencia`), en la moneda principal, con hoy contra
+hace 7, 30 o 90 días.** Reusa `FiltroDias`. Archivos: `ReferenciaView.tsx`.
+
+**En la historia de una versión, quién hizo cada paso se ve solo si la RLS de `usuarios` lo deja ver.** Lo que importa ahí es
+el motivo de la devolución, que se ve siempre; sumar una función que devuelva nombres de otros equipos no tenía un caso.

@@ -1,5 +1,15 @@
 import { formatMonto, type Moneda } from "@/lib/monedas";
-import type { AlcanceMinimo, AvisoBaja, Costo, Unidad } from "./types";
+import type {
+  AccionVersion,
+  AlcanceMinimo,
+  AvisoBaja,
+  Costo,
+  EstadoVersion,
+  FilaDespiece,
+  Paquete,
+  Unidad,
+  VersionResumen,
+} from "./types";
 
 export const UNIDAD: Record<Unidad, string> = { mm: "mm", m2: "m2", u: "u" };
 
@@ -76,4 +86,45 @@ export function textoMinimo(p: {
 
 export function textoPorcentaje(n: number): string {
   return `${n.toLocaleString("es-AR", { maximumFractionDigits: 3 })} %`;
+}
+
+// ---------- Paquetes y versiones ----------
+
+export const ESTADO_VERSION: Record<EstadoVersion, { label: string; badge: string }> = {
+  borrador: { label: "En borrador", badge: "badge-warning" },
+  en_revision: { label: "En revisión", badge: "badge-info" },
+  publicado: { label: "Publicada", badge: "badge-success" },
+  obsoleto: { label: "Obsoleta", badge: "badge-neutral" },
+  descartado: { label: "Descartada", badge: "badge-neutral" },
+};
+
+export const ACCION_VERSION: Record<AccionVersion, string> = {
+  enviada: "Enviada a revisión",
+  retirada: "Retirada de revisión",
+  devuelta: "Devuelta",
+  aprobada: "Aprobada",
+  obsoleta: "Pasó a obsoleta",
+  descartada: "Descartada",
+};
+
+// Lo que el vendedor ve de un paquete: la publicada; sin publicada, la última.
+export function versionPrincipal(p: Paquete): VersionResumen | undefined {
+  return p.versiones.find((v) => v.estado === "publicado") ?? p.versiones[0];
+}
+
+export function textoMedida(n: number): string {
+  return n.toLocaleString("es-AR", { maximumFractionDigits: 2 });
+}
+
+// El total va en la unidad del insumo; medida, ancho y alto, en mm (`db_schema/catalogo.md` → *El despiece*).
+export function textoFila(f: FilaDespiece): string {
+  const corte =
+    f.ancho !== undefined && f.alto !== undefined
+      ? `${textoMedida(f.ancho)} × ${textoMedida(f.alto)} mm`
+      : f.medida !== undefined
+        ? `${textoMedida(f.medida)} mm`
+        : null;
+  return [corte && `${corte} × ${textoMedida(f.cantidad)}`, `${textoMedida(f.total)} ${UNIDAD[f.unidad]}`]
+    .filter(Boolean)
+    .join(" = ");
 }
