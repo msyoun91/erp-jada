@@ -15,3 +15,9 @@ export const MONEDAS: Record<Moneda, string> = {
 export function formatPesos(valor: number) {
   return `$${valor.toLocaleString("es-AR", { maximumFractionDigits: 2 })}`;
 }
+
+export function formatMonto(valor: number, moneda: Moneda) {
+  return moneda === "ARS"
+    ? formatPesos(valor)
+    : `${MONEDAS[moneda]} ${valor.toLocaleString("es-AR", { maximumFractionDigits: 2 })}`;
+}

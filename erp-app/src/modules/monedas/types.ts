@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Database } from "@/lib/supabase/database.types";
 import { MONEDAS_LISTA } from "@/lib/monedas";
+import type { Nivel } from "@/lib/niveles";
 
 type Funciones = Database["public"]["Functions"];
 
@@ -26,7 +27,7 @@ export type FilaHistorial = Omit<
   "anterior" | "nivel" | "cargado_por" | "confirmado_por" | "vigente_desde"
 > & {
   anterior: number | null;
-  nivel: "amarillo" | "naranja" | "rojo" | null;
+  nivel: Nivel | null;
   cargado_por: string | null;
   confirmado_por: string | null;
   vigente_desde: string | null;

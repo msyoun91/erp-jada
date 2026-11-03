@@ -11,7 +11,8 @@ import { ConfirmModal } from "@/components/ui/Modal";
 import { MONEDAS, MONEDAS_LISTA, formatPesos, type Moneda } from "@/lib/monedas";
 import { formatFecha, formatFechaHora } from "@/lib/utils";
 import { confirmarTipoCambio, corregirTipoCambio, elegirPrincipal } from "../actions";
-import { CLASE_NIVEL, textoAviso, textoCambio } from "../etiquetas";
+import { CLASE_NIVEL, textoCambio } from "@/lib/niveles";
+import { textoAviso } from "../etiquetas";
 import { corregirSchema, type Aviso, type CorregirForm, type FilaHistorial, type TipoCambioHoy } from "../types";
 
 type MonedaConHistorial = TipoCambioHoy & { historial: FilaHistorial[] };
