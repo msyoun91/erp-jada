@@ -31,12 +31,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   insumos, servicios fijos, variantes, costos y servicios en % con su historia) y los paquetes (`sql/160`: paquetes,
   versiones y su contenido, edición solo en borrador, duplicar, versión nueva, datos del insumo que quedan fijos y la
   categoría de paquete con versiones adentro), el despiece (`sql/161`: el cálculo, alertas, bloqueos, casos de prueba y la
-  forma de `catalogo_casos.entrada`) y el ciclo (`sql/162`: qué frena el envío, enviar, retirar, devolver, aprobar, descartar,
-  lo que se ofrece en cada color, bajas en cascada, aviso previo y reactivación). **Siguiente:**
-  - `163_catalogo_precio`: precio, detalle del gerente, mínimos por presupuesto y precios de referencia. Parte de
-    `catalogo_despiece`, que ya da insumo, color, categoría, unidad y total de cada fila; da número solo con `calculable` y
-    sin `bloqueado`, y al vendedor le pasa `mensaje` y `mensajes`, nunca `errores`. `catalogo_oferta` dice qué se ofrece en cada
-    color, y solo la pueden llamar funciones DEFINER.
+  forma de `catalogo_casos.entrada`), el ciclo (`sql/162`: qué frena el envío, enviar, retirar, devolver, aprobar, descartar,
+  lo que se ofrece en cada color, bajas en cascada, aviso previo y reactivación) y el precio (`sql/163`: precio, detalle del
+  gerente, mínimos por presupuesto y precios de referencia). **Siguiente:**
   - `164_catalogo_avisos_enums` y `165_catalogo_avisos`: los tipos de `tipo_notificacion` van en su propia
     migración y en el mismo commit que `ICONO`, `TEXTO`, `COLOR` y `RUTA` de `NotificacionesBell`: son `Record`, y
     sumar el tipo sin ellos rompe `tsc`. Lo que avisa una baja sale de `catalogo_baja_efecto` dentro de
@@ -90,7 +87,10 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   obra lista sus presupuestos con su estado actual. Los contactos operativos (capataz, quien recibe)
   se vinculan al presupuesto. Su ficha define cómo obtiene la lista de paquetes a la venta y el formulario
   de cada uno (qué preguntar, predeterminados ya calculados, qué se ofrece) sin leer las tablas del
-  catálogo. A decidir: qué versión y fecha lleva un paquete sumado a un presupuesto viejo, y si ahí se
+  catálogo. Del precio (`sql/163`): `catalogo_precio` y `catalogo_precio_minimos` son lo que se vende hoy y piden
+  `catalogo_aprobar` hasta que esta ficha nombre su permiso; recalcular con la versión y la fecha guardadas se suma acá, y
+  `catalogo_precio_calcular` ya las recibe. El precio no corrige lo elegido, así que el formulario manda en `false` una pieza
+  incluida que no se ofrece. A decidir: qué versión y fecha lleva un paquete sumado a un presupuesto viejo, y si ahí se
   puede elegir una opción dada de baja después (sin costo a esa fecha, el catálogo no da precio). También:
   el renglón libre para lo que no se fabrica (flete, visita), con descripción y monto, y quién lo autoriza
   (`decisiones/catalogo/paquete.md` → *Qué es un paquete*). También: si los vendedores reciben aviso de un

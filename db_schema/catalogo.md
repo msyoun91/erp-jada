@@ -1,10 +1,10 @@
-# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql`, `sql/161_catalogo_despiece.sql`, `sql/162_catalogo_ciclo.sql` — corridas en Supabase vía MCP)
+# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql`, `sql/161_catalogo_despiece.sql`, `sql/162_catalogo_ciclo.sql`, `sql/163_catalogo_precio.sql` — corridas en Supabase vía MCP)
 
 Ficha y decisiones: `decisiones/catalogo/README.md`. Tests: `sql/tests/catalogo_formulas.sql`,
 `sql/tests/catalogo_registros.sql`, `sql/tests/catalogo_paquetes.sql`, `sql/tests/catalogo_despiece.sql`,
-`sql/tests/catalogo_ciclo.sql`.
+`sql/tests/catalogo_ciclo.sql`, `sql/tests/catalogo_precio.sql`.
 
-El SQL va por tramos (`BACKLOG.md` → *Catálogo*). Falta el precio y los avisos.
+El SQL va por tramos (`BACKLOG.md` → *Catálogo*). Faltan los avisos.
 
 ## Permisos
 
@@ -289,6 +289,39 @@ categoría de baja CA008; sin armarse en ningún color CA020, que dice qué falt
 **Errores:** CA019 hay algo que frena: el mensaje trae la lista, una línea por cada cosa · CA020 no se puede reactivar · CA021
 devolver sin motivo · CA022 la versión no está en revisión · CA023 descartar sin publicada. Enviar o descartar fuera de borrador da
 CA012, y sin permiso, 42501.
+
+## El precio
+
+Decisiones: `decisiones/catalogo/precio.md` → *El precio en la base*. Parte de `catalogo_despiece` y no guarda nada. Las públicas son
+DEFINER, porque leen lo que quien llama no puede abrir. Sin permiso, 42501. `catalogo_precio` y `catalogo_precio_minimos` piden
+`catalogo_aprobar` hasta que la ficha de Presupuestos nombre su permiso.
+
+| función | qué hace |
+|---|---|
+| `catalogo_precio(paquete, entrada = '{}', opcionales = '{}', moneda = NULL) → jsonb` | lo que se vende hoy: la publicada de un paquete activo, a la fecha de hoy, si lo elegido se ofrece. `{precio, mensaje, mensajes}`, sin los `errores` del cálculo |
+| `catalogo_precio_detalle(version, entrada = '{}', opcionales = '{}', moneda = NULL, en = now()) → jsonb` | cualquier versión a cualquier fecha, sin mirar la oferta |
+| `catalogo_precio_minimos(items, moneda = NULL)` | `porcentaje_id`, `nombre`, `monto`: un renglón por mínimo que no se alcanzó, con los pasos siguientes aplicados y redondeado. Ítems: `[{paquete_id, cantidad, entrada?, opcionales?}]`. Sin cantidad o sin paquete: CA017 |
+| `catalogo_precios_referencia(moneda = NULL, desde = hace 30 días, hasta = now())` | `paquete_id`, `version_id`, `numero`, `nombre`, `caso_id`, `caso`, `precio_desde`, `precio_hasta`, `cambio` (%), `sin_precio_desde`, `sin_precio_hasta`: lo que más cambió primero |
+
+**Sin EXECUTE para nadie:** `catalogo_precio_calcular(version, entrada, opcionales, moneda, en)` (la cuenta: de acá sale todo),
+`catalogo_precio_venta(paquete, entrada, opcionales, moneda)` (lo que se vende hoy), `catalogo_precio_convertir` (NULL sin tipo de
+cambio) y `catalogo_precio_redondear(monto, moneda)` (ARS a entero, el resto a 2 decimales).
+
+**Lo que lee el vendedor en `mensaje`:** `No se puede calcular con estas medidas` · `Este paquete no tiene precio a la fecha del presupuesto`
+· `Este paquete no está a la venta` · `Este paquete no se ofrece en este color` · `Ya no se ofrece: DVH, Mosquitero` ·
+`Un servicio opcional elegido ya no está`. Con un bloqueo `mensaje` es NULL, y el porqué está en `mensajes`.
+
+**El resultado del detalle** es el del despiece (*El despiece*), con esto de más:
+
+| clave | qué es |
+|---|---|
+| `moneda`, `fecha` | en qué moneda y a qué fecha se calculó |
+| `filas` | además: `costo`, `costo_moneda` y `costo_desde`, como se cargó; `importe`, en la moneda pedida. Sin costo o sin tipo de cambio, falta lo que no se pudo |
+| `piezas` | además: `subtotal`, la suma de sus filas |
+| `costo_despiece`, `subtotal` | el costo de todas las filas, y ese más los del paso 1. NULL si no se pudieron calcular los servicios |
+| `servicios` | `[{porcentaje_id, nombre, porcentaje, paso, opcional, aplica, desde, categorias (nombres), base, monto, minimo?, minimo_moneda?, minimo_por?, minimo_convertido?}]`, por paso y nombre. Un opcional sin elegir o sin nada de sus categorías: `aplica` false, base y monto 0. Vacío si falta un costo o no se pudo calcular |
+| `sin_precio` | text[]: por qué no da número, para quien tiene `catalogo_aprobar`. Los errores del cálculo, los bloqueos, lo que no tiene costo o tipo de cambio a esa fecha, y un opcional que no está. Vacío si hay precio |
+| `precio_exacto`, `precio` | sin redondear y redondeado. NULL si y solo si `sin_precio` trae algo |
 
 ## Fórmulas
 

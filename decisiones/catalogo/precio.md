@@ -88,6 +88,47 @@ base lee del presupuesto guardado. El gerente, que ve todo, puede pedir cualquie
 aprobar, una en revisión). Si la función aceptara una fecha, un vendedor pedía "marzo" y cotizaba con
 los costos de marzo, y desde erp-cliente se cotizaba un borrador.
 
+## El precio en la base (2026-11-03)
+
+**Si el vendedor eligió algo que ya no se ofrece, el precio no da número y dice qué: no lo corrige.** Con el DVH de baja, una
+ventana con DVH lee "Ya no se ofrece: DVH" y no pasa sola al Float: el precio bajaría sin que nadie lo note. Una pieza incluida
+que no se ofrece la destilda el formulario, que se escribe con Presupuestos. El detalle del gerente no mira la oferta: la baja
+del DVH no borra lo que costaba en marzo.
+
+**Sin tipo de cambio a la fecha no hay precio, igual que sin costo.** El vendedor lee lo mismo; el gerente, "Perfil · Blanco: sin
+tipo de cambio de USD_BLUE a ARS a esa fecha", con el costo como se cargó a la vista. Un costo en la moneda del precio no lo
+necesita.
+
+**Un servicio opcional elegido que ya no está tampoco da número.** Si el Seguro se dio de baja después de elegirlo, sacarlo solo
+bajaba el precio sin aviso. El vendedor lee "Un servicio opcional elegido ya no está". Es lo mismo que con una opción que ya no
+existe (*Cómo se calcula*).
+
+**Con un bloqueo, el detalle muestra los importes y los servicios, sin precio.** El gerente ve qué dio la cuenta que frenó el
+paquete, y nadie cotiza con él.
+
+**Sin moneda, la principal, y en EUR 2 decimales, como en USD.** Pedir el precio sin decir en qué moneda toma la que viene
+preseleccionada (`decisiones/monedas.md` → *Moneda principal*).
+
+**El renglón del mínimo por presupuesto llega con los pasos siguientes ya aplicados y redondeado.** Faltan $1.000 de garantía, con
+Transición 4 % e IIBB 3 %: 1.000 × 1,04 / 0,97 = $1.072. Presupuestos lo suma como viene. Si redondeado da 0, no hay renglón.
+
+**De los opcionales, al renglón le toca lo que eligieron todos los ítems que cuentan para ese mínimo.** Un Recargo del 10 % elegido
+en las Ventanas y no en los Paños no se le suma al renglón de garantía de los dos: a nadie se le cobra lo que no eligió. Una Puerta
+sin vidrio no cuenta para ese mínimo, así que lo que elija no cambia nada. Se descartó repartir la diferencia entre los ítems: era
+más exacto por unos pesos y nadie podía sacar la cuenta. Costo aceptado: en ese caso raro, el renglón cobra un poco menos.
+
+**Lo que ese renglón paga de un servicio del paso 2 suma para el mínimo de ese servicio.** Transición con mínimo $8.300: una ventana
+paga $8.120, el renglón de garantía $280, y con $8.400 no hace falta otro renglón.
+
+**Un ítem sin precio no cuenta para los mínimos.** Bloqueado o fuera de la venta, no tiene monto que sumar.
+
+**Los precios de referencia son de paquetes activos y sin servicios opcionales.** Un paquete de baja no se cotiza, y un caso no elige
+opcionales: su entrada no los lleva. Lo que a alguna de las dos fechas no da número va al final, con el porqué: un insumo cargado
+hace 10 días no tiene precio de hace 30.
+
+Archivos: `sql/163_catalogo_precio.sql`, con 328 casos en `sql/tests/catalogo_precio.sql`. Medido en la base: 2,9 ms por precio, con
+un paquete de dos filas.
+
 ## El IVA lo suma Presupuestos (2026-10-29)
 
 **El precio del catálogo es sin IVA: lo suma quien presupuesta, en Presupuestos. Por eso los costos de

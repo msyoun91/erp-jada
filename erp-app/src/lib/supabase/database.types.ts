@@ -3121,6 +3121,91 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      catalogo_precio: {
+        Args: {
+          p_entrada?: Json
+          p_moneda?: Database["public"]["Enums"]["moneda"]
+          p_opcionales?: string[]
+          p_paquete: string
+        }
+        Returns: Json
+      }
+      catalogo_precio_calcular: {
+        Args: {
+          p_en: string
+          p_entrada: Json
+          p_moneda: Database["public"]["Enums"]["moneda"]
+          p_opcionales: string[]
+          p_version: string
+        }
+        Returns: Json
+      }
+      catalogo_precio_convertir: {
+        Args: {
+          p_a: Database["public"]["Enums"]["moneda"]
+          p_de: Database["public"]["Enums"]["moneda"]
+          p_en: string
+          p_monto: number
+        }
+        Returns: number
+      }
+      catalogo_precio_detalle: {
+        Args: {
+          p_en?: string
+          p_entrada?: Json
+          p_moneda?: Database["public"]["Enums"]["moneda"]
+          p_opcionales?: string[]
+          p_version: string
+        }
+        Returns: Json
+      }
+      catalogo_precio_minimos: {
+        Args: {
+          p_items: Json
+          p_moneda?: Database["public"]["Enums"]["moneda"]
+        }
+        Returns: {
+          monto: number
+          nombre: string
+          porcentaje_id: string
+        }[]
+      }
+      catalogo_precio_redondear: {
+        Args: {
+          p_moneda: Database["public"]["Enums"]["moneda"]
+          p_monto: number
+        }
+        Returns: number
+      }
+      catalogo_precio_venta: {
+        Args: {
+          p_entrada: Json
+          p_moneda: Database["public"]["Enums"]["moneda"]
+          p_opcionales: string[]
+          p_paquete: string
+        }
+        Returns: Json
+      }
+      catalogo_precios_referencia: {
+        Args: {
+          p_desde?: string
+          p_hasta?: string
+          p_moneda?: Database["public"]["Enums"]["moneda"]
+        }
+        Returns: {
+          cambio: number | null
+          caso: string
+          caso_id: string
+          nombre: string
+          numero: number
+          paquete_id: string
+          precio_desde: number | null
+          precio_hasta: number | null
+          sin_precio_desde: string[]
+          sin_precio_hasta: string[]
+          version_id: string
+        }[]
+      }
       catalogo_puede_editar: {
         Args: { p_tipo: Database["public"]["Enums"]["tipo_catalogo"] }
         Returns: boolean

@@ -18,7 +18,7 @@ de una sección: esta tabla dice en qué archivo está.
 | `permisos.md` | Al catálogo entran solo los que definen · Sin entes · Pestañas |
 | `paquete.md` | Qué es un paquete · Editor de paquete |
 | `insumos.md` | El insumo · El servicio fijo · El costo del insumo vive en el catálogo |
-| `precio.md` | Servicios: fijos o en % · Servicios en % · El precio sale de una función · El IVA lo suma Presupuestos · Un presupuesto se recalcula como era · Moneda · Tipos de cambio |
+| `precio.md` | Servicios: fijos o en % · Servicios en % · El precio sale de una función · El precio en la base · El IVA lo suma Presupuestos · Un presupuesto se recalcula como era · Moneda · Tipos de cambio |
 | `despiece.md` | El despiece calculado · Cómo se calcula · Las fórmulas se calculan sin SQL dinámico |
 | `versiones.md` | Versiones y aprobación · Qué frena el envío · El ciclo en la base · Casos de prueba |
 
