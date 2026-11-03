@@ -68,11 +68,14 @@ export const PASO: Record<number, { titulo: string; ayuda: string }> = {
   },
 };
 
-export function textoBase(p: { paso: number; categorias: string[] }, nombreCategoria: Map<string, string>): string {
-  if (p.paso === 2) return "sobre el subtotal";
-  if (p.paso === 3) return "sobre el precio final";
-  if (p.categorias.length === 0) return "sobre todo el despiece";
-  return `sobre ${p.categorias.map((c) => nombreCategoria.get(c) ?? "una categoría que no existe").join(", ")}`;
+// Siempre va junto al título del paso ("Paso 2 · Sobre el subtotal"): solo agrega lo que el paso no dice.
+export function textoBase(
+  p: { paso: number; categorias: string[] },
+  nombreCategoria: Map<string, string>,
+): string | null {
+  if (p.paso !== 1) return null;
+  if (p.categorias.length === 0) return "todo el despiece";
+  return `solo ${p.categorias.map((c) => nombreCategoria.get(c) ?? "una categoría que no existe").join(", ")}`;
 }
 
 export function textoMinimo(p: {
@@ -110,6 +113,12 @@ export const ACCION_VERSION: Record<AccionVersion, string> = {
 // Lo que el vendedor ve de un paquete: la publicada; sin publicada, la última.
 export function versionPrincipal(p: Paquete): VersionResumen | undefined {
   return p.versiones.find((v) => v.estado === "publicado") ?? p.versiones[0];
+}
+
+// En un resumen, `ancho - 48 × alto - 48` se leía como una sola cuenta: cada fórmula con operadores va entre
+// paréntesis. Los nombres entre corchetes no cuentan como operadores.
+export function formulaAparte(f: string): string {
+  return /[-+−*×/]|\bsi\b/i.test(f.replace(/\[[^\]]*\]/g, "x")) ? `(${f})` : f;
 }
 
 export function textoMedida(n: number): string {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, TriangleAlert } from "lucide-react";
-import { textoMedida } from "../../etiquetas";
+import { formulaAparte, textoMedida } from "../../etiquetas";
 import type { Categoria, Color, Contenido, InsumoBasico, Material, Variable, Version } from "../../types";
 import { DatosVersion } from "./DatosVersion";
 import { Fila } from "./Fila";
@@ -68,9 +68,9 @@ export function EditorView({
       .map((o) => porId.get(o.insumo_id ?? "")?.nombre);
     return [
       m.medida,
-      m.ancho && m.alto && `${m.ancho} × ${m.alto}`,
+      m.ancho && m.alto && `${formulaAparte(m.ancho)} × ${formulaAparte(m.alto)}`,
       m.area && `área ${m.area}`,
-      `× ${m.cantidad}`,
+      m.cantidad !== "1" && `× ${formulaAparte(m.cantidad)}`,
       opciones.length > 0 && opciones.join(", "),
     ]
       .filter(Boolean)
@@ -111,7 +111,7 @@ export function EditorView({
       <h2 className="t-h2">Editar v{version.numero}</h2>
 
       {frena.length > 0 && (
-        <details className="rounded-md bg-warning-bg p-3 text-warning-text">
+        <details open={frena.length <= 3} className="rounded-md bg-warning-bg p-3 text-warning-text">
           <summary className="t-body-m tap-target cursor-pointer font-semibold">
             <TriangleAlert size={16} strokeWidth={1.75} className="mr-1 inline" />
             {frena.length === 1 ? "1 cosa frena el envío" : `${frena.length} cosas frenan el envío`}
@@ -149,7 +149,7 @@ export function EditorView({
             <div key={p.id} className="card flex flex-col gap-2">
               <ul>
                 <Fila
-                  titulo={`${p.nombre} × ${p.cantidad}`}
+                  titulo={p.cantidad === "1" ? p.nombre : `${p.nombre} × ${formulaAparte(p.cantidad)}`}
                   detalle={[
                     p.opcional && (p.incluida ? "opcional, incluida" : "opcional"),
                     p.secundario && "secundaria",

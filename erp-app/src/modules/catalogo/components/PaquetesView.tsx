@@ -3,13 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
+import { Paginacion } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { activarCategoria, crearCategoria, renombrarCategoria } from "../actions";
 import { ESTADO_VERSION, versionPrincipal } from "../etiquetas";
 import type { Categoria, Paquete } from "../types";
 import { ListaNombresPanel } from "./ListaNombresPanel";
 import { PaqueteAltaModal } from "./PaqueteAltaModal";
+import { ListaPorCategoria, usePaginadoPorCategoria } from "./PorCategoria";
 
 const ESTADOS = [
   { valor: "venta", label: "A la venta" },
@@ -38,6 +39,7 @@ export function PaquetesView({
   const [texto, setTexto] = useState("");
   const [categoriaId, setCategoriaId] = useState("");
   const [estado, setEstado] = useState<Estado>("todos");
+  const [agrupar, setAgrupar] = useState(false);
   const [creando, setCreando] = useState(false);
   const [verCategorias, setVerCategorias] = useState(false);
   const nombreCategoria = new Map(categorias.map((c) => [c.id, c.nombre]));
@@ -53,7 +55,12 @@ export function PaquetesView({
         paquete.versiones.some((v) => v.nombre.toLowerCase().includes(q)),
     )
     .sort((a, b) => (a.version?.nombre ?? "").localeCompare(b.version?.nombre ?? ""));
-  const { visibles, ...paginado } = usePaginado(filtrados);
+  const { grupos, paginado } = usePaginadoPorCategoria(
+    filtrados,
+    (f) => f.version?.categoria_id ?? "",
+    nombreCategoria,
+    agrupar,
+  );
   const porRevisar = paquetes.flatMap((p) => p.versiones.filter((v) => v.estado === "en_revision"));
 
   return (
@@ -107,6 +114,10 @@ export function PaquetesView({
             </option>
           ))}
         </select>
+        <label className="tap-target flex items-center gap-2">
+          <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} />
+          <span className="t-body-m">Agrupar por categoría</span>
+        </label>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -140,8 +151,9 @@ export function PaquetesView({
             </p>
           </div>
         ) : (
-          <ul className="flex flex-col rounded-lg border border-border bg-bg-surface">
-            {visibles.map(({ paquete, version }) => {
+          <ListaPorCategoria
+            grupos={grupos}
+            fila={({ paquete, version }) => {
               if (!version) return null;
               const abierta = paquete.versiones.find((v) => v.estado === "borrador" || v.estado === "en_revision");
               const e = estadoDe(paquete);
@@ -159,7 +171,7 @@ export function PaquetesView({
                       </p>
                       <p className="t-caption truncate">
                         {[
-                          nombreCategoria.get(version.categoria_id),
+                          !agrupar && nombreCategoria.get(version.categoria_id),
                           e === "baja" && `De baja por ${paquete.baja_por ?? "decisión de Técnica"}`,
                           abierta && `v${abierta.numero} ${ESTADO_VERSION[abierta.estado].label.toLowerCase()}`,
                         ]
@@ -175,8 +187,8 @@ export function PaquetesView({
                   </Link>
                 </li>
               );
-            })}
-          </ul>
+            }}
+          />
         )}
       </div>
 

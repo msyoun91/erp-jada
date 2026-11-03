@@ -53,10 +53,10 @@ export function OpcionPanel({
   }
 
   const formulas = [
-    { campo: "medida", label: "Medida (mm), para insumos en mm o u", ejemplo: EJEMPLO.opcionMedida },
-    { campo: "ancho", label: "Ancho (mm), para insumos en m2", ejemplo: EJEMPLO.anchoAlto },
-    { campo: "alto", label: "Alto (mm), para insumos en m2", ejemplo: EJEMPLO.anchoAlto },
-    { campo: "area", label: "Área (mm²), solo si no es un rectángulo", ejemplo: EJEMPLO.area },
+    { campo: "medida", label: "Medida (mm, para insumos en mm o u)", ejemplo: EJEMPLO.opcionMedida },
+    { campo: "ancho", label: "Ancho (mm, para insumos en m2)", ejemplo: EJEMPLO.anchoAlto },
+    { campo: "alto", label: "Alto (mm, para insumos en m2)", ejemplo: EJEMPLO.anchoAlto },
+    { campo: "area", label: "Área (mm², solo si no es un rectángulo)", ejemplo: EJEMPLO.area },
     { campo: "cantidad", label: "Cantidad", ejemplo: EJEMPLO.opcionCantidad },
   ] as const;
 

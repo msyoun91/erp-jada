@@ -4,12 +4,14 @@ import { useState } from "react";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { ordenar, sacar } from "../../actions";
 import type { OrdenarForm, TablaContenido } from "../../types";
 
 type Ordenable = OrdenarForm["tabla"];
 
-// Una fila del editor: tocarla abre su panel; las flechas la mueven entre sus hermanos.
+// Una fila del editor: tocarla abre su panel; el menú la mueve entre sus hermanos o la saca. En un menú y no como
+// tres íconos sueltos: en mobile ocupaban un tercio del ancho y la fórmula de la fila se partía en cuatro renglones.
 export function Fila({
   titulo,
   detalle,
@@ -30,6 +32,7 @@ export function Fila({
   children?: React.ReactNode;
 }) {
   const i = hermanos.indexOf(id);
+  const [sacando, setSacando] = useState(false);
 
   async function mover(delta: number) {
     const ids = [...hermanos];
@@ -45,18 +48,23 @@ export function Fila({
         {detalle && <p className="t-caption font-mono">{detalle}</p>}
         {children}
       </button>
-      <button className="icon-btn" aria-label={`Subir ${que}`} disabled={i <= 0} onClick={() => mover(-1)}>
-        <ArrowUp size={14} strokeWidth={1.75} />
-      </button>
-      <button
-        className="icon-btn"
-        aria-label={`Bajar ${que}`}
-        disabled={i < 0 || i >= hermanos.length - 1}
-        onClick={() => mover(1)}
-      >
-        <ArrowDown size={14} strokeWidth={1.75} />
-      </button>
-      <SacarBoton tabla={tabla} id={id} que={que} />
+      <OverflowMenu
+        items={[
+          ...(i > 0
+            ? [{ label: "Subir", icon: <ArrowUp size={14} strokeWidth={1.75} />, onClick: () => mover(-1) }]
+            : []),
+          ...(i >= 0 && i < hermanos.length - 1
+            ? [{ label: "Bajar", icon: <ArrowDown size={14} strokeWidth={1.75} />, onClick: () => mover(1) }]
+            : []),
+          {
+            label: "Sacar",
+            icon: <Trash2 size={14} strokeWidth={1.75} />,
+            onClick: () => setSacando(true),
+            destructive: true,
+          },
+        ]}
+      />
+      {sacando && <SacarModal tabla={tabla} id={id} que={que} onClose={() => setSacando(false)} />}
     </li>
   );
 }
@@ -69,18 +77,32 @@ export function SacarBoton({ tabla, id, que }: { tabla: TablaContenido; id: stri
       <button className="icon-btn text-text-tertiary" aria-label={`Sacar ${que}`} onClick={() => setConfirmando(true)}>
         <Trash2 size={14} strokeWidth={1.75} />
       </button>
-      {confirmando && (
-        <ConfirmModal
-          title={`Sacar ${que}`}
-          mensaje="Se lleva lo que depende de ello (las variables y materiales de una pieza, las opciones de un material, sus condiciones) y no vuelve: se carga de nuevo."
-          confirmLabel="Sacar"
-          onClose={() => setConfirmando(false)}
-          onConfirm={async () => {
-            const r = await sacar({ tabla, id });
-            if (!r.success) toast.error(r.error);
-          }}
-        />
-      )}
+      {confirmando && <SacarModal tabla={tabla} id={id} que={que} onClose={() => setConfirmando(false)} />}
     </>
+  );
+}
+
+function SacarModal({
+  tabla,
+  id,
+  que,
+  onClose,
+}: {
+  tabla: TablaContenido;
+  id: string;
+  que: string;
+  onClose: () => void;
+}) {
+  return (
+    <ConfirmModal
+      title={`Sacar ${que}`}
+      mensaje="Se lleva lo que depende de ello (las variables y materiales de una pieza, las opciones de un material, sus condiciones) y no vuelve: se carga de nuevo."
+      confirmLabel="Sacar"
+      onClose={onClose}
+      onConfirm={async () => {
+        const r = await sacar({ tabla, id });
+        if (!r.success) toast.error(r.error);
+      }}
+    />
   );
 }

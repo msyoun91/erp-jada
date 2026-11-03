@@ -21,7 +21,7 @@ de una sección: esta tabla dice en qué archivo está.
 | `precio.md` | Servicios: fijos o en % · Servicios en % · El precio sale de una función · El precio en la base · El IVA lo suma Presupuestos · Un presupuesto se recalcula como era · Moneda · Tipos de cambio |
 | `despiece.md` | El despiece calculado · Cómo se calcula · Las fórmulas se calculan sin SQL dinámico |
 | `versiones.md` | Versiones y aprobación · Qué frena el envío · El ciclo en la base · Los avisos en la base · Casos de prueba |
-| `pantallas.md` | Insumos y Servicios fijos · Servicios en % · Paquetes · Editor del borrador · Ejemplos en los campos difíciles |
+| `pantallas.md` | Insumos y Servicios fijos · Servicios en % · Paquetes · Editor del borrador · Ejemplos en los campos difíciles · Agrupar por categoría |
 
 ## Ficha del módulo
 

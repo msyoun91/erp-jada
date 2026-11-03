@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Ayuda } from "@/components/ui/Ayuda";
-import { claseInput } from "@/components/ui/Campo";
+import { Campo, claseInput } from "@/components/ui/Campo";
 import { guardarCondicion } from "../../actions";
 import { EJEMPLO } from "../../ejemplos";
 import { condicionSchema, type Condicion, type CondicionForm } from "../../types";
@@ -94,23 +94,28 @@ function CondicionForm({
     },
   });
   const { errors, isSubmitting } = formState;
+  const id = useId();
 
   return (
     <div className="flex flex-col gap-2 rounded-md border border-border p-2">
-      <input
-        aria-label="Condición"
-        placeholder="ancho > 3000"
-        className={`${claseInput(errors.condicion)} font-mono`}
-        {...register("condicion")}
-      />
-      {errors.condicion && <p className="input-error-text">{errors.condicion.message}</p>}
-      <input
-        aria-label="Mensaje para el vendedor"
-        placeholder="Mensaje para el vendedor"
-        className={claseInput(errors.mensaje)}
-        {...register("mensaje")}
-      />
-      {errors.mensaje && <p className="input-error-text">{errors.mensaje.message}</p>}
+      <Campo id={`${id}-condicion`} label="Si se cumple" requerido error={errors.condicion}>
+        <input
+          id={`${id}-condicion`}
+          aria-required
+          placeholder="ancho > 3000"
+          className={`${claseInput(errors.condicion)} font-mono`}
+          {...register("condicion")}
+        />
+      </Campo>
+      <Campo id={`${id}-mensaje`} label="Mensaje para el vendedor" requerido error={errors.mensaje}>
+        <input
+          id={`${id}-mensaje`}
+          aria-required
+          placeholder="Pasa el máximo del vidrio"
+          className={claseInput(errors.mensaje)}
+          {...register("mensaje")}
+        />
+      </Campo>
       <label className="tap-target flex items-center gap-2">
         <input type="checkbox" {...register("bloquea")} />
         <span className="t-body-m">Bloquea</span>

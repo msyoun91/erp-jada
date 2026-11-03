@@ -5,10 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Archive, CircleX, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { activarPaquete, devolverVersion, duplicarPaquete, moverVersion, versionNueva } from "../actions";
 import {
   devolverSchema,
@@ -21,6 +23,10 @@ import {
 
 type Confirmar = { titulo: string; mensaje: string; boton: string; accion: () => Promise<void> };
 type Resultado = { success: true } | { success: false; error: string };
+type ItemMenu = React.ComponentProps<typeof OverflowMenu>["items"][number];
+
+// A la vista, los pasos del ciclo de la versión; en el menú, lo que no es el paso que sigue (descartar, duplicar, dar
+// de baja). Con los cinco iguales, "Dar de baja el paquete" quedaba en rojo al lado de "Editar".
 
 export function VersionAcciones({
   version,
@@ -63,6 +69,7 @@ export function VersionAcciones({
   }
 
   const botones: React.ReactNode[] = [];
+  const menu: ItemMenu[] = [];
   if (puedeArmar && estado === "borrador") {
     botones.push(
       <Link key="editar" href={`/catalogo/paquetes/versiones/${version.id}/editar`} className="btn btn-primary">
@@ -72,7 +79,6 @@ export function VersionAcciones({
         key="enviar"
         className="btn btn-primary"
         disabled={frena.length > 0}
-        title={frena.length > 0 ? "Primero resolvé lo que frena el envío" : undefined}
         onClick={() =>
           setConfirmar({
             titulo: `Enviar ${v} a revisión`,
@@ -86,22 +92,17 @@ export function VersionAcciones({
       </button>,
     );
     if (publicada) {
-      botones.push(
-        <button
-          key="descartar"
-          className="btn btn-secondary"
-          onClick={() =>
-            setConfirmar({
-              titulo: `Descartar ${v}`,
-              mensaje: `Queda en la historia con su número y no se edita más. La publicada (v${publicada.numero}) sigue a la venta.`,
-              boton: "Descartar",
-              accion: () => hacer(moverVersion("descartar", version.id), `${v} descartada`),
-            })
-          }
-        >
-          Descartar
-        </button>,
-      );
+      menu.push({
+        label: `Descartar ${v}`,
+        icon: <CircleX size={14} strokeWidth={1.75} />,
+        onClick: () =>
+          setConfirmar({
+            titulo: `Descartar ${v}`,
+            mensaje: `Queda en la historia con su número y no se edita más. La publicada (v${publicada.numero}) sigue a la venta.`,
+            boton: "Descartar",
+            accion: () => hacer(moverVersion("descartar", version.id), `${v} descartada`),
+          }),
+      });
     }
   }
   if (puedeArmar && estado === "en_revision") {
@@ -153,43 +154,49 @@ export function VersionAcciones({
     );
   }
   if (puedeArmar) {
-    botones.push(
-      <button key="duplicar" className="btn btn-secondary" onClick={() => setDuplicando(true)}>
-        Duplicar paquete
-      </button>,
-      paquete.activo ? (
-        <button
-          key="baja"
-          className="btn btn-danger"
-          onClick={() =>
-            setConfirmar({
-              titulo: "Dar de baja el paquete",
-              mensaje:
-                "Sale de la venta: el vendedor deja de verlo y los presupuestos que ya lo tienen se recalculan con su versión. Sus versiones quedan como están.",
-              boton: "Dar de baja",
-              accion: () => hacer(activarPaquete({ id: paquete.id, activo: false }), "Paquete de baja"),
-            })
-          }
-        >
-          Dar de baja el paquete
-        </button>
-      ) : (
+    menu.push({
+      label: "Duplicar paquete",
+      icon: <Copy size={14} strokeWidth={1.75} />,
+      onClick: () => setDuplicando(true),
+    });
+    if (paquete.activo) {
+      menu.push({
+        label: "Dar de baja el paquete",
+        icon: <Archive size={14} strokeWidth={1.75} />,
+        destructive: true,
+        onClick: () =>
+          setConfirmar({
+            titulo: "Dar de baja el paquete",
+            mensaje:
+              "Sale de la venta: el vendedor deja de verlo y los presupuestos que ya lo tienen se recalculan con su versión. Sus versiones quedan como están.",
+            boton: "Dar de baja",
+            accion: () => hacer(activarPaquete({ id: paquete.id, activo: false }), "Paquete de baja"),
+          }),
+      });
+    } else {
+      botones.push(
         <button
           key="reactivar"
           className="btn btn-primary"
           onClick={() => hacer(activarPaquete({ id: paquete.id, activo: true }), "Paquete reactivado")}
         >
           Reactivar el paquete
-        </button>
-      ),
-    );
+        </button>,
+      );
+    }
   }
 
-  if (botones.length === 0) return null;
+  if (botones.length === 0 && menu.length === 0) return null;
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">{botones}</div>
+      <div className="flex flex-wrap items-center gap-2">
+        {botones}
+        {menu.length > 0 && <OverflowMenu items={menu} />}
+      </div>
+      {puedeArmar && estado === "borrador" && frena.length > 0 && (
+        <p className="t-caption">Para enviarla a revisión, resolvé lo que frena el envío (abajo).</p>
+      )}
       {confirmar && (
         <ConfirmModal
           title={confirmar.titulo}

@@ -107,6 +107,14 @@ que el "?" no se separe del texto cuando este ocupa dos renglones. El botón es 
 negativo, así no agranda la fila de una etiqueta de 12px y en mobile sigue teniendo 44px. Primer uso: catálogo
 (`decisiones/catalogo/pantallas.md` → *Ejemplos en los campos difíciles*).
 
+### `Campo`: lo que va entre paréntesis no va en mayúsculas
+
+**`Etiqueta` (en `Campo.tsx`) deja el texto entre paréntesis como está escrito; `Campo` la usa siempre.** `.t-label` pasa
+todo a mayúsculas, y "ANCHO (MM)" o "PESO (KG/M)" se leen como otra unidad. Entre paréntesis van unidades y aclaraciones
+("(vacío: obligatoria)"), que en minúscula se leen mejor; por eso es la regla y no una lista de unidades. Una etiqueta con la
+unidad afuera la mete adentro: "Costo (por m2, sin IVA)". Una etiqueta `.t-label` que no es un `Campo` usa `<Etiqueta>`
+directo.
+
 ---
 
 ## Tokens y clases de `globals.css`

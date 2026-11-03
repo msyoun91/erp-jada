@@ -65,28 +65,29 @@ export function PorcentajesView({
                 <p className="t-caption">Ninguno.</p>
               ) : (
                 <ul className="flex flex-col rounded-lg border border-border bg-bg-surface">
-                  {lista.map((p) => (
-                    <li key={p.id} className="border-b border-border last:border-b-0">
-                      <Link
-                        href={`/catalogo/porcentajes/${p.id}`}
-                        className="row tap-target flex items-center gap-3 hover:bg-bg-subtle"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p
-                            className={`t-body-m truncate font-medium ${p.de_baja ? "text-text-tertiary" : "text-text-primary"}`}
-                          >
-                            {p.nombre}
-                          </p>
-                          <p className="t-caption truncate">
-                            {[textoBase(p, nombreCategoria), textoMinimo(p)].filter(Boolean).join(" · ")}
-                          </p>
-                        </div>
-                        {p.opcional && <span className="badge badge-neutral shrink-0">Opcional</span>}
-                        {p.de_baja && <span className="badge badge-neutral shrink-0">De baja</span>}
-                        <span className="t-body-m shrink-0 font-semibold">{textoPorcentaje(p.porcentaje)}</span>
-                      </Link>
-                    </li>
-                  ))}
+                  {lista.map((p) => {
+                    const detalle = [textoBase(p, nombreCategoria), textoMinimo(p)].filter(Boolean).join(" · ");
+                    return (
+                      <li key={p.id} className="border-b border-border last:border-b-0">
+                        <Link
+                          href={`/catalogo/porcentajes/${p.id}`}
+                          className="row tap-target flex items-center gap-3 hover:bg-bg-subtle"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className={`t-body-m truncate font-medium ${p.de_baja ? "text-text-tertiary" : "text-text-primary"}`}
+                            >
+                              {p.nombre}
+                            </p>
+                            {detalle && <p className="t-caption truncate">{detalle}</p>}
+                          </div>
+                          {p.opcional && <span className="badge badge-neutral shrink-0">Opcional</span>}
+                          {p.de_baja && <span className="badge badge-neutral shrink-0">De baja</span>}
+                          <span className="t-body-m shrink-0 font-semibold">{textoPorcentaje(p.porcentaje)}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </section>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
-import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
+import { Palette, Plus, Tags } from "lucide-react";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
+import { Paginacion } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import type { Moneda } from "@/lib/monedas";
 import {
@@ -20,6 +21,7 @@ import { FijoFormPanel } from "./FijoFormPanel";
 import { InsumoFicha } from "./InsumoFicha";
 import { InsumoFormPanel } from "./InsumoFormPanel";
 import { ListaNombresPanel } from "./ListaNombresPanel";
+import { ListaPorCategoria, usePaginadoPorCategoria } from "./PorCategoria";
 
 const ESTADOS = [
   { valor: "activos", label: "Activos" },
@@ -57,6 +59,7 @@ export function InsumosView({
   const [categoriaId, setCategoriaId] = useState("");
   const [estado, setEstado] = useState<Estado>("activos");
   const [porCosto, setPorCosto] = useState(false);
+  const [agrupar, setAgrupar] = useState(false);
   const [abierto, setAbierto] = useState<string | null>(null);
   const [editando, setEditando] = useState<Insumo | "nuevo" | null>(null);
   const [costos, setCostos] = useState<{ titulo: string; filas: FilaCosto[] } | null>(null);
@@ -74,7 +77,7 @@ export function InsumosView({
   );
   // El costo más viejo primero: sin costo, antes que todos.
   const ordenados = porCosto ? [...filtrados].sort((a, b) => masViejo(a).localeCompare(masViejo(b))) : filtrados;
-  const { visibles, ...paginado } = usePaginado(ordenados);
+  const { grupos, paginado } = usePaginadoPorCategoria(ordenados, (i) => i.categoria_id, nombreCategoria, agrupar);
   const ficha = insumos.find((i) => i.id === abierto) ?? null;
 
   function filasCosto(lista: Insumo[]): FilaCosto[] {
@@ -133,9 +136,13 @@ export function InsumosView({
             <option value="costo">Costo más viejo primero</option>
           </select>
         )}
+        <label className="tap-target flex items-center gap-2">
+          <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} />
+          <span className="t-body-m">Agrupar por categoría</span>
+        </label>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         {puedeEditar && (
           <button className="btn btn-primary" onClick={() => setEditando("nuevo")}>
             <Plus size={16} />
@@ -147,17 +154,28 @@ export function InsumosView({
             className="btn btn-secondary"
             onClick={() => setCostos({ titulo: `Cargar costos (${cargables.length})`, filas: cargables })}
           >
-            Cargar costos de la lista
+            Cargar costos
           </button>
         )}
-        <button className="btn btn-secondary" onClick={() => setPanel("categorias")}>
-          Categorías
-        </button>
-        {tipo === "insumo" && (
-          <button className="btn btn-secondary" onClick={() => setPanel("colores")}>
-            Colores
-          </button>
-        )}
+        {/* En un menú: en mobile, con los filtros, eran cinco renglones antes del primer insumo. */}
+        <OverflowMenu
+          items={[
+            {
+              label: "Categorías",
+              icon: <Tags size={14} strokeWidth={1.75} />,
+              onClick: () => setPanel("categorias"),
+            },
+            ...(tipo === "insumo"
+              ? [
+                  {
+                    label: "Colores",
+                    icon: <Palette size={14} strokeWidth={1.75} />,
+                    onClick: () => setPanel("colores"),
+                  },
+                ]
+              : []),
+          ]}
+        />
       </div>
 
       <Paginacion {...paginado} etiqueta={t.plural} />
@@ -168,14 +186,15 @@ export function InsumosView({
           <p className="t-body-m mt-1">
             {insumos.length === 0
               ? puedeEditar
-                ? `Cargá el primero con "${t.nuevo}". Antes, armá sus categorías.`
+                ? `Cargá el primero con "${t.nuevo}". Antes, armá sus categorías en el menú ⋯.`
                 : `Todavía nadie cargó ${t.plural}.`
               : "Probá con otro término o cambiá los filtros."}
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col rounded-lg border border-border bg-bg-surface">
-          {visibles.map((i) => (
+        <ListaPorCategoria
+          grupos={grupos}
+          fila={(i) => (
             <li key={i.id} className="border-b border-border last:border-b-0">
               <button
                 className="row tap-target flex w-full items-center gap-3 text-left hover:bg-bg-subtle"
@@ -189,7 +208,7 @@ export function InsumosView({
                   </p>
                   <p className="t-caption truncate">
                     {[
-                      nombreCategoria.get(i.categoria_id),
+                      !agrupar && nombreCategoria.get(i.categoria_id),
                       UNIDAD[i.unidad],
                       tipo === "insumo" && i.peso !== null && `${textoNumero(i.peso)} kg/${POR_UNIDAD[i.unidad]}`,
                       tipo === "insumo" && i.espesor !== null && `${textoNumero(i.espesor)} mm`,
@@ -203,8 +222,8 @@ export function InsumosView({
                 {puedeCostos && i.activo && <ResumenCosto insumo={i} />}
               </button>
             </li>
-          ))}
-        </ul>
+          )}
+        />
       )}
 
       {ficha && (

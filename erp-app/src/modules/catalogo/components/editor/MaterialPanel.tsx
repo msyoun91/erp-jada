@@ -8,6 +8,7 @@ import { Ayuda } from "@/components/ui/Ayuda";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { guardarMaterial, guardarOpcion, sacar } from "../../actions";
+import { formulaAparte } from "../../etiquetas";
 import { EJEMPLO } from "../../ejemplos";
 import { materialSchema, type Contenido, type Material, type MaterialForm, type Opcion } from "../../types";
 import { CondicionesLista } from "./CondicionesLista";
@@ -77,7 +78,7 @@ export function MaterialPanel({
       campo: "medida",
       label:
         tipo === "unico" && insumo?.unidad === "u"
-          ? "Medida de corte (mm), opcional: se cobra la cantidad"
+          ? "Medida de corte (mm, opcional: se cobra la cantidad)"
           : tipo === "unico" && insumo?.unidad === "m2"
             ? null
             : "Medida (mm)",
@@ -85,7 +86,7 @@ export function MaterialPanel({
     },
     { campo: "ancho", label: conArea && !esServicio ? "Ancho (mm)" : null, ejemplo: EJEMPLO.anchoAlto },
     { campo: "alto", label: conArea && !esServicio ? "Alto (mm)" : null, ejemplo: EJEMPLO.anchoAlto },
-    { campo: "area", label: conArea ? "Área (mm²), solo si no es un rectángulo" : null, ejemplo: EJEMPLO.area },
+    { campo: "area", label: conArea ? "Área (mm², solo si no es un rectángulo)" : null, ejemplo: EJEMPLO.area },
     { campo: "cantidad", label: "Cantidad de piezas iguales", ejemplo: EJEMPLO.cantidad },
   ] as const;
 
@@ -219,7 +220,11 @@ export function MaterialPanel({
                   <Fila
                     key={o.id}
                     titulo={`${insumos.get(o.insumo_id ?? "")?.nombre ?? "—"}${o.predeterminada ? " · predeterminada" : ""}`}
-                    detalle={[o.medida, o.ancho && o.alto && `${o.ancho} × ${o.alto}`, o.cantidad && `× ${o.cantidad}`]
+                    detalle={[
+                      o.medida,
+                      o.ancho && o.alto && `${formulaAparte(o.ancho)} × ${formulaAparte(o.alto)}`,
+                      o.cantidad && `× ${formulaAparte(o.cantidad)}`,
+                    ]
                       .filter(Boolean)
                       .join(" · ")}
                     onAbrir={() => setOpcion(o)}

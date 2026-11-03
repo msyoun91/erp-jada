@@ -138,7 +138,7 @@ export function VariablePanel({
               />
             </Campo>
           )}
-          <Nombres nombres={nombres} />
+          {!(ingresa && lista) && <Nombres nombres={nombres} />}
 
           {ingresa && !lista && (
             <>

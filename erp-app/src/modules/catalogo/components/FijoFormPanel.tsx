@@ -91,7 +91,12 @@ export function FijoFormPanel({
         {!fijo && (
           <div className="flex gap-2">
             <div className="flex-1">
-              <Campo id="fijo-costo" label={`Costo por ${POR_UNIDAD[unidad]}, sin IVA`} requerido error={errors.costo}>
+              <Campo
+                id="fijo-costo"
+                label={`Costo (por ${POR_UNIDAD[unidad]}, sin IVA)`}
+                requerido
+                error={errors.costo}
+              >
                 <input
                   id="fijo-costo"
                   type="number"

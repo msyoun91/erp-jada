@@ -25,7 +25,8 @@ Archivos: `CostosPanel.tsx`.
 
 **Categorías y colores se manejan en un panel lateral de la pestaña de lo que contienen, el mismo para los dos
 (`ListaNombresPanel`).** Siguen la misma regla (nombre fijo con algo adentro, baja sin nada activo) y la frena la base
-(CA006, CA007); quien no edita ve la lista sin acciones.
+(CA006, CA007); quien no edita ve la lista sin acciones. Se abren desde el menú ⋯ de la barra, no con un botón cada
+uno: en mobile, junto a los filtros, eran cinco renglones antes del primer insumo.
 
 **La baja de un insumo, de un color o de un servicio fijo muestra antes lo que va a pasar (`catalogo_baja_aviso`), y se
 confirma aunque no afecte nada.** Con la vista Paquetes se ven los nombres; sin ella, los números (*Antes de confirmar la
@@ -49,14 +50,18 @@ de paso y volver no borra lo escrito; lo que no corresponde no llega a la base.
 
 ## Paquetes (2026-11-03)
 
-**La lista filtra por categoría y por estado (a la venta, sin publicar, de baja) en vez de agrupar, y cada fila lleva a una
-versión: la abierta si hay, si no la publicada.** Es el mismo patrón que Insumos, con paginado y total. Arriba, para quien
+**La lista filtra por categoría y por estado (a la venta, sin publicar, de baja), y cada fila lleva a una versión: la abierta
+si hay, si no la publicada.** Agrupar es opcional (*Agrupar por categoría*). Es el mismo patrón que Insumos, con paginado y total. Arriba, para quien
 aprueba, "Por revisar": las versiones en revisión. Archivos: `PaquetesView.tsx`, `PaqueteAltaModal.tsx`.
 
 **El paquete no tiene página propia: su detalle es el de una versión (`/catalogo/paquetes/versiones/<id>`), la ruta de los
 avisos.** Ahí están las otras versiones para saltar entre ellas, la causa de la baja y los botones del paquete (baja,
 reactivación, duplicar), además de los del ciclo de esa versión. Una sola ruta de detalle, la que ya usan los avisos.
 Archivos: `VersionView.tsx`, `VersionAcciones.tsx`.
+
+**A la vista van los pasos del ciclo (editar, enviar, retirar, aprobar, devolver, versión nueva, reactivar); descartar,
+duplicar y dar de baja van en el menú ⋯.** Con los cinco botones iguales, "Dar de baja el paquete" quedaba en rojo al lado de
+"Editar". Con "Enviar a revisión" deshabilitado, abajo dice por qué: el `title` del botón no se ve en touch.
 
 **El despiece se mira con una calculadora que abre con el primer caso de prueba, y es la misma para la vista sola y para
 quien aprueba: con `catalogo_aprobar` el resultado es el detalle del precio, que incluye el despiece.** Cada cálculo es una
@@ -77,7 +82,7 @@ el motivo de la devolución, que se ve siempre; sumar una función que devuelva 
 
 **El editor es una página aparte (`/catalogo/paquetes/versiones/<id>/editar`), solo para un borrador y con `catalogo_armar`;
 cualquier otra versión vuelve a su ficha.** Arriba, lo que frena el envío, que la base recalcula con cada guardado
-(`catalogo_version_revisar`). Archivos: `components/editor/`.
+(`catalogo_version_revisar`). Con tres cosas o menos, la lista arranca abierta. Archivos: `components/editor/`.
 
 **Cada cosa se guarda sola, en su panel, sin un "guardar todo".** Un borrador puede quedar a medias (*Lo que nunca tiene
 sentido se frena al guardar*): guardar de a una deja ver el error de cada fórmula (CA001) en el momento en que se escribe.
@@ -88,8 +93,10 @@ variables que no carga el vendedor sin rango ni lista, el material único sin no
 sin que un valor escondido haga saltar un CHECK de la base. Un nombre repetido (23505) se traduce por tabla en `actions.ts`:
 la base no dice de qué.
 
-**El orden se cambia con flechas, que renumeran a los hermanos; sacar pide confirmación y dice que se lleva lo que depende.**
-No vuelve (CA015).
+**El orden se cambia con Subir y Bajar, que renumeran a los hermanos; sacar pide confirmación y dice que se lleva lo que
+depende.** No vuelve (CA015). Los tres van en el menú ⋯ de la fila, como pide *P1 — acciones de fila siempre en `OverflowMenu`*
+(`decisiones/global/ui.md`): como íconos sueltos ocupaban un tercio del ancho en mobile y la fórmula de la fila se partía en
+cuatro renglones.
 
 **Las parejas de un material que sigue a otro se eligen en una lista, una por cada opción del que elige: insumo, "ninguna" o
 vacía. "Mismas opciones" las llena para el sincronizado.** En la base son un solo mecanismo (*Un material múltiple puede
@@ -113,3 +120,12 @@ ejemplo van sin punto de miles, como las acepta la base (`despiece.md` → *Las 
 
 **En la opción, ancho, alto y área dicen mm, no m2.** Decían "(m2)" por el tipo de insumo que los usa, y se leía como la
 unidad de la fórmula, que siempre da mm. Archivos: `components/editor/OpcionPanel.tsx`.
+
+## Agrupar por categoría (2026-11-03)
+
+**Insumos, Servicios fijos y Paquetes tienen un toggle "Agrupar por categoría": la lista se ordena por categoría y cada una es
+un plegable con su total.** Arranca sin agrupar, con el filtro por categoría de siempre. Se ordena antes de paginar, así una
+página corta un grupo como mucho en sus bordes, y el total del grupo es el de todas las páginas. Agrupada, la fila no repite
+su categoría. El paquete se agrupa por la categoría de la versión que muestra la fila. Archivos:
+`components/PorCategoria.tsx`.
+

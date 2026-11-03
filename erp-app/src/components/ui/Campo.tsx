@@ -2,6 +2,20 @@ import { Ayuda } from "./Ayuda";
 
 type FieldError = { message?: string };
 
+// `.t-label` va en mayúsculas, y "ANCHO (MM)" se lee como megámetros: lo que está entre paréntesis (unidades,
+// aclaraciones) queda como está escrito.
+export function Etiqueta({ texto }: { texto: string }) {
+  return texto.split(/(\([^)]*\))/).map((parte, i) =>
+    i % 2 === 1 ? (
+      <span key={i} className="normal-case">
+        {parte}
+      </span>
+    ) : (
+      parte
+    ),
+  );
+}
+
 export function Campo({
   id,
   label,
@@ -24,12 +38,12 @@ export function Campo({
       {ejemplo ? (
         <Ayuda de={label} ejemplo={ejemplo} className="mb-1">
           <label htmlFor={id} className={clase}>
-            {label}
+            <Etiqueta texto={label} />
           </label>
         </Ayuda>
       ) : (
         <label htmlFor={id} className={`${clase} mb-1 block`}>
-          {label}
+          <Etiqueta texto={label} />
         </label>
       )}
       {children}

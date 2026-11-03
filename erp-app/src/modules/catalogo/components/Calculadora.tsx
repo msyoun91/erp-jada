@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Campo, claseInput } from "@/components/ui/Campo";
+import { Campo, claseInput, Etiqueta } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
 import { MONEDAS, MONEDAS_LISTA, type Moneda } from "@/lib/monedas";
 import { calcular, guardarCaso } from "../actions";
@@ -117,9 +117,9 @@ export function Calculadora({
         {variables.map((v) => (
           <label key={v.id} className="flex flex-col gap-1">
             <span className="t-label">
-              {v.nombre}
-              {v.es_lista ? "" : v.es_cantidad ? " (u)" : " (mm)"}
-              {v.pieza_id ? ` · ${nombrePieza.get(v.pieza_id)}` : ""}
+              <Etiqueta
+                texto={`${v.nombre}${v.es_lista ? "" : v.es_cantidad ? " (u)" : " (mm)"}${v.pieza_id ? ` · ${nombrePieza.get(v.pieza_id)}` : ""}`}
+              />
             </span>
             {v.es_lista ? (
               <select
@@ -184,7 +184,9 @@ export function Calculadora({
 
         {piezas.map((p) => (
           <label key={p.id} className="flex flex-col gap-1">
-            <span className="t-label">{p.nombre} (opcional)</span>
+            <span className="t-label">
+              <Etiqueta texto={`${p.nombre} (opcional)`} />
+            </span>
             <select
               className="input"
               value={estado.piezas[p.id] ?? ""}
