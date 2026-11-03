@@ -24,8 +24,10 @@ de baja en el medio.
 - Un material en mm o m2 sin su medida: un insumo en m2, sin ancho o sin alto; una opción de otra unidad,
   sin la suya.
 - Una opción sin pareja en el material que la sigue (vacía; "ninguna" vale).
-- Una fórmula con "si" sin "si no", o un material que define el sistema sin "si no".
+- Una fórmula con "si" sin "si no", o un material que define el sistema sin "si no". Ya no llega al envío: lo frena el parser
+  al guardar (`sql/158`).
 - Una fórmula que usa lo que puede faltar o lo que ya no existe, o una referencia o un requisito circular.
+- Un material que sigue a otro de una pieza que puede no estar (2026-11-03).
 - Una fórmula o una condición que usa una lista de valores.
 - Un peso o espesor vacío en un material que la pieza cuenta.
 - Algo marcado secundario sin predeterminado.
@@ -38,7 +40,7 @@ de baja en el medio.
 - Un material que define el sistema sin regla, o con una regla que nombra algo que no es una de sus opciones
   (2026-11-03). El cálculo solo lo ve si cae en esa rama, y los casos pueden no pasar por ahí.
 - Un insumo con colores en una versión sin colores ofrecidos. Si todo es de color indistinto, no lleva.
-- Colores ofrecidos sin base, o con una base que no está entre ellos.
+- Colores ofrecidos sin base. La base es una marca del color ofrecido: no puede estar afuera.
 - Un color ofrecido en el que el paquete no se puede armar. Si deja de poder armarse después de publicada,
   se deja de ofrecer, sin tocar la versión.
 - Una categoría o un color de baja.
@@ -132,6 +134,38 @@ que el aviso no se vuelve ruido; los costos cambian seguido y no le avisan, porq
 Se descartó que el gerente apruebe cada cambio antes de que rija: Administración lo esperaría para
 cada ajuste. Riesgo aceptado: un presupuesto hecho entre el cambio y la reversión queda con el cambio,
 porque se recalcula como era (*Un presupuesto se recalcula como era*).
+
+## El ciclo en la base (2026-11-03)
+
+**Quién envió una versión sale de su historia, no de una columna.** Es la última fila `enviada`. Con una columna además, las dos
+podían decir distinto después de retirarla y reenviarla.
+
+**Revisar devuelve todo lo que frena, y enviar da esa misma lista como error.** Lucía corrige de una vez y puede verlo mientras
+arma, sin intentar enviar: con el primer error solo, una versión con 5 problemas pedía 5 intentos.
+
+**Un nombre usado desde otra pieza vale si alguna de sus apariciones está seguro.** El Soldado está en Marco y en un Mosquitero
+opcional, y Colocación usa `[Soldado]`: el total existe siempre, y es lo que Colocación quiere. Frenarlo no dejaba salida, porque
+un material único se llama como su insumo y no se le puede cambiar el nombre. Si solo está en la opcional, frena. Dentro de su
+pieza manda lo de esa pieza, como en el cálculo.
+
+**Seguir a un material de una pieza que puede no estar frena el envío, como usarlo en una fórmula.** Un Contravidrio de una pieza
+fija que sigue al Vidrio de un Mosquitero opcional no tiene qué elegir cuando el Mosquitero no está.
+
+**Un material con "sin elección" y sin predeterminado se puede marcar secundario.** Se resuelve sin preguntar nada: queda sin ese
+material. Lo que no se puede plegar es lo obligatorio, y esto no lo es (*Editor de paquete*).
+
+**Una opción sale de la oferta si le falta la pareja en cualquier material que la sigue, aunque ese material esté en una pieza
+opcional que el vendedor no eligió.** La oferta se calcula sin saber qué va a elegir el vendedor, y una sola regla alcanza. Costo
+aceptado: en ese caso raro se deja de ofrecer una opción que todavía se podía armar sin la pieza.
+
+**Un color de baja no se mira al calcular la oferta.** Solo se da de baja sin variantes activas, así que lo que tiene color ya no
+se arma en él. Un paquete sin nada de ese color lo sigue ofreciendo, porque el color no le cambia nada; una versión nueva con ese
+color no se puede enviar. Sin esto hacía falta una cascada propia, con otra causa de baja, para un caso que casi no existe.
+
+**La baja del paquete corre antes de guardar la del insumo.** Todavía se ve la oferta de antes, y la de después sale de la misma
+función que muestra el aviso previo: lo que se avisa y lo que pasa no pueden ser distintos. Si la baja falla, se revierte todo.
+
+Archivos: `sql/162_catalogo_ciclo.sql`, con 712 casos en `sql/tests/catalogo_ciclo.sql`.
 
 ## Casos de prueba (2026-11-02)
 

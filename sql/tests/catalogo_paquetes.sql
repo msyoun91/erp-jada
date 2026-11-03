@@ -5,7 +5,7 @@
 -- Servicios fijos con editar), Carlos (gerente: Paquetes con aprobar), Marta (Insumos con cargar, sin Paquetes),
 -- Rodrigo (solo Paquetes, revisa cortes) y Juan (nada). Lo creado lleva Zqx160.
 --
--- Las funciones que cambian el estado de una versión llegan con sql/162: acá lo cambia el dueño, con pg_temp.a.
+-- Las funciones que cambian el estado de una versión están en sql/162, con su test: acá lo cambia el dueño, con pg_temp.a.
 
 BEGIN;
 
@@ -844,7 +844,7 @@ SELECT pg_temp.caso('12 la versión sigue igual', 'Zqx160 Otra', pg_temp.campo('
 
 SELECT pg_temp.caso('12 version_id no se cambia en una pieza', '42501', pg_temp.intentar(pg_temp.upd('catalogo_piezas', 'POtra', format('version_id = %s', pg_temp.l('V1'))), 'Lucia'));
 SELECT pg_temp.caso('12 version_id no se cambia en un material', '42501', pg_temp.intentar(pg_temp.upd('catalogo_materiales', 'MOtra', format('version_id = %s', pg_temp.l('V1'))), 'Lucia'));
-SELECT pg_temp.caso('12 la baja del paquete llega con el ciclo', '42501', pg_temp.intentar(pg_temp.upd('catalogo_paquetes', 'P1', 'activo = false'), 'Lucia'));
+SELECT pg_temp.caso('12 Lucia da de baja el paquete (sql/162)', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_paquetes', 'P1', 'activo = false'), 'Lucia'));
 
 SELECT pg_temp.caso('12 RLS en las nueve tablas', '9', (SELECT count(*)::text FROM pg_class c
   WHERE c.relnamespace = 'public'::regnamespace AND c.relrowsecurity AND c.relname = ANY (ARRAY[

@@ -1,10 +1,10 @@
-# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql`, `sql/161_catalogo_despiece.sql` — corridas en Supabase vía MCP)
+# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql`, `sql/161_catalogo_despiece.sql`, `sql/162_catalogo_ciclo.sql` — corridas en Supabase vía MCP)
 
 Ficha y decisiones: `decisiones/catalogo/README.md`. Tests: `sql/tests/catalogo_formulas.sql`,
-`sql/tests/catalogo_registros.sql`, `sql/tests/catalogo_paquetes.sql`, `sql/tests/catalogo_despiece.sql`.
+`sql/tests/catalogo_registros.sql`, `sql/tests/catalogo_paquetes.sql`, `sql/tests/catalogo_despiece.sql`,
+`sql/tests/catalogo_ciclo.sql`.
 
-El SQL va por tramos (`BACKLOG.md` → *Catálogo*). Falta el ciclo de una versión (qué frena el envío, enviar, aprobar, bajas
-en cascada), el precio y los avisos.
+El SQL va por tramos (`BACKLOG.md` → *Catálogo*). Falta el precio y los avisos.
 
 ## Permisos
 
@@ -19,7 +19,8 @@ en cascada), el precio y los avisos.
 | insumos y variantes | cualquiera de las cuatro vistas | por `tipo`: `insumo` → cargar, `servicio` → fijos_editar |
 | costos | por `tipo`: `insumo` → `catalogo_costos`, `servicio` → `catalogo_fijos_editar` | lo mismo, solo por `catalogo_costos_cargar` |
 | servicios en % | `catalogo_porcentajes` | `catalogo_porcentajes_editar`, solo por funciones |
-| paquetes, versiones y su contenido | `catalogo_paquetes` | `catalogo_armar`. El estado y el número de una versión, nadie directo |
+| paquetes, versiones y su contenido | `catalogo_paquetes` | `catalogo_armar`. El estado y el número de una versión y por qué está de baja un paquete, nadie directo |
+| historia de una versión | `catalogo_paquetes` | solo por las funciones del ciclo |
 
 ## Enums
 
@@ -30,6 +31,7 @@ en cascada), el precio y los avisos.
 | `alcance_minimo` | `paquete` \| `presupuesto` | contra qué se compara el mínimo de un servicio en % |
 | `estado_version_catalogo` | `borrador` \| `en_revision` \| `publicado` \| `obsoleto` \| `descartado` | |
 | `tipo_material` | `unico` \| `elige_vendedor` \| `elige_sistema` \| `sigue` | |
+| `accion_version_catalogo` | `enviada` \| `retirada` \| `devuelta` \| `aprobada` \| `obsoleta` \| `descartada` | las filas de la historia de una versión |
 
 ## catalogo_categorias
 
@@ -144,11 +146,12 @@ variante no corresponde al insumo · CA010 nombre de servicio en % repetido · C
 ## Paquetes y versiones
 
 El contenido de un borrador se escribe directo, con RLS y triggers. Alta, versión nueva y duplicar son funciones. El estado
-lo cambian las funciones del ciclo (`sql/162`), junto con lo que frena el envío y la baja del paquete: hasta entonces,
-`catalogo_paquetes` no tiene GRANT de UPDATE. Un borrador puede estar a medias: acá solo se frena lo que no tiene sentido
+lo cambian las funciones del ciclo (*El ciclo*). Un borrador puede estar a medias: acá solo se frena lo que no tiene sentido
 en ningún momento.
 
-**`catalogo_paquetes`:** `id`, `activo`, `created_at`, `updated_at`. Por qué está de baja llega con `sql/162`.
+**`catalogo_paquetes`:** `id`, `activo`, `baja_insumo_id`, `baja_variante_id`, `created_at`, `updated_at`. GRANT de UPDATE solo
+sobre `activo`, con `catalogo_armar`: dar de baja y reactivar es un UPDATE. Las dos `baja_*` las pone la cascada (*El ciclo*);
+vacías y de baja es a mano. CHECK `catalogo_paquetes_baja`: a lo sumo una, y ninguna si está activo.
 
 **`catalogo_versiones`**
 
@@ -246,6 +249,46 @@ van en mm; `area`, en m2. Nada va redondeado.
 
 **Errores:** CA016 no se encontró la versión · CA017 la entrada no tiene la forma esperada · CA018 interno: una medida o
 cantidad que no se puede usar, no sale de `catalogo_despiece`.
+
+## El ciclo
+
+Decisiones: `decisiones/catalogo/versiones.md` → *El ciclo en la base*. Las funciones son DEFINER o se llaman desde una: Técnica
+no ve los costos que frenan el envío, y Administración da de baja servicios sin ver los paquetes que los usan.
+
+**`catalogo_versiones_historia`:** `id`, `version_id` FK, `accion` (`accion_version_catalogo`), `motivo`, `creado_por` FK →
+usuarios, `activo`, `created_at`, `updated_at`. CHECK `catalogo_versiones_historia_motivo`: el motivo va solo y siempre en
+`devuelta`. Sin GRANT de escritura. Quién envió una versión es la última fila `enviada`.
+
+```
+borrador → en_revision (enviar) → publicado (aprobar) → obsoleto (al aprobar la siguiente)
+            en_revision → borrador (retirar, sin motivo; devolver, con motivo)
+borrador → descartado (solo si el paquete tiene una publicada)
+```
+
+| función | seguridad | quién | qué hace |
+|---|---|---|---|
+| `catalogo_version_revisar(version) → text[]` | DEFINER | `catalogo_paquetes` | lo que frena el envío, para mostrarlo mientras se arma. Vacío: se puede enviar. Sin la vista: CA016 |
+| `catalogo_version_enviar(version)` | DEFINER | `catalogo_armar` | de borrador a revisión, si nada frena |
+| `catalogo_version_retirar(version)` | DEFINER | `catalogo_armar` | de revisión a borrador |
+| `catalogo_version_devolver(version, motivo)` | DEFINER | `catalogo_aprobar` | de revisión a borrador. Sin motivo: CA021 |
+| `catalogo_version_aprobar(version)` | DEFINER | `catalogo_aprobar` | revisa de nuevo, pasa la anterior a obsoleta y publica. No toca `activo` del paquete |
+| `catalogo_version_descartar(version)` | DEFINER | `catalogo_armar` | solo un borrador, y con una publicada en el paquete |
+| `catalogo_version_oferta(version)` | DEFINER | `catalogo_paquetes` | una fila por color ofrecido (una con color NULL si no ofrece ninguno): `color_id`, `color`, `armable`, `piezas_fuera`, `opciones_fuera`, `faltan`. Sin la vista: CA016 |
+| `catalogo_baja_aviso(insumo, variante = NULL) → jsonb` | DEFINER | `catalogo_cargar` o `catalogo_fijos_editar`, según el tipo | `{salen, dejan}`; con la vista Paquetes, también `salen_nombres` y `dejan_detalle` `[{nombre, colores, piezas, opciones}]` |
+
+**Sin EXECUTE para nadie**, solo se llega por las de arriba: `catalogo_oferta(version, sin_insumo, sin_variante)` (la oferta, con
+"¿y si esto se diera de baja?"), `catalogo_baja_efecto(insumo, variante)` (por paquete activo con publicada: `sale`, `colores`,
+`piezas`, `opciones`; la usan el aviso y la cascada), `catalogo_version_frena` (la lista), `catalogo_version_formulas`, `_alcance`,
+`_referencias`, `_circular`, `_insumos` (sus pasos), `catalogo_version_tomar` (permiso, `FOR UPDATE` y estado), `_registrar` (estado
+e historia), `_bloquear` (`FOR SHARE` de insumos, variantes, categoría y colores), `_exigir` (bloquea y frena).
+
+**Triggers.** `catalogo_insumos_baja` y `catalogo_variantes_baja`, BEFORE UPDATE OF `activo`, DEFINER (`catalogo_baja_cascada`): baja
+los paquetes activos que dejan de armarse y guarda la causa. `catalogo_paquetes_reactivar`, BEFORE UPDATE OF `activo`, DEFINER: con
+categoría de baja CA008; sin armarse en ningún color CA020, que dice qué falta; si no, borra la causa. Sin publicada no revisa nada.
+
+**Errores:** CA019 hay algo que frena: el mensaje trae la lista, una línea por cada cosa · CA020 no se puede reactivar · CA021
+devolver sin motivo · CA022 la versión no está en revisión · CA023 descartar sin publicada. Enviar o descartar fuera de borrador da
+CA012, y sin permiso, 42501.
 
 ## Fórmulas
 

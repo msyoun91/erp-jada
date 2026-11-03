@@ -30,20 +30,18 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   tablas que lo usan. Hecho: las fórmulas (`sql/158`), los registros (`sql/159`: permisos, categorías, colores,
   insumos, servicios fijos, variantes, costos y servicios en % con su historia) y los paquetes (`sql/160`: paquetes,
   versiones y su contenido, edición solo en borrador, duplicar, versión nueva, datos del insumo que quedan fijos y la
-  categoría de paquete con versiones adentro) y el despiece (`sql/161`: el cálculo, alertas, bloqueos, casos de prueba y la
-  forma de `catalogo_casos.entrada`). **Siguiente:**
-  - `162_catalogo_ciclo`: qué frena el envío, enviar, retirar, devolver, aprobar y descartar; bajas en cascada,
-    aviso previo y reactivación. Suma a `catalogo_paquetes` por qué está de baja y su GRANT de UPDATE (`activo`), y a la
-    versión quién la envió y su historia con motivos. Enviar toma la versión `FOR UPDATE`, y `FOR SHARE` sus insumos y
-    su categoría, para que no cambien mientras se envía: el control de `sql/160` no ve una versión sin confirmar. Los casos
-    los lee con `catalogo_casos_calcular`. Lo circular y lo que puede faltar se revisan mirando la fórmula entera con
-    `catalogo_formula_usa`: el cálculo de `sql/161` solo ve la rama que toma.
+  categoría de paquete con versiones adentro), el despiece (`sql/161`: el cálculo, alertas, bloqueos, casos de prueba y la
+  forma de `catalogo_casos.entrada`) y el ciclo (`sql/162`: qué frena el envío, enviar, retirar, devolver, aprobar, descartar,
+  lo que se ofrece en cada color, bajas en cascada, aviso previo y reactivación). **Siguiente:**
   - `163_catalogo_precio`: precio, detalle del gerente, mínimos por presupuesto y precios de referencia. Parte de
     `catalogo_despiece`, que ya da insumo, color, categoría, unidad y total de cada fila; da número solo con `calculable` y
-    sin `bloqueado`, y al vendedor le pasa `mensaje` y `mensajes`, nunca `errores`.
+    sin `bloqueado`, y al vendedor le pasa `mensaje` y `mensajes`, nunca `errores`. `catalogo_oferta` dice qué se ofrece en cada
+    color, y solo la pueden llamar funciones DEFINER.
   - `164_catalogo_avisos_enums` y `165_catalogo_avisos`: los tipos de `tipo_notificacion` van en su propia
     migración y en el mismo commit que `ICONO`, `TEXTO`, `COLOR` y `RUTA` de `NotificacionesBell`: son `Record`, y
-    sumar el tipo sin ellos rompe `tsc`.
+    sumar el tipo sin ellos rompe `tsc`. Lo que avisa una baja sale de `catalogo_baja_efecto` dentro de
+    `catalogo_baja_cascada`, que corre antes de guardarla para poder comparar con la oferta de antes. Quien envió una versión es
+    la última fila `enviada` de su historia.
 
   Paquetes a la venta y su formulario se escriben con Presupuestos.
 - **Monedas**: construido (2026-10-29, `sql/155`–`156`, `decisiones/monedas.md`). El catálogo y

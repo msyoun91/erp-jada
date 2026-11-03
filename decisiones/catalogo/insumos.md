@@ -132,7 +132,9 @@ de la baja, sin guardar nada.
 (2026-10-29; la variante, 2026-11-02).** Técnica ve "De baja por: Rueda 80kg Marca A" y sabe cuáles
 reactivar, sin confundirlos con la "Ventana 4 hojas" que dio de baja a propósito en febrero. Con una
 variante dice "De baja por: Perfil hoja · Negro": diciendo solo el insumo, Lucía lo buscaba y lo veía activo
-en Blanco. Si cayeron varias, dice la última. El aviso al gerente lista los que siguen de baja por esa causa,
+en Blanco. Si cayeron varias, dice la última: la que lo sacó de la venta (2026-11-03). Cae Negro y el paquete sigue en Blanco; cae
+Blanco y dice "Perfil hoja · Blanco". Un paquete que ya estaba de baja no cambia de causa, a mano incluido, y al reactivarlo la base
+dice todo lo que falta. El aviso al gerente lista los que siguen de baja por esa causa,
 y el que se reactiva sale de la lista. Se descartó no guardarlo: Técnica buscaba a mano qué paquetes usaban
 la rueda, y el aviso no podía decir cuáles bajó esa baja.
 

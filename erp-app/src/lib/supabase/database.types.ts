@@ -495,23 +495,44 @@ export type Database = {
       catalogo_paquetes: {
         Row: {
           activo: boolean
+          baja_insumo_id: string | null
+          baja_variante_id: string | null
           created_at: string
           id: string
           updated_at: string
         }
         Insert: {
           activo?: boolean
+          baja_insumo_id?: string | null
+          baja_variante_id?: string | null
           created_at?: string
           id?: string
           updated_at?: string
         }
         Update: {
           activo?: boolean
+          baja_insumo_id?: string | null
+          baja_variante_id?: string | null
           created_at?: string
           id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_paquetes_baja_insumo_id_fkey"
+            columns: ["baja_insumo_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_paquetes_baja_variante_id_fkey"
+            columns: ["baja_variante_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_variantes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       catalogo_piezas: {
         Row: {
@@ -903,6 +924,54 @@ export type Database = {
           },
           {
             foreignKeyName: "catalogo_versiones_colores_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogo_versiones_historia: {
+        Row: {
+          accion: Database["public"]["Enums"]["accion_version_catalogo"]
+          activo: boolean
+          creado_por: string
+          created_at: string
+          id: string
+          motivo: string | null
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          accion: Database["public"]["Enums"]["accion_version_catalogo"]
+          activo?: boolean
+          creado_por: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          accion?: Database["public"]["Enums"]["accion_version_catalogo"]
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_versiones_historia_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_versiones_historia_version_id_fkey"
             columns: ["version_id"]
             isOneToOne: false
             referencedRelation: "catalogo_versiones"
@@ -2793,6 +2862,21 @@ export type Database = {
           registro_id: string
         }[]
       }
+      catalogo_baja_aviso: {
+        Args: { p_insumo: string; p_variante?: string }
+        Returns: Json
+      }
+      catalogo_baja_efecto: {
+        Args: { p_insumo: string; p_variante?: string }
+        Returns: {
+          colores: string[]
+          nombre: string
+          opciones: string[]
+          paquete_id: string
+          piezas: string[]
+          sale: boolean
+        }[]
+      }
       catalogo_casos_calcular: {
         Args: { p_version: string }
         Returns: {
@@ -2936,6 +3020,21 @@ export type Database = {
         Returns: string
       }
       catalogo_numero_texto: { Args: { p_n: number }; Returns: string }
+      catalogo_oferta: {
+        Args: {
+          p_sin_insumo?: string
+          p_sin_variante?: string
+          p_version: string
+        }
+        Returns: {
+          armable: boolean
+          color: string | null
+          color_id: string | null
+          faltan: string[]
+          opciones_fuera: string[]
+          piezas_fuera: string[]
+        }[]
+      }
       catalogo_paquete_alta: {
         Args: { p_categoria: string; p_nombre: string }
         Returns: string
@@ -3035,13 +3134,127 @@ export type Database = {
         Args: { p_color: string | null; p_insumo: string }
         Returns: string
       }
+      catalogo_version_alcance: {
+        Args: { p_version: string }
+        Returns: {
+          desde: string | null
+          llega: string
+        }[]
+      }
+      catalogo_version_aprobar: {
+        Args: { p_version: string }
+        Returns: undefined
+      }
+      catalogo_version_bloquear: {
+        Args: { p_version: string }
+        Returns: undefined
+      }
+      catalogo_version_circular: {
+        Args: { p_version: string }
+        Returns: string
+      }
       catalogo_version_copiar: {
         Args: { p_nombre: string; p_origen: string; p_paquete: string }
         Returns: string
       }
+      catalogo_version_descartar: {
+        Args: { p_version: string }
+        Returns: undefined
+      }
+      catalogo_version_devolver: {
+        Args: { p_motivo: string; p_version: string }
+        Returns: undefined
+      }
+      catalogo_version_enviar: {
+        Args: { p_version: string }
+        Returns: undefined
+      }
+      catalogo_version_exigir: {
+        Args: { p_version: string }
+        Returns: undefined
+      }
+      catalogo_version_formulas: {
+        Args: { p_version: string }
+        Returns: {
+          arbol: Json
+          nodo: string | null
+          pieza_id: string | null
+          quien: string
+        }[]
+      }
+      catalogo_version_frena: {
+        Args: { p_version: string }
+        Returns: string[]
+      }
+      catalogo_version_insumos: {
+        Args: { p_version: string }
+        Returns: {
+          activo: boolean
+          con_alto: boolean
+          con_ancho: boolean
+          con_area: boolean
+          con_color: boolean
+          con_medida: boolean
+          cuenta_espesor: boolean
+          cuenta_peso: boolean
+          espesor: number | null
+          insumo: string
+          insumo_id: string
+          material: string
+          peso: number | null
+          pieza: string
+          tipo: Database["public"]["Enums"]["tipo_catalogo"]
+          unidad: Database["public"]["Enums"]["unidad_insumo"]
+        }[]
+      }
       catalogo_version_nueva: {
         Args: { p_origen?: string; p_paquete: string }
         Returns: string
+      }
+      catalogo_version_oferta: {
+        Args: { p_version: string }
+        Returns: {
+          armable: boolean
+          color: string | null
+          color_id: string | null
+          faltan: string[]
+          opciones_fuera: string[]
+          piezas_fuera: string[]
+        }[]
+      }
+      catalogo_version_referencias: {
+        Args: { p_version: string }
+        Returns: {
+          hacia: string[] | null
+          nodo: string | null
+          problema: string | null
+          quien: string
+        }[]
+      }
+      catalogo_version_registrar: {
+        Args: {
+          p_accion: Database["public"]["Enums"]["accion_version_catalogo"]
+          p_estado: Database["public"]["Enums"]["estado_version_catalogo"]
+          p_motivo?: string
+          p_version: string
+        }
+        Returns: undefined
+      }
+      catalogo_version_retirar: {
+        Args: { p_version: string }
+        Returns: undefined
+      }
+      catalogo_version_revisar: {
+        Args: { p_version: string }
+        Returns: string[]
+      }
+      catalogo_version_tomar: {
+        Args: {
+          p_estado: Database["public"]["Enums"]["estado_version_catalogo"]
+          p_permiso: string
+          p_version: string
+        }
+        Returns: Database["public"]["Tables"]["catalogo_versiones"]["Row"]
       }
       contactos_auditoria_detalle: {
         Args: { p_dias: number; p_persona?: string; p_usuario?: string }
@@ -3890,6 +4103,13 @@ export type Database = {
       }
     }
     Enums: {
+      accion_version_catalogo:
+        | "enviada"
+        | "retirada"
+        | "devuelta"
+        | "aprobada"
+        | "obsoleta"
+        | "descartada"
       alcance_minimo: "paquete" | "presupuesto"
       estado_hilo: "abierto" | "cerrado"
       estado_obra:
@@ -4116,6 +4336,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      accion_version_catalogo: [
+        "enviada",
+        "retirada",
+        "devuelta",
+        "aprobada",
+        "obsoleta",
+        "descartada",
+      ],
       alcance_minimo: ["paquete", "presupuesto"],
       estado_hilo: ["abierto", "cerrado"],
       estado_obra: [
