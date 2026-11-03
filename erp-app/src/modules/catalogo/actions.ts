@@ -390,7 +390,7 @@ const CICLO = {
 
 export async function moverVersion(accion: keyof typeof CICLO, versionId: unknown) {
   const parsed = idSchema.safeParse(versionId);
-  if (!parsed.success || !(accion in CICLO)) return invalido([{ message: "Pedido inválido" }]);
+  if (!parsed.success || !Object.hasOwn(CICLO, accion)) return invalido([{ message: "Pedido inválido" }]);
   const supabase = await createClient();
   const { error } = await supabase.rpc(CICLO[accion], { p_version: parsed.data });
   return error ? fallo(error) : listo();
