@@ -1,10 +1,8 @@
-# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql`, `sql/161_catalogo_despiece.sql`, `sql/162_catalogo_ciclo.sql`, `sql/163_catalogo_precio.sql` — corridas en Supabase vía MCP)
+# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql`, `sql/161_catalogo_despiece.sql`, `sql/162_catalogo_ciclo.sql`, `sql/163_catalogo_precio.sql`, `sql/164_catalogo_avisos_enums.sql`, `sql/165_catalogo_avisos.sql` — corridas en Supabase vía MCP)
 
 Ficha y decisiones: `decisiones/catalogo/README.md`. Tests: `sql/tests/catalogo_formulas.sql`,
 `sql/tests/catalogo_registros.sql`, `sql/tests/catalogo_paquetes.sql`, `sql/tests/catalogo_despiece.sql`,
-`sql/tests/catalogo_ciclo.sql`, `sql/tests/catalogo_precio.sql`.
-
-El SQL va por tramos (`BACKLOG.md` → *Catálogo*). Faltan los avisos.
+`sql/tests/catalogo_ciclo.sql`, `sql/tests/catalogo_precio.sql`, `sql/tests/catalogo_avisos.sql`.
 
 ## Permisos
 
@@ -322,6 +320,23 @@ cambio) y `catalogo_precio_redondear(monto, moneda)` (ARS a entero, el resto a 2
 | `servicios` | `[{porcentaje_id, nombre, porcentaje, paso, opcional, aplica, desde, categorias (nombres), base, monto, minimo?, minimo_moneda?, minimo_por?, minimo_convertido?}]`, por paso y nombre. Un opcional sin elegir o sin nada de sus categorías: `aplica` false, base y monto 0. Vacío si falta un costo o no se pudo calcular |
 | `sin_precio` | text[]: por qué no da número, para quien tiene `catalogo_aprobar`. Los errores del cálculo, los bloqueos, lo que no tiene costo o tipo de cambio a esa fecha, y un opcional que no está. Vacío si hay precio |
 | `precio_exacto`, `precio` | sin redondear y redondeado. NULL si y solo si `sin_precio` trae algo |
+
+## Los avisos
+
+Decisiones: `decisiones/catalogo/versiones.md` → *Los avisos en la base*. Quién recibe cada uno y qué dice:
+`db_schema/notificaciones.md` → *Catálogo*.
+
+**`catalogo_bajas`:** una fila por cada baja que sacó algo de la venta. `id`, `insumo_id` FK, `variante_id` FK nullable (NULL: el insumo
+o servicio fijo entero), `salen` uuid[] (los paquetes que sacó), `dejan` text[] (`Puerta balcón (Negro, DVH)`), `creado_por` FK nullable,
+`activo`, `created_at`, `updated_at`. RLS sin policy ni GRANT: la escribe `catalogo_baja_cascada` y la lee `catalogo_avisos`.
+
+| función | seguridad | qué hace |
+|---|---|---|
+| `catalogo_avisos()` | DEFINER, EXECUTE para `authenticated` | `notificacion_id`, `etiqueta`, `motivo`, `destino`, `destino_id` de los avisos propios del catálogo que todavía valen. La usa `notificaciones_listar` |
+| `catalogo_porcentaje_cambio(valor) → text` | INVOKER, sin EXECUTE | qué cambió contra el valor anterior: `5 % → 6 % · Suma Herrajes`, `Alta: 5 %`, `De baja` |
+
+**Triggers**, DEFINER y sin EXECUTE: `catalogo_variantes_avisar_alta` y `_vuelve`, `catalogo_categorias_avisar`,
+`catalogo_porcentajes_valores_avisar`, `catalogo_versiones_historia_avisar`. La baja avisa desde `catalogo_baja_cascada` (*El ciclo*).
 
 ## Fórmulas
 

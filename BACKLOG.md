@@ -32,15 +32,16 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   versiones y su contenido, edición solo en borrador, duplicar, versión nueva, datos del insumo que quedan fijos y la
   categoría de paquete con versiones adentro), el despiece (`sql/161`: el cálculo, alertas, bloqueos, casos de prueba y la
   forma de `catalogo_casos.entrada`), el ciclo (`sql/162`: qué frena el envío, enviar, retirar, devolver, aprobar, descartar,
-  lo que se ofrece en cada color, bajas en cascada, aviso previo y reactivación) y el precio (`sql/163`: precio, detalle del
-  gerente, mínimos por presupuesto y precios de referencia). **Siguiente:**
-  - `164_catalogo_avisos_enums` y `165_catalogo_avisos`: los tipos de `tipo_notificacion` van en su propia
-    migración y en el mismo commit que `ICONO`, `TEXTO`, `COLOR` y `RUTA` de `NotificacionesBell`: son `Record`, y
-    sumar el tipo sin ellos rompe `tsc`. Lo que avisa una baja sale de `catalogo_baja_efecto` dentro de
-    `catalogo_baja_cascada`, que corre antes de guardarla para poder comparar con la oferta de antes. Quien envió una versión es
-    la última fila `enviada` de su historia.
+  lo que se ofrece en cada color, bajas en cascada, aviso previo y reactivación), el precio (`sql/163`: precio, detalle del
+  gerente, mínimos por presupuesto y precios de referencia) y los avisos (`sql/164`–`165`). El SQL de la ficha está completo.
+  **Siguiente:** las pantallas. Tienen que respetar las rutas que ya usan los avisos (`db_schema/notificaciones.md` → *Catálogo*).
 
   Paquetes a la venta y su formulario se escriben con Presupuestos.
+- **Notificaciones — la bandeja tarda según cuántos avisos tenga cada uno**, sin decidir (2026-11-03). Ya pasaba antes de los avisos del
+  catálogo: con 30 avisos, `notificaciones_listar` tarda ~1,6 s como `authenticated` y ~50 ms como dueño. El plan repite la unión
+  `resuelta` por cada aviso, y cada vez recorre `obras` con su RLS (~59 ms, con los datos de prueba de esta base). Con
+  `resuelta AS MATERIALIZED` bajó a ~16 ms en una prueba con avisos que no resuelven a ninguna fila. Falta aplicarlo y correr los diez tests que
+  la usan. Por esto `sql/tests/catalogo_avisos.sql` lee casi todo con `catalogo_avisos()`.
 - **Monedas**: construido (2026-10-29, `sql/155`–`156`, `decisiones/monedas.md`). El catálogo y
   Compras convierten con `monedas_convertir(monto, de, a, fecha)` (`db_schema/monedas.md`). Falta la
   prueba completa en el navegador con dos usuarios.

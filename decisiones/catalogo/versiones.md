@@ -167,6 +167,35 @@ función que muestra el aviso previo: lo que se avisa y lo que pasa no pueden se
 
 Archivos: `sql/162_catalogo_ciclo.sql`, con 712 casos en `sql/tests/catalogo_ciclo.sql`.
 
+## Los avisos en la base (2026-11-03)
+
+**Un insumo sin costo da un solo aviso, aunque tenga varios colores, y dice cuáles faltan.** Un perfil con 12 colores eran 12 avisos
+iguales. Un color nuevo reemplaza el aviso anterior, para que vuelva a estar sin leer. Volver a sumar un color que ya tiene costo no avisa.
+
+**Lo que sacó una baja se guarda en `catalogo_bajas`.** Con el insumo ya de baja, la oferta de antes y la de después son iguales: lo que
+un paquete dejó de ofrecer no se puede recalcular al leer el aviso. Los paquetes que salieron se guardan por id, para mostrar los que
+siguen de baja por esa causa.
+
+**El aviso de una baja desaparece cuando no le queda nada que decir.** Reactivar la Tela devuelve el Mosquitero sin versión nueva, así
+que "dejaron de ofrecer" deja de valer; un paquete que se reactiva sale de la lista. Costo aceptado: si el mismo insumo cae dos veces y
+un paquete cae en las dos, el aviso viejo vuelve a listarlo. Se descartó reemplazar el anterior: se perdían los paquetes que seguían
+de baja desde la primera vez.
+
+**Una reversión les llega como cambio a los demás gerentes, y a quien hizo el cambio solo como reversión.** Si Carlos revierte lo que
+hizo Gerardo, a Gerardo le alcanza un aviso; a otro gerente, la reversión también le mueve el precio.
+
+**Los avisos de una versión apuntan a la fila de la historia, no a la versión.** Una versión retirada y reenviada no revive el aviso
+anterior, y cada aprobación o devolución queda con su propio motivo.
+
+**Sin el permiso que lo trajo, el aviso no se ve.** Como los demás módulos, solo que acá `catalogo_avisos` es DEFINER y lo pregunta ella:
+la RLS no alcanza porque Administración no lee paquetes y una persona sin `catalogo_costos` vería todo insumo como sin costo.
+
+**Del mínimo, el aviso dice solo que cambió.** La moneda es un código (`USD_OFICIAL`) que la base no traduce, y el aviso lleva a la
+historia, donde está el detalle.
+
+Archivos: `sql/164_catalogo_avisos_enums.sql`, `sql/165_catalogo_avisos.sql`, `erp-app/src/modules/notificaciones/components/NotificacionesBell.tsx`,
+con 280 casos en `sql/tests/catalogo_avisos.sql`.
+
 ## Casos de prueba (2026-11-02)
 
 **Cada versión lleva al menos un caso de prueba, y la base no deja enviarla si alguno no se puede

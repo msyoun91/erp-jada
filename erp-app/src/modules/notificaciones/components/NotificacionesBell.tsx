@@ -83,6 +83,14 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   plantilla_fallida: FileWarning,
   tipo_cambio_corregido: Coins,
   tipo_cambio_confirmado: Coins,
+  catalogo_insumo_sin_costo: Coins,
+  catalogo_categoria_nueva: ListPlus,
+  catalogo_baja: Archive,
+  catalogo_porcentaje_cambiado: PencilLine,
+  catalogo_porcentaje_revertido: RotateCcw,
+  catalogo_version_enviada: TriangleAlert,
+  catalogo_version_aprobada: CircleCheck,
+  catalogo_version_devuelta: RotateCcw,
 };
 const TEXTO: Record<TipoNotificacion, string> = {
   miembro_nuevo: "Se sumó a tu equipo",
@@ -125,6 +133,14 @@ const TEXTO: Record<TipoNotificacion, string> = {
   plantilla_fallida: "No pudo crearse el hilo de la plantilla",
   tipo_cambio_corregido: "Se corrigió a mano el",
   tipo_cambio_confirmado: "Se confirmó el salto de MonedAPI del",
+  catalogo_insumo_sin_costo: "Falta el costo de",
+  catalogo_categoria_nueva: "Hay una categoría de insumo nueva:",
+  catalogo_baja: "Se dio de baja",
+  catalogo_porcentaje_cambiado: "Cambió el servicio en %",
+  catalogo_porcentaje_revertido: "Revirtieron tu cambio en",
+  catalogo_version_enviada: "Espera revisión:",
+  catalogo_version_aprobada: "Aprobaron",
+  catalogo_version_devuelta: "Devolvieron",
 };
 const COLOR: Record<TipoNotificacion, string> = {
   miembro_nuevo: "text-brand-500",
@@ -167,6 +183,14 @@ const COLOR: Record<TipoNotificacion, string> = {
   plantilla_fallida: "text-error-text",
   tipo_cambio_corregido: "text-warning-text",
   tipo_cambio_confirmado: "text-warning-text",
+  catalogo_insumo_sin_costo: "text-warning-text",
+  catalogo_categoria_nueva: "text-brand-500",
+  catalogo_baja: "text-warning-text",
+  catalogo_porcentaje_cambiado: "text-warning-text",
+  catalogo_porcentaje_revertido: "text-warning-text",
+  catalogo_version_enviada: "text-warning-text",
+  catalogo_version_aprobada: "text-success-text",
+  catalogo_version_devuelta: "text-warning-text",
 };
 
 // `destino` → ruta. Cada rama de `notificaciones_listar` que devuelva un
@@ -187,6 +211,11 @@ const RUTA: Record<string, (id: string) => string> = {
   contactos: (id) => `/contactos?responsable=${id}`,
   contactos_por_aprobar: () => "/contactos/por-aprobar",
   monedas: () => "/monedas",
+  catalogo_insumos: () => "/catalogo/insumos",
+  catalogo_fijos: () => "/catalogo/fijos",
+  catalogo_porcentajes: () => "/catalogo/porcentajes",
+  catalogo_porcentaje: (id) => `/catalogo/porcentajes/${id}`,
+  catalogo_version: (id) => `/catalogo/paquetes/versiones/${id}`,
 };
 
 // `permiso_otorgado` trae el módulo en `destino` y la vista en `etiqueta`: los

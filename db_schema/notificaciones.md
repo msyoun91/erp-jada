@@ -60,6 +60,22 @@ avisos propios): el aprobador no ve la congelada y quien la cargó no ve la rech
 |---|---|---|---|
 | `monedas_tipos_cambio` | `tipo_cambio_corregido` (a mano), `tipo_cambio_confirmado` (un rojo de MonedAPI) | código de la moneda (la campanita lo traduce con `MONEDAS`); `motivo` = "$antes → $después", el anterior leído del historial | `monedas` |
 
+**Catálogo (`sql/164`–`sql/165`).** Los resuelve `catalogo_avisos()` (DEFINER, solo los avisos propios), y sin el permiso que lo trajo
+el aviso no se ve (`decisiones/catalogo/versiones.md` → *Los avisos en la base*). El actor nunca recibe su propio aviso.
+
+| entidad | tipo | a quién | resuelve | `destino` |
+|---|---|---|---|---|
+| `catalogo_insumos` | `catalogo_insumo_sin_costo` | quienes tienen `catalogo_costos` | nombre del insumo; `motivo` = los colores sin costo; desaparece con todos los costos o el insumo de baja. Uno por insumo: una variante nueva reemplaza el anterior | `catalogo_insumos` |
+| `catalogo_categorias` | `catalogo_categoria_nueva` (solo de insumo) | `catalogo_porcentajes_editar` | nombre; desaparece si se da de baja | `catalogo_porcentajes` |
+| `catalogo_bajas` | `catalogo_baja` | `catalogo_aprobar`; de un servicio fijo, también `catalogo_armar` | insumo, con el color si fue una variante; `motivo` = los paquetes que siguen de baja por esa causa y, mientras siga de baja, lo que dejaron de ofrecer; desaparece sin nada de eso | `catalogo_insumos` o `catalogo_fijos` |
+| `catalogo_porcentajes_valores` | `catalogo_porcentaje_cambiado` | `catalogo_aprobar`, menos el autor de lo revertido | nombre; `motivo` = qué cambió, y `Hubo otro cambio después` si no es el último | `catalogo_porcentaje` |
+| ídem | `catalogo_porcentaje_revertido` | quien hizo el cambio | lo mismo | `catalogo_porcentaje` |
+| `catalogo_versiones_historia` | `catalogo_version_enviada` | `catalogo_aprobar` | `Nombre · v3`; solo el último envío y mientras siga en revisión | `catalogo_version` |
+| ídem | `catalogo_version_aprobada`, `catalogo_version_devuelta` | quien la envió por última vez | `Nombre · v3`; `motivo` = el de la devolución | `catalogo_version` |
+
+Rutas en `RUTA` de `NotificacionesBell`, que las pantallas del catálogo tienen que respetar: `/catalogo/insumos`, `/catalogo/fijos`,
+`/catalogo/porcentajes`, `/catalogo/porcentajes/<id>`, `/catalogo/paquetes/versiones/<id>`.
+
 ## Sumar un evento
 
 1. `ALTER TYPE tipo_notificacion ADD VALUE '<tipo>'`, en su propia transacción: el valor no se puede usar antes del commit y `notificaciones_listar` lo castea al crearse.
@@ -76,8 +92,8 @@ avisos propios): el aprobador no ve la congelada y quien la cargó no ve la rech
 |---|---|---|
 | id | uuid PK | |
 | usuario_id | uuid FK → usuarios | destinatario |
-| tipo | enum `tipo_notificacion` | `miembro_nuevo` \| `permiso_otorgado` \| `delegador_designado` \| los veintiuno de tareas \| los ocho de obras y contactos (`sql/132`) \| los dos de tipos de cambio (`sql/155`) |
-| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos`, `tareas`, `tareas_hilos`, `tareas_plantillas` (`sql/151`), `usuarios`, `obras`, `obras_participantes`, `contactos_personas` (`sql/134`), `contactos_empresas` (`sql/138`), `monedas_tipos_cambio` (`sql/156`) |
+| tipo | enum `tipo_notificacion` | `miembro_nuevo` \| `permiso_otorgado` \| `delegador_designado` \| los veintiuno de tareas \| los ocho de obras y contactos (`sql/132`) \| los dos de tipos de cambio (`sql/155`) \| los ocho del catálogo (`sql/164`) |
+| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos`, `tareas`, `tareas_hilos`, `tareas_plantillas` (`sql/151`), `usuarios`, `obras`, `obras_participantes`, `contactos_personas` (`sql/134`), `contactos_empresas` (`sql/138`), `monedas_tipos_cambio` (`sql/156`), `catalogo_insumos`, `catalogo_categorias`, `catalogo_bajas`, `catalogo_porcentajes_valores`, `catalogo_versiones_historia` (`sql/165`) |
 | entidad_id | uuid | sin FK — apunta a varias tablas |
 | actor_id | uuid FK → usuarios, nullable | quién lo provocó. Null = evento del sistema |
 | leida_at | timestamptz, nullable | |

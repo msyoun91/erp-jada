@@ -14,6 +14,64 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalogo_bajas: {
+        Row: {
+          activo: boolean
+          creado_por: string | null
+          created_at: string
+          dejan: string[]
+          id: string
+          insumo_id: string
+          salen: string[]
+          updated_at: string
+          variante_id: string | null
+        }
+        Insert: {
+          activo?: boolean
+          creado_por?: string | null
+          created_at?: string
+          dejan?: string[]
+          id?: string
+          insumo_id: string
+          salen?: string[]
+          updated_at?: string
+          variante_id?: string | null
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string | null
+          created_at?: string
+          dejan?: string[]
+          id?: string
+          insumo_id?: string
+          salen?: string[]
+          updated_at?: string
+          variante_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_bajas_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_bajas_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_insumos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_bajas_variante_id_fkey"
+            columns: ["variante_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_variantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       catalogo_casos: {
         Row: {
           activo: boolean
@@ -2862,6 +2920,16 @@ export type Database = {
           registro_id: string
         }[]
       }
+      catalogo_avisos: {
+        Args: never
+        Returns: {
+          destino: string
+          destino_id: string
+          etiqueta: string
+          motivo: string
+          notificacion_id: string
+        }[]
+      }
       catalogo_baja_aviso: {
         Args: { p_insumo: string; p_variante?: string }
         Returns: Json
@@ -3047,6 +3115,7 @@ export type Database = {
         Args: { p_activo: boolean; p_id: string }
         Returns: undefined
       }
+      catalogo_porcentaje_cambio: { Args: { p_valor: string }; Returns: string }
       catalogo_porcentaje_empezar: { Args: never; Returns: undefined }
       catalogo_porcentaje_guardar: {
         Args: {
@@ -4285,6 +4354,14 @@ export type Database = {
         | "plantilla_fallida"
         | "tipo_cambio_corregido"
         | "tipo_cambio_confirmado"
+        | "catalogo_insumo_sin_costo"
+        | "catalogo_categoria_nueva"
+        | "catalogo_baja"
+        | "catalogo_porcentaje_cambiado"
+        | "catalogo_porcentaje_revertido"
+        | "catalogo_version_enviada"
+        | "catalogo_version_aprobada"
+        | "catalogo_version_devuelta"
       tipo_obra:
         | "edificio_residencial"
         | "casa"
@@ -4525,6 +4602,14 @@ export const Constants = {
         "plantilla_fallida",
         "tipo_cambio_corregido",
         "tipo_cambio_confirmado",
+        "catalogo_insumo_sin_costo",
+        "catalogo_categoria_nueva",
+        "catalogo_baja",
+        "catalogo_porcentaje_cambiado",
+        "catalogo_porcentaje_revertido",
+        "catalogo_version_enviada",
+        "catalogo_version_aprobada",
+        "catalogo_version_devuelta",
       ],
       tipo_obra: [
         "edificio_residencial",
