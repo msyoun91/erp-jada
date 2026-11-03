@@ -72,3 +72,33 @@ hace 7, 30 o 90 días.** Reusa `FiltroDias`. Archivos: `ReferenciaView.tsx`.
 
 **En la historia de una versión, quién hizo cada paso se ve solo si la RLS de `usuarios` lo deja ver.** Lo que importa ahí es
 el motivo de la devolución, que se ve siempre; sumar una función que devuelva nombres de otros equipos no tenía un caso.
+
+## Editor del borrador (2026-11-03)
+
+**El editor es una página aparte (`/catalogo/paquetes/versiones/<id>/editar`), solo para un borrador y con `catalogo_armar`;
+cualquier otra versión vuelve a su ficha.** Arriba, lo que frena el envío, que la base recalcula con cada guardado
+(`catalogo_version_revisar`). Archivos: `components/editor/`.
+
+**Cada cosa se guarda sola, en su panel, sin un "guardar todo".** Un borrador puede quedar a medias (*Lo que nunca tiene
+sentido se frena al guardar*): guardar de a una deja ver el error de cada fórmula (CA001) en el momento en que se escribe.
+Un material múltiple nuevo deja su panel abierto para sumarle las opciones.
+
+**Los schemas limpian lo que no corresponde al tipo antes de guardar: las piezas fijas sin requisito ni secundario, las
+variables que no carga el vendedor sin rango ni lista, el material único sin nombre.** Así el formulario puede esconder campos
+sin que un valor escondido haga saltar un CHECK de la base. Un nombre repetido (23505) se traduce por tabla en `actions.ts`:
+la base no dice de qué.
+
+**El orden se cambia con flechas, que renumeran a los hermanos; sacar pide confirmación y dice que se lleva lo que depende.**
+No vuelve (CA015).
+
+**Las parejas de un material que sigue a otro se eligen en una lista, una por cada opción del que elige: insumo, "ninguna" o
+vacía. "Mismas opciones" las llena para el sincronizado.** En la base son un solo mecanismo (*Un material múltiple puede
+seguir la elección de otro*).
+
+**El primer color que se suma a una versión queda como base; hacer base a otro apaga el anterior.**
+
+**Los casos de prueba se guardan desde la calculadora de la ficha ("Guardar como caso"), con lo cargado tal cual, y se sacan
+desde su lista.** La calculadora ya arma la entrada de un vendedor; un formulario aparte la repetía.
+
+**No se construyó copiar una pieza suelta.** Sus variables chocarían con los nombres únicos (*Qué es un paquete*), y duplicar
+el paquete o sacar una versión nueva desde otra ya ahorran la recarga. Se suma si una carga real lo pide.

@@ -1,13 +1,25 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { claseInput } from "@/components/ui/Campo";
+import { Campo, claseInput } from "@/components/ui/Campo";
+import { FormModal } from "@/components/ui/FormModal";
 import { MONEDAS, MONEDAS_LISTA, type Moneda } from "@/lib/monedas";
-import { calcular } from "../actions";
+import { calcular, guardarCaso } from "../actions";
 import { aEntrada, desdeEntrada, ESTADO_VACIO, type EntradaEstado } from "../entrada";
 import { textoMedida } from "../etiquetas";
-import type { Caso, ColorVersion, Contenido, Despiece, PrecioDetalle } from "../types";
+import {
+  casoSchema,
+  type Caso,
+  type CasoForm,
+  type ColorVersion,
+  type Contenido,
+  type Despiece,
+  type Entrada,
+  type PrecioDetalle,
+} from "../types";
 import { DespieceResultado } from "./DespieceResultado";
 
 // Lo que cargaría un vendedor, para ver el despiece (y con `catalogo_aprobar`, el precio) de cualquier
@@ -21,6 +33,7 @@ export function Calculadora({
   puedeAprobar,
   monedaPrincipal,
   comparar,
+  guardaCasos,
 }: {
   versionId: string;
   contenido: Contenido;
@@ -30,6 +43,8 @@ export function Calculadora({
   puedeAprobar: boolean;
   monedaPrincipal: Moneda;
   comparar: { id: string; numero: number } | null;
+  // Técnica, en un borrador: lo cargado se guarda como caso de prueba de la versión.
+  guardaCasos: boolean;
 }) {
   const [estado, setEstado] = useState<EntradaEstado>(
     inicial.caso ? desdeEntrada(inicial.caso.entrada, contenido) : ESTADO_VACIO,
@@ -40,6 +55,7 @@ export function Calculadora({
   const [moneda, setMoneda] = useState<Moneda>(monedaPrincipal);
   const [opcionales, setOpcionales] = useState<string[]>([]);
   const [pendiente, startTransition] = useTransition();
+  const [guardandoCaso, setGuardandoCaso] = useState(false);
   const nombrePieza = new Map(contenido.piezas.map((p) => [p.id, p.nombre]));
 
   function correr(e: EntradaEstado, m = moneda, o = opcionales) {
@@ -122,6 +138,8 @@ export function Calculadora({
               </select>
             ) : (
               <input
+                type="number"
+                step="any"
                 className={claseInput()}
                 inputMode="decimal"
                 value={estado.variables[v.id] ?? ""}
@@ -229,7 +247,19 @@ export function Calculadora({
         <button type="submit" className="btn btn-primary" disabled={pendiente}>
           {pendiente ? "Calculando…" : "Calcular"}
         </button>
+        {guardaCasos && (
+          <button type="button" className="btn btn-secondary" onClick={() => setGuardandoCaso(true)}>
+            Guardar como caso
+          </button>
+        )}
       </form>
+      {guardandoCaso && (
+        <GuardarCasoModal
+          versionId={versionId}
+          entrada={aEntrada(estado, contenido)}
+          onClose={() => setGuardandoCaso(false)}
+        />
+      )}
 
       <div className={pendiente ? "opacity-60" : ""}>
         {resultado ? (
@@ -239,5 +269,53 @@ export function Calculadora({
         )}
       </div>
     </div>
+  );
+}
+
+function GuardarCasoModal({
+  versionId,
+  entrada,
+  onClose,
+}: {
+  versionId: string;
+  entrada: Entrada;
+  onClose: () => void;
+}) {
+  const { register, handleSubmit, formState } = useForm<CasoForm>({
+    resolver: zodResolver(casoSchema),
+    defaultValues: { version_id: versionId, nombre: "", entrada },
+  });
+  const { errors, isSubmitting } = formState;
+
+  return (
+    <FormModal
+      title="Guardar como caso de prueba"
+      confirmLabel="Guardar"
+      onClose={onClose}
+      enviando={isSubmitting}
+      onSubmit={handleSubmit(async (d) => {
+        const r = await guardarCaso(d);
+        if (!r.success) {
+          toast.error(r.error);
+          return;
+        }
+        toast.success(`Se guardó el caso ${d.nombre}`);
+        onClose();
+      })}
+    >
+      <p className="t-body-m">
+        Lo que está cargado, tal cual: lo vacío toma su predeterminado al calcular. El gerente revisa con estos casos, y
+        la versión no se envía si alguno no se puede calcular.
+      </p>
+      <Campo id="caso-nombre" label="Nombre" requerido error={errors.nombre}>
+        <input
+          id="caso-nombre"
+          aria-required
+          placeholder="Chica 600 × 600"
+          className={claseInput(errors.nombre)}
+          {...register("nombre")}
+        />
+      </Campo>
+    </FormModal>
   );
 }

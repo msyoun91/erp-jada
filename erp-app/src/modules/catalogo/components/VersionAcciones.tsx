@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,6 +65,9 @@ export function VersionAcciones({
   const botones: React.ReactNode[] = [];
   if (puedeArmar && estado === "borrador") {
     botones.push(
+      <Link key="editar" href={`/catalogo/paquetes/versiones/${version.id}/editar`} className="btn btn-primary">
+        Editar
+      </Link>,
       <button
         key="enviar"
         className="btn btn-primary"

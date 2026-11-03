@@ -34,7 +34,11 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   forma de `catalogo_casos.entrada`), el ciclo (`sql/162`: qué frena el envío, enviar, retirar, devolver, aprobar, descartar,
   lo que se ofrece en cada color, bajas en cascada, aviso previo y reactivación), el precio (`sql/163`: precio, detalle del
   gerente, mínimos por presupuesto y precios de referencia) y los avisos (`sql/164`–`165`). El SQL de la ficha está completo.
-  **Siguiente:** las pantallas. Tienen que respetar las rutas que ya usan los avisos (`db_schema/notificaciones.md` → *Catálogo*).
+  Las pantallas también están (2026-11-03, `decisiones/catalogo/pantallas.md`): Paquetes con su versión, el ciclo y el editor del
+  borrador, Insumos, Servicios fijos y Servicios en %, en las rutas de los avisos. Pasan `tsc` y lint, pero **no se probaron en el
+  navegador**: la sesión que las escribió no tenía la base. **Siguiente:** probarlas con un usuario de cada persona (Técnica,
+  Administración, gerente, quien revisa cortes) y cargar el primer paquete real, que es la prueba del despiece y del precio
+  (`decisiones/catalogo/README.md`).
 
   Paquetes a la venta y su formulario se escriben con Presupuestos.
 - **Notificaciones — la bandeja tarda según cuántos avisos tenga cada uno**, sin decidir (2026-11-03). Ya pasaba antes de los avisos del

@@ -17,6 +17,7 @@ import type {
   Version,
 } from "../types";
 import { Calculadora } from "./Calculadora";
+import { SacarBoton } from "./editor/Fila";
 import { VersionAcciones } from "./VersionAcciones";
 
 // La ruta de los avisos de una versión (`/catalogo/paquetes/versiones/<id>`). La vista sola muestra el
@@ -53,6 +54,7 @@ export function VersionView({
   const comparar =
     version.estado === "en_revision" && publicada ? { id: publicada.id, numero: publicada.numero } : null;
   const nombreInsumo = new Map(insumos.map((i) => [i.id, i.nombre]));
+  const editable = puedeArmar && version.estado === "borrador";
 
   return (
     <div className="flex flex-col gap-6">
@@ -150,18 +152,25 @@ export function VersionView({
           puedeAprobar={puedeAprobar}
           monedaPrincipal={monedaPrincipal}
           comparar={comparar}
+          guardaCasos={editable}
         />
       </section>
 
       <section className="flex flex-col gap-2">
         <h3 className="t-label">Casos de prueba</h3>
+        {editable && (
+          <p className="t-caption">Se cargan con la calculadora de arriba: &quot;Guardar como caso&quot;.</p>
+        )}
         {casos.length === 0 ? (
           <p className="t-body-m text-warning-text">Sin casos: la versión no se puede enviar sin al menos uno.</p>
         ) : (
           <ul className="flex flex-col rounded-lg border border-border bg-bg-surface">
             {casos.map((c) => (
               <li key={c.caso_id} className="row flex flex-col gap-0.5 border-b border-border last:border-b-0">
-                <p className="t-body-m font-medium">{c.nombre}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="t-body-m font-medium">{c.nombre}</p>
+                  {editable && <SacarBoton tabla="catalogo_casos" id={c.caso_id} que={`el caso ${c.nombre}`} />}
+                </div>
                 {c.resultado.calculable ? (
                   <p className="t-caption">
                     Se calcula{c.resultado.bloqueado ? " · con un bloqueo" : ""}

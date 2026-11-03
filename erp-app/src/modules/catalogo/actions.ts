@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { argsRpc } from "@/lib/supabase/rpc";
 import { createClient } from "@/lib/supabase/server";
 import { mensajeError } from "@/lib/utils";
@@ -9,6 +10,9 @@ import {
   activarSchema,
   avisoBajaSchema,
   calcularSchema,
+  casoSchema,
+  colorVersionSchema,
+  condicionSchema,
   categoriaAltaSchema,
   costosSchema,
   devolverSchema,
@@ -17,17 +21,27 @@ import {
   fijoSchema,
   insumoEditarSchema,
   insumoSchema,
+  materialSchema,
   nombreAltaSchema,
+  opcionSchema,
+  ordenarSchema,
   paqueteAltaSchema,
+  piezaSchema,
   porcentajeSchema,
   renombrarSchema,
   revertirSchema,
+  sacarSchema,
   varianteSchema,
+  variableSchema,
+  versionDatosSchema,
   versionNuevaSchema,
   type ActivarForm,
   type AvisoBaja,
   type AvisoBajaForm,
   type CalcularForm,
+  type CasoForm,
+  type ColorVersionForm,
+  type CondicionForm,
   type CategoriaAltaForm,
   type CostosForm,
   type Despiece,
@@ -37,13 +51,21 @@ import {
   type FijoForm,
   type InsumoEditarForm,
   type InsumoForm,
+  type MaterialForm,
   type NivelCosto,
+  type OpcionForm,
+  type OrdenarForm,
   type PaqueteAltaForm,
+  type PiezaForm,
   type PorcentajeForm,
   type PrecioDetalle,
   type RenombrarForm,
   type RevertirForm,
+  type SacarForm,
+  type TablaContenido,
   type VarianteForm,
+  type VariableForm,
+  type VersionDatosForm,
   type VersionNuevaForm,
 } from "./types";
 
@@ -417,4 +439,172 @@ export async function calcular(input: CalcularForm) {
     resultado: esta.data as unknown as PrecioDetalle,
     comparado: (otra?.data ?? null) as unknown as PrecioDetalle | null,
   };
+}
+
+// ---------- Editor del borrador ----------
+// Todo se escribe directo: la RLS pide `catalogo_armar`, los triggers frenan fuera de borrador (CA012) y lo
+// que no se entiende de una fórmula (CA001, con lo que falta). Lo único que se traduce acá es el nombre
+// repetido, que la base da como 23505 sin decir de qué.
+
+const REPETIDO: Record<TablaContenido, string> = {
+  catalogo_piezas: "Ya hay una pieza con ese nombre en la versión",
+  catalogo_variables: "Ya hay una variable con ese nombre en la versión",
+  catalogo_materiales: "Ya hay un material múltiple con ese nombre en la pieza",
+  catalogo_opciones: "Ese insumo ya es una opción, o ya hay una predeterminada",
+  catalogo_condiciones: "Esa condición ya está",
+  catalogo_casos: "Ya hay un caso con ese nombre en la versión",
+  catalogo_versiones_colores: "Ese color ya está en la versión, o ya hay uno base",
+};
+
+function falloContenido(tabla: TablaContenido, error: { code?: string }) {
+  return error.code === "23505" ? { success: false as const, error: REPETIDO[tabla] } : fallo(error);
+}
+
+function listoContenido(tabla: TablaContenido, error: { code?: string } | null) {
+  return error ? falloContenido(tabla, error) : listo();
+}
+
+export async function guardarVersionDatos(input: VersionDatosForm) {
+  const parsed = versionDatosSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("catalogo_versiones")
+    .update({ nombre: parsed.data.nombre, categoria_id: parsed.data.categoria_id })
+    .eq("id", parsed.data.id);
+  return error ? fallo(error) : listo();
+}
+
+// Sin base todavía, el primero lo es.
+export async function sumarColorVersion(input: ColorVersionForm) {
+  const parsed = colorVersionSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("catalogo_versiones_colores")
+    .select("id", { count: "exact", head: true })
+    .eq("version_id", parsed.data.version_id)
+    .eq("activo", true)
+    .eq("base", true);
+  const { error } = await supabase
+    .from("catalogo_versiones_colores")
+    .insert({ ...parsed.data, base: (count ?? 0) === 0 });
+  return listoContenido("catalogo_versiones_colores", error);
+}
+
+// Uno base por versión (índice único): primero se apaga el que estaba.
+export async function marcarColorBase(input: { version_id: string; id: string }) {
+  const parsed = z.object({ version_id: idSchema, id: idSchema }).safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const apagar = await supabase
+    .from("catalogo_versiones_colores")
+    .update({ base: false })
+    .eq("version_id", parsed.data.version_id)
+    .eq("base", true);
+  if (apagar.error) return fallo(apagar.error);
+  const { error } = await supabase.from("catalogo_versiones_colores").update({ base: true }).eq("id", parsed.data.id);
+  return listoContenido("catalogo_versiones_colores", error);
+}
+
+export async function guardarPieza(input: PiezaForm) {
+  const parsed = piezaSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const { id, version_id, orden, ...datos } = parsed.data;
+  const supabase = await createClient();
+  const { error } = id
+    ? await supabase.from("catalogo_piezas").update(datos).eq("id", id)
+    : await supabase.from("catalogo_piezas").insert({ ...datos, version_id, orden });
+  return listoContenido("catalogo_piezas", error);
+}
+
+export async function guardarVariable(input: VariableForm) {
+  const parsed = variableSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const { id, version_id, orden, ...datos } = parsed.data;
+  const supabase = await createClient();
+  const { error } = id
+    ? await supabase.from("catalogo_variables").update(datos).eq("id", id)
+    : await supabase.from("catalogo_variables").insert({ ...datos, version_id, orden });
+  return listoContenido("catalogo_variables", error);
+}
+
+export async function guardarMaterial(input: MaterialForm) {
+  const parsed = materialSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const { id, version_id, orden, ...datos } = parsed.data;
+  const supabase = await createClient();
+  const { data, error } = id
+    ? await supabase.from("catalogo_materiales").update(datos).eq("id", id).select("id").single()
+    : await supabase
+        .from("catalogo_materiales")
+        .insert({ ...datos, version_id, orden })
+        .select("id")
+        .single();
+  if (error) return falloContenido("catalogo_materiales", error);
+  revalidatePath("/catalogo", "layout");
+  return { success: true as const, id: data.id };
+}
+
+// Una predeterminada por material (índice único): marcar una apaga la anterior antes.
+export async function guardarOpcion(input: OpcionForm) {
+  const parsed = opcionSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const { id, version_id, orden, ...datos } = parsed.data;
+  const supabase = await createClient();
+  if (datos.predeterminada) {
+    const apagar = await supabase
+      .from("catalogo_opciones")
+      .update({ predeterminada: false })
+      .eq("material_id", datos.material_id)
+      .eq("predeterminada", true);
+    if (apagar.error) return fallo(apagar.error);
+  }
+  // `material_id` no se cambia: sin GRANT de UPDATE.
+  const { error } = id
+    ? await supabase
+        .from("catalogo_opciones")
+        .update({ ...datos, material_id: undefined })
+        .eq("id", id)
+    : await supabase.from("catalogo_opciones").insert({ ...datos, version_id, orden });
+  return listoContenido("catalogo_opciones", error);
+}
+
+export async function guardarCondicion(input: CondicionForm) {
+  const parsed = condicionSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const { id, version_id, variable_id, material_id, opcion_id, ...datos } = parsed.data;
+  const supabase = await createClient();
+  const { error } = id
+    ? await supabase.from("catalogo_condiciones").update(datos).eq("id", id)
+    : await supabase.from("catalogo_condiciones").insert({ ...datos, version_id, variable_id, material_id, opcion_id });
+  return listoContenido("catalogo_condiciones", error);
+}
+
+export async function guardarCaso(input: CasoForm) {
+  const parsed = casoSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.from("catalogo_casos").insert(parsed.data);
+  return listoContenido("catalogo_casos", error);
+}
+
+// Sacar algo de un borrador saca lo que depende de ello y no vuelve (`catalogo_contenido_baja`, CA015).
+export async function sacar(input: SacarForm) {
+  const parsed = sacarSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.from(parsed.data.tabla).update({ activo: false }).eq("id", parsed.data.id);
+  return error ? fallo(error) : listo();
+}
+
+export async function ordenar(input: OrdenarForm) {
+  const parsed = ordenarSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const resultados = await Promise.all(
+    parsed.data.ids.map((id, orden) => supabase.from(parsed.data.tabla).update({ orden }).eq("id", id)),
+  );
+  const error = resultados.find((r) => r.error)?.error;
+  return error ? fallo(error) : listo();
 }

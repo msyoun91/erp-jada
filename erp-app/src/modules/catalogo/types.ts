@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Constants, type Database } from "@/lib/supabase/database.types";
 import { MONEDAS_LISTA, type Moneda } from "@/lib/monedas";
 import type { Nivel } from "@/lib/niveles";
-import { idSchema } from "@/lib/validacion";
+import { idSchema, uuidOpcional } from "@/lib/validacion";
 
 type Tablas = Database["public"]["Tables"];
 type Enums = Database["public"]["Enums"];
@@ -402,3 +402,196 @@ export type PrecioReferencia = {
   sin_precio_desde: string[];
   sin_precio_hasta: string[];
 };
+
+// ---------- Editor del borrador ----------
+// Cada schema limpia lo que no corresponde al tipo, así el CHECK de la base (`sql/160`) no salta por un
+// campo escondido. Lo que puede quedar a medias en un borrador no se valida acá: lo frena el envío.
+
+export const TIPOS_MATERIAL = Constants.public.Enums.tipo_material;
+
+const formula = z
+  .string()
+  .trim()
+  .max(2000, "Máximo 2000 caracteres")
+  .nullish()
+  .transform((v) => v || null);
+const cantidad = z
+  .string()
+  .trim()
+  .max(2000, "Máximo 2000 caracteres")
+  .nullish()
+  .transform((v) => v || "1");
+const numeroNulo = z.number("Ingresá un número").nullable();
+const nuevoOId = { id: idSchema.nullable(), version_id: idSchema, orden: z.number().int().default(0) };
+
+export const versionDatosSchema = z.object({
+  id: idSchema,
+  nombre,
+  categoria_id: z.string().uuid("Elegí una categoría"),
+});
+export type VersionDatosForm = z.input<typeof versionDatosSchema>;
+
+export const colorVersionSchema = z.object({ version_id: idSchema, color_id: z.string().uuid("Elegí un color") });
+export type ColorVersionForm = z.input<typeof colorVersionSchema>;
+
+export const piezaSchema = z
+  .object({
+    ...nuevoOId,
+    nombre,
+    cantidad,
+    opcional: z.boolean().default(false),
+    incluida: z.boolean().default(false),
+    requiere_pieza_id: uuidOpcional,
+    secundario: z.boolean().default(false),
+    calcula_espesor: z.boolean().default(false),
+    peso_a_produccion: z.boolean().default(true),
+    espesor_a_produccion: z.boolean().default(true),
+  })
+  .transform((d) => (d.opcional ? d : { ...d, incluida: false, secundario: false, requiere_pieza_id: null }));
+export type PiezaForm = z.input<typeof piezaSchema>;
+
+export const variableSchema = z
+  .object({
+    ...nuevoOId,
+    pieza_id: uuidOpcional,
+    nombre,
+    ingresa_vendedor: z.boolean().default(false),
+    es_lista: z.boolean().default(false),
+    formula,
+    // En el formulario, uno por renglón; ya separados también valen, así el schema se puede volver a aplicar
+    // sobre su propia salida (la action recibe lo que validó el formulario).
+    valores: z.union([z.string(), z.array(z.string())]).default(""),
+    valor_predeterminado: z
+      .string()
+      .trim()
+      .nullish()
+      .transform((v) => v || null),
+    es_cantidad: z.boolean().default(false),
+    minimo: numeroNulo,
+    maximo: numeroNulo,
+    secundario: z.boolean().default(false),
+    a_produccion: z.boolean().default(true),
+  })
+  .refine((d) => d.ingresa_vendedor || d.formula, {
+    path: ["formula"],
+    message: "Si no la carga el vendedor, lleva una fórmula",
+  })
+  .transform((d) => {
+    const renglones = typeof d.valores === "string" ? d.valores.split("\n") : d.valores;
+    const valores = [...new Set(renglones.map((v) => v.trim()).filter(Boolean))];
+    if (!d.ingresa_vendedor) {
+      return {
+        ...d,
+        es_lista: false,
+        es_cantidad: false,
+        minimo: null,
+        maximo: null,
+        secundario: false,
+        valores: [],
+        valor_predeterminado: null,
+      };
+    }
+    if (d.es_lista) {
+      const pred = d.valor_predeterminado && valores.includes(d.valor_predeterminado) ? d.valor_predeterminado : null;
+      return {
+        ...d,
+        formula: null,
+        es_cantidad: false,
+        minimo: null,
+        maximo: null,
+        valores,
+        valor_predeterminado: pred,
+      };
+    }
+    return { ...d, valores: [], valor_predeterminado: null };
+  });
+export type VariableForm = z.input<typeof variableSchema>;
+
+export const materialSchema = z
+  .object({
+    ...nuevoOId,
+    pieza_id: idSchema,
+    tipo: z.enum(TIPOS_MATERIAL),
+    nombre: z
+      .string()
+      .trim()
+      .max(120, "Máximo 120 caracteres")
+      .nullish()
+      .transform((v) => v || null),
+    insumo_id: uuidOpcional,
+    medida: formula,
+    ancho: formula,
+    alto: formula,
+    area: formula,
+    cantidad,
+    eleccion: formula,
+    sin_eleccion: z.boolean().default(false),
+    sigue_material_id: uuidOpcional,
+    secundario: z.boolean().default(false),
+    cuenta_peso: z.boolean().default(true),
+    cuenta_espesor: z.boolean().default(false),
+  })
+  .refine((d) => d.tipo === "unico" || d.nombre, {
+    path: ["nombre"],
+    message: "Un material múltiple lleva el nombre que lee el vendedor",
+  })
+  .transform((d) => ({
+    ...d,
+    nombre: d.tipo === "unico" ? null : d.nombre,
+    insumo_id: d.tipo === "unico" ? d.insumo_id : null,
+    eleccion: d.tipo === "elige_sistema" ? d.eleccion : null,
+    sigue_material_id: d.tipo === "sigue" ? d.sigue_material_id : null,
+    sin_eleccion: d.tipo === "elige_vendedor" && d.sin_eleccion,
+    secundario: d.tipo === "elige_vendedor" && d.secundario,
+  }));
+export type MaterialForm = z.input<typeof materialSchema>;
+
+// Una opción vacía hereda del material, cada dato por separado; la cantidad también.
+export const opcionSchema = z.object({
+  ...nuevoOId,
+  material_id: idSchema,
+  insumo_id: uuidOpcional,
+  sigue_opcion_id: uuidOpcional,
+  predeterminada: z.boolean().default(false),
+  medida: formula,
+  ancho: formula,
+  alto: formula,
+  area: formula,
+  cantidad: formula,
+});
+export type OpcionForm = z.input<typeof opcionSchema>;
+
+export const condicionSchema = z.object({
+  id: idSchema.nullable(),
+  version_id: idSchema,
+  variable_id: uuidOpcional,
+  material_id: uuidOpcional,
+  opcion_id: uuidOpcional,
+  condicion: z.string().trim().min(1, "Escribí la condición, como ancho > 3000").max(2000),
+  mensaje: z.string().trim().min(1, "Escribí el mensaje que lee el vendedor").max(500),
+  bloquea: z.boolean().default(false),
+});
+export type CondicionForm = z.input<typeof condicionSchema>;
+
+export const casoSchema = z.object({ version_id: idSchema, nombre, entrada: entradaSchema });
+export type CasoForm = z.input<typeof casoSchema>;
+
+export const TABLAS_CONTENIDO = [
+  "catalogo_piezas",
+  "catalogo_variables",
+  "catalogo_materiales",
+  "catalogo_opciones",
+  "catalogo_condiciones",
+  "catalogo_casos",
+  "catalogo_versiones_colores",
+] as const;
+export type TablaContenido = (typeof TABLAS_CONTENIDO)[number];
+
+export const sacarSchema = z.object({ tabla: z.enum(TABLAS_CONTENIDO), id: idSchema });
+export type SacarForm = z.input<typeof sacarSchema>;
+
+export const ordenarSchema = z.object({
+  tabla: z.enum(["catalogo_piezas", "catalogo_variables", "catalogo_materiales", "catalogo_opciones"]),
+  ids: z.array(idSchema).min(1),
+});
+export type OrdenarForm = z.input<typeof ordenarSchema>;
