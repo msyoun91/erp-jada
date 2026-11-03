@@ -143,7 +143,7 @@ podían decir distinto después de retirarla y reenviarla.
 **Revisar devuelve todo lo que frena, y enviar da esa misma lista como error.** Lucía corrige de una vez y puede verlo mientras
 arma, sin intentar enviar: con el primer error solo, una versión con 5 problemas pedía 5 intentos.
 
-**Un nombre usado desde otra pieza vale si alguna de sus apariciones está seguro.** El Soldado está en Marco y en un Mosquitero
+**Un nombre usado desde otra pieza vale si alguna de sus apariciones es segura.** El Soldado está en Marco y en un Mosquitero
 opcional, y Colocación usa `[Soldado]`: el total existe siempre, y es lo que Colocación quiere. Frenarlo no dejaba salida, porque
 un material único se llama como su insumo y no se le puede cambiar el nombre. Si solo está en la opcional, frena. Dentro de su
 pieza manda lo de esa pieza, como en el cálculo.
