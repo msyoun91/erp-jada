@@ -151,6 +151,18 @@ frena si Técnica marca que no cuente, y con 0 kg escrito vale. Completarlo no c
 versión que contara ese dato pudo enviarse sin él. Sin esto, una versión publicada que no lo contaba y una
 nueva que sí pedían otro insumo.
 
+**Una sola fila por insumo y color, para siempre: volver a sumar un color reactiva la variante, con sus costos
+(2026-11-02).** Excepción a la regla del índice parcial de `CLAUDE.md`: acá no se reutiliza un valor, vuelve a ser la
+misma variante. Con filas repetidas, Perfil hoja · Negro tenía dos historias de costo y un presupuesto viejo no sabía
+cuál leer.
+
+**El insumo guarda si tiene color (`con_color`), y no tiene variantes indistintas y de color a la vez (2026-11-02).**
+Pasar a colores apaga la indistinta; volver a indistinto apaga los colores y reactiva la indistinta. La variante indistinta
+no se baja sola: se baja el insumo. Queda fijo con la unidad al enviarse una versión (*Editor de paquete*).
+
+**Los nombres únicos no distinguen mayúsculas (2026-11-02).** "float 4mm" choca con "Float 4mm": si no, Técnica elegía
+entre dos iguales en el editor. Vale para insumos, servicios fijos, categorías, colores y servicios en %.
+
 ## El servicio fijo (2026-10-29)
 
 **El servicio fijo (Instalación, Soldado) es un registro propio, no un insumo, y sigue las reglas del

@@ -71,6 +71,9 @@ o más, la base no lo deja. Costo aceptado: para sacar solo Herrajes se revierte
 cargar el 6 %. Se descartó revertir solo los datos de ese cambio: si dos cambios tocaban el mismo dato, no
 quedaba claro a qué valor volver.
 
+**Revertir el alta de un servicio en % lo deja de baja (2026-11-02).** Antes del alta no se cobraba, y la historia no se
+borra. Revertir esa reversión lo vuelve a activar.
+
 **No hay función que ve y hace todo: no hay registros que alguien con la pestaña no vea (*Sin
 entes*), como en Monedas.** El gerente tiene las cuatro pestañas con aprobar, costos,
 `catalogo_fijos_editar` y `catalogo_porcentajes_editar`; no necesita armar ni cargar, y si arma, se le da

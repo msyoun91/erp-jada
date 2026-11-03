@@ -109,6 +109,15 @@ Se descartó que cada presupuesto guarde copia de los costos y los %: la copia t
 catálogo para que el vendedor no la lea, y un paquete sumado a un presupuesto viejo no tendría sus
 insumos en ella.
 
+**Cada fila de la historia de un servicio en % es el servicio entero, baja incluida (2026-11-02).** `catalogo_porcentajes`
+es solo a qué apuntan otros módulos; el resto está en `catalogo_porcentajes_valores`. Un presupuesto de marzo cobra lo que
+en marzo estaba activo aunque el servicio se haya dado de baja en abril: con la baja fuera de la historia, no se podía
+saber. Las categorías van en un arreglo, como foto de ese momento: no hay tabla aparte que copiar en cada cambio y cada
+reversión.
+
+**El nombre de un servicio en % es único entre los activos (2026-11-02).** Como el resto del catálogo, y porque el vendedor
+elige los opcionales por su nombre.
+
 **Sin costo a la fecha pedida, no hay precio: el cálculo nunca toma 0 ni busca el costo más cercano
 (2026-11-02).** A un presupuesto de marzo se le suma en noviembre una Ventana cuya v3 usa el Float 5mm,
 cargado en abril: con $0 el precio salía barato sin que nadie lo notara. El vendedor lee "Este paquete no

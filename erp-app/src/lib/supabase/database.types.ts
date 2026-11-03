@@ -14,6 +14,297 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalogo_categorias: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          nombre: string
+          tipo: Database["public"]["Enums"]["tipo_catalogo"]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+          tipo: Database["public"]["Enums"]["tipo_catalogo"]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
+          tipo?: Database["public"]["Enums"]["tipo_catalogo"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_colores: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_costos: {
+        Row: {
+          activo: boolean
+          costo: number
+          creado_por: string
+          created_at: string
+          id: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          updated_at: string
+          variante_id: string
+        }
+        Insert: {
+          activo?: boolean
+          costo: number
+          creado_por: string
+          created_at?: string
+          id?: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          updated_at?: string
+          variante_id: string
+        }
+        Update: {
+          activo?: boolean
+          costo?: number
+          creado_por?: string
+          created_at?: string
+          id?: string
+          moneda?: Database["public"]["Enums"]["moneda"]
+          updated_at?: string
+          variante_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_costos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_costos_variante_id_fkey"
+            columns: ["variante_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_variantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogo_insumos: {
+        Row: {
+          activo: boolean
+          categoria_id: string
+          con_color: boolean
+          created_at: string
+          espesor: number | null
+          id: string
+          nombre: string
+          peso: number | null
+          tipo: Database["public"]["Enums"]["tipo_catalogo"]
+          unidad: Database["public"]["Enums"]["unidad_insumo"]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          categoria_id: string
+          con_color?: boolean
+          created_at?: string
+          espesor?: number | null
+          id?: string
+          nombre: string
+          peso?: number | null
+          tipo: Database["public"]["Enums"]["tipo_catalogo"]
+          unidad: Database["public"]["Enums"]["unidad_insumo"]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          categoria_id?: string
+          con_color?: boolean
+          created_at?: string
+          espesor?: number | null
+          id?: string
+          nombre?: string
+          peso?: number | null
+          tipo?: Database["public"]["Enums"]["tipo_catalogo"]
+          unidad?: Database["public"]["Enums"]["unidad_insumo"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_insumos_categoria_id_tipo_fkey"
+            columns: ["categoria_id", "tipo"]
+            isOneToOne: false
+            referencedRelation: "catalogo_categorias"
+            referencedColumns: ["id", "tipo"]
+          },
+        ]
+      }
+      catalogo_porcentajes: {
+        Row: {
+          activo: boolean
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      catalogo_porcentajes_valores: {
+        Row: {
+          activo: boolean
+          categorias: string[]
+          creado_por: string
+          created_at: string
+          de_baja: boolean
+          id: string
+          minimo: number | null
+          minimo_moneda: Database["public"]["Enums"]["moneda"] | null
+          minimo_por: Database["public"]["Enums"]["alcance_minimo"] | null
+          nombre: string
+          opcional: boolean
+          paso: number
+          porcentaje: number
+          porcentaje_id: string
+          revierte_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          categorias?: string[]
+          creado_por: string
+          created_at?: string
+          de_baja?: boolean
+          id?: string
+          minimo?: number | null
+          minimo_moneda?: Database["public"]["Enums"]["moneda"] | null
+          minimo_por?: Database["public"]["Enums"]["alcance_minimo"] | null
+          nombre: string
+          opcional?: boolean
+          paso: number
+          porcentaje: number
+          porcentaje_id: string
+          revierte_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          categorias?: string[]
+          creado_por?: string
+          created_at?: string
+          de_baja?: boolean
+          id?: string
+          minimo?: number | null
+          minimo_moneda?: Database["public"]["Enums"]["moneda"] | null
+          minimo_por?: Database["public"]["Enums"]["alcance_minimo"] | null
+          nombre?: string
+          opcional?: boolean
+          paso?: number
+          porcentaje?: number
+          porcentaje_id?: string
+          revierte_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_porcentajes_valores_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_porcentajes_valores_porcentaje_id_fkey"
+            columns: ["porcentaje_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_porcentajes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_porcentajes_valores_revierte_id_fkey"
+            columns: ["revierte_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_porcentajes_valores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogo_variantes: {
+        Row: {
+          activo: boolean
+          color_id: string | null
+          created_at: string
+          id: string
+          insumo_id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          color_id?: string | null
+          created_at?: string
+          id?: string
+          insumo_id: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          color_id?: string | null
+          created_at?: string
+          id?: string
+          insumo_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_variantes_color_id_fkey"
+            columns: ["color_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_colores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalogo_variantes_insumo_id_fkey"
+            columns: ["insumo_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_insumos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contactos_accesos: {
         Row: {
           created_at: string
@@ -1901,8 +2192,52 @@ export type Database = {
         Args: { p_n: Json; p_v: Json }
         Returns: boolean
       }
+      catalogo_costos_cargar: {
+        Args: { p_confirmar_rojo?: boolean; p_filas: Json }
+        Returns: number
+      }
+      catalogo_costos_niveles: {
+        Args: { p_filas: Json }
+        Returns: {
+          anterior: number | null
+          anterior_moneda: Database["public"]["Enums"]["moneda"] | null
+          costo: number
+          moneda: Database["public"]["Enums"]["moneda"]
+          nivel: string | null
+          variante_id: string
+        }[]
+      }
+      catalogo_costos_vigentes: {
+        Args: { p_en?: string }
+        Returns: {
+          activo: boolean
+          costo: number
+          creado_por: string
+          created_at: string
+          id: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          updated_at: string
+          variante_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "catalogo_costos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       catalogo_eleccion_evaluar: {
         Args: { p_n: Json; p_v: Json }
+        Returns: string
+      }
+      catalogo_fijo_alta: {
+        Args: {
+          p_categoria: string
+          p_costo: number
+          p_moneda: Database["public"]["Enums"]["moneda"]
+          p_nombre: string
+          p_unidad: Database["public"]["Enums"]["unidad_insumo"]
+        }
         Returns: string
       }
       catalogo_formula_aritmetica: {
@@ -1939,6 +2274,108 @@ export type Database = {
       }
       catalogo_formula_tokens: { Args: { p_texto: string }; Returns: string[] }
       catalogo_formula_usa: { Args: { p_arbol: Json }; Returns: string[] }
+      catalogo_insumo_alta: {
+        Args: {
+          p_categoria: string
+          p_colores?: string[]
+          p_espesor: number | null
+          p_nombre: string
+          p_peso: number | null
+          p_unidad: Database["public"]["Enums"]["unidad_insumo"]
+        }
+        Returns: string
+      }
+      catalogo_porcentaje_activar: {
+        Args: { p_activo: boolean; p_id: string }
+        Returns: undefined
+      }
+      catalogo_porcentaje_empezar: { Args: never; Returns: undefined }
+      catalogo_porcentaje_guardar: {
+        Args: {
+          p_categorias: string[]
+          p_confirmar_rojo?: boolean
+          p_id: string | null
+          p_minimo: number | null
+          p_minimo_moneda: Database["public"]["Enums"]["moneda"] | null
+          p_minimo_por: Database["public"]["Enums"]["alcance_minimo"] | null
+          p_nombre: string
+          p_opcional: boolean
+          p_paso: number
+          p_porcentaje: number
+        }
+        Returns: string
+      }
+      catalogo_porcentaje_registrar: {
+        Args: {
+          p_confirmar_rojo?: boolean
+          p_v: Database["public"]["Tables"]["catalogo_porcentajes_valores"]["Row"]
+        }
+        Returns: string
+      }
+      catalogo_porcentaje_revertir: {
+        Args: { p_confirmar_rojo?: boolean; p_valor_id: string }
+        Returns: string
+      }
+      catalogo_porcentajes_historia: {
+        Args: { p_id: string }
+        Returns: {
+          cargado_por: string
+          categorias: string[]
+          created_at: string
+          de_baja: boolean
+          id: string
+          minimo: number | null
+          minimo_moneda: Database["public"]["Enums"]["moneda"] | null
+          minimo_por: Database["public"]["Enums"]["alcance_minimo"] | null
+          nivel: string | null
+          nombre: string
+          opcional: boolean
+          paso: number
+          porcentaje: number
+          revierte_id: string | null
+          ultimo: boolean
+        }[]
+      }
+      catalogo_porcentajes_vigentes: {
+        Args: { p_en?: string }
+        Returns: {
+          activo: boolean
+          categorias: string[]
+          creado_por: string
+          created_at: string
+          de_baja: boolean
+          id: string
+          minimo: number | null
+          minimo_moneda: Database["public"]["Enums"]["moneda"] | null
+          minimo_por: Database["public"]["Enums"]["alcance_minimo"] | null
+          nombre: string
+          opcional: boolean
+          paso: number
+          porcentaje: number
+          porcentaje_id: string
+          revierte_id: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "catalogo_porcentajes_valores"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      catalogo_puede_editar: {
+        Args: { p_tipo: Database["public"]["Enums"]["tipo_catalogo"] }
+        Returns: boolean
+      }
+      catalogo_puede_ver: { Args: never; Returns: boolean }
+      catalogo_tipos_con_costo: {
+        Args: never
+        Returns: Database["public"]["Enums"]["tipo_catalogo"][]
+      }
+      catalogo_variante_sumar: {
+        Args: { p_color: string | null; p_insumo: string }
+        Returns: string
+      }
       contactos_auditoria_detalle: {
         Args: { p_dias: number; p_persona?: string; p_usuario?: string }
         Returns: {
@@ -2786,6 +3223,7 @@ export type Database = {
       }
     }
     Enums: {
+      alcance_minimo: "paquete" | "presupuesto"
       estado_hilo: "abierto" | "cerrado"
       estado_obra:
         | "idea"
@@ -2818,6 +3256,7 @@ export type Database = {
       origen_tipo_cambio: "monedapi" | "manual"
       prioridad_tarea: "baja" | "media" | "alta"
       recurrencia_unidad: "dia" | "mes"
+      tipo_catalogo: "paquete" | "insumo" | "servicio"
       tipo_evento:
         | "alta"
         | "baja"
@@ -2875,6 +3314,7 @@ export type Database = {
         | "otro"
       tipo_regla_submodulo: "requiere" | "excluye"
       tipo_submodulo: "vista" | "funcion"
+      unidad_insumo: "mm" | "m2" | "u"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3002,6 +3442,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alcance_minimo: ["paquete", "presupuesto"],
       estado_hilo: ["abierto", "cerrado"],
       estado_obra: [
         "idea",
@@ -3038,6 +3479,7 @@ export const Constants = {
       origen_tipo_cambio: ["monedapi", "manual"],
       prioridad_tarea: ["baja", "media", "alta"],
       recurrencia_unidad: ["dia", "mes"],
+      tipo_catalogo: ["paquete", "insumo", "servicio"],
       tipo_evento: [
         "alta",
         "baja",
@@ -3098,6 +3540,7 @@ export const Constants = {
       ],
       tipo_regla_submodulo: ["requiere", "excluye"],
       tipo_submodulo: ["vista", "funcion"],
+      unidad_insumo: ["mm", "m2", "u"],
     },
   },
 } as const

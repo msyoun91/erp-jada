@@ -27,11 +27,11 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   Stock, Compras y `GUIDE_ENTES.md` (`obsoletos/catalogo-descartado-2026-10-22/`). Nada de eso vuelve
   (`decisiones/catalogo/README.md`). La ficha nueva está ahí, aprobada completa (2026-11-02). El SQL va por
   tramos, cada uno con su test, `db_schema/catalogo.md`, `database.types.ts` y su commit; cada enum va con las
-  tablas que lo usan. Hecho: las fórmulas (`sql/158`). **Siguiente:** `sql/159_catalogo_registros.sql`: permisos,
-  categorías, colores, insumos, servicios fijos, variantes, costos y servicios en % con su historia. Después:
-  - `160_catalogo_paquetes`: paquetes, versiones y su contenido, edición solo en borrador, duplicar, versión
-    nueva y datos del insumo que quedan fijos. El árbol de cada fórmula va en una columna generada con
-    `catalogo_formula_parsear`.
+  tablas que lo usan. Hecho: las fórmulas (`sql/158`) y los registros (`sql/159`: permisos, categorías, colores,
+  insumos, servicios fijos, variantes, costos y servicios en % con su historia). **Siguiente:**
+  `sql/160_catalogo_paquetes.sql`: paquetes, versiones y su contenido, edición solo en borrador, duplicar, versión
+  nueva, datos del insumo que quedan fijos (`con_color` incluido) y la categoría de paquete con versiones adentro
+  (nombre fijo y baja). El árbol de cada fórmula va en una columna generada con `catalogo_formula_parsear`. Después:
   - `161_catalogo_despiece`: el cálculo, con alertas, bloqueos y casos de prueba. Su test suma lo circular y el
     orden libre entre fórmulas.
   - `162_catalogo_ciclo`: qué frena el envío, enviar, retirar, devolver, aprobar y descartar; bajas en cascada,
