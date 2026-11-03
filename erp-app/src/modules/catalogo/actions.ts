@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { argsRpc } from "@/lib/supabase/rpc";
 import { createClient } from "@/lib/supabase/server";
 import { mensajeError } from "@/lib/utils";
 import { idSchema } from "@/lib/validacion";
@@ -14,7 +15,9 @@ import {
   insumoEditarSchema,
   insumoSchema,
   nombreAltaSchema,
+  porcentajeSchema,
   renombrarSchema,
+  revertirSchema,
   varianteSchema,
   type ActivarForm,
   type AvisoBaja,
@@ -26,7 +29,9 @@ import {
   type InsumoEditarForm,
   type InsumoForm,
   type NivelCosto,
+  type PorcentajeForm,
   type RenombrarForm,
+  type RevertirForm,
   type VarianteForm,
 } from "./types";
 
@@ -232,4 +237,57 @@ export async function cargarCostos(input: CostosForm) {
   if (error) return fallo(error);
   revalidatePath("/catalogo", "layout");
   return { success: true as const, cargadas: data };
+}
+
+// ---------- Servicios en % ----------
+// CA003 (el % cambia 50 % o más) se confirma y se reintenta, como los costos. CA004 (el paso 3 llega a
+// 100), CA005 (no es el último cambio) y CA010 (nombre repetido) llegan con su mensaje.
+
+export async function guardarPorcentaje(input: PorcentajeForm) {
+  const parsed = porcentajeSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const d = parsed.data;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(
+    "catalogo_porcentaje_guardar",
+    argsRpc<"catalogo_porcentaje_guardar">({
+      p_id: d.id,
+      p_nombre: d.nombre,
+      p_porcentaje: d.porcentaje,
+      p_paso: d.paso,
+      p_categorias: d.categorias,
+      p_minimo: d.minimo,
+      p_minimo_moneda: d.minimo === null ? null : d.minimo_moneda,
+      p_minimo_por: d.minimo === null ? null : d.minimo_por,
+      p_opcional: d.opcional,
+      p_confirmar_rojo: d.confirmar_rojo,
+    }),
+  );
+  if (error?.code === "CA003") return { ...fallo(error), pideConfirmar: true as const };
+  if (error) return fallo(error);
+  revalidatePath("/catalogo", "layout");
+  return { success: true as const, id: data };
+}
+
+export async function activarPorcentaje(input: ActivarForm) {
+  const parsed = activarSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("catalogo_porcentaje_activar", {
+    p_id: parsed.data.id,
+    p_activo: parsed.data.activo,
+  });
+  return error ? fallo(error) : listo();
+}
+
+export async function revertirPorcentaje(input: RevertirForm) {
+  const parsed = revertirSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("catalogo_porcentaje_revertir", {
+    p_valor_id: parsed.data.valor_id,
+    p_confirmar_rojo: parsed.data.confirmar_rojo,
+  });
+  if (error?.code === "CA003") return { ...fallo(error), pideConfirmar: true as const };
+  return error ? fallo(error) : listo();
 }

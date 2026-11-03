@@ -1,6 +1,6 @@
 import type { Moneda } from "@/lib/monedas";
 import { createClient } from "@/lib/supabase/server";
-import type { Categoria, Color, Costo, Insumo, TipoCatalogo, TipoInsumo } from "./types";
+import type { Categoria, Color, Costo, FilaHistoria, Insumo, Porcentaje, TipoCatalogo, TipoInsumo } from "./types";
 
 export async function getCategorias(tipo: TipoCatalogo): Promise<Categoria[]> {
   const supabase = await createClient();
@@ -51,4 +51,34 @@ export async function getMonedaPrincipal(): Promise<Moneda> {
   const { data, error } = await supabase.rpc("monedas_principal_actual");
   if (error) throw error;
   return data;
+}
+
+export async function getPorcentajes(): Promise<Porcentaje[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("catalogo_porcentajes_vigentes");
+  if (error) throw error;
+  return data
+    .map(({ id, porcentaje_id, created_at, ...v }) => ({
+      id: porcentaje_id,
+      valor_id: id,
+      desde: created_at,
+      nombre: v.nombre,
+      porcentaje: v.porcentaje,
+      paso: v.paso,
+      categorias: v.categorias,
+      minimo: v.minimo,
+      minimo_moneda: v.minimo_moneda,
+      minimo_por: v.minimo_por,
+      opcional: v.opcional,
+      de_baja: v.de_baja,
+    }))
+    .sort((a, b) => a.paso - b.paso || a.nombre.localeCompare(b.nombre));
+}
+
+// Vacía sin la vista: la base lo filtra.
+export async function getPorcentajeHistoria(id: string): Promise<FilaHistoria[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("catalogo_porcentajes_historia", { p_id: id });
+  if (error) throw error;
+  return data as FilaHistoria[];
 }

@@ -109,3 +109,58 @@ export const costosSchema = z.object({
   confirmar_rojo: z.boolean().default(false),
 });
 export type CostosForm = z.input<typeof costosSchema>;
+
+// ---------- Servicios en % ----------
+
+export type AlcanceMinimo = Enums["alcance_minimo"];
+
+// El último valor de la historia: la autoridad. `id` es el servicio; `valor_id`, la fila que rige.
+export type Porcentaje = {
+  id: string;
+  valor_id: string;
+  nombre: string;
+  porcentaje: number;
+  paso: number;
+  categorias: string[];
+  minimo: number | null;
+  minimo_moneda: Moneda | null;
+  minimo_por: AlcanceMinimo | null;
+  opcional: boolean;
+  de_baja: boolean;
+  desde: string;
+};
+
+// El generador declara no-nulas las columnas de un `RETURNS TABLE`: estas pueden llegar en null.
+export type FilaHistoria = Omit<Porcentaje, "id" | "valor_id" | "desde"> & {
+  id: string;
+  revierte_id: string | null;
+  cargado_por: string | null;
+  nivel: Nivel | null;
+  ultimo: boolean;
+  created_at: string;
+};
+
+// Las categorías solo valen en el paso 1 y el mínimo nunca va en el paso 3: lo que no corresponde se
+// limpia acá, para que el formulario pueda esconder el campo sin borrar lo escrito.
+export const porcentajeSchema = z
+  .object({
+    id: idSchema.nullable(),
+    nombre,
+    porcentaje: z.number("Ingresá un número").positive("Tiene que ser mayor que cero"),
+    paso: z.number().int().min(1).max(3),
+    categorias: z.array(idSchema).default([]),
+    minimo: z.number("Ingresá un número").positive("Tiene que ser mayor que cero").nullable(),
+    minimo_moneda: moneda,
+    minimo_por: z.enum(Constants.public.Enums.alcance_minimo),
+    opcional: z.boolean().default(false),
+    confirmar_rojo: z.boolean().default(false),
+  })
+  .transform((d) => ({
+    ...d,
+    categorias: d.paso === 1 ? d.categorias : [],
+    minimo: d.paso === 3 ? null : d.minimo,
+  }));
+export type PorcentajeForm = z.input<typeof porcentajeSchema>;
+
+export const revertirSchema = z.object({ valor_id: idSchema, confirmar_rojo: z.boolean().default(false) });
+export type RevertirForm = z.input<typeof revertirSchema>;
