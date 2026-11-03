@@ -1,10 +1,10 @@
-# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql` — corridas en Supabase vía MCP)
+# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql`, `sql/161_catalogo_despiece.sql` — corridas en Supabase vía MCP)
 
 Ficha y decisiones: `decisiones/catalogo/README.md`. Tests: `sql/tests/catalogo_formulas.sql`,
-`sql/tests/catalogo_registros.sql`, `sql/tests/catalogo_paquetes.sql`.
+`sql/tests/catalogo_registros.sql`, `sql/tests/catalogo_paquetes.sql`, `sql/tests/catalogo_despiece.sql`.
 
-El SQL va por tramos (`BACKLOG.md` → *Catálogo*). Falta el despiece, el ciclo de una versión (qué frena el envío, enviar,
-aprobar, bajas en cascada), el precio y los avisos.
+El SQL va por tramos (`BACKLOG.md` → *Catálogo*). Falta el ciclo de una versión (qué frena el envío, enviar, aprobar, bajas
+en cascada), el precio y los avisos.
 
 ## Permisos
 
@@ -178,7 +178,7 @@ tiene su `x_arbol`, generada con `catalogo_formula_parsear`: lo que no se entien
 | `catalogo_materiales` | `pieza_id`, `orden`, `tipo`, `nombre`, `insumo_id`, `medida`, `ancho`, `alto`, `area`, `cantidad` ('1'), `eleccion`, `sin_eleccion`, `sigue_material_id`, `secundario`, `cuenta_peso` (true), `cuenta_espesor` (false) | múltiple repetido en la pieza; `nombre` solo y siempre en el múltiple; `insumo_id` solo en `unico`; `eleccion` solo en `elige_sistema`; `sigue_material_id` solo en `sigue`, y no a sí mismo; `sin_eleccion` y `secundario` solo en `elige_vendedor` |
 | `catalogo_opciones` | `material_id`, `orden`, `insumo_id`, `sigue_opcion_id`, `predeterminada`, `medida`, `ancho`, `alto`, `area`, `cantidad` (lo vacío se hereda) | insumo repetido en el material; dos predeterminadas; dos parejas para una opción; sin insumo ni pareja; una pareja predeterminada |
 | `catalogo_condiciones` | `variable_id`, `material_id` u `opcion_id`, `condicion`, `mensaje`, `bloquea` | no ser de exactamente uno; sin mensaje |
-| `catalogo_casos` | `nombre`, `entrada` (jsonb objeto; su forma la define `sql/161`) | nombre repetido en la versión |
+| `catalogo_casos` | `nombre`, `entrada` (jsonb; forma en *El despiece*) | nombre repetido en la versión; una entrada con otra forma (CHECK `catalogo_casos_entrada_forma`) |
 
 En un material que sigue a otro hay una opción por cada opción de aquel: `sigue_opcion_id` es esa opción e `insumo_id` su
 pareja, NULL si es "ninguna". Sin fila, la pareja está vacía. Los nombres repetidos no distinguen mayúsculas.
@@ -198,6 +198,54 @@ variable, sus condiciones. Lo que requería la pieza o seguía al material queda
 
 **Errores:** CA012 la versión no está en borrador · CA013 ya hay una versión abierta · CA014 no se encontró de qué versión
 copiar · CA015 lo sacado de un borrador no vuelve.
+
+## El despiece
+
+Un solo cálculo, sin costos, para cualquier versión (`decisiones/catalogo/despiece.md`). Es INVOKER: lo abre quien tiene la
+vista Paquetes, y una función DEFINER del precio lo llama como dueña.
+
+| función | seguridad | qué hace |
+|---|---|---|
+| `catalogo_despiece(version, entrada = '{}') → jsonb` | INVOKER | el cálculo. Sin la vista o sin esa versión: CA016. Entrada con otra forma: CA017. Lo demás no es un error de la base: sale en `errores` |
+| `catalogo_casos_calcular(version)` | INVOKER | `caso_id`, `nombre`, `resultado`: el mismo cálculo para cada caso activo |
+| `catalogo_entrada_valida(entrada) → boolean` | INVOKER, IMMUTABLE | la forma de la entrada, en el CHECK de los casos y en el cálculo |
+| `catalogo_numero_texto(n) → text` | INVOKER, IMMUTABLE | 1500 → `1.500`, -18 → `−18`, 666,666 → `666,67`: para los mensajes |
+| `catalogo_despiece_entrada`, `_elegir`, `_medida`, `_fila`, `_sumas` | INVOKER | los pasos, que no se llaman sueltos. Tienen EXECUTE porque `catalogo_despiece` es INVOKER, y ninguno lee costos |
+
+**La entrada.** Todo es opcional, y una clave que no sea de estas cuatro no se guarda:
+
+```json
+{"variables": {"ancho": 1500, "mano": "Izquierda"},
+ "elecciones": {"Hoja": {"Vidrio": "<insumo_id>", "Manija": null}},
+ "piezas": {"Mosquitero": true},
+ "color": "<color_id>"}
+```
+
+- `variables`: por nombre, número o texto (lista). Solo se leen las que ingresa el vendedor. Sin valor: su predeterminado.
+- `elecciones`: pieza → material múltiple → insumo. `null` es "sin elección". Sin valor: la opción predeterminada.
+- `piezas`: solo las opcionales. Sin valor: como esté marcada. Destildar una saca las que la requieren, y una incluida trae
+  la que requiere.
+- `color`: sin valor, el base.
+
+**El resultado:**
+
+| clave | qué es |
+|---|---|
+| `calculable` | false si hay `errores`: entonces `filas` y `piezas` salen vacías |
+| `bloqueado` | algún mensaje bloquea. El despiece sale igual |
+| `mensaje` | `No se puede calcular con estas medidas`, lo único de esto que lee el vendedor; NULL si se pudo |
+| `errores` | text[]: `Vidrio: el alto dio −18 mm`, `x: usa y, que no existe o no se pudo calcular`, `Referencia circular entre a, b` |
+| `mensajes` | `[{mensaje, bloquea, variable_id \| material_id \| opcion_id}]`: rango primero, después las condiciones, variables antes que materiales. Salen también si no se pudo calcular |
+| `color` | `{id, nombre}` o NULL |
+| `variables` | `[{id, nombre, pieza_id?, valor, a_produccion}]`: las sueltas y las de piezas que están y con cantidad mayor que 0 |
+| `piezas` | `[{id, nombre, cantidad, peso?, espesor?, peso_a_produccion, espesor_a_produccion}]`: peso y espesor de una sola pieza. Sin la clave: dato vacío o pieza que no calcula espesor |
+| `filas` | `[{pieza_id, pieza, material_id, opcion_id?, material, insumo_id, insumo, tipo, categoria_id, unidad, color_id?, color?, medida?, ancho?, alto?, area?, cantidad, total}]` |
+
+En una fila, `cantidad` ya lleva la de la pieza y `total` va en la unidad del insumo (mm, m2 o u). `medida`, `ancho` y `alto`
+van en mm; `area`, en m2. Nada va redondeado.
+
+**Errores:** CA016 no se encontró la versión · CA017 la entrada no tiene la forma esperada · CA018 interno: una medida o
+cantidad que no se puede usar, no sale de `catalogo_despiece`.
 
 ## Fórmulas
 

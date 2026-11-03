@@ -30,15 +30,17 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   tablas que lo usan. Hecho: las fórmulas (`sql/158`), los registros (`sql/159`: permisos, categorías, colores,
   insumos, servicios fijos, variantes, costos y servicios en % con su historia) y los paquetes (`sql/160`: paquetes,
   versiones y su contenido, edición solo en borrador, duplicar, versión nueva, datos del insumo que quedan fijos y la
-  categoría de paquete con versiones adentro). **Siguiente:**
-  - `161_catalogo_despiece`: el cálculo, con alertas, bloqueos y casos de prueba. Define la forma de
-    `catalogo_casos.entrada`. Un borrador puede estar a medias, y eso da "no se puede calcular", no un error de la base.
-    Su test suma lo circular y el orden libre entre fórmulas.
+  categoría de paquete con versiones adentro) y el despiece (`sql/161`: el cálculo, alertas, bloqueos, casos de prueba y la
+  forma de `catalogo_casos.entrada`). **Siguiente:**
   - `162_catalogo_ciclo`: qué frena el envío, enviar, retirar, devolver, aprobar y descartar; bajas en cascada,
     aviso previo y reactivación. Suma a `catalogo_paquetes` por qué está de baja y su GRANT de UPDATE (`activo`), y a la
     versión quién la envió y su historia con motivos. Enviar toma la versión `FOR UPDATE`, y `FOR SHARE` sus insumos y
-    su categoría, para que no cambien mientras se envía: el control de `sql/160` no ve una versión sin confirmar.
-  - `163_catalogo_precio`: precio, detalle del gerente, mínimos por presupuesto y precios de referencia.
+    su categoría, para que no cambien mientras se envía: el control de `sql/160` no ve una versión sin confirmar. Los casos
+    los lee con `catalogo_casos_calcular`. Lo circular y lo que puede faltar se revisan mirando la fórmula entera con
+    `catalogo_formula_usa`: el cálculo de `sql/161` solo ve la rama que toma.
+  - `163_catalogo_precio`: precio, detalle del gerente, mínimos por presupuesto y precios de referencia. Parte de
+    `catalogo_despiece`, que ya da insumo, color, categoría, unidad y total de cada fila; da número solo con `calculable` y
+    sin `bloqueado`, y al vendedor le pasa `mensaje` y `mensajes`, nunca `errores`.
   - `164_catalogo_avisos_enums` y `165_catalogo_avisos`: los tipos de `tipo_notificacion` van en su propia
     migración y en el mismo commit que `ICONO`, `TEXTO`, `COLOR` y `RUTA` de `NotificacionesBell`: son `Record`, y
     sumar el tipo sin ellos rompe `tsc`.

@@ -35,6 +35,8 @@ de baja en el medio.
   llegan hasta acá (*Lo que nunca tiene sentido se frena al guardar*).
 - Un material sin insumo, un múltiple sin opciones, uno que sigue a otro sin tener a quién o a uno que también
   sigue, o una lista de valores vacía.
+- Un material que define el sistema sin regla, o con una regla que nombra algo que no es una de sus opciones
+  (2026-11-03). El cálculo solo lo ve si cae en esa rama, y los casos pueden no pasar por ahí.
 - Un insumo con colores en una versión sin colores ofrecidos. Si todo es de color indistinto, no lleva.
 - Colores ofrecidos sin base, o con una base que no está entre ellos.
 - Un color ofrecido en el que el paquete no se puede armar. Si deja de poder armarse después de publicada,

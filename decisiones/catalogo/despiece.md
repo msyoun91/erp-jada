@@ -71,6 +71,42 @@ entran solo los que definen*).
 
 Ejemplo con datos inventados: https://claude.ai/artifact/6f2trHCaiVTdeqEa7bq4eS
 
+## Cómo se calcula (2026-11-03)
+
+**Lo que carga el vendedor apunta por nombre a piezas, materiales y variables, y por id a insumos y colores.** Un caso se
+copia a la versión siguiente, donde esos ids cambian, y el gerente compara dos versiones con la misma entrada. Lo que la
+entrada elige y la versión ya no tiene frena el cálculo, y por lo tanto el envío: "Vidrio: esa opción ya no existe". Un valor
+para una variable que ya no está no cambia nada y se ignora. La forma la frena la base al guardar un caso.
+
+**Las fórmulas se calculan en cualquier orden: se vuelve a pasar hasta que una vuelta no resuelve nada, y lo que sigue
+esperando es lo circular o lo que no existe.** Solo se espera lo que la cuenta usa de verdad: la rama de un "si" que no se
+toma no hace falta. Acá eso no frena; lo circular escrito en esa rama lo frena el envío, que mira la fórmula entera.
+
+**Se devuelven todos los errores, y también los mensajes de rango y condiciones que se pudieron evaluar.** Con alto 30, el
+vendedor lee "Alto va de 300 a 3.000 mm" junto con "No se puede calcular con estas medidas": es el mensaje que le dice qué
+corregir. Quien espera a algo que falló no se nombra, porque repetía el mismo error.
+
+**Una variable adentro de una pieza con cantidad 0 sigue valiendo su cuenta para quien la use, pero no sale, no evalúa rango
+ni condiciones, y si su cuenta falla frena solo a quien la use.** "Cantidad de travesaños" define la cantidad de su propia
+pieza: tiene que poder calcularse antes de saber si la pieza está. Un material de esa pieza vale 0, como pide *El despiece
+calculado*: lo suyo es lo que se corta, y una variable es solo una cuenta.
+
+**Un peso o espesor vacío deja a esa pieza sin el dato, y solo frena el cálculo si una fórmula lo usa.** Un borrador sin el
+peso del Perfil se puede seguir probando y no suma 0; el envío lo frena igual (*Un peso o espesor vacío no es 0*).
+
+**Sin color elegido ni base, las filas salen sin color y el despiece se calcula igual.** El color no mueve ninguna medida. Lo
+frena el envío (*Qué frena el envío*) y el precio no da número sin él.
+
+**Una opción en u hereda la `medida` del material aunque este se haya pensado en mm.** No se cobra ni vale en otra fórmula: en
+el peor caso a Producción le llega una medida de más. La base no guarda una unidad para el material, y sumarla solo serviría
+para esto. Una opción en m2 no hereda `medida`, ni una en mm o u hereda ancho y alto.
+
+**Entre piezas contradictorias gana destildar:** con Cortina marcada y Cajón destildado, no van ninguna de las dos. El
+formulario no lo manda; un caso escrito a mano o copiado sí podría.
+
+Archivos: `sql/161_catalogo_despiece.sql`, con 652 casos en `sql/tests/catalogo_despiece.sql`. Medido en la base: 7,7 ms por
+cálculo en una ventana de 12 filas y unas 30 fórmulas.
+
 ## Las fórmulas se calculan sin SQL dinámico (2026-11-02)
 
 **Técnica escribe la fórmula como texto. Al guardarla, una función de la base la convierte en un árbol y

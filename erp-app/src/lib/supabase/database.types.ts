@@ -2793,6 +2793,14 @@ export type Database = {
           registro_id: string
         }[]
       }
+      catalogo_casos_calcular: {
+        Args: { p_version: string }
+        Returns: {
+          caso_id: string
+          nombre: string
+          resultado: Json
+        }[]
+      }
       catalogo_condicion_evaluar: {
         Args: { p_n: Json; p_v: Json }
         Returns: boolean
@@ -2831,10 +2839,47 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      catalogo_despiece: {
+        Args: { p_entrada?: Json; p_version: string }
+        Returns: Json
+      }
+      catalogo_despiece_elegir: {
+        Args: { p_elegidas: Json; p_faltan: string[]; p_m: Json; p_v: Json }
+        Returns: Json
+      }
+      catalogo_despiece_entrada: {
+        Args: { p_entrada: Json; p_version: string }
+        Returns: {
+          adentro: string[]
+          color: Json
+          elegidas: Json
+          errores: string[]
+          faltan: string[]
+        }[]
+      }
+      catalogo_despiece_fila: {
+        Args: {
+          p_cant_pieza: number
+          p_color: Json
+          p_m: Json
+          p_o: Json
+          p_v: Json
+        }
+        Returns: Json
+      }
+      catalogo_despiece_medida: {
+        Args: { p_arbol: Json; p_que: string; p_unidad?: string; p_v: Json }
+        Returns: number
+      }
+      catalogo_despiece_sumas: {
+        Args: { p_cant: Json; p_hechos: Json; p_materiales: Json; p_piezas: Json }
+        Returns: Json
+      }
       catalogo_eleccion_evaluar: {
         Args: { p_n: Json; p_v: Json }
         Returns: string
       }
+      catalogo_entrada_valida: { Args: { p_entrada: Json }; Returns: boolean }
       catalogo_fijo_alta: {
         Args: {
           p_categoria: string
@@ -2890,6 +2935,7 @@ export type Database = {
         }
         Returns: string
       }
+      catalogo_numero_texto: { Args: { p_n: number }; Returns: string }
       catalogo_paquete_alta: {
         Args: { p_categoria: string; p_nombre: string }
         Returns: string
