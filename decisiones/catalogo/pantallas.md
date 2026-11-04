@@ -198,9 +198,15 @@ la sección: los botones de `Fila` lo enviarían. Archivos: `components/editor/M
 
 **La unidad del insumo decide qué medidas se ven, en el material y en la opción; lo opcional se agrega a pedido.** En u solo la
 cantidad (+ Medida de corte), en mm la medida, en m2 ancho y alto (+ Área), en un servicio en m2 el área (+ Ancho y alto). Lo
-que ya tiene un valor se ve siempre. Todo a pedido dejaba olvidarse un campo obligatorio hasta el envío; todo a la vista
+que ya tiene un valor se ve mientras la unidad lo use. Todo a pedido dejaba olvidarse un campo obligatorio hasta el envío; todo a la vista
 parecía obligar a cargar ancho y alto en una rueda. Sin opciones todavía, un múltiple no muestra medidas. Archivos:
 `components/editor/CamposMedida.tsx`.
+
+**Lo que la unidad del insumo no usa no se guarda (2026-11-04).** Al cambiar un vidrio por un perfil, el panel oculta ancho, alto
+y área, y un trigger los borra al guardar; si volvés a m2 sin guardar, siguen ahí. Hay que volver a escribirlos si ya guardaste:
+se prefirió a dejar en la base datos que no se ven ni se usan. Está en la base y no en el panel porque el cambio de una pareja
+guarda sin pasar por el formulario. Un múltiple no tiene unidad y no se toca. Archivos: `sql/168_catalogo_medidas_por_unidad.sql`,
+`sql/tests/catalogo_medidas.sql`, `components/editor/CamposMedida.tsx`.
 
 ## Agrupar por categoría (2026-11-03)
 

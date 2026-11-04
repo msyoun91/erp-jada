@@ -182,6 +182,8 @@ tiene su `x_arbol`, generada con `catalogo_formula_parsear`: lo que no se entien
 | `catalogo_condiciones` | `variable_id`, `material_id` u `opcion_id`, `condicion`, `mensaje`, `bloquea` | no ser de exactamente uno; sin mensaje |
 | `catalogo_casos` | `nombre`, `entrada` (jsonb; forma en *El despiece*) | nombre repetido en la versión; una entrada con otra forma (CHECK `catalogo_casos_entrada_forma`) |
 
+Trigger `catalogo_medidas_limpiar` (`catalogo_materiales`, `catalogo_opciones`; BEFORE INSERT OR UPDATE, INVOKER): con un insumo en m2 borra `medida`; en mm o u, `ancho`, `alto` y `area`. No frena nada, y sin insumo no toca nada.
+
 En un material que sigue a otro hay una opción por cada opción de aquel: `sigue_opcion_id` es esa opción e `insumo_id` su
 pareja, NULL si es "ninguna". Sin fila, la pareja está vacía. Una fila con `sigue_opcion_id` NULL es una opción suelta: no es
 pareja de nadie y solo se elige a mano. Los nombres repetidos no distinguen mayúsculas.

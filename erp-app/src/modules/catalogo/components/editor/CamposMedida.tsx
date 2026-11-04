@@ -6,7 +6,8 @@ import type { InsumoBasico } from "../../types";
 type CampoMedida = "medida" | "ancho" | "alto" | "area";
 
 // La unidad dice qué medida hace falta: eso aparece solo, y lo opcional se agrega a pedido. Lo que ya tiene un valor se
-// ve siempre, para no esconder un dato. La base lo vuelve a revisar al enviar.
+// ve mientras la unidad lo use: lo que no, se oculta y la base lo borra al guardar. Sin insumo no hay unidad y se ve todo
+// lo cargado. La base lo vuelve a revisar al enviar.
 export function CamposMedida({
   usados,
   conValor,
@@ -23,9 +24,18 @@ export function CamposMedida({
   const m2Servicio = usados.some((i) => i.unidad === "m2" && i.tipo === "servicio");
   const soloMm = usados.every((i) => i.unidad === "mm");
   const soloM2 = usados.every((i) => i.unidad === "m2");
+  const usaMedida = usados.length === 0 || usados.some((i) => i.unidad !== "m2");
+  const usaArea = usados.length === 0 || usados.some((i) => i.unidad === "m2");
 
-  const grupos: { campos: [CampoMedida, string][]; necesario: boolean; aPedido: boolean; pedir: string }[] = [
+  const grupos: {
+    campos: [CampoMedida, string][];
+    aplica: boolean;
+    necesario: boolean;
+    aPedido: boolean;
+    pedir: string;
+  }[] = [
     {
+      aplica: usaMedida,
       campos: [
         [
           "medida",
@@ -41,6 +51,7 @@ export function CamposMedida({
       pedir: "Medida de corte",
     },
     {
+      aplica: usaArea,
       campos: [
         ["ancho", `Ancho (mm${soloM2 ? "" : ", para insumos en m2"})`],
         ["alto", `Alto (mm${soloM2 ? "" : ", para insumos en m2"})`],
@@ -50,6 +61,7 @@ export function CamposMedida({
       pedir: "Ancho y alto (en vez del área)",
     },
     {
+      aplica: usaArea,
       campos: [["area", m2 ? "Área (mm², solo si no es un rectángulo)" : "Área (mm²)"]],
       necesario: m2Servicio,
       aPedido: m2,
@@ -58,6 +70,7 @@ export function CamposMedida({
   ];
 
   return grupos.map((g) => {
+    if (!g.aplica) return null;
     const nombres = g.campos.map(([c]) => c);
     if (g.necesario || nombres.some((c) => pedidos.includes(c) || conValor(c))) {
       return g.campos.map(([c, label]) => <Fragment key={c}>{campo(c, label)}</Fragment>);

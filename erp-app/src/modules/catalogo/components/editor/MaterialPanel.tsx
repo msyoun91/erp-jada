@@ -404,7 +404,7 @@ function Parejas({
           ? await sacar({ tabla: "catalogo_opciones", id: actual.id })
           : { success: true as const }
         : await guardarOpcion({
-            // Cambiar el insumo deja las fórmulas de la pareja; "ninguna" no da fila, y no se guardan.
+            // Cambiar el insumo deja las fórmulas que su unidad usa (las otras las borra la base); "ninguna" no da fila, y no se guardan.
             ...(valor === "ninguna" ? undefined : actual),
             id: actual?.id ?? null,
             version_id: versionId,
