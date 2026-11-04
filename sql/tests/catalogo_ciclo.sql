@@ -598,6 +598,11 @@ SELECT pg_temp.vr('Ci6', 'tr', 1, '2');
 SELECT pg_temp.pz('Ci6', 'P', 1, '{"cantidad": "tr"}');
 SELECT pg_temp.un('Ci6', 'P', 1, 'Escuadra');
 SELECT pg_temp.no_dice('Ci6', 'Referencia circular');
+SELECT pg_temp.ver('Ci7');
+SELECT pg_temp.pz('Ci7', 'Hoja', 1, '{"calcula_espesor": true}');
+SELECT pg_temp.un('Ci7', 'Hoja', 1, 'Instalacion', '{"cantidad": "si [peso Hoja] > 40 entonces 2 si no 1"}');
+SELECT pg_temp.un('Ci7', 'Hoja', 2, 'Soldado', '{"cantidad": "si [espesor Hoja] > 40 entonces 2 si no 1", "cuenta_espesor": true}');
+SELECT pg_temp.no_dice('Ci7', 'Referencia circular');
 
 SELECT pg_temp.ver('Rq');
 SELECT pg_temp.pz('Rq', 'A', 1, '{"opcional": true}');

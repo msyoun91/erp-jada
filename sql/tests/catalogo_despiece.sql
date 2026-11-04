@@ -890,6 +890,18 @@ SELECT pg_temp.un('VPe4', 'H', 1, 'DVH', '{"ancho": "100", "alto": "100", "cuent
 SELECT pg_temp.calc('R10e', 'VPe4');
 SELECT pg_temp.caso('10 si no cuenta, no hace falta', '0', pg_temp.pie('R10e', 'H', 'peso'));
 
+SELECT pg_temp.ver('VPeS');
+SELECT pg_temp.pz('VPeS', 'H', 1, '{"calcula_espesor": true}');
+SELECT pg_temp.un('VPeS', 'H', 1, 'Float', '{"ancho": "1000", "alto": "1000", "cuenta_espesor": true}');
+SELECT pg_temp.un('VPeS', 'H', 2, 'Soldado', '{"cantidad": "si [peso H] > 5 entonces 3 si no 1"}');
+SELECT pg_temp.un('VPeS', 'H', 3, 'Instalacion', '{"cantidad": "si [espesor H] > 2 entonces 5 si no 1", "cuenta_espesor": true}');
+SELECT pg_temp.calc('R10s', 'VPeS');
+SELECT pg_temp.sale('R10s');
+SELECT pg_temp.caso('10 un servicio usa el peso de su pieza', '3', pg_temp.f('R10s', 'Soldado', 'total'));
+SELECT pg_temp.caso('10 un servicio usa el espesor de su pieza, con la marca', '5', pg_temp.f('R10s', 'Instalacion', 'total'));
+SELECT pg_temp.caso('10 con el servicio, el peso es el del vidrio', '10', pg_temp.pie('R10s', 'H', 'peso'));
+SELECT pg_temp.caso('10 con el servicio, el espesor es el del vidrio', '4', pg_temp.pie('R10s', 'H', 'espesor'));
+
 SELECT pg_temp.ver('VPe5');
 SELECT pg_temp.pz('VPe5', 'H', 1);
 SELECT pg_temp.mu('VPe5', 'H', 1, 'elige_vendedor', 'X');

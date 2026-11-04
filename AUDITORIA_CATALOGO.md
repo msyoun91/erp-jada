@@ -222,6 +222,9 @@ los costos por las variantes que muestra la pantalla.
 
 ### 7. El servicio fijo "nunca cuenta para el peso", pero lo frena — Baja
 
+**Resuelto (2026-11-04, `sql/174`):** un material único con un servicio no entra en el peso ni en el espesor, tenga la marca que tenga. Lo de
+abajo describe lo que pasaba antes.
+
 **Qué pasa.** *Editor de paquete* dice: "El servicio fijo nunca cuenta para el peso ni para el espesor, y el editor no muestra esa
 marca en su fila". Con `cuenta_peso` en true por defecto, el servicio no suma kilos, pero el peso de la pieza igual lo espera:
 - `catalogo_despiece_sumas` (`sql/161_catalogo_despiece.sql:366`) espera que todo material con `cuenta_peso` esté calculado;

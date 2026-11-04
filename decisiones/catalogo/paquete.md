@@ -388,7 +388,9 @@ vidrio: contando todo por defecto, el Perfil hoja sin espesor frenaba el envío 
 **El servicio fijo nunca cuenta para el peso ni para el espesor, y el editor no muestra esa marca en su
 fila (2026-11-02).** El Soldado del Marco no tiene peso que cargar: contándolo por defecto, frenaba el envío
 por un dato que no existe. En un material múltiple con opciones de los dos tipos, el servicio elegido no
-suma nada, y un insumo elegido cuenta como cualquier otro, con sus datos vacíos frenando el envío.
+suma nada, y un insumo elegido cuenta como cualquier otro, con sus datos vacíos frenando el envío. La base
+lo resuelve al leer, no apagando la marca al guardar: así el peso de la pieza no espera al servicio y una Instalación
+puede depender de `[peso Hoja]`, y un material que pasa de servicio a insumo vuelve a contar (`sql/174`, 2026-11-04).
 
 **En una fórmula, el peso y el espesor se escriben con el nombre de la pieza: `[peso Hoja 1]` y `[espesor
 Hoja 1]` (2026-11-02).** El editor los ofrece en la lista y valen lo de una sola pieza; los `peso_hoja` de

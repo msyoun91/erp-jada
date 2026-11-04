@@ -222,7 +222,7 @@ vista Paquetes, y una función DEFINER del precio lo llama como dueña.
 | `catalogo_casos_calcular(version)` | INVOKER | `caso_id`, `nombre`, `resultado`: el mismo cálculo para cada caso activo |
 | `catalogo_entrada_valida(entrada) → boolean` | INVOKER, IMMUTABLE | la forma de la entrada, en el CHECK de los casos y en el cálculo |
 | `catalogo_numero_texto(n) → text` | INVOKER, IMMUTABLE | 1500 → `1.500`, -18 → `−18`, 666,666 → `666,67`: para los mensajes |
-| `catalogo_despiece_entrada`, `_elegir`, `_segun`, `_medida`, `_fila`, `_sumas` | INVOKER | los pasos, que no se llaman sueltos. Tienen EXECUTE porque `catalogo_despiece` es INVOKER, y ninguno lee costos |
+| `catalogo_despiece_entrada`, `_elegir`, `_segun`, `_medida`, `_fila`, `_sumas` | INVOKER | los pasos, que no se llaman sueltos. Tienen EXECUTE porque `catalogo_despiece` es INVOKER, y ninguno lee costos. `_sumas` y `catalogo_version_circular` ignoran `cuenta_peso` y `cuenta_espesor` en un material único con un servicio (`sql/174`) |
 
 **La entrada.** Todo es opcional, y una clave que no sea de estas cuatro no se guarda:
 
