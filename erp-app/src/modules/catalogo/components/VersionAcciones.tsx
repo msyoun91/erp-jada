@@ -72,12 +72,16 @@ export function VersionAcciones({
   const menu: ItemMenu[] = [];
   if (puedeArmar && estado === "borrador") {
     botones.push(
-      <Link key="editar" href={`/catalogo/paquetes/versiones/${version.id}/editar`} className="btn btn-primary">
+      <Link
+        key="editar"
+        href={`/catalogo/paquetes/versiones/${version.id}/editar`}
+        className={`btn ${frena.length > 0 ? "btn-primary" : "btn-secondary"}`}
+      >
         Editar
       </Link>,
       <button
         key="enviar"
-        className="btn btn-primary"
+        className={`btn ${frena.length > 0 ? "btn-secondary" : "btn-primary"}`}
         disabled={frena.length > 0}
         onClick={() =>
           setConfirmar({

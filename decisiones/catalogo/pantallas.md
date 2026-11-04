@@ -135,6 +135,11 @@ formulario de Presupuestos. Archivos: `components/Calculadora.tsx`, `entrada.ts`
 **La comparación al aprobar no pide nada propio (2026-11-04).** `calcular` manda la misma entrada a las dos versiones, y lo elegido a mano
 va en ella.
 
+## Un solo botón primario en el borrador (2026-11-04)
+
+**"Editar" es el primario mientras algo frena el envío; sin nada que lo frene, lo es "Enviar a revisión".** Con los dos iguales, la
+ficha no decía cuál era el paso que sigue. Archivos: `VersionAcciones.tsx`.
+
 ## Filas que se abren (2026-11-04)
 
 **Toda fila que abre algo lleva una flecha `›` a la derecha.** El cambio de fondo al pasar el mouse era la única señal, y en touch
