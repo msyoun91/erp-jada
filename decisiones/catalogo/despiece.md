@@ -124,6 +124,11 @@ envío*). Se descartó armar SQL y ejecutarlo: la función del precio lee lo que
 y una fórmula mal filtrada leía cualquier cosa. También convertir el texto en TypeScript, que dejaba la
 regla fuera de Postgres, y plv8, una dependencia nueva para lo mismo.
 
+**Una fórmula con más de 100 operaciones una dentro de otra no se guarda, y lo que agota la pila al parsear da CA001 (2026-11-04).**
+El tope va sobre el árbol, no sobre los paréntesis: una suma de 999 términos parseaba bien, se guardaba y daba 54001 recién al
+calcular. Los paréntesis no dejan rastro en el árbol, así que esos se atajan por el 54001. Las fórmulas reales llegan a 4 niveles, y
+una cadena de 80 "si" sigue entrando. `sql/179`.
+
 **En una fórmula, el decimal es la coma y el punto no se acepta.** Para la empresa, `1.500` es mil
 quinientos: leído como 1,5, `ancho > 1.500` daba siempre cierto sin que nadie lo notara.
 

@@ -300,6 +300,10 @@ color, en vez de frenar: el nivel solo avisa.
 
 ### 12. El parser con paréntesis muy anidados — Baja
 
+**Resuelto (2026-11-04, `sql/179`):** lo que agota la pila al parsear da CA001, y más de 100 operaciones anidadas no se guardan.
+`catalogo_numero_texto` ya no usa máscara. La propuesta de contar paréntesis no alcanzaba: 1.000 signos menos también daban 54001, y
+una suma de 999 términos se guardaba y fallaba al calcular. Lo de abajo describe lo que pasaba antes.
+
 **Qué pasa.** Con cientos de paréntesis anidados (600 alcanzan), dentro del tope de 2.000 caracteres, el parser recursivo da
 **54001** (`stack depth limit exceeded`) en vez de CA001. *Reproducido.* No hay riesgo de seguridad, porque no se guarda nada, pero
 el editor no traduce ese error. En el mismo grupo, `catalogo_numero_texto` muestra `###.###…` desde 10¹⁵.
