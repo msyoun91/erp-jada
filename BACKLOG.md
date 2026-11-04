@@ -42,6 +42,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   **Decidida, sin construir (2026-11-04):** la variable según un material que se elige (`decisiones/catalogo/paquete.md` → *Una
   variable que no carga el vendedor puede definirse según un material*): tabla de valores por opción, despiece, qué frena el
   envío, copia de la versión y comparación al aprobar, con su test; después, el editor.
+  **Decidida, sin construir (2026-11-04):** el vendedor puede cambiar lo que sigue a otro (`decisiones/catalogo/paquete.md` → *la
+  pareja es una sugerencia*): la elección a mano en el despiece y en el precio, opciones sueltas, "secundario" y su freno, con
+  su test; después, el editor y la calculadora. Va en el mismo tramo que la variable: se tocan entre sí.
 
   Paquetes a la venta y su formulario se escriben con Presupuestos.
 - **Notificaciones — la bandeja todavía tarda ~0,6 s con obras recibidas**, sin caso real todavía (2026-11-04). Lo que queda es la RLS de

@@ -24,8 +24,9 @@ de baja en el medio.
 - Un material en mm o m2 sin su medida: un insumo en m2, sin ancho o sin alto; una opción de otra unidad,
   sin la suya.
 - Una opción sin pareja en el material que la sigue (vacía; "ninguna" vale).
-- Una variable según un material con una opción sin valor, o según un material que sigue a otro, permite "sin elección" o
-  puede dar "ninguno" (2026-11-04, *Una variable que no carga el vendedor puede definirse según un material*).
+- Una variable según un material con una opción sin valor, o según un material que permite "sin elección", puede dar
+  "ninguno" o tiene la pareja "ninguna" (2026-11-04, *Una variable que no carga el vendedor puede definirse según un material*).
+- Un material que sigue a otro marcado secundario, si el que elige no tiene predeterminada (2026-11-04).
 - Una fórmula con "si" sin "si no", o un material que define el sistema sin "si no". Ya no llega al envío: lo frena el parser
   al guardar (`sql/158`).
 - Una fórmula que usa lo que puede faltar o lo que ya no existe, o una referencia o un requisito circular.

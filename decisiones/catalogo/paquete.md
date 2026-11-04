@@ -208,8 +208,19 @@ Una opción de otra unidad en mm o m2 lleva su medida, y la base no deja enviar 
 - **Combo:** con opciones distintas, emparejadas. Elegir una en uno marca su pareja en el otro. Ej:
   Contravidrio en combo con Vidrio: Float 4mm → Contravidrio 4mm, Laminado 3+3 → Contravidrio 6mm.
 
-Lo que sigue a otro no se le muestra al vendedor: elige una vez. En la base son un solo mecanismo: el
-sincronizado es un combo donde cada opción tiene por pareja el mismo insumo.
+En la base son un solo mecanismo: el sincronizado es un combo donde cada opción tiene por pareja el mismo insumo.
+
+**~~Lo que sigue a otro no se le muestra al vendedor: elige una vez~~: la pareja es una sugerencia, y el vendedor puede
+cambiar cualquier material que sigue a otro (2026-11-04).** La idea es facilitar la carga sin impedir otras combinaciones: elige
+Laminado 3+3, el Contravidrio se completa en 6mm, y quien no toca nada elige una sola vez. Costo aceptado: se puede armar algo
+que no se fabrica, con un precio que parece correcto, y ninguna condición lo frena porque no mira otro material. Se descartó
+una marca por material para dejar parejas fijas: el usuario quiere que se puedan cambiar todas.
+- **Lo cambiado a mano queda aunque cambie el que elige; si se borra, vuelve a la pareja.** Con el Contravidrio en 6mm a mano,
+  pasar el Vidrio a DVH (pareja 8mm) lo deja en 6mm. Igual que `ancho_hoja_1`, y el presupuesto guarda solo lo elegido a mano.
+- **El vendedor ve las parejas y las opciones sueltas que sume Técnica.** Un Contravidrio 10mm no es pareja de nadie: se
+  elige de la lista y nunca se completa solo. "Ninguna" se puede elegir si es la pareja de alguna opción.
+- **Técnica decide con "secundario" si va plegado en "Más opciones".** Es la marca de los que elige el vendedor, y ahora vale
+  también acá. No se puede plegar si el que elige no tiene predeterminada: no habría nada propuesto.
 
 **Un material sigue a uno que elige, no a otro que sigue; lo frena el envío (2026-11-02).** Si el Contravidrio y el
 Burlete dependen del Vidrio, los dos apuntan al Vidrio. Sin cadenas no hay círculos que revisar ni un orden que resolver
@@ -218,7 +229,7 @@ al calcular. Archivos: `sql/160`.
 **Cada opción del que elige tiene pareja en el que la sigue: un insumo, o "ninguna" si Técnica la elige.
 Vacía, la base no deja enviar la versión (2026-11-02).** Si suman el DVH al Vidrio y se olvidan de la
 pareja en el Contravidrio, el precio salía sin contravidrio sin que nadie lo note. Con "ninguna", el DVH
-no da fila de contravidrio ni se cobra, y el vendedor no ve nada de esto. Como el Contravidrio puede no
+no da fila de contravidrio ni se cobra. Como el Contravidrio puede no
 estar, ninguna fórmula lo usa (*Una fórmula solo puede usar lo que seguro existe*): esa medida sale de
 una variable.
 
@@ -231,9 +242,10 @@ una medida mal sin que nadie lo notara, y cada variable repetía la cadena.
 - **Una opción sin valor no deja enviar la versión,** como una pareja vacía. Sacar una opción saca sus valores.
 - **Solo se calcula el valor de la opción elegida.** Para lo circular y lo que puede faltar cuentan todos: no se conoce la
   elección al revisar.
-- **El material es uno que elige, vendedor o sistema, no uno que sigue a otro:** la elección es la de aquel. La regla de un
-  material que define el sistema no puede usar una variable que dependa de él: es circular.
-- **No vale un material que permite "sin elección" o puede dar "ninguno",** ni uno de una pieza que puede faltar para una
+- **También vale un material que sigue a otro, con un valor por cada opción suya, sueltas incluidas:** el vendedor puede
+  cambiarlo, así que no es la misma elección que la de aquel. La regla de un material que define el sistema no puede usar una
+  variable que dependa de él: es circular.
+- **No vale un material que permite "sin elección", puede dar "ninguno" o tiene la pareja "ninguna",** ni uno de una pieza que puede faltar para una
   variable de lo fijo (*Una fórmula solo puede usar lo que seguro existe*). Se apunta al material, no a su nombre: con un
   Herraje en cada hoja, no hay duda de cuál es.
 
