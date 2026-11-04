@@ -476,6 +476,35 @@ SELECT pg_temp.caso('05 una opción sacada no vuelve', 'CA015', pg_temp.intentar
 SELECT pg_temp.caso('05 una variable sacada no vuelve', 'CA015', pg_temp.intentar(pg_temp.upd('catalogo_variables', 'VA', 'activo = true'), 'Lucia'));
 SELECT pg_temp.caso('05 una condición sacada no vuelve', 'CA015', pg_temp.intentar(pg_temp.upd('catalogo_condiciones', 'CA', 'activo = true'), 'Lucia'));
 
+-- sql/171: nada entra ni se apunta a lo sacado. PA, MM, OM1 y VA ya salieron; PV, MV, OV y VV siguen.
+SELECT pg_temp.crear('PV', pg_temp.ins('catalogo_piezas', 'VB', 'nombre', $q$'Viva'$q$));
+SELECT pg_temp.crear('MV', pg_temp.ins('catalogo_materiales', 'VB', 'pieza_id, tipo, nombre', format($q$%s, 'elige_vendedor', 'Viva'$q$, pg_temp.l('PV'))));
+SELECT pg_temp.crear('OV', pg_temp.ins('catalogo_opciones', 'VB', 'material_id, insumo_id', format('%s, %s', pg_temp.l('MV'), pg_temp.l('Float'))));
+SELECT pg_temp.crear('VV', pg_temp.ins('catalogo_variables', 'VB', 'nombre, segun_material_id', format($q$'vv', %s$q$, pg_temp.l('MV'))));
+
+SELECT pg_temp.caso('05 material en pieza sacada', 'CA025', pg_temp.intentar(pg_temp.ins('catalogo_materiales', 'VB', 'pieza_id, insumo_id', format('%s, %s', pg_temp.l('PA'), pg_temp.l('Perfil'))), 'Lucia'));
+SELECT pg_temp.caso('05 mover un material a pieza sacada', 'CA025', pg_temp.intentar(pg_temp.upd('catalogo_materiales', 'MV', format('pieza_id = %s', pg_temp.l('PA'))), 'Lucia'));
+SELECT pg_temp.caso('05 variable en pieza sacada', 'CA025', pg_temp.intentar(pg_temp.ins('catalogo_variables', 'VB', 'nombre, pieza_id, formula', format($q$'vz', %s, '1'$q$, pg_temp.l('PA'))), 'Lucia'));
+SELECT pg_temp.caso('05 mover una variable a pieza sacada', 'CA025', pg_temp.intentar(pg_temp.upd('catalogo_variables', 'VV', format('pieza_id = %s', pg_temp.l('PA'))), 'Lucia'));
+SELECT pg_temp.caso('05 requerir una pieza sacada', 'CA025', pg_temp.intentar(pg_temp.upd('catalogo_piezas', 'PR', format('requiere_pieza_id = %s', pg_temp.l('PB'))), 'Lucia'));
+SELECT pg_temp.caso('05 opción en material sacado', 'CA025', pg_temp.intentar(pg_temp.ins('catalogo_opciones', 'VB', 'material_id, insumo_id', format('%s, %s', pg_temp.l('MM'), pg_temp.l('Float'))), 'Lucia'));
+SELECT pg_temp.caso('05 pareja de una opción sacada', 'CA025', pg_temp.intentar(pg_temp.ins('catalogo_opciones', 'VB', 'material_id, insumo_id, sigue_opcion_id', format('%s, %s, %s', pg_temp.l('MV'), pg_temp.l('Laminado'), pg_temp.l('OM1'))), 'Lucia'));
+SELECT pg_temp.caso('05 seguir a un material sacado', 'CA025', pg_temp.intentar(pg_temp.ins('catalogo_materiales', 'VB', 'pieza_id, tipo, nombre, sigue_material_id', format($q$%s, 'sigue', 'S2', %s$q$, pg_temp.l('PV'), pg_temp.l('MM'))), 'Lucia'));
+SELECT pg_temp.caso('05 variable según material sacado', 'CA025', pg_temp.intentar(pg_temp.upd('catalogo_variables', 'VV', format('segun_material_id = %s', pg_temp.l('MM'))), 'Lucia'));
+SELECT pg_temp.caso('05 condición de variable sacada', 'CA025', pg_temp.intentar(pg_temp.ins('catalogo_condiciones', 'VB', 'variable_id, condicion, mensaje', format($q$%s, 'vs > 1', 'X'$q$, pg_temp.l('VA'))), 'Lucia'));
+SELECT pg_temp.caso('05 condición de material sacado', 'CA025', pg_temp.intentar(pg_temp.ins('catalogo_condiciones', 'VB', 'material_id, condicion, mensaje', format($q$%s, 'vs > 1', 'X'$q$, pg_temp.l('MM'))), 'Lucia'));
+SELECT pg_temp.caso('05 condición de opción sacada', 'CA025', pg_temp.intentar(pg_temp.ins('catalogo_condiciones', 'VB', 'opcion_id, condicion, mensaje', format($q$%s, 'vs > 1', 'X'$q$, pg_temp.l('OM1'))), 'Lucia'));
+SELECT pg_temp.caso('05 valor de variable sacada', 'CA025', pg_temp.intentar(pg_temp.ins('catalogo_variables_valores', 'VB', 'variable_id, opcion_id, formula', format($q$%s, %s, '1'$q$, pg_temp.l('VA'), pg_temp.l('OV'))), 'Lucia'));
+SELECT pg_temp.caso('05 valor de opción sacada', 'CA025', pg_temp.intentar(pg_temp.ins('catalogo_variables_valores', 'VB', 'variable_id, opcion_id, formula', format($q$%s, %s, '1'$q$, pg_temp.l('VV'), pg_temp.l('OM1'))), 'Lucia'));
+SELECT pg_temp.caso('05 sin permiso sigue siendo 42501', '42501', pg_temp.intentar(pg_temp.ins('catalogo_materiales', 'VB', 'pieza_id, insumo_id', format('%s, %s', pg_temp.l('PA'), pg_temp.l('Perfil'))), 'Juan'));
+
+SELECT pg_temp.caso('05 en lo que sigue se suma', 'ok', pg_temp.intentar(pg_temp.ins('catalogo_condiciones', 'VB', 'material_id, condicion, mensaje', format($q$%s, 'vs > 1', 'X'$q$, pg_temp.l('MV'))), 'Lucia'));
+SELECT pg_temp.caso('05 mover a una pieza que sigue', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_variables', 'VV', format('pieza_id = %s', pg_temp.l('PV'))), 'Lucia'));
+SELECT pg_temp.caso('05 editar lo que sigue', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_materiales', 'MV', $q$cantidad = '2'$q$), 'Lucia'));
+SELECT pg_temp.caso('05 sacar lo que sigue', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_piezas', 'PV', 'activo = false'), 'Lucia'));
+SELECT pg_temp.caso('05 la cascada se lleva el material', 'false', pg_temp.activo('catalogo_materiales', 'MV'));
+SELECT pg_temp.caso('05 y la variable según él', 'false', pg_temp.activo('catalogo_variables', 'VV'));
+
 -- ============================================================
 -- 06. Solo se edita en borrador
 -- ============================================================
