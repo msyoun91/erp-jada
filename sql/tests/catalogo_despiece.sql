@@ -1069,6 +1069,9 @@ SELECT pg_temp.caso('12 número, negativo', '−18', catalogo_numero_texto(-18))
 SELECT pg_temp.caso('12 número, decimales', '666,67', catalogo_numero_texto(666.666));
 SELECT pg_temp.caso('12 número, cero', '0', catalogo_numero_texto(0));
 SELECT pg_temp.caso('12 número, millones', '1.234.567,5', catalogo_numero_texto(1234567.5));
+SELECT pg_temp.caso('12 número, redondo', '100', catalogo_numero_texto(100));
+SELECT pg_temp.caso('12 número, 10 a la 15', '1.000.000.000.000.000', catalogo_numero_texto(1e15));
+SELECT pg_temp.caso('12 número, más grande y con decimales', '−123.456.789.012.345.678,9', catalogo_numero_texto(-123456789012345678.9));
 
 -- ============================================================
 -- 13. No depende de lo que hoy se vende ni del estado

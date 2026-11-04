@@ -219,6 +219,40 @@ BEGIN
   END IF;
 
   -- ============================================================
+  -- Demasiado anidada: CA001, y lo que se guarda se puede calcular
+  -- ============================================================
+  FOR c IN SELECT * FROM (VALUES
+    ('600 parentesis', repeat('(', 600) || '1' || repeat(')', 600), 'formula'),
+    ('999 parentesis', repeat('(', 999) || '1' || repeat(')', 999), 'formula'),
+    ('900 parentesis en condicion', repeat('(', 900) || 'a > 1' || repeat(')', 900), 'condicion'),
+    ('1999 menos', repeat('-', 1999) || '1', 'formula'),
+    ('101 menos', repeat('-', 101) || '1', 'formula'),
+    ('999 sumas', '1' || repeat('+1', 999), 'formula'),
+    ('101 sumas', '1' || repeat('+1', 101), 'formula')
+  ) AS t(n, f, tipo) LOOP
+    tot := tot + 1;
+    BEGIN
+      ast := public.catalogo_formula_parsear(c.f, c.tipo);
+      fallas := fallas || c.n || ' se guardo; ';
+    EXCEPTION
+      WHEN SQLSTATE 'CA001' THEN ok := ok + 1;
+      WHEN OTHERS THEN fallas := fallas || c.n || ' dio ' || SQLSTATE || '; ';
+    END;
+  END LOOP;
+
+  FOR c IN SELECT * FROM (VALUES
+    ('100 sumas', '1' || repeat('+1', 100), 101::numeric),
+    ('100 menos', repeat('-', 100) || '1', 1::numeric),
+    ('100 parentesis', repeat('(', 100) || '1' || repeat(')', 100), 1::numeric),
+    ('80 si', repeat('si a>1 entonces ', 80) || '1' || repeat(' si no 2', 80), 2::numeric)
+  ) AS t(n, f, r) LOOP
+    tot := tot + 1;
+    IF public.catalogo_formula_evaluar(public.catalogo_formula_parsear(c.f), '{"a":1}') = c.r THEN ok := ok + 1;
+    ELSE fallas := fallas || c.n || ' calcula mal; ';
+    END IF;
+  END LOOP;
+
+  -- ============================================================
   -- Privilegios
   -- ============================================================
   tot := tot + 1;
