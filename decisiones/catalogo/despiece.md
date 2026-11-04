@@ -36,6 +36,12 @@ fórmula recibe 0: si eso deja otra medida en 0, sigue sin poder calcularse, y u
 medida `[Vidrio superior]` lleva el mismo "si" en su cantidad. Con cantidad mayor que 0, una medida de
 −18 mm sigue frenando el cálculo.
 
+**Un material múltiple con cantidad 0 no exige elegir, si ninguna opción trae cantidad propia (2026-11-04).** Con alto 2.000 el
+vendedor no tiene que elegir un Vidrio superior que no va; con 2.200, sí. Si alguna opción trae la suya, la cantidad depende de la
+elección y se sigue pidiendo. Sin elección, una variable según ese material usa su valor de "Si no hay elección", y si no lo tiene
+frena el cálculo; lo que lo sigue queda sin fila, aunque su propia cantidad dé más de 0: sin vidrio no hay pareja. Archivos:
+`sql/175_catalogo_cantidad_antes_de_elegir.sql`, `sql/tests/catalogo_despiece.sql`.
+
 **La cuenta no se redondea: filas, servicios en % y conversiones llevan todos sus decimales. Se redondea
 solo el precio final de cada paquete y el renglón del mínimo por presupuesto: en pesos a entero, en USD a
 2 decimales (2026-11-02).** Presupuestos multiplica ese precio por la cantidad: 3 ventanas de $242.309,28

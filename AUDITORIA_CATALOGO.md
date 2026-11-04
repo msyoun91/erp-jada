@@ -238,6 +238,9 @@ editor no muestra esa marca, así que Técnica no tiene salida. Lo que sí sirve
 
 ### 8. Un material múltiple con cantidad 0 igual exige elegir — Baja
 
+**Resuelto (2026-11-04, `sql/175`):** si ninguna opción trae cantidad propia y la del material da 0, no hace falta elegir. Lo de abajo
+describe lo que pasaba antes.
+
 **Qué pasa.** `catalogo_despiece_entrada` marca como faltante todo múltiple sin elección ni predeterminado antes de calcular, y
 `elegir` se corre antes que la cantidad. Es necesario cuando la opción trae su propia cantidad, pero cuando no la trae, la del
 material sola ya sabría que da 0.

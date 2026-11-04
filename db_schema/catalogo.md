@@ -218,7 +218,7 @@ vista Paquetes, y una función DEFINER del precio lo llama como dueña.
 
 | función | seguridad | qué hace |
 |---|---|---|
-| `catalogo_despiece(version, entrada = '{}') → jsonb` | INVOKER | el cálculo. Sin la vista o sin esa versión: CA016. Entrada con otra forma: CA017. Lo demás no es un error de la base: sale en `errores` |
+| `catalogo_despiece(version, entrada = '{}') → jsonb` | INVOKER | el cálculo. Sin la vista o sin esa versión: CA016. Entrada con otra forma: CA017. Lo demás no es un error de la base: sale en `errores`. Un múltiple sin elección y con cantidad 0 no la exige, si ninguna opción trae cantidad propia (`sql/175`) |
 | `catalogo_casos_calcular(version)` | INVOKER | `caso_id`, `nombre`, `resultado`: el mismo cálculo para cada caso activo |
 | `catalogo_entrada_valida(entrada) → boolean` | INVOKER, IMMUTABLE | la forma de la entrada, en el CHECK de los casos y en el cálculo |
 | `catalogo_numero_texto(n) → text` | INVOKER, IMMUTABLE | 1500 → `1.500`, -18 → `−18`, 666,666 → `666,67`: para los mensajes |
