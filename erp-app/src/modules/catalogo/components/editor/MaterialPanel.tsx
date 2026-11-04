@@ -339,6 +339,43 @@ export function MaterialPanel({
   );
 }
 
+// Con el teclado, cada flecha es un cambio y pasa por "Vacía" y "Ninguna", que borran las fórmulas: se guarda lo que queda quieto.
+function ParejaSelect({
+  insumos,
+  valor,
+  onElegir,
+}: {
+  insumos: InsumosPorId;
+  valor: string;
+  onElegir: (v: string) => Promise<void>;
+}) {
+  const [borrador, setBorrador] = useState<string | null>(null);
+  const espera = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const guardando = useRef(false);
+
+  function cambiar(v: string) {
+    if (guardando.current) return;
+    setBorrador(v);
+    clearTimeout(espera.current);
+    espera.current = setTimeout(async () => {
+      guardando.current = true;
+      if (v !== valor) await onElegir(v);
+      guardando.current = false;
+      setBorrador(null);
+    }, 500);
+  }
+
+  return (
+    <InsumoSelect
+      insumos={insumos}
+      value={borrador ?? valor}
+      onChange={cambiar}
+      vacio="Vacía: frena el envío"
+      extra={<option value="ninguna">Ninguna: no lleva</option>}
+    />
+  );
+}
+
 // Una pareja por cada opción del que elige: un insumo, "ninguna" (no da fila) o vacía, que frena el envío.
 // El sincronizado es un combo donde cada pareja es el mismo insumo.
 function Parejas({
@@ -394,13 +431,7 @@ function Parejas({
           return (
             <li key={o.id} className="flex flex-col gap-1">
               <span className="t-body-m">{insumos.get(o.insumo_id ?? "")?.nombre ?? "—"} →</span>
-              <InsumoSelect
-                insumos={insumos}
-                value={valor}
-                onChange={(v) => elegir(o, v)}
-                vacio="Vacía: frena el envío"
-                extra={<option value="ninguna">Ninguna: no lleva</option>}
-              />
+              <ParejaSelect insumos={insumos} valor={valor} onElegir={(v) => elegir(o, v)} />
               {actual?.insumo_id && (
                 <button
                   type="button"

@@ -106,6 +106,10 @@ seguir la elección de otro*).
 se elige en la lista de parejas, y dos parejas pueden ser el mismo insumo: el panel dice "Con Laminado". Cambiar el insumo deja las
 fórmulas; pasar a "ninguna" las borra, porque no da fila. Archivos: `MaterialPanel.tsx`, `OpcionPanel.tsx`.
 
+**La lista de una pareja guarda medio segundo después del último cambio (2026-11-04).** Con la lista cerrada, cada flecha es un cambio: pasaba
+por "Vacía" y "Ninguna", que borran las fórmulas, y dos guardados seguidos chocaban. Bloquearla mientras guarda evitaba el choque, pero no
+la pérdida. Es la única lista del catálogo que guarda sola. Archivos: `MaterialPanel.tsx`.
+
 **El panel de un material múltiple muestra solo las fórmulas que usan sus opciones; sin opciones, todas, aclaradas.** El
 múltiple no guarda unidad: la tiene cada opción. Con el Vidrio todo en m2, Medida no aparece; un campo que ya tiene un valor
 sigue a la vista, para no esconder un dato. Archivo: `MaterialPanel.tsx`.
