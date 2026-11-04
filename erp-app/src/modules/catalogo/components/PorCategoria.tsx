@@ -45,13 +45,13 @@ export function ListaPorCategoria<T>({ grupos, fila }: { grupos: Grupo<T>[]; fil
         ) : (
           <details key={g.id} open className="group">
             {/* Flex y no el triángulo nativo: con `display: list-item` el texto quedaba arriba de los 44px de mobile. */}
-            <summary className="tap-target flex cursor-pointer list-none items-center gap-1 [&::-webkit-details-marker]:hidden">
+            <summary className="tap-target flex cursor-pointer list-none items-center gap-1 rounded-md hover:bg-bg-subtle [&::-webkit-details-marker]:hidden">
               <ChevronRight
-                size={14}
+                size={16}
                 strokeWidth={1.75}
-                className="shrink-0 text-text-tertiary transition-transform group-open:rotate-90"
+                className="shrink-0 text-text-secondary transition-transform group-open:rotate-90"
               />
-              <span className="t-label">
+              <span className="t-label text-text-secondary">
                 {g.nombre} ({g.total})
               </span>
             </summary>

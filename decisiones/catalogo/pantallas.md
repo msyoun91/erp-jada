@@ -135,6 +135,11 @@ formulario de Presupuestos. Archivos: `components/Calculadora.tsx`, `entrada.ts`
 **La comparación al aprobar no pide nada propio (2026-11-04).** `calcular` manda la misma entrada a las dos versiones, y lo elegido a mano
 va en ella.
 
+## Títulos de categoría plegables (2026-11-04)
+
+**El título de un grupo va con más contraste que los rótulos, con la flecha más grande y fondo al pasar el mouse.** Se leía como un rótulo más,
+y no se notaba que plegaba la lista. Archivos: `PorCategoria.tsx`.
+
 ## La calculadora se distingue de lo que solo se lee (2026-11-04)
 
 **En la ficha de la versión, la calculadora va en una tarjeta titulada "Probar el despiece".** Con un rótulo igual al de las secciones
