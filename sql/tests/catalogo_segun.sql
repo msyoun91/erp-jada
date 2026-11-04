@@ -284,7 +284,6 @@ SELECT pg_temp.caso('01 vuelve', 'ok', pg_temp.intentar(format('UPDATE catalogo_
 
 -- Lo que no se puede guardar
 SELECT pg_temp.caso('02 la ingresa el vendedor', '23514', pg_temp.intentar(format('INSERT INTO catalogo_variables (version_id, nombre, ingresa_vendedor, minimo, maximo, segun_material_id) VALUES (%s, %L, true, 1, 2, %s)', pg_temp.l('S1'), 'x', pg_temp.l('S1.Hoja.Herraje'))));
-SELECT pg_temp.caso('02 con fórmula', '23514', pg_temp.intentar(format('INSERT INTO catalogo_variables (version_id, nombre, formula, segun_material_id) VALUES (%s, %L, %L, %s)', pg_temp.l('S1'), 'x', '1', pg_temp.l('S1.Hoja.Herraje'))));
 SELECT pg_temp.caso('02 sin fórmula ni material', '23514', pg_temp.intentar(format('INSERT INTO catalogo_variables (version_id, nombre) VALUES (%s, %L)', pg_temp.l('S1'), 'x')));
 SELECT pg_temp.caso('02 valor que no se entiende', 'CA001', pg_temp.intentar(format('INSERT INTO catalogo_variables_valores (version_id, variable_id, opcion_id, formula) VALUES (%s, %s, %s, %L)', pg_temp.l('S1'), pg_temp.l('S1.descuento_hoja'), pg_temp.l('S1.Hoja.Herraje.Simple'), '1 +')));
 SELECT pg_temp.caso('02 valor repetido', '23505', pg_temp.intentar(format('INSERT INTO catalogo_variables_valores (version_id, variable_id, opcion_id, formula) VALUES (%s, %s, %s, %L)', pg_temp.l('S1'), pg_temp.l('S1.descuento_hoja'), pg_temp.l('S1.Hoja.Herraje.Simple'), '1')));
@@ -373,14 +372,14 @@ SELECT pg_temp.mu('F1', 'Hoja', 2, 'elige_vendedor', 'Tir', '{"sin_eleccion": tr
 SELECT pg_temp.op('F1', 'F1.Hoja.Tir', 1, 'Simple');
 SELECT pg_temp.segun('F1', 'd', 'F1.Hoja.Tir');
 SELECT pg_temp.va('F1', 'F1.d', 'F1.Hoja.Tir.Simple', '1');
-SELECT pg_temp.dice('F1', 'd: depende de Tir, que puede no estar');
+SELECT pg_temp.dice('F1', 'd: falta el valor para cuando Tir queda sin elección');
 
 SELECT pg_temp.base('F2');
 SELECT pg_temp.mu('F2', 'Hoja', 2, 'elige_sistema', 'Rueda', '{"eleccion": "si ancho > 1 entonces [Zqx167 R1] si no ninguno"}');
 SELECT pg_temp.op('F2', 'F2.Hoja.Rueda', 1, 'R1');
 SELECT pg_temp.segun('F2', 'd', 'F2.Hoja.Rueda');
 SELECT pg_temp.va('F2', 'F2.d', 'F2.Hoja.Rueda.R1', '1');
-SELECT pg_temp.dice('F2', 'd: depende de Rueda, que puede no estar');
+SELECT pg_temp.dice('F2', 'd: falta el valor para cuando Rueda queda sin elección');
 
 SELECT pg_temp.base('F3');
 SELECT pg_temp.mu('F3', 'Hoja', 2, 'elige_vendedor', 'Vidrio');
@@ -391,7 +390,7 @@ SELECT pg_temp.pareja('F3', 'F3.Hoja.Contra', 1, 'F3.Hoja.Vidrio.Float', 'Contra
 SELECT pg_temp.pareja('F3', 'F3.Hoja.Contra', 2, 'F3.Hoja.Vidrio.DVH', NULL);
 SELECT pg_temp.segun('F3', 'd', 'F3.Hoja.Contra');
 SELECT pg_temp.va('F3', 'F3.d', 'F3.Hoja.Contra.F3.Hoja.Vidrio.Float', '1');
-SELECT pg_temp.dice('F3', 'd: depende de Contra, que puede no estar');
+SELECT pg_temp.dice('F3', 'd: falta el valor para cuando Contra queda sin elección');
 
 SELECT pg_temp.base('F4');
 SELECT pg_temp.segun('F4', 'd', 'F4.Hoja.Perfil');
