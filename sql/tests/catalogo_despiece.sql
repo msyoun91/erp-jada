@@ -659,6 +659,62 @@ SELECT pg_temp.calc('RFc', 'VF', jsonb_build_object('elecciones', jsonb_build_ob
   jsonb_build_object('Manija', pg_temp.id('Rueda40'), 'Vidrio', NULL::uuid))));
 SELECT pg_temp.caso('06 null donde no se permite', 'Vidrio: falta elegir una opción', pg_temp.err('RFc'));
 
+-- Con cantidad 0 no hace falta elegir, si ninguna opción trae la suya (sql/175).
+SELECT pg_temp.ver('VCero');
+SELECT pg_temp.en('VCero', 'alto', 1, 300, 3000);
+SELECT pg_temp.pz('VCero', 'P', 1);
+SELECT pg_temp.mu('VCero', 'P', 1, 'elige_vendedor', 'Sup', '{"cantidad": "si alto > 2100 entonces 1 si no 0", "ancho": "100", "alto": "alto - 2100"}');
+SELECT pg_temp.op('VCero', 'VCero.P.Sup', 1, 'Float');
+SELECT pg_temp.op('VCero', 'VCero.P.Sup', 2, 'Laminado');
+SELECT pg_temp.mu('VCero', 'P', 2, 'sigue', 'Contra', jsonb_build_object('sigue_material_id', pg_temp.id('VCero.P.Sup'), 'medida', '400'));
+SELECT pg_temp.pareja('VCero', 'VCero.P.Contra', 1, 'VCero.P.Sup.Float', 'Contra4');
+SELECT pg_temp.pareja('VCero', 'VCero.P.Contra', 2, 'VCero.P.Sup.Laminado', 'Contra6');
+SELECT pg_temp.un('VCero', 'P', 3, 'Escuadra', '{"cantidad": "2"}');
+SELECT pg_temp.calc('RCeroa', 'VCero', '{"variables": {"alto": 2000}}');
+SELECT pg_temp.sale('RCeroa');
+SELECT pg_temp.caso('06 cantidad 0: sin fila', NULL, pg_temp.f('RCeroa', 'Sup', 'insumo'));
+SELECT pg_temp.caso('06 cantidad 0: quien lo sigue, sin fila', NULL, pg_temp.f('RCeroa', 'Contra', 'insumo'));
+SELECT pg_temp.caso('06 cantidad 0: lo demás sale', '2', pg_temp.f('RCeroa', 'Zqx161 Escuadra', 'total'));
+SELECT pg_temp.calc('RCerob', 'VCero', '{"variables": {"alto": 2200}}');
+SELECT pg_temp.caso('06 con cantidad, hay que elegir', 'Sup: falta elegir una opción', pg_temp.err('RCerob'));
+SELECT pg_temp.calc('RCeroc', 'VCero', jsonb_build_object('variables', '{"alto": 2200}'::jsonb) || pg_temp.el('P', 'Sup', 'Float'));
+SELECT pg_temp.sale('RCeroc');
+SELECT pg_temp.caso('06 con cantidad y elegido', 'Zqx161 Float', pg_temp.f('RCeroc', 'Sup', 'insumo'));
+
+SELECT pg_temp.ver('VCero2');
+SELECT pg_temp.pz('VCero2', 'P', 1);
+SELECT pg_temp.mu('VCero2', 'P', 1, 'elige_vendedor', 'Rueda', '{"cantidad": "0"}');
+SELECT pg_temp.op('VCero2', 'VCero2.P.Rueda', 1, 'Rueda40', '{"cantidad": "2"}');
+SELECT pg_temp.op('VCero2', 'VCero2.P.Rueda', 2, 'Rueda80');
+SELECT pg_temp.calc('RCero2', 'VCero2');
+SELECT pg_temp.caso('06 una opción con cantidad propia: hay que elegir', 'Rueda: falta elegir una opción', pg_temp.err('RCero2'));
+
+SELECT pg_temp.ver('VCero3');
+SELECT pg_temp.pz('VCero3', 'P', 1);
+SELECT pg_temp.mu('VCero3', 'P', 1, 'elige_vendedor', 'Sup', '{"cantidad": "0"}');
+SELECT pg_temp.op('VCero3', 'VCero3.P.Sup', 1, 'Rueda40');
+SELECT pg_temp.vr('VCero3', 'k', 1, '7', jsonb_build_object('segun_material_id', pg_temp.id('VCero3.P.Sup')));
+SELECT pg_temp.un('VCero3', 'P', 2, 'Escuadra', '{"cantidad": "k"}');
+SELECT pg_temp.calc('RCero3', 'VCero3');
+SELECT pg_temp.sale('RCero3');
+SELECT pg_temp.caso('06 según, con cantidad 0: el valor de sin elección', '7', pg_temp.f('RCero3', 'Zqx161 Escuadra', 'total'));
+
+SELECT pg_temp.ver('VCero4');
+SELECT pg_temp.pz('VCero4', 'P', 1);
+SELECT pg_temp.mu('VCero4', 'P', 1, 'elige_vendedor', 'Sup', '{"cantidad": "0"}');
+SELECT pg_temp.op('VCero4', 'VCero4.P.Sup', 1, 'Rueda40');
+SELECT pg_temp.mete('VCero4.k', 'catalogo_variables', 'VCero4', jsonb_build_object('nombre', 'k', 'segun_material_id', pg_temp.id('VCero4.P.Sup')));
+SELECT pg_temp.calc('RCero4', 'VCero4');
+SELECT pg_temp.caso('06 según, con cantidad 0 y sin ese valor: frena', 'k: Sup no tiene una opción elegida', pg_temp.err('RCero4'));
+
+SELECT pg_temp.ver('VCero5');
+SELECT pg_temp.pz('VCero5', 'P', 1);
+SELECT pg_temp.mu('VCero5', 'P', 1, 'elige_vendedor', 'Sup', '{"cantidad": "k"}');
+SELECT pg_temp.op('VCero5', 'VCero5.P.Sup', 1, 'Rueda40');
+SELECT pg_temp.vr('VCero5', 'k', 1, '0', jsonb_build_object('segun_material_id', pg_temp.id('VCero5.P.Sup')));
+SELECT pg_temp.calc('RCero5', 'VCero5');
+SELECT pg_temp.caso('06 la cantidad depende de la elección: falta elegir', 'Sup: falta elegir una opción', pg_temp.err('RCero5'));
+
 SELECT pg_temp.ver('VS');
 SELECT pg_temp.pz('VS', 'H1', 1);
 SELECT pg_temp.pz('VS', 'H2', 2);
