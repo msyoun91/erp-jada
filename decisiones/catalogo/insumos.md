@@ -48,8 +48,8 @@ y aprobación del gerente. Sin historial de nombres ni aviso de renombre.
 
 **El control de los datos fijos mira todas las versiones, aunque quien edita no pueda verlas (2026-11-02).** Ana, de
 Administración, edita un servicio fijo sin tener la vista Paquetes: con RLS, el control no encontraba ninguna versión y la
-dejaba cambiarlo. Por eso los triggers de insumos y categorías son `SECURITY DEFINER`; solo validan, no devuelven nada.
-Archivos: `sql/160`.
+dejaba cambiarlo. Por eso los triggers de insumos, categorías y colores son `SECURITY DEFINER`; solo validan, no devuelven nada.
+Archivos: `sql/160`, `sql/180`.
 
 **El nombre de un insumo es único entre los activos (2026-10-29).** Unique parcial `WHERE activo`: el
 nombre de uno de baja se reutiliza. Costo aceptado: el reemplazo de un insumo ya usado, que convive
@@ -63,6 +63,12 @@ queda fijo. Se da de baja solo sin nada activo adentro (2026-10-29).** Renombrar
 "Herrajes" le mostraba a Administración una garantía de vidrio cobrándose sobre herrajes, y dar de baja
 "Vidrios" con 30 insumos activos los dejaba en una categoría que no existe. Un servicio en % sobre una
 categoría de baja no cobra nada, sin romper nada.
+
+**Una categoría que un servicio en % usó alguna vez también deja el nombre fijo, aunque esté vacía (2026-11-04).** Ana suma
+"Laminados", vacía, a la Garantía de vidrio; renombrarla a "Herrajes especiales" hacía cobrar la garantía sobre lo que Técnica
+cargara ahí. Mira toda la historia y no solo el valor vigente, porque revertir o reactivar devuelve las categorías de un valor
+anterior, ya con el nombre nuevo. Costo aceptado: la que se sumó por error no se corrige; se da de baja y se crea otra. La baja
+no cambia. Archivos: `sql/180`.
 
 **Las tres categorías van en una sola tabla, con un `tipo`, y la base no deja poner un insumo en una categoría
 de paquete (2026-11-02).** Siguen la misma regla: en tres tablas iguales, se escribiría tres veces.

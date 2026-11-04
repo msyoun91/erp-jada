@@ -313,7 +313,10 @@ fijos, se comportan como el costo.**
   accesorio sean el mismo. La define Técnica, y sigue la regla de las categorías (*El insumo*): se edita
   mientras ningún insumo lo use, después su nombre queda fijo, se da de baja solo sin variantes activas y
   el nombre es único entre los activos (2026-11-02). Renombrar "Negro" a "Negro mate" cambiaba lo que ven
-  vendedor y cliente sin que nadie lo aprobara.
+  vendedor y cliente sin que nadie lo aprobara. Por eso también queda fijo si lo ofrece una versión enviada, aunque ningún
+  insumo lo use (2026-11-04, `sql/180`): pasa con una versión de todo indistinto. Como en la categoría de paquete, si la única
+  enviada se retira o se devuelve, se puede volver a renombrar. La baja no cambia (*Un color de baja no se mira al calcular
+  la oferta*).
 - **Tener color o ser indistinto queda fijo con la unidad, al enviarse una versión que usa el insumo
   (2026-11-02).** Sumarle Negro a un Tornillo indistinto podía dejar de ofrecer en blanco una ventana. Para
   un Tornillo negro se carga otro insumo, con versión nueva de cada paquete que lo use.

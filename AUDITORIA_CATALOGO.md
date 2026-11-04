@@ -312,6 +312,10 @@ el editor no traduce ese error. En el mismo grupo, `catalogo_numero_texto` muest
 
 ### 13. Renombres y bajas que no pasan por el gerente — Baja
 
+**Resuelto (2026-11-04, `sql/180`):** el nombre de un color que ofrece una versión enviada queda fijo, y el de una categoría usada en
+algún valor de un servicio en %, también. Se miró toda la historia y no solo el valor vigente, como proponía esto, porque revertir devuelve
+categorías anteriores. Las bajas no cambian: ya están decididas (`versiones.md`, `insumos.md`). Lo de abajo describe lo que pasaba antes.
+
 Los dos casos se **reprodujeron**:
 - **Color.** `catalogo_colores_validar` fija el nombre solo si alguna variante usa el color. Una versión publicada puede ofrecer
   "Negro" sin que ningún insumo tenga variante negra, por ejemplo con todo de color indistinto. Lucía lo renombra a "Rojo fuego" o

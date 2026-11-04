@@ -277,7 +277,7 @@ export function InsumosView({
       {panel === "categorias" && (
         <ListaNombresPanel
           titulo={tipo === "insumo" ? "Categorías de insumo" : "Categorías de servicio"}
-          regla="El nombre se edita hasta que tiene algo adentro; se da de baja sin nada activo adentro."
+          regla="El nombre se edita hasta que tiene algo adentro o un servicio en % la usa; se da de baja sin nada activo adentro."
           nueva="Nueva categoría"
           items={categorias}
           puedeEditar={puedeEditar}
@@ -291,7 +291,7 @@ export function InsumosView({
       {panel === "colores" && (
         <ListaNombresPanel
           titulo="Colores"
-          regla="Una lista para todos los insumos. El nombre se edita hasta que un insumo lo usa; se da de baja sin variantes activas."
+          regla="Una lista para todos los insumos. El nombre se edita hasta que un insumo lo usa o se envía una versión que lo ofrece; se da de baja sin variantes activas."
           nueva="Nuevo color"
           items={colores}
           puedeEditar={puedeEditar}

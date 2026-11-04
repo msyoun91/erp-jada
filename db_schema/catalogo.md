@@ -40,13 +40,13 @@ Ficha y decisiones: `decisiones/catalogo/README.md`. Tests: `sql/tests/catalogo_
 | nombre | text | sin espacios sobrantes. Único por `tipo` entre las activas, sin distinguir mayúsculas |
 | activo, created_at, updated_at | | |
 
-Trigger `catalogo_categorias_validar` (DEFINER): con un insumo adentro, aun de baja, o con una versión enviada, el nombre
-queda fijo (CA006); con un insumo activo o la versión publicada de un paquete activo, no se da de baja (CA007).
+Trigger `catalogo_categorias_validar` (DEFINER): con un insumo adentro, aun de baja, con una versión enviada o en cualquier
+valor de un servicio en %, el nombre queda fijo (CA006); con un insumo activo o la versión publicada de un paquete activo, no se da de baja (CA007).
 
 ## catalogo_colores
 
 `id`, `nombre` (único entre los activos, sin distinguir mayúsculas), `activo`, `created_at`, `updated_at`. Trigger
-`catalogo_colores_validar`: con una variante, aun de baja, el nombre queda fijo (CA006); con una activa, no se da de baja
+`catalogo_colores_validar` (DEFINER): con una variante, aun de baja, o si lo ofrece una versión enviada, el nombre queda fijo (CA006); con una activa, no se da de baja
 (CA007).
 
 ## catalogo_insumos
