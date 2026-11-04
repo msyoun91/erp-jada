@@ -43,9 +43,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   → *Una variable que no carga el vendedor puede definirse según un material*) y el vendedor que cambia lo que sigue a otro (→ *la pareja es
   una sugerencia*). **Siguiente:** el editor (variable según material con su tabla de valores, opciones sueltas, "secundario" en lo que sigue a
   otro) y la calculadora (elegir a mano lo que sigue a otro). La comparación al aprobar no pide nada propio si sale de los dos cálculos: revisarlo
-  al hacer esa pantalla. **Antes, a medias:** la regresión de `sql/167`. Pasaron `catalogo_segun` (317 / 317), `catalogo_paquetes` (515 / 515), `catalogo_ciclo` (712 / 712), `catalogo_despiece` (652 / 652) y `catalogo_precio` (328 / 328), y
-  sin deriva entre `sql/167` y la base (`md5`, las 11 funciones). **Falta, en su propia sesión porque son ~30–40k tokens para leer y otros
-  tantos para pegar:** `catalogo_avisos`.
+  al hacer esa pantalla. La regresión de `sql/167` está completa: pasaron `catalogo_segun` (317 / 317), `catalogo_paquetes` (515 / 515), `catalogo_ciclo` (712 / 712), `catalogo_despiece` (652 / 652), `catalogo_precio` (328 / 328) y `catalogo_avisos` (280 / 280), y
+  sin deriva entre `sql/167` y la base (`md5`, las 11 funciones).
 
   Paquetes a la venta y su formulario se escriben con Presupuestos.
 - **Notificaciones — la bandeja todavía tarda ~0,6 s con obras recibidas**, sin caso real todavía (2026-11-04). Lo que queda es la RLS de
