@@ -147,7 +147,7 @@ El contenido de un borrador se escribe directo, con RLS y triggers. Alta, versi�
 lo cambian las funciones del ciclo (*El ciclo*). Un borrador puede estar a medias: acá solo se frena lo que no tiene sentido
 en ningún momento.
 
-**`catalogo_paquetes`:** `id`, `activo`, `baja_insumo_id`, `baja_variante_id`, `created_at`, `updated_at`. GRANT de UPDATE solo
+**`catalogo_paquetes`:** `id`, `activo`, `baja_insumo_id`, `baja_variante_id`, `created_at`, `updated_at`. GRANT de INSERT y UPDATE solo
 sobre `activo`, con `catalogo_armar`: dar de baja y reactivar es un UPDATE. Las dos `baja_*` las pone la cascada (*El ciclo*);
 vacías y de baja es a mano. CHECK `catalogo_paquetes_baja`: a lo sumo una, y ninguna si está activo.
 

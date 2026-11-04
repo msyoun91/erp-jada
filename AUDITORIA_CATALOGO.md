@@ -273,6 +273,8 @@ como ya pasa al sacar.
 
 ### 10. Un paquete con una causa de baja inventada — Baja
 
+**Resuelto (2026-11-04, `sql/177`):** el INSERT directo solo alcanza a `activo`. Lo de abajo describe lo que pasaba antes.
+
 **Qué pasa.** `GRANT INSERT ON catalogo_paquetes` es por tabla (`sql/160_catalogo_paquetes.sql:421`), y `sql/162` le sumó
 `baja_insumo_id` y `baja_variante_id`.
 
