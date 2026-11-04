@@ -234,11 +234,13 @@ export type Condicion = Omit<
   Fila<"catalogo_condiciones">,
   "condicion_arbol" | "created_at" | "updated_at" | "version_id"
 >;
+export type ValorVariable = { id: string; variable_id: string; opcion_id: string; formula: string };
 export type Caso = { id: string; nombre: string; entrada: Entrada };
 
 export type Contenido = {
   piezas: Pieza[];
   variables: Variable[];
+  valores: ValorVariable[];
   materiales: Material[];
   opciones: Opcion[];
   condiciones: Condicion[];
@@ -471,8 +473,9 @@ export const variableSchema = z
     maximo: numeroNulo,
     secundario: z.boolean().default(false),
     a_produccion: z.boolean().default(true),
+    segun_material_id: uuidOpcional,
   })
-  .refine((d) => d.ingresa_vendedor || d.formula, {
+  .refine((d) => d.ingresa_vendedor || d.segun_material_id || d.formula, {
     path: ["formula"],
     message: "Si no la carga el vendedor, lleva una fórmula",
   })
@@ -482,6 +485,7 @@ export const variableSchema = z
     if (!d.ingresa_vendedor) {
       return {
         ...d,
+        formula: d.segun_material_id ? null : d.formula,
         es_lista: false,
         es_cantidad: false,
         minimo: null,
@@ -495,6 +499,7 @@ export const variableSchema = z
       const pred = d.valor_predeterminado && valores.includes(d.valor_predeterminado) ? d.valor_predeterminado : null;
       return {
         ...d,
+        segun_material_id: null,
         formula: null,
         es_cantidad: false,
         minimo: null,
@@ -503,9 +508,18 @@ export const variableSchema = z
         valor_predeterminado: pred,
       };
     }
-    return { ...d, valores: [], valor_predeterminado: null };
+    return { ...d, segun_material_id: null, valores: [], valor_predeterminado: null };
   });
 export type VariableForm = z.input<typeof variableSchema>;
+
+export const valorVariableSchema = z.object({
+  id: idSchema.nullable(),
+  version_id: idSchema,
+  variable_id: idSchema,
+  opcion_id: idSchema,
+  formula: z.string().trim().min(1, "Escribí un número o una fórmula").max(2000, "Máximo 2000 caracteres"),
+});
+export type ValorVariableForm = z.input<typeof valorVariableSchema>;
 
 export const materialSchema = z
   .object({
@@ -542,7 +556,7 @@ export const materialSchema = z
     eleccion: d.tipo === "elige_sistema" ? d.eleccion : null,
     sigue_material_id: d.tipo === "sigue" ? d.sigue_material_id : null,
     sin_eleccion: d.tipo === "elige_vendedor" && d.sin_eleccion,
-    secundario: d.tipo === "elige_vendedor" && d.secundario,
+    secundario: (d.tipo === "elige_vendedor" || d.tipo === "sigue") && d.secundario,
   }));
 export type MaterialForm = z.input<typeof materialSchema>;
 
@@ -579,6 +593,7 @@ export type CasoForm = z.input<typeof casoSchema>;
 export const TABLAS_CONTENIDO = [
   "catalogo_piezas",
   "catalogo_variables",
+  "catalogo_variables_valores",
   "catalogo_materiales",
   "catalogo_opciones",
   "catalogo_condiciones",

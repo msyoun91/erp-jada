@@ -31,6 +31,7 @@ import {
   renombrarSchema,
   revertirSchema,
   sacarSchema,
+  valorVariableSchema,
   varianteSchema,
   variableSchema,
   versionDatosSchema,
@@ -60,6 +61,7 @@ import {
   type PorcentajeForm,
   type PrecioDetalle,
   type RenombrarForm,
+  type ValorVariableForm,
   type RevertirForm,
   type SacarForm,
   type TablaContenido,
@@ -449,6 +451,7 @@ export async function calcular(input: CalcularForm) {
 const REPETIDO: Record<TablaContenido, string> = {
   catalogo_piezas: "Ya hay una pieza con ese nombre en la versión",
   catalogo_variables: "Ya hay una variable con ese nombre en la versión",
+  catalogo_variables_valores: "Esa opción ya tiene un valor",
   catalogo_materiales: "Ya hay un material múltiple con ese nombre en la pieza",
   catalogo_opciones: "Ese insumo ya es una opción, o ya hay una predeterminada",
   catalogo_condiciones: "Esa condición ya está",
@@ -523,10 +526,27 @@ export async function guardarVariable(input: VariableForm) {
   if (!parsed.success) return invalido(parsed.error.issues);
   const { id, version_id, orden, ...datos } = parsed.data;
   const supabase = await createClient();
+  const { data, error } = id
+    ? await supabase.from("catalogo_variables").update(datos).eq("id", id).select("id").single()
+    : await supabase
+        .from("catalogo_variables")
+        .insert({ ...datos, version_id, orden })
+        .select("id")
+        .single();
+  if (error) return falloContenido("catalogo_variables", error);
+  revalidatePath("/catalogo", "layout");
+  return { success: true as const, id: data.id };
+}
+
+export async function guardarValorVariable(input: ValorVariableForm) {
+  const parsed = valorVariableSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const { id, formula, ...resto } = parsed.data;
+  const supabase = await createClient();
   const { error } = id
-    ? await supabase.from("catalogo_variables").update(datos).eq("id", id)
-    : await supabase.from("catalogo_variables").insert({ ...datos, version_id, orden });
-  return listoContenido("catalogo_variables", error);
+    ? await supabase.from("catalogo_variables_valores").update({ formula }).eq("id", id)
+    : await supabase.from("catalogo_variables_valores").insert({ ...resto, formula });
+  return listoContenido("catalogo_variables_valores", error);
 }
 
 export async function guardarMaterial(input: MaterialForm) {

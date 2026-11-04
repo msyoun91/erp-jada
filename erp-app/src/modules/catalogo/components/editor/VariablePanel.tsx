@@ -1,13 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
-import { guardarVariable } from "../../actions";
-import { variableSchema, type Condicion, type Pieza, type Variable, type VariableForm } from "../../types";
+import { guardarValorVariable, guardarVariable, sacar } from "../../actions";
+import {
+  variableSchema,
+  type Contenido,
+  type Material,
+  type Opcion,
+  type ValorVariable,
+  type Variable,
+  type VariableForm,
+} from "../../types";
 import { CondicionesLista } from "./CondicionesLista";
+import type { InsumosPorId } from "./InsumoSelect";
 import { Nombres } from "./Nombres";
 
 const numeroONulo = (v: unknown) => (v === "" || v === null ? null : Number(v));
@@ -17,22 +27,24 @@ export function VariablePanel({
   versionId,
   variable,
   piezaId,
-  piezas,
   orden,
-  condiciones,
+  contenido,
+  insumos,
   nombres,
+  onCreado,
   onClose,
 }: {
   versionId: string;
   variable: Variable | null;
   piezaId: string | null;
-  piezas: Pieza[];
   orden: number;
-  condiciones: Condicion[];
+  contenido: Contenido;
+  insumos: InsumosPorId;
   nombres: string[];
+  onCreado: (id: string) => void;
   onClose: () => void;
 }) {
-  const { register, handleSubmit, control, formState } = useForm<VariableForm>({
+  const { register, handleSubmit, control, formState, getValues, reset } = useForm<VariableForm>({
     resolver: zodResolver(variableSchema),
     defaultValues: variable
       ? { ...variable, version_id: versionId, valores: variable.valores.join("\n") }
@@ -52,10 +64,16 @@ export function VariablePanel({
           maximo: null,
           secundario: false,
           a_produccion: true,
+          segun_material_id: null,
         },
   });
   const { errors, isSubmitting } = formState;
-  const [ingresa, lista] = useWatch({ control, name: ["ingresa_vendedor", "es_lista"] });
+  const [ingresa, lista, segunId] = useWatch({ control, name: ["ingresa_vendedor", "es_lista", "segun_material_id"] });
+  const segun = !ingresa && segunId ? segunId : null;
+  const materiales = contenido.materiales.filter((m) => m.tipo !== "unico");
+  const nombrePieza = (id: string) => contenido.piezas.find((p) => p.id === id)?.nombre;
+  const materialGuardado =
+    variable?.segun_material_id === segun ? materiales.find((m) => m.id === segun) : undefined;
 
   async function guardar(d: VariableForm) {
     const r = await guardarVariable(d);
@@ -64,7 +82,11 @@ export function VariablePanel({
       return;
     }
     toast.success(variable ? "Variable guardada" : `Se sumó ${d.nombre}`);
-    onClose();
+    // Los valores cuelgan de la variable guardada y de ese material: el panel sigue abierto para cargarlos.
+    const material = !d.ingresa_vendedor && d.segun_material_id;
+    if (!material || material === variable?.segun_material_id) onClose();
+    else if (variable) reset(getValues());
+    else onCreado(r.id);
   }
 
   return (
@@ -86,7 +108,7 @@ export function VariablePanel({
           <Campo id="var-pieza" label="Dónde está" error={errors.pieza_id}>
             <select id="var-pieza" className="input" {...register("pieza_id")}>
               <option value="">Por sí sola (de todo el paquete)</option>
-              {piezas.map((p) => (
+              {contenido.piezas.map((p) => (
                 <option key={p.id} value={p.id}>
                   En {p.nombre}
                 </option>
@@ -109,7 +131,20 @@ export function VariablePanel({
             </label>
           )}
 
-          {ingresa && lista ? (
+          {!ingresa && (
+            <Campo id="var-segun" label="De dónde sale" error={errors.segun_material_id}>
+              <select id="var-segun" className="input" {...register("segun_material_id")}>
+                <option value="">De una fórmula</option>
+                {materiales.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    Según {m.nombre} · {nombrePieza(m.pieza_id)}
+                  </option>
+                ))}
+              </select>
+            </Campo>
+          )}
+
+          {segun ? null : ingresa && lista ? (
             <>
               <Campo id="var-valores" label="Valores, uno por renglón" error={errors.valores}>
                 <textarea id="var-valores" rows={4} className={claseInput(errors.valores)} {...register("valores")} />
@@ -133,7 +168,7 @@ export function VariablePanel({
               />
             </Campo>
           )}
-          {!(ingresa && lista) && <Nombres nombres={nombres} />}
+          {!segun && !(ingresa && lista) && <Nombres nombres={nombres} />}
 
           {ingresa && !lista && (
             <>
@@ -185,10 +220,130 @@ export function VariablePanel({
           </label>
         </form>
 
+        {segun &&
+          (variable && materialGuardado ? (
+            <Valores
+              versionId={versionId}
+              variable={variable}
+              material={materialGuardado}
+              contenido={contenido}
+              insumos={insumos}
+              nombres={nombres}
+            />
+          ) : (
+            <p className="t-caption">Al guardar se cargan los valores, uno por cada opción de ese material.</p>
+          ))}
+
         {variable && (
-          <CondicionesLista versionId={versionId} de={{ variable_id: variable.id }} condiciones={condiciones} />
+          <CondicionesLista
+            versionId={versionId}
+            de={{ variable_id: variable.id }}
+            condiciones={contenido.condiciones}
+          />
         )}
       </div>
     </RightPanel>
+  );
+}
+
+// Un valor por cada opción del material, "ninguna" no: un material que puede no dar nada ya frena el envío.
+function Valores({
+  versionId,
+  variable,
+  material,
+  contenido,
+  insumos,
+  nombres,
+}: {
+  versionId: string;
+  variable: Variable;
+  material: Material;
+  contenido: Contenido;
+  insumos: InsumosPorId;
+  nombres: string[];
+}) {
+  const nombreInsumo = (id: string | null) => insumos.get(id ?? "")?.nombre ?? "—";
+  const opciones = contenido.opciones.filter((o) => o.material_id === material.id && o.insumo_id);
+
+  // Dos opciones del que elige pueden tener la misma pareja, y cada fila lleva su valor.
+  function etiqueta(o: Opcion) {
+    if (material.tipo !== "sigue") return nombreInsumo(o.insumo_id);
+    if (!o.sigue_opcion_id) return `${nombreInsumo(o.insumo_id)} · suelta`;
+    const delQueElige = contenido.opciones.find((x) => x.id === o.sigue_opcion_id);
+    return `${nombreInsumo(o.insumo_id)} · con ${nombreInsumo(delQueElige?.insumo_id ?? null)}`;
+  }
+
+  return (
+    <section className="flex flex-col gap-2">
+      <h4 className="t-label">Valor según {material.nombre}</h4>
+      {opciones.length === 0 ? (
+        <p className="t-body-m text-warning-text">{material.nombre} todavía no tiene opciones.</p>
+      ) : (
+        <>
+          <p className="t-caption">Número o fórmula. Se guarda al salir del campo; una opción sin valor frena el envío.</p>
+          <ul className="flex flex-col gap-2">
+            {opciones.map((o) => (
+              <ValorFila
+                key={o.id}
+                versionId={versionId}
+                variableId={variable.id}
+                opcionId={o.id}
+                etiqueta={etiqueta(o)}
+                valor={contenido.valores.find((x) => x.variable_id === variable.id && x.opcion_id === o.id)}
+              />
+            ))}
+          </ul>
+          <Nombres nombres={nombres.filter((n) => n !== variable.nombre)} />
+        </>
+      )}
+    </section>
+  );
+}
+
+function ValorFila({
+  versionId,
+  variableId,
+  opcionId,
+  etiqueta,
+  valor,
+}: {
+  versionId: string;
+  variableId: string;
+  opcionId: string;
+  etiqueta: string;
+  valor: ValorVariable | undefined;
+}) {
+  const [texto, setTexto] = useState(valor?.formula ?? "");
+  const id = `valor-${opcionId}`;
+
+  async function guardar() {
+    const nuevo = texto.trim();
+    if (nuevo === (valor?.formula ?? "")) return;
+    if (!nuevo && !valor) return;
+    const r = nuevo
+      ? await guardarValorVariable({
+          id: valor?.id ?? null,
+          version_id: versionId,
+          variable_id: variableId,
+          opcion_id: opcionId,
+          formula: nuevo,
+        })
+      : await sacar({ tabla: "catalogo_variables_valores", id: valor!.id });
+    if (!r.success) toast.error(r.error);
+  }
+
+  return (
+    <li className="flex flex-col gap-1">
+      <label htmlFor={id} className="t-body-m">
+        {etiqueta}
+      </label>
+      <input
+        id={id}
+        className="input font-mono"
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        onBlur={guardar}
+      />
+    </li>
   );
 }

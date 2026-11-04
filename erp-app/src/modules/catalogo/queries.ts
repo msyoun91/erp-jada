@@ -196,7 +196,7 @@ export async function getVersion(id: string): Promise<Version | null> {
 
 export async function getContenido(versionId: string): Promise<Contenido> {
   const supabase = await createClient();
-  const [piezas, variables, materiales, opciones, condiciones, casos] = await Promise.all([
+  const [piezas, variables, valores, materiales, opciones, condiciones, casos] = await Promise.all([
     supabase
       .from("catalogo_piezas")
       .select(
@@ -213,6 +213,11 @@ export async function getContenido(versionId: string): Promise<Contenido> {
       .eq("version_id", versionId)
       .eq("activo", true)
       .order("orden"),
+    supabase
+      .from("catalogo_variables_valores")
+      .select("id, variable_id, opcion_id, formula")
+      .eq("version_id", versionId)
+      .eq("activo", true),
     supabase
       .from("catalogo_materiales")
       .select(
@@ -242,10 +247,11 @@ export async function getContenido(versionId: string): Promise<Contenido> {
       .eq("activo", true)
       .order("created_at"),
   ]);
-  for (const r of [piezas, variables, materiales, opciones, condiciones, casos]) if (r.error) throw r.error;
+  for (const r of [piezas, variables, valores, materiales, opciones, condiciones, casos]) if (r.error) throw r.error;
   return {
     piezas: piezas.data ?? [],
     variables: variables.data ?? [],
+    valores: valores.data ?? [],
     materiales: materiales.data ?? [],
     opciones: opciones.data ?? [],
     condiciones: condiciones.data ?? [],

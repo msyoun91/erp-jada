@@ -5,7 +5,7 @@ import type { Contenido, Entrada } from "./types";
 export type EntradaEstado = {
   variables: Record<string, string>;
   piezas: Record<string, "" | "si" | "no">;
-  // "" la predeterminada, "ninguna" sin elección, o el insumo.
+  // "" la predeterminada o la pareja, "ninguna" sin elección, o el insumo.
   elecciones: Record<string, string>;
   color: string;
 };
@@ -31,7 +31,7 @@ export function aEntrada(e: EntradaEstado, c: Contenido): Entrada {
   for (const m of c.materiales) {
     const valor = e.elecciones[m.id];
     const nombrePieza = pieza.get(m.pieza_id);
-    if (m.tipo !== "elige_vendedor" || !valor || !nombrePieza || !m.nombre) continue;
+    if ((m.tipo !== "elige_vendedor" && m.tipo !== "sigue") || !valor || !nombrePieza || !m.nombre) continue;
     entrada.elecciones ??= {};
     entrada.elecciones[nombrePieza] ??= {};
     entrada.elecciones[nombrePieza][m.nombre] = valor === "ninguna" ? null : valor;

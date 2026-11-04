@@ -87,7 +87,7 @@ export function Calculadora({
 
   const variables = contenido.variables.filter((v) => v.ingresa_vendedor);
   const piezas = contenido.piezas.filter((p) => p.opcional);
-  const elegibles = contenido.materiales.filter((m) => m.tipo === "elige_vendedor");
+  const elegibles = contenido.materiales.filter((m) => m.tipo === "elige_vendedor" || m.tipo === "sigue");
   const serviciosOpcionales =
     resultado && "servicios" in resultado ? (resultado as PrecioDetalle).servicios.filter((s) => s.opcional) : [];
 
@@ -156,8 +156,11 @@ export function Calculadora({
         ))}
 
         {elegibles.map((m) => {
-          const opciones = contenido.opciones.filter((o) => o.material_id === m.id && o.insumo_id);
+          const propias = contenido.opciones.filter((o) => o.material_id === m.id);
+          // Dos opciones del que elige pueden tener la misma pareja: el vendedor elige el insumo, una sola vez.
+          const opciones = [...new Map(propias.filter((o) => o.insumo_id).map((o) => [o.insumo_id, o])).values()];
           const pred = opciones.find((o) => o.predeterminada);
+          const sigue = m.tipo === "sigue";
           return (
             <label key={m.id} className="flex flex-col gap-1">
               <span className="t-label">
@@ -169,7 +172,11 @@ export function Calculadora({
                 onChange={(e) => set("elecciones", m.id, e.target.value)}
               >
                 <option value="">
-                  {pred ? `Predeterminada: ${nombreInsumo.get(pred.insumo_id ?? "")}` : "Sin predeterminada"}
+                  {sigue
+                    ? "La pareja de lo elegido"
+                    : pred
+                      ? `Predeterminada: ${nombreInsumo.get(pred.insumo_id ?? "")}`
+                      : "Sin predeterminada"}
                 </option>
                 {opciones.map((o) => (
                   <option key={o.id} value={o.insumo_id ?? ""}>
@@ -177,6 +184,7 @@ export function Calculadora({
                   </option>
                 ))}
                 {m.sin_eleccion && <option value="ninguna">Sin elección</option>}
+                {sigue && propias.some((o) => !o.insumo_id) && <option value="ninguna">Ninguna</option>}
               </select>
             </label>
           );

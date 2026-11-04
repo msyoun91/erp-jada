@@ -119,6 +119,22 @@ desde su lista.** La calculadora ya arma la entrada de un vendedor; un formulari
 **No se construyó copiar una pieza suelta.** Sus variables chocarían con los nombres únicos (*Qué es un paquete*), y duplicar
 el paquete o sacar una versión nueva desde otra ya ahorran la recarga. Se suma si una carga real lo pide.
 
+**Una variable que no carga el vendedor elige en una sola lista de dónde sale: "De una fórmula" o "Según Vidrio · Hoja" (2026-11-04).**
+Una lista evita un interruptor más y un estado "según, sin material". Lista todos los múltiples y la base dice por qué no vale alguno
+(lo frena el envío): filtrarlos acá repetiría esa regla. Archivos: `components/editor/VariablePanel.tsx`.
+
+**Los valores se cargan en el panel de la variable, uno por opción, y cada uno se guarda al salir del campo; borrarlo lo saca (2026-11-04).**
+Cuelgan de la variable guardada y de ese material: al elegir o cambiar el material, Guardar deja el panel abierto para cargarlos. En un
+material que sigue a otro, cada fila dice de dónde viene ("6mm · con Laminado", "10mm · suelta"), porque dos parejas pueden ser el mismo
+insumo con valores distintos.
+
+**La calculadora lista cada insumo una sola vez en lo que sigue a otro y arranca en "La pareja de lo elegido" (2026-11-04).** El vendedor
+elige un insumo, y la base decide la fila (`paquete.md` → *la pareja es una sugerencia*). "Más opciones" no se pliega acá: es del
+formulario de Presupuestos. Archivos: `components/Calculadora.tsx`, `entrada.ts`.
+
+**La comparación al aprobar no pide nada propio (2026-11-04).** `calcular` manda la misma entrada a las dos versiones, y lo elegido a mano
+va en ella.
+
 ## Sin "?" en los campos (2026-11-03)
 
 **~~Los campos difíciles llevan un "?" con un ejemplo~~: se retiró a pedido del usuario, con `components/ui/Ayuda.tsx` y

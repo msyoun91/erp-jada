@@ -39,12 +39,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   navegador**: la sesión que las escribió no tenía la base. **Siguiente:** probarlas con un usuario de cada persona (Técnica,
   Administración, gerente, quien revisa cortes) y cargar el primer paquete real, que es la prueba del despiece y del precio
   (`decisiones/catalogo/README.md`).
-  **Base lista, falta la pantalla (2026-11-04, `sql/167`):** la variable según un material que se elige (`decisiones/catalogo/paquete.md`
-  → *Una variable que no carga el vendedor puede definirse según un material*) y el vendedor que cambia lo que sigue a otro (→ *la pareja es
-  una sugerencia*). **Siguiente:** el editor (variable según material con su tabla de valores, opciones sueltas, "secundario" en lo que sigue a
-  otro) y la calculadora (elegir a mano lo que sigue a otro). La comparación al aprobar no pide nada propio si sale de los dos cálculos: revisarlo
-  al hacer esa pantalla. La regresión de `sql/167` está completa: pasaron `catalogo_segun` (317 / 317), `catalogo_paquetes` (515 / 515), `catalogo_ciclo` (712 / 712), `catalogo_despiece` (652 / 652), `catalogo_precio` (328 / 328) y `catalogo_avisos` (280 / 280), y
-  sin deriva entre `sql/167` y la base (`md5`, las 11 funciones).
+  **Falta en el editor (2026-11-04):** las fórmulas de una pareja. `paquete.md` cuenta con Laminado → Contravidrio 6mm × 3 y Templado → × 5, pero
+  `Parejas` (`MaterialPanel.tsx`) solo elige el insumo: no abre la opción, y volver a elegirlo guarda la fila sin fórmulas. Las opciones sueltas sí
+  tienen su panel.
 
   Paquetes a la venta y su formulario se escriben con Presupuestos.
 - **Notificaciones — la bandeja todavía tarda ~0,6 s con obras recibidas**, sin caso real todavía (2026-11-04). Lo que queda es la RLS de

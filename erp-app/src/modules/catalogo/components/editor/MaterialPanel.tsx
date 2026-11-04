@@ -60,6 +60,7 @@ export function MaterialPanel({
   const [tipo, insumoId] = useWatch({ control, name: ["tipo", "insumo_id"] });
   const insumo = insumos.get(insumoId ?? "");
   const opciones = material ? contenido.opciones.filter((o) => o.material_id === material.id) : [];
+  const sueltas = opciones.filter((o) => !o.sigue_opcion_id);
   const esServicio = tipo === "unico" && insumo?.tipo === "servicio";
 
   // Un múltiple no tiene unidad: la tiene cada opción.
@@ -69,6 +70,16 @@ export function MaterialPanel({
   const seguibles = contenido.materiales.filter(
     (m) => m.id !== material?.id && (m.tipo === "elige_vendedor" || m.tipo === "elige_sistema"),
   );
+
+  function detalleOpcion(o: Opcion) {
+    return [
+      o.medida,
+      o.ancho && o.alto && `${formulaAparte(o.ancho)} × ${formulaAparte(o.alto)}`,
+      o.cantidad && `× ${formulaAparte(o.cantidad)}`,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
 
   async function grabar(d: MaterialForm) {
     const r = await guardarMaterial(d);
@@ -155,13 +166,7 @@ export function MaterialPanel({
                   <Fila
                     key={o.id}
                     titulo={`${insumos.get(o.insumo_id ?? "")?.nombre ?? "—"}${o.predeterminada ? " · predeterminada" : ""}`}
-                    detalle={[
-                      o.medida,
-                      o.ancho && o.alto && `${formulaAparte(o.ancho)} × ${formulaAparte(o.alto)}`,
-                      o.cantidad && `× ${formulaAparte(o.cantidad)}`,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
+                    detalle={detalleOpcion(o)}
                     onAbrir={() => setOpcion(o)}
                     tabla="catalogo_opciones"
                     id={o.id}
@@ -218,16 +223,16 @@ export function MaterialPanel({
             )}
 
             {tipo === "elige_vendedor" && (
-              <>
-                <label className="tap-target flex items-center gap-2">
-                  <input type="checkbox" {...register("sin_eleccion")} />
-                  <span className="t-body-m">Permite &quot;sin elección&quot;</span>
-                </label>
-                <label className="tap-target flex items-center gap-2">
-                  <input type="checkbox" {...register("secundario")} />
-                  <span className="t-body-m">Secundario: va plegado en &quot;Más opciones&quot;</span>
-                </label>
-              </>
+              <label className="tap-target flex items-center gap-2">
+                <input type="checkbox" {...register("sin_eleccion")} />
+                <span className="t-body-m">Permite &quot;sin elección&quot;</span>
+              </label>
+            )}
+            {(tipo === "elige_vendedor" || tipo === "sigue") && (
+              <label className="tap-target flex items-center gap-2">
+                <input type="checkbox" {...register("secundario")} />
+                <span className="t-body-m">Secundario: va plegado en &quot;Más opciones&quot;</span>
+              </label>
             )}
 
             <CamposMedida
@@ -271,7 +276,30 @@ export function MaterialPanel({
           </form>
 
           {material?.tipo === "sigue" && material.sigue_material_id && (
-            <Parejas versionId={versionId} material={material} contenido={contenido} insumos={insumos} />
+            <>
+              <Parejas versionId={versionId} material={material} contenido={contenido} insumos={insumos} />
+              <section className="flex flex-col gap-2">
+                <h4 className="t-label">Opciones sueltas</h4>
+                <p className="t-caption">No son pareja de nadie: el vendedor las elige de la lista, nunca se completan solas.</p>
+                <ul className="flex flex-col">
+                  {sueltas.map((o) => (
+                    <Fila
+                      key={o.id}
+                      titulo={insumos.get(o.insumo_id ?? "")?.nombre ?? "—"}
+                      detalle={detalleOpcion(o)}
+                      onAbrir={() => setOpcion(o)}
+                      tabla="catalogo_opciones"
+                      id={o.id}
+                      hermanos={sueltas.map((x) => x.id)}
+                      que="la opción"
+                    />
+                  ))}
+                </ul>
+                <button className="btn btn-secondary btn-sm self-start" onClick={() => setOpcion("nueva")}>
+                  Sumar opción suelta
+                </button>
+              </section>
+            </>
           )}
 
           {material && (
@@ -344,7 +372,7 @@ function Parejas({
   return (
     <section className="flex flex-col gap-2">
       <h4 className="t-label">Parejas</h4>
-      <p className="t-caption">El vendedor elige una vez, en el otro material: esta queda con la pareja.</p>
+      <p className="t-caption">Se completa con la pareja de lo que se elige en el otro material; el vendedor puede cambiarla.</p>
       <ul className="flex flex-col gap-2">
         {delQueElige.map((o) => {
           const actual = propias.find((p) => p.sigue_opcion_id === o.id);

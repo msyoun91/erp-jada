@@ -40,6 +40,8 @@ export function EditorView({
   const sueltas = contenido.variables.filter((v) => !v.pieza_id);
 
   function detalleVariable(v: Variable) {
+    if (v.segun_material_id)
+      return `según ${contenido.materiales.find((m) => m.id === v.segun_material_id)?.nombre ?? "un material"}`;
     if (!v.ingresa_vendedor) return `= ${v.formula ?? ""}`;
     if (v.es_lista)
       return `lista: ${v.valores.join(", ")}${v.valor_predeterminado ? ` · ${v.valor_predeterminado}` : ""}`;
@@ -231,10 +233,11 @@ export function EditorView({
           versionId={version.id}
           variable={panel.id ? (contenido.variables.find((v) => v.id === panel.id) ?? null) : null}
           piezaId={panel.piezaId}
-          piezas={contenido.piezas}
           orden={contenido.variables.filter((v) => v.pieza_id === panel.piezaId).length}
-          condiciones={contenido.condiciones}
+          contenido={contenido}
+          insumos={porId}
           nombres={nombres}
+          onCreado={(id) => setPanel({ tipo: "variable", id, piezaId: panel.piezaId })}
           onClose={() => setPanel(null)}
         />
       )}
