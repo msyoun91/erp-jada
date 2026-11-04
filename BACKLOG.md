@@ -41,11 +41,10 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (`decisiones/catalogo/README.md`).
 
   Paquetes a la venta y su formulario se escriben con Presupuestos.
-- **Notificaciones — la bandeja tarda según cuántos avisos tenga cada uno**, sin decidir (2026-11-03). Ya pasaba antes de los avisos del
-  catálogo: con 30 avisos, `notificaciones_listar` tarda ~1,6 s como `authenticated` y ~50 ms como dueño. El plan repite la unión
-  `resuelta` por cada aviso, y cada vez recorre `obras` con su RLS (~59 ms, con los datos de prueba de esta base). Con
-  `resuelta AS MATERIALIZED` bajó a ~16 ms en una prueba con avisos que no resuelven a ninguna fila. Falta aplicarlo y correr los diez tests que
-  la usan. Por esto `sql/tests/catalogo_avisos.sql` lee casi todo con `catalogo_avisos()`.
+- **Notificaciones — la bandeja todavía tarda ~0,6 s con obras recibidas**, sin caso real todavía (2026-11-04). Lo que queda es la RLS de
+  `eventos`: pasa por `etiqueta_registro` en cada evento de la obra, ~7 ms por obra en cada aviso `obras_recibidas` o `agenda_recibida`. Crece
+  con las obras recibidas, no con la cantidad de avisos. Se mira si se nota con datos reales (`decisiones/global/infra.md` → *La bandeja calcula
+  cada conteo una vez*).
 - **Monedas**: construido (2026-10-29, `sql/155`–`156`, `decisiones/monedas.md`). El catálogo y
   Compras convierten con `monedas_convertir(monto, de, a, fecha)` (`db_schema/monedas.md`). Falta la
   prueba completa en el navegador con dos usuarios.

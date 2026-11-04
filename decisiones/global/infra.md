@@ -66,6 +66,13 @@ Verificado: sacarle la asignación al destinatario vacía su bandeja y la fila s
 baja" e "hilo dado de baja" muestran el título aunque la RLS ya no deje verlo, sin link: con la
 regla al pie de la letra se borraban antes de leerse. `decisiones/tareas/avisos.md`.
 
+**La bandeja calcula cada conteo una vez (`sql/166`, 2026-11-04).** El `LATERAL` de los avisos a
+`usuarios` se aplanaba y su conteo corría tres veces por aviso, y cada corrida recorre `eventos`, cuya
+RLS pasa por `etiqueta_registro` en cada fila. Con `OFFSET 0`, la bandeja con obras recibidas bajó de
+1,5 s a 0,6 s, con las mismas filas. Se descartó `resuelta AS MATERIALIZED`, la idea anterior: con avisos
+reales no cambia nada (1591 → 1569 ms). También un índice parcial de transferencias: mejora a un usuario
+(591 → 403 ms) y empeora a otro (377 → 528 ms). Lo que queda, en `BACKLOG.md`.
+
 **Evento es fila, estado es consulta.** "Te asignaron X" pasó una vez y tiene destinatario único.
 "Tenés 3 vencidas" es el estado de hoy: como fila necesitaría un cron que la cree a medianoche y
 otra pasada que la borre al completar la tarea. Es `notificaciones_avisos()`, mismo criterio que

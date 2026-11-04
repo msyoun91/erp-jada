@@ -198,8 +198,7 @@ END;
 $f$;
 
 -- "etiqueta | motivo | destino | actor" de cada aviso de ese tipo y ese nombre, sin los prefijos del test. "-" si no hay. Lee
--- catalogo_avisos con el mismo JOIN del actor que la bandeja: notificaciones_listar tarda unos 60 ms por aviso (BACKLOG → Notificaciones),
--- y con cientos de lecturas el test no termina. De punta a punta se prueba un caso de cada tipo, con pg_temp.listado.
+-- catalogo_avisos con el mismo JOIN del actor que la bandeja: con cientos de lecturas de notificaciones_listar el test no termina. De punta a punta se prueba un caso de cada tipo, con pg_temp.listado.
 CREATE FUNCTION pg_temp.bandeja(p_como text, p_tipo text, p_nombre text) RETURNS text LANGUAGE sql AS $f$
   SELECT coalesce(pg_temp.consultar(format($q$
     SELECT replace(replace(string_agg(concat_ws(' | ', x.etiqueta, x.motivo, x.destino, a.nombre), ' // ' ORDER BY x.etiqueta COLLATE "C", x.motivo COLLATE "C"),
