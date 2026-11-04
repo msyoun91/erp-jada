@@ -803,6 +803,8 @@ SELECT pg_temp.caso('02 el estado no se escribe directo', '42501', pg_temp.inten
 SELECT pg_temp.caso('02 la historia no se escribe directo', '42501', pg_temp.intentar(format($q$INSERT INTO catalogo_versiones_historia (version_id, accion, creado_por) VALUES (%s, 'aprobada', %s)$q$, pg_temp.l('V1'), pg_temp.l('Lucia')), 'Lucia'));
 SELECT pg_temp.caso('02 ni se cambia', '42501', pg_temp.intentar(format('UPDATE catalogo_versiones_historia SET activo = false WHERE version_id = %s', pg_temp.l('V1')), 'Carlos'));
 SELECT pg_temp.caso('02 por qué está de baja no se escribe directo', '42501', pg_temp.intentar(format('UPDATE catalogo_paquetes SET baja_insumo_id = %s WHERE id = %L', pg_temp.l('Felpa'), pg_temp.paquete('V1')), 'Lucia'));
+SELECT pg_temp.caso('02 ni se inventa el insumo al crear', '42501', pg_temp.intentar(format('INSERT INTO catalogo_paquetes (activo, baja_insumo_id) VALUES (false, %s)', pg_temp.l('Felpa')), 'Lucia'));
+SELECT pg_temp.caso('02 ni la variante', '42501', pg_temp.intentar(format('INSERT INTO catalogo_paquetes (activo, baja_variante_id) VALUES (false, %L)', pg_temp.variante('PerfilHoja', 'Negro')), 'Lucia'));
 SELECT pg_temp.caso('02 la historia: Rodrigo la ve', '6', pg_temp.consultar(format('SELECT count(*)::text FROM catalogo_versiones_historia WHERE version_id = %s', pg_temp.l('V1')), 'Rodrigo'));
 SELECT pg_temp.caso('02 la historia: Ana no', '0', pg_temp.consultar(format('SELECT count(*)::text FROM catalogo_versiones_historia WHERE version_id = %s', pg_temp.l('V1')), 'Ana'));
 SELECT pg_temp.caso('02 la historia: Juan no', '0', pg_temp.consultar(format('SELECT count(*)::text FROM catalogo_versiones_historia WHERE version_id = %s', pg_temp.l('V1')), 'Juan'));
