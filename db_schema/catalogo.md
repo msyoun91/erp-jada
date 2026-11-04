@@ -331,7 +331,7 @@ cambio) y `catalogo_precio_redondear(monto, moneda)` (ARS a entero, el resto a 2
 | `piezas` | además: `subtotal`, la suma de sus filas |
 | `costo_despiece`, `subtotal` | el costo de todas las filas, y ese más los del paso 1. NULL si no se pudieron calcular los servicios |
 | `servicios` | `[{porcentaje_id, nombre, porcentaje, paso, opcional, aplica, desde, categorias (nombres), base, monto, minimo?, minimo_moneda?, minimo_por?, minimo_convertido?}]`, por paso y nombre. Un opcional sin elegir o sin nada de sus categorías: `aplica` false, base y monto 0. Vacío si falta un costo o no se pudo calcular |
-| `sin_precio` | text[]: por qué no da número, para quien tiene `catalogo_aprobar`. Los errores del cálculo, los bloqueos, lo que no tiene costo o tipo de cambio a esa fecha, un opcional que no está, y que no quede ninguna fila. Vacío si hay precio |
+| `sin_precio` | text[]: por qué no da número, para quien tiene `catalogo_aprobar`. Los errores del cálculo, los bloqueos, lo que no tiene costo o tipo de cambio a esa fecha, que falte elegir el color, un opcional que no está, y que no quede ninguna fila. Vacío si hay precio |
 | `precio_exacto`, `precio` | sin redondear y redondeado. NULL si y solo si `sin_precio` trae algo |
 
 ## Los avisos

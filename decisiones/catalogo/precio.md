@@ -170,6 +170,11 @@ paquete sumado a un presupuesto viejo lo decide Presupuestos (`BACKLOG.md`).
 bajaba el total de un presupuesto sin que nadie lo notara, y tampoco hay un paquete que cueste $0 a propósito. El vendedor lee "Con estas
 medidas y elecciones el paquete no lleva nada". Con un bloqueo manda el bloqueo. Archivos: `sql/172`.
 
+**Sin color, no hay precio y se dice eso (2026-11-04).** Una fila de un insumo con colores que no tiene color no busca costo, y el
+gerente lee "Falta elegir el color", una sola vez aunque falte en varias filas. Antes leía "Perfil: sin costo a esa fecha" y buscaba el
+costo donde no estaba, o daba precio con el costo de la variante indistinta apagada si el insumo había pasado a colores. Solo pasa en
+borradores: tener color queda fijo al enviar la versión, así que recalcular un presupuesto viejo no cambia. Archivos: `sql/181`.
+
 ## Moneda (2026-10-29)
 
 **El presupuesto elige en qué moneda sale el precio (en USD, también si oficial o blue), y el catálogo

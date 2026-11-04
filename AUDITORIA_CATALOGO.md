@@ -329,6 +329,9 @@ Los dos casos se **reprodujeron**:
 
 ### 14. Sin color, el gerente lee "sin costo" — Baja
 
+**Resuelto (2026-11-04, `sql/181`):** una fila de un insumo con colores que no tiene color dice "Falta elegir el color" y no busca costo, así
+que tampoco usa el de la variante indistinta apagada. Lo de abajo describe lo que pasaba antes.
+
 **Qué pasa.** Si una fila de un insumo con colores no tiene color, `catalogo_precio_calcular` busca la variante con
 `color_id IS NULL`. No la encuentra y dice "Perfil: sin costo a esa fecha", cuando la causa es que no hay color. *Reproducido.*
 
