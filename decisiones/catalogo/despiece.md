@@ -97,9 +97,8 @@ peso del Perfil se puede seguir probando y no suma 0; el envío lo frena igual (
 **Sin color elegido ni base, las filas salen sin color y el despiece se calcula igual.** El color no mueve ninguna medida. Lo
 frena el envío (*Qué frena el envío*) y el precio no da número sin él.
 
-**Una opción en u hereda la `medida` del material aunque este se haya pensado en mm.** No se cobra ni vale en otra fórmula: en
-el peor caso a Producción le llega una medida de más. La base no guarda una unidad para el material, y sumarla solo serviría
-para esto. Una opción en m2 no hereda `medida`, ni una en mm o u hereda ancho y alto.
+**Una opción en u hereda la `medida` del material si este la tiene.** No se cobra ni vale en otra fórmula: en el peor caso a
+Producción le llega una medida de más. Una opción en m2 no hereda `medida`, ni una en mm o u hereda ancho y alto.
 
 **Entre piezas contradictorias gana destildar:** con Cortina marcada y Cajón destildado, no van ninguna de las dos. El
 formulario no lo manda; un caso escrito a mano o copiado sí podría.

@@ -602,10 +602,19 @@ SELECT pg_temp.ver('VE');
 SELECT pg_temp.pz('VE', 'P', 1);
 SELECT pg_temp.mu('VE', 'P', 1, 'elige_vendedor', 'Mosq', '{"sin_eleccion": true, "ancho": "1500", "alto": "1200", "cantidad": "2"}');
 SELECT pg_temp.op('VE', 'VE.P.Mosq', 1, 'Tela');
-SELECT pg_temp.op('VE', 'VE.P.Mosq', 2, 'Enrollable');
 SELECT pg_temp.op('VE', 'VE.P.Mosq', 3, 'Laminado', '{"ancho": "100", "cantidad": "1"}');
-SELECT pg_temp.op('VE', 'VE.P.Mosq', 4, 'PerfilHoja');
 SELECT pg_temp.un('VE', 'P', 2, 'Felpa', '{"medida": "[Mosq] + 1"}');
+
+SELECT pg_temp.ver('VEu');
+SELECT pg_temp.pz('VEu', 'P', 1);
+SELECT pg_temp.mu('VEu', 'P', 1, 'elige_vendedor', 'Mosq', '{"cantidad": "2"}');
+SELECT pg_temp.op('VEu', 'VEu.P.Mosq', 1, 'Enrollable');
+SELECT pg_temp.un('VEu', 'P', 2, 'Felpa', '{"medida": "[Mosq] + 1"}');
+
+SELECT pg_temp.ver('VEm');
+SELECT pg_temp.pz('VEm', 'P', 1);
+SELECT pg_temp.mu('VEm', 'P', 1, 'elige_vendedor', 'Mosq', '{"cantidad": "2"}');
+SELECT pg_temp.op('VEm', 'VEm.P.Mosq', 1, 'PerfilHoja');
 
 SELECT pg_temp.calc('REa', 'VE');
 SELECT pg_temp.sale('REa');
@@ -618,17 +627,17 @@ SELECT pg_temp.calc('REc', 'VE', pg_temp.el('P', 'Mosq', 'Tela'));
 SELECT pg_temp.caso('06 la tela hereda el ancho', '1500', pg_temp.f('REc', 'Mosq', 'ancho'));
 SELECT pg_temp.caso('06 y la cantidad', '3.6', pg_temp.f('REc', 'Mosq', 'total'));
 SELECT pg_temp.caso('06 vale lo de la opción elegida, en mm²', '3600001', pg_temp.f('REc', 'Felpa', 'medida'));
-SELECT pg_temp.calc('REd', 'VE', pg_temp.el('P', 'Mosq', 'Enrollable'));
+SELECT pg_temp.calc('REd', 'VEu', pg_temp.el('P', 'Mosq', 'Enrollable'));
 SELECT pg_temp.sale('REd');
-SELECT pg_temp.caso('06 el enrollable no hereda el ancho', NULL, pg_temp.f('REd', 'Mosq', 'ancho'));
+SELECT pg_temp.caso('06 el enrollable no lleva ancho', NULL, pg_temp.f('REd', 'Mosq', 'ancho'));
 SELECT pg_temp.caso('06 y se cobra por unidad', '2', pg_temp.f('REd', 'Mosq', 'total'));
 SELECT pg_temp.caso('06 en u vale la cantidad', '3', pg_temp.f('REd', 'Felpa', 'medida'));
 SELECT pg_temp.calc('REe', 'VE', pg_temp.el('P', 'Mosq', 'Laminado'));
 SELECT pg_temp.caso('06 su propio ancho', '100', pg_temp.f('REe', 'Mosq', 'ancho'));
 SELECT pg_temp.caso('06 hereda el alto', '1200', pg_temp.f('REe', 'Mosq', 'alto'));
 SELECT pg_temp.caso('06 su propia cantidad', '0.12', pg_temp.f('REe', 'Mosq', 'total'));
-SELECT pg_temp.calc('REf', 'VE', pg_temp.el('P', 'Mosq', 'PerfilHoja'));
-SELECT pg_temp.caso('06 otra unidad sin su medida', 'Mosq: falta la medida', pg_temp.err('REf'));
+SELECT pg_temp.calc('REf', 'VEm', pg_temp.el('P', 'Mosq', 'PerfilHoja'));
+SELECT pg_temp.caso('06 en mm sin su medida', 'Mosq: falta la medida', pg_temp.err('REf'));
 SELECT pg_temp.calc('REg', 'VE', pg_temp.el('P', 'Mosq', 'Float'));
 SELECT pg_temp.caso('06 una opción que no está', 'Mosq: esa opción ya no existe', pg_temp.err('REg'));
 SELECT pg_temp.calc('REh', 'VE', '{"elecciones": {"P": {"Otra": null}}}');
@@ -883,11 +892,11 @@ SELECT pg_temp.caso('10 si no cuenta, no hace falta', '0', pg_temp.pie('R10e', '
 
 SELECT pg_temp.ver('VPe5');
 SELECT pg_temp.pz('VPe5', 'H', 1);
-SELECT pg_temp.mu('VPe5', 'H', 1, 'elige_vendedor', 'X', '{"ancho": "1000", "alto": "1000"}');
-SELECT pg_temp.op('VPe5', 'VPe5.H.X', 1, 'Float', '{"predeterminada": true}');
+SELECT pg_temp.mu('VPe5', 'H', 1, 'elige_vendedor', 'X');
+SELECT pg_temp.op('VPe5', 'VPe5.H.X', 1, 'Rueda40', '{"predeterminada": true}');
 SELECT pg_temp.op('VPe5', 'VPe5.H.X', 2, 'Soldado');
 SELECT pg_temp.calc('R10f', 'VPe5');
-SELECT pg_temp.caso('10 opción de insumo, pesa', '10', pg_temp.pie('R10f', 'H', 'peso'));
+SELECT pg_temp.caso('10 opción de insumo, pesa', '0.05', pg_temp.pie('R10f', 'H', 'peso'));
 SELECT pg_temp.calc('R10g', 'VPe5', pg_temp.el('H', 'X', 'Soldado'));
 SELECT pg_temp.caso('10 opción de servicio, no', '0', pg_temp.pie('R10g', 'H', 'peso'));
 

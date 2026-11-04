@@ -10,6 +10,9 @@ DECLARE
   v_mat uuid;
   v_mul uuid;
   v_opc uuid;
+  v_otra uuid;
+  v_mm2 uuid := (SELECT id FROM catalogo_insumos WHERE activo AND unidad = 'mm' AND id <> v_mm LIMIT 1);
+  v_error text;
   v_ok int := 0;
   v_total int := 0;
   v_fallos text[] := '{}';
@@ -59,6 +62,28 @@ BEGIN
   UPDATE catalogo_opciones SET insumo_id = v_mm, medida = '5' WHERE id = v_opc;
   INSERT INTO casos SELECT '07 opción que pasa a mm', '5|||', concat_ws('|', medida, coalesce(ancho, ''), coalesce(alto, ''), coalesce(area, ''))
     FROM catalogo_opciones WHERE id = v_opc;
+
+  -- Misma unidad (sql/169). La opción que queda está en mm.
+  BEGIN
+    INSERT INTO catalogo_opciones (version_id, material_id, insumo_id) VALUES (v_version, v_mul, v_m2);
+    v_error := 'ok';
+  EXCEPTION WHEN OTHERS THEN v_error := SQLSTATE;
+  END;
+  INSERT INTO casos VALUES ('08 otra unidad no entra', 'CA024', v_error);
+
+  INSERT INTO catalogo_opciones (version_id, material_id, insumo_id) VALUES (v_version, v_mul, v_mm2) RETURNING id INTO v_otra;
+  INSERT INTO casos VALUES ('09 la misma unidad entra', 'true', (v_otra IS NOT NULL)::text);
+
+  BEGIN
+    UPDATE catalogo_opciones SET insumo_id = v_m2 WHERE id = v_otra;
+    v_error := 'ok';
+  EXCEPTION WHEN OTHERS THEN v_error := SQLSTATE;
+  END;
+  INSERT INTO casos VALUES ('10 no se cambia a otra unidad', 'CA024', v_error);
+
+  UPDATE catalogo_opciones SET activo = false WHERE id = v_otra;
+  UPDATE catalogo_opciones SET insumo_id = v_m2 WHERE id = v_opc;
+  INSERT INTO casos SELECT '11 sola, sí se cambia', v_m2::text, insumo_id::text FROM catalogo_opciones WHERE id = v_opc;
 
   FOR r IN SELECT * FROM casos LOOP
     v_total := v_total + 1;

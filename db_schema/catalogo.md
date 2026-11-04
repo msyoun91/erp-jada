@@ -184,6 +184,8 @@ tiene su `x_arbol`, generada con `catalogo_formula_parsear`: lo que no se entien
 
 Trigger `catalogo_medidas_limpiar` (`catalogo_materiales`, `catalogo_opciones`; BEFORE INSERT OR UPDATE, INVOKER): con un insumo en m2 borra `medida`; en mm o u, `ancho`, `alto` y `area`. No frena nada, y sin insumo no toca nada.
 
+Trigger `catalogo_opciones_misma_unidad` (`catalogo_opciones`; BEFORE INSERT OR UPDATE OF `insumo_id`, INVOKER): las opciones activas de un material van en la misma unidad (CA024). Lo que no tiene insumo ("ninguna") no cuenta.
+
 En un material que sigue a otro hay una opción por cada opción de aquel: `sigue_opcion_id` es esa opción e `insumo_id` su
 pareja, NULL si es "ninguna". Sin fila, la pareja está vacía. Una fila con `sigue_opcion_id` NULL es una opción suelta: no es
 pareja de nadie y solo se elige a mano. Los nombres repetidos no distinguen mayúsculas.
@@ -290,7 +292,7 @@ los paquetes activos que dejan de armarse y guarda la causa. `catalogo_paquetes_
 categoría de baja CA008; sin armarse en ningún color CA020, que dice qué falta; si no, borra la causa. Sin publicada no revisa nada.
 
 **Errores:** CA019 hay algo que frena: el mensaje trae la lista, una línea por cada cosa · CA020 no se puede reactivar · CA021
-devolver sin motivo · CA022 la versión no está en revisión · CA023 descartar sin publicada. Enviar o descartar fuera de borrador da
+devolver sin motivo · CA022 la versión no está en revisión · CA023 descartar sin publicada · CA024 una opción de otra unidad que las del material. Enviar o descartar fuera de borrador da
 CA012, y sin permiso, 42501.
 
 ## El precio

@@ -17,6 +17,7 @@ export function InsumoSelect({
   onChange,
   vacio = "Elegí uno",
   extra,
+  unidad,
 }: {
   id?: string;
   insumos: InsumosPorId;
@@ -27,11 +28,17 @@ export function InsumoSelect({
   onChange?: (v: string) => void;
   vacio?: string;
   extra?: React.ReactNode;
+  // Las opciones de un material van en la misma unidad: la base lo vuelve a revisar (CA024).
+  unidad?: InsumoBasico["unidad"];
 }) {
   const lista = [...insumos.values()];
   const grupo = (tipo: InsumoBasico["tipo"]) =>
     lista
-      .filter((i) => i.tipo === tipo && (i.activo || i.id === (value ?? actual)))
+      .filter(
+        (i) =>
+          i.tipo === tipo &&
+          (i.id === (value ?? actual) || (i.activo && (!unidad || i.unidad === unidad))),
+      )
       .map((i) => (
         <option key={i.id} value={i.id}>
           {i.nombre} ({UNIDAD[i.unidad]}){i.activo ? "" : " · de baja"}

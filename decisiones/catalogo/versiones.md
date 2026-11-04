@@ -21,8 +21,7 @@ y lo que se suma se suma acá. La base lo revisa al enviar y de nuevo al aprobar
 de baja en el medio.
 - El paquete vacío, o una pieza sin materiales.
 - Un insumo o servicio fijo de baja, o sin costo; un color ofrecido con alguna variante sin costo.
-- Un material en mm o m2 sin su medida: un insumo en m2, sin ancho o sin alto; una opción de otra unidad,
-  sin la suya.
+- Un material en mm o m2 sin su medida: un insumo en m2, sin ancho o sin alto.
 - Una opción sin pareja en el material que la sigue (vacía; "ninguna" vale).
 - Una variable según un material con una opción sin valor, o según un material que permite "sin elección", puede dar
   "ninguno" o tiene la pareja "ninguna" (2026-11-04, *Una variable que no carga el vendedor puede definirse según un material*).

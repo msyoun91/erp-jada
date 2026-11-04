@@ -22,8 +22,6 @@ export function CamposMedida({
   const enU = usados.some((i) => i.unidad === "u" && i.tipo !== "servicio");
   const m2 = usados.some((i) => i.unidad === "m2" && i.tipo !== "servicio");
   const m2Servicio = usados.some((i) => i.unidad === "m2" && i.tipo === "servicio");
-  const soloMm = usados.every((i) => i.unidad === "mm");
-  const soloM2 = usados.every((i) => i.unidad === "m2");
   const usaMedida = usados.length === 0 || usados.some((i) => i.unidad !== "m2");
   const usaArea = usados.length === 0 || usados.some((i) => i.unidad === "m2");
 
@@ -39,11 +37,7 @@ export function CamposMedida({
       campos: [
         [
           "medida",
-          enMm
-            ? `Medida (mm${soloMm ? "" : ", para insumos en mm"})`
-            : enU
-              ? "Medida de corte (mm, opcional: se cobra la cantidad)"
-              : "Medida (mm)",
+          enU ? "Medida de corte (mm, opcional: se cobra la cantidad)" : "Medida (mm)",
         ],
       ],
       necesario: enMm,
@@ -53,8 +47,8 @@ export function CamposMedida({
     {
       aplica: usaArea,
       campos: [
-        ["ancho", `Ancho (mm${soloM2 ? "" : ", para insumos en m2"})`],
-        ["alto", `Alto (mm${soloM2 ? "" : ", para insumos en m2"})`],
+        ["ancho", "Ancho (mm)"],
+        ["alto", "Alto (mm)"],
       ],
       necesario: m2,
       aPedido: m2Servicio,

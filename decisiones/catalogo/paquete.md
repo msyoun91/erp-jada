@@ -197,10 +197,15 @@ no 600. Si se paga lo que se usa y no la varilla entera, Técnica la carga en mm
   elige el vendedor, se puede permitir "sin elección" y, al mismo tiempo, configurar el predeterminado.
 
 **En un material múltiple, cada opción puede llevar su medida y su cantidad; la que no trae, la hereda
-del material, cada una por separado. La medida solo se hereda con la misma unidad (2026-11-02).** En el
-Mosquitero, la Tela (m2) hereda 1.500 × 1.200 y el Enrollable (u) no lleva medida: heredándola, cobraba
-1.800.000 u. La Rueda simple hereda la cantidad 4 y la tándem trae 2, que también puede ser una fórmula.
-Una opción de otra unidad en mm o m2 lleva su medida, y la base no deja enviar la versión sin ella.
+del material, cada una por separado (2026-11-02).** La Rueda simple hereda la cantidad 4 y la tándem trae 2,
+que también puede ser una fórmula.
+
+**Las opciones de un material van todas en la misma unidad; la primera la fija (2026-11-04).** Un mosquitero
+de tela (m2) y uno enrollable (u) son dos piezas opcionales, no dos opciones. Mezclarlas dejaba cargar por
+error un perfil entre los vidrios, y obligaba a medidas distintas en el mismo panel. Una pareja compara dos
+materiales, así que el Vidrio en m2 sigue pudiendo tener un Contravidrio en mm. La unidad se cambia cuando
+queda una sola opción. Archivos: `sql/169_catalogo_opciones_misma_unidad.sql`,
+`components/editor/InsumoSelect.tsx`.
 
 **Un material múltiple puede seguir la elección de otro: sincronizado o en combo.**
 - **Sincronizado:** con las mismas opciones. El vendedor elige en uno y los sincronizados quedan con

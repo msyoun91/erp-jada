@@ -459,13 +459,15 @@ SELECT pg_temp.dice('Me', 'Zqx162 ServM2: falta el área');
 SELECT pg_temp.un('Me', 'P', 5, 'Escuadra');
 SELECT pg_temp.no_dice('Me', 'Zqx162 Escuadra: falta');
 SELECT pg_temp.pz('Me', 'Q', 2);
-SELECT pg_temp.mu('Me', 'Q', 1, 'elige_vendedor', 'Multi', '{"medida": "100"}');
-SELECT pg_temp.op('Me', 'Me.Q.Multi', 1, 'Curvo');
-SELECT pg_temp.op('Me', 'Me.Q.Multi', 2, 'DVH');
-SELECT pg_temp.op('Me', 'Me.Q.Multi', 3, 'Tirador');
-SELECT pg_temp.no_dice('Me', 'Multi (Zqx162 Curvo)');
-SELECT pg_temp.dice('Me', 'Multi (Zqx162 DVH): falta el ancho o el alto');
-SELECT pg_temp.no_dice('Me', 'Multi (Zqx162 Tirador)');
+SELECT pg_temp.mu('Me', 'Q', 1, 'elige_vendedor', 'MultiMm', '{"medida": "100"}');
+SELECT pg_temp.op('Me', 'Me.Q.MultiMm', 1, 'Curvo');
+SELECT pg_temp.mu('Me', 'Q', 2, 'elige_vendedor', 'MultiM2', '{"medida": "100"}');
+SELECT pg_temp.op('Me', 'Me.Q.MultiM2', 1, 'DVH');
+SELECT pg_temp.mu('Me', 'Q', 3, 'elige_vendedor', 'MultiU', '{"medida": "100"}');
+SELECT pg_temp.op('Me', 'Me.Q.MultiU', 1, 'Tirador');
+SELECT pg_temp.no_dice('Me', 'MultiMm (Zqx162 Curvo)');
+SELECT pg_temp.dice('Me', 'MultiM2 (Zqx162 DVH): falta el ancho o el alto');
+SELECT pg_temp.no_dice('Me', 'MultiU (Zqx162 Tirador)');
 
 SELECT pg_temp.chico('Me2', 'ServM2');
 SELECT pg_temp.dice('Me2', 'Zqx162 ServM2: falta el área');
@@ -876,9 +878,9 @@ SELECT pg_temp.caso('03 sin opción en negro no se ofrece', 'false | P | -', pg_
 SELECT pg_temp.caso('03 eso frena el envío', true::text, (position('En Zqx162 Negro no se puede armar' IN pg_temp.frena('Cn')) > 0)::text);
 SELECT pg_temp.caso('03 permite "sin elección"', 'ok', pg_temp.intentar(format('UPDATE catalogo_materiales SET sin_eleccion = true WHERE id = %s', pg_temp.l('Cn.P.Sola')), 'Lucia'));
 SELECT pg_temp.caso('03 entonces sí', 'true | - | Zqx162 PerfilMosq', pg_temp.ofrece('Cn', 'Negro'));
-SELECT pg_temp.mu('Cn', 'P', 3, 'elige_sistema', 'Regla', '{"eleccion": "si 1 > 2 entonces [Zqx162 PerfilMosq] si no [Zqx162 ManijaEstandar]", "medida": "10"}');
+SELECT pg_temp.mu('Cn', 'P', 3, 'elige_sistema', 'Regla', '{"eleccion": "si 1 > 2 entonces [Zqx162 PerfilMosq] si no [Zqx162 PerfilMarco]", "medida": "10"}');
 SELECT pg_temp.op('Cn', 'Cn.P.Regla', 1, 'PerfilMosq');
-SELECT pg_temp.op('Cn', 'Cn.P.Regla', 2, 'ManijaEstandar');
+SELECT pg_temp.op('Cn', 'Cn.P.Regla', 2, 'PerfilMarco');
 SELECT pg_temp.caso('03 el sistema no puede elegir otra', true::text, (pg_temp.ofrece('Cn', 'Negro') LIKE 'false | P | %')::text);
 SELECT pg_temp.caso('03 en blanco se arma', 'true | - | -', pg_temp.ofrece('Cn', 'Blanco'));
 

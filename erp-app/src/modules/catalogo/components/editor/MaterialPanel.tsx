@@ -8,7 +8,14 @@ import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { guardarMaterial, guardarOpcion, sacar } from "../../actions";
 import { formulaAparte } from "../../etiquetas";
-import { materialSchema, type Contenido, type Material, type MaterialForm, type Opcion } from "../../types";
+import {
+  materialSchema,
+  type Contenido,
+  type InsumoBasico,
+  type Material,
+  type MaterialForm,
+  type Opcion,
+} from "../../types";
 import { CamposMedida } from "./CamposMedida";
 import { CondicionesLista } from "./CondicionesLista";
 import { Fila } from "./Fila";
@@ -32,6 +39,11 @@ function detalleOpcion(o: Opcion) {
   ]
     .filter(Boolean)
     .join(" · ");
+}
+
+// La unidad que fijan las otras opciones del material.
+function unidadDe(opciones: Opcion[], insumos: InsumosPorId, sin?: string) {
+  return opciones.filter((o) => o.id !== sin).flatMap((o) => insumos.get(o.insumo_id ?? "")?.unidad ?? [])[0];
 }
 
 export function MaterialPanel({
@@ -329,6 +341,7 @@ export function MaterialPanel({
           orden={opciones.length}
           conPredeterminada={material.tipo !== "sigue"}
           parejaDe={seguida ? (insumos.get(seguida.insumo_id ?? "")?.nombre ?? "—") : undefined}
+          unidad={unidadDe(opciones, insumos, opcion === "nueva" ? undefined : opcion.id)}
           insumos={insumos}
           condiciones={contenido.condiciones}
           nombres={nombres}
@@ -342,10 +355,12 @@ export function MaterialPanel({
 // Con el teclado, cada flecha es un cambio y pasa por "Vacía" y "Ninguna", que borran las fórmulas: se guarda lo que queda quieto.
 function ParejaSelect({
   insumos,
+  unidad,
   valor,
   onElegir,
 }: {
   insumos: InsumosPorId;
+  unidad?: InsumoBasico["unidad"];
   valor: string;
   onElegir: (v: string) => Promise<void>;
 }) {
@@ -368,6 +383,7 @@ function ParejaSelect({
   return (
     <InsumoSelect
       insumos={insumos}
+      unidad={unidad}
       value={borrador ?? valor}
       onChange={cambiar}
       vacio="Vacía: frena el envío"
@@ -431,7 +447,12 @@ function Parejas({
           return (
             <li key={o.id} className="flex flex-col gap-1">
               <span className="t-body-m">{insumos.get(o.insumo_id ?? "")?.nombre ?? "—"} →</span>
-              <ParejaSelect insumos={insumos} valor={valor} onElegir={(v) => elegir(o, v)} />
+              <ParejaSelect
+                insumos={insumos}
+                unidad={unidadDe(propias, insumos, actual?.id)}
+                valor={valor}
+                onElegir={(v) => elegir(o, v)}
+              />
               {actual?.insumo_id && (
                 <button
                   type="button"

@@ -6,13 +6,14 @@ import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { guardarOpcion } from "../../actions";
-import { opcionSchema, type Condicion, type Opcion, type OpcionForm } from "../../types";
+import { UNIDAD } from "../../etiquetas";
+import { opcionSchema, type Condicion, type InsumoBasico, type Opcion, type OpcionForm } from "../../types";
 import { CamposMedida } from "./CamposMedida";
 import { CondicionesLista } from "./CondicionesLista";
 import { InsumoSelect, type InsumosPorId } from "./InsumoSelect";
 import { Nombres } from "./Nombres";
 
-// Lo que la opción no trae lo hereda del material, cada dato por separado; la medida, solo con la misma unidad.
+// Lo que la opción no trae lo hereda del material, cada dato por separado.
 export function OpcionPanel({
   versionId,
   materialId,
@@ -20,6 +21,7 @@ export function OpcionPanel({
   orden,
   conPredeterminada,
   parejaDe,
+  unidad,
   insumos,
   condiciones,
   nombres,
@@ -32,6 +34,8 @@ export function OpcionPanel({
   conPredeterminada: boolean;
   // Una pareja elige su insumo en la lista de parejas; dos pueden ser el mismo, y esto dice de cuál se trata.
   parejaDe?: string;
+  // La de las otras opciones del material. Sin otras, se elige cualquiera y esa fija la unidad.
+  unidad?: InsumoBasico["unidad"];
   insumos: InsumosPorId;
   condiciones: Condicion[];
   nombres: string[];
@@ -77,7 +81,9 @@ export function OpcionPanel({
                 insumos={insumos}
                 actual={opcion?.insumo_id}
                 registro={register("insumo_id")}
+                unidad={unidad}
               />
+              {unidad && <p className="t-caption">Las opciones de este material van en {UNIDAD[unidad]}.</p>}
             </Campo>
           )}
           {conPredeterminada && (
