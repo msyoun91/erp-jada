@@ -767,6 +767,26 @@ SELECT pg_temp.caso('13 volver a 60 llevaría a 105', 'CA004', pg_temp.intentar(
 SELECT pg_temp.caso('13 sigue el 50', '50.0', pg_temp.vigente('IIBB'));
 
 -- ============================================================
+-- 14. Una categoría vacía que un servicio en % usa (sql/180)
+-- ============================================================
+SELECT pg_temp.crear('Laminados', $q$INSERT INTO catalogo_categorias (tipo, nombre)
+  VALUES ('insumo', 'Zqx159 Laminados') RETURNING id$q$, 'Lucia');
+SELECT pg_temp.caso('14 vacía y sin servicio: se renombra', 'ok', pg_temp.intentar(format(
+  $q$UPDATE catalogo_categorias SET nombre = 'Zqx159 Laminado' WHERE id = %L$q$, pg_temp.id('Laminados')), 'Lucia'));
+SELECT pg_temp.crear('Garantia lam', format(
+  $q$SELECT catalogo_porcentaje_guardar(NULL, 'Zqx159 Garantía lam', 5, 1, ARRAY[%L]::uuid[], NULL, NULL, NULL, false)$q$,
+  pg_temp.id('Laminados')), 'Ana');
+SELECT pg_temp.caso('14 con un servicio: nombre fijo, aunque Lucia no lo vea', 'CA006', pg_temp.intentar(format(
+  $q$UPDATE catalogo_categorias SET nombre = 'Zqx159 Herrajes especiales' WHERE id = %L$q$, pg_temp.id('Laminados')), 'Lucia'));
+SELECT pg_temp.caso('14 Ana la saca del servicio', 'ok', pg_temp.intentar(format(
+  $q$SELECT catalogo_porcentaje_guardar(%L, 'Zqx159 Garantía lam', 5, 1, ARRAY[%L]::uuid[], NULL, NULL, NULL, false)$q$,
+  pg_temp.id('Garantia lam'), pg_temp.id('Vidrios')), 'Ana'));
+SELECT pg_temp.caso('14 revertir la devolvería: sigue fijo', 'CA006', pg_temp.intentar(format(
+  $q$UPDATE catalogo_categorias SET nombre = 'Zqx159 Herrajes especiales' WHERE id = %L$q$, pg_temp.id('Laminados')), 'Lucia'));
+SELECT pg_temp.caso('14 se da de baja: un servicio sobre ella no cobra nada', 'ok', pg_temp.intentar(format(
+  $q$UPDATE catalogo_categorias SET activo = false WHERE id = %L$q$, pg_temp.id('Laminados')), 'Lucia'));
+
+-- ============================================================
 -- Resultado
 -- ============================================================
 DO $$

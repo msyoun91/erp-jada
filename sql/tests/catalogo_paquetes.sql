@@ -813,6 +813,31 @@ SELECT pg_temp.caso('10 a una de baja sí: lo frena el envío', 'ok', pg_temp.in
 SELECT pg_temp.caso('10 las de insumo: nombre fijo con algo adentro', 'CA006', pg_temp.intentar(pg_temp.upd('catalogo_categorias', 'Perfiles', $q$nombre = 'Zqx160 Otro'$q$), 'Lucia'));
 SELECT pg_temp.caso('10 las de insumo: no se bajan con algo activo', 'CA007', pg_temp.intentar(pg_temp.upd('catalogo_categorias', 'Perfiles', 'activo = false'), 'Lucia'));
 
+-- Un color que ofrece una versión, sin ninguna variante que lo use (sql/180).
+SELECT pg_temp.crear('Rojo', $q$INSERT INTO catalogo_colores (nombre) VALUES ('Zqx160 Rojo') RETURNING id$q$);
+SELECT pg_temp.crear('Sacado', $q$INSERT INTO catalogo_colores (nombre) VALUES ('Zqx160 Sacado') RETURNING id$q$);
+SELECT pg_temp.crear('VRojo', pg_temp.alta('Zqx160 Rojo', 'Puertas'));
+SELECT pg_temp.crear('CRojo', pg_temp.ins('catalogo_versiones_colores', 'VRojo', 'color_id', pg_temp.l('Rojo')));
+SELECT pg_temp.crear('CSacado', pg_temp.ins('catalogo_versiones_colores', 'VRojo', 'color_id', pg_temp.l('Sacado')));
+SELECT pg_temp.caso('10 color en un borrador: se renombra', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_colores', 'Rojo', $q$nombre = 'Zqx160 Rojo2'$q$), 'Lucia'));
+SELECT pg_temp.caso('10 color: sacarlo del borrador', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_versiones_colores', 'CSacado', 'activo = false'), 'Lucia'));
+
+SELECT pg_temp.a('VRojo', 'en_revision');
+SELECT pg_temp.caso('10 color en revisión: nombre fijo', 'CA006', pg_temp.intentar(pg_temp.upd('catalogo_colores', 'Rojo', $q$nombre = 'Zqx160 Rojo3'$q$), 'Lucia'));
+SELECT pg_temp.caso('10 color en revisión: Marta, sin Paquetes, también', 'CA006', pg_temp.intentar(pg_temp.upd('catalogo_colores', 'Rojo', $q$nombre = 'Zqx160 Rojo3'$q$), 'Marta'));
+SELECT pg_temp.caso('10 color sacado antes de enviar: se renombra', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_colores', 'Sacado', $q$nombre = 'Zqx160 Sacado2'$q$), 'Lucia'));
+SELECT pg_temp.caso('10 color sin variantes: se da de baja', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_colores', 'Rojo', 'activo = false'), 'Lucia'));
+SELECT pg_temp.caso('10 color se reactiva', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_colores', 'Rojo', 'activo = true'), 'Lucia'));
+
+SELECT pg_temp.a('VRojo', 'borrador');
+SELECT pg_temp.caso('10 color retirada: se renombra de nuevo', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_colores', 'Rojo', $q$nombre = 'Zqx160 Rojo3'$q$), 'Lucia'));
+SELECT pg_temp.a('VRojo', 'publicado');
+SELECT pg_temp.caso('10 color publicada: nombre fijo', 'CA006', pg_temp.intentar(pg_temp.upd('catalogo_colores', 'Rojo', $q$nombre = 'Zqx160 Rojo4'$q$), 'Lucia'));
+SELECT pg_temp.a('VRojo', 'obsoleto');
+SELECT pg_temp.caso('10 color obsoleta: nombre fijo', 'CA006', pg_temp.intentar(pg_temp.upd('catalogo_colores', 'Rojo', $q$nombre = 'Zqx160 Rojo4'$q$), 'Lucia'));
+SELECT pg_temp.a('VRojo', 'descartado');
+SELECT pg_temp.caso('10 color descartada: se renombra', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_colores', 'Rojo', $q$nombre = 'Zqx160 Rojo4'$q$), 'Lucia'));
+
 -- ============================================================
 -- 11. Publicadas: una por paquete, con nombres que no se repiten
 -- ============================================================
@@ -891,7 +916,7 @@ FROM unnest(ARRAY['catalogo_paquete_alta(text,uuid)', 'catalogo_version_copiar(u
                   'catalogo_version_nueva(uuid,uuid)', 'catalogo_paquete_duplicar(uuid,text)']) AS f;
 SELECT pg_temp.caso('12 authenticated no llama ' || f, 'false', has_function_privilege('authenticated', f, 'EXECUTE')::text)
 FROM unnest(ARRAY['catalogo_versiones_validar()', 'catalogo_contenido_validar()', 'catalogo_contenido_baja()',
-                  'catalogo_categorias_validar()', 'catalogo_insumos_validar()', 'catalogo_predeterminada_apagar()',
+                  'catalogo_categorias_validar()', 'catalogo_colores_validar()', 'catalogo_insumos_validar()', 'catalogo_predeterminada_apagar()',
                   'catalogo_color_base_apagar()']) AS f;
 
 -- ============================================================
