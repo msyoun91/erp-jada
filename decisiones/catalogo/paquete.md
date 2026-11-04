@@ -222,6 +222,21 @@ no da fila de contravidrio ni se cobra, y el vendedor no ve nada de esto. Como e
 estar, ninguna fórmula lo usa (*Una fórmula solo puede usar lo que seguro existe*): esa medida sale de
 una variable.
 
+**Una variable que no carga el vendedor puede definirse según un material que se elige: lleva un valor por cada
+opción, número o fórmula, en vez de su fórmula (2026-11-04).** `descuento_hoja`, según Herraje: Corredera simple 20,
+Corredera oculta 35, Elevable 50. Elegir el herraje cambia `ancho_hoja = (ancho − descuento_hoja) / 2`, y con ella el
+perfil, el vidrio y el precio; el vendedor no toca nada más y las demás fórmulas la usan como a cualquier variable. Se
+descartó encadenar `si Herraje = [Corredera oculta] entonces 35 si no …`: una opción nueva caía en el último "si no" y daba
+una medida mal sin que nadie lo notara, y cada variable repetía la cadena.
+- **Una opción sin valor no deja enviar la versión,** como una pareja vacía. Sacar una opción saca sus valores.
+- **Solo se calcula el valor de la opción elegida.** Para lo circular y lo que puede faltar cuentan todos: no se conoce la
+  elección al revisar.
+- **El material es uno que elige, vendedor o sistema, no uno que sigue a otro:** la elección es la de aquel. La regla de un
+  material que define el sistema no puede usar una variable que dependa de él: es circular.
+- **No vale un material que permite "sin elección" o puede dar "ninguno",** ni uno de una pieza que puede faltar para una
+  variable de lo fijo (*Una fórmula solo puede usar lo que seguro existe*). Se apunta al material, no a su nombre: con un
+  Herraje en cada hoja, no hay duda de cuál es.
+
 **El color es por paquete. En un color se deja de ofrecer lo que no se puede armar en ese color, y el
 color solo no se ofrece si el paquete no se puede armar sin eso (2026-11-02).** Un material de color
 indistinto, como el tornillo, no afecta. Con la regla anterior, que pedía la variante en todos los
