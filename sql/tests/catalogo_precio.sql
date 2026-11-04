@@ -627,6 +627,37 @@ SELECT pg_temp.un('SoloOpc', 'Opc', 1, 'Manija');
 SELECT pg_temp.caso('04 solo una pieza sin elegir: sin precio', 'Con estas medidas y elecciones el paquete no lleva nada', pg_temp.de('SoloOpc', '{mensaje}'));
 SELECT pg_temp.n('04 con la pieza elegida sí', 1000, pg_temp.de('SoloOpc', '{precio}', pg_temp.e('{"piezas": {"Opc": true}}')));
 
+-- sql/181: sin color, lo que falta es el color. No se busca costo.
+SELECT pg_temp.ver('SinColor');
+SELECT pg_temp.en('SinColor', 'ancho', 1, 100, 5000);
+SELECT pg_temp.pz('SinColor', 'Marco', 1);
+SELECT pg_temp.un('SinColor', 'Marco', 1, 'PerfilMarco', '{"medida": "ancho"}');
+SELECT pg_temp.pz('SinColor', 'Hoja', 2);
+SELECT pg_temp.un('SinColor', 'Hoja', 1, 'PerfilMarco', '{"medida": "ancho"}');
+SELECT pg_temp.pz('SinColor', 'Herraje', 3);
+SELECT pg_temp.un('SinColor', 'Herraje', 1, 'Manija');
+SELECT pg_temp.caso('04 sin color: sin precio', NULL, pg_temp.de('SinColor', '{precio}'));
+SELECT pg_temp.caso('04 sin color: una sola línea, aunque falte en dos filas', '["Falta elegir el color"]', pg_temp.de('SinColor', '{sin_precio}'));
+SELECT pg_temp.caso('04 sin color: la fila no trae costo', NULL, pg_temp.de('SinColor', '{filas,0,costo}'));
+SELECT pg_temp.n('04 sin color: lo indistinto sí trae', 1000, pg_temp.de('SinColor', '{filas,2,costo}'));
+SELECT pg_temp.color_base('SinColor', 'Blanco', false);
+SELECT pg_temp.caso('04 colores sin base y sin elegir: lo mismo', '["Falta elegir el color"]', pg_temp.de('SinColor', '{sin_precio}'));
+SELECT pg_temp.n('04 con el color elegido sí', 141000, pg_temp.de('SinColor', '{precio}', pg_temp.color('Blanco')));
+SELECT pg_temp.caso('04 con un color sin costo: nombra el color', 'Zqx163 PerfilMarco · Zqx163 Blanco: sin costo a esa fecha', pg_temp.de('SinColor', '{sin_precio,1}', pg_temp.color('Blanco'), 'ARS', '{}', pg_temp.hace(200)));
+
+-- Era indistinto y pasó a colores: el costo viejo de la variante apagada no da precio.
+SELECT pg_temp.insumo('PasoAColor', 'Perfiles', 'u');
+SELECT pg_temp.costo('PasoAColor', NULL, 500, 'ARS', pg_temp.hace(100));
+SELECT pg_temp.ver('Paso');
+SELECT pg_temp.pz('Paso', 'Unica', 1);
+SELECT pg_temp.un('Paso', 'Unica', 1, 'PasoAColor');
+SELECT pg_temp.n('04 indistinto: da precio', 500, pg_temp.de('Paso', '{precio}'));
+SELECT pg_temp.caso('04 pasa a colores', 'ok', pg_temp.intentar(format(
+  'UPDATE catalogo_insumos SET con_color = true WHERE id = %s', pg_temp.l('PasoAColor')), 'Lucia'));
+SELECT pg_temp.caso('04 pasó a colores: sin precio', NULL, pg_temp.de('Paso', '{precio}'));
+SELECT pg_temp.caso('04 pasó a colores: falta el color', '["Falta elegir el color"]', pg_temp.de('Paso', '{sin_precio}'));
+SELECT pg_temp.caso('04 pasó a colores: sin el costo viejo', NULL, pg_temp.de('Paso', '{filas,0,costo}'));
+
 -- ============================================================
 -- 5. Los mínimos por presupuesto: el ejemplo de decisiones/catalogo/precio.md
 -- ============================================================
