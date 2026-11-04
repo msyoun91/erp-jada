@@ -132,6 +132,12 @@ una cadena de 80 "si" sigue entrando. `sql/179`.
 **En una fórmula, el decimal es la coma y el punto no se acepta.** Para la empresa, `1.500` es mil
 quinientos: leído como 1,5, `ancho > 1.500` daba siempre cierto sin que nadie lo notara.
 
+**En la calculadora, la medida sigue la misma regla, y por eso el campo es de texto (2026-11-04).** No se adivina si `1.500` son mil
+quinientos o 1,5 m de una planilla: se marca el error y no deja calcular ni guardar el caso. Con `type="number"`, el navegador se
+queda con el punto como decimal y, según el idioma, deja vacío lo que no entiende, y vacío toma el predeterminado. La entrada viaja
+como número, así que la base no ve lo escrito: es la excepción a que la regla viva en Postgres. `numeroEscrito` en
+`modules/catalogo/entrada.ts`, `Calculadora.tsx`.
+
 **Un nombre con espacios va entre corchetes: `[Perfil hoja]`.** El editor los pone al elegirlo de la lista.
 
 **Un "si" en medio de una cuenta va entre paréntesis: `(si alto > 2100 entonces 4 si no 3) + 1` (2026-11-02).**

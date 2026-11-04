@@ -108,7 +108,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   menos que $1.565.000); Monedas hoy guarda solo el de venta (`decisiones/monedas.md` → *Ficha del módulo*).
   También, de una planilla de carpinterías real (2026-11-02): cada renglón lleva designación y ubicación
   ("V4 · Lavadero"), y la planilla viene en metros con punto, así que el campo de medida del formulario tiene
-  que rechazar `3.00`: sin el punto son 300 mm, y pasan un mínimo de 300.
+  que rechazar `3.00`: sin el punto son 300 mm, y pasan un mínimo de 300. La calculadora ya lo hace con `numeroEscrito`
+  (`modules/catalogo/entrada.ts`): al usarla en Presupuestos, subirla a `lib/utils.ts`.
   También, a evaluar sin compromiso (2026-11-04): selección masiva de opcionales, para tildar o destildar de una vez la
   Colocación o la Garantía de vidrio en varios ítems. Cada ítem sigue guardando lo suyo, y la pieza se reconoce por nombre
   (`entrada.piezas`), así que no cambia el catálogo. A decidir: si hace falta frenar presupuestos mezclados, que sí pediría

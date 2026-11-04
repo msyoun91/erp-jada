@@ -8,7 +8,7 @@ import { Campo, claseInput, Etiqueta } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
 import { MONEDAS, MONEDAS_LISTA, type Moneda } from "@/lib/monedas";
 import { calcular, guardarCaso } from "../actions";
-import { aEntrada, desdeEntrada, ESTADO_VACIO, type EntradaEstado } from "../entrada";
+import { aEntrada, desdeEntrada, ESTADO_VACIO, numeroEscrito, type EntradaEstado } from "../entrada";
 import { textoMedida } from "../etiquetas";
 import {
   casoSchema,
@@ -86,6 +86,11 @@ export function Calculadora({
     setEstado((e) => ({ ...e, [k]: { ...(e[k] as Record<string, string>), [id]: valor } }));
 
   const variables = contenido.variables.filter((v) => v.ingresa_vendedor);
+  const malEscrita = (v: Contenido["variables"][number]) => {
+    const valor = estado.variables[v.id]?.trim();
+    return !v.es_lista && !!valor && numeroEscrito(valor) === null;
+  };
+  const hayMalEscrita = variables.some(malEscrita);
   const piezas = contenido.piezas.filter((p) => p.opcional);
   const elegibles = contenido.materiales.filter((m) => m.tipo === "elige_vendedor" || m.tipo === "sigue");
   const serviciosOpcionales =
@@ -138,14 +143,16 @@ export function Calculadora({
               </select>
             ) : (
               <input
-                type="number"
-                step="any"
-                className={claseInput()}
+                type="text"
+                className={malEscrita(v) ? "input input-error" : claseInput()}
                 inputMode="decimal"
                 value={estado.variables[v.id] ?? ""}
                 placeholder={v.formula ? `Predeterminado: ${v.formula}` : "Obligatoria"}
                 onChange={(e) => set("variables", v.id, e.target.value)}
               />
+            )}
+            {malEscrita(v) && (
+              <span className="input-error-text">Va sin puntos y con coma para el decimal: 1500 o 1500,5</span>
             )}
             {v.minimo !== null && v.maximo !== null && (
               <span className="t-caption">
@@ -254,11 +261,16 @@ export function Calculadora({
           </>
         )}
 
-        <button type="submit" className="btn btn-primary" disabled={pendiente}>
+        <button type="submit" className="btn btn-primary" disabled={pendiente || hayMalEscrita}>
           {pendiente ? "Calculando…" : "Calcular"}
         </button>
         {guardaCasos && (
-          <button type="button" className="btn btn-secondary" onClick={() => setGuardandoCaso(true)}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={hayMalEscrita}
+            onClick={() => setGuardandoCaso(true)}
+          >
             Guardar como caso
           </button>
         )}

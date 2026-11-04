@@ -344,6 +344,9 @@ costo.
 
 ### 15. En la calculadora, "1.500" se lee 1,5 — Baja, por lectura
 
+**Resuelto (2026-11-04, `modules/catalogo/entrada.ts`):** el campo es de texto y no acepta el punto: marca el error ahí mismo y no deja
+calcular ni guardar el caso. Lo de abajo describe lo que pasaba antes.
+
 **Qué pasa.** `aEntrada` (`modules/catalogo/entrada.ts`) convierte con `Number(valor.replace(",", "."))`, y el campo es
 `type="number"`. Escribir 1.500, como escribe la empresa, da 1,5 mm. El mínimo de la variable lo frena casi siempre, pero el mensaje
 de rango no dice que el problema fue el punto. Además, un caso guardado así pasa el envío, porque un valor fuera de rango no frena.
