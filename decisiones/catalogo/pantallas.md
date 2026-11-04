@@ -144,7 +144,7 @@ parecía obligar a cargar ancho y alto en una rueda. Sin opciones todavía, un m
 ## Agrupar por categoría (2026-11-03)
 
 **Insumos, Servicios fijos y Paquetes tienen un toggle "Agrupar por categoría": la lista se ordena por categoría y cada una es
-un plegable con su total.** Arranca sin agrupar, con el filtro por categoría de siempre. Se ordena antes de paginar, así una
+un plegable con su total.** Arranca agrupada (2026-11-04: pedido del usuario; antes arrancaba sin agrupar); destildar vuelve a la lista corrida. Se ordena antes de paginar, así una
 página corta un grupo como mucho en sus bordes, y el total del grupo es el de todas las páginas. Agrupada, la fila no repite
 su categoría. El paquete se agrupa por la categoría de la versión que muestra la fila. Archivos:
 `components/PorCategoria.tsx`.

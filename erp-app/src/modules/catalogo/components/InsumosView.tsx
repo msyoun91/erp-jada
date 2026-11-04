@@ -59,7 +59,7 @@ export function InsumosView({
   const [categoriaId, setCategoriaId] = useState("");
   const [estado, setEstado] = useState<Estado>("activos");
   const [porCosto, setPorCosto] = useState(false);
-  const [agrupar, setAgrupar] = useState(false);
+  const [agrupar, setAgrupar] = useState(true);
   const [abierto, setAbierto] = useState<string | null>(null);
   const [editando, setEditando] = useState<Insumo | "nuevo" | null>(null);
   const [costos, setCostos] = useState<{ titulo: string; filas: FilaCosto[] } | null>(null);

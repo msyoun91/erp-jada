@@ -39,7 +39,7 @@ export function PaquetesView({
   const [texto, setTexto] = useState("");
   const [categoriaId, setCategoriaId] = useState("");
   const [estado, setEstado] = useState<Estado>("todos");
-  const [agrupar, setAgrupar] = useState(false);
+  const [agrupar, setAgrupar] = useState(true);
   const [creando, setCreando] = useState(false);
   const [verCategorias, setVerCategorias] = useState(false);
   const nombreCategoria = new Map(categorias.map((c) => [c.id, c.nombre]));
