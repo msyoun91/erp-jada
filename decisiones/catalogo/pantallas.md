@@ -102,6 +102,10 @@ cuatro renglones.
 vacía. "Mismas opciones" las llena para el sincronizado.** En la base son un solo mecanismo (*Un material múltiple puede
 seguir la elección de otro*).
 
+**Las fórmulas de una pareja se abren desde su fila, con el mismo panel de una opción sin la lista de insumos (2026-11-04).** El insumo
+se elige en la lista de parejas, y dos parejas pueden ser el mismo insumo: el panel dice "Con Laminado". Cambiar el insumo deja las
+fórmulas; pasar a "ninguna" las borra, porque no da fila. Archivos: `MaterialPanel.tsx`, `OpcionPanel.tsx`.
+
 **El panel de un material múltiple muestra solo las fórmulas que usan sus opciones; sin opciones, todas, aclaradas.** El
 múltiple no guarda unidad: la tiene cada opción. Con el Vidrio todo en m2, Medida no aparece; un campo que ya tiene un valor
 sigue a la vista, para no esconder un dato. Archivo: `MaterialPanel.tsx`.

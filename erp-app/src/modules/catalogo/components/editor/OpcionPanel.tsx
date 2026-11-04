@@ -19,6 +19,7 @@ export function OpcionPanel({
   opcion,
   orden,
   conPredeterminada,
+  parejaDe,
   insumos,
   condiciones,
   nombres,
@@ -29,6 +30,8 @@ export function OpcionPanel({
   opcion: Opcion | null;
   orden: number;
   conPredeterminada: boolean;
+  // Una pareja elige su insumo en la lista de parejas; dos pueden ser el mismo, y esto dice de cuál se trata.
+  parejaDe?: string;
   insumos: InsumosPorId;
   condiciones: Condicion[];
   nombres: string[];
@@ -56,7 +59,7 @@ export function OpcionPanel({
   return (
     <RightPanel
       title={opcion ? `Opción ${insumos.get(opcion.insumo_id ?? "")?.nombre ?? ""}` : "Nueva opción"}
-      subtitle="Vacío: lo hereda del material."
+      subtitle={`${parejaDe ? `Con ${parejaDe}. ` : ""}Vacío: lo hereda del material.`}
       onClose={onClose}
       hayCambios={formState.isDirty}
       footer={
@@ -67,14 +70,16 @@ export function OpcionPanel({
     >
       <div className="flex flex-col gap-4 overflow-y-auto p-5">
         <form onSubmit={handleSubmit(guardar)} className="flex flex-col gap-4">
-          <Campo id="opcion-insumo" label="Insumo o servicio fijo" requerido error={errors.insumo_id}>
-            <InsumoSelect
-              id="opcion-insumo"
-              insumos={insumos}
-              actual={opcion?.insumo_id}
-              registro={register("insumo_id")}
-            />
-          </Campo>
+          {!parejaDe && (
+            <Campo id="opcion-insumo" label="Insumo o servicio fijo" requerido error={errors.insumo_id}>
+              <InsumoSelect
+                id="opcion-insumo"
+                insumos={insumos}
+                actual={opcion?.insumo_id}
+                registro={register("insumo_id")}
+              />
+            </Campo>
+          )}
           {conPredeterminada && (
             <label className="tap-target flex items-center gap-2">
               <input type="checkbox" {...register("predeterminada")} />

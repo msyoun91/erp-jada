@@ -23,6 +23,17 @@ const TIPO: Record<MaterialForm["tipo"], string> = {
   sigue: "Sigue la elección de otro (sincronizado o combo)",
 };
 
+function detalleOpcion(o: Opcion) {
+  return [
+    o.medida,
+    o.ancho && o.alto && `${formulaAparte(o.ancho)} × ${formulaAparte(o.alto)}`,
+    o.area && `área ${formulaAparte(o.area)}`,
+    o.cantidad && `× ${formulaAparte(o.cantidad)}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
 export function MaterialPanel({
   versionId,
   material,
@@ -71,15 +82,7 @@ export function MaterialPanel({
     (m) => m.id !== material?.id && (m.tipo === "elige_vendedor" || m.tipo === "elige_sistema"),
   );
 
-  function detalleOpcion(o: Opcion) {
-    return [
-      o.medida,
-      o.ancho && o.alto && `${formulaAparte(o.ancho)} × ${formulaAparte(o.alto)}`,
-      o.cantidad && `× ${formulaAparte(o.cantidad)}`,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-  }
+  const seguida = opcion && opcion !== "nueva" ? contenido.opciones.find((o) => o.id === opcion.sigue_opcion_id) : null;
 
   async function grabar(d: MaterialForm) {
     const r = await guardarMaterial(d);
@@ -277,7 +280,13 @@ export function MaterialPanel({
 
           {material?.tipo === "sigue" && material.sigue_material_id && (
             <>
-              <Parejas versionId={versionId} material={material} contenido={contenido} insumos={insumos} />
+              <Parejas
+                versionId={versionId}
+                material={material}
+                contenido={contenido}
+                insumos={insumos}
+                onAbrir={setOpcion}
+              />
               <section className="flex flex-col gap-2">
                 <h4 className="t-label">Opciones sueltas</h4>
                 <p className="t-caption">No son pareja de nadie: el vendedor las elige de la lista, nunca se completan solas.</p>
@@ -319,6 +328,7 @@ export function MaterialPanel({
           opcion={opcion === "nueva" ? null : opcion}
           orden={opciones.length}
           conPredeterminada={material.tipo !== "sigue"}
+          parejaDe={seguida ? (insumos.get(seguida.insumo_id ?? "")?.nombre ?? "—") : undefined}
           insumos={insumos}
           condiciones={contenido.condiciones}
           nombres={nombres}
@@ -336,11 +346,13 @@ function Parejas({
   material,
   contenido,
   insumos,
+  onAbrir,
 }: {
   versionId: string;
   material: Material;
   contenido: Contenido;
   insumos: InsumosPorId;
+  onAbrir: (o: Opcion) => void;
 }) {
   const [pendiente, setPendiente] = useState(false);
   const delQueElige = contenido.opciones.filter((o) => o.material_id === material.sigue_material_id);
@@ -355,6 +367,8 @@ function Parejas({
           ? await sacar({ tabla: "catalogo_opciones", id: actual.id })
           : { success: true as const }
         : await guardarOpcion({
+            // Cambiar el insumo deja las fórmulas de la pareja; "ninguna" no da fila, y no se guardan.
+            ...(valor === "ninguna" ? undefined : actual),
             id: actual?.id ?? null,
             version_id: versionId,
             material_id: material.id,
@@ -387,6 +401,15 @@ function Parejas({
                 vacio="Vacía: frena el envío"
                 extra={<option value="ninguna">Ninguna: no lleva</option>}
               />
+              {actual?.insumo_id && (
+                <button
+                  type="button"
+                  className="tap-target t-caption self-start text-left text-text-brand"
+                  onClick={() => onAbrir(actual)}
+                >
+                  {detalleOpcion(actual) || "+ Fórmulas propias"}
+                </button>
+              )}
             </li>
           );
         })}

@@ -39,9 +39,6 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   navegador**: la sesión que las escribió no tenía la base. **Siguiente:** probarlas con un usuario de cada persona (Técnica,
   Administración, gerente, quien revisa cortes) y cargar el primer paquete real, que es la prueba del despiece y del precio
   (`decisiones/catalogo/README.md`).
-  **Falta en el editor (2026-11-04):** las fórmulas de una pareja. `paquete.md` cuenta con Laminado → Contravidrio 6mm × 3 y Templado → × 5, pero
-  `Parejas` (`MaterialPanel.tsx`) solo elige el insumo: no abre la opción, y volver a elegirlo guarda la fila sin fórmulas. Las opciones sueltas sí
-  tienen su panel.
 
   Paquetes a la venta y su formulario se escriben con Presupuestos.
 - **Notificaciones — la bandeja todavía tarda ~0,6 s con obras recibidas**, sin caso real todavía (2026-11-04). Lo que queda es la RLS de
