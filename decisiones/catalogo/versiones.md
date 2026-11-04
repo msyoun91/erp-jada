@@ -63,6 +63,11 @@ pieza saca sus variables y materiales, y sacar una opción saca su pareja. Una p
 requisito, y un material que seguía al sacado queda sin a quién seguir, que frena el envío. Reactivar una fila suelta podía
 dejar un material dentro de una pieza sacada. Archivos: `sql/160`.
 
+**Nada entra ni se apunta a lo que ya se sacó de un borrador (2026-11-04).** Dos personas editan el mismo borrador sin bloquearlo: si
+Lucía saca una pieza mientras Martín, con el panel abierto, le suma un material, ese material no se veía en el despiece, pero fijaba su
+insumo y dejaba la versión publicada sin poder copiarse. Ahora la base lo frena (CA025) y Martín recarga. Una edición que no cambia a quién
+apunta no toma lock sobre el padre, para no cruzarse con la cascada de la baja. Archivos: `sql/171`.
+
 **Cada paquete tiene una sola versión abierta (borrador o en revisión) a la vez, y Técnica puede
 retirarla de revisión: vuelve a borrador sin pasar por el gerente (2026-10-29).** Con la v3 en revisión
 y una rueda discontinuada, Técnica la retira, le cambia la rueda y la reenvía: el gerente aprueba una

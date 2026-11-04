@@ -93,6 +93,10 @@ sacadas, y un precio 0 cuando no queda ninguna fila. Lo demás son bordes. Ningu
 
 ### 1. El JIT hace lento todo lo que pasa por `catalogo_version_frena` — Alta, a confirmar en Supabase
 
+**Descartado en Supabase (2026-11-04).** La plataforma trae `jit = off` (`platform-defaults.conf`) y ningún rol lo cambia. `frena` tarda
+44–50 ms en un borrador de 2 piezas y 7 materiales (245 ms la primera llamada). No se cambió nada. Lo de abajo vale solo para un Postgres con
+`jit = on`, como el local de la auditoría.
+
 **Qué pasa.** Postgres estima 1.000 filas para cada función que devuelve filas. En `catalogo_version_referencias`, esa estimación
 se multiplica por subconsultas correlativas: el costo estimado llega a ~640.000, cuando `jit_above_cost` es 100.000 y
 `jit_optimize_above_cost` 500.000. Entonces Postgres compila con LLVM en cada llamada. Como las funciones SQL no guardan el plan
@@ -124,6 +128,8 @@ Con JIT, cada uno de esos pasos espera unos 2,6 s.
 `_referencias`, pero es más frágil.
 
 ### 2. Contenido debajo de algo ya sacado del borrador — Media
+
+**Resuelto (2026-11-04, `sql/171`):** CA025. Lo de abajo describe lo que pasaba antes.
 
 **Qué pasa.** `catalogo_contenido_validar` (`sql/160_catalogo_paquetes.sql:306`) impide reactivar lo sacado (CA015), pero no impide
 crear o mover algo debajo de un padre sacado. Las FK compuestas no miran `activo`. Se puede:

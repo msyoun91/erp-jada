@@ -192,7 +192,8 @@ pareja de nadie y solo se elige a mano. Los nombres repetidos no distinguen may�
 
 **Triggers.** `catalogo_versiones_validar`: pone el número; fuera de borrador, nombre y categoría no cambian (CA012).
 `catalogo_contenido_validar`, en las ocho tablas: fuera de borrador no se edita (CA012), con `FOR SHARE` sobre la versión
-para que no entre una edición mientras se envía; lo sacado no vuelve (CA015). `catalogo_contenido_baja`: sacar una pieza
+para que no entre una edición mientras se envía; lo sacado no vuelve (CA015); nada entra ni se apunta a lo sacado (CA025), con
+`FOR SHARE` sobre el padre solo al cambiar a quién apunta. `catalogo_contenido_baja`: sacar una pieza
 saca sus variables y materiales; un material, sus opciones, condiciones y las variables según él; una opción, su pareja, sus
 condiciones y sus valores; una variable, sus condiciones y sus valores. Lo que requería la pieza o seguía al material queda sin apuntar.
 
@@ -204,7 +205,7 @@ condiciones y sus valores; una variable, sus condiciones y sus valores. Lo que r
 | `catalogo_version_copiar(origen, paquete, nombre) → uuid` | INVOKER | la copia, solo lo activo. Las fórmulas apuntan por nombre y no cambian. Tiene EXECUTE porque las dos de arriba son INVOKER |
 
 **Errores:** CA012 la versión no está en borrador · CA013 ya hay una versión abierta · CA014 no se encontró de qué versión
-copiar · CA015 lo sacado de un borrador no vuelve.
+copiar · CA015 lo sacado de un borrador no vuelve · CA025 algo que entra en lo sacado o lo apunta.
 
 ## El despiece
 
