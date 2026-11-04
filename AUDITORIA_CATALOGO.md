@@ -256,6 +256,11 @@ en *Cómo se calcula*.
 
 ### 9. Opciones huérfanas al cambiar el tipo de un material o a quién sigue — Baja, por lectura
 
+**Resuelto (2026-11-04, `sql/176`):** al cambiar, salen las opciones que dejan de aplicar, y el panel lo avisa antes de guardar. Se reprodujo, y
+pesaba más de lo que dice abajo: `frena` sí las contaba (`catalogo_version_insumos`), una pareja vieja se podía elegir a mano y fijaba la unidad de
+las nuevas (CA024). Los valores de una variable que cambia de material no se tocaron: no se miran ni se copian, como dice *Una variable que no carga
+el vendedor*. Lo de abajo describe lo que pasaba antes.
+
 **Qué pasa.** `UPDATE catalogo_materiales SET tipo = …` o `SET sigue_material_id = …` no saca las opciones que ya no corresponden.
 Quedan opciones en un material `unico`, o parejas que apuntan a opciones del material que se seguía antes.
 

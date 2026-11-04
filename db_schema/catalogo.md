@@ -198,6 +198,7 @@ para que no entre una edición mientras se envía; lo sacado no vuelve (CA015); 
 `FOR SHARE` sobre el padre solo al cambiar a quién apunta. `catalogo_contenido_baja`: sacar una pieza
 saca sus variables y materiales; un material, sus opciones, condiciones y las variables según él; una opción, su pareja, sus
 condiciones y sus valores; una variable, sus condiciones y sus valores. Lo que requería la pieza o seguía al material queda sin apuntar.
+`catalogo_material_cambia` (`catalogo_materiales`; AFTER UPDATE OF `tipo`, `sigue_material_id`, INVOKER): saca lo que deja de aplicar. Un único, todas sus opciones; los demás, las parejas de una opción que no es del material que siguen. Las sueltas quedan.
 
 | función | seguridad | qué hace |
 |---|---|---|

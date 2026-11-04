@@ -68,6 +68,12 @@ Lucía saca una pieza mientras Martín, con el panel abierto, le suma un materia
 insumo y dejaba la versión publicada sin poder copiarse. Ahora la base lo frena (CA025) y Martín recarga. Una edición que no cambia a quién
 apunta no toma lock sobre el padre, para no cruzarse con la cascada de la baja. Archivos: `sql/171`.
 
+**Cambiar el tipo de un material o a quién sigue saca las opciones que dejan de aplicar, y no vuelven (2026-11-04).** Al pasar a único salen
+todas; al cambiar a quién sigue o dejar de seguir, salen las parejas y quedan las sueltas. Una pareja vieja no se veía en el editor, pero frenaba el
+envío si su insumo estaba de baja, se podía elegir a mano, fijaba su insumo y su unidad, y se copiaba a cada versión. El panel avisa cuántas salen
+antes de guardar, porque no vuelven. Lo que apuntaba al material (quien lo sigue, una variable según él) no sale: lo frena el envío, y Técnica decide.
+Archivos: `sql/176`, `MaterialPanel.tsx`, `sql/tests/catalogo_segun.sql`.
+
 **Cada paquete tiene una sola versión abierta (borrador o en revisión) a la vez, y Técnica puede
 retirarla de revisión: vuelve a borrador sin pasar por el gerente (2026-10-29).** Con la v3 en revisión
 y una rueda discontinuada, Técnica la retira, le cambia la rueda y la reenvía: el gerente aprueba una

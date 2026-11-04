@@ -80,10 +80,17 @@ export function MaterialPanel({
   });
   const { errors, isSubmitting } = formState;
   const { ref: registrarRegla, ...campoRegla } = register("eleccion");
-  const [tipo, insumoId] = useWatch({ control, name: ["tipo", "insumo_id"] });
+  const [tipo, insumoId, sigueId] = useWatch({ control, name: ["tipo", "insumo_id", "sigue_material_id"] });
   const insumo = insumos.get(insumoId ?? "");
   const opciones = material ? contenido.opciones.filter((o) => o.material_id === material.id) : [];
   const sueltas = opciones.filter((o) => !o.sigue_opcion_id);
+  // Lo saca la base al guardar (`catalogo_material_cambia`) y no vuelve: se avisa antes.
+  const seSacan =
+    tipo === "unico"
+      ? opciones.length
+      : tipo === "sigue" && sigueId === material?.sigue_material_id
+        ? 0
+        : opciones.length - sueltas.length;
   const esServicio = tipo === "unico" && insumo?.tipo === "servicio";
 
   // Un múltiple no tiene unidad: la tiene cada opción.
@@ -151,6 +158,11 @@ export function MaterialPanel({
                 ))}
               </select>
             </Campo>
+            {seSacan > 0 && (
+              <p className="t-body-m text-warning-text">
+                Al guardar se {seSacan === 1 ? "saca 1 opción" : `sacan ${seSacan} opciones`}: ya no aplican con este cambio.
+              </p>
+            )}
 
             {tipo === "unico" ? (
               <Campo id="mat-insumo" label="Insumo o servicio fijo" requerido error={errors.insumo_id}>
