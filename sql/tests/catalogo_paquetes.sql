@@ -355,7 +355,7 @@ SELECT pg_temp.caso('03 único que sigue', '23514', pg_temp.intentar(pg_temp.ins
 SELECT pg_temp.caso('03 lo elige el vendedor, con elección', '23514', pg_temp.intentar(pg_temp.ins('catalogo_materiales', 'V1', 'pieza_id, tipo, nombre, eleccion', format($q$%s, 'elige_vendedor', 'X', 'si a > 1 entonces b si no c'$q$, pg_temp.l('Marco'))), 'Lucia'));
 SELECT pg_temp.caso('03 lo elige el sistema, con sin elección', '23514', pg_temp.intentar(pg_temp.ins('catalogo_materiales', 'V1', 'pieza_id, tipo, nombre, sin_eleccion', format($q$%s, 'elige_sistema', 'X', true$q$, pg_temp.l('Marco'))), 'Lucia'));
 SELECT pg_temp.caso('03 lo elige el sistema, secundario', '23514', pg_temp.intentar(pg_temp.ins('catalogo_materiales', 'V1', 'pieza_id, tipo, nombre, secundario', format($q$%s, 'elige_sistema', 'X', true$q$, pg_temp.l('Marco'))), 'Lucia'));
-SELECT pg_temp.caso('03 sigue a otro, secundario', '23514', pg_temp.intentar(pg_temp.ins('catalogo_materiales', 'V1', 'pieza_id, tipo, nombre, secundario', format($q$%s, 'sigue', 'X', true$q$, pg_temp.l('Marco'))), 'Lucia'));
+SELECT pg_temp.caso('03 sigue a otro, con sin elección', '23514', pg_temp.intentar(pg_temp.ins('catalogo_materiales', 'V1', 'pieza_id, tipo, nombre, sin_eleccion', format($q$%s, 'sigue', 'X', true$q$, pg_temp.l('Marco'))), 'Lucia'));
 SELECT pg_temp.caso('03 se sigue a sí mismo', '23514', pg_temp.intentar(pg_temp.upd('catalogo_materiales', 'MContra', format('sigue_material_id = %s', pg_temp.l('MContra'))), 'Lucia'));
 
 SELECT pg_temp.caso('03 opción sin insumo ni pareja', '23514', pg_temp.intentar(pg_temp.ins('catalogo_opciones', 'V1', 'material_id', pg_temp.l('MVidrio')), 'Lucia'));

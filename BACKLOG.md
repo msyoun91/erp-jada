@@ -39,12 +39,13 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   navegador**: la sesión que las escribió no tenía la base. **Siguiente:** probarlas con un usuario de cada persona (Técnica,
   Administración, gerente, quien revisa cortes) y cargar el primer paquete real, que es la prueba del despiece y del precio
   (`decisiones/catalogo/README.md`).
-  **Decidida, sin construir (2026-11-04):** la variable según un material que se elige (`decisiones/catalogo/paquete.md` → *Una
-  variable que no carga el vendedor puede definirse según un material*): tabla de valores por opción, despiece, qué frena el
-  envío, copia de la versión y comparación al aprobar, con su test; después, el editor.
-  **Decidida, sin construir (2026-11-04):** el vendedor puede cambiar lo que sigue a otro (`decisiones/catalogo/paquete.md` → *la
-  pareja es una sugerencia*): la elección a mano en el despiece y en el precio, opciones sueltas, "secundario" y su freno, con
-  su test; después, el editor y la calculadora. Va en el mismo tramo que la variable: se tocan entre sí.
+  **Base lista, falta la pantalla (2026-11-04, `sql/167`):** la variable según un material que se elige (`decisiones/catalogo/paquete.md`
+  → *Una variable que no carga el vendedor puede definirse según un material*) y el vendedor que cambia lo que sigue a otro (→ *la pareja es
+  una sugerencia*). **Siguiente:** el editor (variable según material con su tabla de valores, opciones sueltas, "secundario" en lo que sigue a
+  otro) y la calculadora (elegir a mano lo que sigue a otro). La comparación al aprobar no pide nada propio si sale de los dos cálculos: revisarlo
+  al hacer esa pantalla. **Antes, a medias:** la regresión de `sql/167`. Pasaron `catalogo_segun` (317 / 317) y `catalogo_paquetes` (515 / 515), y
+  sin deriva entre `sql/167` y la base (`md5`, las 11 funciones). **Faltan, de a uno por sesión porque cada uno son ~30–40k tokens para leer y otros
+  tantos para pegar:** `catalogo_ciclo` (se tocó para esto: sin su insumo, la fila de Contra6 también figura entre las opciones que no se ofrecen), `_despiece`, `_precio` y `_avisos`.
 
   Paquetes a la venta y su formulario se escriben con Presupuestos.
 - **Notificaciones — la bandeja todavía tarda ~0,6 s con obras recibidas**, sin caso real todavía (2026-11-04). Lo que queda es la RLS de

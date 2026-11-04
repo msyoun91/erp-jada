@@ -220,7 +220,14 @@ una marca por material para dejar parejas fijas: el usuario quiere que se puedan
 - **El vendedor ve las parejas y las opciones sueltas que sume Técnica.** Un Contravidrio 10mm no es pareja de nadie: se
   elige de la lista y nunca se completa solo. "Ninguna" se puede elegir si es la pareja de alguna opción.
 - **Técnica decide con "secundario" si va plegado en "Más opciones".** Es la marca de los que elige el vendedor, y ahora vale
-  también acá. No se puede plegar si el que elige no tiene predeterminada: no habría nada propuesto.
+  también acá. No se puede plegar si el que elige no tiene predeterminada: no habría nada propuesto. Si lo define el sistema, sí se
+  puede: su regla siempre propone.
+- **Si el insumo elegido a mano es el de la pareja de lo elegido, vale esa fila, con sus fórmulas (2026-11-04).** Con Laminado → Contravidrio
+  6mm × 3 y Templado → Contravidrio 6mm × 5, elegir 6mm a mano con el Templado da × 5, igual que no tocarlo. Si no es esa pareja, vale la
+  primera fila de ese insumo. Por eso una suelta no repite una pareja: frena el envío (`versiones.md` → *Qué frena el envío*).
+- **Elegida a mano, una opción sin su insumo no se ofrece, como cualquiera (2026-11-04).** Si se da de baja el Contravidrio 10mm suelto, el
+  paquete sigue a la venta y solo quien lo eligió ve "Ya no se ofrece". Sigue valiendo que una opción sale si le falta su pareja, aunque se
+  pueda elegir otra a mano: sin la pareja no hay qué completar, y el aviso de la baja lista la opción y la pareja. Archivos: `sql/167`.
 
 **Un material sigue a uno que elige, no a otro que sigue; lo frena el envío (2026-11-02).** Si el Contravidrio y el
 Burlete dependen del Vidrio, los dos apuntan al Vidrio. Sin cadenas no hay círculos que revisar ni un orden que resolver
@@ -248,6 +255,9 @@ una medida mal sin que nadie lo notara, y cada variable repetía la cadena.
 - **No vale un material que permite "sin elección", puede dar "ninguno" o tiene la pareja "ninguna",** ni uno de una pieza que puede faltar para una
   variable de lo fijo (*Una fórmula solo puede usar lo que seguro existe*). Se apunta al material, no a su nombre: con un
   Herraje en cada hoja, no hay duda de cuál es.
+- **Sacar el material saca las variables según él, y sacar la variable o la opción saca sus valores (2026-11-04).** Sin el material la
+  variable no tiene de dónde sacar un valor; una fórmula que la usaba frena el envío. Si Técnica cambia el material de la variable, lo
+  cargado para el anterior ya no se mira y el envío pide los valores del nuevo. Archivos: `sql/167`.
 
 **El color es por paquete. En un color se deja de ofrecer lo que no se puede armar en ese color, y el
 color solo no se ofrece si el paquete no se puede armar sin eso (2026-11-02).** Un material de color

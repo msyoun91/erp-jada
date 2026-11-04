@@ -26,7 +26,10 @@ de baja en el medio.
 - Una opción sin pareja en el material que la sigue (vacía; "ninguna" vale).
 - Una variable según un material con una opción sin valor, o según un material que permite "sin elección", puede dar
   "ninguno" o tiene la pareja "ninguna" (2026-11-04, *Una variable que no carga el vendedor puede definirse según un material*).
-- Un material que sigue a otro marcado secundario, si el que elige no tiene predeterminada (2026-11-04).
+- Un material que sigue a otro marcado secundario, si el que elige es del vendedor y no tiene predeterminada (2026-11-04). Si
+  lo define el sistema, siempre hay algo propuesto.
+- Una opción suelta igual a una pareja del mismo material (2026-11-04): saldría dos veces en la lista, y sus fórmulas podrían
+  ser distintas.
 - Una fórmula con "si" sin "si no", o un material que define el sistema sin "si no". Ya no llega al envío: lo frena el parser
   al guardar (`sql/158`).
 - Una fórmula que usa lo que puede faltar o lo que ya no existe, o una referencia o un requisito circular.

@@ -208,7 +208,7 @@ export async function getContenido(versionId: string): Promise<Contenido> {
     supabase
       .from("catalogo_variables")
       .select(
-        "id, pieza_id, nombre, orden, ingresa_vendedor, es_lista, formula, valores, valor_predeterminado, es_cantidad, minimo, maximo, secundario, a_produccion, activo",
+        "id, pieza_id, nombre, orden, ingresa_vendedor, es_lista, formula, valores, valor_predeterminado, es_cantidad, minimo, maximo, secundario, a_produccion, segun_material_id, activo",
       )
       .eq("version_id", versionId)
       .eq("activo", true)

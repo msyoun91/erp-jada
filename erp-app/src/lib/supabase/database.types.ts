@@ -781,6 +781,7 @@ export type Database = {
           orden: number
           pieza_id: string | null
           secundario: boolean
+          segun_material_id: string | null
           updated_at: string
           valor_predeterminado: string | null
           valores: string[]
@@ -802,6 +803,7 @@ export type Database = {
           orden?: number
           pieza_id?: string | null
           secundario?: boolean
+          segun_material_id?: string | null
           updated_at?: string
           valor_predeterminado?: string | null
           valores?: string[]
@@ -823,12 +825,20 @@ export type Database = {
           orden?: number
           pieza_id?: string | null
           secundario?: boolean
+          segun_material_id?: string | null
           updated_at?: string
           valor_predeterminado?: string | null
           valores?: string[]
           version_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "catalogo_variables_segun_fk"
+            columns: ["segun_material_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_materiales"
+            referencedColumns: ["id", "version_id"]
+          },
           {
             foreignKeyName: "catalogo_variables_pieza_id_version_id_fkey"
             columns: ["pieza_id", "version_id"]
@@ -838,6 +848,64 @@ export type Database = {
           },
           {
             foreignKeyName: "catalogo_variables_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      catalogo_variables_valores: {
+        Row: {
+          activo: boolean
+          created_at: string
+          formula: string
+          formula_arbol: Json | null
+          id: string
+          opcion_id: string
+          updated_at: string
+          variable_id: string
+          version_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          formula: string
+          formula_arbol?: never
+          id?: string
+          opcion_id: string
+          updated_at?: string
+          variable_id: string
+          version_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          formula?: string
+          formula_arbol?: never
+          id?: string
+          opcion_id?: string
+          updated_at?: string
+          variable_id?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_variables_valores_opcion_id_version_id_fkey"
+            columns: ["opcion_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_opciones"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "catalogo_variables_valores_variable_id_version_id_fkey"
+            columns: ["variable_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_variables"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "catalogo_variables_valores_version_id_fkey"
             columns: ["version_id"]
             isOneToOne: false
             referencedRelation: "catalogo_versiones"

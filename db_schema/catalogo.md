@@ -1,8 +1,8 @@
-# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql`, `sql/161_catalogo_despiece.sql`, `sql/162_catalogo_ciclo.sql`, `sql/163_catalogo_precio.sql`, `sql/164_catalogo_avisos_enums.sql`, `sql/165_catalogo_avisos.sql` — corridas en Supabase vía MCP)
+# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql`, `sql/161_catalogo_despiece.sql`, `sql/162_catalogo_ciclo.sql`, `sql/163_catalogo_precio.sql`, `sql/164_catalogo_avisos_enums.sql`, `sql/165_catalogo_avisos.sql`, `sql/167_catalogo_segun_y_cambiar.sql` — corridas en Supabase vía MCP)
 
 Ficha y decisiones: `decisiones/catalogo/README.md`. Tests: `sql/tests/catalogo_formulas.sql`,
 `sql/tests/catalogo_registros.sql`, `sql/tests/catalogo_paquetes.sql`, `sql/tests/catalogo_despiece.sql`,
-`sql/tests/catalogo_ciclo.sql`, `sql/tests/catalogo_precio.sql`, `sql/tests/catalogo_avisos.sql`.
+`sql/tests/catalogo_ciclo.sql`, `sql/tests/catalogo_precio.sql`, `sql/tests/catalogo_avisos.sql`, `sql/tests/catalogo_segun.sql`.
 
 ## Permisos
 
@@ -175,20 +175,22 @@ tiene su `x_arbol`, generada con `catalogo_formula_parsear`: lo que no se entien
 |---|---|---|
 | `catalogo_versiones_colores` | `color_id`, `base` | color repetido, dos bases |
 | `catalogo_piezas` | `nombre`, `orden`, `cantidad` ('1'), `opcional`, `incluida`, `requiere_pieza_id`, `secundario`, `calcula_espesor`, `peso_a_produccion`, `espesor_a_produccion` | nombre repetido en la versión; una fija incluida, secundaria o con requisito; requerirse a sí misma |
-| `catalogo_variables` | `pieza_id` (NULL: suelta), `nombre`, `orden`, `ingresa_vendedor`, `es_lista`, `formula`, `valores`, `valor_predeterminado`, `es_cantidad`, `minimo`, `maximo`, `secundario`, `a_produccion` | nombre repetido en la versión; sin fórmula si no la ingresa el vendedor; lista o mínimo, máximo, cantidad o secundaria si no la ingresa; lista con fórmula, mínimo o cantidad; predeterminado fuera de la lista |
-| `catalogo_materiales` | `pieza_id`, `orden`, `tipo`, `nombre`, `insumo_id`, `medida`, `ancho`, `alto`, `area`, `cantidad` ('1'), `eleccion`, `sin_eleccion`, `sigue_material_id`, `secundario`, `cuenta_peso` (true), `cuenta_espesor` (false) | múltiple repetido en la pieza; `nombre` solo y siempre en el múltiple; `insumo_id` solo en `unico`; `eleccion` solo en `elige_sistema`; `sigue_material_id` solo en `sigue`, y no a sí mismo; `sin_eleccion` y `secundario` solo en `elige_vendedor` |
+| `catalogo_variables` | `pieza_id` (NULL: suelta), `nombre`, `orden`, `ingresa_vendedor`, `es_lista`, `formula`, `valores`, `valor_predeterminado`, `es_cantidad`, `minimo`, `maximo`, `secundario`, `a_produccion`, `segun_material_id` | nombre repetido en la versión; sin fórmula ni material si no la ingresa el vendedor; lista o mínimo, máximo, cantidad o secundaria si no la ingresa; lista con fórmula, mínimo o cantidad; predeterminado fuera de la lista; según un material si la ingresa el vendedor o con fórmula |
+| `catalogo_variables_valores` | `variable_id`, `opcion_id`, `formula` | valor repetido para la opción; lo que no se entiende (CA001). Solo se miran los de las opciones de `segun_material_id`: lo cargado para otro material queda sin efecto |
+| `catalogo_materiales` | `pieza_id`, `orden`, `tipo`, `nombre`, `insumo_id`, `medida`, `ancho`, `alto`, `area`, `cantidad` ('1'), `eleccion`, `sin_eleccion`, `sigue_material_id`, `secundario`, `cuenta_peso` (true), `cuenta_espesor` (false) | múltiple repetido en la pieza; `nombre` solo y siempre en el múltiple; `insumo_id` solo en `unico`; `eleccion` solo en `elige_sistema`; `sigue_material_id` solo en `sigue`, y no a sí mismo; `sin_eleccion` solo en `elige_vendedor`; `secundario` solo en `elige_vendedor` y `sigue` |
 | `catalogo_opciones` | `material_id`, `orden`, `insumo_id`, `sigue_opcion_id`, `predeterminada`, `medida`, `ancho`, `alto`, `area`, `cantidad` (lo vacío se hereda) | insumo repetido en el material; dos predeterminadas; dos parejas para una opción; sin insumo ni pareja; una pareja predeterminada |
 | `catalogo_condiciones` | `variable_id`, `material_id` u `opcion_id`, `condicion`, `mensaje`, `bloquea` | no ser de exactamente uno; sin mensaje |
 | `catalogo_casos` | `nombre`, `entrada` (jsonb; forma en *El despiece*) | nombre repetido en la versión; una entrada con otra forma (CHECK `catalogo_casos_entrada_forma`) |
 
 En un material que sigue a otro hay una opción por cada opción de aquel: `sigue_opcion_id` es esa opción e `insumo_id` su
-pareja, NULL si es "ninguna". Sin fila, la pareja está vacía. Los nombres repetidos no distinguen mayúsculas.
+pareja, NULL si es "ninguna". Sin fila, la pareja está vacía. Una fila con `sigue_opcion_id` NULL es una opción suelta: no es
+pareja de nadie y solo se elige a mano. Los nombres repetidos no distinguen mayúsculas.
 
 **Triggers.** `catalogo_versiones_validar`: pone el número; fuera de borrador, nombre y categoría no cambian (CA012).
-`catalogo_contenido_validar`, en las siete tablas: fuera de borrador no se edita (CA012), con `FOR SHARE` sobre la versión
+`catalogo_contenido_validar`, en las ocho tablas: fuera de borrador no se edita (CA012), con `FOR SHARE` sobre la versión
 para que no entre una edición mientras se envía; lo sacado no vuelve (CA015). `catalogo_contenido_baja`: sacar una pieza
-saca sus variables y materiales; un material, sus opciones y condiciones; una opción, su pareja y sus condiciones; una
-variable, sus condiciones. Lo que requería la pieza o seguía al material queda sin apuntar.
+saca sus variables y materiales; un material, sus opciones, condiciones y las variables según él; una opción, su pareja, sus
+condiciones y sus valores; una variable, sus condiciones y sus valores. Lo que requería la pieza o seguía al material queda sin apuntar.
 
 | función | seguridad | qué hace |
 |---|---|---|
@@ -211,7 +213,7 @@ vista Paquetes, y una función DEFINER del precio lo llama como dueña.
 | `catalogo_casos_calcular(version)` | INVOKER | `caso_id`, `nombre`, `resultado`: el mismo cálculo para cada caso activo |
 | `catalogo_entrada_valida(entrada) → boolean` | INVOKER, IMMUTABLE | la forma de la entrada, en el CHECK de los casos y en el cálculo |
 | `catalogo_numero_texto(n) → text` | INVOKER, IMMUTABLE | 1500 → `1.500`, -18 → `−18`, 666,666 → `666,67`: para los mensajes |
-| `catalogo_despiece_entrada`, `_elegir`, `_medida`, `_fila`, `_sumas` | INVOKER | los pasos, que no se llaman sueltos. Tienen EXECUTE porque `catalogo_despiece` es INVOKER, y ninguno lee costos |
+| `catalogo_despiece_entrada`, `_elegir`, `_segun`, `_medida`, `_fila`, `_sumas` | INVOKER | los pasos, que no se llaman sueltos. Tienen EXECUTE porque `catalogo_despiece` es INVOKER, y ninguno lee costos |
 
 **La entrada.** Todo es opcional, y una clave que no sea de estas cuatro no se guarda:
 
@@ -223,7 +225,8 @@ vista Paquetes, y una función DEFINER del precio lo llama como dueña.
 ```
 
 - `variables`: por nombre, número o texto (lista). Solo se leen las que ingresa el vendedor. Sin valor: su predeterminado.
-- `elecciones`: pieza → material múltiple → insumo. `null` es "sin elección". Sin valor: la opción predeterminada.
+- `elecciones`: pieza → material múltiple → insumo. `null` es "sin elección". Sin valor: la opción predeterminada. En un
+  material que sigue a otro es lo elegido a mano: `null` es "ninguna", si es la pareja de alguna opción, y sin valor, la pareja.
 - `piezas`: solo las opcionales. Sin valor: como esté marcada. Destildar una saca las que la requieren, y una incluida trae
   la que requiere.
 - `color`: sin valor, el base.

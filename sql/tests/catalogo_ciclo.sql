@@ -898,9 +898,9 @@ SELECT pg_temp.caso('04 reactivo DVH', 'ok', pg_temp.ins_activo('DVH', true));
 SELECT pg_temp.caso('04 vuelve a ofrecerse, sin versión nueva', 'true | - | -', pg_temp.ofrece('B1', 'Blanco'));
 
 -- La pareja de una opción: esa opción no se ofrece más
-SELECT pg_temp.caso('04 aviso Contra6', pg_temp.con_nombres('{}', jsonb_build_array(pg_temp.deja('B1', '{}', '{}', ARRAY['Zqx162 Laminado']))), pg_temp.aviso('Contra6', NULL, 'Lucia'));
+SELECT pg_temp.caso('04 aviso Contra6', pg_temp.con_nombres('{}', jsonb_build_array(pg_temp.deja('B1', '{}', '{}', ARRAY['Zqx162 Contra6', 'Zqx162 Laminado']))), pg_temp.aviso('Contra6', NULL, 'Lucia'));
 SELECT pg_temp.caso('04 baja Contra6', 'ok', pg_temp.ins_activo('Contra6', false));
-SELECT pg_temp.caso('04 sin pareja no se ofrece el Laminado', 'true | - | Zqx162 Laminado', pg_temp.ofrece('B1', 'Blanco'));
+SELECT pg_temp.caso('04 sin pareja no se ofrece el Laminado', 'true | - | Zqx162 Contra6,Zqx162 Laminado', pg_temp.ofrece('B1', 'Blanco'));
 SELECT pg_temp.caso('04 B1 sigue', 'activo', pg_temp.causa('B1'));
 SELECT pg_temp.caso('04 reactivo Contra6', 'ok', pg_temp.ins_activo('Contra6', true));
 
