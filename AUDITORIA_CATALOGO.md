@@ -174,6 +174,9 @@ decisiones evitan en otros lugares: *Sin costo a la fecha pedida, no hay precio*
 
 ### 4. Escrituras de dos pasos en `actions.ts` — Baja, por lectura
 
+**Resuelto (2026-11-04, `sql/173`):** las marcas las apaga un trigger, y sumar un color y ordenar son funciones. Lo de abajo describe lo que
+pasaba antes.
+
 **Qué pasa.** Cada llamada de supabase-js es su propia transacción. Hay acciones que hacen dos o más:
 - **`guardarOpcion`** con `predeterminada`: primero apaga la predeterminada anterior y después guarda la nueva. Si el segundo paso
   falla, el material queda **sin predeterminada**, y nadie lo pidió. Puede fallar por un insumo repetido (23505), otra unidad
@@ -190,6 +193,10 @@ son chicas, porque el envío frena una base o una predeterminada que falten.
 dos pasos en una transacción.
 
 ### 5. Un UPDATE que la RLS no deja pasar se informa como "guardado" — Baja, por lectura
+
+**Resuelto (2026-11-04, `actions.ts`):** 0 filas da "No tenés permiso para hacer esto". También en las que la auditoría no nombraba:
+`editarFijo`, `quitarColor`, `activarPaquete`, `guardarVersionDatos`, `guardarValorVariable` y `marcarColorBase`. Lo de abajo describe lo
+que pasaba antes.
 
 **Qué pasa.** Con RLS, un UPDATE sin permiso no da error: no encuentra filas y devuelve 0. Pasa lo mismo si el id no existe.
 `actions.ts` solo mira `error`, así que esas acciones devuelven `success`: `renombrar*`, `activar*`, `editarInsumo`,

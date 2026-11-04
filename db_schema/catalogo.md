@@ -173,18 +173,20 @@ tiene su `x_arbol`, generada con `catalogo_formula_parsear`: lo que no se entien
 
 | tabla | columnas | se frena al guardar |
 |---|---|---|
-| `catalogo_versiones_colores` | `color_id`, `base` | color repetido, dos bases |
+| `catalogo_versiones_colores` | `color_id`, `base` | color repetido; marcar otro base apaga el anterior, y dos marcas a la vez las frena el índice |
 | `catalogo_piezas` | `nombre`, `orden`, `cantidad` ('1'), `opcional`, `incluida`, `requiere_pieza_id`, `secundario`, `calcula_espesor`, `peso_a_produccion`, `espesor_a_produccion` | nombre repetido en la versión; una fija incluida, secundaria o con requisito; requerirse a sí misma |
 | `catalogo_variables` | `pieza_id` (NULL: suelta), `nombre`, `orden`, `ingresa_vendedor`, `es_lista`, `formula`, `valores`, `valor_predeterminado`, `es_cantidad`, `minimo`, `maximo`, `secundario`, `a_produccion`, `segun_material_id` | nombre repetido en la versión; sin fórmula ni material si no la ingresa el vendedor; lista o mínimo, máximo, cantidad o secundaria si no la ingresa; lista con fórmula, mínimo o cantidad; predeterminado fuera de la lista; según un material si la ingresa el vendedor. En una variable según un material, `formula` es su valor si queda sin elección |
 | `catalogo_variables_valores` | `variable_id`, `opcion_id`, `formula` | valor repetido para la opción; lo que no se entiende (CA001). Solo se miran los de las opciones de `segun_material_id`: lo cargado para otro material queda sin efecto |
 | `catalogo_materiales` | `pieza_id`, `orden`, `tipo`, `nombre`, `insumo_id`, `medida`, `ancho`, `alto`, `area`, `cantidad` ('1'), `eleccion`, `sin_eleccion`, `sigue_material_id`, `secundario`, `cuenta_peso` (true), `cuenta_espesor` (false) | múltiple repetido en la pieza; `nombre` solo y siempre en el múltiple; `insumo_id` solo en `unico`; `eleccion` solo en `elige_sistema`; `sigue_material_id` solo en `sigue`, y no a sí mismo; `sin_eleccion` solo en `elige_vendedor`; `secundario` solo en `elige_vendedor` y `sigue` |
-| `catalogo_opciones` | `material_id`, `orden`, `insumo_id`, `sigue_opcion_id`, `predeterminada`, `medida`, `ancho`, `alto`, `area`, `cantidad` (lo vacío se hereda) | insumo repetido en el material; dos predeterminadas; dos parejas para una opción; sin insumo ni pareja; una pareja predeterminada |
+| `catalogo_opciones` | `material_id`, `orden`, `insumo_id`, `sigue_opcion_id`, `predeterminada`, `medida`, `ancho`, `alto`, `area`, `cantidad` (lo vacío se hereda) | insumo repetido en el material; marcar otra predeterminada apaga la anterior, y dos marcas a la vez las frena el índice; dos parejas para una opción; sin insumo ni pareja; una pareja predeterminada |
 | `catalogo_condiciones` | `variable_id`, `material_id` u `opcion_id`, `condicion`, `mensaje`, `bloquea` | no ser de exactamente uno; sin mensaje |
 | `catalogo_casos` | `nombre`, `entrada` (jsonb; forma en *El despiece*) | nombre repetido en la versión; una entrada con otra forma (CHECK `catalogo_casos_entrada_forma`) |
 
 Trigger `catalogo_medidas_limpiar` (`catalogo_materiales`, `catalogo_opciones`; BEFORE INSERT OR UPDATE, INVOKER): con un insumo en m2 borra `medida`; en mm o u, `ancho`, `alto` y `area`. No frena nada, y sin insumo no toca nada.
 
 Trigger `catalogo_opciones_misma_unidad` (`catalogo_opciones`; BEFORE INSERT OR UPDATE OF `insumo_id`, INVOKER): las opciones activas de un material van en la misma unidad (CA024). Lo que no tiene insumo ("ninguna") no cuenta.
+
+Triggers `catalogo_predeterminada_apagar` (`catalogo_opciones`) y `catalogo_color_base_apagar` (`catalogo_versiones_colores`), BEFORE INSERT OR UPDATE de la marca, INVOKER: marcar una fila apaga la que estaba, dentro del mismo statement. Si la nueva no se puede guardar, la anterior sigue marcada.
 
 En un material que sigue a otro hay una opción por cada opción de aquel: `sigue_opcion_id` es esa opción e `insumo_id` su
 pareja, NULL si es "ninguna". Sin fila, la pareja está vacía. Una fila con `sigue_opcion_id` NULL es una opción suelta: no es
@@ -203,6 +205,8 @@ condiciones y sus valores; una variable, sus condiciones y sus valores. Lo que r
 | `catalogo_version_nueva(paquete, origen = NULL) → uuid` | INVOKER | sin origen, desde la publicada. Otra abierta: CA013. Origen que no está: CA014 |
 | `catalogo_paquete_duplicar(version, nombre) → uuid` | INVOKER | paquete nuevo, v1 copiada de cualquier versión, sin vínculo. Origen que no está: CA014 |
 | `catalogo_version_copiar(origen, paquete, nombre) → uuid` | INVOKER | la copia, solo lo activo. Las fórmulas apuntan por nombre y no cambian. Tiene EXECUTE porque las dos de arriba son INVOKER |
+| `catalogo_version_color_sumar(version, color)` | INVOKER | suma el color. Sin base activa, queda como base. Toma la versión `FOR UPDATE`: dos altas a la vez se turnan |
+| `catalogo_contenido_ordenar(tabla, ids)` | INVOKER | renumera a los hermanos desde 0 en piezas, variables, materiales u opciones. Si falta alguna fila (sin permiso o id que no está): 42501 y no cambia nada. Otra tabla: 22023 |
 
 **Errores:** CA012 la versión no está en borrador · CA013 ya hay una versión abierta · CA014 no se encontró de qué versión
 copiar · CA015 lo sacado de un borrador no vuelve · CA025 algo que entra en lo sacado o lo apunta.

@@ -121,6 +121,16 @@ texto, y quedaban dos formas de hacer lo mismo). Archivos: `Nombres.tsx`, `Mater
 
 **El primer color que se suma a una versión queda como base; hacer base a otro apaga el anterior.**
 
+**Marcar otra predeterminada o otro color base apaga el anterior en la base, con un trigger (2026-11-04).** Eran dos pasos en
+`actions.ts`: si fallaba el segundo, el material o la versión quedaban sin marca. Se eligió el trigger y no una función por
+caso, como proponía la auditoría, porque `guardarOpcion` tendría que pasarle todas las columnas de la opción. Por eso un UPDATE
+directo ya no da 23505: apaga la anterior. El índice único sigue, y frena dos marcas a la vez. Sumar un color y ordenar sí son
+funciones (`catalogo_version_color_sumar`, `catalogo_contenido_ordenar`). Archivos: `sql/173`, `actions.ts`.
+
+**Un UPDATE que no encuentra filas se informa como falta de permiso (2026-11-04).** Con RLS no da error: no encuentra filas, y la
+pantalla decía "guardado". Como nada se borra, 0 filas quiere decir que no hay permiso, y se muestra el mensaje del 42501. Todos
+los UPDATE de `actions.ts` piden `.select("id")`. Archivo: `actions.ts`.
+
 **Los casos de prueba se guardan desde la calculadora de la ficha ("Guardar como caso"), con lo cargado tal cual, y se sacan
 desde su lista.** La calculadora ya arma la entrada de un vendedor; un formulario aparte la repetía.
 

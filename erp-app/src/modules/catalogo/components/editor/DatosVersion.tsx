@@ -34,7 +34,7 @@ export function DatosVersion({
   }
 
   async function base(id: string) {
-    const r = await marcarColorBase({ version_id: version.id, id });
+    const r = await marcarColorBase(id);
     if (!r.success) toast.error(r.error);
   }
 

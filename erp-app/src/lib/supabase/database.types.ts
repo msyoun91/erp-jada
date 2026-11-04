@@ -3025,6 +3025,10 @@ export type Database = {
         Args: { p_n: Json; p_v: Json }
         Returns: boolean
       }
+      catalogo_contenido_ordenar: {
+        Args: { p_ids: string[]; p_tabla: string }
+        Returns: undefined
+      }
       catalogo_costos_cargar: {
         Args: { p_confirmar_rojo?: boolean; p_filas: Json }
         Returns: number
@@ -3374,6 +3378,10 @@ export type Database = {
       catalogo_version_circular: {
         Args: { p_version: string }
         Returns: string
+      }
+      catalogo_version_color_sumar: {
+        Args: { p_color: string; p_version: string }
+        Returns: undefined
       }
       catalogo_version_copiar: {
         Args: { p_nombre: string; p_origen: string; p_paquete: string }

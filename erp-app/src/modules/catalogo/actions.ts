@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { argsRpc } from "@/lib/supabase/rpc";
 import { createClient } from "@/lib/supabase/server";
 import { mensajeError } from "@/lib/utils";
@@ -88,6 +87,14 @@ function listo() {
   return { success: true as const };
 }
 
+// Con RLS, un UPDATE sin permiso no da error: no encuentra filas. Como nada se borra, 0 filas es eso.
+const SIN_PERMISO = { code: "42501" };
+
+function actualizado({ data, error }: { data: unknown[] | null; error: unknown }) {
+  if (error) return fallo(error);
+  return data?.length ? listo() : fallo(SIN_PERMISO);
+}
+
 // ---------- Categorías y colores ----------
 
 export async function crearCategoria(input: CategoriaAltaForm) {
@@ -102,22 +109,24 @@ export async function renombrarCategoria(input: RenombrarForm) {
   const parsed = renombrarSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase
+  const resultado = await supabase
     .from("catalogo_categorias")
     .update({ nombre: parsed.data.nombre })
-    .eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+    .eq("id", parsed.data.id)
+    .select("id");
+  return actualizado(resultado);
 }
 
 export async function activarCategoria(input: ActivarForm) {
   const parsed = activarSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase
+  const resultado = await supabase
     .from("catalogo_categorias")
     .update({ activo: parsed.data.activo })
-    .eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+    .eq("id", parsed.data.id)
+    .select("id");
+  return actualizado(resultado);
 }
 
 export async function crearColor(input: { nombre: string }) {
@@ -132,22 +141,24 @@ export async function renombrarColor(input: RenombrarForm) {
   const parsed = renombrarSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase
+  const resultado = await supabase
     .from("catalogo_colores")
     .update({ nombre: parsed.data.nombre })
-    .eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+    .eq("id", parsed.data.id)
+    .select("id");
+  return actualizado(resultado);
 }
 
 export async function activarColor(input: ActivarForm) {
   const parsed = activarSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase
+  const resultado = await supabase
     .from("catalogo_colores")
     .update({ activo: parsed.data.activo })
-    .eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+    .eq("id", parsed.data.id)
+    .select("id");
+  return actualizado(resultado);
 }
 
 // ---------- Insumos y servicios fijos ----------
@@ -174,11 +185,12 @@ export async function editarInsumo(input: InsumoEditarForm) {
   if (!parsed.success) return invalido(parsed.error.issues);
   const { id, nombre, categoria_id, unidad, peso, espesor, con_color } = parsed.data;
   const supabase = await createClient();
-  const { error } = await supabase
+  const resultado = await supabase
     .from("catalogo_insumos")
     .update({ nombre, categoria_id, unidad, peso, espesor, con_color })
-    .eq("id", id);
-  return error ? fallo(error) : listo();
+    .eq("id", id)
+    .select("id");
+  return actualizado(resultado);
 }
 
 export async function crearFijo(input: FijoForm) {
@@ -201,8 +213,7 @@ export async function editarFijo(input: FijoEditarForm) {
   if (!parsed.success) return invalido(parsed.error.issues);
   const { id, ...datos } = parsed.data;
   const supabase = await createClient();
-  const { error } = await supabase.from("catalogo_insumos").update(datos).eq("id", id);
-  return error ? fallo(error) : listo();
+  return actualizado(await supabase.from("catalogo_insumos").update(datos).eq("id", id).select("id"));
 }
 
 // La baja dispara la cascada (`catalogo_baja_cascada`): lo que sale de la venta lo decide la base.
@@ -210,11 +221,12 @@ export async function activarInsumo(input: ActivarForm) {
   const parsed = activarSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase
+  const resultado = await supabase
     .from("catalogo_insumos")
     .update({ activo: parsed.data.activo })
-    .eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+    .eq("id", parsed.data.id)
+    .select("id");
+  return actualizado(resultado);
 }
 
 export async function avisoBaja(input: AvisoBajaForm) {
@@ -245,8 +257,7 @@ export async function quitarColor(varianteId: unknown) {
   const parsed = idSchema.safeParse(varianteId);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase.from("catalogo_variantes").update({ activo: false }).eq("id", parsed.data);
-  return error ? fallo(error) : listo();
+  return actualizado(await supabase.from("catalogo_variantes").update({ activo: false }).eq("id", parsed.data).select("id"));
 }
 
 // ---------- Costos ----------
@@ -376,11 +387,12 @@ export async function activarPaquete(input: ActivarForm) {
   const parsed = activarSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase
+  const resultado = await supabase
     .from("catalogo_paquetes")
     .update({ activo: parsed.data.activo })
-    .eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+    .eq("id", parsed.data.id)
+    .select("id");
+  return actualizado(resultado);
 }
 
 const CICLO = {
@@ -444,9 +456,9 @@ export async function calcular(input: CalcularForm) {
 }
 
 // ---------- Editor del borrador ----------
-// Todo se escribe directo: la RLS pide `catalogo_armar`, los triggers frenan fuera de borrador (CA012) y lo
+// Casi todo se escribe directo: la RLS pide `catalogo_armar`, los triggers frenan fuera de borrador (CA012) y lo
 // que no se entiende de una fórmula (CA001, con lo que falta). Lo único que se traduce acá es el nombre
-// repetido, que la base da como 23505 sin decir de qué.
+// repetido, que la base da como 23505 sin decir de qué. Lo de varios pasos lo hace la base (`sql/173`).
 
 const REPETIDO: Record<TablaContenido, string> = {
   catalogo_piezas: "Ya hay una pieza con ese nombre en la versión",
@@ -467,47 +479,47 @@ function listoContenido(tabla: TablaContenido, error: { code?: string } | null) 
   return error ? falloContenido(tabla, error) : listo();
 }
 
+function actualizadoContenido(
+  tabla: TablaContenido,
+  { data, error }: { data: unknown[] | null; error: { code?: string } | null },
+) {
+  return error ? falloContenido(tabla, error) : actualizado({ data, error });
+}
+
 export async function guardarVersionDatos(input: VersionDatosForm) {
   const parsed = versionDatosSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase
+  const resultado = await supabase
     .from("catalogo_versiones")
     .update({ nombre: parsed.data.nombre, categoria_id: parsed.data.categoria_id })
-    .eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+    .eq("id", parsed.data.id)
+    .select("id");
+  return actualizado(resultado);
 }
 
-// Sin base todavía, el primero lo es.
 export async function sumarColorVersion(input: ColorVersionForm) {
   const parsed = colorVersionSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { count } = await supabase
-    .from("catalogo_versiones_colores")
-    .select("id", { count: "exact", head: true })
-    .eq("version_id", parsed.data.version_id)
-    .eq("activo", true)
-    .eq("base", true);
-  const { error } = await supabase
-    .from("catalogo_versiones_colores")
-    .insert({ ...parsed.data, base: (count ?? 0) === 0 });
+  const { error } = await supabase.rpc("catalogo_version_color_sumar", {
+    p_version: parsed.data.version_id,
+    p_color: parsed.data.color_id,
+  });
   return listoContenido("catalogo_versiones_colores", error);
 }
 
-// Uno base por versión (índice único): primero se apaga el que estaba.
-export async function marcarColorBase(input: { version_id: string; id: string }) {
-  const parsed = z.object({ version_id: idSchema, id: idSchema }).safeParse(input);
+// El que estaba lo apaga la base (`catalogo_color_base_apagar`).
+export async function marcarColorBase(colorVersionId: unknown) {
+  const parsed = idSchema.safeParse(colorVersionId);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const apagar = await supabase
+  const resultado = await supabase
     .from("catalogo_versiones_colores")
-    .update({ base: false })
-    .eq("version_id", parsed.data.version_id)
-    .eq("base", true);
-  if (apagar.error) return fallo(apagar.error);
-  const { error } = await supabase.from("catalogo_versiones_colores").update({ base: true }).eq("id", parsed.data.id);
-  return listoContenido("catalogo_versiones_colores", error);
+    .update({ base: true })
+    .eq("id", parsed.data)
+    .select("id");
+  return actualizadoContenido("catalogo_versiones_colores", resultado);
 }
 
 export async function guardarPieza(input: PiezaForm) {
@@ -515,10 +527,10 @@ export async function guardarPieza(input: PiezaForm) {
   if (!parsed.success) return invalido(parsed.error.issues);
   const { id, version_id, orden, ...datos } = parsed.data;
   const supabase = await createClient();
-  const { error } = id
-    ? await supabase.from("catalogo_piezas").update(datos).eq("id", id)
-    : await supabase.from("catalogo_piezas").insert({ ...datos, version_id, orden });
-  return listoContenido("catalogo_piezas", error);
+  const resultado = id
+    ? await supabase.from("catalogo_piezas").update(datos).eq("id", id).select("id")
+    : await supabase.from("catalogo_piezas").insert({ ...datos, version_id, orden }).select("id");
+  return actualizadoContenido("catalogo_piezas", resultado);
 }
 
 export async function guardarVariable(input: VariableForm) {
@@ -527,13 +539,14 @@ export async function guardarVariable(input: VariableForm) {
   const { id, version_id, orden, ...datos } = parsed.data;
   const supabase = await createClient();
   const { data, error } = id
-    ? await supabase.from("catalogo_variables").update(datos).eq("id", id).select("id").single()
+    ? await supabase.from("catalogo_variables").update(datos).eq("id", id).select("id").maybeSingle()
     : await supabase
         .from("catalogo_variables")
         .insert({ ...datos, version_id, orden })
         .select("id")
         .single();
   if (error) return falloContenido("catalogo_variables", error);
+  if (!data) return fallo(SIN_PERMISO);
   revalidatePath("/catalogo", "layout");
   return { success: true as const, id: data.id };
 }
@@ -543,10 +556,10 @@ export async function guardarValorVariable(input: ValorVariableForm) {
   if (!parsed.success) return invalido(parsed.error.issues);
   const { id, formula, ...resto } = parsed.data;
   const supabase = await createClient();
-  const { error } = id
-    ? await supabase.from("catalogo_variables_valores").update({ formula }).eq("id", id)
-    : await supabase.from("catalogo_variables_valores").insert({ ...resto, formula });
-  return listoContenido("catalogo_variables_valores", error);
+  const resultado = id
+    ? await supabase.from("catalogo_variables_valores").update({ formula }).eq("id", id).select("id")
+    : await supabase.from("catalogo_variables_valores").insert({ ...resto, formula }).select("id");
+  return actualizadoContenido("catalogo_variables_valores", resultado);
 }
 
 export async function guardarMaterial(input: MaterialForm) {
@@ -555,39 +568,33 @@ export async function guardarMaterial(input: MaterialForm) {
   const { id, version_id, orden, ...datos } = parsed.data;
   const supabase = await createClient();
   const { data, error } = id
-    ? await supabase.from("catalogo_materiales").update(datos).eq("id", id).select("id").single()
+    ? await supabase.from("catalogo_materiales").update(datos).eq("id", id).select("id").maybeSingle()
     : await supabase
         .from("catalogo_materiales")
         .insert({ ...datos, version_id, orden })
         .select("id")
         .single();
   if (error) return falloContenido("catalogo_materiales", error);
+  if (!data) return fallo(SIN_PERMISO);
   revalidatePath("/catalogo", "layout");
   return { success: true as const, id: data.id };
 }
 
-// Una predeterminada por material (índice único): marcar una apaga la anterior antes.
+// La predeterminada anterior la apaga la base (`catalogo_predeterminada_apagar`).
 export async function guardarOpcion(input: OpcionForm) {
   const parsed = opcionSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const { id, version_id, orden, ...datos } = parsed.data;
   const supabase = await createClient();
-  if (datos.predeterminada) {
-    const apagar = await supabase
-      .from("catalogo_opciones")
-      .update({ predeterminada: false })
-      .eq("material_id", datos.material_id)
-      .eq("predeterminada", true);
-    if (apagar.error) return fallo(apagar.error);
-  }
   // `material_id` no se cambia: sin GRANT de UPDATE.
-  const { error } = id
+  const resultado = id
     ? await supabase
         .from("catalogo_opciones")
         .update({ ...datos, material_id: undefined })
         .eq("id", id)
-    : await supabase.from("catalogo_opciones").insert({ ...datos, version_id, orden });
-  return listoContenido("catalogo_opciones", error);
+        .select("id")
+    : await supabase.from("catalogo_opciones").insert({ ...datos, version_id, orden }).select("id");
+  return actualizadoContenido("catalogo_opciones", resultado);
 }
 
 export async function guardarCondicion(input: CondicionForm) {
@@ -595,10 +602,13 @@ export async function guardarCondicion(input: CondicionForm) {
   if (!parsed.success) return invalido(parsed.error.issues);
   const { id, version_id, variable_id, material_id, opcion_id, ...datos } = parsed.data;
   const supabase = await createClient();
-  const { error } = id
-    ? await supabase.from("catalogo_condiciones").update(datos).eq("id", id)
-    : await supabase.from("catalogo_condiciones").insert({ ...datos, version_id, variable_id, material_id, opcion_id });
-  return listoContenido("catalogo_condiciones", error);
+  const resultado = id
+    ? await supabase.from("catalogo_condiciones").update(datos).eq("id", id).select("id")
+    : await supabase
+        .from("catalogo_condiciones")
+        .insert({ ...datos, version_id, variable_id, material_id, opcion_id })
+        .select("id");
+  return actualizadoContenido("catalogo_condiciones", resultado);
 }
 
 export async function guardarCaso(input: CasoForm) {
@@ -614,17 +624,16 @@ export async function sacar(input: SacarForm) {
   const parsed = sacarSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase.from(parsed.data.tabla).update({ activo: false }).eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+  return actualizado(await supabase.from(parsed.data.tabla).update({ activo: false }).eq("id", parsed.data.id).select("id"));
 }
 
 export async function ordenar(input: OrdenarForm) {
   const parsed = ordenarSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const resultados = await Promise.all(
-    parsed.data.ids.map((id, orden) => supabase.from(parsed.data.tabla).update({ orden }).eq("id", id)),
-  );
-  const error = resultados.find((r) => r.error)?.error;
+  const { error } = await supabase.rpc("catalogo_contenido_ordenar", {
+    p_tabla: parsed.data.tabla,
+    p_ids: parsed.data.ids,
+  });
   return error ? fallo(error) : listo();
 }
