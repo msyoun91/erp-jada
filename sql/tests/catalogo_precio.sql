@@ -601,6 +601,31 @@ SELECT pg_temp.caso('04 opcional que no existe', 'Un servicio opcional elegido y
   $q$SELECT catalogo_precio(%L, %L::jsonb, ARRAY[%L]::uuid[], 'ARS')->>'mensaje'$q$, pg_temp.paquete('Ej'), pg_temp.e('{}'), gen_random_uuid()), 'Carlos'));
 SELECT pg_temp.sin_servicios();
 
+-- sql/172: sin ninguna fila no hay precio, ni 0.
+SELECT pg_temp.ver('Cond');
+SELECT pg_temp.en('Cond', 'ancho', 1, 100, 5000);
+SELECT pg_temp.pz('Cond', 'Unica', 1);
+SELECT pg_temp.un('Cond', 'Unica', 1, 'Manija', '{"cantidad": "si ancho > 1000 entonces 1 si no 0"}');
+SELECT pg_temp.mete(NULL, 'catalogo_condiciones', 'Cond', jsonb_build_object(
+  'variable_id', pg_temp.id('Cond.ancho'), 'condicion', 'ancho < 200', 'mensaje', 'Muy angosto', 'bloquea', true));
+SELECT pg_temp.mete(NULL, 'catalogo_casos', 'Cond', '{"nombre": "base", "entrada": {"variables": {"ancho": 1500}}}');
+SELECT pg_temp.mete(NULL, 'catalogo_casos', 'Cond', '{"nombre": "angosto", "entrada": {"variables": {"ancho": 500}}}');
+SELECT pg_temp.publicar('Cond');
+SELECT pg_temp.caso('04 sin filas: sin precio', NULL, pg_temp.pr('Cond', '{precio}', pg_temp.e('{}', 500)));
+SELECT pg_temp.caso('04 sin filas: el vendedor lee por qué', 'Con estas medidas y elecciones el paquete no lleva nada', pg_temp.pr('Cond', '{mensaje}', pg_temp.e('{}', 500)));
+SELECT pg_temp.caso('04 sin filas: el gerente también', 'Con estas medidas y elecciones el paquete no lleva nada', pg_temp.de('Cond', '{sin_precio,0}', pg_temp.e('{}', 500)));
+SELECT pg_temp.caso('04 sin filas: sin exacto', NULL, pg_temp.de('Cond', '{precio_exacto}', pg_temp.e('{}', 500)));
+SELECT pg_temp.caso('04 sin filas: el despiece se pudo calcular', 'true', pg_temp.de('Cond', '{calculable}', pg_temp.e('{}', 500)));
+SELECT pg_temp.n('04 con otra medida sí', 1000, pg_temp.pr('Cond', '{precio}', pg_temp.e('{}', 1500)));
+SELECT pg_temp.caso('04 sin filas y con bloqueo: sin mensaje general', NULL, pg_temp.pr('Cond', '{mensaje}', pg_temp.e('{}', 150)));
+SELECT pg_temp.caso('04 sin filas y con bloqueo: solo el bloqueo', '["Muy angosto"]', pg_temp.de('Cond', '{sin_precio}', pg_temp.e('{}', 150)));
+
+SELECT pg_temp.ver('SoloOpc');
+SELECT pg_temp.pz('SoloOpc', 'Opc', 1, '{"opcional": true}');
+SELECT pg_temp.un('SoloOpc', 'Opc', 1, 'Manija');
+SELECT pg_temp.caso('04 solo una pieza sin elegir: sin precio', 'Con estas medidas y elecciones el paquete no lleva nada', pg_temp.de('SoloOpc', '{mensaje}'));
+SELECT pg_temp.n('04 con la pieza elegida sí', 1000, pg_temp.de('SoloOpc', '{precio}', pg_temp.e('{"piezas": {"Opc": true}}')));
+
 -- ============================================================
 -- 5. Los mínimos por presupuesto: el ejemplo de decisiones/catalogo/precio.md
 -- ============================================================
@@ -618,6 +643,8 @@ SELECT pg_temp.caso('05 sin ítems', 'nada', pg_temp.mi('[]'));
 SELECT pg_temp.caso('05 cantidad con decimales', 'Garantia=5500', pg_temp.mi(jsonb_build_array(pg_temp.it('Ej', 1.5))));
 SELECT pg_temp.caso('05 un ítem sin precio no cuenta', 'Garantia=7000', pg_temp.mi(jsonb_build_array(
   pg_temp.it('Ej', 1), pg_temp.it('Ej', 1, jsonb_build_object('entrada', pg_temp.e('{}', 4500))))));
+SELECT pg_temp.caso('05 un ítem sin filas tampoco', 'Garantia=7000', pg_temp.mi(jsonb_build_array(
+  pg_temp.it('Ej', 1), pg_temp.it('Cond', 1, jsonb_build_object('entrada', pg_temp.e('{}', 500))))));
 SELECT pg_temp.caso('05 uno que no está a la venta no cuenta', 'Garantia=7000', pg_temp.mi(jsonb_build_array(
   pg_temp.it('Ej', 1), jsonb_build_object('paquete_id', gen_random_uuid(), 'cantidad', 1))));
 SELECT pg_temp.caso('05 sin entrada ni opcionales', 'nada', pg_temp.mi(jsonb_build_array(
@@ -759,6 +786,8 @@ SELECT pg_temp.caso('07 sin costo entonces: dice por qué', '{"Zqx163 Nuevo: sin
 SELECT pg_temp.caso('07 sin costo entonces: hoy nada', '{}', pg_temp.re('Nuevo1', 'base', 'sin_precio_hasta'));
 SELECT pg_temp.caso('07 un caso bloqueado: sin precio', NULL, pg_temp.re('Ej', 'grande', 'precio_hasta'));
 SELECT pg_temp.caso('07 un caso bloqueado: dice por qué', '{"Demasiado ancho"}', pg_temp.re('Ej', 'grande', 'sin_precio_hasta'));
+SELECT pg_temp.caso('07 un caso sin filas: sin precio', NULL, pg_temp.re('Cond', 'angosto', 'precio_hasta'));
+SELECT pg_temp.caso('07 un caso sin filas: dice por qué', '{"Con estas medidas y elecciones el paquete no lleva nada"}', pg_temp.re('Cond', 'angosto', 'sin_precio_hasta'));
 
 SELECT pg_temp.caso('07 solo la publicada: la vieja no', NULL, pg_temp.re('Versiones', 'base', 'version_id'));
 SELECT pg_temp.caso('07 solo la publicada: la nueva sí', pg_temp.id('Versiones2')::text, pg_temp.re('Versiones2', 'base', 'version_id'));
