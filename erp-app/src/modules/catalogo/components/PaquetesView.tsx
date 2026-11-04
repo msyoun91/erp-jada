@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Plus, Tags } from "lucide-react";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { Paginacion } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { activarCategoria, crearCategoria, renombrarCategoria } from "../actions";
@@ -87,6 +88,29 @@ export function PaquetesView({
         </section>
       )}
 
+      <div className="flex flex-wrap items-center gap-2">
+        {puedeArmar && (
+          <button className="btn btn-primary" onClick={() => setCreando(true)}>
+            <Plus size={16} />
+            Nuevo paquete
+          </button>
+        )}
+        {puedeAprobar && (
+          <Link href="/catalogo/paquetes/referencia" className="btn btn-secondary">
+            Precios de referencia
+          </Link>
+        )}
+        <OverflowMenu
+          items={[
+            {
+              label: "Categorías",
+              icon: <Tags size={14} strokeWidth={1.75} />,
+              onClick: () => setVerCategorias(true),
+            },
+          ]}
+        />
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar paquete…" />
         <select
@@ -121,23 +145,6 @@ export function PaquetesView({
         </label>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {puedeArmar && (
-          <button className="btn btn-primary" onClick={() => setCreando(true)}>
-            <Plus size={16} />
-            Nuevo paquete
-          </button>
-        )}
-        <button className="btn btn-secondary" onClick={() => setVerCategorias(true)}>
-          Categorías
-        </button>
-        {puedeAprobar && (
-          <Link href="/catalogo/paquetes/referencia" className="btn btn-secondary">
-            Precios de referencia
-          </Link>
-        )}
-      </div>
-
       <div>
         <Paginacion {...paginado} etiqueta="paquetes" />
         {filtrados.length === 0 ? (
@@ -146,7 +153,7 @@ export function PaquetesView({
             <p className="t-body-m mt-1">
               {paquetes.length === 0
                 ? puedeArmar
-                  ? 'Armá el primero con "Nuevo paquete". Antes, cargá sus categorías.'
+                  ? 'Armá el primero con "Nuevo paquete". Antes, cargá sus categorías en el menú ⋯.'
                   : "Todavía nadie armó paquetes."
                 : "Probá con otro término o cambiá los filtros."}
             </p>

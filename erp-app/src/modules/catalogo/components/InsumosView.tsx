@@ -97,6 +97,42 @@ export function InsumosView({
 
   return (
     <div>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {puedeEditar && (
+          <button className="btn btn-primary" onClick={() => setEditando("nuevo")}>
+            <Plus size={16} />
+            {t.nuevo}
+          </button>
+        )}
+        {puedeCostos && cargables.length > 0 && (
+          <button
+            className="btn btn-secondary"
+            onClick={() => setCostos({ titulo: `Cargar costos (${cargables.length})`, filas: cargables })}
+          >
+            Cargar costos
+          </button>
+        )}
+        {/* En un menú: en mobile, con los filtros, eran cinco renglones antes del primer insumo. */}
+        <OverflowMenu
+          items={[
+            {
+              label: "Categorías",
+              icon: <Tags size={14} strokeWidth={1.75} />,
+              onClick: () => setPanel("categorias"),
+            },
+            ...(tipo === "insumo"
+              ? [
+                  {
+                    label: "Colores",
+                    icon: <Palette size={14} strokeWidth={1.75} />,
+                    onClick: () => setPanel("colores"),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </div>
+
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder={t.buscar} />
         <select
@@ -140,42 +176,6 @@ export function InsumosView({
           <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} />
           <span className="t-body-m">Agrupar por categoría</span>
         </label>
-      </div>
-
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        {puedeEditar && (
-          <button className="btn btn-primary" onClick={() => setEditando("nuevo")}>
-            <Plus size={16} />
-            {t.nuevo}
-          </button>
-        )}
-        {puedeCostos && cargables.length > 0 && (
-          <button
-            className="btn btn-secondary"
-            onClick={() => setCostos({ titulo: `Cargar costos (${cargables.length})`, filas: cargables })}
-          >
-            Cargar costos
-          </button>
-        )}
-        {/* En un menú: en mobile, con los filtros, eran cinco renglones antes del primer insumo. */}
-        <OverflowMenu
-          items={[
-            {
-              label: "Categorías",
-              icon: <Tags size={14} strokeWidth={1.75} />,
-              onClick: () => setPanel("categorias"),
-            },
-            ...(tipo === "insumo"
-              ? [
-                  {
-                    label: "Colores",
-                    icon: <Palette size={14} strokeWidth={1.75} />,
-                    onClick: () => setPanel("colores"),
-                  },
-                ]
-              : []),
-          ]}
-        />
       </div>
 
       <Paginacion {...paginado} etiqueta={t.plural} />
