@@ -88,11 +88,11 @@ export function VersionView({
           <nav aria-label="Versiones del paquete" className="flex flex-wrap gap-2">
             {paquete.versiones.map((v) =>
               v.id === version.id ? (
-                <span key={v.id} className="badge badge-info">
+                <span key={v.id} aria-current="page" className="btn btn-secondary btn-sm border-brand-500 text-text-brand">
                   v{v.numero} · {ESTADO_VERSION[v.estado].label}
                 </span>
               ) : (
-                <Link key={v.id} href={`/catalogo/paquetes/versiones/${v.id}`} className="badge badge-neutral">
+                <Link key={v.id} href={`/catalogo/paquetes/versiones/${v.id}`} className="btn btn-secondary btn-sm">
                   v{v.numero} · {ESTADO_VERSION[v.estado].label}
                 </Link>
               ),

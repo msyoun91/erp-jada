@@ -135,6 +135,11 @@ formulario de Presupuestos. Archivos: `components/Calculadora.tsx`, `entrada.ts`
 **La comparación al aprobar no pide nada propio (2026-11-04).** `calcular` manda la misma entrada a las dos versiones, y lo elegido a mano
 va en ella.
 
+## Selector de versiones (2026-11-04)
+
+**Las versiones del paquete se eligen con botones, no con badges; la actual va marcada con el color de marca.** Eran iguales a los
+badges de estado, que no se tocan. Archivos: `VersionView.tsx`.
+
 ## Acciones antes que filtros (2026-11-04)
 
 **En Paquetes, Insumos y Servicios fijos, las acciones van arriba y los filtros debajo, y las categorías siempre en el menú ⋯.** Con

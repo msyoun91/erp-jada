@@ -61,7 +61,7 @@ export function OverflowMenu({
       <button
         ref={botonRef}
         type="button"
-        className="btn btn-ghost btn-sm"
+        className="btn btn-secondary btn-sm"
         onClick={alternar}
         aria-label="Más acciones"
         aria-expanded={abierto}

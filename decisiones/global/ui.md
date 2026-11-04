@@ -55,6 +55,8 @@ Obras que lo usan, en `decisiones/tareas/visibilidad.md` → *Compartir al asign
 
 **`OverflowMenu` posiciona el dropdown con `fixed` + `getBoundingClientRect`, no `absolute`.** Dentro de un panel con `overflow-y-auto` un menú `absolute` lo recorta el contenedor (se veía cortado en `HiloDetailPanel`). `fixed` no lo recorta ningún ancestro con overflow; la posición se calcula al abrir y se decide arriba/abajo según el espacio libre (alto estimado por cantidad de ítems — ver comentario `ponytail:`). Contrapartida: al scrollear el contenedor el menú se despegaría del botón, así que un listener de `scroll` en captura lo cierra.
 
+**El botón `⋯` lleva el borde de `btn-secondary`, no `btn-ghost` (2026-11-04).** Sin borde casi no se veía, y adentro hay acciones que no están en otro lado (Categorías, Colores, dar de baja).
+
 ### `ThemeToggle`
 
 **El toggle de tema deja de flotar y se muda al footer del sidebar.** Era un botón `fixed
