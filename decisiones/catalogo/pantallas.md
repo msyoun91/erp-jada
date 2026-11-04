@@ -135,6 +135,11 @@ formulario de Presupuestos. Archivos: `components/Calculadora.tsx`, `entrada.ts`
 **La comparación al aprobar no pide nada propio (2026-11-04).** `calcular` manda la misma entrada a las dos versiones, y lo elegido a mano
 va en ella.
 
+## Baja de un insumo en el menú (2026-11-04)
+
+**En la ficha de un insumo o servicio fijo, "Dar de baja" va en el menú ⋯.** En rojo al lado de "Editar" pesaba más que lo que se hace
+todos los días, igual que en la versión del paquete. Archivos: `InsumoFicha.tsx`.
+
 ## Selector de versiones (2026-11-04)
 
 **Las versiones del paquete se eligen con botones, no con badges; la actual va marcada con el color de marca.** Eran iguales a los

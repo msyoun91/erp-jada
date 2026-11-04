@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Archive } from "lucide-react";
 import { toast } from "sonner";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { activarInsumo, avisoBaja, quitarColor, sumarColor } from "../actions";
 import { POR_UNIDAD, UNIDAD, hace, textoCosto, textoNumero } from "../etiquetas";
@@ -93,7 +95,7 @@ export function InsumoFicha({
         subtitle={datos.join(" · ")}
         onClose={onClose}
         footer={
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {puedeEditar && insumo.activo && (
               <button className="btn btn-secondary" onClick={onEditar}>
                 Editar
@@ -106,9 +108,16 @@ export function InsumoFicha({
             )}
             {puedeEditar &&
               (insumo.activo ? (
-                <button className="btn btn-danger" onClick={() => pedirBaja(null)} disabled={enviando}>
-                  Dar de baja
-                </button>
+                <OverflowMenu
+                  items={[
+                    {
+                      label: "Dar de baja",
+                      icon: <Archive size={14} strokeWidth={1.75} />,
+                      destructive: true,
+                      onClick: () => pedirBaja(null),
+                    },
+                  ]}
+                />
               ) : (
                 <button className="btn btn-primary" onClick={reactivar} disabled={enviando}>
                   Reactivar
