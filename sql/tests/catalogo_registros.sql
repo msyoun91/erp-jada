@@ -528,6 +528,29 @@ SELECT pg_temp.caso('09 Negro de vuelta', 'ok', pg_temp.intentar(format(
 SELECT pg_temp.caso('09 con su costo', '800.0000', pg_temp.consultar(format(
   $q$SELECT costo::text FROM catalogo_costos_vigentes() WHERE variante_id = %L$q$, pg_temp.id('v Negro')), 'Ana'));
 
+-- La misma variante dos veces no llega al 23505 del UNIQUE (sql/178).
+SELECT pg_temp.caso('09 variante repetida', 'CA026', pg_temp.intentar(format(
+  $q$SELECT catalogo_costos_cargar('[{"variante_id":"%s","costo":810,"moneda":"ARS"},
+                                     {"variante_id":"%s","costo":820,"moneda":"ARS"}]')$q$,
+  pg_temp.id('v Negro'), pg_temp.id('v Negro')), 'Ana'));
+SELECT pg_temp.caso('09 la repetida no guardó', '800.0000', pg_temp.consultar(format(
+  $q$SELECT costo::text FROM catalogo_costos_vigentes() WHERE variante_id = %L$q$, pg_temp.id('v Negro')), 'Ana'));
+
+-- Sin tipo de cambio, el nivel va sin color y no frena la carga (sql/178). En la base real EUR tiene tipos de cambio.
+UPDATE monedas_tipos_cambio SET activo = false WHERE moneda = 'EUR';
+SELECT pg_temp.caso('09 sin tipo de cambio: sin color', 'sin color', pg_temp.nivel('v Float', 1, 'EUR'));
+SELECT pg_temp.caso('09 sin tipo de cambio: el rojo de otra fila frena igual', 'CA003', pg_temp.intentar(format(
+  $q$SELECT catalogo_costos_cargar('[{"variante_id":"%s","costo":5,"moneda":"EUR"},
+                                     {"variante_id":"%s","costo":10000,"moneda":"ARS"}]')$q$,
+  pg_temp.id('v Blanco'), pg_temp.id('v Float')), 'Ana'));
+SELECT pg_temp.caso('09 sin tipo de cambio: se guarda', 'ok', pg_temp.intentar(format(
+  $q$SELECT catalogo_costos_cargar('[{"variante_id":"%s","costo":5,"moneda":"EUR"}]')$q$,
+  pg_temp.id('v Blanco')), 'Ana'));
+SELECT pg_temp.caso('09 sin tipo de cambio: el vigente', '5.0000 EUR', pg_temp.consultar(format(
+  $q$SELECT costo || ' ' || moneda FROM catalogo_costos_vigentes() WHERE variante_id = %L$q$, pg_temp.id('v Blanco')), 'Ana'));
+SELECT pg_temp.caso('09 sin tipo de cambio del anterior: sin color', 'sin color', pg_temp.nivel('v Blanco', 1000, 'ARS'));
+SELECT pg_temp.caso('09 en la misma moneda compara igual', 'rojo', pg_temp.nivel('v Blanco', 50, 'EUR'));
+
 -- ============================================================
 -- 10. Servicios en %: quién los ve y las reglas de cada dato
 -- ============================================================

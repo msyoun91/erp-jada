@@ -373,12 +373,13 @@ SELECT pg_temp.caso('01 referencia: ' || u, '42501',
 FROM unnest(ARRAY['Lucia','Ana','Rodrigo','Juan']) AS u;
 SELECT pg_temp.caso('01 sin EXECUTE: ' || f, 'false',
   has_function_privilege('authenticated', 'public.' || f, 'EXECUTE')::text)
-FROM unnest(ARRAY['catalogo_precio_redondear(numeric,moneda)', 'catalogo_precio_convertir(numeric,moneda,moneda,timestamptz)',
+FROM unnest(ARRAY['catalogo_precio_redondear(numeric,moneda)',
   'catalogo_precio_calcular(uuid,jsonb,uuid[],moneda,timestamptz)', 'catalogo_precio_venta(uuid,jsonb,uuid[],moneda)']) AS f;
 SELECT pg_temp.caso('01 con EXECUTE: ' || f, 'true',
   has_function_privilege('authenticated', 'public.' || f, 'EXECUTE')::text)
 FROM unnest(ARRAY['catalogo_precio(uuid,jsonb,uuid[],moneda)', 'catalogo_precio_detalle(uuid,jsonb,uuid[],moneda,timestamptz)',
-  'catalogo_precio_minimos(jsonb,moneda)', 'catalogo_precios_referencia(moneda,timestamptz,timestamptz)']) AS f;
+  'catalogo_precio_minimos(jsonb,moneda)', 'catalogo_precios_referencia(moneda,timestamptz,timestamptz)',
+  'catalogo_precio_convertir(numeric,moneda,moneda,timestamptz)']) AS f;
 SELECT pg_temp.caso('01 anon: ' || f, 'false', has_function_privilege('anon', 'public.' || f, 'EXECUTE')::text)
 FROM unnest(ARRAY['catalogo_precio(uuid,jsonb,uuid[],moneda)', 'catalogo_precio_detalle(uuid,jsonb,uuid[],moneda,timestamptz)',
   'catalogo_precio_minimos(jsonb,moneda)', 'catalogo_precios_referencia(moneda,timestamptz,timestamptz)',
