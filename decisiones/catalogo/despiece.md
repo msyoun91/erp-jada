@@ -129,6 +129,12 @@ El tope va sobre el árbol, no sobre los paréntesis: una suma de 999 términos 
 calcular. Los paréntesis no dejan rastro en el árbol, así que esos se atajan por el 54001. Las fórmulas reales llegan a 4 niveles, y
 una cadena de 80 "si" sigue entrando. `sql/179`.
 
+**Si cambia la gramática o la forma del árbol, la migración reescribe los árboles guardados con `SET EXPRESSION` (2026-11-04).**
+Los `*_arbol` son columnas generadas: cambiar el parser no los recalcula, y `UPDATE … SET formula = formula` da CA012 en una versión
+enviada. `ALTER TABLE … ALTER COLUMN … SET EXPRESSION AS (…)`, con la misma expresión, reescribe la tabla sin pasar por los triggers,
+así que no hace falta desactivarlos. Son 15 columnas en 6 tablas, y hay que hacerlo con todas. Si el parser nuevo rechaza un texto ya guardado, la migración falla entera con el error del parser: esa fórmula
+se resuelve antes. `sql/158`, `sql/160`, `sql/167`.
+
 **En una fórmula, el decimal es la coma y el punto no se acepta.** Para la empresa, `1.500` es mil
 quinientos: leído como 1,5, `ancho > 1.500` daba siempre cierto sin que nadie lo notara.
 
