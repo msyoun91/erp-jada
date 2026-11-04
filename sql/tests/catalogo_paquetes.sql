@@ -408,13 +408,20 @@ SELECT pg_temp.caso('04 sacarlo', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_m
 SELECT pg_temp.caso('04 un mismo insumo, dos filas en la pieza', '2', (SELECT count(*)::text FROM catalogo_materiales
   WHERE pieza_id = pg_temp.id('Marco') AND insumo_id = pg_temp.id('Perfil') AND activo));
 SELECT pg_temp.caso('04 opción repetida en el material', '23505', pg_temp.intentar(pg_temp.ins('catalogo_opciones', 'V1', 'material_id, insumo_id', format('%s, %s', pg_temp.l('MVidrio'), pg_temp.l('Float'))), 'Lucia'));
-SELECT pg_temp.caso('04 dos predeterminadas', '23505', pg_temp.intentar(pg_temp.upd('catalogo_opciones', 'OLam', 'predeterminada = true'), 'Lucia'));
+SELECT pg_temp.caso('04 marcar otra predeterminada', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_opciones', 'OLam', 'predeterminada = true'), 'Lucia'));
+SELECT pg_temp.caso('04 apaga la anterior', 'false', pg_temp.campo('catalogo_opciones', 'OFloat', 'predeterminada::text'));
+SELECT pg_temp.caso('04 si la nueva no se guarda', 'CA001', pg_temp.intentar(pg_temp.upd('catalogo_opciones', 'OFloat', $q$predeterminada = true, cantidad = '('$q$), 'Lucia'));
+SELECT pg_temp.caso('04 la anterior sigue marcada', 'true', pg_temp.campo('catalogo_opciones', 'OLam', 'predeterminada::text'));
+SELECT pg_temp.caso('04 volver a la primera', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_opciones', 'OFloat', 'predeterminada = true'), 'Lucia'));
 SELECT pg_temp.caso('04 dos parejas para una opción', '23505', pg_temp.intentar(pg_temp.ins('catalogo_opciones', 'V1', 'material_id, insumo_id, sigue_opcion_id',
   format('%s, %s, %s', pg_temp.l('MContra'), pg_temp.l('Contra6'), pg_temp.l('OFloat'))), 'Lucia'));
 SELECT pg_temp.caso('04 un insumo puede ser pareja de dos', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_opciones', 'OC6', format('insumo_id = %s', pg_temp.l('Contra4'))), 'Lucia'));
 SELECT pg_temp.caso('04 volverla', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_opciones', 'OC6', format('insumo_id = %s', pg_temp.l('Contra6'))), 'Lucia'));
 SELECT pg_temp.caso('04 color repetido', '23505', pg_temp.intentar(pg_temp.ins('catalogo_versiones_colores', 'V1', 'color_id', pg_temp.l('Blanco')), 'Lucia'));
-SELECT pg_temp.caso('04 dos bases', '23505', pg_temp.intentar(pg_temp.upd('catalogo_versiones_colores', 'CNegro', 'base = true'), 'Lucia'));
+SELECT pg_temp.caso('04 marcar otro color base', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_versiones_colores', 'CNegro', 'base = true'), 'Lucia'));
+SELECT pg_temp.caso('04 apaga el anterior', 'false', pg_temp.campo('catalogo_versiones_colores', 'CBlanco', 'base::text'));
+SELECT pg_temp.caso('04 volver al primero', 'ok', pg_temp.intentar(pg_temp.upd('catalogo_versiones_colores', 'CBlanco', 'base = true'), 'Lucia'));
+SELECT pg_temp.caso('04 el otro ya no es base', 'false', pg_temp.campo('catalogo_versiones_colores', 'CNegro', 'base::text'));
 SELECT pg_temp.caso('04 caso repetido', '23505', pg_temp.intentar(pg_temp.ins('catalogo_casos', 'V1', 'nombre', $q$'Chica'$q$), 'Lucia'));
 SELECT pg_temp.caso('04 caso repetido con mayúsculas', '23505', pg_temp.intentar(pg_temp.ins('catalogo_casos', 'V1', 'nombre', $q$'CHICA'$q$), 'Lucia'));
 
@@ -884,7 +891,54 @@ FROM unnest(ARRAY['catalogo_paquete_alta(text,uuid)', 'catalogo_version_copiar(u
                   'catalogo_version_nueva(uuid,uuid)', 'catalogo_paquete_duplicar(uuid,text)']) AS f;
 SELECT pg_temp.caso('12 authenticated no llama ' || f, 'false', has_function_privilege('authenticated', f, 'EXECUTE')::text)
 FROM unnest(ARRAY['catalogo_versiones_validar()', 'catalogo_contenido_validar()', 'catalogo_contenido_baja()',
-                  'catalogo_categorias_validar()', 'catalogo_insumos_validar()']) AS f;
+                  'catalogo_categorias_validar()', 'catalogo_insumos_validar()', 'catalogo_predeterminada_apagar()',
+                  'catalogo_color_base_apagar()']) AS f;
+
+-- ============================================================
+-- 13. Sumar colores y ordenar (sql/173)
+-- ============================================================
+SELECT pg_temp.crear('VEsc', pg_temp.alta('Zqx160 Escrituras', 'Puertas'));
+SELECT pg_temp.crear('Pz1', pg_temp.ins('catalogo_piezas', 'VEsc', 'nombre, orden', $q$'Pz1', 0$q$));
+SELECT pg_temp.crear('Pz2', pg_temp.ins('catalogo_piezas', 'VEsc', 'nombre, orden', $q$'Pz2', 1$q$));
+
+CREATE FUNCTION pg_temp.sumar_color(p_color text) RETURNS text LANGUAGE sql AS $f$
+  SELECT format('SELECT catalogo_version_color_sumar(%s, %s)', pg_temp.l('VEsc'), pg_temp.l(p_color));
+$f$;
+
+CREATE FUNCTION pg_temp.ordenar(p_tabla text, p_ids text) RETURNS text LANGUAGE sql AS $f$
+  SELECT format('SELECT catalogo_contenido_ordenar(%L, ARRAY[%s]::uuid[])', p_tabla, p_ids);
+$f$;
+
+CREATE FUNCTION pg_temp.ordenes() RETURNS text LANGUAGE sql AS $f$
+  SELECT string_agg(nombre || '=' || orden, ' ' ORDER BY nombre) FROM catalogo_piezas WHERE version_id = pg_temp.id('VEsc');
+$f$;
+
+CREATE FUNCTION pg_temp.colores() RETURNS text LANGUAGE sql AS $f$
+  SELECT string_agg(k.nombre || '=' || c.base, ' ' ORDER BY k.nombre) FROM catalogo_versiones_colores c
+  JOIN catalogo_colores k ON k.id = c.color_id WHERE c.version_id = pg_temp.id('VEsc');
+$f$;
+
+SELECT pg_temp.caso('13 Rodrigo no suma un color', '42501', pg_temp.intentar(pg_temp.sumar_color('Blanco'), 'Rodrigo'));
+SELECT pg_temp.caso('13 sumar el primer color', 'ok', pg_temp.intentar(pg_temp.sumar_color('Blanco'), 'Lucia'));
+SELECT pg_temp.caso('13 sumar el segundo', 'ok', pg_temp.intentar(pg_temp.sumar_color('Negro'), 'Lucia'));
+SELECT pg_temp.caso('13 solo el primero es base', 'Zqx160 Blanco=true Zqx160 Negro=false', pg_temp.colores());
+SELECT pg_temp.caso('13 color repetido', '23505', pg_temp.intentar(pg_temp.sumar_color('Blanco'), 'Lucia'));
+
+SELECT pg_temp.crear('VEscCopia', format('SELECT catalogo_paquete_duplicar(%s, %L)', pg_temp.l('VEsc'), 'Zqx160 Escrituras copia'));
+SELECT pg_temp.caso('13 la copia conserva el base', '1 de 2', (SELECT count(*) FILTER (WHERE base) || ' de ' || count(*)
+  FROM catalogo_versiones_colores WHERE version_id = pg_temp.id('VEscCopia')));
+SELECT pg_temp.crear('VOpcCopia', format('SELECT catalogo_paquete_duplicar(%s, %L)', pg_temp.l('V1'), 'Zqx160 Opciones copia'));
+SELECT pg_temp.caso('13 la copia conserva la predeterminada', 'Zqx160 Float', (SELECT i.nombre FROM catalogo_opciones o
+  JOIN catalogo_insumos i ON i.id = o.insumo_id WHERE o.version_id = pg_temp.id('VOpcCopia') AND o.predeterminada));
+
+SELECT pg_temp.caso('13 ordenar', 'ok', pg_temp.intentar(pg_temp.ordenar('catalogo_piezas', pg_temp.l('Pz2') || ',' || pg_temp.l('Pz1')), 'Lucia'));
+SELECT pg_temp.caso('13 quedan invertidas', 'Pz1=1 Pz2=0', pg_temp.ordenes());
+SELECT pg_temp.caso('13 Rodrigo no ordena', '42501', pg_temp.intentar(pg_temp.ordenar('catalogo_piezas', pg_temp.l('Pz1') || ',' || pg_temp.l('Pz2')), 'Rodrigo'));
+SELECT pg_temp.caso('13 un id que no está', '42501', pg_temp.intentar(pg_temp.ordenar('catalogo_piezas', pg_temp.l('Pz1') || ',' || quote_literal(gen_random_uuid())), 'Lucia'));
+SELECT pg_temp.caso('13 no quedó a medias', 'Pz1=1 Pz2=0', pg_temp.ordenes());
+SELECT pg_temp.caso('13 otra tabla', '22023', pg_temp.intentar(pg_temp.ordenar('catalogo_casos', pg_temp.l('Pz1')), 'Lucia'));
+SELECT pg_temp.caso('13 anon no llama ' || f, 'false', has_function_privilege('anon', f, 'EXECUTE')::text)
+FROM unnest(ARRAY['catalogo_version_color_sumar(uuid,uuid)', 'catalogo_contenido_ordenar(text,uuid[])']) AS f;
 
 -- ============================================================
 -- Resultado
