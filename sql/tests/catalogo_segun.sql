@@ -575,8 +575,116 @@ SELECT pg_temp.caso('07 baja una pareja', 'ok', pg_temp.intentar(format('UPDATE 
 SELECT pg_temp.caso('07 el Float no se ofrece', 'Ya no se ofrece: Zqx167 Float', pg_temp.precio(pg_temp.e('Contra', 'Contra10'), 'mensaje'));
 
 -- ============================================================
+-- 7b. Cambiar el tipo de un material o a quién sigue (sql/176)
+-- ============================================================
+SELECT pg_temp.insumo('Viejo', 'u');
+SELECT pg_temp.insumo('Nuevo', 'u');
+SELECT pg_temp.insumo('Metro2', 'm2');
+SELECT pg_temp.insumo('Fijado', 'u');
+SELECT pg_temp.insumo('Suelto', 'u');
+
+-- A quién sigue: la pareja vieja sale, la suelta queda, y lo vivo de la pareja vieja sale con ella
+SELECT pg_temp.base('K1');
+SELECT pg_temp.mu('K1', 'Hoja', 2, 'elige_vendedor', 'A', '{"medida": "ancho"}');
+SELECT pg_temp.op('K1', 'K1.Hoja.A', 1, 'Float', '{"predeterminada": true}');
+SELECT pg_temp.mu('K1', 'Hoja', 3, 'elige_vendedor', 'B', '{"medida": "ancho"}');
+SELECT pg_temp.op('K1', 'K1.Hoja.B', 1, 'Laminado', '{"predeterminada": true}');
+SELECT pg_temp.mu('K1', 'Hoja', 4, 'sigue', 'Contra', jsonb_build_object('sigue_material_id', pg_temp.id('K1.Hoja.A'), 'medida', 'ancho'));
+SELECT pg_temp.pareja('K1', 'K1.Hoja.Contra', 1, 'K1.Hoja.A.Float', 'Viejo');
+SELECT pg_temp.op('K1', 'K1.Hoja.Contra', 2, 'Suelto');
+SELECT pg_temp.segun('K1', 'dc', 'K1.Hoja.Contra');
+SELECT pg_temp.va('K1', 'K1.dc', 'K1.Hoja.Contra.K1.Hoja.A.Float', '7');
+SELECT pg_temp.caso('07b cambia a quién sigue', 'ok', pg_temp.intentar(format('UPDATE catalogo_materiales SET sigue_material_id = %s WHERE id = %s', pg_temp.l('K1.Hoja.B'), pg_temp.l('K1.Hoja.Contra'))));
+SELECT pg_temp.caso('07b la pareja vieja sale', 'false', (SELECT activo::text FROM catalogo_opciones WHERE id = pg_temp.id('K1.Hoja.Contra.K1.Hoja.A.Float')));
+SELECT pg_temp.caso('07b la suelta queda', 'true', (SELECT activo::text FROM catalogo_opciones WHERE id = pg_temp.id('K1.Hoja.Contra.Suelto')));
+SELECT pg_temp.caso('07b su valor sale', '0', pg_temp.valores_activos(pg_temp.id('K1.dc')));
+SELECT pg_temp.dice('K1', 'Contra: falta la pareja de Zqx167 Laminado');
+SELECT pg_temp.pareja('K1', 'K1.Hoja.Contra', 3, 'K1.Hoja.B.Laminado', 'Nuevo');
+SELECT pg_temp.caso('07b la pareja vieja no se elige', 'Contra: esa opción ya no existe | dc: falta el valor de la opción elegida en Contra', pg_temp.errores('K1', pg_temp.e('Contra', 'Viejo')));
+SELECT pg_temp.caso('07b la pareja vieja no frena de baja', 'ok', pg_temp.intentar(format('UPDATE catalogo_insumos SET activo = false WHERE id = %s', pg_temp.l('Viejo'))));
+SELECT pg_temp.no_dice('K1', 'Zqx167 Viejo');
+SELECT pg_temp.caso('07b la pareja vieja no se fija', 'ok', pg_temp.intentar(format($q$UPDATE catalogo_insumos SET activo = true, unidad = 'mm' WHERE id = %s$q$, pg_temp.l('Viejo'))));
+
+-- La pareja vieja tampoco fija la unidad de las nuevas
+SELECT pg_temp.base('K2');
+SELECT pg_temp.mu('K2', 'Hoja', 2, 'elige_vendedor', 'A');
+SELECT pg_temp.op('K2', 'K2.Hoja.A', 1, 'Float');
+SELECT pg_temp.mu('K2', 'Hoja', 3, 'elige_vendedor', 'B');
+SELECT pg_temp.op('K2', 'K2.Hoja.B', 1, 'Laminado');
+SELECT pg_temp.mu('K2', 'Hoja', 4, 'sigue', 'Contra', jsonb_build_object('sigue_material_id', pg_temp.id('K2.Hoja.A')));
+SELECT pg_temp.pareja('K2', 'K2.Hoja.Contra', 1, 'K2.Hoja.A.Float', 'Nuevo');
+SELECT pg_temp.intentar(format('UPDATE catalogo_materiales SET sigue_material_id = %s WHERE id = %s', pg_temp.l('K2.Hoja.B'), pg_temp.l('K2.Hoja.Contra')));
+SELECT pg_temp.pareja('K2', 'K2.Hoja.Contra', 2, 'K2.Hoja.B.Laminado', 'Metro2');
+SELECT pg_temp.caso('07b otra unidad en la pareja nueva', 'true', (SELECT activo::text FROM catalogo_opciones WHERE id = pg_temp.id('K2.Hoja.Contra.K2.Hoja.B.Laminado')));
+
+-- Deja de seguir: las parejas salen, las sueltas son sus opciones
+SELECT pg_temp.base('K3');
+SELECT pg_temp.mu('K3', 'Hoja', 2, 'elige_vendedor', 'A');
+SELECT pg_temp.op('K3', 'K3.Hoja.A', 1, 'Float');
+SELECT pg_temp.mu('K3', 'Hoja', 3, 'sigue', 'Contra', jsonb_build_object('sigue_material_id', pg_temp.id('K3.Hoja.A')));
+SELECT pg_temp.pareja('K3', 'K3.Hoja.Contra', 1, 'K3.Hoja.A.Float', 'Nuevo');
+SELECT pg_temp.op('K3', 'K3.Hoja.Contra', 2, 'Suelto');
+SELECT pg_temp.caso('07b deja de seguir', 'ok', pg_temp.intentar(format($q$UPDATE catalogo_materiales SET tipo = 'elige_vendedor', sigue_material_id = NULL WHERE id = %s$q$, pg_temp.l('K3.Hoja.Contra'))));
+SELECT pg_temp.caso('07b sin parejas', 'Zqx167 Suelto', (SELECT string_agg(i.nombre, ',') FROM catalogo_opciones o JOIN catalogo_insumos i ON i.id = o.insumo_id WHERE o.material_id = pg_temp.id('K3.Hoja.Contra') AND o.activo));
+
+-- Entre los que eligen no cambia nada, y empezar a seguir deja las opciones como sueltas
+SELECT pg_temp.base('K4');
+SELECT pg_temp.mu('K4', 'Hoja', 2, 'elige_vendedor', 'A');
+SELECT pg_temp.op('K4', 'K4.Hoja.A', 1, 'Float');
+SELECT pg_temp.mu('K4', 'Hoja', 3, 'elige_vendedor', 'B');
+SELECT pg_temp.op('K4', 'K4.Hoja.B', 1, 'Laminado');
+SELECT pg_temp.caso('07b a lo define el sistema', 'ok', pg_temp.intentar(format($q$UPDATE catalogo_materiales SET tipo = 'elige_sistema', eleccion = '[Zqx167 Laminado]' WHERE id = %s$q$, pg_temp.l('K4.Hoja.B'))));
+SELECT pg_temp.caso('07b conserva su opción', 'true', (SELECT activo::text FROM catalogo_opciones WHERE id = pg_temp.id('K4.Hoja.B.Laminado')));
+SELECT pg_temp.caso('07b empieza a seguir', 'ok', pg_temp.intentar(format($q$UPDATE catalogo_materiales SET tipo = 'sigue', eleccion = NULL, sigue_material_id = %s WHERE id = %s$q$, pg_temp.l('K4.Hoja.A'), pg_temp.l('K4.Hoja.B'))));
+SELECT pg_temp.caso('07b queda como suelta', 'true', (SELECT activo::text FROM catalogo_opciones WHERE id = pg_temp.id('K4.Hoja.B.Laminado')));
+
+-- A único: salen sus opciones, las parejas de quien lo sigue y sus valores; lo que apuntaba a él sigue frenando. El insumo no queda fijo ni se copia.
+SELECT pg_temp.base('K5');
+SELECT pg_temp.mu('K5', 'Hoja', 2, 'elige_vendedor', 'M', '{"medida": "ancho"}');
+SELECT pg_temp.op('K5', 'K5.Hoja.M', 1, 'Fijado', '{"predeterminada": true}');
+SELECT pg_temp.mu('K5', 'Hoja', 3, 'sigue', 'S', jsonb_build_object('sigue_material_id', pg_temp.id('K5.Hoja.M'), 'medida', 'ancho'));
+SELECT pg_temp.pareja('K5', 'K5.Hoja.S', 1, 'K5.Hoja.M.Fijado', 'Nuevo');
+SELECT pg_temp.segun('K5', 'dd', 'K5.Hoja.M');
+SELECT pg_temp.va('K5', 'K5.dd', 'K5.Hoja.M.Fijado', '5');
+SELECT pg_temp.caso('07b pasa a único', 'ok', pg_temp.intentar(format($q$UPDATE catalogo_materiales SET tipo = 'unico', nombre = NULL, insumo_id = %s WHERE id = %s$q$, pg_temp.l('Nuevo'), pg_temp.l('K5.Hoja.M'))));
+SELECT pg_temp.caso('07b sin su opción', 'false', (SELECT activo::text FROM catalogo_opciones WHERE id = pg_temp.id('K5.Hoja.M.Fijado')));
+SELECT pg_temp.caso('07b sin la pareja', 'false', (SELECT activo::text FROM catalogo_opciones WHERE id = pg_temp.id('K5.Hoja.S.K5.Hoja.M.Fijado')));
+SELECT pg_temp.caso('07b sin su valor', '0', pg_temp.valores_activos(pg_temp.id('K5.dd')));
+SELECT pg_temp.dice('K5', 'S: sigue a Zqx167 Nuevo, que no elige');
+SELECT pg_temp.dice('K5', 'dd: depende de Zqx167 Nuevo, que no se elige');
+SELECT pg_temp.caso('07b saca el que seguía', 'ok', pg_temp.sacar('catalogo_materiales', 'K5.Hoja.S'));
+SELECT pg_temp.caso('07b saca la variable', 'ok', pg_temp.sacar('catalogo_variables', 'K5.dd'));
+SELECT pg_temp.limpia('K5');
+SELECT pg_temp.publicar('K5');
+SELECT pg_temp.caso('07b el insumo no queda fijo', 'ok', pg_temp.intentar(format($q$UPDATE catalogo_insumos SET nombre = 'Zqx167 Fijado 2' WHERE id = %s$q$, pg_temp.l('Fijado'))));
+SELECT pg_temp.crear('K5v2', format('SELECT catalogo_version_nueva(%L)', pg_temp.paquete('K5')));
+SELECT pg_temp.caso('07b no se copia', '0', (SELECT count(*)::text FROM catalogo_opciones WHERE version_id = pg_temp.id('K5v2')));
+
+-- Sacar lo que se sigue deja sin a quién seguir: las sueltas quedan
+SELECT pg_temp.base('K6');
+SELECT pg_temp.mu('K6', 'Hoja', 2, 'elige_vendedor', 'A');
+SELECT pg_temp.op('K6', 'K6.Hoja.A', 1, 'Float');
+SELECT pg_temp.mu('K6', 'Hoja', 3, 'sigue', 'Contra', jsonb_build_object('sigue_material_id', pg_temp.id('K6.Hoja.A')));
+SELECT pg_temp.op('K6', 'K6.Hoja.Contra', 1, 'Suelto');
+SELECT pg_temp.caso('07b saca lo que se sigue', 'ok', pg_temp.sacar('catalogo_materiales', 'K6.Hoja.A'));
+SELECT pg_temp.caso('07b la suelta sigue ahí', 'true', (SELECT activo::text FROM catalogo_opciones WHERE id = pg_temp.id('K6.Hoja.Contra.Suelto')));
+
+-- Editar otra cosa no saca nada, y sin permiso no se cambia
+SELECT pg_temp.base('K7');
+SELECT pg_temp.mu('K7', 'Hoja', 2, 'elige_vendedor', 'A');
+SELECT pg_temp.op('K7', 'K7.Hoja.A', 1, 'Float');
+SELECT pg_temp.mu('K7', 'Hoja', 3, 'sigue', 'Contra', jsonb_build_object('sigue_material_id', pg_temp.id('K7.Hoja.A')));
+SELECT pg_temp.pareja('K7', 'K7.Hoja.Contra', 1, 'K7.Hoja.A.Float', 'Nuevo');
+SELECT pg_temp.caso('07b guarda igual', 'ok', pg_temp.intentar(format($q$UPDATE catalogo_materiales SET tipo = 'sigue', sigue_material_id = %s, nombre = 'Contra 2' WHERE id = %s$q$, pg_temp.l('K7.Hoja.A'), pg_temp.l('K7.Hoja.Contra'))));
+SELECT pg_temp.caso('07b la pareja queda', 'true', (SELECT activo::text FROM catalogo_opciones WHERE id = pg_temp.id('K7.Hoja.Contra.K7.Hoja.A.Float')));
+SELECT pg_temp.intentar(format($q$UPDATE catalogo_materiales SET tipo = 'unico', nombre = NULL, sigue_material_id = NULL, insumo_id = %s WHERE id = %s$q$, pg_temp.l('Nuevo'), pg_temp.l('K7.Hoja.Contra')), 'Rodrigo');
+SELECT pg_temp.caso('07b sin armar no saca', 'true', (SELECT activo::text FROM catalogo_opciones WHERE id = pg_temp.id('K7.Hoja.Contra.K7.Hoja.A.Float')));
+
+-- ============================================================
 -- 8. Privilegios
 -- ============================================================
+SELECT pg_temp.caso('08 el trigger no se llama', 'false', has_function_privilege('authenticated', 'catalogo_material_cambia()', 'EXECUTE')::text);
+SELECT pg_temp.caso('08 anon no llama el trigger', 'false', has_function_privilege('anon', 'catalogo_material_cambia()', 'EXECUTE')::text);
 SELECT pg_temp.caso('08 RLS', 'true', (SELECT c.relrowsecurity::text FROM pg_class c WHERE c.relname = 'catalogo_variables_valores'));
 SELECT pg_temp.caso('08 anon no llama', 'false', has_function_privilege('anon', 'catalogo_despiece_segun(jsonb,jsonb,jsonb,text[],jsonb)', 'EXECUTE')::text);
 SELECT pg_temp.caso('08 anon no lee', 'false', has_table_privilege('anon', 'catalogo_variables_valores', 'SELECT')::text);
