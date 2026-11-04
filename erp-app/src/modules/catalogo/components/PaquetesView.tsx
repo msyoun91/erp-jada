@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import { Paginacion } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { activarCategoria, crearCategoria, renombrarCategoria } from "../actions";
@@ -79,6 +79,7 @@ export function PaquetesView({
                     {v.nombre} · v{v.numero}
                   </span>
                   <span className="t-caption shrink-0">{nombreCategoria.get(v.categoria_id)}</span>
+                  <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
                 </Link>
               </li>
             ))}
@@ -184,6 +185,7 @@ export function PaquetesView({
                     >
                       {ESTADOS.find((x) => x.valor === e)?.label}
                     </span>
+                    <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
                   </Link>
                 </li>
               );

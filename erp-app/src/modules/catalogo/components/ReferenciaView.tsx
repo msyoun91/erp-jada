@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { FiltroDias } from "@/components/ui/FiltroDias";
 import { formatMonto, type Moneda } from "@/lib/monedas";
 import type { PrecioReferencia } from "../types";
@@ -54,6 +54,7 @@ export function ReferenciaView({ filas, dias, moneda }: { filas: PrecioReferenci
                     {f.cambio.toLocaleString("es-AR", { maximumFractionDigits: 1 })} %
                   </span>
                 )}
+                <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
               </Link>
             </li>
           ))}

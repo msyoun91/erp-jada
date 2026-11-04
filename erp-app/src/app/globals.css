@@ -118,6 +118,8 @@
   a { @apply text-text-brand; }
   a:hover { @apply text-brand-500; }
   [data-theme="dark"] .logo { filter: brightness(0) invert(1); }
+  /* Tailwind 4 les sacó la manito a los botones. */
+  button:not(:disabled) { cursor: pointer; }
   /* Un solo foco visible para todo lo interactivo: .input tiene el suyo
      propio abajo, y estos selectores no lo pisan. */
   a:focus-visible, button:focus-visible, [tabindex]:focus-visible {

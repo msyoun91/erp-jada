@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
@@ -43,10 +43,13 @@ export function Fila({
 
   return (
     <li className="flex items-start gap-1 border-b border-border py-2 last:border-b-0">
-      <button className="tap-target min-w-0 flex-1 text-left" onClick={onAbrir}>
-        <p className="t-body-m font-medium">{titulo}</p>
-        {detalle && <p className="t-caption font-mono">{detalle}</p>}
-        {children}
+      <button className="tap-target flex min-w-0 flex-1 items-center gap-2 text-left" onClick={onAbrir}>
+        <div className="min-w-0 flex-1">
+          <p className="t-body-m font-medium">{titulo}</p>
+          {detalle && <p className="t-caption font-mono">{detalle}</p>}
+          {children}
+        </div>
+        <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
       </button>
       <OverflowMenu
         items={[

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Palette, Plus, Tags } from "lucide-react";
+import { ChevronRight, Palette, Plus, Tags } from "lucide-react";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { Paginacion } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -220,6 +220,7 @@ export function InsumosView({
                 </div>
                 {!i.activo && <span className="badge badge-neutral shrink-0">De baja</span>}
                 {puedeCostos && i.activo && <ResumenCosto insumo={i} />}
+                <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
               </button>
             </li>
           )}

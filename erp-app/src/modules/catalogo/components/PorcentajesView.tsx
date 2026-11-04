@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import type { Moneda } from "@/lib/monedas";
 import { PASO, textoBase, textoMinimo, textoPorcentaje } from "../etiquetas";
 import type { Categoria, Porcentaje } from "../types";
@@ -84,6 +84,7 @@ export function PorcentajesView({
                           {p.opcional && <span className="badge badge-neutral shrink-0">Opcional</span>}
                           {p.de_baja && <span className="badge badge-neutral shrink-0">De baja</span>}
                           <span className="t-body-m shrink-0 font-semibold">{textoPorcentaje(p.porcentaje)}</span>
+                          <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
                         </Link>
                       </li>
                     );

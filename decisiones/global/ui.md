@@ -137,6 +137,10 @@ declaran: las filas-link de los tres listados de obras, el resultado del `Buscad
 `WidgetCard`, que la toma solo cuando recibe `href`. El `Buscador` es un `<button>` y no un
 `<Link>`: lo que define la clase es que el elemento sea clickeable, no su etiqueta.
 
+**`button:not(:disabled) { cursor: pointer }` en la capa base (2026-11-04).** Tailwind 4 dejó los
+botones con el cursor por defecto: los `<Link>` mostraban la manito y los `<button>` no, aunque se
+vieran iguales. Una regla global y no `cursor-pointer` botón por botón.
+
 **El `py-1.5` de las toolbars se va: `.input` ya mide lo que mide `.btn`.** Un `.input py-1.5`
 mide ~35px al lado de un `.btn` de 40px, y estaba en 14 lugares. Sin pisar, `.input` mide 41px
 —9px de padding contra 9px, más 1.5px de borde contra 1px— así que el desfasaje era el override,

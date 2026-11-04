@@ -135,6 +135,12 @@ formulario de Presupuestos. Archivos: `components/Calculadora.tsx`, `entrada.ts`
 **La comparación al aprobar no pide nada propio (2026-11-04).** `calcular` manda la misma entrada a las dos versiones, y lo elegido a mano
 va en ella.
 
+## Filas que se abren (2026-11-04)
+
+**Toda fila que abre algo lleva una flecha `›` a la derecha.** El cambio de fondo al pasar el mouse era la única señal, y en touch
+no existe: las listas parecían texto. Archivos: `PaquetesView.tsx`, `InsumosView.tsx`, `PorcentajesView.tsx`, `ReferenciaView.tsx`,
+`editor/Fila.tsx`.
+
 ## Sin "?" en los campos (2026-11-03)
 
 **~~Los campos difíciles llevan un "?" con un ejemplo~~: se retiró a pedido del usuario, con `components/ui/Ayuda.tsx` y
