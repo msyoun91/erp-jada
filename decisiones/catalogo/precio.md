@@ -188,6 +188,10 @@ su dólar (`decisiones/monedas.md` → *Tipos de cambio*). Se descartó la moned
 la unidad cambia la cuenta de lo que el gerente aprobó y la moneda no (USD 12 y $17.400 son el mismo
 costo), y fija obligaba a convertir a mano o a cargar otro insumo, con versión nueva de cada paquete.
 
+**Sin tipo de cambio para comparar, el costo se guarda sin color y sin pedir confirmación (2026-11-04).** El nivel solo avisa, y
+una fila no puede frenar una carga en bloque por eso. El costo mismo no se pierde: hasta que haya tipo de cambio, el precio dice que
+falta. A cambio, en esa fila un error de tipeo no se ve. Archivos: `sql/178`.
+
 ## ~~Tipos de cambio~~ (2026-10-27)
 
 Mudados al módulo Monedas el 2026-10-29: `decisiones/monedas.md`. **El catálogo lee de ahí el tipo de

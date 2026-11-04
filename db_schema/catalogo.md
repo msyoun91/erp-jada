@@ -128,8 +128,8 @@ Sin GRANT de INSERT ni UPDATE: un costo no se pisa.
 | `catalogo_fijo_alta(nombre, categoria, unidad, costo, moneda) → uuid` | INVOKER | nace con su costo; sin costo, no nace |
 | `catalogo_variante_sumar(insumo, color) → uuid` | INVOKER | suma el color o reactiva su fila |
 | `catalogo_costos_vigentes(en = now())` | INVOKER | el costo de cada variante a esa fecha. Respeta RLS |
-| `catalogo_costos_niveles(filas)` | INVOKER | anterior y nivel de cada fila, antes de guardar. El anterior se pasa a la moneda nueva: sin tipo de cambio, MO001 |
-| `catalogo_costos_cargar(filas, confirmar_rojo = false) → integer` | DEFINER | filas: `[{variante_id, costo, moneda}]`. Se guardan juntas o ninguna. 42501 si alguna no está permitida |
+| `catalogo_costos_niveles(filas)` | INVOKER | anterior y nivel de cada fila, antes de guardar. El anterior se pasa a la moneda nueva: sin tipo de cambio, nivel NULL |
+| `catalogo_costos_cargar(filas, confirmar_rojo = false) → integer` | DEFINER | filas: `[{variante_id, costo, moneda}]`. Se guardan juntas o ninguna. 42501 si alguna no está permitida. CA026 si una variante va más de una vez |
 | `catalogo_porcentajes_vigentes(en = now())` | INVOKER | el último valor de cada servicio a esa fecha, de baja incluidos. Respeta RLS |
 | `catalogo_porcentaje_guardar(id, nombre, porcentaje, paso, categorias, minimo, minimo_moneda, minimo_por, opcional, confirmar_rojo = false) → uuid` | DEFINER | `id` NULL: alta. Sin cambios, no suma fila. Devuelve el servicio |
 | `catalogo_porcentaje_activar(id, activo)` | DEFINER | baja y reactivación |
@@ -139,7 +139,7 @@ Sin GRANT de INSERT ni UPDATE: un costo no se pisa.
 
 **Errores de los registros:** CA003 rojo sin confirmar · CA004 los del paso 3 llegan a 100 · CA005 no es el último cambio ·
 CA006 nombre o dato fijo · CA007 baja con algo activo adentro · CA008 adentro de una categoría o color de baja · CA009 la
-variante no corresponde al insumo · CA010 nombre de servicio en % repetido · CA011 categoría que no es de insumo ni de servicio.
+variante no corresponde al insumo · CA010 nombre de servicio en % repetido · CA011 categoría que no es de insumo ni de servicio · CA026 variante repetida en una carga de costos.
 
 ## Paquetes y versiones
 

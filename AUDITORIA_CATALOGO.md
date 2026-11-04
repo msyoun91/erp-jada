@@ -286,6 +286,9 @@ TO authenticated;`. `catalogo_paquete_alta` sigue funcionando, y el INSERT con `
 
 ### 11. Carga de costos — Baja
 
+**Resuelto (2026-11-04, `sql/178`):** la variante repetida da CA026, y sin tipo de cambio el nivel va en NULL. Lo de abajo describe
+lo que pasaba antes.
+
 **Qué pasa.**
 - Si la misma variante va dos veces en una carga en bloque, falla con **23505**, sin un mensaje que se entienda. *Reproducido.*
 - `catalogo_costos_niveles` pasa el costo anterior a la moneda nueva. Si esa moneda no tiene ningún tipo de cambio cargado hasta
