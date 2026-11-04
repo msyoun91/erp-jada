@@ -107,6 +107,10 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   También, de una planilla de carpinterías real (2026-11-02): cada renglón lleva designación y ubicación
   ("V4 · Lavadero"), y la planilla viene en metros con punto, así que el campo de medida del formulario tiene
   que rechazar `3.00`: sin el punto son 300 mm, y pasan un mínimo de 300.
+  También, a evaluar sin compromiso (2026-11-04): selección masiva de opcionales, para tildar o destildar de una vez la
+  Colocación o la Garantía de vidrio en varios ítems. Cada ítem sigue guardando lo suyo, y la pieza se reconoce por nombre
+  (`entrada.piezas`), así que no cambia el catálogo. A decidir: si hace falta frenar presupuestos mezclados, que sí pediría
+  una respuesta única guardada en el presupuesto; cómo se cobra la colocación y si va en un renglón aparte.
 - **Stock** y **Compras**: sin ficha. Lo que se había decidido para ellos al fichar el catálogo se
   descartó con él (2026-10-22). Sigue valiendo que los proveedores son empresas de Contactos
   (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*). Compras manda a presupuestar
