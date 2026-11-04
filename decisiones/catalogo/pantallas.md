@@ -135,10 +135,15 @@ formulario de Presupuestos. Archivos: `components/Calculadora.tsx`, `entrada.ts`
 **La comparación al aprobar no pide nada propio (2026-11-04).** `calcular` manda la misma entrada a las dos versiones, y lo elegido a mano
 va en ella.
 
-## Baja de un insumo en el menú (2026-11-04)
+## La calculadora se distingue de lo que solo se lee (2026-11-04)
 
-**En la ficha de un insumo o servicio fijo, "Dar de baja" va en el menú ⋯.** En rojo al lado de "Editar" pesaba más que lo que se hace
-todos los días, igual que en la versión del paquete. Archivos: `InsumoFicha.tsx`.
+**En la ficha de la versión, la calculadora va en una tarjeta titulada "Probar el despiece".** Con un rótulo igual al de las secciones
+de solo lectura, no se notaba que ahí se podía cargar algo. Archivos: `VersionView.tsx`.
+
+## Baja en el menú (2026-11-04)
+
+**En la ficha de un insumo, un servicio fijo o un servicio en %, "Dar de baja" va en el menú ⋯.** En rojo al lado de "Editar" pesaba más
+que lo que se hace todos los días, igual que en la versión del paquete. Archivos: `InsumoFicha.tsx`, `PorcentajeFicha.tsx`.
 
 ## Selector de versiones (2026-11-04)
 

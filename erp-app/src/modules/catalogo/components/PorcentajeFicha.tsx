@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { Archive, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import type { Moneda } from "@/lib/monedas";
 import { CLASE_NIVEL, textoCambio } from "@/lib/niveles";
 import { formatFechaHora } from "@/lib/utils";
@@ -79,7 +80,7 @@ export function PorcentajeFicha({
           {porcentaje.de_baja && <span className="badge badge-neutral">De baja</span>}
         </div>
         {puedeEditar && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {!porcentaje.de_baja && (
               <button className="btn btn-secondary" onClick={() => setEditando(true)}>
                 Cambiar
@@ -90,9 +91,16 @@ export function PorcentajeFicha({
                 Reactivar
               </button>
             ) : (
-              <button className="btn btn-danger" onClick={() => setBaja(true)}>
-                Dar de baja
-              </button>
+              <OverflowMenu
+                items={[
+                  {
+                    label: "Dar de baja",
+                    icon: <Archive size={14} strokeWidth={1.75} />,
+                    destructive: true,
+                    onClick: () => setBaja(true),
+                  },
+                ]}
+              />
             )}
           </div>
         )}

@@ -135,8 +135,11 @@ export function VersionView({
         </section>
       )}
 
-      <section className="flex flex-col gap-3">
-        <h3 className="t-label">{puedeAprobar ? "Despiece y precio" : "Despiece"}</h3>
+      <section className="card flex flex-col gap-3">
+        <div>
+          <h3 className="t-h3">{puedeAprobar ? "Probar el despiece y el precio" : "Probar el despiece"}</h3>
+          <p className="t-caption">Cambiá los datos y tocá Calcular, que no guarda nada.</p>
+        </div>
         {comparar && (
           <p className="t-caption">
             Junto a la v{comparar.numero} publicada, con las mismas medidas y la misma fecha: la diferencia sale solo de
