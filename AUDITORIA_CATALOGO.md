@@ -158,6 +158,8 @@ como pide *Lo que nunca tiene sentido se frena al guardar*.
 
 ### 3. Si con esas medidas no queda ninguna fila, el precio da 0 — Media
 
+**Resuelto (2026-11-04, `sql/172`):** sin filas no hay precio, y el mensaje lo dice. Lo de abajo describe lo que pasaba antes.
+
 **Qué pasa.** Si todas las piezas o materiales dan cantidad 0, el despiece sale calculable y sin filas. En
 `catalogo_precio_calcular` (`sql/163_catalogo_precio.sql:88`), el costo queda en `coalesce(sum, 0) = 0`, ningún servicio aplica y
 el precio da 0.

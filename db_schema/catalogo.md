@@ -313,7 +313,7 @@ DEFINER, porque leen lo que quien llama no puede abrir. Sin permiso, 42501. `cat
 `catalogo_precio_venta(paquete, entrada, opcionales, moneda)` (lo que se vende hoy), `catalogo_precio_convertir` (NULL sin tipo de
 cambio) y `catalogo_precio_redondear(monto, moneda)` (ARS a entero, el resto a 2 decimales).
 
-**Lo que lee el vendedor en `mensaje`:** `No se puede calcular con estas medidas` · `Este paquete no tiene precio a la fecha del presupuesto`
+**Lo que lee el vendedor en `mensaje`:** `No se puede calcular con estas medidas` · `Con estas medidas y elecciones el paquete no lleva nada` · `Este paquete no tiene precio a la fecha del presupuesto`
 · `Este paquete no está a la venta` · `Este paquete no se ofrece en este color` · `Ya no se ofrece: DVH, Mosquitero` ·
 `Un servicio opcional elegido ya no está`. Con un bloqueo `mensaje` es NULL, y el porqué está en `mensajes`.
 
@@ -326,7 +326,7 @@ cambio) y `catalogo_precio_redondear(monto, moneda)` (ARS a entero, el resto a 2
 | `piezas` | además: `subtotal`, la suma de sus filas |
 | `costo_despiece`, `subtotal` | el costo de todas las filas, y ese más los del paso 1. NULL si no se pudieron calcular los servicios |
 | `servicios` | `[{porcentaje_id, nombre, porcentaje, paso, opcional, aplica, desde, categorias (nombres), base, monto, minimo?, minimo_moneda?, minimo_por?, minimo_convertido?}]`, por paso y nombre. Un opcional sin elegir o sin nada de sus categorías: `aplica` false, base y monto 0. Vacío si falta un costo o no se pudo calcular |
-| `sin_precio` | text[]: por qué no da número, para quien tiene `catalogo_aprobar`. Los errores del cálculo, los bloqueos, lo que no tiene costo o tipo de cambio a esa fecha, y un opcional que no está. Vacío si hay precio |
+| `sin_precio` | text[]: por qué no da número, para quien tiene `catalogo_aprobar`. Los errores del cálculo, los bloqueos, lo que no tiene costo o tipo de cambio a esa fecha, un opcional que no está, y que no quede ninguna fila. Vacío si hay precio |
 | `precio_exacto`, `precio` | sin redondear y redondeado. NULL si y solo si `sin_precio` trae algo |
 
 ## Los avisos

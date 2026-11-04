@@ -166,6 +166,10 @@ tiene precio a la fecha del presupuesto"; quien tiene `catalogo_aprobar` ve qué
 pedir el detalle de una fecha vieja. El despiece no usa costos y sale igual. Qué versión y fecha lleva un
 paquete sumado a un presupuesto viejo lo decide Presupuestos (`BACKLOG.md`).
 
+**Sin filas, no hay precio (2026-11-04).** Si con esas medidas y elecciones no queda ninguna fila, el precio no da 0: una línea en $0
+bajaba el total de un presupuesto sin que nadie lo notara, y tampoco hay un paquete que cueste $0 a propósito. El vendedor lee "Con estas
+medidas y elecciones el paquete no lleva nada". Con un bloqueo manda el bloqueo. Archivos: `sql/172`.
+
 ## Moneda (2026-10-29)
 
 **El presupuesto elige en qué moneda sale el precio (en USD, también si oficial o blue), y el catálogo
