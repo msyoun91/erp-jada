@@ -257,9 +257,12 @@ una medida mal sin que nadie lo notara, y cada variable repetía la cadena.
 - **También vale un material que sigue a otro, con un valor por cada opción suya, sueltas incluidas:** el vendedor puede
   cambiarlo, así que no es la misma elección que la de aquel. La regla de un material que define el sistema no puede usar una
   variable que dependa de él: es circular.
-- **No vale un material que permite "sin elección", puede dar "ninguno" o tiene la pareja "ninguna",** ni uno de una pieza que puede faltar para una
-  variable de lo fijo (*Una fórmula solo puede usar lo que seguro existe*). Se apunta al material, no a su nombre: con un
-  Herraje en cada hoja, no hay duda de cuál es.
+- **Un material que permite "sin elección", puede dar "ninguno" o tiene la pareja "ninguna" pide un valor para ese caso, número o
+  fórmula; sin él no se envía (2026-11-04).** `descuento_hoja`, según Herraje: si no hay elección, 0. Obligatorio para que nadie lo
+  olvide y dé 0 sin que se note, el mismo problema del "si no". Va en `formula`, que en estas variables estaba vacía: la copia de
+  versiones y la revisión de lo circular y lo que falta ya la cubren. Archivos: `sql/170_catalogo_segun_sin_eleccion.sql`.
+- **No vale un material de una pieza que puede faltar para una variable de lo fijo** (*Una fórmula solo puede usar lo que seguro
+  existe*). Se apunta al material, no a su nombre: con un Herraje en cada hoja, no hay duda de cuál es.
 - **Sacar el material saca las variables según él, y sacar la variable o la opción saca sus valores (2026-11-04).** Sin el material la
   variable no tiene de dónde sacar un valor; una fórmula que la usaba frena el envío. Si Técnica cambia el material de la variable, lo
   cargado para el anterior ya no se mira y el envío pide los valores del nuevo. Archivos: `sql/167`.

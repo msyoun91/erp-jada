@@ -22,6 +22,16 @@ import { Nombres } from "./Nombres";
 
 const numeroONulo = (v: unknown) => (v === "" || v === null ? null : Number(v));
 
+// Solo decide si se muestra el campo: lo que frena el envío lo decide la base (`catalogo_version_referencias`).
+function puedeQuedarSinEleccion(m: Material, contenido: Contenido) {
+  const elige = (x: Material | undefined) => Boolean(x?.sin_eleccion || /\bninguno\b/.test(x?.eleccion ?? ""));
+  if (m.tipo !== "sigue") return elige(m);
+  return (
+    elige(contenido.materiales.find((x) => x.id === m.sigue_material_id)) ||
+    contenido.opciones.some((o) => o.material_id === m.id && !o.insumo_id)
+  );
+}
+
 // El nombre es el que lee el vendedor y el que usan las fórmulas (`[Ancho de hoja 1]`).
 export function VariablePanel({
   versionId,
@@ -74,6 +84,10 @@ export function VariablePanel({
   const nombrePieza = (id: string) => contenido.piezas.find((p) => p.id === id)?.nombre;
   const materialGuardado =
     variable?.segun_material_id === segun ? materiales.find((m) => m.id === segun) : undefined;
+  const materialSegun = materiales.find((m) => m.id === segun);
+  // Lo ya cargado se ve aunque el material ya no pueda quedar vacío: la base lo sigue revisando.
+  const conSinEleccion =
+    materialSegun && (puedeQuedarSinEleccion(materialSegun, contenido) || Boolean(getValues("formula")));
 
   async function guardar(d: VariableForm) {
     const r = await guardarVariable(d);
@@ -144,7 +158,18 @@ export function VariablePanel({
             </Campo>
           )}
 
-          {segun ? null : ingresa && lista ? (
+          {segun ? (
+            conSinEleccion && (
+              <Campo id="var-formula" label="Si no hay elección (número o fórmula)" requerido error={errors.formula}>
+                <input
+                  id="var-formula"
+                  aria-required
+                  className={`${claseInput(errors.formula)} font-mono`}
+                  {...register("formula")}
+                />
+              </Campo>
+            )
+          ) : ingresa && lista ? (
             <>
               <Campo id="var-valores" label="Valores, uno por renglón" error={errors.valores}>
                 <textarea id="var-valores" rows={4} className={claseInput(errors.valores)} {...register("valores")} />
@@ -246,7 +271,7 @@ export function VariablePanel({
   );
 }
 
-// Un valor por cada opción del material, "ninguna" no: un material que puede no dar nada ya frena el envío.
+// Un valor por cada opción del material, "ninguna" no: esa la cubre "Si no hay elección".
 function Valores({
   versionId,
   variable,

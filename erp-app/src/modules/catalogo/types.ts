@@ -485,7 +485,6 @@ export const variableSchema = z
     if (!d.ingresa_vendedor) {
       return {
         ...d,
-        formula: d.segun_material_id ? null : d.formula,
         es_lista: false,
         es_cantidad: false,
         minimo: null,
