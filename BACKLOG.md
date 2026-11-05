@@ -136,3 +136,50 @@ construyó*). El prerequisito de entonces ya está: el hilo sabe sobre qué regi
 guarda la plantilla en el vínculo (`sql/119`, `sql/148`–`152`), así que una sugerencia puede saber si
 la tarea ya existe. Cuando aparezca el caso, abre el flujo de plantillas ("Usar" con su "Sobre"), no
 un camino de creación nuevo.
+
+## Seguridad — auditoría del 2026-11-05, con agentes IA en el horizonte
+
+Nota de hoy: 7/10. Con un agente conectado sin estos cambios bajaría a 4–5/10. La autorización en la base
+está bien: RLS, `tiene_permiso`, las `DEFINER` con `search_path` y el permiso chequeado al entrar, y `sql/102`,
+que corta al desactivado incluso por PostgREST directo. Lo flojo es lo que la rodea. La auditoría se hizo
+contra `sql/`, no contra la base viva: antes de construir cada punto, verificarlo en la base.
+
+**Ahora — sirve haya agentes o no:**
+- **MFA (TOTP de Supabase Auth) para quien tenga `usuarios_gestionar` o `usuarios_delegar`, y la *leaked
+  password protection* encendida.** Sin MFA, la contraseña filtrada de un admin es el sistema entero: asigna
+  permisos y resetea contraseñas. El toggle quedó apagado a propósito (`decisiones/global/infra.md` →
+  *`sql/035`*). A decidir: exigir `aal2` en la base (`auth.jwt()->>'aal'` en las funciones de administración),
+  no solo en la pantalla.
+- **Test SQL de superficie de RPC.** Falla si `anon` ejecuta alguna función de `public` y si `authenticated`
+  ejecuta una `SECURITY DEFINER` fuera de una lista blanca (`has_function_privilege`). Son unas 260 y ya se
+  escapó una (`sql/054`: un `DROP` + `CREATE` la dejó abierta a `anon`). Mismo formato `DO … RAISE EXCEPTION`
+  de `sql/tests/`.
+- **Headers de seguridad en `erp-app/next.config.ts`** (`headers()`): `Content-Security-Policy`, con el script
+  de tema de `app/layout.tsx` permitido por hash, `frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy` y `Strict-Transport-Security`. Hoy no hay ninguno.
+- **Cuando la base pase a producción, el MCP de Supabase de las sesiones de desarrollo va solo lectura o a una
+  rama.** Hoy aplica migraciones y corre SQL con privilegios altos, y lee datos: un texto inyectado en un
+  registro, un issue o un archivo puede terminar en SQL. Mientras la base no sea de producción está bien
+  (`decisiones/global/infra.md` → *Playwright puede escribir*).
+
+**Cuando llegue el primer agente, no antes** (hoy sería arquitectura especulativa: `decisiones/global/infra.md`
+→ *La regla de negocio vive en Postgres*):
+- **El agente es una fila propia en `usuarios`, con submódulos mínimos.** Sin rol nuevo: los recibe por
+  delegación con techo (`sql/105`), nunca tiene más que quien se los dio, la auditoría lo nombra sola y
+  desactivarlo lo corta al instante (`sql/102`). Si es el asistente de una persona, usa el token de esa
+  persona. Nunca una cuenta compartida: un agente de todos le muestra a A lo de B.
+- **Nunca `service_role`, nunca funciones de administración.** Las RPC de `service_role` confían en `p_admin`
+  (`sql/121_tomar_delegado.sql`): con esa key cualquiera se hace pasar por cualquier admin. Fuera del agente:
+  `usuarios_gestionar`, `usuarios_delegar` y `catalogo_aprobar`. Aprobar la versión propia es un riesgo
+  aceptado entre personas (`decisiones/catalogo/permisos.md`), no para un agente.
+- **Sus herramientas son una lista blanca de RPCs que ya existen.** Ni SQL libre ni acceso genérico a tablas.
+- **Una persona confirma lo irreversible y lo que sale afuera:** fusionar contactos (no se revierte,
+  `sql/147`), transferir, aprobar versiones, tocar permisos, mandar un mail o pedir algo a la web.
+- **Límite de ritmo en Postgres para el usuario del agente.** Hace en un minuto lo de un mes, y cada cambio de
+  estado puede disparar plantillas de otros usuarios (`sql/152`). A decidir: dónde se cuenta.
+- **El texto de la base es dato, nunca instrucción (inyección de prompt).** Entra por el texto libre de tareas,
+  hilos, contactos, obras y motivos; por las plantillas, que copian su texto en hilos de otros al dispararse
+  (`sql/150`); y sobre todo por erp-cliente, donde escribe gente de afuera. Un mismo agente no junta, sin una
+  persona en el medio, entrada no confiable, datos sensibles (costos del catálogo, teléfonos y mails) y un
+  canal hacia afuera. La interfaz del agente no carga imágenes remotas: exfiltran por la URL.
+- Al construirlo, la decisión va a `decisiones/global/permisos.md` y esta entrada se borra.
