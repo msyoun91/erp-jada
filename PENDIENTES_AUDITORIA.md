@@ -7,21 +7,13 @@ cierra todo, el archivo.
 
 ## 3. Probar en el navegador
 
-Cada arreglo pasa `tsc` y lint; ninguno se vio andando.
+Probado el 2026-11-05 con Playwright. Lo que sigue no se pudo probar: hace falta un usuario descartable, porque
+desactivar a `Tester` le pasaría sus hilos, su agenda y sus obras a otro, y reactivarlo no lo deshace.
 
-- **Editar un paso con plazo en días ya habilitado**, cambiando solo el título: antes fallaba siempre con
-  TA011. Probar también pasar de días a fecha fija, y al revés.
-- **Login con `?next=`:** `/login?next=/tareas/<id>` vuelve ahí después de entrar, y
-  `/login?next=/%09/evil.com` termina en `/`.
-- **Desactivar y reactivar un usuario:** uno común; un delegador (tiene que fallar con US009 y la cuenta
-  quedar sin ban); y reactivar uno cuyo email ya tomó otra cuenta (tiene que fallar y la cuenta seguir
-  baneada).
-- **"No se guardó: el registro cambió o ya no lo ves"** al editar algo que otro desactivó mientras la ficha
-  estaba abierta (un paso, una obra, una persona). De paso, confirmar que PostgREST devuelve el conteo en un
-  UPDATE sin `select()`: si no lo devuelve, `errorDeUpdate` (`lib/utils.ts`) no detecta nada.
-- **Hilos y Equipo (Tareas) y Empresas (Contactos)** traen lo mismo que antes. Ahora juntan dos consultas y
-  ordenan en Next (los hilos por `updated_at`, las empresas por nombre), no en la base.
-- **Huérfanas en Contactos:** el admin las sigue viendo marcadas, en personas y en empresas.
+- **Desactivar y reactivar un usuario:** uno común, y reactivar uno cuyo email ya tomó otra cuenta (tiene que
+  fallar y la cuenta seguir baneada).
+- **Huérfanas en Contactos:** el admin las sigue viendo marcadas, en personas y en empresas. Hoy no hay ninguna:
+  el filtro y su estado vacío andan, pero la marca no se vio.
 
 ## 4. Decidido, sin hacer
 

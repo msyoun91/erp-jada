@@ -76,8 +76,8 @@ function Contenido({ pasos, cadena, hilos }: Datos) {
             <span className="truncate">{p.tareas_hilos.titulo}</span>
             {p.estado === "solicitada" && (
               <span>
-                Pide {p.tareas_hilos.responsable_id === yo ? "vos" : nombre(p.tareas_hilos.responsable_id)} a{" "}
-                {p.asignado_equipo_id ? "el equipo" : nombre(p.asignado_id)}
+                Pide {p.tareas_hilos.responsable_id === yo ? "vos" : nombre(p.tareas_hilos.responsable_id)}{" "}
+                {p.asignado_equipo_id ? "al equipo" : `a ${nombre(p.asignado_id)}`}
               </span>
             )}
             {estaVencido(p, hoy) && <span className="text-error-text">Vencido</span>}

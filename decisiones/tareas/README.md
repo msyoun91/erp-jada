@@ -23,7 +23,7 @@ archivos de esta carpeta no repiten nombres de los de `master`: los punteros vie
 | `recurrencia.md` | Recurrencia por hilo · intervalo · cada cierre genera · preguntar si sigue · lo genera un trigger al cerrar · qué copia el siguiente |
 | `avisos.md` | De dónde salen · salidas con título sin link · todo lo que entra a `solicitada` es pedido · una vez por persona y cambio · quitado no avisa a quien se fue · bloqueado solo al insertar antes · huérfanos al cierre · `transferencia` con `{de, a}` · "paso a reasignar" al crear, sin actor · un disparo avisa una vez al dueño · en un disparo no actúa nadie |
 | `vistas.md` | Misión: qué entra, qué espera, orden, acciones en la tarjeta, fichas al lado · Equipo: tres tipos, filtro por miembro, acciones en la fila · Plantillas: pestañas, "a revisar", usar desde el hilo, formulario con "Sobre" y disparo, usar pide el registro · Todas: huérfanos · lo derivado en pantalla, espejo de la base |
-| `escrituras.md` | Directo o sistema · desactivar y transferir por DEFINER · la cascada no exige `tareas_pedir` · desactivar el hilo no toca sus pasos · reabrir solo el estado · no se completa sin aceptar · transferir afuera contra el equipo guardado · plazo en días derivado · insertar antes por la forma · nota del admin · qué guarda el historial |
+| `escrituras.md` | Directo o sistema · el admin no edita lo desactivado · desactivar y transferir por DEFINER · la cascada no exige `tareas_pedir` · desactivar el hilo no toca sus pasos · reabrir solo el estado · no se completa sin aceptar · transferir afuera contra el equipo guardado · plazo en días derivado · insertar antes por la forma · nota del admin · qué guarda el historial |
 
 ## Ficha del módulo
 

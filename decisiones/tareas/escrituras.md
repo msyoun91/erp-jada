@@ -53,3 +53,5 @@ ella que tomó el previo viejo. Sin flags ni variables de sesión.
 **`tareas_ediciones` guarda lo que edita una persona (2026-09-24).** Título, descripción,
 prioridad y vencimientos del paso; título y recurrencia del hilo. El vencimiento derivado y el
 equipo que mueve la base no son ediciones; el resultado se escribe al completar y queda congelado.
+
+**El admin no edita un paso desactivado, ni uno de un hilo desactivado: solo le cambia `activo` (2026-11-05).** Sigue viéndolo por RLS, así que con la ficha abierta guardar decía "Paso guardado" y cambiaba una fila inactiva. Da TA013, también al completarlo con nota. La exención total venía de `sql/113`, sin una decisión escrita. Archivos: `sql/184`, `sql/tests/tareas_reglas.sql`.

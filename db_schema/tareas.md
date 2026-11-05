@@ -140,7 +140,8 @@ Triggers:
   pasan al nuevo responsable.
 - `tareas_al_crear` / `tareas_al_editar` (BEFORE): quién escribe qué columna, transiciones, pedidos
   (`tareas_estado_al_abrir`), receptor válido, espera y motivo que se limpian, bloqueo (TA004),
-  plazo relativo.
+  plazo relativo. Un paso desactivado, o de un hilo desactivado, no se edita (TA013); el admin solo
+  le cambia `activo` (`sql/184`).
 - `tareas_propagar` (AFTER INSERT / UPDATE OF estado, activo): reabre el hilo, cascada de reabrir,
   vencimiento del siguiente al habilitarse o bloquearse.
 - `tareas_validar_cadena` (constraint, diferido): desactivar desde la cola (TA006); el previo solo

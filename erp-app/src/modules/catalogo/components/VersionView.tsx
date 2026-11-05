@@ -114,11 +114,11 @@ export function VersionView({
 
       {frena && (
         <section className="flex flex-col gap-1">
-          <h3 className="t-label">Lo que frena el envío</h3>
+          <h3 className="t-label">Lo que frena {version.estado === "en_revision" ? "la aprobación" : "el envío"}</h3>
           {frena.length === 0 ? (
             <p className="t-body-m flex items-center gap-2 text-success-text">
               <CircleCheck size={16} />
-              Nada: se puede enviar.
+              Nada: se puede {version.estado === "en_revision" ? "aprobar" : "enviar"}.
             </p>
           ) : (
             <ul className="flex flex-col gap-1">

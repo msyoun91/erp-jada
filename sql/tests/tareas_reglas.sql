@@ -222,6 +222,9 @@ SELECT pg_temp.caso('40 M1 desactiva C1 (no es el último)', 'TA006', pg_temp.in
 SELECT pg_temp.caso('41 M1 desactiva C2, cancelado', 'TA007', pg_temp.intentar(format('SELECT tareas_desactivar_paso(%L)', pg_temp.id('C2')), 'M1'));
 SELECT pg_temp.caso('42 por PostgREST: la fila nueva no pasa la policy de SELECT', '42501', pg_temp.editar('C3', 'activo = false', 'M1'));
 SELECT pg_temp.caso('42 M1 desactiva C3, el último', 'ok', pg_temp.intentar(format('SELECT tareas_desactivar_paso(%L)', pg_temp.id('C3')), 'M1'));
+SELECT pg_temp.caso('42 A edita C3 desactivado', 'TA013', pg_temp.editar('C3', 'titulo = ''C3 editado''', 'A'));
+SELECT pg_temp.caso('42 A le cambia el plazo a C3 desactivado', 'TA013', pg_temp.editar('C3', 'vence_dias = 9', 'A'));
+SELECT pg_temp.caso('42 C3 sigue igual', 'C3', (SELECT titulo FROM tareas WHERE id = pg_temp.id('C3')));
 SELECT pg_temp.caso('43 A reactiva C3', 'ok', pg_temp.editar('C3', 'activo = true', 'A'));
 
 -- ============================================================
@@ -251,6 +254,7 @@ SELECT pg_temp.caso('50 con un paso de M2', 'ok', pg_temp.sumar('H4', 'P5', 'M2'
 SELECT pg_temp.caso('50 M1 desactiva H4, sin completados', 'ok',
   pg_temp.intentar(format('SELECT tareas_desactivar_hilo(%L)', pg_temp.id('H4')), 'M1'));
 SELECT pg_temp.caso('50 H4 desactivado', 'false', (SELECT activo::text FROM tareas_hilos WHERE id = pg_temp.id('H4')));
+SELECT pg_temp.caso('50 A edita P5, con el hilo desactivado', 'TA013', pg_temp.editar('P5', 'titulo = ''P5 editado''', 'A'));
 SELECT pg_temp.caso('51 M1 lo reactiva', 'ok',
   pg_temp.intentar(format('UPDATE tareas_hilos SET activo = true WHERE id = %L', pg_temp.id('H4')), 'M1'));
 SELECT pg_temp.caso('51 no pasó nada (M1 no lo ve)', 'false', (SELECT activo::text FROM tareas_hilos WHERE id = pg_temp.id('H4')));
