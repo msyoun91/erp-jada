@@ -35,10 +35,11 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   lo que se ofrece en cada color, bajas en cascada, aviso previo y reactivación), el precio (`sql/163`: precio, detalle del
   gerente, mínimos por presupuesto y precios de referencia) y los avisos (`sql/164`–`165`). El SQL de la ficha está completo.
   Las pantallas también están (2026-11-03, `decisiones/catalogo/pantallas.md`): Paquetes con su versión, el ciclo y el editor del
-  borrador, Insumos, Servicios fijos y Servicios en %, en las rutas de los avisos. Pasan `tsc` y lint, pero **no se probaron en el
-  navegador**: la sesión que las escribió no tenía la base. **Siguiente:** probarlas con un usuario de cada persona (Técnica,
-  Administración, gerente, quien revisa cortes) y cargar el primer paquete real, que es la prueba del despiece y del precio
-  (`decisiones/catalogo/README.md`).
+  borrador, Insumos, Servicios fijos y Servicios en %, en las rutas de los avisos. Probadas el 2026-11-05 con un usuario de cada persona
+  (`erp-app/e2e/catalogo.spec.ts`): pestañas, rutas ajenas, lecturas y escrituras directas contra la base, avisos y el ciclo de una versión.
+  El test usa datos que ya están en la base (`Zqx501 Ciclo`, `Perfiles YL`, `Zqx508 Servicios`). Sin probar por persona: armar un material
+  en el editor (el paquete sale de duplicar otro) y el celular; ningún test controla el valor del precio. **Siguiente:** cargar el primer
+  paquete real, que es la prueba del despiece y del precio (`decisiones/catalogo/README.md`).
 
   Paquetes a la venta y su formulario se escriben con Presupuestos.
 - **Notificaciones — la bandeja todavía tarda ~0,6 s con obras recibidas**, sin caso real todavía (2026-11-04). Lo que queda es la RLS de

@@ -33,6 +33,7 @@ export default defineConfig({
     { name: "duplicados", testMatch: /duplicados\.spec\.ts/, dependencies: ["setup"] },
     { name: "contactos", testMatch: /contactos\.spec\.ts/, dependencies: ["setup"] },
     { name: "tareas", testMatch: /tareas\.spec\.ts/, dependencies: ["setup"] },
+    { name: "catalogo", testMatch: /catalogo\.spec\.ts/, dependencies: ["setup"] },
   ],
   webServer: { command: "npm run dev", url: baseURL, reuseExistingServer: true },
 });
