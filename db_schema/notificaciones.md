@@ -60,7 +60,7 @@ avisos propios): el aprobador no ve la congelada y quien la cargó no ve la rech
 |---|---|---|---|
 | `monedas_tipos_cambio` | `tipo_cambio_corregido` (a mano), `tipo_cambio_confirmado` (un rojo de MonedAPI) | código de la moneda (la campanita lo traduce con `MONEDAS`); `motivo` = "$antes → $después", el anterior leído del historial | `monedas` |
 
-**Catálogo (`sql/164`–`sql/165`).** Los resuelve `catalogo_avisos()` (DEFINER, solo los avisos propios), y sin el permiso que lo trajo
+**Catálogo (`sql/164`–`sql/165`, `sql/182`).** Los resuelve `catalogo_avisos(p_ids)` con los ids de `mias` (DEFINER, solo los avisos propios), y sin el permiso que lo trajo
 el aviso no se ve (`decisiones/catalogo/versiones.md` → *Los avisos en la base*). El actor nunca recibe su propio aviso.
 
 | entidad | tipo | a quién | resuelve | `destino` |

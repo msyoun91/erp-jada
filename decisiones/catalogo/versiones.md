@@ -209,8 +209,12 @@ la RLS no alcanza porque Administración no lee paquetes y una persona sin `cata
 **Del mínimo, el aviso dice solo que cambió.** La moneda es un código (`USD_OFICIAL`) que la base no traduce, y el aviso lleva a la
 historia, donde está el detalle.
 
-Archivos: `sql/164_catalogo_avisos_enums.sql`, `sql/165_catalogo_avisos.sql`, `erp-app/src/modules/notificaciones/components/NotificacionesBell.tsx`,
-con 280 casos en `sql/tests/catalogo_avisos.sql`.
+**La campanita le pide a `catalogo_avisos` solo los ids que va a mostrar.** Los avisos de cambios en % no desaparecen solos, y resolverlos
+todos para quedarse con 30 crecía con el historial. Se prefirió pasar los ids antes que un límite propio: la función filtra los que ya no
+valen, así que con un límite podría dejar afuera avisos que la bandeja sí muestra. El filtro por `auth.uid()` sigue adentro porque es DEFINER.
+
+Archivos: `sql/164_catalogo_avisos_enums.sql`, `sql/165_catalogo_avisos.sql`, `sql/182_catalogo_avisos_solo_los_pedidos.sql`,
+`erp-app/src/modules/notificaciones/components/NotificacionesBell.tsx`, con 283 casos en `sql/tests/catalogo_avisos.sql`.
 
 ## Casos de prueba (2026-11-02)
 

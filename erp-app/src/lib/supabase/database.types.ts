@@ -2989,7 +2989,7 @@ export type Database = {
         }[]
       }
       catalogo_avisos: {
-        Args: never
+        Args: { p_ids: string[] }
         Returns: {
           destino: string
           destino_id: string

@@ -345,7 +345,7 @@ o servicio fijo entero), `salen` uuid[] (los paquetes que sacó), `dejan` text[]
 
 | función | seguridad | qué hace |
 |---|---|---|
-| `catalogo_avisos()` | DEFINER, EXECUTE para `authenticated` | `notificacion_id`, `etiqueta`, `motivo`, `destino`, `destino_id` de los avisos propios del catálogo que todavía valen. La usa `notificaciones_listar` |
+| `catalogo_avisos(p_ids uuid[])` | DEFINER, EXECUTE para `authenticated` | `notificacion_id`, `etiqueta`, `motivo`, `destino`, `destino_id` de los avisos propios del catálogo que todavía valen, solo entre los `p_ids` pedidos (`sql/182`). Un id ajeno no devuelve nada. La usa `notificaciones_listar` |
 | `catalogo_porcentaje_cambio(valor) → text` | INVOKER, sin EXECUTE | qué cambió contra el valor anterior: `5 % → 6 % · Suma Herrajes`, `Alta: 5 %`, `De baja` |
 
 **Triggers**, DEFINER y sin EXECUTE: `catalogo_variantes_avisar_alta` y `_vuelve`, `catalogo_categorias_avisar`,

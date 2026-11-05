@@ -364,6 +364,9 @@ los árboles ya guardados, o traer una migración que los reescriba con los trig
 
 ### 17. La campanita crece con el historial del catálogo — Baja
 
+**Resuelto (2026-11-04, `sql/182`):** `catalogo_avisos` recibe los ids de `mias` y resuelve solo esos. Con 1.000 avisos de cambios en %, la
+campanita bajó de ~700 ms a ~100 ms, y da las mismas filas. Con 30 no cambia (~80 ms). Lo de abajo describe lo que pasaba antes.
+
 **Qué pasa.** `notificaciones_listar` limita `mias` a 30, pero `JOIN catalogo_avisos()` resuelve **todos** los avisos activos del
 catálogo del usuario. Por cada uno, `catalogo_porcentaje_cambio` hace sus propias consultas. Los avisos de cambios en % no
 desaparecen solos.
@@ -406,7 +409,7 @@ desaparecen solos.
 | `catalogo_despiece` | 659 | 659 / 659 · 4,1 ms por cálculo |
 | `catalogo_ciclo` | 714 | 714 / 714 |
 | `catalogo_precio` | 328 | 328 / 328 |
-| `catalogo_avisos` | 280 | 280 / 280 |
+| `catalogo_avisos` | 283 | 283 / 283 |
 | `catalogo_segun` | 316 | 316 / 316 |
 | `catalogo_medidas` | 12 | 12 / 12, con datos previos |
 | `catalogo_sin_eleccion` | 5 | 5 / 5, con datos previos |
