@@ -203,7 +203,7 @@ CREATE FUNCTION pg_temp.bandeja(p_como text, p_tipo text, p_nombre text) RETURNS
   SELECT coalesce(pg_temp.consultar(format($q$
     SELECT replace(replace(string_agg(concat_ws(' | ', x.etiqueta, x.motivo, x.destino, a.nombre), ' // ' ORDER BY x.etiqueta COLLATE "C", x.motivo COLLATE "C"),
                    'Zqx165 ', ''), 'test165 ', '')
-    FROM catalogo_avisos() x
+    FROM catalogo_avisos(ARRAY(SELECT id FROM usuario_notificaciones WHERE usuario_id = auth.uid())) x
     JOIN usuario_notificaciones n ON n.id = x.notificacion_id
     LEFT JOIN notificaciones_actores() a ON a.id = n.actor_id
     WHERE n.tipo = %L AND x.etiqueta LIKE %L
@@ -223,7 +223,7 @@ $f$;
 CREATE FUNCTION pg_temp.cuenta(p_como text, p_tipo text, p_nombre text, p_motivo text) RETURNS text LANGUAGE sql AS $f$
   SELECT pg_temp.consultar(format($q$
     SELECT count(*)::text
-    FROM catalogo_avisos() x
+    FROM catalogo_avisos(ARRAY(SELECT id FROM usuario_notificaciones WHERE usuario_id = auth.uid())) x
     JOIN usuario_notificaciones n ON n.id = x.notificacion_id
     WHERE n.tipo = %L AND x.etiqueta LIKE %L AND replace(x.motivo, 'Zqx165 ', '') = %L
   $q$, p_tipo, 'Zqx165 ' || p_nombre || '%', p_motivo), p_como);
@@ -232,7 +232,7 @@ $f$;
 CREATE FUNCTION pg_temp.destino(p_como text, p_tipo text, p_nombre text) RETURNS uuid LANGUAGE sql AS $f$
   SELECT pg_temp.consultar(format($q$
     SELECT x.destino_id::text
-    FROM catalogo_avisos() x
+    FROM catalogo_avisos(ARRAY(SELECT id FROM usuario_notificaciones WHERE usuario_id = auth.uid())) x
     JOIN usuario_notificaciones n ON n.id = x.notificacion_id
     WHERE n.tipo = %L AND x.etiqueta LIKE %L
     LIMIT 1
@@ -622,11 +622,16 @@ SELECT pg_temp.caso('descartada: no avisa', '0', (
 -- ============================================================
 -- Solo los propios, y privilegios
 -- ============================================================
-SELECT pg_temp.caso('catalogo_avisos: solo los propios', '0', pg_temp.consultar('SELECT count(*)::text FROM catalogo_avisos()', 'Juan'));
+-- Los ids se leen como postgres, sin RLS: son los de todos, y Juan los pide igual.
+SELECT pg_temp.caso('catalogo_avisos: un id ajeno no devuelve nada', '0', pg_temp.consultar(format('SELECT count(*)::text FROM catalogo_avisos(%L::uuid[])',
+  (SELECT array_agg(n.id) FROM usuario_notificaciones n WHERE n.entidad LIKE 'catalogo%')), 'Juan'));
+SELECT pg_temp.caso('catalogo_avisos: sin ids, nada', '0', pg_temp.consultar($q$SELECT count(*)::text FROM catalogo_avisos('{}')$q$, 'Carlos'));
+SELECT pg_temp.caso('catalogo_avisos: resuelve solo el id pedido', '1', pg_temp.consultar(format('SELECT count(*)::text FROM catalogo_avisos(ARRAY[%L]::uuid[])', pg_temp.consultar('SELECT x.notificacion_id::text FROM catalogo_avisos(ARRAY(SELECT id FROM usuario_notificaciones WHERE usuario_id = auth.uid())) x ORDER BY 1 LIMIT 1', 'Carlos')), 'Carlos'));
+SELECT pg_temp.caso('catalogo_avisos: ese mismo id, pedido por otro gerente, no', '0', pg_temp.consultar(format('SELECT count(*)::text FROM catalogo_avisos(ARRAY[%L]::uuid[])', pg_temp.consultar('SELECT x.notificacion_id::text FROM catalogo_avisos(ARRAY(SELECT id FROM usuario_notificaciones WHERE usuario_id = auth.uid())) x ORDER BY 1 LIMIT 1', 'Carlos')), 'Gerardo'));
 SELECT pg_temp.caso('catalogo_avisos: Juan no ve los de otro en la bandeja', '-', pg_temp.bandeja('Juan', 'catalogo_baja', 'Rueda'));
 
-SELECT pg_temp.caso('catalogo_avisos: la pueden llamar los logueados', 'true', has_function_privilege('authenticated', 'catalogo_avisos()', 'EXECUTE')::text);
-SELECT pg_temp.caso('catalogo_avisos: anon no', 'false', has_function_privilege('anon', 'catalogo_avisos()', 'EXECUTE')::text);
+SELECT pg_temp.caso('catalogo_avisos: la pueden llamar los logueados', 'true', has_function_privilege('authenticated', 'catalogo_avisos(uuid[])', 'EXECUTE')::text);
+SELECT pg_temp.caso('catalogo_avisos: anon no', 'false', has_function_privilege('anon', 'catalogo_avisos(uuid[])', 'EXECUTE')::text);
 SELECT pg_temp.caso(f || ': sin EXECUTE', 'false', has_function_privilege('authenticated', f, 'EXECUTE')::text)
 FROM unnest(ARRAY['catalogo_variantes_avisar()', 'catalogo_categorias_avisar()', 'catalogo_porcentajes_valores_avisar()',
                   'catalogo_versiones_historia_avisar()', 'catalogo_porcentaje_cambio(uuid)', 'catalogo_baja_cascada()']) AS f;
