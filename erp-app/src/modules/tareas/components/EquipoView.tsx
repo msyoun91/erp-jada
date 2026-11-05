@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { CircleCheck } from "lucide-react";
 import { toast } from "sonner";
+import { Vacio } from "@/components/ui/Vacio";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import { aceptarPaso } from "../actions";
 import { compararMision, estaBloqueado, estaEnEspera, estaVencido } from "../derivados";
@@ -105,7 +106,7 @@ function Contenido({ pasos, cadena, hilos }: Datos) {
           ) : (
             <>
               {!estaBloqueado(p, porId) && (
-                <button className="btn btn-sm btn-secondary" onClick={() => setDialogo({ tipo: "completar", paso: p })}>
+                <button className="btn btn-sm btn-primary" onClick={() => setDialogo({ tipo: "completar", paso: p })}>
                   Completar
                 </button>
               )}
@@ -125,10 +126,7 @@ function Contenido({ pasos, cadena, hilos }: Datos) {
   function lista(filas: PasoEquipo[], vacio: string) {
     if (filas.length === 0)
       return (
-        <div className="empty-state">
-          <CircleCheck size={30} strokeWidth={1.5} className="mx-auto mb-3 text-success" />
-          <p className="t-h3">{vacio}</p>
-        </div>
+        <Vacio icono={CircleCheck} color="text-success" titulo={vacio} />
       );
     return <div className="flex flex-col rounded-lg border border-border bg-bg-surface">{filas.map(fila)}</div>;
   }

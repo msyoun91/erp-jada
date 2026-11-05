@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ShieldOff } from "lucide-react";
 import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
+import { Vacio } from "@/components/ui/Vacio";
 import { delegarSubmodulos } from "../actions";
 import type { Miembro, Otorgamiento, Submodulo } from "../types";
 import { labelModulo } from "./PermisosPanel";
@@ -150,13 +151,10 @@ export function DelegarPanel({
       }
     >
       {visibles.size === 0 ? (
-        <div className="empty-state">
-          <p className="t-h3">Nada para asignar</p>
-          <p className="t-body-m mt-1">
-            {miembro.nombre} no tiene permisos, y no tenés permisos delegables para darle. Los marca
-            el administrador.
-          </p>
-        </div>
+        <Vacio icono={ShieldOff} titulo="Nada para asignar">
+          {miembro.nombre} no tiene permisos, y no tenés permisos delegables para darle. Los marca el
+          administrador.
+        </Vacio>
       ) : (
         <div className="flex-1 overflow-y-auto">
           {Object.entries(porModulo).map(([modulo, items]) => {

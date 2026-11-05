@@ -118,7 +118,7 @@ export function VinculosSeccion({
         )}
       </div>
       {abiertos.length === 0 ? (
-        <div className="empty-state">
+        <div className="empty-state empty-state-sm">
           <p className="t-body-m">
             {trabaja ? "Sin contactos todavía. Sumá el primero con «Vincular contacto»." : "Sin contactos vinculados."}
           </p>

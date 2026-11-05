@@ -186,7 +186,7 @@ export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin,
           )}
         </div>
         {abiertas.length === 0 ? (
-          <div className="empty-state">
+          <div className="empty-state empty-state-sm">
             <p className="t-body-m">Sin empresa.</p>
           </div>
         ) : (

@@ -50,7 +50,7 @@ export function VinculosDeContacto({ vinculos }: { vinculos: VinculoConRegistro[
     <div>
       <p className="t-label mb-2">Dónde figura</p>
       {vinculos.length === 0 ? (
-        <div className="empty-state">
+        <div className="empty-state empty-state-sm">
           <p className="t-body-m">No está vinculado a ninguna obra.</p>
         </div>
       ) : (

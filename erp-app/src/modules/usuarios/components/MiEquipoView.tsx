@@ -1,6 +1,8 @@
 "use client";
 
+import { UsersRound } from "lucide-react";
 import { useState } from "react";
+import { Vacio } from "@/components/ui/Vacio";
 import { initials } from "@/lib/utils";
 import type { MiEquipo, Miembro, Submodulo } from "../types";
 import { DelegarPanel } from "./DelegarPanel";
@@ -18,10 +20,9 @@ export function MiEquipoView({
 
   if (!miEquipo) {
     return (
-      <div className="empty-state">
-        <p className="t-h3">No estás en un equipo</p>
-        <p className="t-body-m mt-1">Los equipos los arma el administrador.</p>
-      </div>
+      <Vacio icono={UsersRound} titulo="No estás en un equipo">
+        Los equipos los arma el administrador.
+      </Vacio>
     );
   }
 

@@ -2,19 +2,10 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  Archive,
-  ArchiveRestore,
-  LogOut,
-  Pencil,
-  Plus,
-  ShieldCheck,
-  ShieldOff,
-  SlidersHorizontal,
-  UserPlus,
-} from "lucide-react";
+import { Archive, ArchiveRestore, LogOut, Pencil, Plus, ShieldCheck, ShieldOff, SlidersHorizontal, UserPlus, UsersRound } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
+import { Vacio } from "@/components/ui/Vacio";
 import { initials } from "@/lib/utils";
 import { asignarEquipo, cambiarEstadoEquipo, designarDelegador } from "../actions";
 import type { Equipo, Submodulo, Usuario } from "../types";
@@ -122,14 +113,11 @@ export function EquiposView({
       )}
 
       {activos.length === 0 ? (
-        <div className="empty-state">
-          <p className="t-h3">Sin equipos todavía</p>
-          <p className="t-body-m mt-1">
-            {puedeGestionar
-              ? 'Creá el primero con "Nuevo equipo". Cada equipo puede tener un delegador que reparte permisos entre sus miembros.'
-              : "Todavía no hay equipos armados."}
-          </p>
-        </div>
+        <Vacio icono={UsersRound} titulo="Sin equipos todavía">
+          {puedeGestionar
+            ? 'Creá el primero con "Nuevo equipo". Cada equipo puede tener un delegador que reparte permisos entre sus miembros.'
+            : "Todavía no hay equipos armados."}
+        </Vacio>
       ) : (
         <div className="flex flex-col gap-4">
           {activos.map((equipo) => {

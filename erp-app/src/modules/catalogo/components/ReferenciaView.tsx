@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, TrendingUp } from "lucide-react";
 import { FiltroDias } from "@/components/ui/FiltroDias";
 import { Volver } from "@/components/ui/Volver";
+import { Vacio } from "@/components/ui/Vacio";
 import { formatMonto, type Moneda } from "@/lib/monedas";
 import type { PrecioReferencia } from "../types";
 
@@ -21,10 +22,9 @@ export function ReferenciaView({ filas, dias, moneda }: { filas: PrecioReferenci
         cambió, primero.
       </p>
       {filas.length === 0 ? (
-        <div className="empty-state">
-          <p className="t-h3">Sin precios para comparar</p>
-          <p className="t-body-m mt-1">Aparecen cuando hay versiones publicadas con casos de prueba.</p>
-        </div>
+        <Vacio icono={TrendingUp} titulo="Sin precios para comparar">
+          Aparecen cuando hay versiones publicadas con casos de prueba.
+        </Vacio>
       ) : (
         <ul className="flex flex-col rounded-lg border border-border bg-bg-surface">
           {filas.map((f) => (

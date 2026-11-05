@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus, Repeat, UserRound } from "lucide-react";
+import { ChevronRight, ListTodo, Plus, Repeat, SearchX, UserRound } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { Vacio } from "@/components/ui/Vacio";
 import { hoyISO } from "@/lib/utils";
 import { estaAbierto, estaVencido } from "../derivados";
 import { ESTADO_HILO, textoRecurrencia } from "../etiquetas";
@@ -76,15 +77,14 @@ export function HilosView({
       <Paginacion {...paginado} etiqueta="hilos" />
 
       {filtrados.length === 0 ? (
-        <div className="empty-state">
-          <p className="t-h3">{hilos.length === 0 ? "Sin hilos todavía" : "Sin resultados"}</p>
-          <p className="t-body-m mt-1">
-            {hilos.length === 0
-              ? (vacio ??
-                'Acá aparecen los hilos que llevás y los que tienen un paso tuyo. Creá uno con "Nuevo hilo".')
-              : "Probá con otro término o cambiá el filtro de estado."}
-          </p>
-        </div>
+        <Vacio
+          icono={hilos.length === 0 ? ListTodo : SearchX}
+          titulo={hilos.length === 0 ? "Sin hilos todavía" : "Sin resultados"}
+        >
+          {hilos.length === 0
+            ? (vacio ?? 'Acá aparecen los hilos que llevás y los que tienen un paso tuyo. Creá uno con "Nuevo hilo".')
+            : "Probá con otro término o cambiá el filtro de estado."}
+        </Vacio>
       ) : (
         <HilosLista hilos={visibles} yo={yo} nombres={nombres} />
       )}

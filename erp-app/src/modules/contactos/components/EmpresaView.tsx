@@ -213,7 +213,7 @@ export function EmpresaView({
           )}
         </div>
         {actuales.length === 0 ? (
-          <div className="empty-state">
+          <div className="empty-state empty-state-sm">
             <p className="t-body-m">Sin personas que veas.</p>
           </div>
         ) : (

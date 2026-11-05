@@ -71,7 +71,7 @@ export function AuditoriaView({
         <section className="flex flex-col gap-2">
           <h2 className="t-h3">Quién miró contactos</h2>
           {resumen.length === 0 ? (
-            <div className="empty-state">
+            <div className="empty-state empty-state-sm">
               <p className="t-body-m">Nadie miró un teléfono o email en los últimos {dias} días.</p>
             </div>
           ) : (
@@ -114,7 +114,7 @@ export function AuditoriaView({
               Tocá un usuario para ver a quién miró, o filtrá por persona para ver quién la miró.
             </p>
           ) : filas.length === 0 ? (
-            <div className="empty-state">
+            <div className="empty-state empty-state-sm">
               <p className="t-body-m">Sin accesos en los últimos {dias} días.</p>
             </div>
           ) : (

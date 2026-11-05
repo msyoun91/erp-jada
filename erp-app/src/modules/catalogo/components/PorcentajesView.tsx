@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Percent, Plus } from "lucide-react";
+import { Vacio } from "@/components/ui/Vacio";
 import type { Moneda } from "@/lib/monedas";
 import { PASO, textoBase, textoMinimo, textoPorcentaje } from "../etiquetas";
 import type { Categoria, Porcentaje } from "../types";
@@ -46,14 +47,11 @@ export function PorcentajesView({
       </div>
 
       {porcentajes.length === 0 ? (
-        <div className="empty-state">
-          <p className="t-h3">Sin servicios en % todavía</p>
-          <p className="t-body-m mt-1">
-            {puedeEditar
-              ? 'Cargá el primero con "Nuevo servicio en %": comercialización, garantías, IIBB.'
-              : "Todavía nadie cargó servicios en %."}
-          </p>
-        </div>
+        <Vacio icono={Percent} titulo="Sin servicios en % todavía">
+          {puedeEditar
+            ? 'Cargá el primero con "Nuevo servicio en %": comercialización, garantías, IIBB.'
+            : "Todavía nadie cargó servicios en %."}
+        </Vacio>
       ) : (
         [1, 2, 3].map((paso) => {
           const lista = visibles.filter((p) => p.paso === paso);

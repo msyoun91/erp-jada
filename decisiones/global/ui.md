@@ -252,7 +252,7 @@ Cierra los tres ítems P2 del backlog. Regla de `GUIDE_DESIGN.md`: >20 registros
 ### Consistencia entre módulos (2026-11-05)
 
 Una pasada por las pantallas de los siete módulos, comparándolas entre sí. Cada punto era un patrón
-escrito a mano en cada módulo que ya se había separado.
+escrito a mano en cada módulo que ya se había separado. Lo que quedó sin hacer, en `PENDIENTES_UI.md` (raíz).
 
 **El marco de toda pantalla es `<Modulo>` (`components/layout/Modulo.tsx`).** Los seis `layout.tsx`
 copiaban Breadcrumb + `<h1>` + tabs con el ícono y el nombre escritos a mano, aunque la guía decía que
@@ -306,6 +306,26 @@ usa el mismo token.
 y debajo los datos en `t-caption`, como Obra, Persona, Empresa e Hilo. La versión no tenía tarjeta; el
 servicio en % ponía "Cambiar" y el `⋯` en otra fila. Sin componente: lo común son tres líneas de marcado,
 y la regla queda en `GUIDE_DESIGN.md` → *Ficha de detalle*.
+
+**`<Vacio>` para la pantalla vacía y `.empty-state-sm` para la sección vacía.** El design system pide ícono
+de 30px en el estado vacío y solo Misión y Equipo lo tenían, cada uno escrito a mano. Y una sección vacía
+dentro de una ficha ("Sin empresa.") usaba la misma caja de 60px de relleno que un listado entero: ~150px
+por una línea, varias veces por ficha en el celular. `Vacio` no es client component, así un server
+component (Referencia, Auditoría, Inicio) también le pasa el ícono. Archivos: `Vacio.tsx`, 18 pantallas, 8
+secciones.
+
+**`<Filtros>`: en el celular, los filtros de Insumos, Servicios y Paquetes se pliegan.** Eran cuatro filas
+de selects antes del primer insumo; ahora es una (buscador + "Filtros", con cuántos hay puestos). Desde `sm`
+el envoltorio es `contents` y la fila queda como estaba. Solo con dos filtros o más: con uno, esconderlo
+cuesta un toque y no ahorra la fila.
+
+**`OverflowMenu enBarra`.** El `⋯` es `btn-sm` porque vive en filas; en la barra de acciones medía 34px al
+lado de botones de 40. Con `enBarra` mide 40 desde `md` (abajo ya rigen los 44 táctiles).
+
+**Las bandejas de trabajo son la excepción a *acciones de fila siempre en `OverflowMenu`*.** Equipo de
+Tareas muestra Aceptar, Rechazar, Completar y Repartir en la fila por decisión
+(`decisiones/tareas/vistas.md` → *Equipo*), igual que la tarjeta de Misión: en una bandeja, decidir es el
+trabajo. Se igualó con Misión: "Completar" pasa a primario, como "Aceptar".
 
 **`erp-cliente` volvió a tener el mismo `globals.css`.** Le faltaban `button:not(:disabled)` y
 `.input:disabled`; se copió el archivo entero, como dice la entrada de arriba.

@@ -201,6 +201,8 @@
   .segmented-item[aria-pressed="true"], .segmented-item[aria-current="page"] { @apply bg-brand-50 font-semibold text-brand-700; }
 
   .empty-state { @apply bg-bg-surface border border-dashed border-border-strong rounded-lg p-[60px] text-center text-text-tertiary; }
+  /* Una sección vacía dentro de una ficha ("Sin empresa."): una línea, no 150px de caja. */
+  .empty-state-sm { @apply p-5 text-body-m; }
 
   /* Fila de listado o bloque de panel: 13px 20px es el token de row del design
      system (§8), no un valor arbitrario. Estaba escrito a mano como

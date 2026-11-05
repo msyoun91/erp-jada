@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus, ShieldCheck } from "lucide-react";
+import { Building2, ChevronRight, Plus, SearchX, ShieldCheck, UserRound } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { Vacio } from "@/components/ui/Vacio";
 import { IconoContacto, type TipoContacto } from "./Buscador";
 import { EmpresaFormPanel, NuevaPersonaPanel } from "./ContactoFormPanel";
 
@@ -102,12 +103,12 @@ export function ContactosView({
       <Paginacion {...paginado} etiqueta={t.etiqueta} />
 
       {filtradas.length === 0 ? (
-        <div className="empty-state">
-          <p className="t-h3">{filas.length === 0 ? `Sin ${t.etiqueta} todavía` : "Sin resultados"}</p>
-          <p className="t-body-m mt-1">
-            {filas.length === 0 ? t.vacio : filtro === "huerfanas" && !q ? t.sinHuerfanas : "Probá con otro nombre."}
-          </p>
-        </div>
+        <Vacio
+          icono={filas.length > 0 ? SearchX : tipo === "persona" ? UserRound : Building2}
+          titulo={filas.length === 0 ? `Sin ${t.etiqueta} todavía` : "Sin resultados"}
+        >
+          {filas.length === 0 ? t.vacio : filtro === "huerfanas" && !q ? t.sinHuerfanas : "Probá con otro nombre."}
+        </Vacio>
       ) : (
         <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
           {visibles.map((f) => (

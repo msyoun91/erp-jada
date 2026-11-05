@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Plus, Tags } from "lucide-react";
+import { ChevronRight, Package, Plus, SearchX, Tags } from "lucide-react";
+import { Filtros } from "@/components/ui/Filtros";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { Paginacion } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { Vacio } from "@/components/ui/Vacio";
 import { activarCategoria, crearCategoria, renombrarCategoria } from "../actions";
 import { ESTADO_VERSION, versionPrincipal } from "../etiquetas";
 import type { Categoria, Paquete } from "../types";
@@ -101,6 +103,7 @@ export function PaquetesView({
           </Link>
         )}
         <OverflowMenu
+          enBarra
           items={[
             {
               label: "Categorías",
@@ -111,8 +114,10 @@ export function PaquetesView({
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <SearchInput value={texto} onChange={setTexto} placeholder="Buscar paquete…" />
+      <Filtros
+        buscador={<SearchInput value={texto} onChange={setTexto} placeholder="Buscar paquete…" />}
+        activos={[categoriaId !== "", estado !== "todos", !agrupar].filter(Boolean).length}
+      >
         <select
           className="input w-auto"
           value={categoriaId}
@@ -143,21 +148,21 @@ export function PaquetesView({
           <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} />
           <span className="t-body-m">Agrupar por categoría</span>
         </label>
-      </div>
+      </Filtros>
 
       <div>
         <Paginacion {...paginado} etiqueta="paquetes" />
         {filtrados.length === 0 ? (
-          <div className="empty-state">
-            <p className="t-h3">{paquetes.length === 0 ? "Sin paquetes todavía" : "Sin resultados"}</p>
-            <p className="t-body-m mt-1">
-              {paquetes.length === 0
-                ? puedeArmar
-                  ? 'Armá el primero con "Nuevo paquete". Antes, cargá sus categorías en el menú ⋯.'
-                  : "Todavía nadie armó paquetes."
-                : "Probá con otro término o cambiá los filtros."}
-            </p>
-          </div>
+          <Vacio
+            icono={paquetes.length === 0 ? Package : SearchX}
+            titulo={paquetes.length === 0 ? "Sin paquetes todavía" : "Sin resultados"}
+          >
+            {paquetes.length === 0
+              ? puedeArmar
+                ? 'Armá el primero con "Nuevo paquete". Antes, cargá sus categorías en el menú ⋯.'
+                : "Todavía nadie armó paquetes."
+              : "Probá con otro término o cambiá los filtros."}
+          </Vacio>
         ) : (
           <ListaPorCategoria
             grupos={grupos}

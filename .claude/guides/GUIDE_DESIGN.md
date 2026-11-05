@@ -48,6 +48,10 @@ debajo otra con buscador y filtros. Las dos `mb-4 flex flex-wrap items-center ga
 siempre en el mismo lugar, y en el celular no queda enterrado debajo del buscador. Una acción que depende de
 la vista elegida igual se muestra siempre: si aparece y desaparece, la fila de abajo salta.
 
+Con dos filtros o más además del buscador, la fila de abajo es `<Filtros buscador={…} activos={n}>`
+(`components/ui/Filtros.tsx`): en el celular los pliega detrás de un botón que cuenta los puestos; desde `sm`
+no hace nada. Un `⋯` en la fila de acciones lleva `enBarra`, para medir lo mismo que los botones de al lado.
+
 Elegir entre pocas vistas o períodos es un `.segmented` (`globals.css`): botones con `aria-pressed` o links
 con `aria-current`, que es lo que marca el elegido. No `btn-primary`: eso es una acción.
 
@@ -105,9 +109,12 @@ Nunca ejecutar sin que el usuario confirme.
 ## Estado vacío
 
 Toda pantalla tiene un estado vacío definido.
-Si no hay datos: mostrar mensaje claro que explique por qué y qué hacer. Siempre título (`t-h3`) + texto
-(`t-body-m mt-1`) dentro de `.empty-state`; "Sin X todavía" si no hay nada y "Sin resultados" si lo vació
-un filtro.
+Si no hay datos: mostrar mensaje claro que explique por qué y qué hacer.
+
+- **Una pantalla vacía** es `<Vacio icono={…} titulo="…">qué hacer</Vacio>` (`components/ui/Vacio.tsx`):
+  ícono de 30px, título y texto. "Sin X todavía" con el ícono de lo que falta; "Sin resultados" si lo vació
+  un filtro, con `SearchX`. Una bandeja sin pendientes, `CircleCheck` en `text-success`
+- **Una sección vacía dentro de una ficha** ("Sin empresa.") es `.empty-state .empty-state-sm`: una línea
 
 ## Íconos
 

@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Archive, ArchiveRestore, Copy, Globe, GlobeLock, Pencil, Play, Plus } from "lucide-react";
+import { Archive, ArchiveRestore, ClipboardList, Copy, Globe, GlobeLock, Pencil, Play, Plus, SearchX } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { Vacio } from "@/components/ui/Vacio";
 import { copiarPlantilla, desactivarPlantilla, publicarPlantilla, reactivarPlantilla } from "../actions";
 import { motivoRevisar } from "../derivados";
 import { nombreEnte, PRIORIDAD, textoCompleta, textoCondicion, textoDisparo } from "../etiquetas";
@@ -228,10 +229,12 @@ function Contenido({
       </div>
 
       {activas.length === 0 ? (
-        <div className="empty-state">
-          <p className="t-h3">{porVista[ver].length > 0 ? "Sin resultados" : "Sin plantillas todavía"}</p>
-          <p className="t-body-m mt-1">{vacio}</p>
-        </div>
+        <Vacio
+          icono={porVista[ver].length > 0 ? SearchX : ClipboardList}
+          titulo={porVista[ver].length > 0 ? "Sin resultados" : "Sin plantillas todavía"}
+        >
+          {vacio}
+        </Vacio>
       ) : (
         <div className="flex flex-col gap-3">{activas.map(tarjeta)}</div>
       )}

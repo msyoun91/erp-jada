@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, MapPin, Plus, ShieldCheck, UserRound } from "lucide-react";
+import { Building2, ChevronRight, MapPin, Plus, SearchX, ShieldCheck, UserRound } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { Vacio } from "@/components/ui/Vacio";
 import type { ObraResumen } from "../queries";
 import { ESTADOS_ABIERTOS, LABEL_ESTADO, type EstadoObra } from "../types";
 import { AltaObraPanel, type QuienSlot } from "./ObraFormPanel";
@@ -99,16 +100,16 @@ export function ObrasView({
       <Paginacion {...paginado} etiqueta="obras" />
 
       {filtradas.length === 0 ? (
-        <div className="empty-state">
-          <p className="t-h3">{obras.length === 0 ? "Sin obras todavía" : "Sin resultados"}</p>
-          <p className="t-body-m mt-1">
-            {obras.length === 0
-              ? `Acá aparecen las obras que llevás y en las que participás.${Quien ? ' Cargá una con "Nueva obra".' : ""}`
-              : filtro === "huerfanas"
-                ? "Ninguna obra activa quedó sin quien la trabaje."
-                : "Probá con otro término o cambiá el filtro de estado."}
-          </p>
-        </div>
+        <Vacio
+          icono={obras.length === 0 ? Building2 : SearchX}
+          titulo={obras.length === 0 ? "Sin obras todavía" : "Sin resultados"}
+        >
+          {obras.length === 0
+            ? `Acá aparecen las obras que llevás y en las que participás.${Quien ? ' Cargá una con "Nueva obra".' : ""}`
+            : filtro === "huerfanas"
+              ? "Ninguna obra activa quedó sin quien la trabaje."
+              : "Probá con otro término o cambiá el filtro de estado."}
+        </Vacio>
       ) : (
         <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
           {visibles.map((o) => (

@@ -177,7 +177,7 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
           )}
         </div>
         {ordenados.length === 0 ? (
-          <div className="empty-state">
+          <div className="empty-state empty-state-sm">
             <p className="t-body-m">Sin pasos todavía. Sumá el primero con «Sumar paso».</p>
           </div>
         ) : (

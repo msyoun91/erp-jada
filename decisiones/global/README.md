@@ -22,7 +22,7 @@ Tocar `components/ui/` o `globals.css`: design system, componentes compartidos, 
 - Design system
 - Componentes compartidos (`components/ui/`) — `RightPanel` y `Modal` viven en el top layer · `ConfirmModal` · `OverflowMenu` · `ThemeToggle` · `SearchInput` · `FiltroDias` · `Ayuda` · `Campo`: paréntesis sin mayúsculas
 - Tokens y clases de `globals.css`
-- Auditorías de UI app-wide — P0 — errores, confirmaciones, foco, boundaries · P1 — responsive y legibilidad · P1 — acciones de fila siempre en `OverflowMenu` · P2 — búsqueda, paginación y contador de resultados · Consistencia entre módulos (`Modulo`, `Volver`, `PiePanel`, `.alert`, `.segmented`, acciones arriba)
+- Auditorías de UI app-wide — P0 — errores, confirmaciones, foco, boundaries · P1 — responsive y legibilidad · P1 — acciones de fila siempre en `OverflowMenu` · P2 — búsqueda, paginación y contador de resultados · Consistencia entre módulos (`Modulo`, `Volver`, `PiePanel`, `.alert`, `.segmented`, acciones arriba, `Vacio`, `Filtros`, bandejas como excepción del `⋯`)
 - DM Sans reemplaza a Barlow Semi Condensed + Plus Jakarta Sans
 - `.input:disabled` — el campo deshabilitado tiene que verse deshabilitado
 

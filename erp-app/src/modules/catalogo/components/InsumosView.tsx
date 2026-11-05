@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronRight, Palette, Plus, Tags } from "lucide-react";
+import { Boxes, ChevronRight, Palette, Plus, SearchX, Tags, Wrench } from "lucide-react";
+import { Filtros } from "@/components/ui/Filtros";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { Paginacion } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { Vacio } from "@/components/ui/Vacio";
 import type { Moneda } from "@/lib/monedas";
 import {
   activarCategoria,
@@ -114,6 +116,7 @@ export function InsumosView({
         )}
         {/* En un menú: en mobile, con los filtros, eran cinco renglones antes del primer insumo. */}
         <OverflowMenu
+          enBarra
           items={[
             {
               label: "Categorías",
@@ -133,64 +136,68 @@ export function InsumosView({
         />
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <SearchInput value={texto} onChange={setTexto} placeholder={t.buscar} />
-        <select
-          className="input w-auto"
-          value={categoriaId}
-          onChange={(e) => setCategoriaId(e.target.value)}
-          aria-label="Filtrar por categoría"
+      <div className="mb-4">
+        <Filtros
+          buscador={<SearchInput value={texto} onChange={setTexto} placeholder={t.buscar} />}
+          activos={[categoriaId !== "", estado !== "activos", porCosto, !agrupar].filter(Boolean).length}
         >
-          <option value="">Todas las categorías</option>
-          {categorias.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}
-              {c.activo ? "" : " (de baja)"}
-            </option>
-          ))}
-        </select>
-        <select
-          className="input w-auto"
-          value={estado}
-          onChange={(e) => setEstado(e.target.value as Estado)}
-          aria-label="Filtrar por estado"
-        >
-          {ESTADOS.map((e) => (
-            <option key={e.valor} value={e.valor}>
-              {e.label}
-            </option>
-          ))}
-        </select>
-        {puedeCostos && (
           <select
             className="input w-auto"
-            value={porCosto ? "costo" : "nombre"}
-            onChange={(e) => setPorCosto(e.target.value === "costo")}
-            aria-label="Ordenar"
+            value={categoriaId}
+            onChange={(e) => setCategoriaId(e.target.value)}
+            aria-label="Filtrar por categoría"
           >
-            <option value="nombre">Por nombre</option>
-            <option value="costo">Costo más viejo primero</option>
+            <option value="">Todas las categorías</option>
+            {categorias.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nombre}
+                {c.activo ? "" : " (de baja)"}
+              </option>
+            ))}
           </select>
-        )}
-        <label className="tap-target flex items-center gap-2">
-          <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} />
-          <span className="t-body-m">Agrupar por categoría</span>
-        </label>
+          <select
+            className="input w-auto"
+            value={estado}
+            onChange={(e) => setEstado(e.target.value as Estado)}
+            aria-label="Filtrar por estado"
+          >
+            {ESTADOS.map((e) => (
+              <option key={e.valor} value={e.valor}>
+                {e.label}
+              </option>
+            ))}
+          </select>
+          {puedeCostos && (
+            <select
+              className="input w-auto"
+              value={porCosto ? "costo" : "nombre"}
+              onChange={(e) => setPorCosto(e.target.value === "costo")}
+              aria-label="Ordenar"
+            >
+              <option value="nombre">Por nombre</option>
+              <option value="costo">Costo más viejo primero</option>
+            </select>
+          )}
+          <label className="tap-target flex items-center gap-2">
+            <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} />
+            <span className="t-body-m">Agrupar por categoría</span>
+          </label>
+        </Filtros>
       </div>
 
       <Paginacion {...paginado} etiqueta={t.plural} />
 
       {filtrados.length === 0 ? (
-        <div className="empty-state">
-          <p className="t-h3">{insumos.length === 0 ? `Sin ${t.plural} todavía` : "Sin resultados"}</p>
-          <p className="t-body-m mt-1">
-            {insumos.length === 0
-              ? puedeEditar
-                ? `Cargá el primero con "${t.nuevo}". Antes, armá sus categorías en el menú ⋯.`
-                : `Todavía nadie cargó ${t.plural}.`
-              : "Probá con otro término o cambiá los filtros."}
-          </p>
-        </div>
+        <Vacio
+          icono={insumos.length > 0 ? SearchX : tipo === "insumo" ? Boxes : Wrench}
+          titulo={insumos.length === 0 ? `Sin ${t.plural} todavía` : "Sin resultados"}
+        >
+          {insumos.length === 0
+            ? puedeEditar
+              ? `Cargá el primero con "${t.nuevo}". Antes, armá sus categorías en el menú ⋯.`
+              : `Todavía nadie cargó ${t.plural}.`
+            : "Probá con otro término o cambiá los filtros."}
+        </Vacio>
       ) : (
         <ListaPorCategoria
           grupos={grupos}

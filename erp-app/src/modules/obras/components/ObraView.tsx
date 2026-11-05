@@ -162,7 +162,7 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
           )}
         </div>
         {participantes.length === 0 ? (
-          <div className="empty-state">
+          <div className="empty-state empty-state-sm">
             <p className="t-body-m">Solo {obra.responsable_id === yo ? "vos" : nombre(obra.responsable_id)}.</p>
           </div>
         ) : (

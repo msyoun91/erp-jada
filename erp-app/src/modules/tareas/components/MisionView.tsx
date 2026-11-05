@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, CircleCheck, Clock, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { Vacio } from "@/components/ui/Vacio";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import { aceptarPaso } from "../actions";
 import { compararMision, esperaFichas, estaBloqueado, estaEnEspera, estaVencido } from "../derivados";
@@ -92,19 +93,15 @@ export function MisionView({
     const hayEsperando = bloqueados.length + enEspera.length > 0;
     return (
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
-        <div className="empty-state">
-          {hayEsperando ? (
-            <Lock size={30} strokeWidth={1.5} className="mx-auto mb-3 text-warning" />
-          ) : (
-            <CircleCheck size={30} strokeWidth={1.5} className="mx-auto mb-3 text-success" />
-          )}
-          <p className="t-h3">No hay nada para hacer ahora.</p>
-          <p className="t-body-m mt-1">
-            {hayEsperando
-              ? "Todo lo tuyo espera a un paso anterior o está en espera."
-              : "Cuando te asignen o te pidan un paso, va a aparecer acá."}
-          </p>
-        </div>
+        <Vacio
+          icono={hayEsperando ? Lock : CircleCheck}
+          color={hayEsperando ? "text-warning" : "text-success"}
+          titulo="No hay nada para hacer ahora"
+        >
+          {hayEsperando
+            ? "Todo lo tuyo espera a un paso anterior o está en espera."
+            : "Cuando te asignen o te pidan un paso, va a aparecer acá."}
+        </Vacio>
         {esperando}
       </div>
     );

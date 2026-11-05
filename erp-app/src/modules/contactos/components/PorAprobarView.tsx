@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Link2, UserRound } from "lucide-react";
+import { CircleCheck, Eye, Link2, UserRound } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Campo, claseInput } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { Volver } from "@/components/ui/Volver";
+import { Vacio } from "@/components/ui/Vacio";
 import { labelRol } from "@/lib/entes";
 import { formatFecha } from "@/lib/utils";
 import { resolverContacto, verContacto } from "../actions";
@@ -200,10 +201,9 @@ export function PorAprobarView({ contactos }: { contactos: PorAprobar[] }) {
     <div className="flex flex-col gap-4">
       <Volver href="/contactos">Contactos</Volver>
       {contactos.length === 0 ? (
-        <div className="empty-state">
-          <p className="t-h3">Nada por aprobar</p>
-          <p className="t-body-m mt-1">Acá llegan las personas y empresas que se parecen a otra, hasta que las resuelvas.</p>
-        </div>
+        <Vacio icono={CircleCheck} color="text-success" titulo="Nada por aprobar">
+          Acá llegan las personas y empresas que se parecen a otra, hasta que las resuelvas.
+        </Vacio>
       ) : (
         contactos.map((c) => <Tarjeta key={`${c.tipo}-${c.id}`} c={c} />)
       )}

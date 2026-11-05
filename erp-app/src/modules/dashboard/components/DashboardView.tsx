@@ -1,4 +1,6 @@
+import { LayoutGrid } from "lucide-react";
 import { Modulo } from "@/components/layout/Modulo";
+import { Vacio } from "@/components/ui/Vacio";
 import { WidgetUsuarios } from "./WidgetUsuarios";
 import { ConfigurarWidgets } from "./ConfigurarWidgets";
 import type { DashboardData, WidgetDefinicion } from "../types";
@@ -17,12 +19,9 @@ export function DashboardView({ data, widgets, prefs, modulos }: Props) {
   return (
     <Modulo modulo="dashboard" accion={widgets.length > 0 && <ConfigurarWidgets widgets={widgets} prefs={prefs} />}>
       {visibles.length === 0 ? (
-        <div className="empty-state">
-          <p className="t-h3">Sin widgets a la vista</p>
-          <p className="t-body-m mt-1">
-            {widgets.length > 0 ? 'Elegí cuáles ver en "Configurar".' : "Todavía no tenés widgets habilitados."}
-          </p>
-        </div>
+        <Vacio icono={LayoutGrid} titulo="Sin widgets a la vista">
+          {widgets.length > 0 ? 'Elegí cuáles ver en "Configurar".' : "Todavía no tenés widgets habilitados."}
+        </Vacio>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 [grid-auto-flow:dense]">
           {visibles.map((widget) => {

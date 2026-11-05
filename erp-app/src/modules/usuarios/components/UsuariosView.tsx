@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Archive, ArchiveRestore, KeyRound, Pencil, UserPlus, ShieldCheck } from "lucide-react";
+import { Archive, ArchiveRestore, KeyRound, Pencil, SearchX, ShieldCheck, UserPlus, UsersRound } from "lucide-react";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
+import { Vacio } from "@/components/ui/Vacio";
 import { initials } from "@/lib/utils";
 import { desactivarUsuario, reactivarUsuario } from "../actions";
 import type { Submodulo, SubmoduloRegla, Usuario } from "../types";
@@ -111,17 +112,16 @@ export function UsuariosView({
       <Paginacion {...paginado} etiqueta="usuarios" />
 
       {filtrados.length === 0 ? (
-        <div className="empty-state">
-          {/* "Sin usuarios todavía" solo si la base está vacía: con el filtro
-              en "Activos" por default, una lista de puros inactivos no es una
-              base vacía. */}
-          <p className="t-h3">{usuarios.length === 0 ? "Sin usuarios todavía" : "Sin resultados"}</p>
-          <p className="t-body-m mt-1">
-            {usuarios.length === 0
-              ? 'Creá el primero con "Nuevo usuario".'
-              : "Probá con otro término de búsqueda o cambiá el filtro de estado."}
-          </p>
-        </div>
+        // "Sin usuarios todavía" solo si la base está vacía: con el filtro en "Activos" por default,
+        // una lista de puros desactivados no es una base vacía.
+        <Vacio
+          icono={usuarios.length === 0 ? UsersRound : SearchX}
+          titulo={usuarios.length === 0 ? "Sin usuarios todavía" : "Sin resultados"}
+        >
+          {usuarios.length === 0
+            ? 'Creá el primero con "Nuevo usuario".'
+            : "Probá con otro término de búsqueda o cambiá el filtro de estado."}
+        </Vacio>
       ) : (
         <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
           {visibles.map((usuario) => (

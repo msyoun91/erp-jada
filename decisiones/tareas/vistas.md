@@ -40,7 +40,8 @@ de ese `equipo_id`, como la RLS. `getEquipo` en `queries.ts`; vista en `EquipoVi
 todavía. Los miembros salen de `tareas_asignables()` sin `pedido`.
 
 **Acciones en la fila, como en Misión.** Pedido: Aceptar · Rechazar · Repartir. Al equipo: Completar
-(si no espera al anterior) · Poner en espera · Repartir. Repartir = `ReasignarModal` con
+(si no espera al anterior) · Poner en espera · Repartir. Completar es primario, como Aceptar y como en
+Misión (2026-11-05); es la excepción registrada a la regla del `⋯` (`decisiones/global/ui.md`). Repartir = `ReasignarModal` con
 `soloMiEquipo`. Hilos reusa `HilosView` sin "Nuevo hilo": un hilo nuevo es de quien lo crea.
 
 ## Plantillas (2026-09-24)

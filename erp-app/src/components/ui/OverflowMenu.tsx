@@ -5,8 +5,11 @@ import { MoreHorizontal } from "lucide-react";
 
 export function OverflowMenu({
   items,
+  enBarra,
 }: {
   items: { label: string; icon: React.ReactNode; onClick: () => void; destructive?: boolean }[];
+  // En la barra de acciones de un listado va al alto de los botones de al lado; en una fila, chico.
+  enBarra?: boolean;
 }) {
   const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
   const abierto = pos !== null;
@@ -61,7 +64,7 @@ export function OverflowMenu({
       <button
         ref={botonRef}
         type="button"
-        className="btn btn-secondary btn-sm"
+        className={`btn btn-secondary ${enBarra ? "px-3 md:min-h-10" : "btn-sm"}`}
         onClick={alternar}
         aria-label="Más acciones"
         aria-expanded={abierto}
