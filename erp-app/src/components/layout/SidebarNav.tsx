@@ -82,7 +82,7 @@ export function SidebarNav({
           title="Mi perfil"
           className="flex min-w-0 flex-1 items-center gap-2 rounded-sm py-1 hover:bg-bg-subtle"
         >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-900 text-[13px] font-semibold text-white">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary text-[13px] font-semibold text-white">
             {initials(nombre)}
           </div>
           {/* El color activo va en el span y no en el Link: el span fija su

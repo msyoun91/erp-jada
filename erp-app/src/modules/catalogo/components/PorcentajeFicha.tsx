@@ -57,50 +57,46 @@ export function PorcentajeFicha({
     <div className="flex flex-col gap-6">
       <Volver href="/catalogo/porcentajes">Servicios en %</Volver>
 
-      <section className="card flex flex-col gap-2">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div>
-            <h2 className="t-h2">
-              {porcentaje.nombre} · {textoPorcentaje(porcentaje.porcentaje)}
-            </h2>
-            <p className="t-body-m">
-              {[
-                PASO[porcentaje.paso].titulo,
-                textoBase(porcentaje, nombreCategoria),
-                textoMinimo(porcentaje),
-                porcentaje.opcional && "opcional",
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
-          </div>
+      <section className="card flex flex-col gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="t-h2 min-w-0 flex-1">
+            {porcentaje.nombre} · {textoPorcentaje(porcentaje.porcentaje)}
+          </h2>
           {porcentaje.de_baja && <span className="badge badge-neutral">De baja</span>}
-        </div>
-        {puedeEditar && (
-          <div className="flex flex-wrap items-center gap-2">
-            {!porcentaje.de_baja && (
-              <button className="btn btn-secondary" onClick={() => setEditando(true)}>
-                Cambiar
-              </button>
-            )}
-            {porcentaje.de_baja ? (
-              <button className="btn btn-primary" onClick={() => activar(true)}>
+          {puedeEditar &&
+            (porcentaje.de_baja ? (
+              <button className="btn btn-primary btn-sm" onClick={() => activar(true)}>
                 Reactivar
               </button>
             ) : (
-              <OverflowMenu
-                items={[
-                  {
-                    label: "Dar de baja",
-                    icon: <Archive size={14} />,
-                    destructive: true,
-                    onClick: () => setBaja(true),
-                  },
-                ]}
-              />
-            )}
-          </div>
-        )}
+              <>
+                {/* "Cambiar" a la vista y la baja en el ⋯: pantallas.md → *Baja en el menú*. */}
+                <button className="btn btn-secondary btn-sm" onClick={() => setEditando(true)}>
+                  Cambiar
+                </button>
+                <OverflowMenu
+                  items={[
+                    {
+                      label: "Dar de baja",
+                      icon: <Archive size={14} />,
+                      destructive: true,
+                      onClick: () => setBaja(true),
+                    },
+                  ]}
+                />
+              </>
+            ))}
+        </div>
+        <p className="t-caption">
+          {[
+            PASO[porcentaje.paso].titulo,
+            textoBase(porcentaje, nombreCategoria),
+            textoMinimo(porcentaje),
+            porcentaje.opcional && "opcional",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
       </section>
 
       <section className="flex flex-col gap-2">

@@ -297,6 +297,16 @@ vez de ir solo en una fila arriba.
 también. Inicio dice qué hacer ("Configurar"), y el error sugiere la conexión: en obra es la causa más
 probable.
 
+**El primario es `--primary`, dark-aware: navy en claro, `#1A6DC8` en oscuro.** El navy fijo sobre el
+fondo casi negro pesaba menos que un secundario con borde: la jerarquía de botones se invertía justo en el
+modo pensado para el sol. Blanco sobre `#1A6DC8` da 5.2:1. En claro no cambia nada. El avatar del sidebar
+usa el mismo token.
+
+**Las fichas de Catálogo toman la forma de las otras.** Tarjeta, título con estado y acciones a la derecha,
+y debajo los datos en `t-caption`, como Obra, Persona, Empresa e Hilo. La versión no tenía tarjeta; el
+servicio en % ponía "Cambiar" y el `⋯` en otra fila. Sin componente: lo común son tres líneas de marcado,
+y la regla queda en `GUIDE_DESIGN.md` → *Ficha de detalle*.
+
 **`erp-cliente` volvió a tener el mismo `globals.css`.** Le faltaban `button:not(:disabled)` y
 `.input:disabled`; se copió el archivo entero, como dice la entrada de arriba.
 

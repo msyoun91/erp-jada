@@ -61,9 +61,9 @@ export function VersionView({
     <div className="flex flex-col gap-6">
       <Volver href="/catalogo/paquetes">Paquetes</Volver>
 
-      <section className="flex flex-col gap-3">
+      <section className="card flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="t-h2">
+          <h2 className="t-h2 min-w-0 flex-1">
             {version.nombre} · v{version.numero}
           </h2>
           <span className={`badge ${ESTADO_VERSION[version.estado].badge}`}>
@@ -71,7 +71,7 @@ export function VersionView({
           </span>
           {!paquete.activo && <span className="badge badge-neutral">Paquete de baja</span>}
         </div>
-        <p className="t-body-m">
+        <p className="t-caption">
           {[
             categoria?.nombre,
             version.colores.length > 0

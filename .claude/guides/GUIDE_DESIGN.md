@@ -32,7 +32,10 @@ import { Modulo } from "@/components/layout/Modulo";
 - El `<Breadcrumb>` reusa `LABEL_MAP` para el módulo y la tab activa (`tabActiva`, misma lógica que `ModuleTabs`)
   para la vista; con una sola tab muestra solo el módulo. No navega: la vuelta de una ficha es `<Volver>`
 
-## Ficha de detalle: vuelta al listado
+## Ficha de detalle
+
+La cabecera es una `.card`: primero una fila con el `<h2 className="t-h2 min-w-0 flex-1">`, los badges de
+estado y las acciones (el `⋯`, y a la vista solo lo de todos los días), y debajo los datos en `t-caption`.
 
 Toda ficha con ruta propia (`/obras/[id]`, `/catalogo/porcentajes/[id]`, …) arranca con
 `<Volver href="/listado">Listado</Volver>` (`components/ui/Volver.tsx`). Va en el `page.tsx` y no en el
