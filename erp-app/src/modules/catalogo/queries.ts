@@ -21,6 +21,22 @@ import type {
   VersionResumen,
 } from "./types";
 
+// Max Rows de Supabase: una respuesta más larga se corta sin error, y la pantalla mostraría costos o
+// insumos de menos como si no existieran. Cada consulta necesita un orden que no empate.
+const PAGINA = 1000;
+
+async function leerTodo<T>(
+  pagina: (desde: number, hasta: number) => PromiseLike<{ data: T[] | null; error: Error | null }>,
+): Promise<T[]> {
+  const filas: T[] = [];
+  for (;;) {
+    const { data, error } = await pagina(filas.length, filas.length + PAGINA - 1);
+    if (error) throw error;
+    filas.push(...(data ?? []));
+    if (!data || data.length < PAGINA) return filas;
+  }
+}
+
 export async function getCategorias(tipo: TipoCatalogo): Promise<Categoria[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -44,22 +60,26 @@ export async function getColores(): Promise<Color[]> {
 export async function getInsumos(tipo: TipoInsumo): Promise<Insumo[]> {
   const supabase = await createClient();
   const [insumos, costos] = await Promise.all([
-    supabase
-      .from("catalogo_insumos")
-      .select(
-        "id, nombre, categoria_id, unidad, peso, espesor, con_color, activo, catalogo_variantes(id, color_id, activo)",
-      )
-      .eq("tipo", tipo)
-      .order("nombre"),
-    supabase.rpc("catalogo_costos_vigentes"),
+    leerTodo((desde, hasta) =>
+      supabase
+        .from("catalogo_insumos")
+        .select(
+          "id, nombre, categoria_id, unidad, peso, espesor, con_color, activo, catalogo_variantes(id, color_id, activo)",
+        )
+        .eq("tipo", tipo)
+        .order("nombre")
+        .order("id")
+        .range(desde, hasta),
+    ),
+    leerTodo((desde, hasta) =>
+      supabase.rpc("catalogo_costos_vigentes").order("variante_id").range(desde, hasta),
+    ),
   ]);
-  if (insumos.error) throw insumos.error;
-  if (costos.error) throw costos.error;
 
   const porVariante = new Map<string, Costo>(
-    costos.data.map((c) => [c.variante_id, { costo: c.costo, moneda: c.moneda, desde: c.created_at }]),
+    costos.map((c) => [c.variante_id, { costo: c.costo, moneda: c.moneda, desde: c.created_at }]),
   );
-  return insumos.data.map(({ catalogo_variantes, ...i }) => ({
+  return insumos.map(({ catalogo_variantes, ...i }) => ({
     ...i,
     variantes: catalogo_variantes.map((v) => ({ ...v, costo: porVariante.get(v.id) ?? null })),
   }));
@@ -133,8 +153,9 @@ function aPaquete(p: PaqueteFila): Paquete {
 
 export async function getPaquetes(): Promise<Paquete[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("catalogo_paquetes").select(SELECT_PAQUETE);
-  if (error) throw error;
+  const data = await leerTodo((desde, hasta) =>
+    supabase.from("catalogo_paquetes").select(SELECT_PAQUETE).order("id").range(desde, hasta),
+  );
   return (data as unknown as PaqueteFila[]).map(aPaquete);
 }
 
@@ -284,11 +305,14 @@ export async function getCasosCalculados(versionId: string): Promise<CasoCalcula
 // Nombre, tipo y unidad de insumos y servicios fijos: se leen desde cualquier pestaña del catálogo.
 export async function getInsumosBasicos(): Promise<InsumoBasico[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("catalogo_insumos")
-    .select("id, nombre, tipo, unidad, categoria_id, con_color, activo")
-    .order("nombre");
-  if (error) throw error;
+  const data = await leerTodo((desde, hasta) =>
+    supabase
+      .from("catalogo_insumos")
+      .select("id, nombre, tipo, unidad, categoria_id, con_color, activo")
+      .order("nombre")
+      .order("id")
+      .range(desde, hasta),
+  );
   return data as InsumoBasico[];
 }
 

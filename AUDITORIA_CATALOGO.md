@@ -210,6 +210,9 @@ página abierta, la pantalla le dice "guardado" y no cambió nada.
 
 ### 6. Listas sin paginar contra el `max-rows` de PostgREST — Baja, a confirmar
 
+**Resuelto (2026-11-04, `queries.ts`):** *Max Rows* está en 1.000, y las cuatro lecturas traen de a 1.000 hasta que no queda nada. Filtrar los
+costos por tipo no alcanzaba: perfiles, vidrios y herrajes son todos `insumo`. Lo de abajo describe lo que pasaba antes.
+
 **Qué pasa.** `getInsumos` lee todos los insumos y todo `catalogo_costos_vigentes()`, una fila por variante con costo.
 `getPaquetes` y `getInsumosBasicos` leen todo de una vez. Supabase corta cada respuesta en `max-rows`, que por defecto es 1.000, y
 lo hace **sin error**. *El costo del insumo* ya prevé "200 perfiles en 3 colores", que son 600 variantes solo de perfiles.
@@ -424,5 +427,4 @@ La suite cubre bien las reglas escritas en las decisiones. Le falta un caso por 
 
 ## Qué conviene decidir antes de cargar el primer paquete real
 
-**Hallazgo 6**, lo único abierto (2026-11-04): ver *Max Rows* en la configuración de la API de Supabase y decidir cómo leer esas listas.
-Lo demás está resuelto o descartado, y lo del 18 no pide acción inmediata.
+Nada (2026-11-04): los hallazgos 1 a 17 están resueltos o descartados, y lo del 18 no pide acción inmediata.

@@ -32,6 +32,10 @@ uno: en mobile, junto a los filtros, eran cinco renglones antes del primer insum
 confirma aunque no afecte nada.** Con la vista Paquetes se ven los nombres; sin ella, los números (*Antes de confirmar la
 baja…*). Archivos: `BajaModal.tsx`.
 
+**Las listas de insumos, costos y paquetes se leen enteras, de a 1.000 filas (2026-11-04).** Max Rows corta sin error, y una variante
+con costo se vería "sin costo" y "Cambiar todos (%)" no la tocaría. Se pagina la lectura y no la pantalla: los filtros y el agrupado
+trabajan sobre la lista entera. Si Max Rows baja de 1.000, hay que bajar `PAGINA`. Archivos: `modules/catalogo/queries.ts`.
+
 ## Servicios en % (2026-11-03)
 
 **La lista agrupa por paso, que es el orden del cálculo, y dice cuánto suman los del paso 3; cada servicio abre su página
