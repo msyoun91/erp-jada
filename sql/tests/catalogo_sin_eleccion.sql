@@ -2,7 +2,8 @@
 -- Termina en RAISE: revierte todo y devuelve "N / M ok".
 DO $$
 DECLARE
-  v_insumo uuid := (SELECT id FROM catalogo_insumos WHERE activo AND unidad = 'u' LIMIT 1);
+  v_categoria uuid;
+  v_insumo uuid;
   v_paquete uuid;
   v_version uuid;
   v_pieza uuid;
@@ -18,9 +19,13 @@ DECLARE
   v_fallos text[] := '{}';
   r record;
 BEGIN
+  INSERT INTO catalogo_categorias (tipo, nombre) VALUES ('insumo', 'Zqx170 Insumos') RETURNING id INTO v_categoria;
+  INSERT INTO catalogo_insumos (tipo, nombre, categoria_id, unidad) VALUES ('insumo', 'Zqx170 Bisagra', v_categoria, 'u') RETURNING id INTO v_insumo;
+
+  INSERT INTO catalogo_categorias (tipo, nombre) VALUES ('paquete', 'Zqx170 Paquetes') RETURNING id INTO v_categoria;
   INSERT INTO catalogo_paquetes DEFAULT VALUES RETURNING id INTO v_paquete;
   INSERT INTO catalogo_versiones (paquete_id, nombre, categoria_id)
-    VALUES (v_paquete, 'Zqx170', (SELECT id FROM catalogo_categorias WHERE tipo = 'paquete' AND activo LIMIT 1))
+    VALUES (v_paquete, 'Zqx170', v_categoria)
     RETURNING id INTO v_version;
   INSERT INTO catalogo_piezas (version_id, nombre) VALUES (v_version, 'P') RETURNING id INTO v_pieza;
   INSERT INTO catalogo_piezas (version_id, nombre, opcional) VALUES (v_version, 'Opc', true) RETURNING id INTO v_opcional;
