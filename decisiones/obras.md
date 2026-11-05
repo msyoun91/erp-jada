@@ -10,8 +10,8 @@
 ## La obra es del equipo comercial (2026-09-25)
 
 **Obras sigue la obra del lado comercial; los demás equipos trabajan la etapa, no la obra.**
-Administración, producción y logística actúan según el estado de cada presupuesto (módulo futuro), y
-post-venta tiene su módulo aparte. Así la obra y sus contactos comerciales no salen de comercial, sin
+Administración, producción, logística y colocación trabajan en el módulo de ejecución y cobros (futuro),
+que toma lo aprobado en Presupuestos (`decisiones/presupuestos.md`), y post-venta tiene su módulo aparte. Así la obra y sus contactos comerciales no salen de comercial, sin
 marcas por contacto. Se había propuesto antes que logística y colocación vieran la obra; el usuario lo
 cambió al definir que el módulo es de comercial.
 
@@ -197,11 +197,12 @@ resolviera después, y el usuario eligió congelar. Contactos hace lo mismo con 
 ## Los estados son solo comerciales (2026-09-25)
 
 **El estado de la obra dice en qué punto está la relación comercial, no qué se está haciendo.** Lo
-operativo es el estado de cada presupuesto, leído al mostrarlo. La ficha de la obra lista sus
-presupuestos con su estado actual y un link ("Etapa 1 ↗ — en producción", "Etapa 2 ↗ — en
-cotización"): composición en `app/` (`GUIDE_ENTES.md` §2.7), sin columnas en Obras.
+operativo se lee al mostrarlo: hasta `aprobado`, el estado de cada presupuesto (`decisiones/presupuestos.md`), y
+después, el módulo de ejecución (futuro). La ficha de la obra lista sus presupuestos con su estado actual y
+un link ("Etapa 1 ↗ — en producción", "Etapa 2 ↗ — publicado"): composición en `app/` (`GUIDE_ENTES.md` §2.7),
+sin columnas en Obras.
 
-**Con un presupuesto en producción y otro en cotización, la obra está `contratada`.** Contratada es
+**Con un presupuesto aprobado y otro en cotización, la obra está `contratada`.** Contratada es
 final. Cotizar la etapa 2 no la devuelve atrás: la cotización se ve en su presupuesto y sus tareas
 salen de ahí. En la lista, un contador calculado al mostrar ("contratada · 1 en cotización") evita
 perderla de vista.
@@ -224,7 +225,8 @@ que no permitía contar.
 equivocado no puede quedar para siempre. La revierten los mismos que cambian el estado, a cualquiera de
 los tres abiertos, con causa en texto libre y obligatoria (caso raro, no se cuenta: sin lista). La causa
 queda en el evento `estado` (`detalle`), como el motivo de pérdida, sin columna nueva. Con Presupuestos,
-el trigger suma la condición "ningún presupuesto aprobado"; con uno aprobado, contratada es final.
+el trigger suma la condición "ningún presupuesto aprobado"; con uno aprobado, contratada es final. Revertir
+la aprobación, con su causa, saca esa condición (`decisiones/presupuestos.md` → *Estados y versiones*).
 
 **Datos de la obra (2026-09-25):** nombre, dirección, localidad, notas, origen, tipo de obra y fecha
 estimada de compra (mes y año). Origen y tipo son listas cerradas, para poder contar, igual que el motivo
@@ -312,8 +314,8 @@ Personas
 │                     "Obras", los números de todas: por estado, perdidas por motivo, contratadas por
 │                     origen y tipo · — · no ve ninguna obra ni contacto, salvo por otro permiso
 ├── Admin           — ve todo · hace todo, reactiva · —
-├── Administración, producción, logística, colocación — NO usan Obras: trabajan la etapa en
-│                     Presupuestos (futuro) · no ven la obra ni sus contactos comerciales
+├── Administración, producción, logística, colocación — NO usan Obras: trabajan la etapa en el
+│                     módulo de ejecución y cobros (futuro) · no ven la obra ni sus contactos comerciales
 ├── Post-venta      — NO usa Obras: módulo aislado (futuro), que apunta a la obra y a los ítems
 └── Cliente         — NO usa el módulo
 Entes
@@ -333,7 +335,10 @@ Entes
              contratada → cualquiera de los tres, con causa (texto libre), mientras no haya
                presupuesto aprobado; no pasa directo a perdida
              con Presupuestos: el primero lleva a en_cotizacion y el primero aprobado a contratada;
-               desde ahí contratada la pone solo la base
+               desde ahí contratada la pone solo la base. Uno nuevo en una perdida la reabre a
+               en_cotizacion. Un rechazo que la deja sin presupuestos abiertos ni aprobados la pasa a
+               perdida, con el motivo del rechazo. A perdida a mano, solo sin presupuestos abiertos
+               (decisiones/presupuestos.md → Efectos en la obra)
            · la ven: responsable, participantes, obras_equipo sobre obra.equipo_id o el equipo_id de
              un participante, obras_todas
            · la trabajan (editar, cambiar el estado, vincular; lo pregunta también Contactos):
@@ -386,7 +391,7 @@ Eventos que emite
                                  (quién se sumó y con qué vínculo)
     · descartado: "cambiaron el estado de tu obra" (ruido entre quienes trabajan la misma obra)
 Eventos que consume
-└── ninguno hoy · con Presupuestos: presupuesto creado y aprobado mueven el estado
+└── ninguno hoy · con Presupuestos: presupuesto creado, aprobado y rechazado mueven el estado
 Tareas
 ├── plantillas "Sobre: obra" por estado, para comercial; una vez por plantilla y obra
 └── pasos de plantilla que se completan solos: vincular {rol} · pasar a {estado}; el link de

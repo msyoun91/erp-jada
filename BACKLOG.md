@@ -19,7 +19,7 @@ Los cinco tramos están cerrados (estado y tests en el encabezado de `decisiones
 ## Módulos que siguen
 
 Orden: Contactos y Obras → **Catálogo** → Presupuestos → Post-venta. Sin lugar todavía en el orden:
-Stock y Compras.
+Ejecución y cobros, Stock y Compras.
 
 Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo** (servicios y productos): de ahí salen los ítems de los presupuestos. **Se arma de cero**
@@ -80,47 +80,42 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   arman en el editor y pasan por aprobación. Una pantalla de alta en bloque se suma solo si hace falta
   seguido. Falta saber de dónde sale hoy la lista de insumos y costos. El script fija `request.jwt.claims` con un
   usuario real: `creado_por` es NOT NULL y sale de `auth.uid()`, así que con `service_role` solo falla.
-- **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
-  ítems del catálogo con el precio copiado, más un renglón por cada mínimo por presupuesto de los
-  servicios en %, que calcula el catálogo (`decisiones/catalogo/precio.md` → *Servicios en %*). Cada ítem guarda
-  su versión y solo lo que cargó el vendedor: lo escrito, las elecciones, las piezas opcionales y el color;
-  el resto lo recalcula el catálogo. El precio llega redondeado, y el ítem lo multiplica por su cantidad.
-  Suma el IVA:
-  el precio del catálogo llega sin IVA (`decisiones/catalogo/precio.md` → *El IVA lo suma Presupuestos*). Su estado
-  es el operativo (en cotización, aprobado, en producción…) y es lo que mueve a administración, producción y logística: sus plantillas de
-  ejecución y el seguimiento comercial al entregar cuelgan del presupuesto, no de la obra. El primer
-  presupuesto pasa la obra a `en_cotizacion` y el primero aprobado a `contratada`. La ficha de la
-  obra lista sus presupuestos con su estado actual. Los contactos operativos (capataz, quien recibe)
-  se vinculan al presupuesto. Su ficha define cómo obtiene la lista de paquetes a la venta y el formulario
-  de cada uno (qué preguntar, predeterminados ya calculados, qué se ofrece) sin leer las tablas del
-  catálogo. Del precio (`sql/163`): `catalogo_precio` y `catalogo_precio_minimos` son lo que se vende hoy y piden
-  `catalogo_aprobar` hasta que esta ficha nombre su permiso; recalcular con la versión y la fecha guardadas se suma acá, y
-  `catalogo_precio_calcular` ya las recibe. El precio no corrige lo elegido, así que el formulario manda en `false` una pieza
-  incluida que no se ofrece. A decidir: qué versión y fecha lleva un paquete sumado a un presupuesto viejo, y si ahí se
-  puede elegir una opción dada de baja después (sin costo a esa fecha, el catálogo no da precio). También:
-  el renglón libre para lo que no se fabrica (flete, visita), con descripción y monto, y quién lo autoriza
-  (`decisiones/catalogo/paquete.md` → *Qué es un paquete*). También: si los vendedores reciben aviso de un
-  paquete nuevo o de uno que sale de la venta (hoy nadie les avisa). También:
-  cómo ve logística el nombre y la dirección de una obra que no
-  abre (propuesta: la etapa guarda su dirección de entrega). También: si un presupuesto en USD blue
-  cobrado en billetes usa el dólar de compra (USD 1.000 al de venta, vendidos a $1.545, dejan $20.000
-  menos que $1.565.000); Monedas hoy guarda solo el de venta (`decisiones/monedas.md` → *Ficha del módulo*).
-  También, de una planilla de carpinterías real (2026-11-02): cada renglón lleva designación y ubicación
-  ("V4 · Lavadero"), y la planilla viene en metros con punto, así que el campo de medida del formulario tiene
-  que rechazar `3.00`: sin el punto son 300 mm, y pasan un mínimo de 300. La calculadora ya lo hace con `numeroEscrito`
-  (`modules/catalogo/entrada.ts`): al usarla en Presupuestos, subirla a `lib/utils.ts`.
-  También, a evaluar sin compromiso (2026-11-04): selección masiva de opcionales, para tildar o destildar de una vez la
-  Colocación o la Garantía de vidrio en varios ítems. Cada ítem sigue guardando lo suyo, y la pieza se reconoce por nombre
-  (`entrada.piezas`), así que no cambia el catálogo. A decidir: si hace falta frenar presupuestos mezclados, que sí pediría
-  una respuesta única guardada en el presupuesto; cómo se cobra la colocación y si va en un renglón aparte.
+- **Presupuestos**: ficha aprobada (2026-11-05), con sus decisiones, en `decisiones/presupuestos.md`. **Siguiente:** el SQL, después
+  de `/clear`. Falta construirlo todo, y esto no está en la ficha:
+  - **Del cálculo:** el ítem guarda su versión y solo lo que cargó el vendedor: lo escrito, las elecciones, las piezas opcionales y
+    el color. El precio llega redondeado y el ítem lo multiplica por su cantidad. Una función de la base da la lista de paquetes a la
+    venta y el formulario de cada uno (qué preguntar, predeterminados ya calculados, qué se ofrece), sin leer las tablas del catálogo.
+    `catalogo_precio` y `catalogo_precio_minimos` pasan a pedir `presupuestos_armar`, en lugar de `catalogo_aprobar`. Recalcular con la
+    versión y la fecha guardadas se suma acá (`catalogo_precio_calcular` ya las recibe), y `catalogo_precio_minimos` se amplía con la
+    versión y la fecha de cada renglón. El precio no corrige lo elegido, así que el formulario manda en `false` una pieza incluida que
+    no se ofrece.
+  - **Del formulario:** la planilla de carpinterías real (2026-11-02) viene en metros con punto, así que el campo de medida tiene que
+    rechazar `3.00`: sin el punto son 300 mm, y pasan un mínimo de 300. La calculadora ya lo hace con `numeroEscrito`
+    (`modules/catalogo/entrada.ts`): al usarla en Presupuestos, subirla a `lib/utils.ts`.
+  - **Sin caso todavía:** widget de números, con los estados, los rechazos por motivo y lo resignado por mantener y por descuentos (los
+    datos se guardan igual); importar planillas, después de ver varias reales y medir la carga manual; si los vendedores reciben aviso
+    de un paquete nuevo o de uno que sale de la venta (hoy nadie les avisa); y, a evaluar sin compromiso (2026-11-04), selección masiva
+    de opcionales, para tildar o destildar de una vez la Colocación o la Garantía de vidrio en varios ítems. Cada ítem sigue guardando
+    lo suyo, y la pieza se reconoce por nombre (`entrada.piezas`), así que no cambia el catálogo. A decidir con eso: si hace falta frenar
+    presupuestos mezclados, que sí pediría una respuesta única guardada en el presupuesto, y cómo se cobra la colocación y si va en un
+    renglón aparte.
+  - **Con Obras:** la base de la comisión, hoy "de lo contratado" sin monto (`decisiones/obras.md`): el módulo tiene que exponer el
+    total aprobado.
+  - **Dólar de compra:** el presupuesto siempre usa el de venta; lo de cobrar en billetes pasó a *Ejecución y cobros*, abajo.
+- **Ejecución y cobros**: sin ficha. Sale de Presupuestos (2026-11-05): toma lo aprobado y lo muestra a administración, producción,
+  logística y colocación, sin precios para producción y logística. Registra cobros y habilitaciones, y de acá sale el "en producción"
+  de la ficha de la obra. Van acá los contactos operativos (capataz, quien recibe) y cómo ve logística el nombre y la dirección de una
+  obra que no abre (propuesta: la etapa guarda su dirección de entrega). También: si un presupuesto en USD blue cobrado en billetes usa
+  el dólar de compra (USD 1.000 al de venta, vendidos a $1.545, dejan $20.000 menos que $1.565.000); Monedas hoy guarda solo el de venta
+  (`decisiones/monedas.md` → *Ficha del módulo*). Y qué pasa al revertir una aprobación con la ejecución en marcha.
 - **Stock** y **Compras**: sin ficha. Lo que se había decidido para ellos al fichar el catálogo se
   descartó con él (2026-10-22). Sigue valiendo que los proveedores son empresas de Contactos
   (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*). Compras manda a presupuestar
   y lo compara con Administración, sin leer ni cargar el costo del catálogo
   (`decisiones/catalogo/insumos.md` → *El costo del insumo vive en el catálogo*).
-- **erp-cliente**: sin ficha, y el portal no abre sin ella. A decidir para el catálogo (2026-11-02): qué
-  paquetes ve cada cliente, si ve el precio y si puede elegir los servicios en % opcionales. Sin esto,
-  una constructora cotizaría todo con precio y, destildando un opcional, vería menos que con el vendedor.
+- **erp-cliente**: sin ficha, y el portal no abre sin ella. Ya decidido en `decisiones/presupuestos.md` → *El cliente y el portal*: de cada
+  presupuesto ve el precio y elige los opcionales, y el ERP escribe y lee, sin que el portal le envíe nada. A decidir para el catálogo
+  (2026-11-02): si el cliente ve paquetes fuera de un presupuesto, y cuáles. Falta también si tiene base propia, y cómo entra cada cliente.
 - **Post-venta**: módulo aislado para su equipo. La unidad (1°C, local, casa) se arma después,
   eligiendo ítems del presupuesto aprobado ("estas 4 ventanas → 1°C"); si un ítem agrupa varias
   unidades, se lleva ítem y cantidad. Una obra de un solo dueño es una unidad con todo. Propietarios e
