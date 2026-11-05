@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getUsuarioActualId } from "@/lib/usuarios";
 import { idSchema } from "@/lib/validacion";
 import { puedeAdministrar, puedeAprobar, puedeAuditar, puedeVerContactos } from "@/modules/contactos/permissions";
-import { getCandidatos, getNombres, getPersonas, getPorAprobar } from "@/modules/contactos/queries";
+import { getNombres, getPersonas, getPorAprobar } from "@/modules/contactos/queries";
 import { ContactosView } from "@/modules/contactos/components/ContactosView";
 
 export default async function PersonasPage(props: PageProps<"/contactos">) {
@@ -16,13 +16,7 @@ export default async function PersonasPage(props: PageProps<"/contactos">) {
 
   const todas = await puedeAdministrar();
   const { responsable } = await props.searchParams;
-  const [personas, nombres, candidatos] = await Promise.all([
-    getPersonas({ todas, yo }),
-    getNombres(),
-    todas ? getCandidatos() : [],
-  ]);
-  // Huérfana: activa y con un dueño sin `contactos_ver` (`contactos_avisar_huerfanas`).
-  const pueden = new Set(candidatos.map((c) => c.id));
+  const [personas, nombres] = await Promise.all([getPersonas({ todas, yo }), getNombres()]);
   const de = idSchema.safeParse(responsable).success ? (responsable as string) : null;
 
   return (
@@ -34,7 +28,7 @@ export default async function PersonasPage(props: PageProps<"/contactos">) {
         detalle: todas ? (p.responsable_id === yo ? "Vos" : (nombres[p.responsable_id] ?? null)) : null,
         activo: p.activo,
         congelada: p.congelada,
-        huerfana: todas && p.activo && !pueden.has(p.responsable_id),
+        huerfana: p.huerfana,
         responsable_id: p.responsable_id,
       }))}
       porAprobar={(await puedeAprobar()) ? (await getPorAprobar()).length : undefined}

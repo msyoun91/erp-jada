@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getUsuarioActualId } from "@/lib/usuarios";
 import { puedeAdministrar, puedeAprobar, puedeVerContactos } from "@/modules/contactos/permissions";
-import { getCandidatos, getEmpresas, getNombres, getPorAprobar } from "@/modules/contactos/queries";
+import { getEmpresas, getNombres, getPorAprobar } from "@/modules/contactos/queries";
 import { ContactosView } from "@/modules/contactos/components/ContactosView";
 
 export default async function EmpresasPage() {
@@ -9,14 +9,7 @@ export default async function EmpresasPage() {
   if (!yo || !(await puedeVerContactos())) notFound();
 
   const todas = await puedeAdministrar();
-  const [empresas, nombres, candidatos] = await Promise.all([
-    getEmpresas({ todas, yo }),
-    getNombres(),
-    todas ? getCandidatos() : [],
-  ]);
-  // Huérfana: activa, sin equipo y con una cargadora sin `contactos_ver`: no la
-  // ve nadie más que el admin, que le asigna un equipo desde la ficha.
-  const pueden = new Set(candidatos.map((c) => c.id));
+  const [empresas, nombres] = await Promise.all([getEmpresas({ todas, yo }), getNombres()]);
 
   return (
     <ContactosView
@@ -32,7 +25,7 @@ export default async function EmpresasPage() {
               : null,
         activo: e.activo,
         congelada: e.congelada,
-        huerfana: todas && e.activo && e.equipo_id === null && !pueden.has(e.creado_por),
+        huerfana: e.huerfana,
         responsable_id: null,
       }))}
       porAprobar={(await puedeAprobar()) ? (await getPorAprobar()).length : undefined}

@@ -37,30 +37,34 @@ export type PasoResumen = Pick<Tarea, "id" | "estado" | "asignado_id" | "asignad
 export type HiloResumen = Hilo & { tareas: PasoResumen[] };
 
 const RESUMEN = "*, tareas(id, estado, asignado_id, asignado_equipo_id, vence, activo)";
+const HILO_DEL_PASO = `tareas_hilos!inner(${RESUMEN})` as const;
+
+// Los hilos de una columna propia y los que llegan por un paso, sin repetir y
+// lo más reciente primero. Se juntan acá y no con `id.in.(…)` en la URL: con
+// el historial de una persona o un equipo, esa lista pasa el largo que acepta.
+function unirHilos(directos: HiloResumen[], porPaso: { tareas_hilos: HiloResumen }[]): HiloResumen[] {
+  const porId = new Map(directos.map((h) => [h.id, h]));
+  for (const { tareas_hilos: h } of porPaso) porId.set(h.id, h);
+  return [...porId.values()].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+}
 
 // Hilos: donde participo como responsable o asignado de algún paso activo. La
 // RLS deja ver más (el equipo del delegador, todo al admin); eso va en Equipo
 // y en Todas.
 export async function getMisHilos(yo: string): Promise<HiloResumen[]> {
   const supabase = await createClient();
-  const { data: mios, error: miosError } = await supabase
-    .from("tareas")
-    .select("hilo_id")
-    .eq("asignado_id", yo)
-    .eq("activo", true);
-  if (miosError) throw miosError;
-
-  const ids = [...new Set(mios.map((t) => t.hilo_id))];
-  const filtro = ids.length > 0 ? `responsable_id.eq.${yo},id.in.(${ids.join(",")})` : `responsable_id.eq.${yo}`;
-
-  const { data, error } = await supabase
-    .from("tareas_hilos")
-    .select(RESUMEN)
-    .eq("activo", true)
-    .or(filtro)
-    .order("updated_at", { ascending: false });
-  if (error) throw error;
-  return data;
+  const [propios, porPaso] = await Promise.all([
+    supabase.from("tareas_hilos").select(RESUMEN).eq("activo", true).eq("responsable_id", yo),
+    supabase
+      .from("tareas")
+      .select(HILO_DEL_PASO)
+      .eq("asignado_id", yo)
+      .eq("activo", true)
+      .eq("tareas_hilos.activo", true),
+  ]);
+  if (propios.error) throw propios.error;
+  if (porPaso.error) throw porPaso.error;
+  return unirHilos(propios.data, porPaso.data);
 }
 
 // La sección de la ficha del registro: los hilos que nacieron sobre él y quien
@@ -228,7 +232,7 @@ export async function getEquipo(
   equipo: string
 ): Promise<{ pasos: PasoEquipo[]; cadena: PasoCadena[]; hilos: HiloResumen[] }> {
   const supabase = await createClient();
-  const [pasos, delEquipo] = await Promise.all([
+  const [pasos, delEquipo, porPaso] = await Promise.all([
     supabase
       .from("tareas")
       .select("*, tareas_hilos!inner(titulo, responsable_id)")
@@ -237,22 +241,21 @@ export async function getEquipo(
       .in("estado", ["solicitada", "pendiente"])
       .eq("tareas_hilos.activo", true)
       .eq("tareas_hilos.estado", "abierto"),
-    supabase.from("tareas").select("hilo_id").eq("equipo_id", equipo).eq("activo", true),
+    supabase.from("tareas_hilos").select(RESUMEN).eq("activo", true).eq("equipo_id", equipo),
+    supabase
+      .from("tareas")
+      .select(HILO_DEL_PASO)
+      .eq("equipo_id", equipo)
+      .eq("activo", true)
+      .eq("tareas_hilos.activo", true),
   ]);
-  if (pasos.error) throw pasos.error;
-  if (delEquipo.error) throw delEquipo.error;
+  for (const r of [pasos, delEquipo, porPaso]) if (r.error) throw r.error;
 
-  const ids = [...new Set(delEquipo.data.map((t) => t.hilo_id))];
-  const filtro = ids.length > 0 ? `equipo_id.eq.${equipo},id.in.(${ids.join(",")})` : `equipo_id.eq.${equipo}`;
-  const { data: hilos, error } = await supabase
-    .from("tareas_hilos")
-    .select(RESUMEN)
-    .eq("activo", true)
-    .or(filtro)
-    .order("updated_at", { ascending: false });
-  if (error) throw error;
-
-  return { pasos: pasos.data, cadena: await getCadena(pasos.data), hilos };
+  return {
+    pasos: pasos.data ?? [],
+    cadena: await getCadena(pasos.data ?? []),
+    hilos: unirHilos(delEquipo.data ?? [], porPaso.data ?? []),
+  };
 }
 
 // Todas: lo que la RLS deja ver al admin, desactivados incluidos.

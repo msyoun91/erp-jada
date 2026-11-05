@@ -28,20 +28,33 @@ export async function getCandidatos(): Promise<UsuarioBasico[]> {
   return data;
 }
 
+// Quiénes pueden ser dueños, para marcar huérfanas: solo la lista del admin las marca.
+async function getPueden(todas: boolean): Promise<Set<string> | null> {
+  return todas ? new Set((await getCandidatos()).map((c) => c.id)) : null;
+}
+
 // La agenda: las personas de las que es dueño. Las que ve en contexto (por una
 // obra) aparecen en la obra, no acá. El admin ve todas, también las desactivadas.
-export async function getPersonas({ todas, yo }: { todas: boolean; yo: string }): Promise<Persona[]> {
+// Huérfana: activa y con un dueño sin `contactos_ver` (`contactos_avisar_huerfanas`).
+export async function getPersonas({ todas, yo }: { todas: boolean; yo: string }): Promise<(Persona & { huerfana: boolean })[]> {
   const supabase = await createClient();
   let query = supabase.from("contactos_personas").select(COLUMNAS_PERSONA).order("nombre");
   if (!todas) query = query.eq("responsable_id", yo).eq("activo", true);
-  const { data, error } = await query;
+  const [{ data, error }, pueden] = await Promise.all([query, getPueden(todas)]);
   if (error) throw error;
-  return data;
+  return data.map((p) => ({ ...p, huerfana: pueden !== null && p.activo && !pueden.has(p.responsable_id) }));
 }
 
 // Las de su equipo (sin equipo, las que cargó) y las compartidas con él; el
-// admin, todas.
-export async function getEmpresas({ todas, yo }: { todas: boolean; yo: string }): Promise<(Empresa & { compartida: boolean })[]> {
+// admin, todas. Huérfana: activa, sin equipo y con una cargadora sin
+// `contactos_ver`: no la ve nadie más que el admin, que le asigna un equipo.
+export async function getEmpresas({
+  todas,
+  yo,
+}: {
+  todas: boolean;
+  yo: string;
+}): Promise<(Empresa & { compartida: boolean; huerfana: boolean })[]> {
   const supabase = await createClient();
   let query = supabase.from("contactos_empresas").select("*").order("nombre");
   let compartidas = new Set<string>();
@@ -61,9 +74,13 @@ export async function getEmpresas({ todas, yo }: { todas: boolean; yo: string })
       .eq("activo", true)
       .or(compartidas.size > 0 ? `${propias},id.in.(${[...compartidas].join(",")})` : propias);
   }
-  const { data, error } = await query;
+  const [{ data, error }, pueden] = await Promise.all([query, getPueden(todas)]);
   if (error) throw error;
-  return data.map((e) => ({ ...e, compartida: compartidas.has(e.id) }));
+  return data.map((e) => ({
+    ...e,
+    compartida: compartidas.has(e.id),
+    huerfana: pueden !== null && e.activo && e.equipo_id === null && !pueden.has(e.creado_por),
+  }));
 }
 
 // Con qué equipos se compartió (se ve con la empresa) y los equipos activos,

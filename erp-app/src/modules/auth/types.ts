@@ -30,7 +30,7 @@ export const loginSchema = z.object({
 export type LoginForm = z.input<typeof loginSchema>;
 
 export const perfilSchema = z.object({
-  nombre: z.string().min(1, "El nombre es obligatorio"),
+  nombre: z.string().trim().min(1, "El nombre es obligatorio").max(200, "Máximo 200 caracteres"),
   telefono: telefonoOpcional,
 });
 

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const crearUsuarioSchema = z.object({
-  nombre: z.string().min(1, "El nombre es obligatorio"),
+  nombre: z.string().trim().min(1, "El nombre es obligatorio").max(200, "Máximo 200 caracteres"),
   email: z.string().min(1, "El email es obligatorio").email("Email inválido"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
 });
@@ -10,7 +10,7 @@ export type CrearUsuarioForm = z.infer<typeof crearUsuarioSchema>;
 
 export const editarUsuarioSchema = z.object({
   id: z.string().uuid(),
-  nombre: z.string().min(1, "El nombre es obligatorio"),
+  nombre: z.string().trim().min(1, "El nombre es obligatorio").max(200, "Máximo 200 caracteres"),
   email: z.string().min(1, "El email es obligatorio").email("Email inválido"),
 });
 
@@ -37,6 +37,11 @@ export const equipoSchema = z.object({
 });
 
 export type EquipoForm = z.infer<typeof equipoSchema>;
+
+export const estadoEquipoSchema = z.object({
+  equipo_id: z.string().uuid(),
+  activo: z.boolean(),
+});
 
 export const asignarEquipoSchema = z.object({
   usuario_id: z.string().uuid(),

@@ -118,6 +118,12 @@ export type RolesForm = z.input<typeof rolesSchema>;
 
 export const buscarSchema = z.string().trim().min(2, "Escribí al menos 2 letras").max(200);
 
+export const fusionablesSchema = z.object({
+  tipo: z.enum(["persona", "empresa"]),
+  excluir: idSchema,
+  texto: buscarSchema,
+});
+
 // "Es la misma" solo para un alta (CO025), rechazar con motivo (CO024) y una
 // persona se aprueba solo homónima (CO023): los hace valer `contactos_resolver`.
 export const resolverSchema = z

@@ -13,6 +13,7 @@ import {
   editarPersonaSchema,
   empresaSchema,
   equipoEmpresaSchema,
+  fusionablesSchema,
   fusionarSchema,
   parecidasSchema,
   personaEmpresaSchema,
@@ -60,8 +61,10 @@ function trasUpdate(error: string | null) {
 }
 
 // El texto tal cual, sin comodines: `%` y `_` escritos no amplían la búsqueda.
+// PostgREST lee `*` como `%` y no deja escaparlo; como `_` (un carácter
+// cualquiera) sigue encontrando el `*` escrito, amplía lo mínimo.
 function patronIlike(texto: string) {
-  return `%${texto.replace(/[\\%_]/g, "\\$&")}%`;
+  return `%${texto.replace(/[\\%_]/g, "\\$&").replace(/\*/g, "_")}%`;
 }
 
 function validarId(id: unknown) {
@@ -374,16 +377,17 @@ export async function resolverContacto(input: ResolverForm) {
 
 // La otra, para fusionar: activas y aprobadas, del mismo tipo (el admin las ve todas).
 export async function buscarFusionables(tipo: "persona" | "empresa", excluir: string, texto: string) {
-  const parsed = buscarSchema.safeParse(texto);
+  const parsed = fusionablesSchema.safeParse({ tipo, excluir, texto });
   if (!parsed.success) return invalido(parsed.error.issues);
+  const d = parsed.data;
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from(tipo === "persona" ? "contactos_personas" : "contactos_empresas")
+    .from(d.tipo === "persona" ? "contactos_personas" : "contactos_empresas")
     .select("id, nombre")
     .eq("activo", true)
     .eq("congelada", false)
-    .neq("id", excluir)
-    .ilike("nombre", patronIlike(parsed.data))
+    .neq("id", d.excluir)
+    .ilike("nombre", patronIlike(d.texto))
     .order("nombre")
     .limit(8);
   if (error) return fallo(error);

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { mensajeError } from "@/lib/utils";
+import { idSchema } from "@/lib/validacion";
 import { puedeDelegar, puedeGestionarUsuarios } from "./permissions";
 import {
   asignarEquipoSchema,
@@ -11,6 +12,7 @@ import {
   crearUsuarioSchema,
   editarUsuarioSchema,
   equipoSchema,
+  estadoEquipoSchema,
   fijarDelegablesSchema,
   quitarDelegadorSchema,
   resetearPasswordSchema,
@@ -140,6 +142,12 @@ export async function desactivarUsuario(usuarioId: string) {
     return { success: false as const, error: "No autorizado" };
   }
 
+  const parsed = idSchema.safeParse(usuarioId);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+  const id = parsed.data;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -147,7 +155,7 @@ export async function desactivarUsuario(usuarioId: string) {
 
   // Sin esta guarda el único gestor puede dejar el sistema sin nadie que
   // pueda reactivar a nadie — incluido él.
-  if (user?.id === usuarioId) {
+  if (user?.id === id) {
     return { success: false as const, error: "No podés desactivar tu propia cuenta" };
   }
 
@@ -160,7 +168,7 @@ export async function desactivarUsuario(usuarioId: string) {
   // hilos, su agenda y sus obras pasan a otro, salen avisos— y volver `activo`
   // no las deshace. Levantar el ban, en cambio, no deja rastro.
   const admin = createAdminClient();
-  const { error: banError } = await admin.auth.admin.updateUserById(usuarioId, {
+  const { error: banError } = await admin.auth.admin.updateUserById(id, {
     ban_duration: BAN_INDEFINIDO,
   });
 
@@ -171,10 +179,10 @@ export async function desactivarUsuario(usuarioId: string) {
   const { error } = await admin
     .from("usuarios")
     .update({ activo: false })
-    .eq("id", usuarioId);
+    .eq("id", id);
 
   if (error) {
-    await admin.auth.admin.updateUserById(usuarioId, { ban_duration: "none" });
+    await admin.auth.admin.updateUserById(id, { ban_duration: "none" });
     return { success: false as const, error: mensajeError(error) };
   }
 
@@ -187,10 +195,16 @@ export async function reactivarUsuario(usuarioId: string) {
     return { success: false as const, error: "No autorizado" };
   }
 
+  const parsed = idSchema.safeParse(usuarioId);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+  const id = parsed.data;
+
   // Al revés que desactivar, y por lo mismo: si `activo` falla se vuelve a
   // banear, mientras que volver `activo` a false correría la baja otra vez.
   const admin = createAdminClient();
-  const { error: banError } = await admin.auth.admin.updateUserById(usuarioId, {
+  const { error: banError } = await admin.auth.admin.updateUserById(id, {
     ban_duration: "none",
   });
 
@@ -201,10 +215,10 @@ export async function reactivarUsuario(usuarioId: string) {
   const { error } = await admin
     .from("usuarios")
     .update({ activo: true })
-    .eq("id", usuarioId);
+    .eq("id", id);
 
   if (error) {
-    await admin.auth.admin.updateUserById(usuarioId, { ban_duration: BAN_INDEFINIDO });
+    await admin.auth.admin.updateUserById(id, { ban_duration: BAN_INDEFINIDO });
     // `idx_usuarios_email_activo` es parcial (WHERE activo): mientras estuvo
     // desactivado, ese email pudo darse de alta en otra cuenta.
     if ((error as { code?: string }).code === "23505") {
@@ -283,10 +297,15 @@ export async function cambiarEstadoEquipo(equipoId: string, activo: boolean) {
     return { success: false as const, error: "No autorizado" };
   }
 
+  const parsed = estadoEquipoSchema.safeParse({ equipo_id: equipoId, activo });
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
   const { error } = await createAdminClient()
     .from("equipos")
-    .update({ activo })
-    .eq("id", equipoId);
+    .update({ activo: parsed.data.activo })
+    .eq("id", parsed.data.equipo_id);
 
   if (error) return errorEquipo(error);
 
@@ -326,9 +345,14 @@ export async function designarDelegador(usuarioId: string) {
     return { success: false as const, error: "No autorizado" };
   }
 
+  const parsed = idSchema.safeParse(usuarioId);
+  if (!parsed.success) {
+    return { success: false as const, error: parsed.error.issues[0].message };
+  }
+
   const { error } = await createAdminClient().rpc("designar_delegador", {
     p_admin: adminId,
-    p_usuario: usuarioId,
+    p_usuario: parsed.data,
   });
 
   if (error) {
