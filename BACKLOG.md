@@ -15,6 +15,9 @@ Los cinco tramos están cerrados (estado y tests en el encabezado de `decisiones
   paso pide una función, como `contactos_crear_y_vincular`).
 - **Sin probar en el navegador:** elegir entre dos comisiones al fusionar (lo cubre
   `sql/tests/contactos_fusionar.sql`).
+- **Sin correr:** los casos `05 a cargo` de `sql/tests/obras_reglas.sql` (`obras_a_cargo`, la RPC de la
+  ficha), sumados el 2026-11-05 en una sesión sin acceso a la base. Correr el archivo entero y borrar esta
+  línea.
 
 ## Módulos que siguen
 
@@ -136,6 +139,15 @@ construyó*). El prerequisito de entonces ya está: el hilo sabe sobre qué regi
 guarda la plantilla en el vínculo (`sql/119`, `sql/148`–`152`), así que una sugerencia puede saber si
 la tarea ya existe. Cuando aparezca el caso, abre el flujo de plantillas ("Usar" con su "Sobre"), no
 un camino de creación nuevo.
+
+## Tareas — etiquetas de las referencias en una llamada, sin caso real todavía
+
+`getEnlaces` (`modules/tareas/queries.ts`) pide `etiqueta_registro` una vez por cada `{ente:uuid|nombre}`
+de los pasos del hilo y de Misión, en paralelo. Hoy son pocas por hilo; se construye cuando uno con muchas
+referencias tarde (auditoría del 2026-11-05, punto 10). Diseño: `etiquetas_registros(p_entes text[], p_ids
+uuid[]) → (ente, registro_id, etiqueta)`, SQL `STABLE` e INVOKER con GRANT `authenticated`, que devuelve solo
+las que `etiqueta_registro` no da en NULL; va con las genéricas en `db_schema/core.md`. La app cambia en el
+mismo commit en que se aplica la migración: sin ella no abre ningún hilo con referencias.
 
 ## Seguridad — auditoría del 2026-11-05, con agentes IA en el horizonte
 

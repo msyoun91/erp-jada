@@ -85,3 +85,14 @@ dice por qué. Archivos: `PasoPanel.tsx`, `e2e/tareas.spec.ts`.
 abierto y activo, con responsable o asignado de un paso abierto que ya no puede recibir. El admin
 transfiere o reasigna desde el hilo. `?responsable=` (del aviso "hilos huérfanos") suma el filtro
 "De {persona}": lo que lleva o tiene abierto. Reusa `HilosView` sin "Nuevo hilo".
+
+## Lo derivado en pantalla (2026-11-05)
+
+**Lo que decide qué botón o marca se muestra se deriva en la pantalla, espejo de la base.** Bloqueada
+(`estaBloqueado`), huérfano (`esHuerfano`), "a revisar" (`motivoRevisar`) y si un paso es pedido
+(`PasoPanel`) repiten `tareas_bloquea`, `tareas_puede_recibir` y `tareas_es_pedido`. Se quedan así, por
+decisión del usuario en la auditoría del 2026-11-05: la base vuelve a decidir al escribir, y pasarlos a la
+base eran columnas calculadas y seis vistas. Divergen en un solo caso: un hilo huérfano cuyo responsable
+dejó el equipo sin delegador que lo reciba guarda el `equipo_id` viejo, y `PasoPanel` puede mostrar u
+ocultar mal "Devolver". Cambiar una de esas reglas en SQL pide cambiar su espejo (`derivados.ts`,
+`PasoPanel.tsx`).

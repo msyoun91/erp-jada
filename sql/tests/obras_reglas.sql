@@ -134,6 +134,10 @@ CREATE FUNCTION pg_temp.obras_trabaja_rpc(p_obra text, p_como text) RETURNS text
   SELECT pg_temp.leer(format('SELECT obras_trabaja(%L)', pg_temp.id(p_obra)), p_como);
 $f$;
 
+CREATE FUNCTION pg_temp.obras_a_cargo_rpc(p_obra text, p_como text) RETURNS text LANGUAGE sql AS $f$
+  SELECT pg_temp.leer(format('SELECT obras_a_cargo(%L)', pg_temp.id(p_obra)), p_como);
+$f$;
+
 CREATE FUNCTION pg_temp.etiqueta(p_obra text, p_como text) RETURNS text LANGUAGE sql AS $f$
   SELECT pg_temp.leer(format('SELECT etiqueta_registro(''obra'', %L)', pg_temp.id(p_obra)), p_como);
 $f$;
@@ -294,6 +298,13 @@ SELECT pg_temp.caso('05 A trabaja (administrar)', 'true', pg_temp.trabaja('Belgr
 SELECT pg_temp.caso('05 Laura no trabaja (solo la ve)', 'false', pg_temp.trabaja('Belgrano', 'Laura'));
 SELECT pg_temp.caso('05 Nico no trabaja', 'false', pg_temp.trabaja('Belgrano', 'Nico'));
 SELECT pg_temp.caso('05 obras_trabaja como Laura', 'false', pg_temp.obras_trabaja_rpc('Belgrano', 'Laura'));
+-- `obras_a_cargo`: con lo que la ficha muestra transferir y desactivar.
+SELECT pg_temp.caso('05 a cargo: Juan (responsable)', 'true', pg_temp.obras_a_cargo_rpc('Belgrano', 'Juan'));
+SELECT pg_temp.caso('05 a cargo: JN (jefe del equipo de la obra)', 'true', pg_temp.obras_a_cargo_rpc('Belgrano', 'JN'));
+SELECT pg_temp.caso('05 a cargo: A (administrar)', 'true', pg_temp.obras_a_cargo_rpc('Belgrano', 'A'));
+SELECT pg_temp.caso('05 a cargo: Pedro no (participante)', 'false', pg_temp.obras_a_cargo_rpc('Belgrano', 'Pedro'));
+SELECT pg_temp.caso('05 a cargo: Laura no (jefa de otro equipo)', 'false', pg_temp.obras_a_cargo_rpc('Belgrano', 'Laura'));
+SELECT pg_temp.caso('05 a cargo: Nico no (del equipo, sin ser jefe)', 'false', pg_temp.obras_a_cargo_rpc('Belgrano', 'Nico'));
 
 -- ============================================================
 -- 06 — Participantes: sumar, quitar, no reactivar
