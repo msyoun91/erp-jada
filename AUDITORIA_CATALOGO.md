@@ -355,6 +355,10 @@ misma función.
 
 ### 16. Los árboles de las fórmulas no se pueden regenerar — Baja, de mantenimiento
 
+**Resuelto (2026-11-04, `decisiones/catalogo/despiece.md`):** si cambia el parser, la migración reescribe los árboles con `SET EXPRESSION`,
+que no pasa por los triggers. No hay migración ahora: la regla se aplica cuando cambie el parser. Lo de abajo describe lo que se encontró, y
+la propuesta de desactivar triggers ya no hace falta.
+
 **Qué pasa.** `*_arbol` son columnas `GENERATED … STORED` sobre `catalogo_formula_parsear`, que es IMMUTABLE. Si algún día cambia la
 gramática o la forma del árbol, las filas guardadas quedan con el árbol viejo. Para regenerarlas hay que hacer `UPDATE … SET formula =
 formula`, y `catalogo_contenido_validar` lo rechaza con CA012 en toda versión que no esté en borrador.
@@ -420,9 +424,5 @@ La suite cubre bien las reglas escritas en las decisiones. Le falta un caso por 
 
 ## Qué conviene decidir antes de cargar el primer paquete real
 
-1. **Hallazgo 1.** Correr `SHOW jit;` en Supabase. Si da `on`, ponerle `SET jit = off` a `catalogo_version_frena`. Hoy es lo que más
-   se va a notar al probar el editor.
-2. **Hallazgo 2.** Cerrar el hueco en `catalogo_contenido_validar`: el editor escribe directo en esas tablas, panel por panel.
-3. **Hallazgo 3.** Decidir qué pasa con un precio sin filas.
-4. **Hallazgos 4 y 5.** Pasar a funciones de la base las escrituras de dos pasos, y tratar los UPDATE de 0 filas como error.
-5. **Hallazgos 7, 8 y 13.** Elegir entre ajustar el código o la decisión, porque hoy dicen distinto.
+**Hallazgo 6**, lo único abierto (2026-11-04): ver *Max Rows* en la configuración de la API de Supabase y decidir cómo leer esas listas.
+Lo demás está resuelto o descartado, y lo del 18 no pide acción inmediata.
