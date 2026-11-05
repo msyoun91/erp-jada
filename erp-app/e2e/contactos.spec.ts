@@ -115,6 +115,8 @@ test("Norte comparte Caputo con Sur y deja de compartirla", async ({ browser }) 
 test("El auditor ve quién miró a Marta y que no era suya", async ({ browser }) => {
   test.setTimeout(120_000);
   const marta = `Marta Auditada ${marca}`;
+  // Por corrida: con el mismo dato que una anterior, no se aprueba.
+  const telefono = `12${marca.slice(3).padStart(8, "0")}`;
   const { ctx: ctxAdmin, page: admin } = await como(browser, "admin");
 
   await admin.goto("/usuarios");
@@ -135,10 +137,10 @@ test("El auditor ve quién miró a Marta y que no era suya", async ({ browser })
   await juan.getByRole("button", { name: "Nueva persona" }).click();
   const alta = panel(juan);
   await alta.getByLabel("Nombre").fill(marta);
-  await alta.getByLabel("Teléfono").fill("1144556677");
+  await alta.getByLabel("Teléfono").fill(telefono);
   const url = await crearIgual(juan, alta, "Crear persona", /\/contactos\/personas\/[0-9a-f-]{36}$/);
   await juan.getByRole("button", { name: "Ver contacto" }).click();
-  await expect(juan.getByText("1144556677")).toBeVisible();
+  await expect(juan.getByText(telefono)).toBeVisible();
   await expect(juan.getByRole("link", { name: "Auditoría" })).toHaveCount(0);
   await juan.goto("/contactos/auditoria");
   await expect(juan.getByRole("heading", { name: "Quién miró contactos" })).toHaveCount(0);
@@ -147,7 +149,7 @@ test("El auditor ve quién miró a Marta y que no era suya", async ({ browser })
   // El admin la mira sin ser suya.
   await admin.goto(url);
   await admin.getByRole("button", { name: "Ver contacto" }).click();
-  await expect(admin.getByText("1144556677")).toBeVisible();
+  await expect(admin.getByText(telefono)).toBeVisible();
 
   // Auditoría, filtrada por Marta: los dos accesos, el del admin marcado.
   await admin.getByRole("link", { name: "Auditoría" }).click();
