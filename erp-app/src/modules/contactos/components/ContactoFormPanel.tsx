@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { crearPersona, editarPersona, guardarEmpresa } from "../actions";
 import {
   editarPersonaSchema,
@@ -22,20 +22,6 @@ import {
 import { AvisoParecidas, useParecidas } from "./Parecidas";
 
 const FORM_ID = "contacto-form";
-
-function Pie({ enviando, crear, onClose }: { enviando: boolean; crear: string | null; onClose: () => void }) {
-  return (
-    <>
-      <div className="flex-1" />
-      <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={enviando}>
-        Cancelar
-      </button>
-      <button type="submit" form={FORM_ID} className="btn btn-primary btn-sm" disabled={enviando}>
-        {enviando ? "Guardando…" : (crear ?? "Guardar")}
-      </button>
-    </>
-  );
-}
 
 const claseForm = "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4";
 
@@ -67,7 +53,7 @@ export function NuevaPersonaPanel({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <RightPanel title="Nueva persona" onClose={onClose} hayCambios={formState.isDirty} footer={<Pie enviando={enviando} crear={parecidas ? "Crear igual" : "Crear persona"} onClose={onClose} />}>
+    <RightPanel title="Nueva persona" onClose={onClose} hayCambios={formState.isDirty} footer={<PiePanel confirmar={parecidas ? "Crear igual" : "Crear persona"} enviando={enviando} onCancelar={onClose} form={FORM_ID} />}>
       <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className={claseForm}>
         <Campo id="p-nombre" label="Nombre" requerido error={errors.nombre}>
           <input id="p-nombre" aria-required placeholder="Marta Gómez" className={claseInput(errors.nombre)} {...register("nombre")} />
@@ -136,7 +122,7 @@ export function EditarPersonaPanel({
       title="Editar persona"
       onClose={onClose}
       hayCambios={formState.isDirty}
-      footer={<Pie enviando={enviando} crear={parecidas ? "Guardar igual" : null} onClose={onClose} />}
+      footer={<PiePanel confirmar={parecidas ? "Guardar igual" : "Guardar"} enviando={enviando} onCancelar={onClose} form={FORM_ID} />}
     >
       <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className={claseForm}>
         <Campo id="p-nombre" label="Nombre" requerido error={errors.nombre}>
@@ -204,7 +190,12 @@ export function EmpresaFormPanel({ empresa, onClose }: { empresa?: Empresa; onCl
       onClose={onClose}
       hayCambios={formState.isDirty}
       footer={
-        <Pie enviando={enviando} crear={parecidas ? (empresa ? "Guardar igual" : "Crear igual") : empresa ? null : "Crear empresa"} onClose={onClose} />
+        <PiePanel
+          confirmar={parecidas ? (empresa ? "Guardar igual" : "Crear igual") : empresa ? "Guardar" : "Crear empresa"}
+          enviando={enviando}
+          onCancelar={onClose}
+          form={FORM_ID}
+        />
       }
     >
       <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className={claseForm}>

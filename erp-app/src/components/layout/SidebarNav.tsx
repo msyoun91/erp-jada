@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Coins, Contact, Home, ListTodo, Package, UsersRound, LogOut, type LucideIcon } from "lucide-react";
+import { Building2, Coins, Contact, Home, ListTodo, Package, UserRound, UsersRound, LogOut, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/modules/auth/actions";
@@ -15,6 +15,8 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   contactos: Contact,
   catalogo: Package,
   monedas: Coins,
+  // No es un módulo ni va en NAV_ITEMS: está para que su <h1> salga del mismo lugar.
+  perfil: UserRound,
 };
 
 export const LABEL_MAP: Record<string, string> = {
@@ -25,6 +27,7 @@ export const LABEL_MAP: Record<string, string> = {
   contactos: "Contactos",
   catalogo: "Catálogo",
   monedas: "Monedas",
+  perfil: "Mi perfil",
 };
 
 type NavItem = { modulo: string; href: string };
@@ -62,7 +65,7 @@ export function SidebarNav({
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
           return (
             <Link key={modulo} href={href} className={`nav-item ${active ? "nav-item-active" : ""}`}>
-              <Icon size={16} strokeWidth={1.75} />
+              <Icon size={16} />
               {LABEL_MAP[modulo]}
             </Link>
           );
@@ -99,7 +102,7 @@ export function SidebarNav({
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-text-tertiary hover:bg-bg-subtle hover:text-text-secondary"
             title="Cerrar sesión"
           >
-            <LogOut size={14} strokeWidth={1.75} />
+            <LogOut size={14} />
           </button>
         </form>
       </div>

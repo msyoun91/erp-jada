@@ -249,6 +249,57 @@ Cierra los tres ítems P2 del backlog. Regla de `GUIDE_DESIGN.md`: >20 registros
 - **"Mis tareas" queda sin paginar a propósito** (marcado con `ponytail:` en `TareasListaView`): la vista agrupa hilos (cards con tareas anidadas) y tareas sueltas, y paginar la concatenación de los dos grupos confunde. Sí tiene contador ("N hilos · M tareas sueltas"). Paginar por grupo cuando alguien pase de ~20 hilos.
 - **Toaster: el problema no era el `position`, era el offset.** Sonner ya estira el toaster a ancho completo por debajo de 600px (su propio `@media (max-width: 600px)` le pone `width: 100%` y offsets laterales), así que `top-center` no habría cambiado nada visible en mobile; lo que tapaba el topbar (`h-14` = 56px, en flujo normal) era el `top: 16px` fijo. Fix: `mobileOffset={{ top: "72px" }}` en `app/layout.tsx`. `position` sigue en `top-right` para desktop, donde no hay topbar con qué chocar.
 
+### Consistencia entre módulos (2026-11-05)
+
+Una pasada por las pantallas de los siete módulos, comparándolas entre sí. Cada punto era un patrón
+escrito a mano en cada módulo que ya se había separado.
+
+**El marco de toda pantalla es `<Modulo>` (`components/layout/Modulo.tsx`).** Los seis `layout.tsx`
+copiaban Breadcrumb + `<h1>` + tabs con el ícono y el nombre escritos a mano, aunque la guía decía que
+salían del nav. Inicio, que no tiene layout, se había ido: decía "Dashboard" (el nav dice "Inicio"), sin
+ícono ni ruta. Mi perfil tampoco tenía ruta. `perfil` entra a `ICON_MAP`/`LABEL_MAP` sin entrar a
+`NAV_ITEMS`. Archivos: `Modulo.tsx`, los seis `layout.tsx`, `DashboardView.tsx`, `perfil/page.tsx`.
+
+**El trazo de los íconos lo pone un `LucideProvider` en `app/layout.tsx`.** 121 íconos escribían
+`strokeWidth={1.75}` y 73 no, así que quedaban en el 2 de lucide —el `+` de cada "Nuevo …" entre ellos—.
+Los íconos de lucide son client components, así que el contexto llega también a los que dibuja un server
+component. Se borraron los 121 props redundantes.
+
+**`<Volver>` (`components/ui/Volver.tsx`) en toda ficha.** Catálogo tenía un link en `text-brand`, los
+"Por aprobar" otro en `text-secondary`, y Obra, Persona, Empresa e Hilo ninguno: el breadcrumb no navega y
+con una sola tab no hay tabs, así que en el celular se salía con el atrás del browser. En esas cuatro va en
+el `page.tsx`, porque la misma ficha se abre al lado de un paso de Tareas y ahí no tiene a dónde volver.
+
+**`<PiePanel>` en `RightPanel.tsx`: un solo pie para los paneles que guardan.** Veinte paneles lo
+copiaban (Obras y Contactos con un `Pie` local cada uno); los nueve de Catálogo habían quedado distintos:
+"Guardar" solo, a la izquierda, en tamaño grande, sin salida y algunos sin "Guardando…". "Creando…" y
+"Agregando…" pasan a "Guardando…"; `enCurso` lo cambia donde el botón no guarda ("Revisando…").
+
+**`.alert` + `.alert-warning|error|success|info` en `globals.css`.** Once avisos con cuatro paddings y con
+o sin borde. Destapó un bug: en cinco, el texto llevaba `t-body-m`, que lo repinta de `text-secondary` —en
+oscuro, azul sobre el marrón del warning—. El aviso fija el color, y adentro va sin `t-*`.
+
+**`.segmented` en `globals.css`, con el elegido marcado por `aria-pressed`/`aria-current`.** Estaba copiado
+en `FiltroDias` y en Equipo y Plantillas de Tareas. Leer el estado del ARIA obliga a ponerlo.
+
+**Acciones arriba, filtros abajo, en todos los listados.** Era la regla de Catálogo
+(`decisiones/catalogo/pantallas.md` → *Acciones antes que filtros*); Usuarios, Contactos, Obras e Hilos
+ponían el primario al final de los filtros, que en el celular es la segunda o tercera fila. En Plantillas
+"Nueva plantilla" se ve siempre y abre en "Mis plantillas": dependiendo de la vista, saltaba la fila de
+abajo al cambiarla. En Todas (Tareas) el select se suma a la fila de filtros de `HilosView` (`filtro`), en
+vez de ir solo en una fila arriba.
+
+**"Desactivado/a", no "Inactivo".** Usuarios, Equipos, Mi equipo y los vínculos de Contactos decían
+"Inactivo" para lo que el menú llama "Desactivar" y el resto de la app "Desactivada". Catálogo sigue con
+"De baja": es su término.
+
+**Estado vacío siempre con título.** Inicio y Plantillas tenían solo el texto, y el error de sección
+también. Inicio dice qué hacer ("Configurar"), y el error sugiere la conexión: en obra es la causa más
+probable.
+
+**`erp-cliente` volvió a tener el mismo `globals.css`.** Le faltaban `button:not(:disabled)` y
+`.input:disabled`; se copió el archivo entero, como dice la entrada de arriba.
+
 ---
 
 ## DM Sans reemplaza a Barlow Semi Condensed + Plus Jakarta Sans

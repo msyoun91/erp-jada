@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { crearUsuario } from "../actions";
 import { crearUsuarioSchema, type CrearUsuarioForm } from "../types";
 
@@ -36,24 +36,7 @@ export function CrearUsuarioPanel({ onClose }: { onClose: () => void }) {
       title="Nuevo usuario"
       onClose={onClose}
       hayCambios={isDirty}
-      footer={
-        <>
-          <div className="flex-1" />
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={onClose}
-            disabled={enviando}
-          >
-            Cancelar
-          </button>
-          {/* El submit vive en el footer del panel, fuera del <form>: los ata
-              el atributo form=, sin estado ni ref de por medio. */}
-          <button type="submit" form={FORM_ID} className="btn btn-primary btn-sm" disabled={enviando}>
-            {enviando ? "Creando…" : "Crear usuario"}
-          </button>
-        </>
-      }
+      footer={<PiePanel confirmar="Crear usuario" enviando={enviando} onCancelar={onClose} form={FORM_ID} />}
     >
       <form
         id={FORM_ID}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { asignarEquipo } from "../actions";
 import { AgendaAlJefe } from "./AgendaAlJefe";
 import type { Equipo, Usuario } from "../types";
@@ -45,26 +45,7 @@ export function AgregarMiembroPanel({
       subtitle={equipo.nombre}
       onClose={onClose}
       hayCambios={usuarioId !== ""}
-      footer={
-        <>
-          <div className="flex-1" />
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={onClose}
-            disabled={enviando}
-          >
-            Cancelar
-          </button>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={guardar}
-            disabled={enviando || !usuarioId}
-          >
-            {enviando ? "Agregando…" : "Agregar"}
-          </button>
-        </>
-      }
+      footer={<PiePanel confirmar="Agregar" enviando={enviando} onCancelar={onClose} onConfirmar={guardar} deshabilitado={!usuarioId} />}
     >
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
         {candidatos.length === 0 ? (

@@ -11,7 +11,7 @@ export type TipoContacto = "persona" | "empresa";
 
 export function IconoContacto({ tipo }: { tipo: TipoContacto }) {
   const Icono = tipo === "persona" ? UserRound : Building2;
-  return <Icono size={14} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />;
+  return <Icono size={14} className="shrink-0 text-text-tertiary" />;
 }
 
 function Opcion({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
@@ -68,7 +68,7 @@ export function BuscadorVinculables({
           {onCrear &&
             tipos.map((tipo) => (
               <Opcion key={`crear-${tipo}`} onClick={() => onCrear(tipo, texto.trim())}>
-                <Plus size={14} strokeWidth={1.75} className="shrink-0 text-text-brand" />
+                <Plus size={14} className="shrink-0 text-text-brand" />
                 <span className="t-body-m text-text-brand">
                   Crear «{texto.trim()}» como {tipo}
                 </span>
@@ -126,7 +126,7 @@ export function EmpresaSelector({
           ))}
           {buscable && crear && (
             <Opcion onClick={() => onCambio({ id: null, nombre: texto.trim() })}>
-              <Plus size={14} strokeWidth={1.75} className="shrink-0 text-text-brand" />
+              <Plus size={14} className="shrink-0 text-text-brand" />
               <span className="t-body-m text-text-brand">Crear «{texto.trim()}»</span>
             </Opcion>
           )}

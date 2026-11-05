@@ -112,7 +112,7 @@ export function InsumoFicha({
                   items={[
                     {
                       label: "Dar de baja",
-                      icon: <Archive size={14} strokeWidth={1.75} />,
+                      icon: <Archive size={14} />,
                       destructive: true,
                       onClick: () => pedirBaja(null),
                     },

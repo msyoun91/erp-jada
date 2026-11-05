@@ -61,6 +61,23 @@ export function ObrasView({
 
   return (
     <div>
+      {(Quien || porAprobar !== undefined) && (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          {Quien && (
+            <button className="btn btn-primary" onClick={() => setCreando(true)}>
+              <Plus size={16} />
+              Nueva obra
+            </button>
+          )}
+          {porAprobar !== undefined && (
+            <Link href="/obras/por-aprobar" className="btn btn-secondary">
+              <ShieldCheck size={16} />
+              Por aprobar{porAprobar > 0 && <span className="badge badge-warning">{porAprobar}</span>}
+            </Link>
+          )}
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar por nombre o dirección…" />
         <select
@@ -77,18 +94,6 @@ export function ObrasView({
           {todas && <option value="huerfanas">Huérfanas</option>}
           {todas?.responsable && <option value="persona">De {nombres[todas.responsable] ?? "—"}</option>}
         </select>
-        {porAprobar !== undefined && (
-          <Link href="/obras/por-aprobar" className="btn btn-secondary">
-            <ShieldCheck size={16} />
-            Por aprobar{porAprobar > 0 && <span className="badge badge-warning">{porAprobar}</span>}
-          </Link>
-        )}
-        {Quien && (
-          <button className="btn btn-primary" onClick={() => setCreando(true)}>
-            <Plus size={16} />
-            Nueva obra
-          </button>
-        )}
       </div>
 
       <Paginacion {...paginado} etiqueta="obras" />
@@ -116,11 +121,11 @@ export function ObrasView({
                 <p className="t-body-m truncate font-medium text-text-primary">{o.nombre}</p>
                 <p className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="flex min-w-0 items-center gap-1">
-                    <MapPin size={12} strokeWidth={1.75} />
+                    <MapPin size={12} />
                     <span className="truncate">{o.localidad ? `${o.direccion}, ${o.localidad}` : o.direccion}</span>
                   </span>
                   <span className="flex items-center gap-1">
-                    <UserRound size={12} strokeWidth={1.75} />
+                    <UserRound size={12} />
                     {o.responsable_id === yo ? "Vos" : (nombres[o.responsable_id] ?? "—")}
                   </span>
                 </p>
@@ -128,7 +133,7 @@ export function ObrasView({
               {!o.activo && <span className="badge badge-neutral">Desactivada</span>}
               {o.activo && o.congelada && <span className="badge badge-warning">Por aprobar</span>}
               <span className={`badge ${LABEL_ESTADO[o.estado].badge}`}>{LABEL_ESTADO[o.estado].label}</span>
-              <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+              <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
             </Link>
           ))}
         </div>

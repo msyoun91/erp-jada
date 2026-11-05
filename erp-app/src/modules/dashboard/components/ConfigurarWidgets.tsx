@@ -27,7 +27,7 @@ export function ConfigurarWidgets({ widgets, prefs }: Props) {
         className="btn btn-secondary btn-sm"
         onClick={() => setOpen((v) => !v)}
       >
-        <Settings2 size={14} strokeWidth={1.75} />
+        <Settings2 size={14} />
         Configurar
       </button>
 

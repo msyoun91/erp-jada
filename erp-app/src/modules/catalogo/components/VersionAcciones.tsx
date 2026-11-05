@@ -98,7 +98,7 @@ export function VersionAcciones({
     if (publicada) {
       menu.push({
         label: `Descartar ${v}`,
-        icon: <CircleX size={14} strokeWidth={1.75} />,
+        icon: <CircleX size={14} />,
         onClick: () =>
           setConfirmar({
             titulo: `Descartar ${v}`,
@@ -160,13 +160,13 @@ export function VersionAcciones({
   if (puedeArmar) {
     menu.push({
       label: "Duplicar paquete",
-      icon: <Copy size={14} strokeWidth={1.75} />,
+      icon: <Copy size={14} />,
       onClick: () => setDuplicando(true),
     });
     if (paquete.activo) {
       menu.push({
         label: "Dar de baja el paquete",
-        icon: <Archive size={14} strokeWidth={1.75} />,
+        icon: <Archive size={14} />,
         destructive: true,
         onClick: () =>
           setConfirmar({

@@ -43,7 +43,7 @@ export function Historial({ ediciones }: { ediciones: Edicion[] }) {
               <div className="flex-1" />
               {admin && e.activo && (
                 <button className="icon-btn h-7 w-7" onClick={() => onOcultar(e.id)} aria-label="Ocultar entrada" title="Ocultar">
-                  <EyeOff size={14} strokeWidth={1.75} />
+                  <EyeOff size={14} />
                 </button>
               )}
             </div>

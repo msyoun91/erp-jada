@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { claseInput, Etiqueta } from "@/components/ui/Campo";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { MONEDAS, MONEDAS_LISTA, formatMonto, type Moneda } from "@/lib/monedas";
 import { CLASE_NIVEL, textoCambio } from "@/lib/niveles";
 import { cargarCostos, revisarCostos } from "../actions";
@@ -89,18 +89,21 @@ export function CostosPanel({
         hayCambios={formState.isDirty}
         footer={
           niveles ? (
-            <>
-              <button className="btn btn-secondary" onClick={() => setNiveles(null)} disabled={isSubmitting}>
-                Volver a editar
-              </button>
-              <button className="btn btn-primary" onClick={() => guardar(getValues())} disabled={isSubmitting}>
-                Guardar
-              </button>
-            </>
+            <PiePanel
+              confirmar="Guardar"
+              enviando={isSubmitting}
+              cancelar="Volver a editar"
+              onCancelar={() => setNiveles(null)}
+              onConfirmar={() => guardar(getValues())}
+            />
           ) : (
-            <button className="btn btn-primary" onClick={handleSubmit(revisar)} disabled={isSubmitting}>
-              Revisar
-            </button>
+            <PiePanel
+              confirmar="Revisar"
+              enCurso="Revisando…"
+              enviando={isSubmitting}
+              onCancelar={onClose}
+              onConfirmar={handleSubmit(revisar)}
+            />
           )
         }
       >

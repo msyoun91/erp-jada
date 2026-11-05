@@ -50,7 +50,7 @@ export function TiposCambioBarra({
           aria-label="Actualizar tipos de cambio"
           title="Actualizar tipos de cambio"
         >
-          <RefreshCw size={14} strokeWidth={1.75} className={pendiente ? "animate-spin" : ""} />
+          <RefreshCw size={14} className={pendiente ? "animate-spin" : ""} />
         </button>
       </div>
       <ul className="flex flex-col gap-0.5">
@@ -70,7 +70,7 @@ export function TiposCambioBarra({
           href="/monedas"
           className="t-caption mt-1 flex items-start gap-1 text-warning-text hover:underline"
         >
-          <TriangleAlert size={12} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+          <TriangleAlert size={12} className="mt-0.5 shrink-0" />
           {textoAviso(a)}
         </Link>
       ))}

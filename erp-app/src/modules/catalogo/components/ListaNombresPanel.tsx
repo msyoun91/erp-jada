@@ -96,7 +96,7 @@ export function ListaNombresPanel({
                             ? [
                                 {
                                   label: "Renombrar",
-                                  icon: <Pencil size={14} strokeWidth={1.75} />,
+                                  icon: <Pencil size={14} />,
                                   onClick: () => setRenombrando(item.id),
                                 },
                               ]
@@ -104,9 +104,9 @@ export function ListaNombresPanel({
                           {
                             label: item.activo ? "Dar de baja" : "Reactivar",
                             icon: item.activo ? (
-                              <Archive size={14} strokeWidth={1.75} />
+                              <Archive size={14} />
                             ) : (
-                              <ArchiveRestore size={14} strokeWidth={1.75} />
+                              <ArchiveRestore size={14} />
                             ),
                             onClick: () => activar(item),
                             destructive: item.activo,

@@ -187,7 +187,7 @@ function Contenido({
 
   const vacio =
     porVista[ver].length > 0
-      ? "Sin resultados. Probá con otro término."
+      ? "Probá con otro término."
       : ver === "mias"
         ? 'Armá una con "Nueva plantilla" o copiá una del Catálogo.'
         : ver === "catalogo"
@@ -196,33 +196,41 @@ function Contenido({
 
   return (
     <div>
+      {/* Siempre a la vista, y abre en "Mis plantillas", donde va a aparecer:
+          si dependiera de la vista elegida, el botón saltaría al cambiarla. */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="flex rounded-lg border border-border p-0.5" role="group" aria-label="Qué ver">
+        <button
+          className="btn btn-primary"
+          onClick={() => {
+            setVer("mias");
+            setDialogo({ tipo: "nueva" });
+          }}
+        >
+          <Plus size={16} />
+          Nueva plantilla
+        </button>
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div className="segmented" role="group" aria-label="Qué ver">
           {vistas.map((v) => (
             <button
               key={v.valor}
               onClick={() => setVer(v.valor)}
               aria-pressed={v.valor === ver}
-              className={`tap-target t-caption flex items-center rounded-md px-3 py-1 ${
-                v.valor === ver ? "bg-brand-50 font-semibold text-brand-700" : "text-text-tertiary"
-              }`}
+              className="segmented-item tap-target"
             >
               {v.label}
             </button>
           ))}
         </div>
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar plantilla…" />
-        {ver === "mias" && (
-          <button className="btn btn-primary" onClick={() => setDialogo({ tipo: "nueva" })}>
-            <Plus size={16} />
-            Nueva plantilla
-          </button>
-        )}
       </div>
 
       {activas.length === 0 ? (
         <div className="empty-state">
-          <p className="t-body-m">{vacio}</p>
+          <p className="t-h3">{porVista[ver].length > 0 ? "Sin resultados" : "Sin plantillas todavía"}</p>
+          <p className="t-body-m mt-1">{vacio}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">{activas.map(tarjeta)}</div>

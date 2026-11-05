@@ -84,7 +84,7 @@ export function LoginForm({ next, motivo }: { next?: string; motivo?: string }) 
           {aviso && !error && (
             <p
               role="status"
-              className="mb-4 rounded-md border border-warning/20 bg-warning-bg px-3 py-2 text-sm text-warning-text"
+              className="alert alert-warning mb-4"
             >
               {aviso}
             </p>
@@ -150,7 +150,7 @@ export function LoginForm({ next, motivo }: { next?: string; motivo?: string }) 
                   aria-pressed={verPassword}
                   className="icon-btn absolute right-1 top-1/2 -translate-y-1/2 text-text-tertiary"
                 >
-                  {verPassword ? <EyeOff size={18} strokeWidth={1.75} /> : <Eye size={18} strokeWidth={1.75} />}
+                  {verPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               {errors.password && (
@@ -165,7 +165,7 @@ export function LoginForm({ next, motivo }: { next?: string; motivo?: string }) 
             {error && (
               <p
                 role="alert"
-                className="rounded-md border border-error/20 bg-error-bg px-3 py-2 text-sm text-error-text"
+                className="alert alert-error"
               >
                 {error}
               </p>

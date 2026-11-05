@@ -8,7 +8,7 @@ import { FormProvider, useForm, useFormContext, useWatch } from "react-hook-form
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { ENTES } from "@/lib/entes";
 import { buscarParecidas, crearObra, editarObra } from "../actions";
 import { ORIGEN, TIPO } from "../etiquetas";
@@ -126,13 +126,13 @@ function AvisoParecidas({ items, verbo }: { items: ParecidaAviso[]; verbo: strin
   return (
     <div
       ref={alAparecer}
-      className="rounded-md border border-warning/20 bg-warning-bg px-3 py-2 text-warning-text"
+      className="alert alert-warning"
     >
-      <p className="t-body-m flex items-center gap-2 font-medium">
-        <TriangleAlert size={16} strokeWidth={1.75} className="shrink-0" />
+      <p className="flex items-center gap-2 font-medium">
+        <TriangleAlert size={16} className="shrink-0" />
         Se parece a {items.length === 1 ? "otra obra" : "otras obras"}
       </p>
-      <ul className="t-body-m mt-1 flex flex-col gap-0.5">
+      <ul className="mt-1 flex flex-col gap-0.5">
         {items.map((p, i) => (
           <li key={p.id ?? i}>
             {p.id ? (
@@ -148,20 +148,6 @@ function AvisoParecidas({ items, verbo }: { items: ParecidaAviso[]; verbo: strin
       </ul>
       <p className="t-caption mt-1">Si es otra, {verbo} igual: queda por aprobar hasta que la revisen.</p>
     </div>
-  );
-}
-
-function Pie({ enviando, confirmar, onClose }: { enviando: boolean; confirmar: string; onClose: () => void }) {
-  return (
-    <>
-      <div className="flex-1" />
-      <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={enviando}>
-        Cancelar
-      </button>
-      <button type="submit" form={FORM_ID} className="btn btn-primary btn-sm" disabled={enviando}>
-        {enviando ? "Guardando…" : confirmar}
-      </button>
-    </>
   );
 }
 
@@ -221,7 +207,7 @@ export function AltaObraPanel({ Quien, onClose }: { Quien: QuienSlot; onClose: (
       title="Nueva obra"
       onClose={onClose}
       hayCambios={formState.isDirty || quien !== null}
-      footer={<Pie enviando={enviando} confirmar={parecidas ? "Crear igual" : "Crear obra"} onClose={onClose} />}
+      footer={<PiePanel confirmar={parecidas ? "Crear igual" : "Crear obra"} enviando={enviando} onCancelar={onClose} form={FORM_ID} />}
     >
       <FormProvider {...form}>
         <form
@@ -302,7 +288,7 @@ export function EditarObraPanel({ obra, onClose }: { obra: Obra; onClose: () => 
       title="Editar obra"
       onClose={onClose}
       hayCambios={formState.isDirty}
-      footer={<Pie enviando={enviando} confirmar={parecidas ? "Guardar igual" : "Guardar"} onClose={onClose} />}
+      footer={<PiePanel confirmar={parecidas ? "Guardar igual" : "Guardar"} enviando={enviando} onCancelar={onClose} form={FORM_ID} />}
     >
       <FormProvider {...form}>
         <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className={claseForm}>

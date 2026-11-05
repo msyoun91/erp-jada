@@ -24,6 +24,7 @@ export function HilosView({
   yo,
   nombres,
   vacio,
+  filtro,
 }: {
   hilos: HiloResumen[];
   yo: string;
@@ -31,6 +32,8 @@ export function HilosView({
   // En Equipo y en Todas: sin crear, que un hilo nuevo es de quien lo crea;
   // `vacio` es el texto de la lista vacía.
   vacio?: string;
+  // Un filtro de la vista que la usa (Todas), en la misma fila que los de acá.
+  filtro?: React.ReactNode;
 }) {
   const [texto, setTexto] = useState("");
   const [estado, setEstado] = useState<Filtro>("abierto");
@@ -44,8 +47,18 @@ export function HilosView({
 
   return (
     <div>
+      {!vacio && (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <button className="btn btn-primary" onClick={() => setCreando(true)}>
+            <Plus size={16} />
+            Nuevo hilo
+          </button>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar hilo…" />
+        {filtro}
         <select
           className="input w-auto"
           value={estado}
@@ -58,12 +71,6 @@ export function HilosView({
             </option>
           ))}
         </select>
-        {!vacio && (
-          <button className="btn btn-primary" onClick={() => setCreando(true)}>
-            <Plus size={16} />
-            Nuevo hilo
-          </button>
-        )}
       </div>
 
       <Paginacion {...paginado} etiqueta="hilos" />
@@ -107,7 +114,7 @@ export function HilosLista({ hilos, yo, nombres }: { hilos: HiloResumen[]; yo: s
               <p className="t-body-m truncate font-medium text-text-primary">{h.titulo}</p>
               <p className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="flex items-center gap-1">
-                  <UserRound size={12} strokeWidth={1.75} />
+                  <UserRound size={12} />
                   {h.responsable_id === yo ? "Vos" : (nombres[h.responsable_id] ?? "—")}
                 </span>
                 <span>
@@ -125,7 +132,7 @@ export function HilosLista({ hilos, yo, nombres }: { hilos: HiloResumen[]; yo: s
                 )}
                 {recurrencia && (
                   <span className="flex items-center gap-1">
-                    <Repeat size={12} strokeWidth={1.75} />
+                    <Repeat size={12} />
                     {recurrencia}
                   </span>
                 )}
@@ -133,7 +140,7 @@ export function HilosLista({ hilos, yo, nombres }: { hilos: HiloResumen[]; yo: s
             </div>
             {!h.activo && <span className="badge badge-neutral">Desactivado</span>}
             <span className={`badge ${ESTADO_HILO[h.estado].badge}`}>{ESTADO_HILO[h.estado].label}</span>
-            <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+            <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
           </Link>
         );
       })}

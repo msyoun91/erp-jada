@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Plus, TriangleAlert } from "lucide-react";
+import { Plus, TriangleAlert } from "lucide-react";
+import { Volver } from "@/components/ui/Volver";
 import { formulaAparte, textoMedida } from "../../etiquetas";
 import type { Categoria, Color, Contenido, InsumoBasico, Material, Variable, Version } from "../../types";
 import { DatosVersion } from "./DatosVersion";
@@ -103,22 +103,18 @@ export function EditorView({
 
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        href={`/catalogo/paquetes/versiones/${version.id}`}
-        className="t-body-m flex items-center gap-1 text-text-brand"
-      >
-        <ArrowLeft size={14} strokeWidth={1.75} />
+      <Volver href={`/catalogo/paquetes/versiones/${version.id}`}>
         {version.nombre} · v{version.numero}
-      </Link>
+      </Volver>
       <h2 className="t-h2">Editar v{version.numero}</h2>
 
       {frena.length > 0 && (
-        <details open={frena.length <= 3} className="rounded-md bg-warning-bg p-3 text-warning-text">
-          <summary className="t-body-m tap-target cursor-pointer font-semibold">
-            <TriangleAlert size={16} strokeWidth={1.75} className="mr-1 inline" />
+        <details open={frena.length <= 3} className="alert alert-warning">
+          <summary className="tap-target cursor-pointer font-semibold">
+            <TriangleAlert size={16} className="mr-1 inline" />
             {frena.length === 1 ? "1 cosa frena el envío" : `${frena.length} cosas frenan el envío`}
           </summary>
-          <ul className="t-body-m mt-2 list-disc pl-5">
+          <ul className="mt-2 list-disc pl-5">
             {frena.map((f) => (
               <li key={f}>{f}</li>
             ))}

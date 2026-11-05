@@ -136,15 +136,13 @@ function Contenido({ pasos, cadena, hilos }: Datos) {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="flex rounded-lg border border-border p-0.5" role="group" aria-label="Qué ver">
+        <div className="segmented" role="group" aria-label="Qué ver">
           {TIPOS.map((t) => (
             <button
               key={t.valor}
               onClick={() => setTipo(t.valor)}
               aria-pressed={t.valor === tipo}
-              className={`tap-target t-caption flex items-center rounded-md px-3 py-1 ${
-                t.valor === tipo ? "bg-brand-50 font-semibold text-brand-700" : "text-text-tertiary"
-              }`}
+              className="segmented-item tap-target"
             >
               {t.label} ({cuenta[t.valor]})
             </button>

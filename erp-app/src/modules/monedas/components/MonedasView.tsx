@@ -38,7 +38,7 @@ export function MonedasView({
         <ul className="flex flex-col gap-1">
           {avisos.map((a) => (
             <li key={`${a.aviso}-${a.moneda ?? ""}`} className="t-body-m flex items-start gap-2 text-warning-text">
-              <TriangleAlert size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+              <TriangleAlert size={16} className="mt-0.5 shrink-0" />
               {textoAviso(a)}
             </li>
           ))}
@@ -135,8 +135,8 @@ function TarjetaMoneda({
       </div>
 
       {pendiente && (
-        <div className="rounded-md bg-warning-bg p-3 text-warning-text">
-          <p className="t-body-m">
+        <div className="alert alert-warning">
+          <p>
             MonedAPI trajo {formatPesos(pendiente.valor)}
             {pendiente.anterior !== null && ` (${textoCambio(pendiente.anterior, pendiente.valor)})`}. No rige hasta
             confirmarlo; mientras tanto se usa el vigente.

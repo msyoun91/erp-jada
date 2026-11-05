@@ -2,8 +2,7 @@ import Link from "next/link";
 
 // El período de los logs: escrito cuatro veces entre Pendientes y Auditoría,
 // con el activo en `btn-primary` — navy sólido, que en el sistema es un botón
-// de acción, no un filtro elegido. Misma forma que el segmented de relación de
-// la Lista de tareas.
+// de acción, no un filtro elegido. Es un `.segmented` de links.
 export const DIAS_OPCIONES = [7, 30, 90];
 
 export function FiltroDias({
@@ -16,15 +15,13 @@ export function FiltroDias({
   etiqueta: string;
 }) {
   return (
-    <div className="flex rounded-lg border border-border p-0.5" role="group" aria-label={etiqueta}>
+    <div className="segmented" role="group" aria-label={etiqueta}>
       {DIAS_OPCIONES.map((d) => (
         <Link
           key={d}
           href={`${href}${href.includes("?") ? "&" : "?"}dias=${d}`}
           aria-current={d === dias ? "page" : undefined}
-          className={`tap-target t-caption flex items-center rounded-md px-3 py-1 ${
-            d === dias ? "bg-brand-50 font-semibold text-brand-700" : "text-text-tertiary"
-          }`}
+          className="segmented-item tap-target"
         >
           {d} días
         </Link>

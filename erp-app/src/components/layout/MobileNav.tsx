@@ -39,7 +39,7 @@ export function MobileNav({
           className="flex h-11 w-11 items-center justify-center rounded-sm text-text-tertiary hover:bg-bg-subtle"
           aria-label="Abrir menú"
         >
-          <Menu size={18} strokeWidth={1.75} />
+          <Menu size={18} />
         </button>
         <Image src="/logo.svg" alt="JADA" width={60} height={22} className="logo" priority />
         <div className="ml-auto">
@@ -63,7 +63,7 @@ export function MobileNav({
             className="flex h-11 w-11 items-center justify-center rounded-sm text-text-tertiary hover:bg-bg-subtle"
             aria-label="Cerrar menú"
           >
-            <X size={14} strokeWidth={1.75} />
+            <X size={14} />
           </button>
         </div>
         <SidebarNav modulosVisibles={modulosVisibles} nombre={nombre} tiposCambio={tiposCambio} />

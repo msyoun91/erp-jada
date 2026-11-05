@@ -62,13 +62,13 @@ export function AvisoParecidas({
   return (
     <div
       ref={alAparecer}
-      className="rounded-md border border-warning/20 bg-warning-bg px-3 py-2 text-warning-text"
+      className="alert alert-warning"
     >
-      <p className="t-body-m flex items-center gap-2 font-medium">
-        <TriangleAlert size={16} strokeWidth={1.75} className="shrink-0" />
+      <p className="flex items-center gap-2 font-medium">
+        <TriangleAlert size={16} className="shrink-0" />
         Se parece a {items.length === 1 ? una : varias}
       </p>
-      <ul className="t-body-m mt-1 flex flex-col gap-1">
+      <ul className="mt-1 flex flex-col gap-1">
         {items.map((p, i) =>
           p.coincide ? (
             <li key={p.id ?? i} className="flex flex-wrap items-center gap-x-2">
@@ -105,8 +105,8 @@ export function AvisoParecidas({
 // En la ficha de una congelada: lo que la base frena hasta que la aprueben (CO020).
 export function EsperaAprobacion({ tipo }: { tipo: TipoContacto }) {
   return (
-    <p className="t-body-m flex items-start gap-2 rounded-md border border-warning/20 bg-warning-bg px-3 py-2 text-warning-text">
-      <TriangleAlert size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+    <p className="alert alert-warning flex items-start gap-2">
+      <TriangleAlert size={16} className="mt-0.5 shrink-0" />
       {tipo === "persona"
         ? "Se parece a otra persona y espera aprobación. Mientras tanto no se transfiere ni se vincula."
         : "Se parece a otra empresa y espera aprobación. Mientras tanto no se vincula."}

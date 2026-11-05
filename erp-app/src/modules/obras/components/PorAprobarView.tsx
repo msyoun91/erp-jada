@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Link2, MapPin, UserRound } from "lucide-react";
+import { Link2, MapPin, UserRound } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { Volver } from "@/components/ui/Volver";
 import { labelRol } from "@/lib/entes";
 import { formatFecha } from "@/lib/utils";
 import { resolverObra } from "../actions";
@@ -88,11 +88,11 @@ function Tarjeta({ obra }: { obra: PorAprobar }) {
       </div>
       <div className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="flex items-center gap-1">
-          <MapPin size={12} strokeWidth={1.75} />
+          <MapPin size={12} />
           {lugar(obra)}
         </span>
         <span className="flex items-center gap-1" title="Responsable">
-          <UserRound size={12} strokeWidth={1.75} />
+          <UserRound size={12} />
           {obra.responsable} · {formatFecha(obra.created_at)}
         </span>
         <span>{TIPO[obra.tipo]}</span>
@@ -108,7 +108,7 @@ function Tarjeta({ obra }: { obra: PorAprobar }) {
       {obra.notas && <p className="t-body-m whitespace-pre-wrap">{obra.notas}</p>}
       {vinculos.length > 0 && (
         <p className="t-caption flex items-center gap-1">
-          <Link2 size={12} strokeWidth={1.75} className="shrink-0" />
+          <Link2 size={12} className="shrink-0" />
           Al aprobarla se vincula {vinculos.join(", ")}.
         </p>
       )}
@@ -171,10 +171,7 @@ function Tarjeta({ obra }: { obra: PorAprobar }) {
 export function PorAprobarView({ obras }: { obras: PorAprobar[] }) {
   return (
     <div className="flex flex-col gap-4">
-      <Link href="/obras" className="t-body-m flex w-fit items-center gap-1 text-text-secondary hover:text-text-primary">
-        <ArrowLeft size={14} />
-        Obras
-      </Link>
+      <Volver href="/obras">Obras</Volver>
       {obras.length === 0 ? (
         <div className="empty-state">
           <p className="t-h3">Nada por aprobar</p>

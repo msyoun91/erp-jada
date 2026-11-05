@@ -44,7 +44,7 @@ export function ThemeToggle() {
       title={etiqueta}
       className="icon-btn text-text-tertiary hover:text-text-secondary"
     >
-      {oscuro ? <Sun size={16} strokeWidth={1.75} /> : <Moon size={16} strokeWidth={1.75} />}
+      {oscuro ? <Sun size={16} /> : <Moon size={16} />}
     </button>
   );
 }

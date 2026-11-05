@@ -193,7 +193,7 @@ function PasswordForm() {
               aria-pressed={verPassword}
               className="icon-btn absolute right-1 top-1/2 -translate-y-1/2 text-text-tertiary"
             >
-              {verPassword ? <EyeOff size={18} strokeWidth={1.75} /> : <Eye size={18} strokeWidth={1.75} />}
+              {verPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
           {errors.password ? (

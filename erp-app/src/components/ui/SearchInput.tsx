@@ -17,7 +17,6 @@ export function SearchInput({
     <div className="relative grow basis-full sm:basis-auto sm:min-w-[180px]">
       <Search
         size={14}
-        strokeWidth={1.75}
         className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary"
       />
       <input

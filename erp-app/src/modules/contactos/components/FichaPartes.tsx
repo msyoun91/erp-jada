@@ -29,7 +29,7 @@ export function SeFusiono({ tipo, fusionada }: { tipo: "persona" | "empresa"; fu
   const texto = `${fusionada.nombre} (de ${fusionada.dueno})`;
   return (
     <p className="t-body-m flex items-center gap-2 rounded-md bg-bg-subtle px-3 py-2">
-      <Merge size={14} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+      <Merge size={14} className="shrink-0 text-text-tertiary" />
       <span>
         Se fusionó con{" "}
         {fusionada.id ? (

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, CircleCheck, TriangleAlert } from "lucide-react";
+import { CircleCheck, TriangleAlert } from "lucide-react";
+import { Volver } from "@/components/ui/Volver";
 import type { Moneda } from "@/lib/monedas";
 import { formatFechaHora } from "@/lib/utils";
 import { ACCION_VERSION, ESTADO_VERSION } from "../etiquetas";
@@ -58,10 +59,7 @@ export function VersionView({
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/catalogo/paquetes" className="t-body-m flex items-center gap-1 text-text-brand">
-        <ArrowLeft size={14} strokeWidth={1.75} />
-        Paquetes
-      </Link>
+      <Volver href="/catalogo/paquetes">Paquetes</Volver>
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -100,9 +98,9 @@ export function VersionView({
           </nav>
         )}
         {version.estado === "borrador" && ultima?.accion === "devuelta" && (
-          <div className="rounded-md bg-warning-bg p-3 text-warning-text">
-            <p className="t-body-m font-semibold">Devuelta{ultima.quien ? ` por ${ultima.quien}` : ""}</p>
-            <p className="t-body-m">{ultima.motivo}</p>
+          <div className="alert alert-warning">
+            <p className="font-semibold">Devuelta{ultima.quien ? ` por ${ultima.quien}` : ""}</p>
+            <p>{ultima.motivo}</p>
           </div>
         )}
         <VersionAcciones
@@ -119,14 +117,14 @@ export function VersionView({
           <h3 className="t-label">Lo que frena el envío</h3>
           {frena.length === 0 ? (
             <p className="t-body-m flex items-center gap-2 text-success-text">
-              <CircleCheck size={16} strokeWidth={1.75} />
+              <CircleCheck size={16} />
               Nada: se puede enviar.
             </p>
           ) : (
             <ul className="flex flex-col gap-1">
               {frena.map((f) => (
                 <li key={f} className="t-body-m flex items-start gap-2 text-warning-text">
-                  <TriangleAlert size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+                  <TriangleAlert size={16} className="mt-0.5 shrink-0" />
                   {f}
                 </li>
               ))}

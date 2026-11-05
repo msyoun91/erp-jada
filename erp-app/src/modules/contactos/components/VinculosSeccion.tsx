@@ -100,7 +100,7 @@ export function VinculosSeccion({
           </p>
           {extras[v.id]?.detalle}
         </div>
-        {!c.activo && <span className="badge badge-neutral">Inactivo</span>}
+        {!c.activo && <span className="badge badge-neutral">Desactivada</span>}
         {menu.length > 0 && <OverflowMenu items={menu} />}
       </li>
     );

@@ -139,7 +139,7 @@ export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin,
           {menu.length > 0 && <OverflowMenu items={menu} />}
         </div>
         <p className="t-caption flex items-center gap-1" title="Dueño">
-          <UserRound size={12} strokeWidth={1.75} />
+          <UserRound size={12} />
           {nombre(persona.responsable_id)}
         </p>
         {persona.activo && persona.congelada && <EsperaAprobacion tipo="persona" />}
@@ -148,7 +148,7 @@ export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin,
           <div className="flex flex-col gap-1">
             {contacto.telefono ? (
               <a href={`tel:${contacto.telefono}`} className="t-body-m flex items-center gap-2 text-text-brand">
-                <Phone size={14} strokeWidth={1.75} />
+                <Phone size={14} />
                 {contacto.telefono}
               </a>
             ) : (
@@ -156,7 +156,7 @@ export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin,
             )}
             {contacto.email ? (
               <a href={`mailto:${contacto.email}`} className="t-body-m flex items-center gap-2 text-text-brand">
-                <Mail size={14} strokeWidth={1.75} />
+                <Mail size={14} />
                 {contacto.email}
               </a>
             ) : (

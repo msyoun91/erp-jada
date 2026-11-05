@@ -4,7 +4,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { guardarOpcion } from "../../actions";
 import { UNIDAD } from "../../etiquetas";
 import { opcionSchema, type Condicion, type InsumoBasico, type Opcion, type OpcionForm } from "../../types";
@@ -66,11 +66,7 @@ export function OpcionPanel({
       subtitle={`${parejaDe ? `Con ${parejaDe}. ` : ""}Vacío: lo hereda del material.`}
       onClose={onClose}
       hayCambios={formState.isDirty}
-      footer={
-        <button className="btn btn-primary" onClick={handleSubmit(guardar)} disabled={isSubmitting}>
-          Guardar
-        </button>
-      }
+      footer={<PiePanel confirmar="Guardar" enviando={isSubmitting} onCancelar={onClose} onConfirmar={handleSubmit(guardar)} />}
     >
       <div className="flex flex-col gap-4 overflow-y-auto p-5">
         <form onSubmit={handleSubmit(guardar)} className="flex flex-col gap-4">

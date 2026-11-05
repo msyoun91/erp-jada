@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Volver } from "@/components/ui/Volver";
 import { idSchema } from "@/lib/validacion";
 import { accionDe } from "../../fichas";
 import { fichaObra } from "./ficha";
@@ -10,5 +11,11 @@ export default async function ObraPage(props: PageProps<"/obras/[id]">) {
   if (!idSchema.safeParse(id).success) notFound();
   const ficha = await fichaObra(id, accionDe(await props.searchParams));
   if (!ficha) notFound();
-  return ficha;
+  // La vuelta va acá y no en `ObraView`: la misma ficha se abre al lado de un paso de Tareas.
+  return (
+    <div className="flex flex-col gap-4">
+      <Volver href="/obras">Obras</Volver>
+      {ficha}
+    </div>
+  );
 }

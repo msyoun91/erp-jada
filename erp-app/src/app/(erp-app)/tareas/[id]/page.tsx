@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Volver } from "@/components/ui/Volver";
 import { idSchema } from "@/lib/validacion";
 import { puedeAdministrar, puedePedir, puedeVerEquipo, puedeVerPlantillas, puedeVerTareas } from "@/modules/tareas/permissions";
 import { getAsignables, getContexto, getHilo, getPlantillas } from "@/modules/tareas/queries";
@@ -26,12 +27,15 @@ export default async function HiloPage(props: PageProps<"/tareas/[id]">) {
   const pestanas = abierto ? await pestanasDePaso(datos.hilo, datos.sobre, abierto.descripcion, datos.enlaces, accionDe(params)) : [];
 
   return (
-    <HiloView
-      {...datos}
-      pasoAbierto={abierto?.id ?? null}
-      pestanas={pestanas}
-      plantillas={plantillas.filter((p) => p.activo && p.dueno_id === contexto.yo)}
-      ctx={{ ...contexto, asignables, admin, pedir, delegador }}
-    />
+    <div className="flex flex-col gap-4">
+      <Volver href="/tareas">Hilos</Volver>
+      <HiloView
+        {...datos}
+        pasoAbierto={abierto?.id ?? null}
+        pestanas={pestanas}
+        plantillas={plantillas.filter((p) => p.activo && p.dueno_id === contexto.yo)}
+        ctx={{ ...contexto, asignables, admin, pedir, delegador }}
+      />
+    </div>
   );
 }

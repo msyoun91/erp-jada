@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { UserRound } from "lucide-react";
+import { Modulo } from "@/components/layout/Modulo";
 import { createClient } from "@/lib/supabase/server";
 import { PerfilView } from "@/modules/auth/components/PerfilView";
 
@@ -26,12 +26,8 @@ export default async function PerfilPage() {
   if (!perfil) redirect("/login");
 
   return (
-    <div className="flex flex-col h-full">
-      <h1 className="t-h1 mb-4 flex items-center gap-2.5">
-        <UserRound size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
-        Mi perfil
-      </h1>
+    <Modulo modulo="perfil">
       <PerfilView nombre={perfil.nombre} email={perfil.email} telefono={perfil.telefono} />
-    </div>
+    </Modulo>
   );
 }

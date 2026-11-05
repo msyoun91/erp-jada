@@ -4,7 +4,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { guardarPieza } from "../../actions";
 import { piezaSchema, type Pieza, type PiezaForm } from "../../types";
 import { Nombres } from "./Nombres";
@@ -48,11 +48,7 @@ export function PiezaPanel({
       subtitle="Lo de adentro es para una sola pieza; la cantidad lo multiplica."
       onClose={onClose}
       hayCambios={formState.isDirty}
-      footer={
-        <button className="btn btn-primary" onClick={handleSubmit(guardar)} disabled={isSubmitting}>
-          Guardar
-        </button>
-      }
+      footer={<PiePanel confirmar="Guardar" enviando={isSubmitting} onCancelar={onClose} onConfirmar={handleSubmit(guardar)} />}
     >
       <form onSubmit={handleSubmit(guardar)} className="flex flex-col gap-4 overflow-y-auto p-5">
         <Campo id="pieza-nombre" label="Nombre" requerido error={errors.nombre}>

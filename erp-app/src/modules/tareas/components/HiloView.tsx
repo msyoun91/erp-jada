@@ -107,7 +107,7 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
           </p>
         </div>
         <span className={`badge ${ESTADO_PASO[p.estado].badge}`}>{ESTADO_PASO[p.estado].label}</span>
-        <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+        <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
       </button>
     );
   }
@@ -123,7 +123,7 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
         </div>
         <div className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="flex items-center gap-1" title="Responsable">
-            <UserRound size={12} strokeWidth={1.75} />
+            <UserRound size={12} />
             {hilo.responsable_id === ctx.yo ? "Vos" : nombre(hilo.responsable_id)}
           </span>
           {sobre && (
@@ -136,7 +136,7 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
           )}
           {recurrencia && (
             <span className="flex items-center gap-1">
-              <Repeat size={12} strokeWidth={1.75} />
+              <Repeat size={12} />
               {recurrencia}
             </span>
           )}
@@ -151,9 +151,9 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
       </div>
 
       {dueno && vivo && activos.length > 0 && abiertos === 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-success-bg px-4 py-3 text-success-text">
-          <CheckCircle2 size={16} strokeWidth={1.75} className="shrink-0" />
-          <p className="t-body-m flex-1">Todo completado.</p>
+        <div className="alert alert-success flex flex-wrap items-center gap-3">
+          <CheckCircle2 size={16} className="shrink-0" />
+          <p className="flex-1">Todo completado.</p>
           <button className="btn btn-primary btn-sm" onClick={() => setDialogo("cerrar")}>
             Cerrar hilo
           </button>

@@ -62,7 +62,7 @@ export function RightPanel({
               {subtitle && <p className="t-caption">{subtitle}</p>}
             </div>
             <button onClick={intentarCerrar} className="icon-btn text-text-tertiary" aria-label="Cerrar">
-              <X size={18} strokeWidth={1.75} />
+              <X size={18} />
             </button>
           </div>
 
@@ -81,6 +81,51 @@ export function RightPanel({
       {confirmandoCierre && (
         <DescartarCambios onDescartar={onClose} onSeguir={() => setConfirmandoCierre(false)} />
       )}
+    </>
+  );
+}
+
+// El pie de todo panel que guarda: la salida y el primario, a la derecha y en
+// chico. Estaba escrito a mano en 25 paneles, y Catálogo había quedado con el
+// "Guardar" solo, a la izquierda, en tamaño grande y sin "Guardando…".
+export function PiePanel({
+  confirmar,
+  enviando,
+  onCancelar,
+  cancelar = "Cancelar",
+  form,
+  onConfirmar,
+  deshabilitado,
+  enCurso = "Guardando…",
+  nota,
+}: {
+  confirmar: string;
+  enviando: boolean;
+  onCancelar: () => void;
+  cancelar?: string;
+  // El submit vive fuera del <form>: `form` lo ata por id; sin form, `onConfirmar`.
+  form?: string;
+  onConfirmar?: () => void;
+  deshabilitado?: boolean;
+  enCurso?: string;
+  // A la izquierda: lo que falta o lo que va a cambiar.
+  nota?: React.ReactNode;
+}) {
+  return (
+    <>
+      <div className="t-caption flex-1">{nota}</div>
+      <button type="button" className="btn btn-secondary btn-sm" onClick={onCancelar} disabled={enviando}>
+        {cancelar}
+      </button>
+      <button
+        type={form ? "submit" : "button"}
+        form={form}
+        onClick={onConfirmar}
+        className="btn btn-primary btn-sm"
+        disabled={enviando || deshabilitado}
+      >
+        {enviando ? enCurso : confirmar}
+      </button>
     </>
   );
 }

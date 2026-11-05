@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { editarUsuario } from "../actions";
 import { editarUsuarioSchema, type EditarUsuarioForm, type Usuario } from "../types";
 
@@ -46,22 +46,7 @@ export function EditarUsuarioPanel({
       subtitle={usuario.nombre}
       onClose={onClose}
       hayCambios={isDirty}
-      footer={
-        <>
-          <div className="flex-1" />
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={onClose}
-            disabled={enviando}
-          >
-            Cancelar
-          </button>
-          <button type="submit" form={FORM_ID} className="btn btn-primary btn-sm" disabled={enviando}>
-            {enviando ? "Guardando…" : "Guardar"}
-          </button>
-        </>
-      }
+      footer={<PiePanel confirmar="Guardar" enviando={enviando} onCancelar={onClose} form={FORM_ID} />}
     >
       <form
         id={FORM_ID}

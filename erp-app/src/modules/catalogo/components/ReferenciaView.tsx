@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { FiltroDias } from "@/components/ui/FiltroDias";
+import { Volver } from "@/components/ui/Volver";
 import { formatMonto, type Moneda } from "@/lib/monedas";
 import type { PrecioReferencia } from "../types";
 
@@ -10,10 +11,7 @@ export function ReferenciaView({ filas, dias, moneda }: { filas: PrecioReferenci
   const m = (n: number | null) => (n === null ? "sin precio" : formatMonto(n, moneda));
   return (
     <div className="flex flex-col gap-4">
-      <Link href="/catalogo/paquetes" className="t-body-m flex items-center gap-1 text-text-brand">
-        <ArrowLeft size={14} strokeWidth={1.75} />
-        Paquetes
-      </Link>
+      <Volver href="/catalogo/paquetes">Paquetes</Volver>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="t-h3">Precios de referencia</h2>
         <FiltroDias href="/catalogo/paquetes/referencia" dias={dias} etiqueta="Comparar contra hace" />
@@ -54,7 +52,7 @@ export function ReferenciaView({ filas, dias, moneda }: { filas: PrecioReferenci
                     {f.cambio.toLocaleString("es-AR", { maximumFractionDigits: 1 })} %
                   </span>
                 )}
-                <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+                <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
               </Link>
             </li>
           ))}

@@ -71,6 +71,19 @@ export function ContactosView({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
+        <button className="btn btn-primary" onClick={() => setCreando(true)}>
+          <Plus size={16} />
+          {t.nueva}
+        </button>
+        {porAprobar !== undefined && (
+          <Link href="/contactos/por-aprobar" className="btn btn-secondary">
+            <ShieldCheck size={16} />
+            Por aprobar{porAprobar > 0 && <span className="badge badge-warning">{porAprobar}</span>}
+          </Link>
+        )}
+      </div>
+
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder={t.buscar} />
         {administrar && (
           <select
@@ -84,16 +97,6 @@ export function ContactosView({
             {administrar.de && <option value="de">De {administrar.de.nombre}</option>}
           </select>
         )}
-        {porAprobar !== undefined && (
-          <Link href="/contactos/por-aprobar" className="btn btn-secondary">
-            <ShieldCheck size={16} />
-            Por aprobar{porAprobar > 0 && <span className="badge badge-warning">{porAprobar}</span>}
-          </Link>
-        )}
-        <button className="btn btn-primary" onClick={() => setCreando(true)}>
-          <Plus size={16} />
-          {t.nueva}
-        </button>
       </div>
 
       <Paginacion {...paginado} etiqueta={t.etiqueta} />
@@ -120,7 +123,7 @@ export function ContactosView({
               </div>
               {!f.activo && <span className="badge badge-neutral">Desactivada</span>}
               {f.activo && f.congelada && <span className="badge badge-warning">Por aprobar</span>}
-              <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+              <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
             </Link>
           ))}
         </div>

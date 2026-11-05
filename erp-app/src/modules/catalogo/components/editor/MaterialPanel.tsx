@@ -5,7 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { guardarMaterial, guardarOpcion, sacar } from "../../actions";
 import { formulaAparte } from "../../etiquetas";
 import {
@@ -138,11 +138,7 @@ export function MaterialPanel({
         subtitle="Las fórmulas dan mm; el sistema pasa a la unidad del insumo."
         onClose={onClose}
         hayCambios={formState.isDirty}
-        footer={
-          <button className="btn btn-primary" onClick={handleSubmit(guardar)} disabled={isSubmitting}>
-            Guardar
-          </button>
-        }
+        footer={<PiePanel confirmar="Guardar" enviando={isSubmitting} onCancelar={onClose} onConfirmar={handleSubmit(guardar)} />}
       >
         <div className="flex flex-col gap-4 overflow-y-auto p-5">
           <form onSubmit={handleSubmit(guardar)} className="flex flex-col gap-4">

@@ -1,6 +1,4 @@
-import { Building2 } from "lucide-react";
-import { Breadcrumb } from "@/components/layout/Breadcrumb";
-import { ModuleTabs } from "@/components/layout/ModuleTabs";
+import { Modulo } from "@/components/layout/Modulo";
 import { puedeVerObras, puedeVerTodas } from "@/modules/obras/permissions";
 
 export default async function ObrasLayout({ children }: { children: React.ReactNode }) {
@@ -11,14 +9,8 @@ export default async function ObrasLayout({ children }: { children: React.ReactN
   ];
 
   return (
-    <div className="flex flex-col h-full">
-      <Breadcrumb modulo="obras" tabs={tabs} />
-      <h1 className="t-h1 mb-4 flex items-center gap-2.5">
-        <Building2 size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
-        Obras
-      </h1>
-      <ModuleTabs modulo="obras" tabs={tabs} />
+    <Modulo modulo="obras" tabs={tabs}>
       {children}
-    </div>
+    </Modulo>
   );
 }

@@ -97,7 +97,7 @@ export function InsumosView({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         {puedeEditar && (
           <button className="btn btn-primary" onClick={() => setEditando("nuevo")}>
             <Plus size={16} />
@@ -117,14 +117,14 @@ export function InsumosView({
           items={[
             {
               label: "Categorías",
-              icon: <Tags size={14} strokeWidth={1.75} />,
+              icon: <Tags size={14} />,
               onClick: () => setPanel("categorias"),
             },
             ...(tipo === "insumo"
               ? [
                   {
                     label: "Colores",
-                    icon: <Palette size={14} strokeWidth={1.75} />,
+                    icon: <Palette size={14} />,
                     onClick: () => setPanel("colores"),
                   },
                 ]
@@ -220,7 +220,7 @@ export function InsumosView({
                 </div>
                 {!i.activo && <span className="badge badge-neutral shrink-0">De baja</span>}
                 {puedeCostos && i.activo && <ResumenCosto insumo={i} />}
-                <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+                <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
               </button>
             </li>
           )}

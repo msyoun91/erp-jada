@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getUsuarioActualId } from "@/lib/usuarios";
+import { Volver } from "@/components/ui/Volver";
 import { idSchema } from "@/lib/validacion";
 import { puedeAdministrar } from "@/modules/contactos/permissions";
 import { getLadoFusion, getNombres } from "@/modules/contactos/queries";
@@ -36,5 +37,11 @@ export default async function FusionarPage(props: PageProps<"/contactos/fusionar
   );
   const activas = Object.fromEntries(comisiones.filter((c) => c.activo).map((c) => [c.vinculo_id, textoComision(c)]));
 
-  return <FusionarView tipo={tipo} lados={[ladoA, ladoB]} comisiones={activas} nombres={nombres} yo={yo} />;
+  // Se llega desde la ficha de `a`: vuelve ahí.
+  return (
+    <div className="flex flex-col gap-4">
+      <Volver href={`/contactos/${tipo === "persona" ? "personas" : "empresas"}/${ladoA.id}`}>{ladoA.nombre}</Volver>
+      <FusionarView tipo={tipo} lados={[ladoA, ladoB]} comisiones={activas} nombres={nombres} yo={yo} />
+    </div>
+  );
 }

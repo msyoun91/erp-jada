@@ -49,19 +49,19 @@ export function Fila({
           {detalle && <p className="t-caption font-mono">{detalle}</p>}
           {children}
         </div>
-        <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+        <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
       </button>
       <OverflowMenu
         items={[
           ...(i > 0
-            ? [{ label: "Subir", icon: <ArrowUp size={14} strokeWidth={1.75} />, onClick: () => mover(-1) }]
+            ? [{ label: "Subir", icon: <ArrowUp size={14} />, onClick: () => mover(-1) }]
             : []),
           ...(i >= 0 && i < hermanos.length - 1
-            ? [{ label: "Bajar", icon: <ArrowDown size={14} strokeWidth={1.75} />, onClick: () => mover(1) }]
+            ? [{ label: "Bajar", icon: <ArrowDown size={14} />, onClick: () => mover(1) }]
             : []),
           {
             label: "Sacar",
-            icon: <Trash2 size={14} strokeWidth={1.75} />,
+            icon: <Trash2 size={14} />,
             onClick: () => setSacando(true),
             destructive: true,
           },
@@ -78,7 +78,7 @@ export function SacarBoton({ tabla, id, que }: { tabla: TablaContenido; id: stri
   return (
     <>
       <button className="icon-btn text-text-tertiary" aria-label={`Sacar ${que}`} onClick={() => setConfirmando(true)}>
-        <Trash2 size={14} strokeWidth={1.75} />
+        <Trash2 size={14} />
       </button>
       {confirmando && <SacarModal tabla={tabla} id={id} que={que} onClose={() => setConfirmando(false)} />}
     </>

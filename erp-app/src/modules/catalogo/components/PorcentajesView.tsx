@@ -30,13 +30,15 @@ export function PorcentajesView({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        {puedeEditar && (
+      {puedeEditar && (
+        <div className="flex flex-wrap items-center gap-3">
           <button className="btn btn-primary" onClick={() => setCreando(true)}>
             <Plus size={16} />
             Nuevo servicio en %
           </button>
-        )}
+        </div>
+      )}
+      <div className="flex flex-wrap items-center gap-3">
         <label className="tap-target flex items-center gap-2">
           <input type="checkbox" checked={verBajas} onChange={(e) => setVerBajas(e.target.checked)} />
           <span className="t-body-m">Ver los de baja</span>
@@ -84,7 +86,7 @@ export function PorcentajesView({
                           {p.opcional && <span className="badge badge-neutral shrink-0">Opcional</span>}
                           {p.de_baja && <span className="badge badge-neutral shrink-0">De baja</span>}
                           <span className="t-body-m shrink-0 font-semibold">{textoPorcentaje(p.porcentaje)}</span>
-                          <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+                          <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
                         </Link>
                       </li>
                     );

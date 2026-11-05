@@ -37,7 +37,7 @@ export function ComisionReferente({
     <div className="t-caption mt-1 flex flex-col gap-0.5">
       {vigente ? (
         <p className="flex flex-wrap items-center gap-x-2">
-          <CircleDollarSign size={12} strokeWidth={1.75} className="shrink-0" />
+          <CircleDollarSign size={12} className="shrink-0" />
           <span className="font-medium text-text-primary">Comisión {textoComision(vigente)}</span>
           {abierto && (
             <button className="text-text-brand hover:underline" onClick={() => setCargando(true)}>

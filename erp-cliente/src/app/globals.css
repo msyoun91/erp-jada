@@ -118,6 +118,8 @@
   a { @apply text-text-brand; }
   a:hover { @apply text-brand-500; }
   [data-theme="dark"] .logo { filter: brightness(0) invert(1); }
+  /* Tailwind 4 les sacó la manito a los botones. */
+  button:not(:disabled) { cursor: pointer; }
   /* Un solo foco visible para todo lo interactivo: .input tiene el suyo
      propio abajo, y estos selectores no lo pisan. */
   a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
@@ -157,6 +159,9 @@
      pierde el rojo y se pinta azul de marca. */
   .input-error, .input-error:focus { @apply border-error ring-[3px] ring-[rgba(220,38,38,.12)]; }
   .input-error-text { @apply text-error-text text-xs mt-1; }
+  /* Sin esto un campo deshabilitado se ve idéntico a uno editable: el único
+     indicio era el cursor, y en touch no hay cursor. */
+  .input:disabled { @apply bg-bg-subtle text-text-secondary cursor-not-allowed; }
 
   .badge { @apply font-semibold text-[11px] rounded-full px-[9px] py-[3px]; }
   .badge-brand { @apply bg-brand-50 text-text-brand; }
@@ -172,6 +177,22 @@
      no pasaba. */
   .card-link:hover { @apply shadow-md; }
   .card-featured { @apply border-brand-300; }
+
+  /* Aviso dentro de la pantalla: el Alert del design system (§8), del que ya
+     deriva el toast. Fija tamaño y color del texto: un `t-body-m` adentro lo
+     repinta de `text-secondary` — azul sobre el marrón del warning en oscuro. */
+  .alert { @apply rounded-md border px-3 py-2.5 text-body-m; }
+  .alert-warning { @apply border-warning/20 bg-warning-bg text-warning-text; }
+  .alert-error { @apply border-error/20 bg-error-bg text-error-text; }
+  .alert-success { @apply border-success/20 bg-success-bg text-success-text; }
+  .alert-info { @apply border-info/20 bg-info-bg text-info-text; }
+
+  /* Elegir una de pocas vistas o períodos (FiltroDias, Equipo y Plantillas de
+     Tareas): estaba copiado tres veces. El elegido lo marca el ARIA que el
+     control ya tiene que llevar, no una clase aparte. */
+  .segmented { @apply flex w-fit rounded-lg border border-border p-0.5; }
+  .segmented-item { @apply flex items-center rounded-md px-3 py-1 text-caption text-text-tertiary; }
+  .segmented-item[aria-pressed="true"], .segmented-item[aria-current="page"] { @apply bg-brand-50 font-semibold text-brand-700; }
 
   .empty-state { @apply bg-bg-surface border border-dashed border-border-strong rounded-lg p-[60px] text-center text-text-tertiary; }
 

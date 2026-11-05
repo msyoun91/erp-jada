@@ -17,7 +17,7 @@ import { ResetearPasswordModal } from "./ResetearPasswordModal";
 
 const ESTADOS = [
   { valor: "activos", label: "Activos" },
-  { valor: "inactivos", label: "Inactivos" },
+  { valor: "inactivos", label: "Desactivados" },
   { valor: "todos", label: "Todos" },
 ] as const;
 
@@ -82,6 +82,15 @@ export function UsuariosView({
 
   return (
     <div>
+      {puedeGestionar && (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <button className="btn btn-primary" onClick={() => setPanelCrear(true)}>
+            <UserPlus size={16} />
+            Nuevo usuario
+          </button>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar por nombre o email…" />
 
@@ -97,13 +106,6 @@ export function UsuariosView({
             </option>
           ))}
         </select>
-
-        {puedeGestionar && (
-          <button className="btn btn-primary" onClick={() => setPanelCrear(true)}>
-            <UserPlus size={16} />
-            Nuevo usuario
-          </button>
-        )}
       </div>
 
       <Paginacion {...paginado} etiqueta="usuarios" />
@@ -144,7 +146,7 @@ export function UsuariosView({
                   filas: solo aporta cuando la lista puede mezclar estados. */}
               {estado !== "activos" && (
                 <span className={`badge shrink-0 ${usuario.activo ? "badge-success" : "badge-neutral"}`}>
-                  {usuario.activo ? "Activo" : "Inactivo"}
+                  {usuario.activo ? "Activo" : "Desactivado"}
                 </span>
               )}
 
@@ -153,29 +155,29 @@ export function UsuariosView({
                   items={[
                     {
                       label: "Editar",
-                      icon: <Pencil size={14} strokeWidth={1.75} />,
+                      icon: <Pencil size={14} />,
                       onClick: () => setEditando(usuario),
                     },
                     {
                       label: "Permisos",
-                      icon: <ShieldCheck size={14} strokeWidth={1.75} />,
+                      icon: <ShieldCheck size={14} />,
                       onClick: () => setUsuarioPermisos(usuario),
                     },
                     {
                       label: "Resetear contraseña",
-                      icon: <KeyRound size={14} strokeWidth={1.75} />,
+                      icon: <KeyRound size={14} />,
                       onClick: () => setReseteando(usuario),
                     },
                     usuario.activo
                       ? {
                           label: "Desactivar",
-                          icon: <Archive size={14} strokeWidth={1.75} />,
+                          icon: <Archive size={14} />,
                           onClick: () => setDesactivando(usuario),
                           destructive: true,
                         }
                       : {
                           label: "Reactivar",
-                          icon: <ArchiveRestore size={14} strokeWidth={1.75} />,
+                          icon: <ArchiveRestore size={14} />,
                           onClick: () => onReactivar(usuario),
                         },
                   ]}

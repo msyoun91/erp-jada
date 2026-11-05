@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { guardarEquipo } from "../actions";
 import { equipoSchema, type Equipo, type EquipoForm } from "../types";
 
@@ -40,22 +40,7 @@ export function EquipoPanel({ equipo, onClose }: { equipo: Equipo | null; onClos
       subtitle={equipo?.nombre}
       onClose={onClose}
       hayCambios={isDirty}
-      footer={
-        <>
-          <div className="flex-1" />
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={onClose}
-            disabled={enviando}
-          >
-            Cancelar
-          </button>
-          <button type="submit" form={FORM_ID} className="btn btn-primary btn-sm" disabled={enviando}>
-            {enviando ? "Guardando…" : equipo ? "Guardar" : "Crear equipo"}
-          </button>
-        </>
-      }
+      footer={<PiePanel confirmar={equipo ? "Guardar" : "Crear equipo"} enviando={enviando} onCancelar={onClose} form={FORM_ID} />}
     >
       <form
         id={FORM_ID}

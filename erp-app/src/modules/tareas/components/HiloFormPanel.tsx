@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { crearHilo, editarHilo } from "../actions";
 import { hiloSchema, type Hilo, type HiloForm } from "../types";
 import { Campo, claseInput } from "@/components/ui/Campo";
@@ -49,17 +49,7 @@ export function HiloFormPanel({ hilo, onClose }: { hilo?: Hilo; onClose: () => v
       title={hilo ? "Editar hilo" : "Nuevo hilo"}
       onClose={onClose}
       hayCambios={isDirty}
-      footer={
-        <>
-          <div className="flex-1" />
-          <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={enviando}>
-            Cancelar
-          </button>
-          <button type="submit" form={FORM_ID} className="btn btn-primary btn-sm" disabled={enviando}>
-            {enviando ? "Guardando…" : hilo ? "Guardar" : "Crear hilo"}
-          </button>
-        </>
-      }
+      footer={<PiePanel confirmar={hilo ? "Guardar" : "Crear hilo"} enviando={enviando} onCancelar={onClose} form={FORM_ID} />}
     >
       <form
         id={FORM_ID}

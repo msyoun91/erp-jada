@@ -48,7 +48,6 @@ export function ListaPorCategoria<T>({ grupos, fila }: { grupos: Grupo<T>[]; fil
             <summary className="tap-target flex cursor-pointer list-none items-center gap-1 rounded-md hover:bg-bg-subtle [&::-webkit-details-marker]:hidden">
               <ChevronRight
                 size={16}
-                strokeWidth={1.75}
                 className="shrink-0 text-text-secondary transition-transform group-open:rotate-90"
               />
               <span className="t-label text-text-secondary">

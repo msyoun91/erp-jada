@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LucideProvider } from "lucide-react";
 import { TopLayerToaster } from "@/components/feedback/TopLayerToaster";
 import "./globals.css";
 
@@ -24,7 +25,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* <script> plano y no <Script beforeInteractive>: esa estrategia encola en self.__next_s
             y la vacía un chunk async, o sea después del primer paint — flash de tema claro. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        {children}
+        {/* El trazo del design system (§7) para todo ícono: escrito ícono por ícono, 73 quedaban en el 2 de lucide. */}
+        <LucideProvider>{children}</LucideProvider>
         {/* En mobile el toaster ocupa el ancho completo y el topbar mide 56px: sin offset lo tapa.
             Vive en el top layer (ver TopLayerToaster) para verse sobre los <dialog> de RightPanel/Modal. */}
         <TopLayerToaster />

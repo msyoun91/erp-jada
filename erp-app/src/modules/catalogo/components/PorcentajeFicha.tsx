@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { Archive, ArrowLeft } from "lucide-react";
+import { Archive } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
+import { Volver } from "@/components/ui/Volver";
 import type { Moneda } from "@/lib/monedas";
 import { CLASE_NIVEL, textoCambio } from "@/lib/niveles";
 import { formatFechaHora } from "@/lib/utils";
@@ -55,10 +55,7 @@ export function PorcentajeFicha({
 
   return (
     <div className="flex flex-col gap-6">
-      <Link href="/catalogo/porcentajes" className="t-body-m flex items-center gap-1 text-text-brand">
-        <ArrowLeft size={14} strokeWidth={1.75} />
-        Servicios en %
-      </Link>
+      <Volver href="/catalogo/porcentajes">Servicios en %</Volver>
 
       <section className="card flex flex-col gap-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -95,7 +92,7 @@ export function PorcentajeFicha({
                 items={[
                   {
                     label: "Dar de baja",
-                    icon: <Archive size={14} strokeWidth={1.75} />,
+                    icon: <Archive size={14} />,
                     destructive: true,
                     onClick: () => setBaja(true),
                   },

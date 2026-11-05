@@ -38,25 +38,25 @@ export function TodasView({
   });
 
   return (
-    <div>
-      <select
-        className="input mb-3 w-auto"
-        value={filtro}
-        onChange={(e) => setFiltro(e.target.value as Filtro)}
-        aria-label="Qué hilos ver"
-      >
-        <option value="todos">Todos los hilos</option>
-        <option value="huerfanos">Huérfanos</option>
-        <option value="desactivados">Desactivados</option>
-        {responsable && <option value="persona">De {nombres[responsable] ?? "—"}</option>}
-      </select>
-      <HilosView
-        key={filtro}
-        hilos={filtrados}
-        yo={yo}
-        nombres={nombres}
-        vacio={filtro === "huerfanos" ? "Ningún hilo abierto quedó sin quien lo reciba." : "Sin hilos acá."}
-      />
-    </div>
+    <HilosView
+      key={filtro}
+      hilos={filtrados}
+      yo={yo}
+      nombres={nombres}
+      vacio={filtro === "huerfanos" ? "Ningún hilo abierto quedó sin quien lo reciba." : "Sin hilos acá."}
+      filtro={
+        <select
+          className="input w-auto"
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value as Filtro)}
+          aria-label="Qué hilos ver"
+        >
+          <option value="todos">Todos los hilos</option>
+          <option value="huerfanos">Huérfanos</option>
+          <option value="desactivados">Desactivados</option>
+          {responsable && <option value="persona">De {nombres[responsable] ?? "—"}</option>}
+        </select>
+      }
+    />
   );
 }

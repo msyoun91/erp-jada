@@ -56,7 +56,7 @@ export function NotasSection({ hiloId, tareaId, notas }: { hiloId: string; tarea
             <div className="flex-1" />
             {admin && n.activo && (
               <button className="icon-btn h-7 w-7" onClick={() => onOcultar(n.id)} aria-label="Ocultar nota" title="Ocultar">
-                <EyeOff size={14} strokeWidth={1.75} />
+                <EyeOff size={14} />
               </button>
             )}
           </div>

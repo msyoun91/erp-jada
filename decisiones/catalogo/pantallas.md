@@ -167,7 +167,8 @@ badges de estado, que no se tocan. Archivos: `VersionView.tsx`.
 
 **En Paquetes, Insumos y Servicios fijos, las acciones van arriba y los filtros debajo, y las categorías siempre en el menú ⋯.** Con
 los filtros primero, "Nuevo…" quedaba enterrado, y cada pestaña ponía "Categorías" en otro lado. "Precios de referencia" queda a la
-vista porque es una pantalla aparte. Archivos: `PaquetesView.tsx`, `InsumosView.tsx`.
+vista porque es una pantalla aparte. Archivos: `PaquetesView.tsx`, `InsumosView.tsx`. Desde el 2026-11-05 es la regla de todos los listados:
+`decisiones/global/ui.md` → *Consistencia entre módulos*.
 
 ## Un solo botón primario en el borrador (2026-11-04)
 

@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { ConfirmModal } from "@/components/ui/Modal";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { MONEDAS, MONEDAS_LISTA, type Moneda } from "@/lib/monedas";
 import { guardarPorcentaje } from "../actions";
 import { PASO } from "../etiquetas";
@@ -83,11 +83,7 @@ export function PorcentajeFormPanel({
         subtitle="Rige desde que se guarda. Cada cambio queda en la historia y se puede revertir."
         onClose={onClose}
         hayCambios={formState.isDirty}
-        footer={
-          <button className="btn btn-primary" onClick={handleSubmit(guardar)} disabled={isSubmitting}>
-            {isSubmitting ? "Guardando…" : "Guardar"}
-          </button>
-        }
+        footer={<PiePanel confirmar="Guardar" enviando={isSubmitting} onCancelar={onClose} onConfirmar={handleSubmit(guardar)} />}
       >
         <form onSubmit={handleSubmit(guardar)} className="flex flex-col gap-4 overflow-y-auto p-5">
           <Campo id="pct-nombre" label="Nombre" requerido error={errors.nombre}>

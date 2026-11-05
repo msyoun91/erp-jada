@@ -112,28 +112,28 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
         </div>
         <div className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1">
           <span className="flex items-center gap-1">
-            <MapPin size={12} strokeWidth={1.75} />
+            <MapPin size={12} />
             {obra.localidad ? `${obra.direccion}, ${obra.localidad}` : obra.direccion}
           </span>
           <span className="flex items-center gap-1" title="Responsable">
-            <UserRound size={12} strokeWidth={1.75} />
+            <UserRound size={12} />
             {nombre(obra.responsable_id)}
           </span>
           <span>{TIPO[obra.tipo]}</span>
           <span className="flex items-center gap-1" title="Origen">
-            <Flag size={12} strokeWidth={1.75} />
+            <Flag size={12} />
             {ORIGEN[obra.origen]}
           </span>
           {obra.compra_estimada && (
             <span className="flex items-center gap-1" title="Compra estimada">
-              <CalendarClock size={12} strokeWidth={1.75} />
+              <CalendarClock size={12} />
               Compra en {mesAnio(obra.compra_estimada)}
             </span>
           )}
         </div>
         {congelada && (
-          <p className="t-body-m flex items-start gap-2 rounded-md border border-warning/20 bg-warning-bg px-3 py-2 text-warning-text">
-            <TriangleAlert size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+          <p className="alert alert-warning flex items-start gap-2">
+            <TriangleAlert size={16} className="mt-0.5 shrink-0" />
             {obra.congelada_antes ? "El cambio se parece" : "Se parece"} a otra obra y espera aprobación. Mientras tanto no
             cambia de estado, no se transfiere ni se vinculan contactos.
           </p>
@@ -169,7 +169,7 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
           <ul className="flex flex-col rounded-lg border border-border bg-bg-surface">
             {participantes.map((p) => (
               <li key={p.id} className="row flex items-center gap-3 border-b border-border last:border-b-0">
-                <UserRound size={14} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+                <UserRound size={14} className="shrink-0 text-text-tertiary" />
                 <p className="t-body-m min-w-0 flex-1 truncate">{nombre(p.usuario_id)}</p>
                 {aCargo && (
                   <button
@@ -177,7 +177,7 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
                     onClick={() => setQuitando({ id: p.id, nombre: nombre(p.usuario_id) })}
                     aria-label={`Quitar a ${nombre(p.usuario_id)}`}
                   >
-                    <X size={16} strokeWidth={1.75} />
+                    <X size={16} />
                   </button>
                 )}
               </li>

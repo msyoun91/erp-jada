@@ -25,7 +25,7 @@ export function WidgetCard({ titulo, icono, href, columnas, accion, children }: 
       className={`card ${href ? "card-link" : ""} ${columnas === 2 ? "sm:col-span-2" : ""}`}
     >
       <div className="mb-3 flex items-center gap-2">
-        <Icon size={16} strokeWidth={1.75} className="text-brand-500 shrink-0" />
+        <Icon size={16} className="text-brand-500 shrink-0" />
         <p className="t-label flex-1">{titulo}</p>
         {accion}
       </div>

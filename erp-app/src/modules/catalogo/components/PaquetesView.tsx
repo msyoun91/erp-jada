@@ -80,7 +80,7 @@ export function PaquetesView({
                     {v.nombre} · v{v.numero}
                   </span>
                   <span className="t-caption shrink-0">{nombreCategoria.get(v.categoria_id)}</span>
-                  <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+                  <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
                 </Link>
               </li>
             ))}
@@ -88,7 +88,7 @@ export function PaquetesView({
         </section>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-3">
         {puedeArmar && (
           <button className="btn btn-primary" onClick={() => setCreando(true)}>
             <Plus size={16} />
@@ -104,7 +104,7 @@ export function PaquetesView({
           items={[
             {
               label: "Categorías",
-              icon: <Tags size={14} strokeWidth={1.75} />,
+              icon: <Tags size={14} />,
               onClick: () => setVerCategorias(true),
             },
           ]}
@@ -192,7 +192,7 @@ export function PaquetesView({
                     >
                       {ESTADOS.find((x) => x.valor === e)?.label}
                     </span>
-                    <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+                    <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
                   </Link>
                 </li>
               );

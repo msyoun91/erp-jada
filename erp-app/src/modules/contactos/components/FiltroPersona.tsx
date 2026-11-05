@@ -17,7 +17,7 @@ export function FiltroPersona({ base }: { base: string }) {
   if (!abierto) {
     return (
       <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAbierto(true)}>
-        <UserRound size={14} strokeWidth={1.75} />
+        <UserRound size={14} />
         Filtrar por persona
       </button>
     );

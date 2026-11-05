@@ -1,6 +1,4 @@
-import { ListTodo } from "lucide-react";
-import { Breadcrumb } from "@/components/layout/Breadcrumb";
-import { ModuleTabs } from "@/components/layout/ModuleTabs";
+import { Modulo } from "@/components/layout/Modulo";
 import { puedeVerEquipo, puedeVerMision, puedeVerPlantillas, puedeVerTareas, puedeVerTodas } from "@/modules/tareas/permissions";
 
 export default async function TareasLayout({ children }: { children: React.ReactNode }) {
@@ -20,14 +18,8 @@ export default async function TareasLayout({ children }: { children: React.React
   ];
 
   return (
-    <div className="flex flex-col h-full">
-      <Breadcrumb modulo="tareas" tabs={tabs} />
-      <h1 className="t-h1 mb-4 flex items-center gap-2.5">
-        <ListTodo size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
-        Tareas
-      </h1>
-      <ModuleTabs modulo="tareas" tabs={tabs} />
+    <Modulo modulo="tareas" tabs={tabs}>
       {children}
-    </div>
+    </Modulo>
   );
 }

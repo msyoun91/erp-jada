@@ -254,7 +254,7 @@ export function NotificacionesBell({ notificaciones }: { notificaciones: Notific
         className="icon-btn relative text-text-tertiary hover:text-text-secondary"
         aria-label={sinLeer > 0 ? `Notificaciones (${sinLeer} sin leer)` : "Notificaciones"}
       >
-        <Bell size={18} strokeWidth={1.75} />
+        <Bell size={18} />
         {sinLeer > 0 && (
           <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-semibold text-white">
             {sinLeer > 9 ? "9+" : sinLeer}
@@ -303,7 +303,6 @@ export function NotificacionesBell({ notificaciones }: { notificaciones: Notific
                       >
                         <Icono
                           size={18}
-                          strokeWidth={1.75}
                           className={`mt-0.5 shrink-0 ${COLOR[n.tipo]}`}
                         />
                         <span className="min-w-0 flex-1">

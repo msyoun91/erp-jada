@@ -5,7 +5,7 @@ import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { ENTES, labelRol, type CodigoEnte } from "@/lib/entes";
 import { guardarPlantilla } from "../actions";
 import { nombreEnte, textoAccion, textoCompleta, textoCondicion, textoDisparo } from "../etiquetas";
@@ -163,17 +163,7 @@ export function PlantillaFormPanel({
       title={plantilla ? "Editar plantilla" : "Nueva plantilla"}
       onClose={onClose}
       hayCambios={isDirty}
-      footer={
-        <>
-          <div className="flex-1" />
-          <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={enviando}>
-            Cancelar
-          </button>
-          <button type="submit" form={FORM_ID} className="btn btn-primary btn-sm" disabled={enviando}>
-            {enviando ? "Guardando…" : plantilla ? "Guardar" : "Crear plantilla"}
-          </button>
-        </>
-      }
+      footer={<PiePanel confirmar={plantilla ? "Guardar" : "Crear plantilla"} enviando={enviando} onCancelar={onClose} form={FORM_ID} />}
     >
       <form
         id={FORM_ID}

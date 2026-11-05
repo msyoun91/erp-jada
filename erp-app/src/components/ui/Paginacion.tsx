@@ -57,7 +57,7 @@ export function Paginacion({
             disabled={pagina === 0}
             aria-label="Página anterior"
           >
-            <ChevronLeft size={16} strokeWidth={1.75} />
+            <ChevronLeft size={16} />
           </button>
           <span className="t-caption">
             {pagina + 1} / {totalPaginas}
@@ -68,7 +68,7 @@ export function Paginacion({
             disabled={pagina >= totalPaginas - 1}
             aria-label="Página siguiente"
           >
-            <ChevronRight size={16} strokeWidth={1.75} />
+            <ChevronRight size={16} />
           </button>
         </div>
       )}

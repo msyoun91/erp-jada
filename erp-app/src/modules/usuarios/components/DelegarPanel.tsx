@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { delegarSubmodulos } from "../actions";
 import type { Miembro, Otorgamiento, Submodulo } from "../types";
 import { labelModulo } from "./PermisosPanel";
@@ -118,7 +118,6 @@ export function DelegarPanel({
         {!esVista && s.vista_id && marcado(s.id) && !marcado(s.vista_id) && (
           <AlertTriangle
             size={14}
-            strokeWidth={1.75}
             className="shrink-0 text-warning-text"
             aria-label="Requiere que su vista esté autorizada"
           />
@@ -135,23 +134,18 @@ export function DelegarPanel({
       hayCambios={cambios > 0}
       footer={
         puedeDelegar ? (
-          <>
-            <div className="flex-1 t-caption">
-              {huerfanas > 0
+          <PiePanel
+            confirmar="Guardar"
+            enviando={enviando}
+            onCancelar={onClose}
+            onConfirmar={guardar}
+            deshabilitado={cambios === 0 || huerfanas > 0}
+            nota={
+              huerfanas > 0
                 ? `${huerfanas} función${huerfanas !== 1 ? "es" : ""} sin su vista`
-                : cambios > 0 && `${cambios} cambio${cambios !== 1 ? "s" : ""} pendiente${cambios !== 1 ? "s" : ""}`}
-            </div>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
-              Cancelar
-            </button>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={guardar}
-              disabled={enviando || cambios === 0 || huerfanas > 0}
-            >
-              {enviando ? "Guardando…" : "Guardar"}
-            </button>
-          </>
+                : cambios > 0 && `${cambios} cambio${cambios !== 1 ? "s" : ""} pendiente${cambios !== 1 ? "s" : ""}`
+            }
+          />
         ) : undefined
       }
     >

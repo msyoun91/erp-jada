@@ -30,9 +30,9 @@ export function DespieceResultado({
   return (
     <div className="flex flex-col gap-4">
       {resultado.errores.length > 0 && (
-        <div className="rounded-md bg-error-bg p-3 text-error-text">
-          <p className="t-body-m font-semibold">{resultado.mensaje ?? "No se puede calcular"}</p>
-          <ul className="t-body-m mt-1 list-disc pl-5">
+        <div className="alert alert-error">
+          <p className="font-semibold">{resultado.mensaje ?? "No se puede calcular"}</p>
+          <ul className="mt-1 list-disc pl-5">
             {resultado.errores.map((e) => (
               <li key={e}>{e}</li>
             ))}
@@ -48,9 +48,9 @@ export function DespieceResultado({
               className={`t-body-m flex items-start gap-2 ${m.bloquea ? "text-error-text" : "text-warning-text"}`}
             >
               {m.bloquea ? (
-                <CircleAlert size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+                <CircleAlert size={16} className="mt-0.5 shrink-0" />
               ) : (
-                <TriangleAlert size={16} strokeWidth={1.75} className="mt-0.5 shrink-0" />
+                <TriangleAlert size={16} className="mt-0.5 shrink-0" />
               )}
               {m.bloquea ? "Bloquea: " : ""}
               {m.mensaje}

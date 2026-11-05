@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { ArrowLeft, Eye, Link2, UserRound } from "lucide-react";
+import { Eye, Link2, UserRound } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
 import { ConfirmModal } from "@/components/ui/Modal";
+import { Volver } from "@/components/ui/Volver";
 import { labelRol } from "@/lib/entes";
 import { formatFecha } from "@/lib/utils";
 import { resolverContacto, verContacto } from "../actions";
@@ -97,7 +97,7 @@ function Tarjeta({ c }: { c: PorAprobar }) {
       </div>
       <div className="t-caption flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="flex items-center gap-1" title={persona ? "Dueño" : "La cargó"}>
-          <UserRound size={12} strokeWidth={1.75} />
+          <UserRound size={12} />
           {c.dueno}
           {c.equipo && ` · ${c.equipo}`} · {formatFecha(c.created_at)}
         </span>
@@ -123,7 +123,7 @@ function Tarjeta({ c }: { c: PorAprobar }) {
       {c.notas && <p className="t-body-m whitespace-pre-wrap">{c.notas}</p>}
       {c.guardados.length > 0 && (
         <p className="t-caption flex items-center gap-1">
-          <Link2 size={12} strokeWidth={1.75} className="shrink-0" />
+          <Link2 size={12} className="shrink-0" />
           Al aprobarla se vincula {c.guardados.map(textoGuardado).join("; ")}.
         </p>
       )}
@@ -198,10 +198,7 @@ function Tarjeta({ c }: { c: PorAprobar }) {
 export function PorAprobarView({ contactos }: { contactos: PorAprobar[] }) {
   return (
     <div className="flex flex-col gap-4">
-      <Link href="/contactos" className="t-body-m flex w-fit items-center gap-1 text-text-secondary hover:text-text-primary">
-        <ArrowLeft size={14} />
-        Contactos
-      </Link>
+      <Volver href="/contactos">Contactos</Volver>
       {contactos.length === 0 ? (
         <div className="empty-state">
           <p className="t-h3">Nada por aprobar</p>

@@ -5,7 +5,7 @@ import { Link2 } from "lucide-react";
 import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { crearPaso, editarPaso, insertarPasoAntes } from "../actions";
 import { REFERENCIA } from "../derivados";
 import { editarPasoSchema, insertarAntesSchema, pasoSchema, type RegistroEncontrado, type Tarea } from "../types";
@@ -133,17 +133,7 @@ export function PasoFormPanel({ modo, yo, onClose }: { modo: ModoPaso; yo: strin
       subtitle={modo.tipo === "antes" ? `Antes de "${modo.siguiente.titulo}"` : undefined}
       onClose={onClose}
       hayCambios={isDirty}
-      footer={
-        <>
-          <div className="flex-1" />
-          <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={enviando}>
-            Cancelar
-          </button>
-          <button type="submit" form={FORM_ID} className="btn btn-primary btn-sm" disabled={enviando}>
-            {enviando ? "Guardando…" : modo.tipo === "editar" ? "Guardar" : "Sumar paso"}
-          </button>
-        </>
-      }
+      footer={<PiePanel confirmar={modo.tipo === "editar" ? "Guardar" : "Sumar paso"} enviando={enviando} onCancelar={onClose} form={FORM_ID} />}
     >
       <form
         id={FORM_ID}

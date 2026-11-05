@@ -1,6 +1,4 @@
-import { Contact } from "lucide-react";
-import { Breadcrumb } from "@/components/layout/Breadcrumb";
-import { ModuleTabs } from "@/components/layout/ModuleTabs";
+import { Modulo } from "@/components/layout/Modulo";
 import { puedeAuditar, puedeVerContactos } from "@/modules/contactos/permissions";
 
 // Auditoría es una vista aparte: el auditor no necesita ver la agenda.
@@ -17,14 +15,8 @@ export default async function ContactosLayout({ children }: { children: React.Re
   ];
 
   return (
-    <div className="flex flex-col h-full">
-      <Breadcrumb modulo="contactos" tabs={tabs} />
-      <h1 className="t-h1 mb-4 flex items-center gap-2.5">
-        <Contact size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
-        Contactos
-      </h1>
-      <ModuleTabs modulo="contactos" tabs={tabs} />
+    <Modulo modulo="contactos" tabs={tabs}>
       {children}
-    </div>
+    </Modulo>
   );
 }

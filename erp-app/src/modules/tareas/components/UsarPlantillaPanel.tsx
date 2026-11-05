@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { ENTES, labelRol, type CodigoEnte } from "@/lib/entes";
 import { rolesDeRegistro, usarPlantilla } from "../actions";
 import { motivoRevisar } from "../derivados";
@@ -108,21 +108,14 @@ export function UsarPlantillaPanel({
       subtitle={hiloId ? "Suma sus pasos a este hilo" : "Crea un hilo con sus pasos"}
       onClose={onClose}
       footer={
-        <>
-          <div className="flex-1" />
-          <button type="button" className="btn btn-secondary btn-sm" onClick={onClose} disabled={enviando}>
-            Cancelar
-          </button>
-          <button
-            type="submit"
+          <PiePanel
+            confirmar={hiloId ? "Sumar pasos" : "Crear hilo"}
+            enviando={enviando}
+            onCancelar={onClose}
             form={FORM_ID}
-            className="btn btn-primary btn-sm"
-            disabled={enviando || !plantilla || (sobre !== null && !registro)}
-          >
-            {enviando ? "Guardando…" : hiloId ? "Sumar pasos" : "Crear hilo"}
-          </button>
-        </>
-      }
+            deshabilitado={!plantilla || (sobre !== null && !registro)}
+          />
+        }
     >
       <form
         id={FORM_ID}

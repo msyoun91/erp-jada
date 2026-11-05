@@ -61,7 +61,7 @@ export function MiEquipoView({
               {permisos[miembro.id]?.some((p) => p.submodulo_id === idDelegar) && (
                 <span className="badge badge-info shrink-0">Delegador</span>
               )}
-              {!miembro.activo && <span className="badge badge-neutral shrink-0">Inactivo</span>}
+              {!miembro.activo && <span className="badge badge-neutral shrink-0">Desactivado</span>}
               {!esYo && (
                 <button
                   type="button"

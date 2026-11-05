@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, Search } from "lucide-react";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { LABEL_MAP } from "@/components/layout/SidebarNav";
 import { asignarSubmodulos } from "../actions";
 import type { Submodulo, SubmoduloRegla, Usuario } from "../types";
@@ -121,7 +121,7 @@ export function PermisosPanel({
     if (problema) {
       return (
         <span className="flex min-w-0 items-center gap-1 text-warning-text" title={problema}>
-          <AlertTriangle size={14} strokeWidth={1.75} className="shrink-0" aria-hidden />
+          <AlertTriangle size={14} className="shrink-0" aria-hidden />
           <span className="truncate t-caption text-warning-text">{problema}</span>
         </span>
       );
@@ -206,24 +206,19 @@ export function PermisosPanel({
       subtitle={usuario.nombre}
       onClose={onClose}
       footer={
-        <>
-          <div className="flex-1 t-caption">
-            {problemas.size > 0
+        <PiePanel
+          confirmar="Guardar"
+          enviando={enviando}
+          onCancelar={onClose}
+          onConfirmar={guardar}
+          deshabilitado={cambiosPendientes === 0 || problemas.size > 0}
+          nota={
+            problemas.size > 0
               ? `${problemas.size} permiso${problemas.size !== 1 ? "s" : ""} por resolver`
               : cambiosPendientes > 0 &&
-                `${cambiosPendientes} cambio${cambiosPendientes !== 1 ? "s" : ""} pendiente${cambiosPendientes !== 1 ? "s" : ""}`}
-          </div>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
-            Cancelar
-          </button>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={guardar}
-            disabled={enviando || cambiosPendientes === 0 || problemas.size > 0}
-          >
-            {enviando ? "Guardando…" : "Guardar"}
-          </button>
-        </>
+                `${cambiosPendientes} cambio${cambiosPendientes !== 1 ? "s" : ""} pendiente${cambiosPendientes !== 1 ? "s" : ""}`
+          }
+        />
       }
     >
       {otros.length > 0 && (
@@ -256,7 +251,6 @@ export function PermisosPanel({
           <div className="relative">
             <Search
               size={14}
-              strokeWidth={1.75}
               className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-tertiary"
             />
             <input

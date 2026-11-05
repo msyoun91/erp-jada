@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { quitarDelegador } from "../actions";
 import type { Submodulo, Usuario } from "../types";
 import { labelModulo } from "./PermisosPanel";
@@ -65,24 +65,13 @@ export function QuitarDelegadorPanel({
       onClose={onClose}
       hayCambios={herederoId !== "" || noCopiar.size > 0}
       footer={
-        <>
-          <div className="flex-1" />
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={onClose}
-            disabled={enviando}
-          >
-            Cancelar
-          </button>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={guardar}
-            disabled={enviando || (!sinHeredero && !herederoId)}
-          >
-            {enviando ? "Guardando…" : "Quitar delegador"}
-          </button>
-        </>
+        <PiePanel
+          confirmar="Quitar delegador"
+          enviando={enviando}
+          onCancelar={onClose}
+          onConfirmar={guardar}
+          deshabilitado={!sinHeredero && !herederoId}
+        />
       }
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">

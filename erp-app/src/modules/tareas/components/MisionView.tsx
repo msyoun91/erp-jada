@@ -237,7 +237,7 @@ function Esperando({ pasos, motivo }: { pasos: PasoMision[]; motivo: (p: PasoMis
   return (
     <div className="flex flex-col gap-2">
       <button className="btn btn-ghost btn-sm self-start" onClick={() => setAbierto(!abierto)}>
-        <Clock size={14} strokeWidth={1.75} />
+        <Clock size={14} />
         {pasos.length} {pasos.length === 1 ? "paso esperando" : "pasos esperando"}
         {abierto ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
@@ -255,7 +255,7 @@ function Esperando({ pasos, motivo }: { pasos: PasoMision[]; motivo: (p: PasoMis
                   {p.tareas_hilos.titulo} · {motivo(p)}
                 </p>
               </div>
-              <ChevronRight size={16} strokeWidth={1.75} className="shrink-0 text-text-tertiary" />
+              <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
             </Link>
           ))}
         </div>

@@ -79,7 +79,7 @@ export function EquiposView({
       return [
         {
           label: "Quitar delegador",
-          icon: <ShieldOff size={14} strokeWidth={1.75} />,
+          icon: <ShieldOff size={14} />,
           onClick: () => setSaliente(usuario),
         },
       ];
@@ -89,14 +89,14 @@ export function EquiposView({
         ? [
             {
               label: "Hacer delegador",
-              icon: <ShieldCheck size={14} strokeWidth={1.75} />,
+              icon: <ShieldCheck size={14} />,
               onClick: () => ejecutar(designarDelegador(usuario.id), `${usuario.nombre} es el delegador`),
             },
           ]
         : []),
       {
         label: "Sacar del equipo",
-        icon: <LogOut size={14} strokeWidth={1.75} />,
+        icon: <LogOut size={14} />,
         onClick: () => {
           setAgendaAlJefe(true);
           setSacando({ usuario, equipo });
@@ -153,17 +153,17 @@ export function EquiposView({
                       items={[
                         {
                           label: "Agregar miembro",
-                          icon: <UserPlus size={14} strokeWidth={1.75} />,
+                          icon: <UserPlus size={14} />,
                           onClick: () => setAgregandoA(equipo),
                         },
                         {
                           label: "Renombrar",
-                          icon: <Pencil size={14} strokeWidth={1.75} />,
+                          icon: <Pencil size={14} />,
                           onClick: () => setEditando(equipo),
                         },
                         {
                           label: "Desactivar",
-                          icon: <Archive size={14} strokeWidth={1.75} />,
+                          icon: <Archive size={14} />,
                           onClick: () => setDesactivando(equipo),
                           destructive: true,
                         },
@@ -187,7 +187,7 @@ export function EquiposView({
                     {tiene(usuario.id, idDelegar) && (
                       <span className="badge badge-info shrink-0">Delegador</span>
                     )}
-                    {!usuario.activo && <span className="badge badge-neutral shrink-0">Inactivo</span>}
+                    {!usuario.activo && <span className="badge badge-neutral shrink-0">Desactivado</span>}
                     {puedeGestionar && (
                       <OverflowMenu items={itemsMiembro(usuario, equipo, hayDelegador)} />
                     )}
@@ -222,7 +222,7 @@ export function EquiposView({
                     items={[
                       {
                         label: "Reactivar",
-                        icon: <ArchiveRestore size={14} strokeWidth={1.75} />,
+                        icon: <ArchiveRestore size={14} />,
                         onClick: () => ejecutar(cambiarEstadoEquipo(equipo.id, true), "Equipo reactivado"),
                       },
                     ]}

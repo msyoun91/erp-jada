@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { crearYVincular, vincular } from "../actions";
 import { crearYVincularSchema, type CrearYVincularForm, type Vinculable } from "../types";
 import { BuscadorVinculables, EmpresaSelector, type EmpresaElegida, type TipoContacto } from "./Buscador";
@@ -63,15 +63,13 @@ export function VincularPanel({
       hayCambios={creando !== null}
       footer={
         creando && (
-          <>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setCreando(null)} disabled={enviando}>
-              Volver a buscar
-            </button>
-            <div className="flex-1" />
-            <button type="submit" form={FORM_ID} className="btn btn-primary btn-sm" disabled={enviando}>
-              {enviando ? "Guardando…" : "Crear y vincular"}
-            </button>
-          </>
+          <PiePanel
+            confirmar="Crear y vincular"
+            enviando={enviando}
+            cancelar="Volver a buscar"
+            onCancelar={() => setCreando(null)}
+            form={FORM_ID}
+          />
         )
       }
     >

@@ -151,13 +151,13 @@ export function EmpresaView({
           {menu.length > 0 && <OverflowMenu items={menu} />}
         </div>
         <p className="t-caption flex items-center gap-1" title="Equipo">
-          <UsersRound size={12} strokeWidth={1.75} />
+          <UsersRound size={12} />
           {empresa.equipo_id ? (nombres[empresa.equipo_id] ?? "—") : `Sin equipo · la cargó ${nombre(empresa.creado_por)}`}
         </p>
         {compartidaCon.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             <span className="t-caption flex items-center gap-1">
-              <Share2 size={12} strokeWidth={1.75} />
+              <Share2 size={12} />
               Compartida con
             </span>
             {compartidaCon.map((c) => (
@@ -182,19 +182,19 @@ export function EmpresaView({
         <div className="flex flex-col gap-1">
           {empresa.telefono && (
             <a href={`tel:${empresa.telefono}`} className="t-body-m flex items-center gap-2 text-text-brand">
-              <Phone size={14} strokeWidth={1.75} />
+              <Phone size={14} />
               {empresa.telefono}
             </a>
           )}
           {empresa.email && (
             <a href={`mailto:${empresa.email}`} className="t-body-m flex items-center gap-2 text-text-brand">
-              <Mail size={14} strokeWidth={1.75} />
+              <Mail size={14} />
               {empresa.email}
             </a>
           )}
           {empresa.web && (
             <p className="t-body-m flex items-center gap-2">
-              <Globe size={14} strokeWidth={1.75} />
+              <Globe size={14} />
               {empresa.web}
             </p>
           )}

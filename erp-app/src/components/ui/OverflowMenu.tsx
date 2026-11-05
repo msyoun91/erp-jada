@@ -66,7 +66,7 @@ export function OverflowMenu({
         aria-label="Más acciones"
         aria-expanded={abierto}
       >
-        <MoreHorizontal size={14} strokeWidth={1.75} />
+        <MoreHorizontal size={14} />
       </button>
       {pos && (
         <div

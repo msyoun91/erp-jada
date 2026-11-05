@@ -14,26 +14,39 @@ El sistema se usa desde celular en obra y en oficina.
 
 ## Encabezado de módulo
 
-Todo módulo tiene un `<Breadcrumb>` (`Módulo / Vista`) y un `<h1>` con ícono + nombre, en ese orden, antes de los tabs. Estructura obligatoria en el `layout.tsx` del módulo:
+Toda pantalla de `(erp-app)` —módulos, Inicio y Mi perfil— va dentro de `<Modulo>`
+(`components/layout/Modulo.tsx`): `<Breadcrumb>` (`Módulo / Vista`), `<h1>` con ícono + nombre y tabs,
+en ese orden. El `layout.tsx` del módulo queda así:
 
 ```tsx
-import { IconName } from 'lucide-react'
-import { Breadcrumb } from '@/components/layout/Breadcrumb'
+import { Modulo } from "@/components/layout/Modulo";
 
-<div className="flex flex-col h-full">
-  <Breadcrumb modulo="nombre" tabs={tabs} />
-  <h1 className="t-h1 mb-4 flex items-center gap-2.5">
-    <IconName size={28} strokeWidth={1.75} className="text-brand-500 shrink-0" />
-    Nombre del Módulo
-  </h1>
-  <ModuleTabs modulo="nombre" tabs={tabs} />
+<Modulo modulo="nombre" tabs={tabs}>
   {children}
-</div>
+</Modulo>
 ```
 
-- Ícono y label del `<h1>`: del `ICON_MAP` y `LABEL_MAP` de `SidebarNav.tsx` — misma fuente de verdad. Nunca uno distinto al del nav
-- El `<Breadcrumb>` reusa `LABEL_MAP` para el módulo y la tab activa (`tabActiva`, misma lógica que `ModuleTabs`) para la vista; con una sola tab muestra solo el módulo
-- La hoja de detalle (nombre de la obra/persona) no la muestra el breadcrumb del layout: las fichas de obras usan su propio `modules/obras/components/Breadcrumb` (ver `decisiones/obras/ui.md`)
+- Ícono y nombre salen del `ICON_MAP` y `LABEL_MAP` de `SidebarNav.tsx`: un módulo nuevo se suma ahí y en
+  ningún otro lado. No escribir el `<h1>` a mano
+- `accion` pone un control a la derecha del título (Configurar, en Inicio)
+- El `<Breadcrumb>` reusa `LABEL_MAP` para el módulo y la tab activa (`tabActiva`, misma lógica que `ModuleTabs`)
+  para la vista; con una sola tab muestra solo el módulo. No navega: la vuelta de una ficha es `<Volver>`
+
+## Ficha de detalle: vuelta al listado
+
+Toda ficha con ruta propia (`/obras/[id]`, `/catalogo/porcentajes/[id]`, …) arranca con
+`<Volver href="/listado">Listado</Volver>` (`components/ui/Volver.tsx`). Va en el `page.tsx` y no en el
+componente de la ficha cuando esa ficha también se abre al lado de un paso de Tareas.
+
+## Barra de un listado: acciones arriba, filtros abajo
+
+Primero una fila con las acciones —el primario (`Nuevo …`) primero, después los secundarios y el `⋯`—, y
+debajo otra con buscador y filtros. Las dos `mb-4 flex flex-wrap items-center gap-3`. Así el primario está
+siempre en el mismo lugar, y en el celular no queda enterrado debajo del buscador. Una acción que depende de
+la vista elegida igual se muestra siempre: si aparece y desaparece, la fila de abajo salta.
+
+Elegir entre pocas vistas o períodos es un `.segmented` (`globals.css`): botones con `aria-pressed` o links
+con `aria-current`, que es lo que marca el elegido. No `btn-primary`: eso es una acción.
 
 ## Server → Client boundary
 
@@ -54,6 +67,9 @@ Todo formulario tiene tres estados:
 - **Toasts** (Sonner) para confirmaciones rápidas de acciones
 - **Mensajes inline** para errores de formulario
 - El usuario nunca se queda preguntando si algo funcionó
+- **Avisos en pantalla** (algo espera aprobación, lo que frena un envío, un error de cálculo): `.alert` +
+  `.alert-warning|error|success|info`. El aviso fija el color del texto: adentro no va `t-body-m`, que lo
+  repinta de `text-secondary`
 - Los errores de Supabase siempre se traducen a español comprensible (`mensajeError()` de `lib/utils.ts`). Nunca mostrar errores técnicos en pantalla
 
 ## Acciones: esperar al servidor, sin optimistic updates
@@ -63,6 +79,10 @@ No hay `useOptimistic` en la app. Una acción espera la server action con el bot
 ## Crear y editar: panel lateral, no modal
 
 `RightPanel.tsx` (`components/ui/`) es el patrón para formularios de creación/edición. Crear/editar es una tarea de mayor foco y duración, y el panel lateral no bloquea el contexto de la lista de atrás.
+
+El pie es `<PiePanel>` (en `RightPanel.tsx`): la salida y el primario a la derecha, en `btn-sm`, con
+"Guardando…" mientras espera. A la izquierda, `nota` para lo que falta o lo que va a cambiar. No armar el
+pie a mano.
 
 Las confirmaciones sí son modal (`Modal.tsx` / `ConfirmModal`): son una interrupción corta y ahí el modal es más directo.
 
@@ -82,7 +102,19 @@ Nunca ejecutar sin que el usuario confirme.
 ## Estado vacío
 
 Toda pantalla tiene un estado vacío definido.
-Si no hay datos: mostrar mensaje claro que explique por qué y qué hacer.
+Si no hay datos: mostrar mensaje claro que explique por qué y qué hacer. Siempre título (`t-h3`) + texto
+(`t-body-m mt-1`) dentro de `.empty-state`; "Sin X todavía" si no hay nada y "Sin resultados" si lo vació
+un filtro.
+
+## Íconos
+
+El trazo es uno solo, 1.75, y lo pone el `LucideProvider` de `app/layout.tsx`: no escribir `strokeWidth`
+salvo para apartarse a propósito (los íconos grandes de un estado vacío van en 1.5).
+
+## Estado desactivado
+
+La acción es "Desactivar" y el estado, "Desactivado/a" (badge `badge-neutral`, filtro "Desactivados"). No
+"Inactivo". Catálogo dice "Dar de baja" / "De baja", que es el término del negocio ahí.
 
 ## Sidebar
 

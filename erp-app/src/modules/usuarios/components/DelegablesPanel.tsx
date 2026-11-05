@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { RightPanel } from "@/components/ui/RightPanel";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { fijarDelegables } from "../actions";
 import type { Submodulo } from "../types";
 import { labelModulo } from "./PermisosPanel";
@@ -59,27 +59,14 @@ export function DelegablesPanel({
       onClose={onClose}
       hayCambios={hayCambios}
       footer={
-        <>
-          <div className="flex-1 t-caption">
-            {quitados > 0 &&
-              `Desmarcar revoca lo que ya se delegó de ${quitados === 1 ? "ese permiso" : "esos permisos"}`}
-          </div>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={onClose}
-            disabled={enviando}
-          >
-            Cancelar
-          </button>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={guardar}
-            disabled={enviando || !hayCambios}
-          >
-            {enviando ? "Guardando…" : "Guardar"}
-          </button>
-        </>
+        <PiePanel
+          confirmar="Guardar"
+          enviando={enviando}
+          onCancelar={onClose}
+          onConfirmar={guardar}
+          deshabilitado={!hayCambios}
+          nota={quitados > 0 && `Desmarcar revoca lo que ya se delegó de ${quitados === 1 ? "ese permiso" : "esos permisos"}`}
+        />
       }
     >
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
