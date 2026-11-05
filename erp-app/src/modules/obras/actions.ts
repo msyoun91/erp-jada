@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { Database } from "@/lib/supabase/database.types";
 import { argsRpc } from "@/lib/supabase/rpc";
 import { createClient } from "@/lib/supabase/server";
-import { mensajeError } from "@/lib/utils";
+import { errorDeUpdate, mensajeError } from "@/lib/utils";
 import { idSchema } from "@/lib/validacion";
 import {
   altaSchema,
@@ -41,12 +41,15 @@ function listo() {
   return { success: true as const };
 }
 
+function trasUpdate(error: string | null) {
+  return error ? { success: false as const, error } : listo();
+}
+
 async function editarFila(id: unknown, cambios: Database["public"]["Tables"]["obras"]["Update"]) {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase.from("obras").update(cambios).eq("id", parsed.data);
-  return error ? fallo(error) : listo();
+  return trasUpdate(errorDeUpdate(await supabase.from("obras").update(cambios, { count: "exact" }).eq("id", parsed.data)));
 }
 
 export async function crearObra(input: AltaForm) {
@@ -128,8 +131,9 @@ export async function quitarParticipante(id: string) {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase.from("obras_participantes").update({ activo: false }).eq("id", parsed.data);
-  return error ? fallo(error) : listo();
+  return trasUpdate(
+    errorDeUpdate(await supabase.from("obras_participantes").update({ activo: false }, { count: "exact" }).eq("id", parsed.data))
+  );
 }
 
 // Reemplaza la vigente (`obras_registrar_comision`): no se edita.

@@ -151,27 +151,31 @@ export async function desactivarUsuario(usuarioId: string) {
     return { success: false as const, error: "No podés desactivar tu propia cuenta" };
   }
 
+  // `activo = false` le saca los permisos (`tiene_permiso`, `sql/020`) y el
+  // proxy lo echa del ERP, pero su access token sigue siendo válido hasta que
+  // expire: sin el ban entra igual por la API con lo que RLS le concede por
+  // `auth.uid()`. El ban además rechaza el login nuevo.
+  //
+  // El ban va primero: el UPDATE dispara las bajas (`sql/114`, `sql/133`) —sus
+  // hilos, su agenda y sus obras pasan a otro, salen avisos— y volver `activo`
+  // no las deshace. Levantar el ban, en cambio, no deja rastro.
   const admin = createAdminClient();
+  const { error: banError } = await admin.auth.admin.updateUserById(usuarioId, {
+    ban_duration: BAN_INDEFINIDO,
+  });
+
+  if (banError) {
+    return { success: false as const, error: mensajeError(banError) };
+  }
+
   const { error } = await admin
     .from("usuarios")
     .update({ activo: false })
     .eq("id", usuarioId);
 
   if (error) {
+    await admin.auth.admin.updateUserById(usuarioId, { ban_duration: "none" });
     return { success: false as const, error: mensajeError(error) };
-  }
-
-  // `activo = false` le saca los permisos (`tiene_permiso`, `sql/020`) y el
-  // proxy lo echa del ERP, pero su access token sigue siendo válido hasta que
-  // expire: sin el ban entra igual por la API con lo que RLS le concede por
-  // `auth.uid()`. El ban además rechaza el login nuevo.
-  const { error: banError } = await admin.auth.admin.updateUserById(usuarioId, {
-    ban_duration: BAN_INDEFINIDO,
-  });
-
-  if (banError) {
-    await admin.from("usuarios").update({ activo: true }).eq("id", usuarioId);
-    return { success: false as const, error: mensajeError(banError) };
   }
 
   revalidatePath("/usuarios", "layout");
@@ -183,13 +187,24 @@ export async function reactivarUsuario(usuarioId: string) {
     return { success: false as const, error: "No autorizado" };
   }
 
+  // Al revés que desactivar, y por lo mismo: si `activo` falla se vuelve a
+  // banear, mientras que volver `activo` a false correría la baja otra vez.
   const admin = createAdminClient();
+  const { error: banError } = await admin.auth.admin.updateUserById(usuarioId, {
+    ban_duration: "none",
+  });
+
+  if (banError) {
+    return { success: false as const, error: mensajeError(banError) };
+  }
+
   const { error } = await admin
     .from("usuarios")
     .update({ activo: true })
     .eq("id", usuarioId);
 
   if (error) {
+    await admin.auth.admin.updateUserById(usuarioId, { ban_duration: BAN_INDEFINIDO });
     // `idx_usuarios_email_activo` es parcial (WHERE activo): mientras estuvo
     // desactivado, ese email pudo darse de alta en otra cuenta.
     if ((error as { code?: string }).code === "23505") {
@@ -199,15 +214,6 @@ export async function reactivarUsuario(usuarioId: string) {
       };
     }
     return { success: false as const, error: mensajeError(error) };
-  }
-
-  const { error: banError } = await admin.auth.admin.updateUserById(usuarioId, {
-    ban_duration: "none",
-  });
-
-  if (banError) {
-    await admin.from("usuarios").update({ activo: false }).eq("id", usuarioId);
-    return { success: false as const, error: mensajeError(banError) };
   }
 
   revalidatePath("/usuarios", "layout");

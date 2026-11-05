@@ -70,6 +70,13 @@ export function mensajeError(error: unknown): string {
   return (codigo && MENSAJES_ERROR[codigo]) || "No se pudo completar la operación. Intentá de nuevo.";
 }
 
+// Un UPDATE que la RLS filtra no falla: afecta 0 filas (GUIDE_DB.md → Trampas de RLS).
+// Con `{ count: "exact" }`, cero filas también es error: la fila cambió o dejó de verse.
+export function errorDeUpdate({ error, count }: { error: unknown; count: number | null }): string | null {
+  if (error) return mensajeError(error);
+  return count === 0 ? "No se guardó: el registro cambió o ya no lo ves. Recargá la página." : null;
+}
+
 // Iniciales para avatares: dos letras del nombre, o de nombre y apellido.
 export function initials(nombre: string): string {
   const parts = nombre.trim().split(" ");

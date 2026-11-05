@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { Database } from "@/lib/supabase/database.types";
 import { argsRpc } from "@/lib/supabase/rpc";
 import { createClient } from "@/lib/supabase/server";
-import { mensajeError } from "@/lib/utils";
+import { errorDeUpdate, mensajeError } from "@/lib/utils";
 import { idSchema } from "@/lib/validacion";
 import {
   buscarDeEnteSchema,
@@ -60,20 +60,22 @@ function listo() {
   return { success: true as const };
 }
 
+function trasUpdate(error: string | null) {
+  return error ? { success: false as const, error } : listo();
+}
+
 async function editarHiloFila(id: unknown, cambios: Tablas["tareas_hilos"]["Update"]) {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase.from("tareas_hilos").update(cambios).eq("id", parsed.data);
-  return error ? fallo(error) : listo();
+  return trasUpdate(errorDeUpdate(await supabase.from("tareas_hilos").update(cambios, { count: "exact" }).eq("id", parsed.data)));
 }
 
 async function editarPasoFila(id: unknown, cambios: Tablas["tareas"]["Update"]) {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase.from("tareas").update(cambios).eq("id", parsed.data);
-  return error ? fallo(error) : listo();
+  return trasUpdate(errorDeUpdate(await supabase.from("tareas").update(cambios, { count: "exact" }).eq("id", parsed.data)));
 }
 
 // ---------- Hilos ----------
@@ -186,8 +188,9 @@ export async function insertarPasoAntes(input: InsertarAntesForm) {
 export async function editarPaso(input: EditarPasoForm) {
   const parsed = editarPasoSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
-  const { id, ...cambios } = parsed.data;
-  return editarPasoFila(id, cambios);
+  const { id, vence, ...cambios } = parsed.data;
+  // Con plazo en días, `vence` lo pone la base: mandarlo vacío lo pisaría, y eso falla (TA011).
+  return editarPasoFila(id, cambios.vence_dias === null ? { ...cambios, vence } : cambios);
 }
 
 // El estado que queda (pendiente o solicitada) lo decide la base.
@@ -276,16 +279,14 @@ export async function ocultarNota(id: string) {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase.from("tareas_notas").update({ activo: false }).eq("id", parsed.data);
-  return error ? fallo(error) : listo();
+  return trasUpdate(errorDeUpdate(await supabase.from("tareas_notas").update({ activo: false }, { count: "exact" }).eq("id", parsed.data)));
 }
 
 export async function ocultarEdicion(id: string) {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase.from("tareas_ediciones").update({ activo: false }).eq("id", parsed.data);
-  return error ? fallo(error) : listo();
+  return trasUpdate(errorDeUpdate(await supabase.from("tareas_ediciones").update({ activo: false }, { count: "exact" }).eq("id", parsed.data)));
 }
 
 // ---------- Plantillas ----------
@@ -347,8 +348,7 @@ async function editarPlantillaFila(id: unknown, cambios: Tablas["tareas_plantill
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase.from("tareas_plantillas").update(cambios).eq("id", parsed.data);
-  return error ? fallo(error) : listo();
+  return trasUpdate(errorDeUpdate(await supabase.from("tareas_plantillas").update(cambios, { count: "exact" }).eq("id", parsed.data)));
 }
 
 export async function publicarPlantilla(id: string, publicada: boolean) {

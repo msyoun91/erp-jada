@@ -1,14 +1,23 @@
 import { z } from "zod";
 import { telefonoOpcional } from "@/lib/validacion";
 
-// El browser resuelve "//evil.com" y "/\evil.com" como URLs absolutas aunque
-// arranquen con "/": sin este filtro, `?next=` es un open redirect.
+// El browser lee "\" como "/" y borra tabs y saltos de línea: "//evil.com",
+// "/\evil.com" y "/\t/evil.com" son otro sitio aunque arranquen con "/". En vez
+// de enumerar formas, se resuelve como lo hace él contra un origen fijo y solo
+// pasa si el origen no cambió; sin esto, `?next=` es un open redirect.
+const ORIGEN_PROPIO = "http://erp.invalid";
 const destinoInterno = z
   .string()
   .nullish()
-  .transform((v) =>
-    v && v.startsWith("/") && !v.startsWith("//") && !v.startsWith("/\\") ? v : "/"
-  );
+  .transform((v) => {
+    if (!v?.startsWith("/")) return "/";
+    try {
+      const url = new URL(v, ORIGEN_PROPIO);
+      return url.origin === ORIGEN_PROPIO ? `${url.pathname}${url.search}${url.hash}` : "/";
+    } catch {
+      return "/";
+    }
+  });
 
 export const loginSchema = z.object({
   // `.pipe` en vez de encadenar checks: con el campo vacío queremos "es

@@ -16,7 +16,9 @@ No usa `redirect()` en el action: los Server Components tienen que releer la ses
 
 ### `?next=` con lista blanca de paths propios
 
-El proxy redirigía a `/login` sin guardar el destino, así que un deep link a `/tareas` terminaba en el dashboard. Ahora `updateSession` agrega `?next=<pathname>` y el schema lo sanea: solo se acepta un string que arranque con `/` y no con `//` ni `/\` — el browser resuelve esas dos formas como URLs absolutas, y sin el filtro `?next=` es un open redirect. Va dentro de `loginSchema` y no en un helper aparte para que lo cubra el mismo `safeParse` del servidor.
+El proxy redirigía a `/login` sin guardar el destino, así que un deep link a `/tareas` terminaba en el dashboard. Ahora `updateSession` agrega `?next=<pathname>` y el schema lo sanea. Va dentro de `loginSchema` y no en un helper aparte para que lo cubra el mismo `safeParse` del servidor.
+
+**El destino se resuelve contra un origen fijo y pasa solo si el origen no cambió (2026-11-05).** El filtro anterior (arranca con `/`, no con `//` ni `/\`) dejaba pasar `/%09/evil.com`: el browser borra tabs y saltos de línea, así que `/\t/evil.com` es `//evil.com`, y `router.replace` a otro origen navega igual. Enumerar formas no cierra; resolver como el browser (`new URL(v, origen)`) sí. Vuelve el path normalizado. `modules/auth/types.ts`.
 
 Solo el `pathname`, sin el `search`: los prefetch RSC pasan por el proxy con un `?_rsc=` que no sirve como destino. Se pierden los filtros de una URL como `/tareas/auditoria?desde=…`, que es mucho menos que perder la vista entera.
 

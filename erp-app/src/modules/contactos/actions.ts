@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { argsRpc } from "@/lib/supabase/rpc";
 import { createClient } from "@/lib/supabase/server";
-import { mensajeError } from "@/lib/utils";
+import { errorDeUpdate, mensajeError } from "@/lib/utils";
 import { idSchema } from "@/lib/validacion";
 import {
   buscarSchema,
@@ -55,6 +55,10 @@ function listo() {
   return { success: true as const };
 }
 
+function trasUpdate(error: string | null) {
+  return error ? { success: false as const, error } : listo();
+}
+
 // El texto tal cual, sin comodines: `%` y `_` escritos no amplían la búsqueda.
 function patronIlike(texto: string) {
   return `%${texto.replace(/[\\%_]/g, "\\$&")}%`;
@@ -84,11 +88,9 @@ export async function editarPersona(input: EditarPersonaForm) {
   if (!parsed.success) return invalido(parsed.error.issues);
   const { id, contacto, ...cambios } = parsed.data;
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("contactos_personas")
-    .update({ ...cambios, ...contacto })
-    .eq("id", id);
-  return error ? fallo(error) : listo();
+  return trasUpdate(
+    errorDeUpdate(await supabase.from("contactos_personas").update({ ...cambios, ...contacto }, { count: "exact" }).eq("id", id))
+  );
 }
 
 export async function transferirPersona(input: TransferirPersonaForm) {
@@ -114,8 +116,9 @@ export async function reactivarPersona(id: string) {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase.from("contactos_personas").update({ activo: true }).eq("id", parsed.data);
-  return error ? fallo(error) : listo();
+  return trasUpdate(
+    errorDeUpdate(await supabase.from("contactos_personas").update({ activo: true }, { count: "exact" }).eq("id", parsed.data))
+  );
 }
 
 // "Ver contacto" deja registro en `contactos_accesos`: se llama al tocar el
@@ -146,8 +149,7 @@ export async function guardarEmpresa(input: EmpresaForm) {
   const { id, ...datos } = parsed.data;
   const supabase = await createClient();
   if (id) {
-    const { error } = await supabase.from("contactos_empresas").update(datos).eq("id", id);
-    return error ? fallo(error) : listo();
+    return trasUpdate(errorDeUpdate(await supabase.from("contactos_empresas").update(datos, { count: "exact" }).eq("id", id)));
   }
   const nueva = crypto.randomUUID();
   const { error } = await supabase.from("contactos_empresas").insert({ id: nueva, ...datos });
@@ -160,11 +162,14 @@ export async function asignarEquipoEmpresa(input: EquipoEmpresaForm) {
   const parsed = equipoEmpresaSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("contactos_empresas")
-    .update({ equipo_id: parsed.data.equipo_id })
-    .eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+  return trasUpdate(
+    errorDeUpdate(
+      await supabase
+        .from("contactos_empresas")
+        .update({ equipo_id: parsed.data.equipo_id }, { count: "exact" })
+        .eq("id", parsed.data.id)
+    )
+  );
 }
 
 export async function compartirEmpresa(input: CompartirEmpresaForm) {
@@ -191,8 +196,9 @@ export async function reactivarEmpresa(id: string) {
   const parsed = idSchema.safeParse(id);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase.from("contactos_empresas").update({ activo: true }).eq("id", parsed.data);
-  return error ? fallo(error) : listo();
+  return trasUpdate(
+    errorDeUpdate(await supabase.from("contactos_empresas").update({ activo: true }, { count: "exact" }).eq("id", parsed.data))
+  );
 }
 
 // ---------- Persona ↔ empresa ----------
@@ -212,11 +218,14 @@ export async function cerrarPersonaEmpresa(input: CerrarForm) {
   const parsed = cerrarSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("contactos_persona_empresa")
-    .update({ hasta: parsed.data.hasta })
-    .eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+  return trasUpdate(
+    errorDeUpdate(
+      await supabase
+        .from("contactos_persona_empresa")
+        .update({ hasta: parsed.data.hasta }, { count: "exact" })
+        .eq("id", parsed.data.id)
+    )
+  );
 }
 
 export async function desactivarPersonaEmpresa(id: string) {
@@ -301,22 +310,22 @@ export async function cambiarRoles(input: RolesForm) {
   const parsed = rolesSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("contactos_vinculos")
-    .update({ roles: parsed.data.roles })
-    .eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+  return trasUpdate(
+    errorDeUpdate(
+      await supabase.from("contactos_vinculos").update({ roles: parsed.data.roles }, { count: "exact" }).eq("id", parsed.data.id)
+    )
+  );
 }
 
 export async function cerrarVinculo(input: CerrarForm) {
   const parsed = cerrarSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("contactos_vinculos")
-    .update({ hasta: parsed.data.hasta })
-    .eq("id", parsed.data.id);
-  return error ? fallo(error) : listo();
+  return trasUpdate(
+    errorDeUpdate(
+      await supabase.from("contactos_vinculos").update({ hasta: parsed.data.hasta }, { count: "exact" }).eq("id", parsed.data.id)
+    )
+  );
 }
 
 export async function desactivarVinculo(id: string) {

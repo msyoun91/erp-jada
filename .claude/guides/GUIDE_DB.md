@@ -105,7 +105,7 @@ Las funciones llamadas con `.rpc()` son `SECURITY INVOKER` por defecto, para que
 
 - **Dos policies que se consultan mutuamente → `42P17 infinite recursion detected in policy`.** Si una policy tiene que mirar otra tabla RLS-protegida que puede mirar hacia atrás, el lado de vuelta va en una función `SECURITY DEFINER STABLE`, no en un `EXISTS` directo. `tsc` no lo detecta: aparece recién al usar la ruta logueado.
 - **`INSERT … RETURNING` (`.insert().select()`) pasa por la policy de SELECT con la fila nueva.** Si esa policy autoriza con una función que relee la misma tabla, o la visibilidad depende de filas que se insertan en el statement siguiente (asignados, miembros), la fila todavía no se ve y falla con `42501` / `new row violates row-level security policy`. Salidas: autorizar la fila nueva por columna (`creado_por = auth.uid()`), o generar el `id` antes (`gen_random_uuid()` en SQL, `crypto.randomUUID()` en TS) y no pedir `RETURNING`.
-- **Un UPDATE que RLS rechaza no falla: afecta 0 filas.** En SQL, `IF NOT FOUND THEN RAISE`; en una action de una sola tabla, `{ count: "exact" }` y chequear `count` (ver `errorDeUpdate` en las actions de tareas y obras). Alinear el `USING` del UPDATE con el del SELECT: una fila modificable pero invisible es un bug silencioso.
+- **Un UPDATE que RLS rechaza no falla: afecta 0 filas.** En SQL, `IF NOT FOUND THEN RAISE`; en una action de una sola tabla, `{ count: "exact" }` y pasar la respuesta por `errorDeUpdate` (`lib/utils.ts`), que trata cero filas como error. Alinear el `USING` del UPDATE con el del SELECT: una fila modificable pero invisible es un bug silencioso.
 
 ### Auditoría
 
