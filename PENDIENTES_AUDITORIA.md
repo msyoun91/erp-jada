@@ -5,21 +5,6 @@ Lo que quedó sin hacer o sin verificar de la auditoría y de sus arreglos (comm
 el proxy del entorno rechaza `mcp.supabase.com`. Cuando algo de acá se cierra, se borra su línea; cuando se
 cierra todo, el archivo.
 
-## 1. Habilitar el acceso a la base
-
-- Permitir `mcp.supabase.com` en *Network access* de la configuración del entorno (pasos en
-  https://code.claude.com/docs/en/cloud-environments#network-access). Sin eso no se puede nada de la sección 2.
-
-## 2. Correr contra la base
-
-- **`sql/tests/obras_reglas.sql` entero.** Los casos `05 a cargo` (de `obras_a_cargo`) son nuevos y nunca
-  corrieron. Al pasar, borrar también su línea en `BACKLOG.md` (*Contactos y Obras* → *Sin correr*).
-- **La suite SQL de los cuatro módulos:** `sql/tests/tareas_*`, `usuarios_*`, `contactos_*`, `obras_*`,
-  `duplicados`, `entes_*`, `submodulo_reglas`, `notificaciones_usuarios` y `perfil_*`. La auditoría leyó el
-  SQL, no lo corrió. Los arreglos no tocaron SQL, así que tendrían que pasar como antes.
-- **Comparar lo aplicado con `sql/`** (`md5(prosrc)`): la auditoría se hizo contra los archivos.
-- **Los e2e** (`erp-app/e2e/`): la sesión no tenía `.env`.
-
 ## 3. Probar en el navegador
 
 Cada arreglo pasa `tsc` y lint; ninguno se vio andando.

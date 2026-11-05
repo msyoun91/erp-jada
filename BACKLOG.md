@@ -15,9 +15,6 @@ Los cinco tramos están cerrados (estado y tests en el encabezado de `decisiones
   paso pide una función, como `contactos_crear_y_vincular`).
 - **Sin probar en el navegador:** elegir entre dos comisiones al fusionar (lo cubre
   `sql/tests/contactos_fusionar.sql`).
-- **Sin correr:** los casos `05 a cargo` de `sql/tests/obras_reglas.sql` (`obras_a_cargo`, la RPC de la
-  ficha), sumados el 2026-11-05 en una sesión sin acceso a la base. Correr el archivo entero y borrar esta
-  línea.
 
 ## Módulos que siguen
 

@@ -11,11 +11,6 @@ Nada de esto está decidido: son propuestas. Al decidir una, se implementa y se 
 
 ## Verificación que falta
 
-- **Los e2e no se corrieron.** En el entorno de la revisión no había base (sin `.env`, y el conector de
-  Supabase no conectaba). Se revisó que ningún selector dependa de un texto cambiado, pero hay que correr
-  `npm run e2e` desde `erp-app`. Lo que más puede romper: el orden nuevo de las barras (acciones arriba),
-  los links `Volver` en las fichas, "Desactivado" en vez de "Inactivo" y "Guardando…" en vez de
-  "Creando…"/"Agregando…" en los paneles.
 - **Las pantallas se vieron con datos de ejemplo, no con datos reales.** Repasar en un celular: Insumos y
   Paquetes con los filtros plegados, una ficha de obra y de hilo con `Volver`, y el botón primario en modo
   oscuro.
