@@ -385,8 +385,9 @@ desaparecen solos.
   - Dos `version_nueva` simultáneas del mismo paquete dan 23505 en vez de CA013.
 - **Copia entre paquetes.** `catalogo_version_copiar` tiene EXECUTE para `authenticated`. Llamada directo, copia una versión de
   otro paquete como borrador de este y se saltea el CA014 de `version_nueva`. No abre nada que `catalogo_armar` no pueda hacer a mano.
-- **Tests que necesitan datos previos.** `catalogo_medidas` y `catalogo_sin_eleccion` toman una categoría e insumos que ya existan.
-  En una base vacía cortan con 23502 antes de probar nada. Con 6 insumos de prueba dan 12 / 12 y 5 / 5.
+- **Tests que necesitan datos previos. Resuelto (2026-11-04):** los dos crean su categoría y sus insumos, y dan 12 / 12 y 5 / 5 en una
+  base vacía. Antes, `catalogo_medidas` y `catalogo_sin_eleccion` tomaban una categoría e insumos que ya existieran y, en una base vacía,
+  cortaban con 23502 antes de probar nada.
 - **Collation de los tests.** Con collation `C`, `catalogo_ciclo` da 2 fallos por el orden alfabético de "Referencia circular
   entre …". Con `en-US`, como Supabase, pasa entero.
 - **Carga inicial por script** (BACKLOG). `catalogo_costos.creado_por`, `catalogo_porcentajes_valores.creado_por` y

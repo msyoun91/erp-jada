@@ -80,7 +80,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
 - **Catálogo — carga inicial**, antes de abrir el módulo (2026-11-02): insumos, variantes y costos desde una
   planilla, una sola vez y por script, con las mismas reglas de la base que cualquier alta. Los paquetes se
   arman en el editor y pasan por aprobación. Una pantalla de alta en bloque se suma solo si hace falta
-  seguido. Falta saber de dónde sale hoy la lista de insumos y costos.
+  seguido. Falta saber de dónde sale hoy la lista de insumos y costos. El script fija `request.jwt.claims` con un
+  usuario real: `creado_por` es NOT NULL y sale de `auth.uid()`, así que con `service_role` solo falla.
 - **Presupuestos**: uno por etapa de la obra (FK `obra_id`), con versiones (congeladas al enviarse) e
   ítems del catálogo con el precio copiado, más un renglón por cada mínimo por presupuesto de los
   servicios en %, que calcula el catálogo (`decisiones/catalogo/precio.md` → *Servicios en %*). Cada ítem guarda
