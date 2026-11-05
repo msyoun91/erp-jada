@@ -46,8 +46,42 @@ export async function getPersonas({ todas, yo }: { todas: boolean; yo: string })
 }
 
 // Las de su equipo (sin equipo, las que cargó) y las compartidas con él; el
-// admin, todas. Huérfana: activa, sin equipo y con una cargadora sin
-// `contactos_ver`: no la ve nadie más que el admin, que le asigna un equipo.
+// admin, todas. Las compartidas llegan por su tabla y se juntan acá, no con un
+// `id.in.(…)` en la URL, que crece con cada empresa compartida.
+async function getEmpresasVisibles(todas: boolean, yo: string): Promise<(Empresa & { compartida: boolean })[]> {
+  const supabase = await createClient();
+  if (todas) {
+    const { data, error } = await supabase.from("contactos_empresas").select("*").order("nombre");
+    if (error) throw error;
+    return data.map((e) => ({ ...e, compartida: false }));
+  }
+
+  const { data: equipo, error } = await supabase.rpc("mi_equipo");
+  if (error) throw error;
+  const propias = supabase.from("contactos_empresas").select("*").eq("activo", true);
+  if (!equipo) {
+    const { data, error } = await propias.is("equipo_id", null).eq("creado_por", yo).order("nombre");
+    if (error) throw error;
+    return data.map((e) => ({ ...e, compartida: false }));
+  }
+
+  const [delEquipo, conMiEquipo] = await Promise.all([
+    propias.eq("equipo_id", equipo),
+    supabase
+      .from("contactos_empresa_equipos")
+      .select("contactos_empresas!inner(*)")
+      .eq("equipo_id", equipo)
+      .eq("contactos_empresas.activo", true),
+  ]);
+  if (delEquipo.error) throw delEquipo.error;
+  if (conMiEquipo.error) throw conMiEquipo.error;
+  const porId = new Map(delEquipo.data.map((e) => [e.id, { ...e, compartida: false }]));
+  for (const { contactos_empresas: e } of conMiEquipo.data) porId.set(e.id, { ...e, compartida: true });
+  return [...porId.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+}
+
+// Huérfana: activa, sin equipo y con una cargadora sin `contactos_ver`: no la
+// ve nadie más que el admin, que le asigna un equipo.
 export async function getEmpresas({
   todas,
   yo,
@@ -55,30 +89,9 @@ export async function getEmpresas({
   todas: boolean;
   yo: string;
 }): Promise<(Empresa & { compartida: boolean; huerfana: boolean })[]> {
-  const supabase = await createClient();
-  let query = supabase.from("contactos_empresas").select("*").order("nombre");
-  let compartidas = new Set<string>();
-  if (!todas) {
-    const { data: equipo, error } = await supabase.rpc("mi_equipo");
-    if (error) throw error;
-    if (equipo) {
-      const { data, error } = await supabase
-        .from("contactos_empresa_equipos")
-        .select("empresa_id")
-        .eq("equipo_id", equipo);
-      if (error) throw error;
-      compartidas = new Set(data.map((c) => c.empresa_id));
-    }
-    const propias = equipo ? `equipo_id.eq.${equipo}` : `and(equipo_id.is.null,creado_por.eq.${yo})`;
-    query = query
-      .eq("activo", true)
-      .or(compartidas.size > 0 ? `${propias},id.in.(${[...compartidas].join(",")})` : propias);
-  }
-  const [{ data, error }, pueden] = await Promise.all([query, getPueden(todas)]);
-  if (error) throw error;
-  return data.map((e) => ({
+  const [empresas, pueden] = await Promise.all([getEmpresasVisibles(todas, yo), getPueden(todas)]);
+  return empresas.map((e) => ({
     ...e,
-    compartida: compartidas.has(e.id),
     huerfana: pueden !== null && e.activo && e.equipo_id === null && !pueden.has(e.creado_por),
   }));
 }
