@@ -12,6 +12,7 @@ tablas, columnas o enums, actualizar ese archivo y `database.types.ts`.
 | `obras.md` | obras, participantes, estados, ver/trabajar/a cargo, `obras_alta` (`sql/126`, `sql/128`) |
 | `monedas.md` | enum `moneda`, tipos de cambio con fecha, moneda principal, consultas a MonedAPI, `monedas_convertir`, `nivel_cambio` (`sql/155`–`sql/157`) |
 | `catalogo.md` | fórmulas: del texto al árbol y su cálculo (`sql/158`); permisos, categorías, colores, insumos y servicios fijos, variantes, costos y servicios en % (`sql/159`); paquetes, versiones y su contenido (`sql/160`); el cálculo del despiece y los casos de prueba (`sql/161`); qué frena el envío, enviar, aprobar, lo que se ofrece, bajas en cascada y reactivación (`sql/162`); el precio, el detalle del gerente, los mínimos por presupuesto y los precios de referencia (`sql/163`); los avisos (`sql/164`–`sql/165`) |
+| `presupuestos.md` | permisos, configuración, presupuesto (ente), versiones y secciones (`sql/185`) |
 | `contactos.md` | personas, empresas, persona ↔ empresa, vínculos con registros, ediciones, accesos, "Ver contacto" (`sql/127`, `sql/128`) |
 
 Esta rama sacó `tareas` y `obras` para rediseñar permisos desde cero (`sql/101`, `sql/102`); sus

@@ -146,7 +146,7 @@ con `obras_numeros`, todas; sin `obras_ver`, nada. Activas; un alta congelada no
 - `obras_transferir(obra, responsable, quedarme = false)` — DEFINER. Con `quedarme`, quien transfiere
   se suma como participante antes (mientras la tiene a cargo); sin él, deja de participar. OB016 si no
   existe o está desactivada.
-- `obras_desactivar(obra)` — DEFINER.
+- `obras_desactivar(obra)` — DEFINER. Con presupuestos activos, PR007 (trigger de Presupuestos, `presupuestos.md`).
 - `obras_alta(nombre, direccion, origen, tipo, localidad?, notas?, compra_estimada?, estado?,
   quien_persona?, quien_empresa?, quien_nuevo_tipo?, quien_nuevo_nombre?, quien_nuevo_telefono?,
   quien_nuevo_email?) → uuid` — INVOKER (`sql/128`). La obra y un solo "¿Quién?" (OB017), vinculado

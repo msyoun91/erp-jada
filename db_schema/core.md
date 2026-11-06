@@ -169,7 +169,7 @@ Catálogo cross-módulo: cada módulo registra acá sus entes en su propia migra
 
 RLS `entes_select`: `activo AND tiene_permiso(submodulo)` — sin la vista del ente, el ente no existe. Solo `GRANT SELECT`: escribe la migración de cada módulo.
 
-Filas: `hilo` y `tarea` (`sql/112`, ver `tareas.md`), `obra` (`sql/126`, `obras.md`), `persona` y `empresa` (`sql/127`, `contactos.md`).
+Filas: `hilo` y `tarea` (`sql/112`, ver `tareas.md`), `obra` (`sql/126`, `obras.md`), `persona` y `empresa` (`sql/127`, `contactos.md`), `presupuesto` (`sql/185`, `presupuestos.md`; dueño `creado_por`; ramas en `etiqueta_registro`, `puede_abrir_registro` y `buscar_registros`).
 
 ## eventos (`sql/109`)
 

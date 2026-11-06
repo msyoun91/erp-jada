@@ -1,7 +1,8 @@
 # Decisiones — módulo Presupuestos
 
 > **Estado: ficha aprobada (2026-11-05), revisada punto por punto con el usuario; revisada el 2026-11-06 (secciones con moneda e
-> IVA, opcionales, auditoría de la ficha y revisión de UX). Sin SQL ni pantallas.**
+> IVA, opcionales, auditoría de la ficha y revisión de UX). SQL por tramos: tramo 1 (`sql/185`: permisos, configuración,
+> presupuesto, versiones y secciones) aplicado el 2026-11-06, con su test; ver *La base*. Sin pantallas.**
 > Se armó desde cero, sin partir del backlog, y se contrastó con él al final. Lo que falta, en `BACKLOG.md`
 > → *Presupuestos*.
 
@@ -87,7 +88,9 @@ Presupuestos
                                                          quien la ve, configura
 
 Reglas entre permisos: presupuestos_ver requiere obras_ver · presupuestos_administrar requiere obras_administrar
-                     · presupuestos_autorizar y presupuestos_administrar no se delegan
+Delegables: sí — presupuestos_ver · presupuestos_armar · presupuestos_revision
+            no — presupuestos_autorizar · presupuestos_administrar · presupuestos_autorizar_tecnica
+                 · presupuestos_configuracion
 ```
 Aprobada el 2026-11-05; revisada el 2026-11-06.
 
@@ -98,8 +101,6 @@ Pendientes:
 - **A qué contacto le llega en el portal:** espera la ficha de `erp-cliente` (base propia, cómo entra cada cliente). Pista: los
   contactos ya tienen rol en la obra (cliente, decisor, arquitecto…), así que probablemente sean los que elija el vendedor entre esos
   roles. No se suma relación hasta entonces.
-- **Delegación de `presupuestos_ver` y `presupuestos_armar`:** sin decidir. Obras delega las equivalentes. Confirmar al escribir
-  el SQL.
 
 ## Etapas
 
@@ -284,6 +285,11 @@ respuesta de la API. La función devuelve el número del presupuesto y, por reng
 cargado y las alertas; es el criterio de `catalogo_precio`. No devuelve el nombre (decisión del usuario, 2026-11-06): es texto libre, y
 "Pérez – Nordelta – arq. Gómez" le mostraba la obra y sus contactos; Técnica y el vendedor hablan de "el 142". Su aviso lleva a *Revisión técnica*, no a la ficha.
 
+**Se delega todo menos lo que autoriza o cambia las reglas: ver, armar y Revisión técnica (decisión del usuario, 2026-11-06).** Laura
+suma a Pedro y le da ella misma Presupuestos y armar, como hoy le da Obras. Martín le da Revisión técnica a Sofía, pero autorizar alertas
+lo asigna el admin: es el mismo criterio de Catálogo, donde aprobar no se delega. Configuración tampoco, porque el tope y el plazo valen
+para todos.
+
 **Configuración es una vista sin función: quien la ve, configura (2026-11-06).** Es solo gerencia y nadie necesita mirarla sin cambiarla;
 las escrituras se verifican en la base contra la vista. Se sacó `presupuestos_configurar`.
 
@@ -452,3 +458,32 @@ confirmaba un total que después cambiaba.
 
 **Una versión imprimible desde el ERP, además del portal.** Se imprime o guarda como PDF desde el navegador, sin librería nueva y sin costos
 ni comparación. Permite usar el módulo sin el portal, y queda como respaldo.
+
+## La base
+
+Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2 renglones y precio · 3 ciclo de la versión · 4 aprobar,
+rechazar y la obra · 5 avisos.
+
+**El tipo de versión no se guarda: se deduce de la variante (2026-11-06).** Una versión de una variante que ya existe es una
+corrección o una actualización; una con la variante siguiente es una variante nueva. Guardar el tipo era el mismo dato dos veces.
+`presupuestos_versiones.variante`.
+
+**El número es un entero de una secuencia, y `P-0142` es una columna generada (2026-11-06).** Buscar "142" y ordenar usan el
+entero; la etiqueta, el buscador y las plantillas (`{codigo}` en `entes.datos`) usan el código, sin formatearlo en dos lugares.
+Pasado el 9999 sigue con cinco cifras. `presupuestos.numero`, `presupuestos.codigo`.
+
+**Ver un presupuesto no depende de que esté activo (2026-11-06).** Desactivar es un UPDATE directo, y Postgres le pide a la fila
+nueva que pase la policy de SELECT: si "ve" pidiera `activo`, nadie salvo administrar podía desactivar. Quien ve la obra ve también
+los borradores desactivados; la lista los filtra. `presupuestos_ve_de`.
+
+**Las plantillas que dispara un presupuesto son las de quien lo creó (2026-11-06).** El disparo corre las plantillas del dueño, y
+el presupuesto no tiene dueño propio: `creado_por` es el registro de quién lo armó. `entes.dueno = 'creado_por'`.
+
+**La configuración arranca vacía (2026-11-06).** Tope y plazo son números de gerencia, no del sistema; hasta que los cargue, el
+tramo 3 frena publicar (no hay vencimiento) y todo descuento pide autorización. `presupuestos_configuracion`.
+
+**El nombre del presupuesto se edita mientras esté activo, en cualquier estado (2026-11-06).** Es la etiqueta interna ("el 142 de
+Belgrano"); congelar lo aprobado es sobre versiones y renglones, que es lo que toman ejecución y post-venta. `presupuestos_update`.
+
+**La versión arranca con IVA discriminado y la sección se llama "General" si no se elige otro nombre (2026-11-06).** Son
+predeterminados que el vendedor cambia en el borrador. `presupuestos_alta`.

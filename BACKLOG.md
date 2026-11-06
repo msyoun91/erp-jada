@@ -80,8 +80,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   arman en el editor y pasan por aprobación. Una pantalla de alta en bloque se suma solo si hace falta
   seguido. Falta saber de dónde sale hoy la lista de insumos y costos. El script fija `request.jwt.claims` con un
   usuario real: `creado_por` es NOT NULL y sale de `auth.uid()`, así que con `service_role` solo falla.
-- **Presupuestos**: ficha aprobada (2026-11-05), con sus decisiones, en `decisiones/presupuestos.md`. **Siguiente:** el SQL, después
-  de `/clear`. Falta construirlo todo, y esto no está en la ficha:
+- **Presupuestos**: ficha aprobada (2026-11-05), con sus decisiones, en `decisiones/presupuestos.md`. SQL por tramos
+  (`decisiones/presupuestos.md` → *La base*): el 1 (`sql/185`, registros) está aplicado y probado. **Siguiente:** el tramo 2,
+  renglones y precio, que arranca por *Del cálculo*, abajo. Falta todo lo demás, y esto no está en la ficha:
   - **Del cálculo:** el ítem guarda su versión y solo lo que cargó el vendedor: lo escrito, las elecciones, las piezas opcionales y
     el color. El precio llega redondeado y el ítem lo multiplica por su cantidad. Una función de la base da la lista de paquetes a la
     venta y el formulario de cada uno (qué preguntar, predeterminados ya calculados, qué se ofrece), sin leer las tablas del catálogo.

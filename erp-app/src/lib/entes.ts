@@ -69,7 +69,24 @@ const empresa: Ente = {
   datos: { nombre: { label: "Nombre", ejemplo: "Constructora Sur" } },
 };
 
-export const ENTES = { obra, persona, empresa };
+const presupuesto: Ente<Enums["estado_presupuesto"]> = {
+  nombre: "Presupuesto",
+  un: "un presupuesto",
+  el: "el presupuesto",
+  estados: {
+    borrador: { label: "Borrador", badge: "badge-neutral" },
+    publicado: { label: "Publicado", badge: "badge-brand" },
+    aprobado: { label: "Aprobado", badge: "badge-success" },
+    rechazado: { label: "Rechazado", badge: "badge-error" },
+  },
+  roles: {},
+  datos: {
+    codigo: { label: "Número", ejemplo: "P-0142" },
+    nombre: { label: "Nombre", ejemplo: "Ventanas torre" },
+  },
+};
+
+export const ENTES = { obra, persona, empresa, presupuesto };
 
 export type CodigoEnte = keyof typeof ENTES;
 

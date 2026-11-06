@@ -2144,6 +2144,199 @@ export type Database = {
           },
         ]
       }
+      presupuestos: {
+        Row: {
+          activo: boolean
+          codigo: string | null
+          creado_por: string
+          created_at: string
+          estado: Database["public"]["Enums"]["estado_presupuesto"]
+          id: string
+          nombre: string
+          numero: number
+          obra_id: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo?: never
+          creado_por?: string
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_presupuesto"]
+          id?: string
+          nombre: string
+          numero?: number
+          obra_id: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: never
+          creado_por?: string
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_presupuesto"]
+          id?: string
+          nombre?: string
+          numero?: number
+          obra_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presupuestos_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_obra_id_fkey"
+            columns: ["obra_id"]
+            isOneToOne: false
+            referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presupuestos_configuracion: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          id: string
+          plazo_dias: number
+          tope_descuento: number
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          id?: string
+          plazo_dias: number
+          tope_descuento: number
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          id?: string
+          plazo_dias?: number
+          tope_descuento?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presupuestos_configuracion_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presupuestos_secciones: {
+        Row: {
+          activo: boolean
+          alicuota: number
+          created_at: string
+          id: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          nombre: string
+          orden: number
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          activo?: boolean
+          alicuota: number
+          created_at?: string
+          id?: string
+          moneda: Database["public"]["Enums"]["moneda"]
+          nombre: string
+          orden?: number
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          activo?: boolean
+          alicuota?: number
+          created_at?: string
+          id?: string
+          moneda?: Database["public"]["Enums"]["moneda"]
+          nombre?: string
+          orden?: number
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presupuestos_secciones_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presupuestos_versiones: {
+        Row: {
+          activo: boolean
+          creado_por: string
+          created_at: string
+          estado: Database["public"]["Enums"]["estado_version_presupuesto"]
+          id: string
+          iva_discriminado: boolean
+          numero: number
+          presupuesto_id: string
+          updated_at: string
+          variante: number
+          variante_nombre: string | null
+        }
+        Insert: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_version_presupuesto"]
+          id?: string
+          iva_discriminado?: boolean
+          numero: number
+          presupuesto_id: string
+          updated_at?: string
+          variante: number
+          variante_nombre?: string | null
+        }
+        Update: {
+          activo?: boolean
+          creado_por?: string
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_version_presupuesto"]
+          id?: string
+          iva_discriminado?: boolean
+          numero?: number
+          presupuesto_id?: string
+          updated_at?: string
+          variante?: number
+          variante_nombre?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presupuestos_versiones_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_versiones_presupuesto_id_fkey"
+            columns: ["presupuesto_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submodulo_reglas: {
         Row: {
           activo: boolean
@@ -4110,6 +4303,47 @@ export type Database = {
         Returns: undefined
       }
       obras_ve_comision: { Args: { p_vinculo: string }; Returns: boolean }
+      presupuestos_alta: {
+        Args: {
+          p_alicuota: number
+          p_moneda: Database["public"]["Enums"]["moneda"]
+          p_nombre: string
+          p_obra: string
+          p_seccion?: string
+        }
+        Returns: string
+      }
+      presupuestos_arma: { Args: { p_obra: string }; Returns: boolean }
+      presupuestos_arma_de: {
+        Args: { p_obra: string; p_usuario: string }
+        Returns: boolean
+      }
+      presupuestos_buscar: {
+        Args: { p_texto: string }
+        Returns: {
+          id: string
+          subtitulo: string
+          tipo: string
+          titulo: string
+        }[]
+      }
+      presupuestos_configurar: {
+        Args: { p_plazo: number; p_tope: number }
+        Returns: string
+      }
+      presupuestos_etiqueta: {
+        Args: { p_id: string; p_tipo: string }
+        Returns: string
+      }
+      presupuestos_puede_abrir: {
+        Args: { p_id: string; p_tipo: string; p_usuario: string }
+        Returns: boolean
+      }
+      presupuestos_ve: { Args: { p_obra: string }; Returns: boolean }
+      presupuestos_ve_de: {
+        Args: { p_obra: string; p_usuario: string }
+        Returns: boolean
+      }
       puede_abrir_registro: {
         Args: { p_ente: string; p_id: string; p_usuario: string }
         Returns: boolean
@@ -4348,6 +4582,7 @@ export type Database = {
         | "en_cotizacion"
         | "contratada"
         | "perdida"
+      estado_presupuesto: "borrador" | "publicado" | "aprobado" | "rechazado"
       estado_tarea:
         | "solicitada"
         | "pendiente"
@@ -4360,6 +4595,11 @@ export type Database = {
         | "publicado"
         | "obsoleto"
         | "descartado"
+      estado_version_presupuesto:
+        | "borrador"
+        | "en_revision"
+        | "publicado"
+        | "obsoleto"
       moneda: "ARS" | "USD_OFICIAL" | "USD_BLUE" | "EUR"
       motivo_perdida:
         | "precio"
@@ -4591,6 +4831,7 @@ export const Constants = {
         "contratada",
         "perdida",
       ],
+      estado_presupuesto: ["borrador", "publicado", "aprobado", "rechazado"],
       estado_tarea: [
         "solicitada",
         "pendiente",
@@ -4604,6 +4845,12 @@ export const Constants = {
         "publicado",
         "obsoleto",
         "descartado",
+      ],
+      estado_version_presupuesto: [
+        "borrador",
+        "en_revision",
+        "publicado",
+        "obsoleto",
       ],
       moneda: ["ARS", "USD_OFICIAL", "USD_BLUE", "EUR"],
       motivo_perdida: [
