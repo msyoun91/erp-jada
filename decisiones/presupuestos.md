@@ -33,12 +33,14 @@ Entes
                 · datos {numero, nombre} · ruta /presupuestos/{id} · submódulo presupuestos_ver
                 · disparos {alta, estado}
 No son entes
-├── versión — tipo: actualización o corrección | variante · moneda propia · vencimiento · IVA
-│             discriminado o incluido · estado: borrador → (en_revision) → publicado → obsoleto;
-│             lo publicado no se edita; una publicada por variante
-└── renglón — designación y ubicación ("V4 · Lavadero") · cantidad · alícuota · precio escrito
+├── versión — tipo: actualización o corrección | variante · vencimiento · IVA discriminado o
+│             incluido · cómo se ve cada opcional · estado: borrador → (en_revision) → publicado
+│             → obsoleto; lo publicado no se edita; una publicada por variante
+├── sección — nombre, único en la versión · moneda · alícuota · orden
+└── renglón — designación y ubicación ("V4 · Lavadero") · sección · cantidad · precio escrito
               de Catálogo: paquete y versión, fecha de condiciones, lo cargado, opcionales
               a mano: descripción y precio · de mínimo: el que calcula Catálogo
+              de opcional aparte: la suma de ese opcional en todas las ventanas
 
 Relaciones
 └── presupuesto → obra (FK obra_id, obligatoria). Sin obra: calculadora sin guardar u obra mínima
@@ -172,8 +174,8 @@ stock de uno que queda para un caso puntual.
 actualiza libre o se mantiene con autorización. "Vencido" se calcula, no se guarda: sigue `publicado`, la obra no cambia y no cuenta como
 rechazo.
 
-**Los mínimos son un renglón aparte, con su alícuota y su mantener o actualizar.** Con mantener, autorización, como cualquier ventana.
-`catalogo_precio_minimos` calcula hoy a la fecha de hoy: hay que ampliarla con la versión y la fecha de cada renglón.
+**Los mínimos son un renglón aparte, en una sección y con su mantener o actualizar.** Con mantener, autorización, como cualquier ventana.
+`catalogo_precio_minimos` calcula hoy a la fecha de hoy: hay que ampliarla con la versión, la fecha y la moneda de cada renglón.
 
 **Se guarda el precio escrito y los datos para recalcularlo, sin copiar costos ni porcentajes.** La versión sigue diciendo lo que vio el
 cliente, aunque se corrija algo en Catálogo, y recalcular sirve para encontrar errores: si no coincide, hay algo para investigar.
@@ -183,19 +185,82 @@ cada arquitecto la arma distinto, y hay que resolver de qué paquete es cada ren
 
 ## Moneda e IVA
 
-**La moneda es por versión, elegida por el vendedor.** "Pasámelo en dólares" es una versión nueva. Arranca en la principal, y si las
-variantes publicadas quedan en monedas distintas, el sistema avisa antes de publicar.
+~~**La moneda es por versión, elegida por el vendedor.**~~ Superada el 2026-11-06: la moneda pasó a la sección (*Secciones y opcionales*
+→ *Cada sección tiene su moneda*).
 
-**El cliente ve referencias en otras monedas, al tipo de cambio del día, solo informativas.** Aprueba en la moneda de la versión. Gerencia
+**El cliente ve referencias en otras monedas, al tipo de cambio del día, solo informativas.** Aprueba en la moneda de cada sección; la referencia convierte el total entero. Gerencia
 elige cuáles se muestran, para todos; arrancan pesos y dólar oficial, para no exponer el blue. Cada vez que el ERP actualiza los tipos de
 cambio, los escribe en el portal, y este solo los usa para mostrar.
 
 **Siempre tipo de cambio de venta.** Lo que pase al cobrar en billetes se resuelve en el módulo de cobros (`BACKLOG.md`). Monedas no cambia.
 
-**El IVA es por renglón: 21 %, 10,5 % o 0 %, discriminado o incluido, siempre después del descuento.** Se mezclan alícuotas dentro de un
-mismo presupuesto. La versión exige elegir una alícuota al armarla, cada renglón la toma y puede cambiarla. Un renglón de IVA por alícuota,
-con el descuento repartido proporcionalmente. Lo que no lleva IVA va al 0 %. El precio de Catálogo llega sin IVA
+~~**El IVA es por renglón: 21 %, 10,5 % o 0 %, discriminado o incluido, siempre después del descuento.**~~ Superada el 2026-11-06:
+la alícuota pasó a la sección (*Secciones y opcionales*).
+
+## Secciones y opcionales
+
+**Los renglones van en secciones con nombre y alícuota (21 %, 10,5 % o 0 %); la alícuota vive solo en la sección (2026-11-06).** Un
+edificio con un local al 21 % y departamentos al 10,5 % son dos secciones. Si el contador cambia el criterio, se corrige la sección
+y no 40 renglones uno por uno. El cliente ve el subtotal de cada sección. La versión arranca con una sección, con la alícuota que se
+elige al crearla y un nombre editable, así que una casa simple se arma igual que sin secciones. Mover un renglón de sección le
+cambia la alícuota. Una versión nueva o una variante copia las secciones.
+
+**Un renglón con otra alícuota va en otra sección; el renglón no tiene alícuota propia.** Se descartó la alícuota de la sección como
+predeterminado que el renglón puede cambiar: al cambiar la sección había que decidir si pisaba las excepciones. El caso que lo pedía,
+la colocación, lo resuelve el renglón aparte (abajo).
+
+**Un botón de la versión pone todas las secciones a la misma alícuota.** Es "cambiar todo junto".
+
+**El IVA va discriminado o incluido, siempre después del descuento: un renglón de IVA por alícuota.** El descuento va sobre el total
+y se reparte proporcionalmente entre las alícuotas. Lo que no lleva IVA va al 0 %. El precio de Catálogo llega sin IVA
 (`decisiones/catalogo/precio.md` → *El IVA lo suma Presupuestos*).
+
+**Los opcionales se pueden discriminar, y el vendedor elige cómo se ven: en el precio, debajo de cada ventana o en un renglón aparte
+(decisión del usuario).** Se elige por opcional y por versión: la Colocación aparte y la Garantía de vidrio en el
+precio, en la misma versión. Arranca en el precio, como hoy. Vale para piezas opcionales (Colocación) y servicios en % opcionales
+(Garantía de vidrio). Cambiarlo en una publicada es una corrección. El impreso y el portal lo muestran igual. No deja ver ningún % ni
+costo: el monto ya se deduce tildando y destildando en el portal.
+
+**El monto de un opcional es lo que suma agregarlo, en el orden del cálculo: piezas, después servicios del paso 1, del 2 y del 3.**
+Con los servicios en cascada, medir cada opcional sacándolo solo a él cuenta dos veces lo que se cruza (un Recargo del 10 % sobre el
+subtotal también se cobra sobre la Colocación) y la suma no da el total. En orden siempre cierra: el recargo sobre la colocación queda
+en la línea del Recargo. Se guarda el monto escrito de cada línea, como el precio.
+
+**El renglón aparte es uno por opcional, en la sección que elige el vendedor (decisión del usuario).** Así la colocación puede llevar
+otra alícuota que sus ventanas, en una sección "Colocación · 10,5 %", y el IVA y el total cambian con eso: no es solo cómo se ve. Se
+descartó un renglón por sección de origen: seguía la alícuota de sus ventanas y no servía para darle otra. Costo: en un edificio
+mixto, la colocación del local y la de los departamentos quedan con una sola alícuota. En el portal, destildar la colocación de una
+ventana baja el renglón aparte, no el precio de esa ventana.
+
+**Debajo de cada ventana, la línea del opcional es también el control para elegirlo (decisión del usuario).** Un botón Mosquitero y una
+línea Mosquitero se leían como dos cosas. Donde se puede elegir (borrador y portal), se ven todos con su casilla, y los no elegidos sin
+monto; donde no (publicada, impreso), solo los elegidos. En el precio y en renglón aparte sigue el botón.
+
+**El mínimo de un opcional que va en renglón aparte se suma a ese renglón (decisión del usuario).** Con la Colocación en el precio, el
+cliente veía "Mínimo de colocación" de algo que no aparecía en ningún lado; aparte, ve una sola línea "Colocación $650.000". Es
+presentación: el mínimo sigue con su mantener o actualizar y su autorización, y toma la sección del renglón aparte. Con las otras dos
+formas sigue como renglón propio.
+
+**La comparación antes/después compara el precio completo de cada ventana y el total, no las líneas (decisión del usuario).** Cambiar
+cómo se ve un opcional no cambia el precio: pasar la Colocación del renglón aparte al precio hacía ver la ventana más cara a gerencia.
+El renglón aparte no se compara, porque ya está en sus ventanas.
+
+**Cada sección tiene su moneda, y el total va por moneda: "US$ 7.180 + $ 1.240.000" (decisión del usuario).** Caso real: materiales en
+dólares y mano de obra en pesos, y el cliente paga cada parte en su moneda. Se descartó un total convertido: pasaba el riesgo cambiario
+al tipo de cambio de un día, justo lo que se evita cotizando en dólares. La versión arranca con todas las secciones en la principal;
+"Todas las secciones en…" las cambia juntas, y "pasámelo en dólares" sigue siendo una versión nueva. Si las variantes publicadas quedan
+con monedas distintas, el sistema avisa antes de publicar.
+
+**Por moneda: subtotal, descuento, un renglón de IVA por alícuota y total.** El descuento es el mismo % en cada moneda. El cliente
+confirma los dos montos. La comparación antes/después se hace dentro de cada moneda: una ventana que cambió de moneda dice "antes en
+pesos", sin diferencia.
+
+**Un renglón de Catálogo se calcula en la moneda de su sección, a la fecha de sus condiciones. Un opcional en el precio o debajo de la
+ventana va en la moneda de la ventana; uno en renglón aparte, en la de su sección.** Con la ventana en dólares y su colocación aparte en
+pesos, Catálogo calcula dos veces, una en cada moneda, y cada una cierra exacto. El mínimo se compara en la moneda de su renglón.
+
+**Un renglón a mano no cambia de moneda.** Su precio es escrito y no se recalcula: no se mueve a una sección en otra moneda, y su sección
+no cambia de moneda mientras lo tenga. Para pasarlo, se carga de nuevo.
 
 ## El cliente y el portal
 

@@ -87,7 +87,7 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
     venta y el formulario de cada uno (qué preguntar, predeterminados ya calculados, qué se ofrece), sin leer las tablas del catálogo.
     `catalogo_precio` y `catalogo_precio_minimos` pasan a pedir `presupuestos_armar`, en lugar de `catalogo_aprobar`. Recalcular con la
     versión y la fecha guardadas se suma acá (`catalogo_precio_calcular` ya las recibe), y `catalogo_precio_minimos` se amplía con la
-    versión y la fecha de cada renglón. El precio no corrige lo elegido, así que el formulario manda en `false` una pieza incluida que
+    versión, la fecha y la moneda de cada renglón. El precio no corrige lo elegido, así que el formulario manda en `false` una pieza incluida que
     no se ofrece.
   - **Del formulario:** la planilla de carpinterías real (2026-11-02) viene en metros con punto, así que el campo de medida tiene que
     rechazar `3.00`: sin el punto son 300 mm, y pasan un mínimo de 300. La calculadora ya lo hace con `numeroEscrito`
@@ -97,13 +97,13 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
     de un paquete nuevo o de uno que sale de la venta (hoy nadie les avisa); y, a evaluar sin compromiso (2026-11-04), selección masiva
     de opcionales, para tildar o destildar de una vez la Colocación o la Garantía de vidrio en varios ítems. Cada ítem sigue guardando
     lo suyo, y la pieza se reconoce por nombre (`entrada.piezas`), así que no cambia el catálogo. A decidir con eso: si hace falta frenar
-    presupuestos mezclados, que sí pediría una respuesta única guardada en el presupuesto, y cómo se cobra la colocación y si va en un
-    renglón aparte.
+    presupuestos mezclados, que sí pediría una respuesta única guardada en el presupuesto, y cómo se cobra la colocación. Si va en un
+    renglón aparte lo elige el vendedor (`decisiones/presupuestos.md` → *Secciones y opcionales*).
   - **Con Obras:** la base de la comisión, hoy "de lo contratado" sin monto (`decisiones/obras.md`): el módulo tiene que exponer el
-    total aprobado.
+    total aprobado, que puede venir en dos monedas (una por sección): falta decidir si se convierte, y a qué tipo de cambio.
   - **Dólar de compra:** el presupuesto siempre usa el de venta; lo de cobrar en billetes pasó a *Ejecución y cobros*, abajo.
 - **Ejecución y cobros**: sin ficha. Sale de Presupuestos (2026-11-05): toma lo aprobado y lo muestra a administración, producción,
-  logística y colocación, sin precios para producción y logística. Registra cobros y habilitaciones, y de acá sale el "en producción"
+  logística y colocación, sin precios para producción y logística. Registra cobros, en la moneda de cada sección del presupuesto, y habilitaciones, y de acá sale el "en producción"
   de la ficha de la obra. Van acá los contactos operativos (capataz, quien recibe) y cómo ve logística el nombre y la dirección de una
   obra que no abre (propuesta: la etapa guarda su dirección de entrega). También: si un presupuesto en USD blue cobrado en billetes usa
   el dólar de compra (USD 1.000 al de venta, vendidos a $1.545, dejan $20.000 menos que $1.565.000); Monedas hoy guarda solo el de venta
