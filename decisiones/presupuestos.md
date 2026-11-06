@@ -1,7 +1,7 @@
 # Decisiones — módulo Presupuestos
 
 > **Estado: ficha aprobada (2026-11-05), revisada punto por punto con el usuario; revisada el 2026-11-06 (secciones con moneda e
-> IVA, opcionales y auditoría de la ficha). Sin SQL ni pantallas.**
+> IVA, opcionales, auditoría de la ficha y revisión de UX). Sin SQL ni pantallas.**
 > Se armó desde cero, sin partir del backlog, y se contrastó con él al final. Lo que falta, en `BACKLOG.md`
 > → *Presupuestos*.
 
@@ -33,14 +33,16 @@ Personas                qué ve · qué hace · qué NO ve
 Entes
 └── presupuesto — sin dueño propio: sigue a la obra; creado_por como registro · no se comparte aparte:
                   quien ve la obra ve sus presupuestos
-                · estado estado_presupuesto: borrador → publicado → aprobado | rechazado
+                · estado estado_presupuesto: borrador → publicado → aprobado | rechazado · aprobado y rechazado
+                  no admiten versiones ni quitar variantes: solo se revierten
                 · datos {numero, nombre} · numero: P-0142, correlativo de la base, no se reutiliza
                 · ruta /presupuestos/{id} · submódulo presupuestos_ver
                 · disparos {alta, estado}
 No son entes
-├── versión — tipo: actualización o corrección | variante · vence (se guarda al publicar) · IVA
-│             discriminado o incluido · cómo se ve cada opcional · estado: borrador → (en_revision)
-│             → publicado → obsoleto; en revisión y publicado no se editan; una publicada por variante
+├── versión — tipo: actualización o corrección | variante · variante: número y nombre, se copian al
+│             corregir · vence (se guarda al publicar) · IVA discriminado o incluido · cómo se ve cada
+│             opcional · estado: borrador → (en_revision) → publicado → obsoleto; en revisión y publicado
+│             no se editan; autorizada, vuelve a quien arma, que publica; una publicada por variante
 ├── sección — nombre, único en la versión · moneda · alícuota · orden
 ├── renglón — designación y ubicación ("V4 · Lavadero") · sección · cantidad · precio escrito
 │             de Catálogo: paquete y versión, fecha de condiciones, lo cargado, opcionales
@@ -62,9 +64,10 @@ Relaciones
 Acciones
 ├── presupuesto: crear · aprobar · rechazar con motivo · revertir con causa · imprimir
 │                · desactivar, solo si nunca se publicó (publicado, se aprueba o se rechaza)
-├── versión: armar · publicar · corregir · sumar variante · pedir autorización · autorizar · devolver
+├── versión: armar · publicar · corregir · sumar variante · quitar una variante (la publicada pasa a
+│            obsoleto; no la última) · pedir autorización · autorizar · devolver
 │            · retirar el pedido (vuelve a borrador) · descartar un borrador (activo = false; la publicada
-│              se reemplaza con una corrección)
+│              se reemplaza con una corrección o se quita)
 └── módulo: configurar (gerencia) · leer confirmaciones del portal (etapa 2; cada hora, al abrir, con un botón)
 
 Eventos que emite
@@ -118,6 +121,18 @@ dice. Un solo estado, sin segunda columna (`GUIDE_ENTES.md` §2.1).
 **Hay dos tipos de versión: actualización o corrección, que reemplaza a la anterior al publicarse, y variante, que convive.**
 Aluminio v1 a $100 pasa a v2 a $120: la v1 sigue valiendo hasta que se publica la v2. Aluminio y PVC se publican juntas.
 
+**Cada versión guarda el número y el nombre de su variante, y al corregir los copia (decisión del usuario, 2026-11-06).** El impreso dice
+"Aluminio US$ 7.180 · PVC US$ 6.300", y el número dice a qué variante reemplaza una corrección: "una publicada por variante" es un
+unique parcial sobre presupuesto y número. El nombre es opcional con una sola variante y obligatorio al sumar una; sin nombre se muestra
+"Variante 1". Cambiarlo en una publicada es una corrección, como cambiar cómo se ve un opcional. Costo: con ventanas mantenidas, renombrar
+pide de nuevo la autorización, y una publicada sin nombre se nombra recién al corregirla. Se descartaron la variante como registro propio,
+que renombraba sin versión nueva, y una letra automática (Opción A), que no dice qué es cada una.
+
+**Una variante publicada se quita: su versión pasa a `obsoleto` y el presupuesto sigue con las demás (decisión del usuario,
+2026-11-06).** Si el proveedor deja de entregar el PVC, Juan saca esa variante y el cliente ya no la elige; no mueve la obra ni cuenta como
+rechazo. La última no se quita: para eso está rechazar. Se llama "quitar" y no "retirar", que es lo que se hace con el pedido de
+autorización. En la etapa 2, quitar también escribe en el portal. Se descartó dejarlo como estaba: PVC seguía ofrecida.
+
 **Un borrador de versión se descarta (2026-11-06).** Lo hace quien arma, también con una devuelta: queda `activo = false`, sin borrar.
 Sin esto, Aluminio v2 a medio armar quedaba para siempre, y mientras exista no se abre otra versión de Aluminio. Una publicada no se
 descarta: se reemplaza con una corrección.
@@ -129,6 +144,17 @@ las ventanas que no cambiaron. Sin retirar, con Laura de vacaciones la versión 
 descartó dejar editar y anular la autorización si cambiaba la diferencia: había que comparar en cada guardado, y el jefe recibía avisos
 que se anulaban solos.
 
+**Retirar no avisa: quien iba a resolver lo encuentra al actuar (decisión del usuario, 2026-11-06).** Si Laura autoriza un pedido ya
+retirado, la base frena con "Juan retiró el pedido el 4/11: la versión volvió a borrador", y el filtro *Esperan mi autorización* ya no lo
+muestra. Costo: si coinciden, Laura pierde lo que llevaba revisando. Se descartó un aviso al retirar: un tipo más, y dos avisos sobre
+algo que ya no le toca.
+
+**Cuando autorizan todos, la versión vuelve a quien arma, que publica (decisión del usuario, 2026-11-06).** Sigue `en_revision`, sin
+editarse; "lista para publicar" se calcula: ningún pedido pendiente ni devuelto. Juan recibe un aviso y publica él, o Laura o gerencia,
+que también trabajan la obra: así el cambio de la obra corre como alguien que la ve y dispara las plantillas. Si al pedir ya queda todo
+autorizado, publica en el mismo paso. Se descartó publicar sola con la última autorización: si era la de Técnica, que no ve la obra,
+Obras no podía moverla. Costo: un clic más, y si Juan no está, la versión espera a que publique otro.
+
 **El número es un correlativo de toda la empresa (P-0142): lo asigna la base al crear, no se edita y no se reutiliza (2026-11-06).** Un
 desactivado conserva el suyo, así "el 142" siempre es el mismo. Se descartó numerar por año (P-26-0142): en 2027 hay otro 142 y por
 teléfono hay que decir el año; la fecha ya está en la ficha. Unique parcial `WHERE activo`, por la regla del proyecto; lo que impide reutilizarlo no es el índice sino el correlativo y que nadie
@@ -138,6 +164,13 @@ escribe el vendedor y es obligatorio.
 **Lo que se aprueba junto va en presupuestos separados; lo que compite, en variantes.** Por eso aprobar y rechazar son decisiones
 sobre el presupuesto entero: al aprobar una variante, el resto se inhabilita; al rechazar, caen todas. Así, `rechazado` significa
 solo que el cliente dijo que no a todo, y una variante no elegida no cuenta como rechazo.
+
+**Aprobado y rechazado congelan el presupuesto: sin versiones nuevas, sin corregir y sin quitar variantes; solo se revierten (decisión
+del usuario, 2026-11-06).** Ejecución toma los renglones de la versión elegida y post-venta apunta a ellos: corregirla después los dejaba en
+`obsoleto` y movía la base de la comisión sin que nadie lo aprobara. Lo que cambia en obra va en un presupuesto nuevo ("Adicional V4"),
+que se aprueba aparte; un error en lo aprobado se revierte con causa y se corrige; si el cliente vuelve tras un rechazo, es otro
+presupuesto, que al publicarse reabre la obra. Al aprobar o rechazar, los borradores y las versiones en revisión se descartan y sus
+pedidos quedan retirados: Laura no autoriza algo ya cerrado. Se descartó corregir la elegida y que la nueva pasara a ser la elegida.
 
 **La versión guarda solo su ciclo (`borrador`, `en_revision`, `publicado`, `obsoleto`); el presupuesto guarda cuál se eligió.**
 "Aprobada" e "Inhabilitada" se calculan al mostrar: el mismo hecho en dos lugares podía desalinearse. Los nombres y el sentido son
@@ -164,10 +197,10 @@ está `contratada`, uno que se publica o se rechaza tampoco.
 | Se publica el primero | `en_cotizacion` |
 | Se publica uno en una obra `perdida` | Se reabre a `en_cotizacion` |
 | Se aprueba el primero | `contratada`, firme salvo reversión |
-| Se rechaza y no quedan abiertos ni aprobados | `perdida`, con el motivo del rechazo |
+| Se rechaza y no quedan publicados ni aprobados | `perdida`, con el motivo del rechazo |
 | Se revierte una aprobación y no queda otro aprobado | `en_cotizacion`, con la causa como nota (OB009) |
 | Se revierte el rechazo que la dejó `perdida` | `en_cotizacion` |
-| Tiene presupuestos abiertos o aprobados | No se desactiva |
+| Tiene presupuestos activos, en cualquier estado | No se desactiva |
 
 **La obra cambia cuando el presupuesto se publica, no cuando se crea (decisión del usuario, 2026-11-06).** Un presupuesto se desactiva
 solo si nunca se publicó, así que nunca movió la obra y no hay nada que deshacer. Creado por error en una obra `perdida`, la reabría y
@@ -188,7 +221,15 @@ quién llama.
 **La obra pasa sola a `perdida` y vuelve sola (decisión del usuario).** Se evaluó que el sistema preguntara antes: el usuario
 prefirió que la obra siga a sus presupuestos. Etapa 1 rechazada con la Etapa 2 abierta no la mueve.
 
-**Para marcarla `perdida` a mano, primero se resuelven sus presupuestos abiertos.** Se descartó rechazarlos en cascada: reabrir la
+**Un borrador no sostiene la obra ni frena perderla: solo cuentan los publicados (decisión del usuario, 2026-11-06).** El cliente
+rechaza P-0142 mientras Juan arma P-0150, más barato: la obra pasa a `perdida` con el motivo, y si Juan publica P-0150 se reabre, con el
+aviso de arriba. Si lo abandona, la obra ya quedó bien. Es el criterio de *La obra cambia cuando el presupuesto se publica*: lo que nunca
+movió la obra no la retiene. Se descartó contar los borradores: uno olvidado dejaba la obra en cotización para siempre, sin nada enviado.
+
+**La obra no se desactiva con presupuestos activos, en cualquier estado (2026-11-06).** Un borrador se desactiva antes, porque nunca se
+publicó. Con uno publicado, aprobado o rechazado, la obra no fue un error: queda en el embudo con su motivo, y el rechazo se sigue contando.
+
+**Para marcarla `perdida` a mano, primero se resuelven sus presupuestos publicados.** Se descartó rechazarlos en cascada: reabrir la
 obra no los recuperaba, y alguien podía rechazar un presupuesto ajeno por poder marcar la obra. Se descartó dejarlos como están:
 uno publicado se podía aprobar en una obra perdida.
 
@@ -197,6 +238,10 @@ calculadora sin guardar (`catalogo_precio`). Para un presupuesto formal: una obr
 nada. Se descartó una obra genérica "Consultas": con el primer aprobado quedaba `contratada` para siempre, y mezclaba clientes,
 contactos y números. Costo: la dirección es obligatoria, y una de relleno repetida congela el alta: el presupuesto se arma, pero no se publica
 hasta que se apruebe la obra.
+
+**"Llevar a un presupuesto", desde la calculadora, pide la obra y abre un borrador con la ventana cargada (decisión del usuario,
+2026-11-06).** "¿Cuánto sale una de 150×110?" suele terminar en "mandámelo", y así no se carga dos veces. Si la obra no existe, se crea en
+Obras y la ventana vuelve con ella; cómo vuelve se decide con las pantallas. Se descartó volver a cargarla a mano.
 
 ## Quién accede
 
@@ -226,6 +271,12 @@ cargo" es la regla de Obras (`obras_a_cargo_de`: responsable, `obras_equipo` sob
 mecanismo nuevo. Si Juan, del Norte, participa de una obra del Sur, autoriza la jefa del Sur: en Obras, el jefe del equipo de un
 participante solo ve. Se descartó el jefe de quien arma: autorizaba margen en una obra que no tiene a cargo. Si quien pide ya podría
 autorizar, queda autorizado al pedir, y se registra así.
+
+**Lo que espera autorización se encuentra con un filtro de la lista, "Esperan mi autorización", no con una vista (decisión del usuario,
+2026-11-06).** Muestra solo lo pendiente, con quién pidió, hace cuánto y qué pide (mantenidas por moneda, descuento sobre el tope): lo que
+resolvió otro o se retiró no aparece. Lo tiene quien tiene `presupuestos_autorizar` (sus obras a cargo) o `presupuestos_administrar`
+(todo); el vendedor tiene "Devueltas", con el motivo. Se descartaron solo avisos, sin lista de lo pendiente, y una pestaña propia: un
+submódulo más para las mismas personas.
 
 **Técnica lee por una función que no devuelve precios, montos, totales ni la obra, y no tiene `presupuestos_ver` (2026-11-06).** El precio
 escrito es una columna del renglón y la RLS filtra filas, no columnas: con `presupuestos_ver` y el precio oculto en pantalla, lo veía en la
@@ -268,7 +319,7 @@ cliente lo ve como un renglón por moneda. Un
 solo tope para toda la empresa, que cambia gerencia, con historial.
 
 **Una alerta del paquete pide autorización de Técnica antes de publicar; un bloqueo no publica.** Las dos autorizaciones se piden juntas:
-se publica cuando autorizan todos, y si uno devuelve, vuelve a `borrador`. La de Técnica vale mientras la ventana no cambie: mismo
+queda lista para publicar cuando autorizan todos (*Estados y versiones*), y si uno devuelve, vuelve a `borrador`. La de Técnica vale mientras la ventana no cambie: mismo
 paquete, versión y datos cargados dan el mismo resultado. Técnica ve el presupuesto completo sin precios, porque una ventana puede
 depender de la de al lado.
 
@@ -280,6 +331,11 @@ actualiza libre o se mantiene con autorización. "Vencido" se calcula, no se gua
 rechazo. La fecha de vencimiento sí se guarda al publicar, con el plazo vigente (2026-11-06): recalculada, bajar el plazo vencía
 versiones que el cliente creía vigentes, y subirlo estiraba precios viejos sin autorización. Un plazo nuevo vale para lo que se publique
 después; más tiempo para el cliente es una versión nueva.
+
+**Una versión vencida se aprueba igual, con un aviso: "Vencida hace 3 días: los precios son del 1/10" (decisión del usuario,
+2026-11-06).** El portal no deja confirmarla, pero en la etapa 1 Juan registra lo que el cliente firmó. Costo: nadie autoriza lo que se
+resigna por los precios viejos, que mantener sí pide; se puede contar, porque el vencimiento queda guardado y la aprobación, en los
+eventos del presupuesto. Se descartaron frenarla con un botón a "corregir manteniendo" y una autorización del jefe sobre la aprobación.
 
 **Los mínimos son un renglón aparte, en una sección y con su mantener o actualizar.** Con mantener, autorización, como cualquier ventana.
 `catalogo_precio_minimos` calcula hoy a la fecha de hoy: hay que ampliarla con la versión, la fecha y la moneda de cada renglón.
@@ -341,7 +397,8 @@ ventana baja el renglón aparte, no el precio de esa ventana.
 
 **Debajo de cada ventana, la línea del opcional es también el control para elegirlo (decisión del usuario).** Un botón Mosquitero y una
 línea Mosquitero se leían como dos cosas. Donde se puede elegir (borrador y portal), se ven todos con su casilla, y los no elegidos sin
-monto; donde no (publicada, impreso), solo los elegidos. En el precio y en renglón aparte sigue el botón.
+monto; donde no (publicada, impreso), solo los elegidos. En el precio y en renglón aparte sigue el botón. Se evaluó que el impreso
+mostrara los no elegidos, con o sin monto, para la etapa 1, y queda así (decisión del usuario, 2026-11-06).
 
 **El mínimo de un opcional que va en renglón aparte se suma a ese renglón (decisión del usuario).** Con la Colocación en el precio, el
 cliente veía "Mínimo de colocación" de algo que no aparecía en ningún lado; aparte, ve una sola línea "Colocación $650.000". Es

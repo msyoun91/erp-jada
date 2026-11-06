@@ -102,6 +102,13 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   - **Con Obras:** la base de la comisión, hoy "de lo contratado" sin monto (`decisiones/obras.md`): el módulo tiene que exponer el
     total aprobado, que puede venir en dos monedas (una por sección): falta decidir si se convierte, y a qué tipo de cambio.
   - **Dólar de compra:** el presupuesto siempre usa el de venta; lo de cobrar en billetes pasó a *Ejecución y cobros*, abajo.
+  - **Para las pantallas, sin decidir** (revisión de UX, 2026-11-06): arriba del editor, lo que falta para publicar, como Catálogo
+    (`catalogo_version_revisar`), y el primario dice "Publicar" o "Pedir autorización a Laura y Técnica"; en revisión, a quién espera y
+    desde cuándo; devuelta, el motivo fijo hasta pedir de nuevo; "Todas a hoy" / "Mantener todas" con el resumen "8 mantenidas · +US$ 800";
+    el jefe ve la diferencia por ventana, de mayor a menor, con la antigüedad de las condiciones; "Guardar y otra" con la designación
+    siguiente (V4 → V5) y aviso si se repite; Técnica autoriza juntos los renglones iguales (paquete, versión y lo cargado); el tope al lado
+    del descuento; vencimiento en la lista y filtro "Por vencer"; renglón como tarjeta y total por moneda fijo abajo en el celular;
+    "corregir" y "sumar variante" como pregunta ("¿Reemplaza a la que tiene el cliente, o es otra opción?"); obra congelada avisada al abrir.
 - **Ejecución y cobros**: sin ficha. Sale de Presupuestos (2026-11-05): toma lo aprobado y lo muestra a administración, producción,
   logística y colocación, sin precios para producción y logística. Registra cobros, en la moneda de cada sección del presupuesto, y habilitaciones, y de acá sale el "en producción"
   de la ficha de la obra. Van acá los contactos operativos (capataz, quien recibe) y cómo ve logística el nombre y la dirección de una

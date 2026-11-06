@@ -326,7 +326,7 @@ Entes
            · estado estado_obra: idea · en_busqueda · en_cotizacion · contratada · perdida
                idea           se detectó la obra, sin contacto todavía
                en_busqueda    se busca a quien decide
-               en_cotizacion  hay al menos un presupuesto armándose o enviado
+               en_cotizacion  hay un presupuesto publicado, o se pasó a mano mientras se arma el primero
                contratada     hay al menos un presupuesto aprobado; final salvo reversión
                perdida        no se concretó; motivo (lista cerrada) + detalle libre, en el
                               historial de eventos
@@ -336,8 +336,8 @@ Entes
                presupuesto aprobado; no pasa directo a perdida
              con Presupuestos: el primero publicado lleva a en_cotizacion y el primero aprobado a contratada;
                desde ahí contratada la pone solo la base. Uno publicado en una perdida la reabre a
-               en_cotizacion. Un rechazo que la deja sin presupuestos abiertos ni aprobados la pasa a
-               perdida, con el motivo del rechazo. A perdida a mano, solo sin presupuestos abiertos
+               en_cotizacion. Un rechazo que la deja sin presupuestos publicados ni aprobados la pasa a
+               perdida, con el motivo del rechazo. A perdida a mano, solo sin presupuestos publicados
                (decisiones/presupuestos.md → Efectos en la obra)
            · la ven: responsable, participantes, obras_equipo sobre obra.equipo_id o el equipo_id de
              un participante, obras_todas
