@@ -3,7 +3,8 @@
 -- los casos que fallan.
 --
 -- Mundo: Lucia (Técnica: Paquetes con armar, Insumos con cargar), Ana (Administración: costos, fijos y servicios en %), Carlos
--- (gerente: Paquetes con aprobar), Rodrigo (solo Paquetes) y Juan (nada). Lo creado lleva Zqx163. Los ejemplos son los de
+-- (gerente: Paquetes con aprobar; arma presupuestos, que pide el precio desde sql/186), Rodrigo (solo Paquetes) y Juan
+-- (nada). Lo creado lleva Zqx163. Los ejemplos son los de
 -- decisiones/catalogo/precio.md.
 
 BEGIN;
@@ -251,7 +252,8 @@ UPDATE monedas_tipos_cambio SET activo = false WHERE activo;
 INSERT INTO ids (nombre, id)
 SELECT n, gen_random_uuid() FROM unnest(ARRAY['Lucia','Ana','Carlos','Rodrigo','Juan']) AS n;
 
-INSERT INTO ids (nombre, id) SELECT codigo, id FROM submodulos WHERE activo AND modulo = 'catalogo';
+INSERT INTO ids (nombre, id) SELECT codigo, id FROM submodulos WHERE activo AND (modulo = 'catalogo'
+  OR codigo IN ('contactos_ver', 'obras_ver', 'presupuestos_ver', 'presupuestos_armar'));
 
 INSERT INTO auth.users (id, email, raw_user_meta_data)
 SELECT id, lower(nombre) || '.' || id || '@test163.local', jsonb_build_object('nombre', 'test163 ' || nombre)
@@ -263,6 +265,7 @@ SELECT pg_temp.id(u), pg_temp.id(s) FROM (VALUES
   ('Ana','catalogo_insumos'), ('Ana','catalogo_costos'), ('Ana','catalogo_fijos'), ('Ana','catalogo_fijos_editar'),
   ('Ana','catalogo_porcentajes'), ('Ana','catalogo_porcentajes_editar'),
   ('Carlos','catalogo_paquetes'), ('Carlos','catalogo_aprobar'),
+  ('Carlos','contactos_ver'), ('Carlos','obras_ver'), ('Carlos','presupuestos_ver'), ('Carlos','presupuestos_armar'),
   ('Rodrigo','catalogo_paquetes')
 ) AS p (u, s);
 SET CONSTRAINTS ALL IMMEDIATE;
@@ -373,13 +376,13 @@ SELECT pg_temp.caso('01 referencia: ' || u, '42501',
 FROM unnest(ARRAY['Lucia','Ana','Rodrigo','Juan']) AS u;
 SELECT pg_temp.caso('01 sin EXECUTE: ' || f, 'false',
   has_function_privilege('authenticated', 'public.' || f, 'EXECUTE')::text)
-FROM unnest(ARRAY['catalogo_precio_redondear(numeric,moneda)',
+FROM unnest(ARRAY[
   'catalogo_precio_calcular(uuid,jsonb,uuid[],moneda,timestamptz)', 'catalogo_precio_venta(uuid,jsonb,uuid[],moneda)']) AS f;
 SELECT pg_temp.caso('01 con EXECUTE: ' || f, 'true',
   has_function_privilege('authenticated', 'public.' || f, 'EXECUTE')::text)
 FROM unnest(ARRAY['catalogo_precio(uuid,jsonb,uuid[],moneda)', 'catalogo_precio_detalle(uuid,jsonb,uuid[],moneda,timestamptz)',
   'catalogo_precio_minimos(jsonb,moneda)', 'catalogo_precios_referencia(moneda,timestamptz,timestamptz)',
-  'catalogo_precio_convertir(numeric,moneda,moneda,timestamptz)']) AS f;
+  'catalogo_precio_convertir(numeric,moneda,moneda,timestamptz)', 'catalogo_precio_redondear(numeric,moneda)']) AS f;
 SELECT pg_temp.caso('01 anon: ' || f, 'false', has_function_privilege('anon', 'public.' || f, 'EXECUTE')::text)
 FROM unnest(ARRAY['catalogo_precio(uuid,jsonb,uuid[],moneda)', 'catalogo_precio_detalle(uuid,jsonb,uuid[],moneda,timestamptz)',
   'catalogo_precio_minimos(jsonb,moneda)', 'catalogo_precios_referencia(moneda,timestamptz,timestamptz)',
@@ -388,7 +391,7 @@ FROM unnest(ARRAY['catalogo_precio(uuid,jsonb,uuid[],moneda)', 'catalogo_precio_
 -- ============================================================
 -- 2. El costo del despiece y la moneda
 -- ============================================================
-SELECT pg_temp.caso('02 el vendedor recibe solo esto', 'mensaje,mensajes,precio', pg_temp.consultar(format(
+SELECT pg_temp.caso('02 el vendedor recibe solo esto', 'mensaje,mensajes,precio,version_id', pg_temp.consultar(format(
   $q$SELECT string_agg(k, ',' ORDER BY k) FROM jsonb_object_keys(catalogo_precio(%L, %L::jsonb)) k$q$,
   pg_temp.paquete('Ej'), pg_temp.e('{}')), 'Carlos'));
 SELECT pg_temp.caso('02 sin mensaje', NULL, pg_temp.pr('Ej', '{mensaje}'));

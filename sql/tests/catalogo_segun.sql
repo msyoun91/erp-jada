@@ -231,7 +231,8 @@ $f$;
 INSERT INTO ids (nombre, id)
 SELECT n, gen_random_uuid() FROM unnest(ARRAY['Lucia','Carlos','Rodrigo','Juan']) AS n;
 
-INSERT INTO ids (nombre, id) SELECT codigo, id FROM submodulos WHERE activo AND modulo = 'catalogo';
+INSERT INTO ids (nombre, id) SELECT codigo, id FROM submodulos WHERE activo AND (modulo = 'catalogo'
+  OR codigo IN ('contactos_ver', 'obras_ver', 'presupuestos_ver', 'presupuestos_armar'));
 
 INSERT INTO auth.users (id, email, raw_user_meta_data)
 SELECT id, lower(nombre) || '.' || id || '@test167.local', jsonb_build_object('nombre', 'test167 ' || nombre)
@@ -241,6 +242,7 @@ INSERT INTO usuario_submodulos (usuario_id, submodulo_id)
 SELECT pg_temp.id(u), pg_temp.id(s) FROM (VALUES
   ('Lucia','catalogo_paquetes'), ('Lucia','catalogo_armar'), ('Lucia','catalogo_insumos'), ('Lucia','catalogo_cargar'),
   ('Carlos','catalogo_paquetes'), ('Carlos','catalogo_aprobar'),
+  ('Carlos','contactos_ver'), ('Carlos','obras_ver'), ('Carlos','presupuestos_ver'), ('Carlos','presupuestos_armar'),
   ('Rodrigo','catalogo_paquetes')
 ) AS p (u, s);
 

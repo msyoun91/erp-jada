@@ -2,7 +2,8 @@
 
 > **Estado: ficha aprobada (2026-11-05), revisada punto por punto con el usuario; revisada el 2026-11-06 (secciones con moneda e
 > IVA, opcionales, auditoría de la ficha y revisión de UX). SQL por tramos: tramo 1 (`sql/185`: permisos, configuración,
-> presupuesto, versiones y secciones) aplicado el 2026-11-06, con su test; ver *La base*. Sin pantallas.**
+> presupuesto, versiones y secciones), 2a (`sql/186`: renglones de Catálogo y a mano, descuento y totales) y 2b (`sql/187`:
+> opcionales y mínimos) aplicados el 2026-11-06, con sus tests; ver *La base*. Sin pantallas.**
 > Se armó desde cero, sin partir del backlog, y se contrastó con él al final. Lo que falta, en `BACKLOG.md`
 > → *Presupuestos*.
 
@@ -461,8 +462,12 @@ ni comparación. Permite usar el módulo sin el portal, y queda como respaldo.
 
 ## La base
 
-Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2 renglones y precio · 3 ciclo de la versión · 4 aprobar,
-rechazar y la obra · 5 avisos.
+Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y
+mínimos (`sql/187`) · 3 ciclo de la versión · 4 aprobar, rechazar y la obra · 5 avisos.
+
+**El tramo 2 se parte: 2a los renglones de Catálogo y a mano, con su precio, el descuento y los totales; 2b los opcionales y los
+mínimos (2026-11-06).** El 2b depende de todo el 2a (montos por línea, renglón aparte, mínimos en una sección) y cada mitad se
+prueba sola.
 
 **El tipo de versión no se guarda: se deduce de la variante (2026-11-06).** Una versión de una variante que ya existe es una
 corrección o una actualización; una con la variante siguiente es una variante nueva. Guardar el tipo era el mismo dato dos veces.
@@ -487,3 +492,64 @@ Belgrano"); congelar lo aprobado es sobre versiones y renglones, que es lo que t
 
 **La versión arranca con IVA discriminado y la sección se llama "General" si no se elige otro nombre (2026-11-06).** Son
 predeterminados que el vendedor cambia en el borrador. `presupuestos_alta`.
+
+**El precio de un renglón de Catálogo lo pone la base: se calcula a hoy al crearlo, al cambiar lo cargado y cuando su sección cambia
+de moneda (2026-11-06).** Un trigger llama a `catalogo_precio` y guarda precio, versión, fecha y mensajes; si alguien escribe el precio,
+queda el calculado. No hay un "guardar" aparte de "calcular". Cantidad, designación, ubicación y orden no recalculan. Hoy todo renglón
+es a hoy: mantener (recalcular con la versión y la fecha guardadas) entra con el tramo 3, que copia renglones. `presupuestos_renglones_validar`.
+
+**Un renglón de Catálogo sin precio se guarda, con el porqué; lo frena publicar (2026-11-06).** Un bloqueo, un paquete que salió de la
+venta o una sección que pasa a una moneda sin tipo de cambio dejan sin número a un renglón que ya estaba; rechazarlo solo al crearlo
+era una regla más que no protegía nada. Un paquete que no está a la venta no entra (PR010): no hay versión que guardar. Uno que ya
+estaba queda con su versión. `presupuestos_renglones.precio`, `mensaje`.
+
+**El renglón guarda la moneda de su precio, que el trigger iguala a la de su sección (2026-11-06).** No es otro dato: es parte del
+precio escrito ("US$ 182"). Que no coincida es lo que recalcula al de Catálogo cuando la sección cambia, y lo que frena a uno a mano
+(PR009, *Un renglón a mano no cambia de moneda*). `presupuestos_renglones.moneda`, `presupuestos_secciones_moneda`.
+
+**Una sección con renglones no se saca: antes se mueven o se sacan (2026-11-06).** Sacarlos en cascada se llevaba ventanas sin que
+nadie las mirara. PR011.
+
+**El descuento se redondea por alícuota y el IVA va sobre lo que queda (2026-11-06).** Repartir un descuento ya redondeado entre las
+alícuotas obligaba a elegir a cuál le toca el peso que sobra; por alícuota cada línea cierra y el total es la suma. Costo: puede
+diferir en un peso del % sobre el total. `presupuestos_version_totales`.
+
+**El precio de Catálogo lo pide quien arma: `presupuestos_armar` o `presupuestos_administrar`; `catalogo_aprobar` solo ya no
+(2026-11-06).** Era lo pendiente de Catálogo (`decisiones/catalogo/precio.md` → *El precio sale de una función*). Vale para el precio,
+los mínimos, la lista a la venta y el formulario; el gerente de Catálogo sigue con el detalle. `catalogo_precio_permitido`.
+
+**El formulario de venta devuelve el contenido de la versión con las claves de la calculadora (2026-11-06).** Así la entrada se arma
+con `aEntrada` sin cambios. Solo lo que pregunta: piezas opcionales, variables del vendedor con su predeterminado ya calculado (el
+despiece sin entrada), materiales que elige el vendedor con sus opciones, y por color qué no se ofrece; sin fórmulas, costos ni
+condiciones. `catalogo_venta_formulario`.
+
+**`catalogo_precio_redondear` tiene EXECUTE (2026-11-06).** No lee nada, y los totales redondean igual que el precio sin copiar la
+regla.
+
+**La línea de cada opcional sale de pedir el precio encadenado: sin opcionales, y sumando de a uno en el orden del cálculo; la
+pieza requerida va antes de la que la requiere (2026-11-06).** Cada paso tiene menos que el precio entero, y Catálogo no deja que
+lo fijo use una pieza opcional: si el entero da número, cada paso también. La Cortina antes que su Cajón no se calculaba. Si igual
+un paso falla, el renglón queda sin precio, y frena publicar. Se guarda en el renglón, como el precio. `catalogo_precio_lineas`,
+`presupuestos_renglones.lineas`.
+
+**Cómo se ve cada opcional es una fila por versión; sin fila, va en el precio (2026-11-06).** La pieza se reconoce por nombre,
+porque cada paquete tiene la suya, y el servicio por id. `presupuestos_opcionales`.
+
+**El renglón aparte no se guarda: sale de las líneas de las ventanas (2026-11-06).** Guardarlo era la misma suma dos veces, y
+destildar en una ventana tendría que tocar otro renglón. La ventana resta su línea y la suma va a la sección del aparte; si esa
+sección está en otra moneda, la ventana guarda también esa tanda. `presupuestos_version_importes`.
+
+**Una sección con el renglón aparte de un opcional tampoco se saca (2026-11-06).** Como con renglones: se mueve antes. PR011.
+
+**El mínimo arranca en la sección que más aporta a él (decisión del usuario, 2026-11-06).** El IVA y la moneda siguen al grueso
+de lo que lo generó; la primera sección por orden erraba el IVA en un edificio mixto, y la primera de la versión podía caer en
+pesos con las ventanas en dólares. Después Juan lo mueve, y no vuelve solo. `presupuestos_minimos_calcular`.
+
+**El mínimo es un renglón que pone y saca la base, uno por servicio; quien arma solo lo mueve (2026-11-06).** Se recalcula cada
+vez que cambia un renglón de Catálogo, con la versión y la fecha guardadas de cada renglón (las de su precio), en la moneda de su
+sección. El que ya no hace falta se desactiva, y si vuelve, arranca de nuevo por la regla: un renglón en $0 escondido frenaba sacar
+su sección sin que nadie lo viera. `presupuestos_renglones_minimos`, PR012.
+
+**Hasta el tramo 3, que un opcional pase a aparte en otra moneda recalcula a hoy las ventanas que lo tienen (2026-11-06).** Les
+falta la tanda en esa moneda, y hoy todo renglón es a hoy, como al cambiar la moneda de su sección. Con mantener, se recalcula a su
+fecha.

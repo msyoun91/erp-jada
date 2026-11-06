@@ -2236,6 +2236,181 @@ export type Database = {
           },
         ]
       }
+      presupuestos_opcionales: {
+        Row: {
+          activo: boolean
+          clave: string | null
+          created_at: string
+          forma: Database["public"]["Enums"]["forma_opcional_presupuesto"]
+          id: string
+          pieza: string | null
+          porcentaje_id: string | null
+          seccion_id: string | null
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          activo?: boolean
+          clave?: string | null
+          created_at?: string
+          forma: Database["public"]["Enums"]["forma_opcional_presupuesto"]
+          id?: string
+          pieza?: string | null
+          porcentaje_id?: string | null
+          seccion_id?: string | null
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          activo?: boolean
+          clave?: string | null
+          created_at?: string
+          forma?: Database["public"]["Enums"]["forma_opcional_presupuesto"]
+          id?: string
+          pieza?: string | null
+          porcentaje_id?: string | null
+          seccion_id?: string | null
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presupuestos_opcionales_porcentaje_id_fkey"
+            columns: ["porcentaje_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_porcentajes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_opcionales_seccion_id_version_id_fkey"
+            columns: ["seccion_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_secciones"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "presupuestos_opcionales_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presupuestos_renglones: {
+        Row: {
+          activo: boolean
+          cantidad: number
+          catalogo_version_id: string | null
+          condiciones_en: string | null
+          created_at: string
+          descripcion: string | null
+          designacion: string | null
+          entrada: Json | null
+          id: string
+          lineas: Json | null
+          mensaje: string | null
+          mensajes: Json | null
+          moneda: Database["public"]["Enums"]["moneda"]
+          opcionales: string[] | null
+          orden: number
+          paquete_id: string | null
+          porcentaje_id: string | null
+          precio: number | null
+          seccion_id: string
+          tipo: Database["public"]["Enums"]["tipo_renglon_presupuesto"]
+          ubicacion: string | null
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          activo?: boolean
+          cantidad?: number
+          catalogo_version_id?: string | null
+          condiciones_en?: string | null
+          created_at?: string
+          descripcion?: string | null
+          designacion?: string | null
+          entrada?: Json | null
+          id?: string
+          lineas?: Json | null
+          mensaje?: string | null
+          mensajes?: Json | null
+          moneda: Database["public"]["Enums"]["moneda"]
+          opcionales?: string[] | null
+          orden?: number
+          paquete_id?: string | null
+          porcentaje_id?: string | null
+          precio?: number | null
+          seccion_id: string
+          tipo: Database["public"]["Enums"]["tipo_renglon_presupuesto"]
+          ubicacion?: string | null
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          activo?: boolean
+          cantidad?: number
+          catalogo_version_id?: string | null
+          condiciones_en?: string | null
+          created_at?: string
+          descripcion?: string | null
+          designacion?: string | null
+          entrada?: Json | null
+          id?: string
+          lineas?: Json | null
+          mensaje?: string | null
+          mensajes?: Json | null
+          moneda?: Database["public"]["Enums"]["moneda"]
+          opcionales?: string[] | null
+          orden?: number
+          paquete_id?: string | null
+          porcentaje_id?: string | null
+          precio?: number | null
+          seccion_id?: string
+          tipo?: Database["public"]["Enums"]["tipo_renglon_presupuesto"]
+          ubicacion?: string | null
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presupuestos_renglones_catalogo_version_id_fkey"
+            columns: ["catalogo_version_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_versiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_renglones_paquete_id_fkey"
+            columns: ["paquete_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_paquetes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_renglones_porcentaje_id_fkey"
+            columns: ["porcentaje_id"]
+            isOneToOne: false
+            referencedRelation: "catalogo_porcentajes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_renglones_seccion_id_version_id_fkey"
+            columns: ["seccion_id", "version_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_secciones"
+            referencedColumns: ["id", "version_id"]
+          },
+          {
+            foreignKeyName: "presupuestos_renglones_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presupuestos_secciones: {
         Row: {
           activo: boolean
@@ -2285,6 +2460,7 @@ export type Database = {
           activo: boolean
           creado_por: string
           created_at: string
+          descuento: number
           estado: Database["public"]["Enums"]["estado_version_presupuesto"]
           id: string
           iva_discriminado: boolean
@@ -2298,6 +2474,7 @@ export type Database = {
           activo?: boolean
           creado_por?: string
           created_at?: string
+          descuento?: number
           estado?: Database["public"]["Enums"]["estado_version_presupuesto"]
           id?: string
           iva_discriminado?: boolean
@@ -2311,6 +2488,7 @@ export type Database = {
           activo?: boolean
           creado_por?: string
           created_at?: string
+          descuento?: number
           estado?: Database["public"]["Enums"]["estado_version_presupuesto"]
           id?: string
           iva_discriminado?: boolean
@@ -3493,6 +3671,15 @@ export type Database = {
         }
         Returns: Json
       }
+      catalogo_precio_lineas: {
+        Args: {
+          p_entrada: Json
+          p_monedas: Database["public"]["Enums"]["moneda"][]
+          p_opcionales: string[]
+          p_paquete: string
+        }
+        Returns: Json
+      }
       catalogo_precio_minimos: {
         Args: {
           p_items: Json
@@ -3504,6 +3691,19 @@ export type Database = {
           porcentaje_id: string
         }[]
       }
+      catalogo_precio_minimos_items: {
+        Args: {
+          p_items: Json
+          p_moneda: Database["public"]["Enums"]["moneda"]
+        }
+        Returns: {
+          aportes: Json
+          monto: number
+          nombre: string
+          porcentaje_id: string
+        }[]
+      }
+      catalogo_precio_permitido: { Args: never; Returns: boolean }
       catalogo_precio_redondear: {
         Args: {
           p_moneda: Database["public"]["Enums"]["moneda"]
@@ -3549,6 +3749,16 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["tipo_catalogo"][]
       }
+      catalogo_venta: {
+        Args: never
+        Returns: {
+          categoria: string
+          categoria_id: string
+          nombre: string
+          paquete_id: string
+        }[]
+      }
+      catalogo_venta_formulario: { Args: { p_paquete: string }; Returns: Json }
       catalogo_variante_sumar: {
         Args: { p_color: string | null; p_insumo: string }
         Returns: string
@@ -4327,6 +4537,10 @@ export type Database = {
           titulo: string
         }[]
       }
+      presupuestos_clave: {
+        Args: { p_pieza: string; p_porcentaje: string }
+        Returns: string
+      }
       presupuestos_configurar: {
         Args: { p_plazo: number; p_tope: number }
         Returns: string
@@ -4334,6 +4548,18 @@ export type Database = {
       presupuestos_etiqueta: {
         Args: { p_id: string; p_tipo: string }
         Returns: string
+      }
+      presupuestos_minimos_calcular: {
+        Args: {
+          p_moneda: Database["public"]["Enums"]["moneda"]
+          p_version: string
+        }
+        Returns: {
+          monto: number
+          nombre: string
+          porcentaje_id: string
+          seccion_id: string
+        }[]
       }
       presupuestos_puede_abrir: {
         Args: { p_id: string; p_tipo: string; p_usuario: string }
@@ -4343,6 +4569,29 @@ export type Database = {
       presupuestos_ve_de: {
         Args: { p_obra: string; p_usuario: string }
         Returns: boolean
+      }
+      presupuestos_version_importes: {
+        Args: { p_version: string }
+        Returns: {
+          alicuota: number
+          clave: string
+          importe: number
+          moneda: Database["public"]["Enums"]["moneda"]
+          nombre: string
+          renglon_id: string
+          seccion_id: string
+        }[]
+      }
+      presupuestos_version_totales: {
+        Args: { p_version: string }
+        Returns: {
+          descuento: number
+          iva: Json
+          moneda: Database["public"]["Enums"]["moneda"]
+          sin_precio: number
+          subtotal: number
+          total: number
+        }[]
       }
       puede_abrir_registro: {
         Args: { p_ente: string; p_id: string; p_usuario: string }
@@ -4600,6 +4849,7 @@ export type Database = {
         | "en_revision"
         | "publicado"
         | "obsoleto"
+      forma_opcional_presupuesto: "debajo" | "aparte"
       moneda: "ARS" | "USD_OFICIAL" | "USD_BLUE" | "EUR"
       motivo_perdida:
         | "precio"
@@ -4685,6 +4935,7 @@ export type Database = {
         | "industrial"
         | "otro"
       tipo_regla_submodulo: "requiere" | "excluye"
+      tipo_renglon_presupuesto: "catalogo" | "mano" | "minimo"
       tipo_submodulo: "vista" | "funcion"
       unidad_insumo: "mm" | "m2" | "u"
     }
@@ -4852,6 +5103,7 @@ export const Constants = {
         "publicado",
         "obsoleto",
       ],
+      forma_opcional_presupuesto: ["debajo", "aparte"],
       moneda: ["ARS", "USD_OFICIAL", "USD_BLUE", "EUR"],
       motivo_perdida: [
         "precio",
@@ -4942,6 +5194,7 @@ export const Constants = {
         "otro",
       ],
       tipo_regla_submodulo: ["requiere", "excluye"],
+      tipo_renglon_presupuesto: ["catalogo", "mano", "minimo"],
       tipo_submodulo: ["vista", "funcion"],
       unidad_insumo: ["mm", "m2", "u"],
     },

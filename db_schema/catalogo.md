@@ -1,4 +1,4 @@
-# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql`, `sql/161_catalogo_despiece.sql`, `sql/162_catalogo_ciclo.sql`, `sql/163_catalogo_precio.sql`, `sql/164_catalogo_avisos_enums.sql`, `sql/165_catalogo_avisos.sql`, `sql/167_catalogo_segun_y_cambiar.sql` — corridas en Supabase vía MCP)
+# Catálogo (`sql/158_catalogo_formulas.sql`, `sql/159_catalogo_registros.sql`, `sql/160_catalogo_paquetes.sql`, `sql/161_catalogo_despiece.sql`, `sql/162_catalogo_ciclo.sql`, `sql/163_catalogo_precio.sql`, `sql/164_catalogo_avisos_enums.sql`, `sql/165_catalogo_avisos.sql`, `sql/167_catalogo_segun_y_cambiar.sql`; el precio para quien arma presupuestos y el formulario de venta, en `sql/186_presupuestos_renglones.sql` — corridas en Supabase vía MCP)
 
 Ficha y decisiones: `decisiones/catalogo/README.md`. Tests: `sql/tests/catalogo_formulas.sql`,
 `sql/tests/catalogo_registros.sql`, `sql/tests/catalogo_paquetes.sql`, `sql/tests/catalogo_despiece.sql`,
@@ -304,19 +304,27 @@ CA012, y sin permiso, 42501.
 ## El precio
 
 Decisiones: `decisiones/catalogo/precio.md` → *El precio en la base*. Parte de `catalogo_despiece` y no guarda nada. Las públicas son
-DEFINER, porque leen lo que quien llama no puede abrir. Sin permiso, 42501. `catalogo_precio` y `catalogo_precio_minimos` piden
-`catalogo_aprobar` hasta que la ficha de Presupuestos nombre su permiso.
+DEFINER, porque leen lo que quien llama no puede abrir. Sin permiso, 42501. `catalogo_precio`, `catalogo_precio_lineas`,
+`catalogo_precio_minimos`, `catalogo_venta` y `catalogo_venta_formulario` piden armar presupuestos (`catalogo_precio_permitido()`: `presupuestos_armar` o
+`presupuestos_administrar`, `sql/186`); `catalogo_aprobar` solo ya no alcanza. El detalle y la referencia siguen con `catalogo_aprobar`.
 
 | función | qué hace |
 |---|---|
-| `catalogo_precio(paquete, entrada = '{}', opcionales = '{}', moneda = NULL) → jsonb` | lo que se vende hoy: la publicada de un paquete activo, a la fecha de hoy, si lo elegido se ofrece. `{precio, mensaje, mensajes}`, sin los `errores` del cálculo |
+| `catalogo_precio(paquete, entrada = '{}', opcionales = '{}', moneda = NULL) → jsonb` | lo que se vende hoy: la publicada de un paquete activo, a la fecha de hoy, si lo elegido se ofrece. `{precio, mensaje, mensajes, version_id}`, sin los `errores` del cálculo. `version_id` es la publicada con que se calculó, NULL si no está a la venta |
+| `catalogo_precio_lineas(paquete, entrada, opcionales, monedas[]) → jsonb` | lo de `catalogo_precio` en `monedas[1]`, más `lineas`: `[{pieza \| porcentaje_id, nombre, moneda, monto}]`, lo que sube el precio al agregar cada opcional elegido, en el orden del cálculo (piezas, la requerida antes de la que la requiere; después servicios por paso y nombre). Una tanda por moneda, en el orden pedido. Las líneas más el precio sin opcionales dan el precio exacto. Si un paso no da número, sin precio (`sql/187`) |
+| `catalogo_venta()` | `paquete_id`, `nombre`, `categoria_id`, `categoria`: los activos con publicada, por categoría y nombre |
+| `catalogo_venta_formulario(paquete) → jsonb` | lo que pregunta el formulario de la publicada, sin fórmulas ni costos; NULL si no está a la venta. `{version_id, piezas, variables, materiales, opciones, colores, servicios}`: las piezas opcionales (`incluida`, `requiere_pieza_id`), las variables que ingresa el vendedor con `predeterminado` ya calculado (el despiece sin entrada), los materiales `elige_vendedor` y `sigue` con sus opciones (nombre del insumo, `predeterminada`), los colores en que se arma (`base`, `piezas_fuera`, `opciones_fuera`) y los servicios opcionales vigentes. Las claves son las del contenido de la versión, así la entrada se arma igual que en la calculadora |
 | `catalogo_precio_detalle(version, entrada = '{}', opcionales = '{}', moneda = NULL, en = now()) → jsonb` | cualquier versión a cualquier fecha, sin mirar la oferta |
-| `catalogo_precio_minimos(items, moneda = NULL)` | `porcentaje_id`, `nombre`, `monto`: un renglón por mínimo que no se alcanzó, con los pasos siguientes aplicados y redondeado. Ítems: `[{paquete_id, cantidad, entrada?, opcionales?}]`. Sin cantidad o sin paquete: CA017 |
+| `catalogo_precio_minimos(items, moneda = NULL)` | `porcentaje_id`, `nombre`, `monto`: un renglón por mínimo que no se alcanzó, con los pasos siguientes aplicados y redondeado. Ítems: `[{paquete_id, cantidad, entrada?, opcionales?}]`, a hoy. Sin cantidad o sin paquete: CA017. Envuelve a `catalogo_precio_minimos_items` |
 | `catalogo_precios_referencia(moneda = NULL, desde = hace 30 días, hasta = now())` | `paquete_id`, `version_id`, `numero`, `nombre`, `caso_id`, `caso`, `precio_desde`, `precio_hasta`, `cambio` (%), `sin_precio_desde`, `sin_precio_hasta`: lo que más cambió primero |
 
 **Sin EXECUTE para nadie:** `catalogo_precio_calcular(version, entrada, opcionales, moneda, en)` (la cuenta: de acá sale todo),
-`catalogo_precio_venta(paquete, entrada, opcionales, moneda)` (lo que se vende hoy), `catalogo_precio_convertir` (NULL sin tipo de
-cambio) y `catalogo_precio_redondear(monto, moneda)` (ARS a entero, el resto a 2 decimales).
+`catalogo_precio_venta(paquete, entrada, opcionales, moneda)` (lo que se vende hoy, con `version_id`),
+`catalogo_precio_minimos_items(items, moneda)` (los mínimos y `aportes` `{clave del ítem: lo que aporta}`; un ítem con
+`{clave, version_id, fecha}` se calcula a esa versión y fecha, uno con `paquete_id`, a hoy: lo usa `presupuestos_minimos_calcular`
+con lo guardado en cada renglón), `catalogo_precio_convertir`
+(NULL sin tipo de cambio) y `catalogo_precio_permitido()`. `catalogo_precio_redondear(monto, moneda)` (ARS a entero, el resto a 2
+decimales) tiene EXECUTE desde `sql/186`: no lee nada, y los totales de Presupuestos redondean igual.
 
 **Lo que lee el vendedor en `mensaje`:** `No se puede calcular con estas medidas` · `Con estas medidas y elecciones el paquete no lleva nada` · `Este paquete no tiene precio a la fecha del presupuesto`
 · `Este paquete no está a la venta` · `Este paquete no se ofrece en este color` · `Ya no se ofrece: DVH, Mosquitero` ·

@@ -81,15 +81,21 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   seguido. Falta saber de dónde sale hoy la lista de insumos y costos. El script fija `request.jwt.claims` con un
   usuario real: `creado_por` es NOT NULL y sale de `auth.uid()`, así que con `service_role` solo falla.
 - **Presupuestos**: ficha aprobada (2026-11-05), con sus decisiones, en `decisiones/presupuestos.md`. SQL por tramos
-  (`decisiones/presupuestos.md` → *La base*): el 1 (`sql/185`, registros) está aplicado y probado. **Siguiente:** el tramo 2,
-  renglones y precio, que arranca por *Del cálculo*, abajo. Falta todo lo demás, y esto no está en la ficha:
-  - **Del cálculo:** el ítem guarda su versión y solo lo que cargó el vendedor: lo escrito, las elecciones, las piezas opcionales y
-    el color. El precio llega redondeado y el ítem lo multiplica por su cantidad. Una función de la base da la lista de paquetes a la
-    venta y el formulario de cada uno (qué preguntar, predeterminados ya calculados, qué se ofrece), sin leer las tablas del catálogo.
-    `catalogo_precio` y `catalogo_precio_minimos` pasan a pedir `presupuestos_armar`, en lugar de `catalogo_aprobar`. Recalcular con la
-    versión y la fecha guardadas se suma acá (`catalogo_precio_calcular` ya las recibe), y `catalogo_precio_minimos` se amplía con la
-    versión, la fecha y la moneda de cada renglón. El precio no corrige lo elegido, así que el formulario manda en `false` una pieza incluida que
-    no se ofrece.
+  (`decisiones/presupuestos.md` → *La base*): el 1 (`sql/185`, registros), el 2a (`sql/186`, renglones de Catálogo y a mano,
+  descuento, totales, formulario de venta) y el 2b (`sql/187`, líneas de los opcionales, debajo y aparte, mínimos) están aplicados
+  y probados. **Siguiente:** el 3, ciclo de la versión. Falta todo lo demás, y esto no está en la ficha:
+  - **Para el 3:** mantener — copiar los renglones, las secciones y `presupuestos_opcionales` a la versión nueva y recalcular con su
+    versión y fecha guardadas (`catalogo_precio_calcular` ya las recibe; la función lee el renglón, quien llama no elige la fecha).
+    Hoy el trigger de renglones recalcula siempre a hoy con `catalogo_precio_lineas`: con mantener, también las líneas y la tanda
+    en otra moneda van a su fecha. Los mínimos ya se calculan con la versión y la fecha de cada renglón; falta la fecha del propio
+    mínimo (el valor del mínimo vigente entonces). Sin decidir: un renglón a hoy cargado el lunes y publicado el viernes, ¿se
+    recalcula al publicar o cuenta como mantenido? Publicar frena con renglones sin precio.
+  - **Del 2b, por si pesa:** cada cambio en un renglón de Catálogo recalcula los mínimos de la versión con una vuelta por todos sus
+    renglones, más una por mínimo (`shortcut:` en `presupuestos_renglones_validar`). A 3,5 ms por precio, 40 ventanas con un mínimo
+    son ~0,3 s por edición. Si pesa: una sola vuelta por moneda.
+  - **Del formulario:** el precio no corrige lo elegido, así que la pantalla manda en `false` una pieza incluida que no se ofrece en
+    el color elegido (`catalogo_venta_formulario` → `colores[].piezas_fuera`). Con IVA incluido, falta decidir si el precio con IVA
+    de cada renglón lo da la base o la pantalla (`presupuestos_version_totales` ya da los totales).
   - **Del formulario:** la planilla de carpinterías real (2026-11-02) viene en metros con punto, así que el campo de medida tiene que
     rechazar `3.00`: sin el punto son 300 mm, y pasan un mínimo de 300. La calculadora ya lo hace con `numeroEscrito`
     (`modules/catalogo/entrada.ts`): al usarla en Presupuestos, subirla a `lib/utils.ts`.
