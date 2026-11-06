@@ -108,8 +108,18 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
     lo suyo, y la pieza se reconoce por nombre (`entrada.piezas`), así que no cambia el catálogo. A decidir con eso: si hace falta frenar
     presupuestos mezclados, que sí pediría una respuesta única guardada en el presupuesto, y cómo se cobra la colocación. Si va en un
     renglón aparte lo elige el vendedor (`decisiones/presupuestos.md` → *Secciones y opcionales*).
-  - **Con Obras:** la base de la comisión, hoy "de lo contratado" sin monto (`decisiones/obras.md`): el módulo tiene que exponer el
-    total aprobado, que puede venir en dos monedas (una por sección): falta decidir si se convierte, y a qué tipo de cambio.
+  - **Comisiones: la del referente la paga el cliente en el precio; la del vendedor, no (decisión del usuario, 2026-11-06).**
+    - **Referente: recargo de la versión, escondido en el precio.** El % sale de `obras_comisiones`, sin escribirse dos veces, y se
+      despeja como IIBB (USD 19.000 / 0,95 = 20.000): Marta cobra el % exacto. Se reparte dentro de cada ventana, y el cliente no lo ve.
+      Va antes del descuento, así sigue siendo exacto sobre lo contratado (20.000 − 10 % = 18.000, Marta 900, empresa 17.100). Se
+      descartaron un servicio en % de Catálogo (un % para todos, y el cliente lo destilda si es opcional) y un renglón como el descuento
+      (el cliente lo ve). Toca lo aplicado en el 2a (`presupuestos_version_totales`): va antes del tramo 4 y las pantallas. Sin decidir:
+      comisión en monto (USD 5000), que un participante que arma deduzca el % por el recargo, y el precio si la comisión cambia
+      después de publicar.
+    - **Vendedor: un % de lo contratado sin el recargo del referente, sin recargo propio.** De USD 18.000 con 900 de Marta, Juan
+      cobra el 3 % de 17.100 (USD 513), solo sobre lo que le queda a la empresa. Sale del margen. Sin IVA: supuesto, sin confirmar.
+    - **Base:** el módulo tiene que exponer el total aprobado, hoy "de lo contratado" sin monto (`decisiones/obras.md`), que puede venir
+      en dos monedas (una por sección): falta decidir si se convierte, y a qué tipo de cambio.
   - **Dólar de compra:** el presupuesto siempre usa el de venta; lo de cobrar en billetes pasó a *Ejecución y cobros*, abajo.
   - **Para las pantallas, sin decidir** (revisión de UX, 2026-11-06): arriba del editor, lo que falta para publicar, como Catálogo
     (`catalogo_version_revisar`), y el primario dice "Publicar" o "Pedir autorización a Laura y Técnica"; en revisión, a quién espera y
@@ -125,6 +135,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   obra que no abre (propuesta: la etapa guarda su dirección de entrega). También: si un presupuesto en USD blue cobrado en billetes usa
   el dólar de compra (USD 1.000 al de venta, vendidos a $1.545, dejan $20.000 menos que $1.565.000); Monedas hoy guarda solo el de venta
   (`decisiones/monedas.md` → *Ficha del módulo*). Y qué pasa al revertir una aprobación con la ejecución en marcha.
+  Propuesta (2026-11-06): liquida las comisiones de vendedores y referentes en una vista con su submódulo (el vendedor ve las suyas,
+  el jefe las de su equipo, administración paga, gerencia fija el % de cada vendedor, con historial). Sin decidir: si se pagan al
+  aprobar o a medida que el cliente paga. Lo que se cobra en el precio, en *Presupuestos* → *Comisiones*.
 - **Stock** y **Compras**: sin ficha. Lo que se había decidido para ellos al fichar el catálogo se
   descartó con él (2026-10-22). Sigue valiendo que los proveedores son empresas de Contactos
   (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*). Compras manda a presupuestar
