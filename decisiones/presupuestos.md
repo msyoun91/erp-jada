@@ -22,7 +22,8 @@ Personas                qué ve · qué hace · qué NO ve
 │                    autoriza, revierte, configura · —
 ├── Técnica        — los presupuestos con alertas, completos · autoriza o devuelve · precios, la obra
 │                    y sus contactos
-├── Cliente        — en erp-cliente, lo publicado con referencias en otras monedas · compara, elige
+├── Cliente        — (etapa 2; antes recibe el impreso)
+│                    en erp-cliente, lo publicado con referencias en otras monedas · compara, elige
 │                    opcionales por ventana, confirma · costos, comparación, versiones reemplazadas.
 │                    No rechaza ni pide cambios: eso lo habla con el vendedor
 ├── Administración, producción, logística, colocación — NO usan el módulo: trabajan en el de
@@ -39,19 +40,20 @@ Entes
 No son entes
 ├── versión — tipo: actualización o corrección | variante · vence (se guarda al publicar) · IVA
 │             discriminado o incluido · cómo se ve cada opcional · estado: borrador → (en_revision)
-│             → publicado → obsoleto; lo publicado no se edita; una publicada por variante
+│             → publicado → obsoleto; en revisión y publicado no se editan; una publicada por variante
 ├── sección — nombre, único en la versión · moneda · alícuota · orden
 ├── renglón — designación y ubicación ("V4 · Lavadero") · sección · cantidad · precio escrito
 │             de Catálogo: paquete y versión, fecha de condiciones, lo cargado, opcionales
 │             a mano: descripción y precio · de mínimo: el que calcula Catálogo
 │             de opcional aparte: la suma de ese opcional en todas las ventanas
 ├── autorización — del jefe, por versión; de Técnica, por renglón con alerta · qué se pidió (renglones
-│                  y diferencia por moneda, descuento y tope), quién resolvió, cuándo, motivo si devolvió
+│                  y diferencia por moneda, descuento y tope), quién resolvió, cuándo, motivo si devolvió,
+│                  o retirada por quien pidió
 │                  · la de Técnica guarda lo cargado: vale mientras la ventana sea igual, también en una
 │                  versión nueva del mismo presupuesto · historial: pedir de nuevo es otra fila
-├── confirmación — una por vez que el cliente confirma en el portal: versión, lo elegido por ventana,
+├── confirmación — (etapa 2) una por vez que el cliente confirma en el portal: versión, lo elegido por ventana,
 │                  montos por moneda que vio, cuándo confirmó y cuándo la leyó el ERP · vale la última
-└── configuración — una fila vigente: tope, plazo, monedas de referencia · cambiar crea otra y desactiva
+└── configuración — una fila vigente: tope, plazo, monedas de referencia (etapa 2) · cambiar crea otra y desactiva
                     la anterior, como las comisiones de Obras: así queda el historial
 
 Relaciones
@@ -61,20 +63,22 @@ Acciones
 ├── presupuesto: crear · aprobar · rechazar con motivo · revertir con causa · imprimir
 │                · desactivar, solo si nunca se publicó (publicado, se aprueba o se rechaza)
 ├── versión: armar · publicar · corregir · sumar variante · pedir autorización · autorizar · devolver
-│            · descartar un borrador (activo = false; la publicada se reemplaza con una corrección)
-└── módulo: configurar (gerencia) · leer confirmaciones del portal (cada hora, al abrir, con un botón)
+│            · retirar el pedido (vuelve a borrador) · descartar un borrador (activo = false; la publicada
+│              se reemplaza con una corrección)
+└── módulo: configurar (gerencia) · leer confirmaciones del portal (etapa 2; cada hora, al abrir, con un botón)
 
 Eventos que emite
-└── presupuesto: alta · estado — los escucha Obras; también disparan las plantillas de ejecución
+└── presupuesto: alta · estado — Obras escucha estado (se mueve al publicar, no al crear); los dos disparan
+                 las plantillas de ejecución
 Eventos que consume
 └── ninguno
 
 Presupuestos
 ├── Presupuestos (vista, presupuestos_ver)       — vendedor, jefe comercial, gerencia
 │   ├── presupuestos_armar (funcion)             — vendedor, jefe comercial, gerencia: incluye la calculadora
-│   ├── presupuestos_autorizar (funcion)         — jefe comercial: en las obras que tiene a cargo
+│   ├── presupuestos_autorizar (funcion)         — jefe comercial: autoriza y revierte, en las obras que tiene a cargo
 │   └── presupuestos_administrar (funcion)       — gerencia: ve y hace todo, en cualquier presupuesto
-├── Revisión técnica (vista, presupuestos_revision)     — técnica: completos, sin precios ni obra
+├── Revisión técnica (vista, presupuestos_revision)     — técnica: completos, sin precios, obra ni nombre
 │   └── presupuestos_autorizar_tecnica (funcion)       — técnica
 └── Configuración (vista, presupuestos_configuracion)  — gerencia: tope, plazo, monedas de referencia;
                                                          quien la ve, configura
@@ -94,6 +98,18 @@ Pendientes:
 - **Delegación de `presupuestos_ver` y `presupuestos_armar`:** sin decidir. Obras delega las equivalentes. Confirmar al escribir
   el SQL.
 
+## Etapas
+
+**Se construye en dos etapas: primero todo `erp-app`, después el portal (decisión del usuario, 2026-11-06).** El portal no tiene ficha:
+lo que se escribiera contra él se rehacía al definirlo, y la pantalla de todos los días esperaba.
+- **Etapa 1:** presupuesto, versiones, secciones con moneda e IVA, mantener o actualizar con sus autorizaciones, descuento, mínimos,
+  opcionales en sus tres formas, configuración de tope y plazo, e impreso. Juan manda el impreso y registra la aprobación a mano.
+- **Etapa 2, con la ficha de `erp-cliente`:** todo *El cliente y el portal* salvo el impreso: confirmación, lectura cada hora,
+  combinaciones ya calculadas, monedas de referencia, aviso y comparación del mínimo.
+
+Costo: "más interactivo que un PDF", el objetivo, llega en la segunda. Se descartó recortar la etapa 1 (opcionales solo en el precio):
+la colocación aparte resuelve el IVA, y lo que pesa es el cálculo, no la integración con otro sistema.
+
 ## Estados y versiones
 
 **El presupuesto termina en `aprobado` o `rechazado`, no en `cerrado`.** Obras necesita saber si se aprobó, y "cerrado" no lo
@@ -106,9 +122,17 @@ Aluminio v1 a $100 pasa a v2 a $120: la v1 sigue valiendo hasta que se publica l
 Sin esto, Aluminio v2 a medio armar quedaba para siempre, y mientras exista no se abre otra versión de Aluminio. Una publicada no se
 descarta: se reemplaza con una corrección.
 
+**Una versión en revisión no se edita; quien arma la retira y vuelve a `borrador` (decisión del usuario, 2026-11-06).** La autorización
+del jefe es sobre la diferencia que vio: si Juan sumaba ventanas mantenidas mientras Laura miraba, ella autorizaba US$ 800 y se publicaba
+con US$ 1.400. Al retirar, los pedidos pendientes quedan como retirados en el historial; lo que Técnica ya autorizó sigue valiendo para
+las ventanas que no cambiaron. Sin retirar, con Laura de vacaciones la versión quedaba trabada hasta que gerencia la devolviera. Se
+descartó dejar editar y anular la autorización si cambiaba la diferencia: había que comparar en cada guardado, y el jefe recibía avisos
+que se anulaban solos.
+
 **El número es un correlativo de toda la empresa (P-0142): lo asigna la base al crear, no se edita y no se reutiliza (2026-11-06).** Un
 desactivado conserva el suyo, así "el 142" siempre es el mismo. Se descartó numerar por año (P-26-0142): en 2027 hay otro 142 y por
-teléfono hay que decir el año; la fecha ya está en la ficha. Unique parcial `WHERE activo`, por la regla del proyecto. El nombre lo
+teléfono hay que decir el año; la fecha ya está en la ficha. Unique parcial `WHERE activo`, por la regla del proyecto; lo que impide reutilizarlo no es el índice sino el correlativo y que nadie
+escribe la columna (sin GRANT de INSERT ni UPDATE), así que no hace falta excepción a la regla. El nombre lo
 escribe el vendedor y es obligatorio.
 
 **Lo que se aprueba junto va en presupuestos separados; lo que compite, en variantes.** Por eso aprobar y rechazar son decisiones
@@ -122,24 +146,37 @@ los de Catálogo (`db_schema/catalogo.md` → *El ciclo*), salvo que acá hay va
 **Todo rechazo pide motivo, con la lista de Obras (`motivo_perdida`) y detalle.** Permite contar por qué se rechazan los
 presupuestos, y la obra lo toma si queda perdida.
 
-**Una aprobación o un rechazo equivocados se revierten, con causa escrita.** Lo hacen el jefe comercial o gerencia. Vuelve a
-`publicado` y, si no queda otro aprobado, la obra deja de estar `contratada`. Un clic equivocado no puede quedar para siempre,
-el mismo criterio de Obras.
+**Una aprobación o un rechazo equivocados se revierten, con causa escrita.** Vuelve a `publicado` y, si no queda otro aprobado, la obra
+deja de estar `contratada`. Un clic equivocado no puede quedar para siempre, el mismo criterio de Obras.
+
+**Revierte quien autoriza: `presupuestos_autorizar` con la obra a cargo, o `presupuestos_administrar` (decisión del usuario,
+2026-11-06).** La misma regla, sin mecanismo nuevo; quien tiene la obra a cargo la trabaja, así que el cambio de la obra corre como quien
+actúa. Se descartó una función `presupuestos_revertir`: otro permiso para las mismas personas. Se descartó que revirtiera quien trabaja la
+obra: el vendedor deshacía sus propias aprobaciones sin que nadie se enterara.
 
 ## Efectos en la obra
 
-**Obras lee el presupuesto, nunca las versiones.** Publicar, corregir o sumar una variante no la mueve. Si está `contratada`, un
-presupuesto nuevo o rechazado tampoco.
+**Obras lee el presupuesto, nunca las versiones.** Corregir o sumar una variante no la mueve: la mueve el estado del presupuesto. Si
+está `contratada`, uno que se publica o se rechaza tampoco.
 
 | En el presupuesto | En la obra |
 |---|---|
-| Se crea el primero | `en_cotizacion` |
-| Se crea uno en una obra `perdida` | Se reabre a `en_cotizacion` |
+| Se publica el primero | `en_cotizacion` |
+| Se publica uno en una obra `perdida` | Se reabre a `en_cotizacion` |
 | Se aprueba el primero | `contratada`, firme salvo reversión |
 | Se rechaza y no quedan abiertos ni aprobados | `perdida`, con el motivo del rechazo |
 | Se revierte una aprobación y no queda otro aprobado | `en_cotizacion`, con la causa como nota (OB009) |
 | Se revierte el rechazo que la dejó `perdida` | `en_cotizacion` |
 | Tiene presupuestos abiertos o aprobados | No se desactiva |
+
+**La obra cambia cuando el presupuesto se publica, no cuando se crea (decisión del usuario, 2026-11-06).** Un presupuesto se desactiva
+solo si nunca se publicó, así que nunca movió la obra y no hay nada que deshacer. Creado por error en una obra `perdida`, la reabría y
+Obras le borraba el motivo; al desactivarlo, quedaba en cotización sin presupuestos. Se descartó volver al estado anterior al
+desactivar: había que guardar y restaurar estado, motivo y nota. Costo: mientras se arma el primero, la obra no muestra que se cotiza;
+quien quiera, la pasa a mano. Con la obra congelada (OB018) el presupuesto se arma igual, y solo publicar espera a que se apruebe.
+
+**Con la obra `perdida`, el presupuestador lo avisa al abrir un borrador: "La obra está perdida (precio). Al publicar, se reabre."
+(decisión del usuario, 2026-11-06).** Juan ve antes de armar si está en la obra equivocada, y sabe que publicar cambia la obra.
 
 **Obras cambia la obra como quien actúa, escuchando los eventos del presupuesto (decisión del usuario, 2026-11-06).** Así siguen
 disparando las plantillas colgadas del estado de la obra ("obra contratada"): lo que la base cambia con permisos propios queda en el log
@@ -158,7 +195,8 @@ uno publicado se podía aprobar en una obra perdida.
 **Todo presupuesto tiene obra.** Toda la visibilidad y los efectos dependen de ella. Para "¿cuánto sale una ventana?": la
 calculadora sin guardar (`catalogo_precio`). Para un presupuesto formal: una obra mínima, que después se completa, sin transferir
 nada. Se descartó una obra genérica "Consultas": con el primer aprobado quedaba `contratada` para siempre, y mezclaba clientes,
-contactos y números. Costo: la dirección es obligatoria, y una de relleno repetida congela el alta.
+contactos y números. Costo: la dirección es obligatoria, y una de relleno repetida congela el alta: el presupuesto se arma, pero no se publica
+hasta que se apruebe la obra.
 
 ## Quién accede
 
@@ -191,8 +229,9 @@ autorizar, queda autorizado al pedir, y se registra así.
 
 **Técnica lee por una función que no devuelve precios, montos, totales ni la obra, y no tiene `presupuestos_ver` (2026-11-06).** El precio
 escrito es una columna del renglón y la RLS filtra filas, no columnas: con `presupuestos_ver` y el precio oculto en pantalla, lo veía en la
-respuesta de la API. La función devuelve número y nombre del presupuesto y, por renglón, designación, paquete y versión, medidas, lo
-cargado y las alertas; es el criterio de `catalogo_precio`. Su aviso lleva a *Revisión técnica*, no a la ficha.
+respuesta de la API. La función devuelve el número del presupuesto y, por renglón, designación, paquete y versión, medidas, lo
+cargado y las alertas; es el criterio de `catalogo_precio`. No devuelve el nombre (decisión del usuario, 2026-11-06): es texto libre, y
+"Pérez – Nordelta – arq. Gómez" le mostraba la obra y sus contactos; Técnica y el vendedor hablan de "el 142". Su aviso lleva a *Revisión técnica*, no a la ficha.
 
 **Configuración es una vista sin función: quien la ve, configura (2026-11-06).** Es solo gerencia y nadie necesita mirarla sin cambiarla;
 las escrituras se verifican en la base contra la vista. Se sacó `presupuestos_configurar`.

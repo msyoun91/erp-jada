@@ -334,8 +334,8 @@ Entes
              cualquiera de esos tres → perdida → reabrir a cualquiera de los tres
              contratada → cualquiera de los tres, con causa (texto libre), mientras no haya
                presupuesto aprobado; no pasa directo a perdida
-             con Presupuestos: el primero lleva a en_cotizacion y el primero aprobado a contratada;
-               desde ahí contratada la pone solo la base. Uno nuevo en una perdida la reabre a
+             con Presupuestos: el primero publicado lleva a en_cotizacion y el primero aprobado a contratada;
+               desde ahí contratada la pone solo la base. Uno publicado en una perdida la reabre a
                en_cotizacion. Un rechazo que la deja sin presupuestos abiertos ni aprobados la pasa a
                perdida, con el motivo del rechazo. A perdida a mano, solo sin presupuestos abiertos
                (decisiones/presupuestos.md → Efectos en la obra)
@@ -391,7 +391,7 @@ Eventos que emite
                                  (quién se sumó y con qué vínculo)
     · descartado: "cambiaron el estado de tu obra" (ruido entre quienes trabajan la misma obra)
 Eventos que consume
-└── ninguno hoy · con Presupuestos: presupuesto creado, aprobado y rechazado mueven el estado
+└── ninguno hoy · con Presupuestos: presupuesto publicado, aprobado y rechazado mueven el estado
 Tareas
 ├── plantillas "Sobre: obra" por estado, para comercial; una vez por plantilla y obra
 └── pasos de plantilla que se completan solos: vincular {rol} · pasar a {estado}; el link de
