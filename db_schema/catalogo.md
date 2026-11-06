@@ -320,9 +320,15 @@ DEFINER, porque leen lo que quien llama no puede abrir. Sin permiso, 42501. `cat
 
 **Sin EXECUTE para nadie:** `catalogo_precio_calcular(version, entrada, opcionales, moneda, en)` (la cuenta: de acá sale todo),
 `catalogo_precio_venta(paquete, entrada, opcionales, moneda)` (lo que se vende hoy, con `version_id`),
-`catalogo_precio_minimos_items(items, moneda)` (los mínimos y `aportes` `{clave del ítem: lo que aporta}`; un ítem con
-`{clave, version_id, fecha}` se calcula a esa versión y fecha, uno con `paquete_id`, a hoy: lo usa `presupuestos_minimos_calcular`
-con lo guardado en cada renglón), `catalogo_precio_convertir`
+`catalogo_precio_fuera(version, r)` (lo elegido en un cálculo que esa versión ya no ofrece: color, pieza u opción; NULL si se
+ofrece. Lo usan `catalogo_precio_venta` y, de una ventana mantenida, `presupuestos_version_pedido`; `sql/189`),
+`catalogo_precio_minimos_items(items, moneda, fechas = '{}')` (los mínimos y `aportes` `{clave del ítem: lo que aporta}`; un
+ítem con `{clave, version_id, fecha}` se calcula a esa versión y fecha, uno con `paquete_id`, a hoy: lo usa
+`presupuestos_minimos_calcular` con lo guardado en cada renglón. El umbral es el valor del servicio a la fecha de `fechas`
+`{porcentaje_id: fecha}`, la de un mínimo mantenido, o a hoy, `sql/188`), `catalogo_precio_en(paquete, version, fecha, entrada,
+opcionales, moneda)` (sin versión, `catalogo_precio_venta`; con versión, `catalogo_precio_calcular` a esa fecha más
+`version_id`), `catalogo_precio_lineas_en(paquete, version, fecha, entrada, opcionales, monedas)` (el cálculo de
+`catalogo_precio_lineas`, a una versión y una fecha: mantener en Presupuestos, `sql/188`), `catalogo_precio_convertir`
 (NULL sin tipo de cambio) y `catalogo_precio_permitido()`. `catalogo_precio_redondear(monto, moneda)` (ARS a entero, el resto a 2
 decimales) tiene EXECUTE desde `sql/186`: no lee nada, y los totales de Presupuestos redondean igual.
 

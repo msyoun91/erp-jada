@@ -82,14 +82,16 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   usuario real: `creado_por` es NOT NULL y sale de `auth.uid()`, así que con `service_role` solo falla.
 - **Presupuestos**: ficha aprobada (2026-11-05), con sus decisiones, en `decisiones/presupuestos.md`. SQL por tramos
   (`decisiones/presupuestos.md` → *La base*): el 1 (`sql/185`, registros), el 2a (`sql/186`, renglones de Catálogo y a mano,
-  descuento, totales, formulario de venta) y el 2b (`sql/187`, líneas de los opcionales, debajo y aparte, mínimos) están aplicados
-  y probados. **Siguiente:** el 3, ciclo de la versión. Falta todo lo demás, y esto no está en la ficha:
-  - **Para el 3:** mantener — copiar los renglones, las secciones y `presupuestos_opcionales` a la versión nueva y recalcular con su
-    versión y fecha guardadas (`catalogo_precio_calcular` ya las recibe; la función lee el renglón, quien llama no elige la fecha).
-    Hoy el trigger de renglones recalcula siempre a hoy con `catalogo_precio_lineas`: con mantener, también las líneas y la tanda
-    en otra moneda van a su fecha. Los mínimos ya se calculan con la versión y la fecha de cada renglón; falta la fecha del propio
-    mínimo (el valor del mínimo vigente entonces). Sin decidir: un renglón a hoy cargado el lunes y publicado el viernes, ¿se
-    recalcula al publicar o cuenta como mantenido? Publicar frena con renglones sin precio.
+  descuento, totales, formulario de venta), el 2b (`sql/187`, líneas de los opcionales, debajo y aparte, mínimos), el 3a
+  (`sql/188`, copiar, mantener o actualizar, lo que frena publicar, publicar y quitar variante) y el 3b (`sql/189`, pedir,
+  autorizar, devolver, retirar y la lectura de Técnica) están aplicados y probados.
+  **Siguiente:** el 4, aprobar, rechazar y la obra (al aprobar o rechazar, los borradores y las versiones en revisión se descartan
+  y sus pedidos quedan retirados: `presupuestos_version_a_borrador` ya retira lo pendiente). Falta todo lo demás, y esto no está en
+  la ficha:
+  - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`
+    con versión `en_revision`, y por fila `presupuestos_puede_autorizar('comercial', obra)`; si la lista crece, una función que lo
+    filtre en la base. Una autorización pendiente que ya no hace falta (gerencia sube el tope en plena revisión) igual frena
+    publicar hasta que se resuelva o se retire.
   - **Del 2b, por si pesa:** cada cambio en un renglón de Catálogo recalcula los mínimos de la versión con una vuelta por todos sus
     renglones, más una por mínimo (`shortcut:` en `presupuestos_renglones_validar`). A 3,5 ms por precio, 40 ventanas con un mínimo
     son ~0,3 s por edición. Si pesa: una sola vuelta por moneda.
@@ -113,7 +115,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
     (`catalogo_version_revisar`), y el primario dice "Publicar" o "Pedir autorización a Laura y Técnica"; en revisión, a quién espera y
     desde cuándo; devuelta, el motivo fijo hasta pedir de nuevo; "Todas a hoy" / "Mantener todas" con el resumen "8 mantenidas · +US$ 800";
     el jefe ve la diferencia por ventana, de mayor a menor, con la antigüedad de las condiciones; "Guardar y otra" con la designación
-    siguiente (V4 → V5) y aviso si se repite; Técnica autoriza juntos los renglones iguales (paquete, versión y lo cargado); el tope al lado
+    siguiente (V4 → V5) y aviso si se repite; Técnica autoriza juntos los renglones iguales (ya lo hace la base al autorizar uno,
+    `sql/189`: la pantalla los muestra agrupados); el tope al lado
     del descuento; vencimiento en la lista y filtro "Por vencer"; renglón como tarjeta y total por moneda fijo abajo en el celular;
     "corregir" y "sumar variante" como pregunta ("¿Reemplaza a la que tiene el cliente, o es otra opción?"); obra congelada avisada al abrir.
 - **Ejecución y cobros**: sin ficha. Sale de Presupuestos (2026-11-05): toma lo aprobado y lo muestra a administración, producción,

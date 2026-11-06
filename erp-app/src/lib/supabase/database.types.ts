@@ -2198,6 +2198,83 @@ export type Database = {
           },
         ]
       }
+      presupuestos_autorizaciones: {
+        Row: {
+          activo: boolean
+          created_at: string
+          estado: Database["public"]["Enums"]["estado_autorizacion_presupuesto"]
+          id: string
+          motivo: string | null
+          pedido: Json
+          pedido_por: string
+          renglon_id: string | null
+          resuelto_en: string | null
+          resuelto_por: string | null
+          tipo: Database["public"]["Enums"]["tipo_autorizacion_presupuesto"]
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_autorizacion_presupuesto"]
+          id?: string
+          motivo?: string | null
+          pedido: Json
+          pedido_por?: string
+          renglon_id?: string | null
+          resuelto_en?: string | null
+          resuelto_por?: string | null
+          tipo: Database["public"]["Enums"]["tipo_autorizacion_presupuesto"]
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          estado?: Database["public"]["Enums"]["estado_autorizacion_presupuesto"]
+          id?: string
+          motivo?: string | null
+          pedido?: Json
+          pedido_por?: string
+          renglon_id?: string | null
+          resuelto_en?: string | null
+          resuelto_por?: string | null
+          tipo?: Database["public"]["Enums"]["tipo_autorizacion_presupuesto"]
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presupuestos_autorizaciones_pedido_por_fkey"
+            columns: ["pedido_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_autorizaciones_renglon_id_fkey"
+            columns: ["renglon_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_renglones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_autorizaciones_resuelto_por_fkey"
+            columns: ["resuelto_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_autorizaciones_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presupuestos_configuracion: {
         Row: {
           activo: boolean
@@ -2309,11 +2386,13 @@ export type Database = {
           entrada: Json | null
           id: string
           lineas: Json | null
+          mantener: boolean
           mensaje: string | null
           mensajes: Json | null
           moneda: Database["public"]["Enums"]["moneda"]
           opcionales: string[] | null
           orden: number
+          origen_id: string | null
           paquete_id: string | null
           porcentaje_id: string | null
           precio: number | null
@@ -2334,11 +2413,13 @@ export type Database = {
           entrada?: Json | null
           id?: string
           lineas?: Json | null
+          mantener?: boolean
           mensaje?: string | null
           mensajes?: Json | null
           moneda: Database["public"]["Enums"]["moneda"]
           opcionales?: string[] | null
           orden?: number
+          origen_id?: string | null
           paquete_id?: string | null
           porcentaje_id?: string | null
           precio?: number | null
@@ -2359,11 +2440,13 @@ export type Database = {
           entrada?: Json | null
           id?: string
           lineas?: Json | null
+          mantener?: boolean
           mensaje?: string | null
           mensajes?: Json | null
           moneda?: Database["public"]["Enums"]["moneda"]
           opcionales?: string[] | null
           orden?: number
+          origen_id?: string | null
           paquete_id?: string | null
           porcentaje_id?: string | null
           precio?: number | null
@@ -2379,6 +2462,13 @@ export type Database = {
             columns: ["catalogo_version_id"]
             isOneToOne: false
             referencedRelation: "catalogo_versiones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_renglones_origen_id_fkey"
+            columns: ["origen_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_renglones"
             referencedColumns: ["id"]
           },
           {
@@ -2465,10 +2555,12 @@ export type Database = {
           id: string
           iva_discriminado: boolean
           numero: number
+          origen_id: string | null
           presupuesto_id: string
           updated_at: string
           variante: number
           variante_nombre: string | null
+          vence: string | null
         }
         Insert: {
           activo?: boolean
@@ -2479,10 +2571,12 @@ export type Database = {
           id?: string
           iva_discriminado?: boolean
           numero: number
+          origen_id?: string | null
           presupuesto_id: string
           updated_at?: string
           variante: number
           variante_nombre?: string | null
+          vence?: string | null
         }
         Update: {
           activo?: boolean
@@ -2493,10 +2587,12 @@ export type Database = {
           id?: string
           iva_discriminado?: boolean
           numero?: number
+          origen_id?: string | null
           presupuesto_id?: string
           updated_at?: string
           variante?: number
           variante_nombre?: string | null
+          vence?: string | null
         }
         Relationships: [
           {
@@ -2504,6 +2600,13 @@ export type Database = {
             columns: ["creado_por"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_versiones_origen_id_fkey"
+            columns: ["origen_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_versiones"
             referencedColumns: ["id"]
           },
           {
@@ -3671,12 +3774,34 @@ export type Database = {
         }
         Returns: Json
       }
+      catalogo_precio_en: {
+        Args: {
+          p_entrada: Json
+          p_fecha: string
+          p_moneda: Database["public"]["Enums"]["moneda"]
+          p_opcionales: string[]
+          p_paquete: string
+          p_version: string
+        }
+        Returns: Json
+      }
       catalogo_precio_lineas: {
         Args: {
           p_entrada: Json
           p_monedas: Database["public"]["Enums"]["moneda"][]
           p_opcionales: string[]
           p_paquete: string
+        }
+        Returns: Json
+      }
+      catalogo_precio_lineas_en: {
+        Args: {
+          p_entrada: Json
+          p_fecha: string
+          p_monedas: Database["public"]["Enums"]["moneda"][]
+          p_opcionales: string[]
+          p_paquete: string
+          p_version: string
         }
         Returns: Json
       }
@@ -3693,6 +3818,7 @@ export type Database = {
       }
       catalogo_precio_minimos_items: {
         Args: {
+          p_fechas?: Json
           p_items: Json
           p_moneda: Database["public"]["Enums"]["moneda"]
         }
@@ -4551,6 +4677,7 @@ export type Database = {
       }
       presupuestos_minimos_calcular: {
         Args: {
+          p_mantener?: string[]
           p_moneda: Database["public"]["Enums"]["moneda"]
           p_version: string
         }
@@ -4561,14 +4688,92 @@ export type Database = {
           seccion_id: string
         }[]
       }
+      presupuestos_precio_lineas: {
+        Args: {
+          p_entrada: Json
+          p_monedas: Database["public"]["Enums"]["moneda"][]
+          p_opcionales: string[]
+          p_origen: string
+          p_paquete: string
+          p_version: string
+        }
+        Returns: Json
+      }
+      presupuestos_pedido_resolver: {
+        Args: { p_autoriza: boolean; p_id: string; p_motivo?: string }
+        Returns: undefined
+      }
       presupuestos_puede_abrir: {
         Args: { p_id: string; p_tipo: string; p_usuario: string }
         Returns: boolean
       }
+      presupuestos_puede_autorizar: {
+        Args: {
+          p_obra: string
+          p_tipo: Database["public"]["Enums"]["tipo_autorizacion_presupuesto"]
+        }
+        Returns: boolean
+      }
       presupuestos_ve: { Args: { p_obra: string }; Returns: boolean }
+      presupuestos_renglon_etiqueta: {
+        Args: {
+          p_descripcion: string
+          p_designacion: string
+          p_ubicacion: string
+        }
+        Returns: string
+      }
+      presupuestos_renglon_monedas: {
+        Args: {
+          p_moneda: Database["public"]["Enums"]["moneda"]
+          p_version: string
+        }
+        Returns: Database["public"]["Enums"]["moneda"][]
+      }
+      presupuestos_revision_pendientes: {
+        Args: never
+        Returns: {
+          codigo: string
+          etiqueta: string
+          motivos: Json
+          pedido_en: string
+          pedido_id: string
+          pedido_por: string
+          version_id: string
+        }[]
+      }
+      presupuestos_revision_version: {
+        Args: { p_version: string }
+        Returns: {
+          cantidad: number
+          catalogo_version: number
+          catalogo_version_id: string
+          codigo: string
+          descripcion: string
+          designacion: string
+          entrada: Json
+          mensajes: Json
+          motivos: Json
+          paquete: string
+          paquete_id: string
+          pedido_estado: Database["public"]["Enums"]["estado_autorizacion_presupuesto"]
+          pedido_id: string
+          renglon_id: string
+          tipo: Database["public"]["Enums"]["tipo_renglon_presupuesto"]
+          ubicacion: string
+        }[]
+      }
+      presupuestos_variante_quitar: {
+        Args: { p_version: string }
+        Returns: undefined
+      }
       presupuestos_ve_de: {
         Args: { p_obra: string; p_usuario: string }
         Returns: boolean
+      }
+      presupuestos_version_copiar: {
+        Args: { p_desde: string; p_variante_nueva?: boolean }
+        Returns: string
       }
       presupuestos_version_importes: {
         Args: { p_version: string }
@@ -4581,6 +4786,26 @@ export type Database = {
           renglon_id: string
           seccion_id: string
         }[]
+      }
+      presupuestos_version_pedido: {
+        Args: { p_version: string }
+        Returns: Json
+      }
+      presupuestos_version_pedir: {
+        Args: { p_version: string }
+        Returns: Database["public"]["Enums"]["estado_version_presupuesto"]
+      }
+      presupuestos_version_publicar: {
+        Args: { p_version: string }
+        Returns: undefined
+      }
+      presupuestos_version_retirar: {
+        Args: { p_version: string }
+        Returns: undefined
+      }
+      presupuestos_version_revisar: {
+        Args: { p_version: string }
+        Returns: string[]
       }
       presupuestos_version_totales: {
         Args: { p_version: string }
@@ -4824,6 +5049,11 @@ export type Database = {
         | "obsoleta"
         | "descartada"
       alcance_minimo: "paquete" | "presupuesto"
+      estado_autorizacion_presupuesto:
+        | "pendiente"
+        | "autorizada"
+        | "devuelta"
+        | "retirada"
       estado_hilo: "abierto" | "cerrado"
       estado_obra:
         | "idea"
@@ -4869,6 +5099,7 @@ export type Database = {
       origen_tipo_cambio: "monedapi" | "manual"
       prioridad_tarea: "baja" | "media" | "alta"
       recurrencia_unidad: "dia" | "mes"
+      tipo_autorizacion_presupuesto: "comercial" | "tecnica"
       tipo_catalogo: "paquete" | "insumo" | "servicio"
       tipo_evento:
         | "alta"
@@ -5074,6 +5305,12 @@ export const Constants = {
         "descartada",
       ],
       alcance_minimo: ["paquete", "presupuesto"],
+      estado_autorizacion_presupuesto: [
+        "pendiente",
+        "autorizada",
+        "devuelta",
+        "retirada",
+      ],
       estado_hilo: ["abierto", "cerrado"],
       estado_obra: [
         "idea",
@@ -5125,6 +5362,7 @@ export const Constants = {
       origen_tipo_cambio: ["monedapi", "manual"],
       prioridad_tarea: ["baja", "media", "alta"],
       recurrencia_unidad: ["dia", "mes"],
+      tipo_autorizacion_presupuesto: ["comercial", "tecnica"],
       tipo_catalogo: ["paquete", "insumo", "servicio"],
       tipo_evento: [
         "alta",

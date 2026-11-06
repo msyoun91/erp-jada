@@ -2,8 +2,9 @@
 
 > **Estado: ficha aprobada (2026-11-05), revisada punto por punto con el usuario; revisada el 2026-11-06 (secciones con moneda e
 > IVA, opcionales, auditoría de la ficha y revisión de UX). SQL por tramos: tramo 1 (`sql/185`: permisos, configuración,
-> presupuesto, versiones y secciones), 2a (`sql/186`: renglones de Catálogo y a mano, descuento y totales) y 2b (`sql/187`:
-> opcionales y mínimos) aplicados el 2026-11-06, con sus tests; ver *La base*. Sin pantallas.**
+> presupuesto, versiones y secciones), 2a (`sql/186`: renglones de Catálogo y a mano, descuento y totales), 2b (`sql/187`:
+> opcionales y mínimos), 3a (`sql/188`: copiar, mantener, publicar y quitar variante) y 3b (`sql/189`: pedir, autorizar,
+> devolver, retirar y la lectura de Técnica) aplicados el 2026-11-06, con sus tests; ver *La base*. Sin pantallas.**
 > Se armó desde cero, sin partir del backlog, y se contrastó con él al final. Lo que falta, en `BACKLOG.md`
 > → *Presupuestos*.
 
@@ -315,6 +316,18 @@ cuándo y qué diferencia. La versión pasa por `en_revision`, autoriza la versi
 Sin el permiso, las ventanas arrancan a hoy. Gerencia y ventas ven la comparación antes y después. Cada versión nueva se autoriza de
 nuevo: la diferencia crece con el tiempo. Si quien pide ya puede autorizar, se autoriza solo (*Quién accede*).
 
+**Publicar frena si una ventana a hoy cambió de precio desde que se cargó (decisión del usuario, 2026-11-06).** Juan carga el lunes,
+el miércoles sube el aluminio, publica el viernes: "3 ventanas cambiaron de precio: actualizalas o mantenelas". Lo publicado es siempre
+lo que alguien vio, y no se escapa margen sin autorización. Se descartaron recalcular al publicar (el número cambiaba sin que Juan lo
+viera) y tomar el precio del día de carga (era mantener sin pedir permiso). Costo: un clic más cuando hubo cambios en Catálogo, y
+publicar recalcula cada ventana para comparar.
+
+**Toda ventana mantenida pide autorización, aunque no resigne nada (decisión del usuario, 2026-11-06).** Juan mantiene V1 (US$ 450
+contra 500 a hoy), V2 (300 y 300) y V3 (300 contra 280): Laura recibe el pedido por las tres. Mantener es una decisión comercial y la
+autoriza el jefe, sin que el sistema juzgue si conviene. Se descartaron pedir solo por las más baratas que a hoy y por el neto de cada
+moneda, que dejaba pasar una ventana que resigna si otra cobraba de más. Costo: mantener todo en una corrección sin cambios en Catálogo
+igual pasa por Laura; actualizar no pide nada.
+
 **El renglón a mano no pide autorización: le avisa al jefe comercial al publicar (decisión del usuario).** Con descripción y precio, que
 no se recalcula. Para lo que no está en Catálogo.
 
@@ -463,7 +476,8 @@ ni comparación. Permite usar el módulo sin el portal, y queda como respaldo.
 ## La base
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y
-mínimos (`sql/187`) · 3 ciclo de la versión · 4 aprobar, rechazar y la obra · 5 avisos.
+mínimos (`sql/187`) · 3a versión nueva, mantener y publicar (`sql/188`) · 3b autorizaciones (`sql/189`) · 4 aprobar, rechazar y la
+obra · 5 avisos.
 
 **El tramo 2 se parte: 2a los renglones de Catálogo y a mano, con su precio, el descuento y los totales; 2b los opcionales y los
 mínimos (2026-11-06).** El 2b depende de todo el 2a (montos por línea, renglón aparte, mínimos en una sección) y cada mitad se
@@ -495,8 +509,8 @@ predeterminados que el vendedor cambia en el borrador. `presupuestos_alta`.
 
 **El precio de un renglón de Catálogo lo pone la base: se calcula a hoy al crearlo, al cambiar lo cargado y cuando su sección cambia
 de moneda (2026-11-06).** Un trigger llama a `catalogo_precio` y guarda precio, versión, fecha y mensajes; si alguien escribe el precio,
-queda el calculado. No hay un "guardar" aparte de "calcular". Cantidad, designación, ubicación y orden no recalculan. Hoy todo renglón
-es a hoy: mantener (recalcular con la versión y la fecha guardadas) entra con el tramo 3, que copia renglones. `presupuestos_renglones_validar`.
+queda el calculado. No hay un "guardar" aparte de "calcular". Cantidad, designación, ubicación y orden no recalculan. Mantener, desde
+el 3a: *Mantener es recalcular con la versión y la fecha del renglón de origen*, abajo. `presupuestos_renglones_validar`.
 
 **Un renglón de Catálogo sin precio se guarda, con el porqué; lo frena publicar (2026-11-06).** Un bloqueo, un paquete que salió de la
 venta o una sección que pasa a una moneda sin tipo de cambio dejan sin número a un renglón que ya estaba; rechazarlo solo al crearlo
@@ -550,6 +564,74 @@ vez que cambia un renglón de Catálogo, con la versión y la fecha guardadas de
 sección. El que ya no hace falta se desactiva, y si vuelve, arranca de nuevo por la regla: un renglón en $0 escondido frenaba sacar
 su sección sin que nadie lo viera. `presupuestos_renglones_minimos`, PR012.
 
-**Hasta el tramo 3, que un opcional pase a aparte en otra moneda recalcula a hoy las ventanas que lo tienen (2026-11-06).** Les
-falta la tanda en esa moneda, y hoy todo renglón es a hoy, como al cambiar la moneda de su sección. Con mantener, se recalcula a su
-fecha.
+**~~Hasta el tramo 3, que un opcional pase a aparte en otra moneda recalcula a hoy las ventanas que lo tienen (2026-11-06).~~**
+Superada por el 3a: la ventana se recalcula como esté, a hoy o mantenida (*Mantener es recalcular…*, abajo).
+
+**El tramo 3 se parte: 3a la versión nueva, mantener o actualizar y publicar; 3b pedir, autorizar, devolver y retirar, y la lectura
+de Técnica (2026-11-06).** Como el 2, cada mitad se prueba sola. Hasta el 3b, lo que pide autorización frena publicar.
+
+**Corregir, actualizar y sumar variante copian la versión que se mira; la versión y cada renglón guardan de dónde vienen
+(2026-11-06).** Copia secciones, cómo se ve cada opcional, ventanas y renglones a mano; los mínimos los pone la base. Sumar variante
+arranca sin nombre, y publicarla lo pide si hay otra publicada. Las ventanas arrancan a hoy (*Precio*: sin autorización, a hoy).
+`presupuestos_version_copiar`, `origen_id`.
+
+**Mantener es recalcular con la versión y la fecha del renglón de origen: solo hay dos valores, hoy o los de la versión de la que se
+copió (2026-11-06).** El origen guarda lo que vio el cliente, y si él mismo estaba mantenido, su fecha es la de antes: la cadena
+llega a la cotización original. Cambiar una medida de una mantenida respeta su fecha (`decisiones/catalogo/precio.md` → *Un
+presupuesto se recalcula como era*); cambiarle el paquete frena (PR013): no hay versión vieja de otro paquete, se pasa a hoy antes.
+La fecha la lee la base del origen; quien llama solo elige mantener o no. `presupuestos_renglones.mantener`,
+`presupuestos_precio_lineas`.
+
+**Escribir `mantener`, aunque no cambie, recalcula (2026-11-06).** "Actualizar" una ventana que ya estaba a hoy y cambió de precio es
+el mismo gesto que actualizar una mantenida, sin una función aparte. Un trigger que corre antes marca el renglón para recalcular.
+`presupuestos_renglones_a_hoy`.
+
+**El umbral de un mínimo es el valor del servicio a la fecha del mínimo: hoy, o la del mínimo de origen si se mantiene
+(2026-11-06).** Lo que aporta cada ventana sigue a la fecha de la ventana. Antes el umbral era el mayor de los de cada ventana, a su
+fecha: con mantenidas y a hoy mezcladas no era ni el de antes ni el de hoy. `catalogo_precio_minimos_items`,
+`presupuestos_minimos_calcular`.
+
+**Un mínimo copiado arranca en la sección de igual nombre que la de su origen (2026-11-06).** Si Juan lo había movido a
+Colocación, la corrección no lo devuelve a la sección que más aporta. Sin esa sección, arranca por la regla.
+
+**Una ventana copiada cuyo paquete salió de la venta entra sin precio, con la versión de su origen (2026-11-06).** Es la regla del 2a
+(uno que ya estaba queda con su versión). Mantenida tiene precio, con la autorización de siempre; una nueva de ese paquete no entra
+(PR010).
+
+**~~Lo que frena publicar es una lista, como en Catálogo, y publicar la exige entera (2026-11-06).~~** Superada por el 3b: *Lo que
+frena y lo que pide autorización van separados*, abajo.
+
+**Lo que frena y lo que pide autorización van separados: `revisar` frena pedir y publicar; `pedido` dice qué pide autorización y
+en qué está (2026-11-06).** Frena: sin configuración, sin renglones, variante sin nombre, ventanas sin precio, lo que cambió desde que
+se calculó y mínimos que faltan. Con las dos listas la pantalla elige el primario ("Publicar" o "Pedir autorización"); publicar exige
+las dos, y frena con "Pide …" lo que falta pedir y "Espera la …" lo pendiente. `presupuestos_version_revisar`,
+`presupuestos_version_pedido`, `presupuestos_version_publicar` (PR014).
+
+**Lo que autorizó el jefe vale solo en la vuelta en que se dio; lo de Técnica, para toda ventana igual del presupuesto
+(2026-11-06).** El jefe autorizó una diferencia que, de vuelta en borrador, puede cambiar; Técnica, un resultado que solo depende de
+paquete, versión y lo cargado. Al volver a borrador (retirar o devolver) lo pendiente queda retirado y lo del jefe deja de valer
+(`activo = false`). `presupuestos_version_a_borrador`, `presupuestos_tecnica_cubre`.
+
+**Si uno devuelve, lo demás pendiente queda retirado (2026-11-06).** La versión vuelve a borrador y se edita: Laura no autoriza una
+diferencia que Juan va a cambiar. Pedir de nuevo arma otro pedido. Si Laura llega tarde, la base dice quién devolvió y cuándo (PR018).
+`presupuestos_pedido_resolver`.
+
+**Autorizar una ventana de Técnica autoriza también las pendientes iguales de la versión (2026-11-06).** Por la regla de arriba su
+autorización ya valía para ellas; dejarlas pendientes trababa publicar y dejaba en la cola de Técnica algo resuelto. Es lo que pedía
+la revisión de UX ("Técnica autoriza juntos los renglones iguales"), en la base. `presupuestos_pedido_resolver`.
+
+**Una opción dada de baja mantenida es algo elegido en la ventana que su propia versión ya no ofrece: color, pieza u opción
+(2026-11-06).** Se pregunta a la versión de la ventana, no a la publicada, que puede no tener esa opción. Pide Técnica, junto con las
+alertas; un paquete que salió de la venta sin nada dado de baja pide solo al jefe, por mantener. `catalogo_precio_fuera`, que sale de
+`catalogo_precio_venta` sin copiar la regla.
+
+**La diferencia que ve el jefe es a hoy menos mantenido, por renglón y sumada por moneda (2026-11-06).** Cada renglón en la moneda de
+su sección; un opcional aparte en otra moneda va dentro del precio de su ventana. Una ventana sin precio a hoy va sin diferencia. El
+mínimo se compara con el umbral de hoy. Se guarda al pedir: el jefe ve lo que se pidió. `presupuestos_version_pedido`,
+`presupuestos_autorizaciones.pedido`.
+
+**Gerencia autoriza también lo de Técnica (2026-11-06).** `presupuestos_administrar` deja pasar toda regla del módulo (*Quién
+accede*); si pide ella, todo queda autorizado y publica en el mismo paso. `presupuestos_puede_autorizar`.
+
+**Técnica ve los presupuestos con algún pedido suyo, en cualquier versión (2026-11-06).** Son "los presupuestos con alertas" de la
+ficha: así ve también la versión siguiente, donde lo que autorizó ya vale y no hay pedido nuevo. `presupuestos_revision_version`.
