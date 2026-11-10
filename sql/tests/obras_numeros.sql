@@ -11,6 +11,9 @@
 
 BEGIN;
 
+-- Prueba reglas de Obras: sin el freno de Presupuestos (sql/194), que no deja pasar a contratada sin un aprobado.
+ALTER TABLE obras DISABLE TRIGGER presupuestos_obra_estado;
+
 CREATE TEMP TABLE r (caso text, esperado text, obtenido text, ok boolean) ON COMMIT DROP;
 CREATE TEMP TABLE ids (nombre text PRIMARY KEY, id uuid) ON COMMIT DROP;
 GRANT ALL ON r, ids TO authenticated;

@@ -4849,6 +4849,7 @@ export type Database = {
           alicuota: number
           clave: string
           importe: number
+          importe_con_iva: number
           moneda: Database["public"]["Enums"]["moneda"]
           nombre: string
           renglon_id: string

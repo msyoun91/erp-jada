@@ -255,8 +255,12 @@ UPDATE obras SET congelada = true, congelada_antes = '{}' WHERE id = pg_temp.id(
 SELECT pg_temp.caso('07 congelada: publicar espera', 'OB018', pg_temp.publicar('P4v1'));
 SELECT pg_temp.caso('07 y el presupuesto sigue en borrador', 'borrador', pg_temp.pres('P4'));
 UPDATE obras SET congelada = false, congelada_antes = NULL WHERE id = pg_temp.id('Palermo');
-SELECT pg_temp.caso('07 contratada a mano, todavía se puede', 'ok/contratada',
+SELECT pg_temp.caso('07 contratada a mano, sin aprobado, no se puede', 'PR028/idea',
   pg_temp.mover('Palermo', $s$estado = 'contratada'$s$) || '/' || pg_temp.obra('Palermo'));
+ALTER TABLE obras DISABLE TRIGGER presupuestos_obra_estado;
+UPDATE obras SET estado = 'contratada' WHERE id = pg_temp.id('Palermo');
+ALTER TABLE obras ENABLE TRIGGER presupuestos_obra_estado;
+SELECT pg_temp.caso('07 montaje: una contratada de antes, sin presupuesto', 'contratada', pg_temp.obra('Palermo'));
 SELECT pg_temp.caso('07 publicar no la saca de contratada', 'ok/contratada', pg_temp.publicar('P4v1') || '/' || pg_temp.obra('Palermo'));
 SELECT pg_temp.caso('07 rechazar tampoco', 'ok/contratada', pg_temp.rechazar('P4', 'precio') || '/' || pg_temp.obra('Palermo'));
 SELECT pg_temp.caso('07 sin aprobados, a mano sale con su causa', 'ok/idea/no era',

@@ -148,8 +148,8 @@ con `obras_numeros`, todas; sin `obras_ver`, nada. Activas; un alta congelada no
   existe o está desactivada.
 - `obras_desactivar(obra)` — DEFINER. Con presupuestos activos, PR007 (trigger de Presupuestos, `presupuestos.md`).
 - El estado sigue a los presupuestos desde `sql/191` (`presupuestos.md` → `presupuestos_mover_obra`, `presupuestos_obra_estado`):
-  publicar, aprobar, rechazar y revertir la mueven; a mano no sale de `contratada` con un aprobado (PR025) ni pasa a `perdida` con
-  publicados (PR026).
+  publicar, aprobar, rechazar y revertir la mueven; a mano no sale de `contratada` con un aprobado (PR025), no pasa a `perdida` con
+  publicados (PR026) y no entra a `contratada` sin un aprobado (PR028, `sql/194`).
 - `obras_alta(nombre, direccion, origen, tipo, localidad?, notas?, compra_estimada?, estado?,
   quien_persona?, quien_empresa?, quien_nuevo_tipo?, quien_nuevo_nombre?, quien_nuevo_telefono?,
   quien_nuevo_email?) → uuid` — INVOKER (`sql/128`). La obra y un solo "¿Quién?" (OB017), vinculado

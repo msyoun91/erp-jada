@@ -87,12 +87,7 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   autorizar, devolver, retirar y la lectura de Técnica), el 3c (`sql/190`, el recargo de la comisión del referente, abajo) el 4
   (`sql/191`, aprobar, rechazar, revertir y la obra que sigue a sus presupuestos) y el 5 (`sql/192`–`sql/193`, avisos) están
   aplicados y probados. **Siguiente:** las pantallas, ya definidas (`decisiones/presupuestos.md` → *Pantallas*, 2026-11-10).
-  Primero una migración con lo que pidieron: el nombre no cambia después de aprobar o rechazar, el importe con IVA de cada renglón
-  en `presupuestos_version_importes`, y el freno de `contratada` (abajo). Falta todo lo demás, y esto no está en la ficha:
-  - **Del 4, con las pantallas:** frenar que la obra pase a `contratada` a mano ("contratada si y solo si hay un aprobado"). Hoy se
-    puede, porque sin pantallas no hay otra forma de marcarla; rompe 4 tests de Obras (`obras_reglas`, `obras_numeros`,
-    `obras_contactos_bajas`, `tareas_plantillas_sobre`) y el selector de estado de la ficha de la obra, y hay 2 obras contratadas
-    sin presupuesto, que quedan como están (decisión del usuario, 2026-11-10). Va en `presupuestos_obra_estado`.
+  La migración que piden ya está aplicada (`sql/194`: nombre congelado, `importe_con_iva` por renglón, freno de `contratada`). Falta todo lo demás, y esto no está en la ficha:
   - **Del 4, con el portal:** no aprobar si un mínimo hace que el total difiera de lo que confirmó el cliente (etapa 2).
   - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`
     con versión `en_revision`, y por fila `presupuestos_puede_autorizar('comercial', obra)`; si la lista crece, una función que lo

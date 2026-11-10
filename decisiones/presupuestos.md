@@ -5,7 +5,7 @@
 > presupuesto, versiones y secciones), 2a (`sql/186`: renglones de Catálogo y a mano, descuento y totales), 2b (`sql/187`:
 > opcionales y mínimos), 3a (`sql/188`: copiar, mantener, publicar y quitar variante) y 3b (`sql/189`: pedir, autorizar,
 > devolver, retirar y la lectura de Técnica) aplicados el 2026-11-06, 3c (`sql/190`: recargo del referente) y 4 (`sql/191`: aprobar,
-> rechazar, revertir y la obra) el 2026-11-10, con sus tests; ver *La base*. El tramo 5 (avisos, `sql/192`–`sql/193`) también, con sus tests. Pantallas definidas el 2026-11-10 (*Pantallas*), sin construir.**
+> rechazar, revertir y la obra) el 2026-11-10, con sus tests; ver *La base*. El tramo 5 (avisos, `sql/192`–`sql/193`) también, con sus tests. Pantallas definidas el 2026-11-10 (*Pantallas*), sin construir; la migración que piden (`sql/194`) ya está aplicada.**
 > Se armó desde cero, sin partir del backlog, y se contrastó con él al final. Lo que falta, en `BACKLOG.md`
 > → *Presupuestos*.
 
@@ -533,7 +533,7 @@ presupuesto (trabajo a mano sin valor).
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y
 mínimos (`sql/187`) · 3a versión nueva, mantener y publicar (`sql/188`) · 3b autorizaciones (`sql/189`) · 3c recargo del referente (`sql/190`) · 4 aprobar, rechazar y la
-obra (`sql/191`) · 5 avisos (`sql/192`–`sql/193`).
+obra (`sql/191`) · 5 avisos (`sql/192`–`sql/193`) · 6 pantallas (`sql/194`: nombre congelado PR027, `importe_con_iva`, freno de `contratada` PR028; test `presupuestos_pantallas`). Los tests de Obras que ponían `contratada` a mano desactivan `presupuestos_obra_estado` dentro de su transacción; el selector de estado de la obra ya no ofrece `contratada`.
 
 **El tramo 2 se parte: 2a los renglones de Catálogo y a mano, con su precio, el descuento y los totales; 2b los opcionales y los
 mínimos (2026-11-06).** El 2b depende de todo el 2a (montos por línea, renglón aparte, mínimos en una sección) y cada mitad se

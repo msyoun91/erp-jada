@@ -3,7 +3,7 @@
 Ficha y decisiones: `decisiones/presupuestos.md`. Tests: `sql/tests/presupuestos_registros.sql` (tramo 1),
 `sql/tests/presupuestos_renglones.sql` (2a), `sql/tests/presupuestos_opcionales.sql` (2b), `sql/tests/presupuestos_ciclo.sql` (3a),
 `sql/tests/presupuestos_autorizaciones.sql` (3b), `sql/tests/presupuestos_recargo.sql` (3c),
-`sql/tests/presupuestos_aprobacion.sql` (4), `sql/tests/presupuestos_avisos.sql` (5).
+`sql/tests/presupuestos_aprobacion.sql` (4), `sql/tests/presupuestos_avisos.sql` (5), `sql/tests/presupuestos_pantallas.sql` (6).
 
 **Estado:** tramo 1 — `sql/185` (permisos, configuración, presupuesto, versiones, secciones, ente), aplicado el 2026-11-06.
 Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el precio de Catálogo para quien arma), aplicado el
@@ -11,7 +11,7 @@ Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el 
 2026-11-06. Tramo 3a — `sql/188` (copiar una versión, mantener o actualizar, lo que frena publicar, publicar y quitar una
 variante), aplicado el 2026-11-06. Tramo 3b — `sql/189` (pedir, autorizar, devolver y retirar; lo que frena separado de lo que
 pide autorización; la lectura de Técnica), aplicado el 2026-11-06. Tramo 3c — `sql/190` (el recargo de la comisión del referente), aplicado el 2026-11-10. Tramo 4 — `sql/191` (aprobar, rechazar, revertir y la obra que sigue a sus presupuestos), aplicado el
-2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10.
+2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10. Tramo 6 — `sql/194` (lo que pidieron las pantallas: nombre congelado, importe con IVA por renglón, freno de `contratada`), aplicado el 2026-11-10.
 
 ## Ver y armar: decide la obra
 
@@ -247,7 +247,7 @@ las funciones del ciclo (DEFINER).
   y una sección. Sin armar en esa obra, 42501.
 - `presupuestos_obra_desactivar` — trigger DEFINER sobre `obras` (BEFORE UPDATE OF activo): la obra con presupuestos activos
   no se desactiva (PR007).
-- `presupuestos_version_importes(version) → (renglon_id, seccion_id, moneda, alicuota, clave, nombre, importe)` — INVOKER. Una
+- `presupuestos_version_importes(version) → (renglon_id, seccion_id, moneda, alicuota, clave, nombre, importe, importe_con_iva)` — DEFINER (`sql/190`), con `presupuestos_ve`. `importe_con_iva` (`sql/194`) = redondear(importe × (1 + alícuota / 100)): con IVA incluido, editor, impreso y portal muestran ese número, no lo recalculan. Una
   fila por importe que ve el cliente: cada renglón (`clave` NULL) sin sus opcionales aparte, redondear((precio − líneas aparte) ×
   cantidad); y cada opcional aparte de cada ventana, en la sección y la moneda de su renglón aparte, redondear(línea × cantidad).
   El renglón aparte es la suma por `clave`; su mínimo es el renglón de mínimo con ese servicio. `importe` NULL: sin precio, o sin la
@@ -327,7 +327,8 @@ las funciones del ciclo (DEFINER).
   sin aprobado (a mano) solo se mueve al aprobar. Si la obra tendría que cambiar y está congelada, OB018: publicar espera. El
   UPDATE llega a `obras_al_editar` a profundidad 2 (sin reglas de actor) y el evento `estado` de la obra sale con quien actuó.
 - `presupuestos_obra_estado` — trigger DEFINER sobre `obras` (BEFORE UPDATE OF estado): con un presupuesto aprobado no sale de
-  `contratada` (PR025); con publicados no pasa a `perdida` (PR026). Pasar a `contratada` a mano todavía se puede (`BACKLOG.md`).
+  `contratada` (PR025); con publicados no pasa a `perdida` (PR026); y desde `sql/194` no pasa a `contratada` si no hay uno aprobado (PR028). Al aprobar sí: `presupuestos_mover_obra` corre con el presupuesto ya `aprobado`. Las obras que ya estaban `contratada` sin presupuesto quedan como están: el freno corre al entrar al estado.
+- `presupuestos_nombre_congelado` — trigger INVOKER sobre `presupuestos` (BEFORE UPDATE OF nombre, si cambió, `sql/194`): aprobado o rechazado, el nombre no cambia (PR027). Revertir lo devuelve a `publicado` y se vuelve a poder.
 - `presupuestos_puede_autorizar_de(tipo, obra, usuario) → boolean` — DEFINER STABLE, sin GRANT (`sql/193`): la regla de la tabla *Autoriza*
   por usuario; `presupuestos_puede_autorizar` la envuelve con `auth.uid()`.
 - `presupuestos_mano_nuevos(version) → setof uuid` — sin GRANT: renglones a mano activos sin origen o distintos de su origen
@@ -375,4 +376,4 @@ mantiene lo copiado, con su paquete · PR014 algo frena publicar · PR015 solo s
 variante no se quita · PR017 la versión no está en revisión · PR018 el pedido ya no está pendiente · PR019 devolver pide motivo · PR020 las comisiones
 de los referentes llegan al 100 % · PR021 solo se aprueba una versión publicada · PR022 rechazar pide motivo (y detalle, con
 "otro") · PR023 solo se revierte lo aprobado o rechazado · PR024 revertir pide la causa · PR025 la obra tiene un presupuesto
-aprobado: no sale de contratada · PR026 la obra tiene presupuestos publicados: no pasa a perdida.
+aprobado: no sale de contratada · PR026 la obra tiene presupuestos publicados: no pasa a perdida · PR027 el nombre de un presupuesto aprobado o rechazado no cambia · PR028 la obra pasa a contratada al aprobar un presupuesto.

@@ -23,12 +23,11 @@ import {
   type TransferirForm,
 } from "../types";
 
-// A dónde se puede ir desde cada estado (OB008, OB010); la base lo hace valer.
-// Con Presupuestos, `contratada` la pondrá solo la base.
+// A dónde se puede ir desde cada estado (OB008, OB010); la base lo hace valer. `contratada` la pone solo Presupuestos al aprobar (PR028).
 function destinos(desde: EstadoObra): EstadoObra[] {
   const abiertos = ESTADOS_ABIERTOS.filter((e) => e !== desde);
   if (desde === "contratada" || desde === "perdida") return [...ESTADOS_ABIERTOS];
-  return [...abiertos, "contratada", "perdida"];
+  return [...abiertos, "perdida"];
 }
 
 export function EstadoModal({ obra, inicial, onClose }: { obra: Obra; inicial: EstadoObra | null; onClose: () => void }) {
