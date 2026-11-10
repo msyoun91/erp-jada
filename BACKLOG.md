@@ -86,11 +86,13 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (`sql/188`, copiar, mantener o actualizar, lo que frena publicar, publicar y quitar variante) y el 3b (`sql/189`, pedir,
   autorizar, devolver, retirar y la lectura de Técnica), el 3c (`sql/190`, el recargo de la comisión del referente, abajo) el 4
   (`sql/191`, aprobar, rechazar, revertir y la obra que sigue a sus presupuestos) y el 5 (`sql/192`–`sql/193`, avisos) están
-  aplicados y probados. **Siguiente:** las pantallas. Falta todo lo demás, y esto no está en la ficha:
+  aplicados y probados. **Siguiente:** las pantallas, ya definidas (`decisiones/presupuestos.md` → *Pantallas*, 2026-11-10).
+  Primero una migración con lo que pidieron: el nombre no cambia después de aprobar o rechazar, el importe con IVA de cada renglón
+  en `presupuestos_version_importes`, y el freno de `contratada` (abajo). Falta todo lo demás, y esto no está en la ficha:
   - **Del 4, con las pantallas:** frenar que la obra pase a `contratada` a mano ("contratada si y solo si hay un aprobado"). Hoy se
     puede, porque sin pantallas no hay otra forma de marcarla; rompe 4 tests de Obras (`obras_reglas`, `obras_numeros`,
     `obras_contactos_bajas`, `tareas_plantillas_sobre`) y el selector de estado de la ficha de la obra, y hay 2 obras contratadas
-    sin presupuesto, a decidir qué se hace con ellas. Va en `presupuestos_obra_estado`.
+    sin presupuesto, que quedan como están (decisión del usuario, 2026-11-10). Va en `presupuestos_obra_estado`.
   - **Del 4, con el portal:** no aprobar si un mínimo hace que el total difiera de lo que confirmó el cliente (etapa 2).
   - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`
     con versión `en_revision`, y por fila `presupuestos_puede_autorizar('comercial', obra)`; si la lista crece, una función que lo
@@ -100,8 +102,7 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
     renglones, más una por mínimo (`shortcut:` en `presupuestos_renglones_validar`). A 3,5 ms por precio, 40 ventanas con un mínimo
     son ~0,3 s por edición. Si pesa: una sola vuelta por moneda.
   - **Del formulario:** el precio no corrige lo elegido, así que la pantalla manda en `false` una pieza incluida que no se ofrece en
-    el color elegido (`catalogo_venta_formulario` → `colores[].piezas_fuera`). Con IVA incluido, falta decidir si el precio con IVA
-    de cada renglón lo da la base o la pantalla (`presupuestos_version_totales` ya da los totales).
+    el color elegido (`catalogo_venta_formulario` → `colores[].piezas_fuera`): al cambiar de color, la destilda con un aviso.
   - **Del formulario:** la planilla de carpinterías real (2026-11-02) viene en metros con punto, así que el campo de medida tiene que
     rechazar `3.00`: sin el punto son 300 mm, y pasan un mínimo de 300. La calculadora ya lo hace con `numeroEscrito`
     (`modules/catalogo/entrada.ts`): al usarla en Presupuestos, subirla a `lib/utils.ts`.

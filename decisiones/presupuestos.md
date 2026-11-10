@@ -5,7 +5,7 @@
 > presupuesto, versiones y secciones), 2a (`sql/186`: renglones de Catálogo y a mano, descuento y totales), 2b (`sql/187`:
 > opcionales y mínimos), 3a (`sql/188`: copiar, mantener, publicar y quitar variante) y 3b (`sql/189`: pedir, autorizar,
 > devolver, retirar y la lectura de Técnica) aplicados el 2026-11-06, 3c (`sql/190`: recargo del referente) y 4 (`sql/191`: aprobar,
-> rechazar, revertir y la obra) el 2026-11-10, con sus tests; ver *La base*. El tramo 5 (avisos, `sql/192`–`sql/193`) también, con sus tests. Sin pantallas.**
+> rechazar, revertir y la obra) el 2026-11-10, con sus tests; ver *La base*. El tramo 5 (avisos, `sql/192`–`sql/193`) también, con sus tests. Pantallas definidas el 2026-11-10 (*Pantallas*), sin construir.**
 > Se armó desde cero, sin partir del backlog, y se contrastó con él al final. Lo que falta, en `BACKLOG.md`
 > → *Presupuestos*.
 
@@ -501,6 +501,33 @@ que desapareciera al pedir de nuevo: una condición más para sacar algo que Jua
 flete a US$ 300 o un "Andamio" más, avisa y cuenta solo esos. Cambió: descripción, precio, cantidad o moneda. Uno por versión
 publicada, a quienes pueden autorizar lo comercial en esa obra, menos quien publica; queda como noticia. Vale igual al sumar una
 variante, que también copia. Se descartó avisar en cada publicación: el mismo flete en cada corrección, y el jefe deja de mirarlos.
+
+## Pantallas
+
+**Siete pantallas, revisadas de a una con el usuario (2026-11-10).** Lista `/presupuestos` (filtros Todos, *Esperan mi
+autorización*, *Devueltas*) · ficha `/presupuestos/[id]` (una tarjeta por variante: publicada, la abierta y su estado, corregir,
+quitar; encabezado según estado) · editor `/presupuestos/[id]/[version]` (secciones, renglones, opcionales, totales y *Antes de
+publicar*; solo lectura fuera de borrador o sin armar; quien autoriza resuelve ahí) · impreso `/presupuestos/[id]/imprimir` ·
+Revisión técnica `/presupuestos/revision` y `/presupuestos/revision/[version]` · Configuración · y la sección en la ficha de la obra,
+por composición en `app/`. La calculadora sin guardar sigue en Catálogo; su formulario sube a `components/` para usarlo en los dos.
+
+**El nombre del presupuesto se edita hasta aprobar o rechazar (decisión del usuario, 2026-11-10).** Lo ve el cliente, pero no cambia
+precios. Hoy la base lo deja cambiar en cualquier estado (`GRANT UPDATE (nombre)` en `sql/185`, sin trigger): el freno va en la
+migración de pantallas.
+
+**Con IVA incluido, el precio con IVA de cada renglón lo da la base (decisión del usuario, 2026-11-10).** Editor, impreso y portal
+mostrarían centavos distintos si cada uno redondeara. `presupuestos_version_importes` suma el importe con IVA, redondeado; en el pie,
+el descuento es subtotal − total, así absorbe el redondeo y el total es el mismo que con IVA discriminado.
+
+**El impreso: solo lo publicado, y los datos de la empresa en un archivo de la app (decisión del usuario, 2026-11-10).** Publicado,
+todas las variantes; aprobado, la aprobada; rechazado, la última de cada una; un borrador no se imprime. Empresa: logo y datos fijos
+como marcadores hasta tenerlos, sin tabla hasta que haga falta cambiarlos desde una pantalla. Cliente: nombre y dirección de la obra y
+sus contactos con rol `cliente`.
+
+**Las 2 obras contratadas sin presupuesto quedan como están (decisión del usuario, 2026-11-10).** El freno de `contratada` a mano
+corre al pasar a ese estado, no sobre lo que ya está; son la excepción a "contratada si y solo si hay un aprobado", y publicar o
+rechazar ya no las mueve. Se descartaron pasarlas a cotización (deshace algo que comercial marcó a propósito) y cargarles un
+presupuesto (trabajo a mano sin valor).
 
 ## La base
 
