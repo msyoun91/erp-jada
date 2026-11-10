@@ -293,7 +293,9 @@ SELECT pg_temp.caso('05 su número sigue tomado', '1', (
   SELECT count(*)::text FROM presupuestos a, presupuestos b
   WHERE a.id = pg_temp.id('P2') AND b.id = pg_temp.id('P1') AND a.numero <> b.numero AND a.codigo <> b.codigo));
 
-UPDATE presupuestos SET estado = 'aprobado' WHERE id = pg_temp.id('P1');
+UPDATE presupuestos SET estado = 'aprobado', version_aprobada_id = (
+  SELECT v.id FROM presupuestos_versiones v WHERE v.presupuesto_id = pg_temp.id('P1') ORDER BY v.numero LIMIT 1)
+WHERE id = pg_temp.id('P1');
 SELECT pg_temp.caso('05 aprobado no admite versiones', 'PR003', pg_temp.intentar(format(
   'INSERT INTO presupuestos_versiones (presupuesto_id, variante) VALUES (%L, 3)', pg_temp.id('P1')), 'Juan'));
 

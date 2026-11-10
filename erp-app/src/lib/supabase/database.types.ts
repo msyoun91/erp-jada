@@ -2151,11 +2151,14 @@ export type Database = {
           creado_por: string
           created_at: string
           estado: Database["public"]["Enums"]["estado_presupuesto"]
+          estado_nota: string | null
           id: string
+          motivo_rechazo: Database["public"]["Enums"]["motivo_perdida"] | null
           nombre: string
           numero: number
           obra_id: string
           updated_at: string
+          version_aprobada_id: string | null
         }
         Insert: {
           activo?: boolean
@@ -2163,11 +2166,14 @@ export type Database = {
           creado_por?: string
           created_at?: string
           estado?: Database["public"]["Enums"]["estado_presupuesto"]
+          estado_nota?: string | null
           id?: string
+          motivo_rechazo?: Database["public"]["Enums"]["motivo_perdida"] | null
           nombre: string
           numero?: number
           obra_id: string
           updated_at?: string
+          version_aprobada_id?: string | null
         }
         Update: {
           activo?: boolean
@@ -2175,11 +2181,14 @@ export type Database = {
           creado_por?: string
           created_at?: string
           estado?: Database["public"]["Enums"]["estado_presupuesto"]
+          estado_nota?: string | null
           id?: string
+          motivo_rechazo?: Database["public"]["Enums"]["motivo_perdida"] | null
           nombre?: string
           numero?: number
           obra_id?: string
           updated_at?: string
+          version_aprobada_id?: string | null
         }
         Relationships: [
           {
@@ -2194,6 +2203,13 @@ export type Database = {
             columns: ["obra_id"]
             isOneToOne: false
             referencedRelation: "obras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_version_aprobada_id_fkey"
+            columns: ["version_aprobada_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_versiones"
             referencedColumns: ["id"]
           },
         ]
@@ -4678,6 +4694,7 @@ export type Database = {
         }
         Returns: string
       }
+      presupuestos_aprobar: { Args: { p_version: string }; Returns: undefined }
       presupuestos_arma: { Args: { p_obra: string }; Returns: boolean }
       presupuestos_arma_de: {
         Args: { p_obra: string; p_usuario: string }
@@ -4744,6 +4761,14 @@ export type Database = {
         Returns: boolean
       }
       presupuestos_ve: { Args: { p_obra: string }; Returns: boolean }
+      presupuestos_rechazar: {
+        Args: {
+          p_detalle?: string
+          p_motivo: Database["public"]["Enums"]["motivo_perdida"]
+          p_presupuesto: string
+        }
+        Returns: undefined
+      }
       presupuestos_renglon_etiqueta: {
         Args: {
           p_descripcion: string
@@ -4758,6 +4783,10 @@ export type Database = {
           p_version: string
         }
         Returns: Database["public"]["Enums"]["moneda"][]
+      }
+      presupuestos_revertir: {
+        Args: { p_causa: string; p_presupuesto: string }
+        Returns: undefined
       }
       presupuestos_revision_pendientes: {
         Args: never

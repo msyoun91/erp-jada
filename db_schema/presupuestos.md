@@ -2,15 +2,16 @@
 
 Ficha y decisiones: `decisiones/presupuestos.md`. Tests: `sql/tests/presupuestos_registros.sql` (tramo 1),
 `sql/tests/presupuestos_renglones.sql` (2a), `sql/tests/presupuestos_opcionales.sql` (2b), `sql/tests/presupuestos_ciclo.sql` (3a),
-`sql/tests/presupuestos_autorizaciones.sql` (3b), `sql/tests/presupuestos_recargo.sql` (3c).
+`sql/tests/presupuestos_autorizaciones.sql` (3b), `sql/tests/presupuestos_recargo.sql` (3c),
+`sql/tests/presupuestos_aprobacion.sql` (4).
 
 **Estado:** tramo 1 — `sql/185` (permisos, configuración, presupuesto, versiones, secciones, ente), aplicado el 2026-11-06.
 Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el precio de Catálogo para quien arma), aplicado el
 2026-11-06. Tramo 2b — `sql/187` (lo que suma cada opcional, cómo se ve, el renglón aparte y los mínimos), aplicado el
 2026-11-06. Tramo 3a — `sql/188` (copiar una versión, mantener o actualizar, lo que frena publicar, publicar y quitar una
 variante), aplicado el 2026-11-06. Tramo 3b — `sql/189` (pedir, autorizar, devolver y retirar; lo que frena separado de lo que
-pide autorización; la lectura de Técnica), aplicado el 2026-11-06. Tramo 3c — `sql/190` (el recargo de la comisión del referente), aplicado el 2026-11-10. Siguen: aprobar,
-rechazar y la obra (4), avisos (5).
+pide autorización; la lectura de Técnica), aplicado el 2026-11-06. Tramo 3c — `sql/190` (el recargo de la comisión del referente), aplicado el 2026-11-10. Tramo 4 — `sql/191` (aprobar, rechazar, revertir y la obra que sigue a sus presupuestos), aplicado el
+2026-11-10. Siguen: avisos (5).
 
 ## Ver y armar: decide la obra
 
@@ -34,6 +35,9 @@ policies: `presupuestos_ve(obra)` y `presupuestos_arma(obra)`. `presupuestos_pue
 | nombre | text | 1–200, lo escribe el vendedor |
 | obra_id | uuid FK → obras | obligatoria, no cambia |
 | estado | enum `estado_presupuesto` (`borrador`\|`publicado`\|`aprobado`\|`rechazado`) | default `borrador`. Sin GRANT: lo cambian las funciones del ciclo |
+| version_aprobada_id | uuid FK → presupuestos_versiones, nullable | la variante elegida. CHECK `presupuestos_aprobada`: presente sii `aprobado`. Sin GRANT |
+| motivo_rechazo | enum `motivo_perdida`, nullable | el de Obras. CHECK `presupuestos_rechazo`: presente sii `rechazado`. Sin GRANT |
+| estado_nota | text, nullable | 1–500, sin espacios a los lados: el detalle del rechazo o la causa de la reversión; aprobar la limpia. Sin GRANT |
 | creado_por | uuid FK → usuarios | default `auth.uid()`. Dueño para el disparo de plantillas |
 | activo | boolean | desactivar solo en `borrador` (PR001); no vuelve (PR002) |
 | created_at / updated_at | timestamptz | |
@@ -307,6 +311,23 @@ las funciones del ciclo (DEFINER).
   `motivos`; el pendiente primero). Sin precios, montos, obra ni nombre.
 - `presupuestos_variante_quitar(version)` — DEFINER; sin armar, 42501. Presupuesto `publicado` (PR003), versión `publicado`
   (PR015), y queda otra publicada (PR016): pasa a `obsoleto`.
+- `presupuestos_aprobar(version)` — DEFINER; sin armar, 42501. Presupuesto activo en `publicado` (PR003) y versión `publicado`
+  (PR021). Descarta lo abierto, y el presupuesto queda `aprobado` con `version_aprobada_id`. Las otras variantes publicadas siguen
+  `publicado`: "Inhabilitada" se calcula al mostrar.
+- `presupuestos_rechazar(presupuesto, motivo, detalle = NULL)` — DEFINER; sin armar, 42501. Presupuesto activo en `publicado`
+  (PR003); pide motivo y, con `otro`, detalle (PR022). Descarta lo abierto, y queda `rechazado` con su motivo y la nota.
+- `presupuestos_revertir(presupuesto, causa)` — DEFINER; sin ver el presupuesto o sin `presupuestos_puede_autorizar('comercial',
+  obra)`, 42501. Solo `aprobado` o `rechazado` (PR023), con causa (PR024): vuelve a `publicado`, sin versión elegida ni motivo, y la
+  causa queda en `estado_nota`. Lo descartado al aprobar o rechazar no vuelve.
+- `presupuestos_cerrar_abiertas(presupuesto)` — sin GRANT. Lo `en_revision` vuelve a borrador (`presupuestos_version_a_borrador`:
+  pedidos retirados) y los borradores quedan `activo = false`.
+- `presupuestos_mover_obra` — trigger DEFINER sobre `presupuestos` (AFTER UPDATE OF estado, si cambió). Con la obra tomada `FOR
+  UPDATE`: con algún presupuesto activo `aprobado`, `contratada`; si no, con alguno `publicado`, `en_cotizacion`; si no, y fue un
+  rechazo, `perdida` con `motivo_rechazo` y la nota. La causa de una reversión va a `obras.estado_nota` (OB009). Una `contratada`
+  sin aprobado (a mano) solo se mueve al aprobar. Si la obra tendría que cambiar y está congelada, OB018: publicar espera. El
+  UPDATE llega a `obras_al_editar` a profundidad 2 (sin reglas de actor) y el evento `estado` de la obra sale con quien actuó.
+- `presupuestos_obra_estado` — trigger DEFINER sobre `obras` (BEFORE UPDATE OF estado): con un presupuesto aprobado no sale de
+  `contratada` (PR025); con publicados no pasa a `perdida` (PR026). Pasar a `contratada` a mano todavía se puede (`BACKLOG.md`).
 - `presupuestos_clave(pieza, porcentaje) → text` — IMMUTABLE: la clave de un opcional, en `presupuestos_opcionales.clave` y en
   `lineas`.
 
@@ -331,7 +352,8 @@ Catálogo, para quien arma (`db_schema/catalogo.md` → *El precio*): `catalogo_
 
 Fila `presupuesto` en `entes`: `estados` `estado_presupuesto`, `datos` `{codigo,nombre}`, `roles` `{}`, ruta
 `/presupuestos/{id}`, `disparos` `{alta,estado}`, `dueno` `creado_por`. Trigger `emitir_eventos` (AFTER INSERT OR UPDATE OF
-activo, estado): `emitir_eventos_registro('presupuesto')`.
+activo, estado): `emitir_eventos_registro('presupuesto', '', 'motivo_rechazo,estado_nota')`; el evento `estado` lleva el motivo y
+la nota en `detalle` (`sql/191`).
 
 Ramas: `presupuestos_etiqueta` (`P-0142 · Nombre`; INVOKER, GRANT), `presupuestos_puede_abrir` (DEFINER, sin GRANT),
 `presupuestos_buscar(texto)` (activos por código o nombre, la obra de subtítulo; INVOKER, GRANT). Sin rama en
@@ -343,4 +365,7 @@ que no sigue · PR005 la versión no está en borrador · PR006 la única versi�
 PR008 la sección fue sacada · PR009 un renglón a mano no cambia de moneda · PR010 el paquete no está a la venta · PR011 la
 sección tiene renglones (o el renglón aparte de un opcional) · PR012 el mínimo lo pone y lo saca la base · PR013 solo se
 mantiene lo copiado, con su paquete · PR014 algo frena publicar · PR015 solo se quita una variante publicada · PR016 la última
-variante no se quita · PR017 la versión no está en revisión · PR018 el pedido ya no está pendiente · PR019 devolver pide motivo.
+variante no se quita · PR017 la versión no está en revisión · PR018 el pedido ya no está pendiente · PR019 devolver pide motivo · PR020 las comisiones
+de los referentes llegan al 100 % · PR021 solo se aprueba una versión publicada · PR022 rechazar pide motivo (y detalle, con
+"otro") · PR023 solo se revierte lo aprobado o rechazado · PR024 revertir pide la causa · PR025 la obra tiene un presupuesto
+aprobado: no sale de contratada · PR026 la obra tiene presupuestos publicados: no pasa a perdida.

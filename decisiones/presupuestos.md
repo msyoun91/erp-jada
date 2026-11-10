@@ -4,7 +4,8 @@
 > IVA, opcionales, auditoría de la ficha y revisión de UX). SQL por tramos: tramo 1 (`sql/185`: permisos, configuración,
 > presupuesto, versiones y secciones), 2a (`sql/186`: renglones de Catálogo y a mano, descuento y totales), 2b (`sql/187`:
 > opcionales y mínimos), 3a (`sql/188`: copiar, mantener, publicar y quitar variante) y 3b (`sql/189`: pedir, autorizar,
-> devolver, retirar y la lectura de Técnica) aplicados el 2026-11-06, con sus tests; ver *La base*. Sin pantallas.**
+> devolver, retirar y la lectura de Técnica) aplicados el 2026-11-06, 3c (`sql/190`: recargo del referente) y 4 (`sql/191`: aprobar,
+> rechazar, revertir y la obra) el 2026-11-10, con sus tests; ver *La base*. Falta el tramo 5 (avisos). Sin pantallas.**
 > Se armó desde cero, sin partir del backlog, y se contrastó con él al final. Lo que falta, en `BACKLOG.md`
 > → *Presupuestos*.
 
@@ -214,12 +215,8 @@ quien quiera, la pasa a mano. Con la obra congelada (OB018) el presupuesto se ar
 **Con la obra `perdida`, el presupuestador lo avisa al abrir un borrador: "La obra está perdida (precio). Al publicar, se reabre."
 (decisión del usuario, 2026-11-06).** Juan ve antes de armar si está en la obra equivocada, y sabe que publicar cambia la obra.
 
-**Obras cambia la obra como quien actúa, escuchando los eventos del presupuesto (decisión del usuario, 2026-11-06).** Así siguen
-disparando las plantillas colgadas del estado de la obra ("obra contratada"): lo que la base cambia con permisos propios queda en el log
-pero no dispara (`decisiones/global/entes.md` → *`emitir_evento` es INVOKER*). Por eso quien aprueba, rechaza o revierte trabaja la
-obra: el vendedor y el jefe ya la trabajan, y `presupuestos_administrar` requiere `obras_administrar`. `contratada` pasa a ser una regla
-de datos: la obra está `contratada` si y solo si tiene un presupuesto aprobado, y el trigger de Obras lo verifica por los datos, no por
-quién llama.
+**~~Obras cambia la obra como quien actúa, escuchando los eventos del presupuesto (decisión del usuario, 2026-11-06).~~** Ver *La
+base* → *Un trigger sobre `presupuestos` mueve la obra*.
 
 **La obra pasa sola a `perdida` y vuelve sola (decisión del usuario).** Se evaluó que el sistema preguntara antes: el usuario
 prefirió que la obra siga a sus presupuestos. Etapa 1 rechazada con la Etapa 2 abierta no la mueve.
@@ -481,7 +478,7 @@ ni comparación. Permite usar el módulo sin el portal, y queda como respaldo.
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y
 mínimos (`sql/187`) · 3a versión nueva, mantener y publicar (`sql/188`) · 3b autorizaciones (`sql/189`) · 3c recargo del referente (`sql/190`) · 4 aprobar, rechazar y la
-obra · 5 avisos.
+obra (`sql/191`) · 5 avisos.
 
 **El tramo 2 se parte: 2a los renglones de Catálogo y a mano, con su precio, el descuento y los totales; 2b los opcionales y los
 mínimos (2026-11-06).** El 2b depende de todo el 2a (montos por línea, renglón aparte, mínimos en una sección) y cada mitad se
@@ -646,3 +643,25 @@ Catálogo, así que mantener, actualizar y lo que compara publicar no cambian; `
 de `presupuestos_recargo_de`: el vigente en borrador, y al salir queda en `presupuestos_recargos`, que lee solo quien tiene la obra
 a cargo. Por eso `presupuestos_version_importes` pasó a DEFINER, con su propio control de `presupuestos_ve`. Suma de comisiones en %
 desde 100: PR020. `sql/190`.
+
+**Un trigger sobre `presupuestos` mueve la obra, sin consumidor de eventos (decisión del usuario, 2026-11-10; reemplaza la del
+2026-11-06).** La premisa vieja ya no valía: desde `sql/152` las plantillas corren por el dueño del registro, actúe quien actúe, y
+publicar es DEFINER, así que un consumidor tampoco corría como quien actúa. Tras cada cambio de estado: con algún aprobado,
+`contratada`; si no, con algún publicado, `en_cotizacion`; si no, y fue un rechazo, `perdida` con su motivo. Las siete filas de
+*Efectos en la obra* salen de esas tres preguntas. El evento de la obra lleva a quien actuó. `presupuestos_mover_obra`, `sql/191`.
+
+**El motivo del rechazo y la nota del último cambio de estado son columnas del presupuesto (2026-11-10).** `emitir_eventos_registro`
+solo copia columnas al `detalle` del evento, como en Obras. `estado_nota` es el detalle del rechazo o la causa de la reversión;
+aprobar la limpia. `presupuestos.motivo_rechazo`, `estado_nota`, `version_aprobada_id`.
+
+**Con la obra congelada, frena lo que la movería (2026-11-10).** OB018 solo corre a profundidad 1 y el cambio llega desde un
+trigger, así que lo controla `presupuestos_mover_obra` con el mismo código. Publicar un segundo presupuesto en una obra que ya está
+en cotización no la mueve, y pasa.
+
+**A mano, la obra no sale de `contratada` con un aprobado ni pasa a `perdida` con publicados; pasar a `contratada` a mano todavía se
+puede (2026-11-10).** Frenarlo hoy dejaba a comercial sin forma de marcar una obra contratada hasta que Presupuestos tenga
+pantallas, y hay 2 obras así. Una contratada a mano no la mueven publicar ni rechazar: solo aprobar. Se cierra con las pantallas
+(`BACKLOG.md`). `presupuestos_obra_estado` (PR025, PR026).
+
+**El bloqueo por mínimos al aprobar espera a la etapa 2 (2026-11-10).** Compara contra lo que confirmó el cliente en el portal, que
+todavía no existe.
