@@ -130,6 +130,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
       **El recargo va en todo renglón, también el a mano (decisión del usuario, 2026-11-10).** "Flete cerrado, US$ 500" lo ve el
       cliente a 526,32: Marta cobra sobre todo lo contratado y la empresa se queda con los 500. Mínimos y opcionales aparte salen de
       Catálogo, como las ventanas. Se descartó dejar el a mano como se escribió: los US$ 25 de Marta salían de la empresa.
+      **Varios referentes: los % se suman y se despeja una vez (decisión del usuario, 2026-11-10).** Marta 5 % y Pedro 3 %: recargo 8 %,
+      US$ 1.000 → 1.000 / 0,92 = 1.086,96. Cada uno cobra su % exacto sobre lo contratado. Se descartó despejar uno tras otro
+      (1.085,24: base distinta por referente, y el orden importa) y elegir un solo referente por presupuesto (una columna más).
     - **Vendedor: un % de lo contratado sin el recargo del referente, sin recargo propio.** De USD 18.000 con 900 de Marta, Juan
       cobra el 3 % de 17.100 (USD 513), solo sobre lo que le queda a la empresa. Sale del margen. Sin IVA: supuesto, sin confirmar.
     - **Base:** el módulo tiene que exponer el total aprobado, hoy "de lo contratado" sin monto (`decisiones/obras.md`), que puede venir
