@@ -2,14 +2,15 @@
 
 Ficha y decisiones: `decisiones/presupuestos.md`. Tests: `sql/tests/presupuestos_registros.sql` (tramo 1),
 `sql/tests/presupuestos_renglones.sql` (2a), `sql/tests/presupuestos_opcionales.sql` (2b), `sql/tests/presupuestos_ciclo.sql` (3a),
-`sql/tests/presupuestos_autorizaciones.sql` (3b).
+`sql/tests/presupuestos_autorizaciones.sql` (3b), `sql/tests/presupuestos_recargo.sql` (3c).
 
 **Estado:** tramo 1 — `sql/185` (permisos, configuración, presupuesto, versiones, secciones, ente), aplicado el 2026-11-06.
 Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el precio de Catálogo para quien arma), aplicado el
 2026-11-06. Tramo 2b — `sql/187` (lo que suma cada opcional, cómo se ve, el renglón aparte y los mínimos), aplicado el
 2026-11-06. Tramo 3a — `sql/188` (copiar una versión, mantener o actualizar, lo que frena publicar, publicar y quitar una
 variante), aplicado el 2026-11-06. Tramo 3b — `sql/189` (pedir, autorizar, devolver y retirar; lo que frena separado de lo que
-pide autorización; la lectura de Técnica), aplicado el 2026-11-06. Siguen: aprobar, rechazar y la obra (4), avisos (5).
+pide autorización; la lectura de Técnica), aplicado el 2026-11-06. Tramo 3c — `sql/190` (el recargo de la comisión del referente), aplicado el 2026-11-10. Siguen: aprobar,
+rechazar y la obra (4), avisos (5).
 
 ## Ver y armar: decide la obra
 
@@ -169,6 +170,30 @@ Trigger `presupuestos_opcionales_validar`: solo en una versión activa en `borra
 `presupuestos_opcionales_renglones` (AFTER INSERT OR UPDATE): toca las ventanas con ese opcional y su mínimo, y el trigger de
 renglones decide si recalcular. RLS: como las secciones. GRANT: SELECT; INSERT (`id, version_id, pieza, porcentaje_id, forma,
 seccion_id`); UPDATE (`forma, seccion_id, activo`).
+
+## presupuestos_recargos
+
+El % de recargo de la comisión del referente con que quedó fijada una versión al salir de `borrador` (`sql/190`). Sin fila, o con la
+versión en `borrador`, el recargo es el vigente.
+
+| columna | tipo | notas |
+|---|---|---|
+| version_id | uuid PK FK → presupuestos_versiones | |
+| porcentaje | numeric(5,2) | 0 ≤ % < 100: la suma de las comisiones en % vigentes de los referentes de la obra |
+| created_at / updated_at | timestamptz | |
+
+Escribe solo el trigger `presupuestos_versiones_fijar_recargo` (AFTER UPDATE OF estado, de `borrador` a otro, DEFINER): guarda o
+actualiza al salir. RLS: SELECT con `obras_a_cargo(obra)`, la misma regla que la comisión (`obras_ve_comision`). GRANT: SELECT.
+
+Funciones, todas sin GRANT salvo las ya existentes:
+- `presupuestos_recargo_vigente(obra) → numeric` — suma `obras_comisiones.porcentaje` activas de los vínculos abiertos de la obra
+  con rol `referente`; las de monto no cuentan.
+- `presupuestos_recargo_de(version) → numeric` — en `borrador`, el vigente; si no, el guardado (0 si no hay fila). Desde 100 %,
+  PR020.
+- `presupuestos_recargar(version, monto, moneda) → numeric` — `monto / (1 − %/100)`, redondeado como el precio.
+- `presupuestos_version_importes` es DEFINER desde `sql/190` y mira `presupuestos_ve`: cada importe sale con el recargo, también el
+  renglón a mano, los mínimos y los opcionales aparte; los totales lo heredan. `presupuestos_version_pedido` muestra `precio`, `hoy`
+  y `diferencia` con el recargo. El precio guardado del renglón sigue sin él.
 
 ## presupuestos_configuracion
 

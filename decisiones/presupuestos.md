@@ -480,7 +480,7 @@ ni comparación. Permite usar el módulo sin el portal, y queda como respaldo.
 ## La base
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y
-mínimos (`sql/187`) · 3a versión nueva, mantener y publicar (`sql/188`) · 3b autorizaciones (`sql/189`) · 4 aprobar, rechazar y la
+mínimos (`sql/187`) · 3a versión nueva, mantener y publicar (`sql/188`) · 3b autorizaciones (`sql/189`) · 3c recargo del referente (`sql/190`) · 4 aprobar, rechazar y la
 obra · 5 avisos.
 
 **El tramo 2 se parte: 2a los renglones de Catálogo y a mano, con su precio, el descuento y los totales; 2b los opcionales y los
@@ -639,3 +639,10 @@ accede*); si pide ella, todo queda autorizado y publica en el mismo paso. `presu
 
 **Técnica ve los presupuestos con algún pedido suyo, en cualquier versión (2026-11-06).** Son "los presupuestos con alertas" de la
 ficha: así ve también la versión siguiente, donde lo que autorizó ya vale y no hay pedido nuevo. `presupuestos_revision_version`.
+
+**El recargo se aplica al leer los importes, no se guarda en cada renglón (2026-11-10).** El precio del renglón sigue siendo el de
+Catálogo, así que mantener, actualizar y lo que compara publicar no cambian; `presupuestos_version_importes` lo divide por
+`1 − %` y de ahí lo heredan los totales. Un cambio de comisión en borrador no obliga a recalcular renglones. El % de la versión sale
+de `presupuestos_recargo_de`: el vigente en borrador, y al salir queda en `presupuestos_recargos`, que lee solo quien tiene la obra
+a cargo. Por eso `presupuestos_version_importes` pasó a DEFINER, con su propio control de `presupuestos_ve`. Suma de comisiones en %
+desde 100: PR020. `sql/190`.

@@ -2374,6 +2374,35 @@ export type Database = {
           },
         ]
       }
+      presupuestos_recargos: {
+        Row: {
+          created_at: string
+          porcentaje: number
+          updated_at: string
+          version_id: string
+        }
+        Insert: {
+          created_at?: string
+          porcentaje: number
+          updated_at?: string
+          version_id: string
+        }
+        Update: {
+          created_at?: string
+          porcentaje?: number
+          updated_at?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presupuestos_recargos_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: true
+            referencedRelation: "presupuestos_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presupuestos_renglones: {
         Row: {
           activo: boolean

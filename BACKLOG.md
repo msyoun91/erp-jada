@@ -84,8 +84,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (`decisiones/presupuestos.md` → *La base*): el 1 (`sql/185`, registros), el 2a (`sql/186`, renglones de Catálogo y a mano,
   descuento, totales, formulario de venta), el 2b (`sql/187`, líneas de los opcionales, debajo y aparte, mínimos), el 3a
   (`sql/188`, copiar, mantener o actualizar, lo que frena publicar, publicar y quitar variante) y el 3b (`sql/189`, pedir,
-  autorizar, devolver, retirar y la lectura de Técnica) están aplicados y probados.
-  **Siguiente:** el recargo de la comisión del referente (abajo, *Comisiones*), que toca el 2a y va antes del 4. Después, el 4:
+  autorizar, devolver, retirar y la lectura de Técnica), y el 3c (`sql/190`, el recargo de la comisión del referente, abajo) están
+  aplicados y probados.
+  **Siguiente:** el 4:
   aprobar, rechazar y la obra (al aprobar o rechazar, los borradores y las versiones en revisión se descartan
   y sus pedidos quedan retirados: `presupuestos_version_a_borrador` ya retira lo pendiente). Falta todo lo demás, y esto no está en
   la ficha:
