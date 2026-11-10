@@ -85,7 +85,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   descuento, totales, formulario de venta), el 2b (`sql/187`, líneas de los opcionales, debajo y aparte, mínimos), el 3a
   (`sql/188`, copiar, mantener o actualizar, lo que frena publicar, publicar y quitar variante) y el 3b (`sql/189`, pedir,
   autorizar, devolver, retirar y la lectura de Técnica) están aplicados y probados.
-  **Siguiente:** el 4, aprobar, rechazar y la obra (al aprobar o rechazar, los borradores y las versiones en revisión se descartan
+  **Siguiente:** el recargo de la comisión del referente (abajo, *Comisiones*), que toca el 2a y va antes del 4. Después, el 4:
+  aprobar, rechazar y la obra (al aprobar o rechazar, los borradores y las versiones en revisión se descartan
   y sus pedidos quedan retirados: `presupuestos_version_a_borrador` ya retira lo pendiente). Falta todo lo demás, y esto no está en
   la ficha:
   - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`
@@ -113,9 +114,22 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
       despeja como IIBB (USD 19.000 / 0,95 = 20.000): Marta cobra el % exacto. Se reparte dentro de cada ventana, y el cliente no lo ve.
       Va antes del descuento, así sigue siendo exacto sobre lo contratado (20.000 − 10 % = 18.000, Marta 900, empresa 17.100). Se
       descartaron un servicio en % de Catálogo (un % para todos, y el cliente lo destilda si es opcional) y un renglón como el descuento
-      (el cliente lo ve). Toca lo aplicado en el 2a (`presupuestos_version_totales`): va antes del tramo 4 y las pantallas. Sin decidir:
-      comisión en monto (USD 5000), que un participante que arma deduzca el % por el recargo, y el precio si la comisión cambia
-      después de publicar.
+      (el cliente lo ve). Toca lo aplicado en el 2a (`presupuestos_version_totales`): va antes del tramo 4 y las pantallas.
+      **La versión guarda el % con que se calculó: en borrador sigue a la comisión vigente, y al salir de borrador queda fijo
+      (decisión del usuario, 2026-11-10).** Con Marta al 5 %, V1 de US$ 1.000 se publica a 1.052,63; si pasa al 3 %, la v1 no
+      cambia y la versión siguiente sale a 1.030,93. Aprobada la v1, Marta cobra el 3 % y la diferencia queda para la empresa. Se
+      descartó recalcular lo publicado: cambia un precio que el cliente ya vio.
+      **Una comisión en monto no se suma al precio (decisión del usuario, 2026-11-10).** Quien ve la comisión lee en el editor "La
+      comisión de Marta es un monto fijo (US$ 5.000): no está en el precio"; si la tiene que pagar el cliente, la pasa a % en Obras. Se
+      descartó convertirla en un % de cada presupuesto: con "Ventanas" (19.000 → 24.000) y "Adicional V4" (800 → 5.800), el cliente la
+      pagaba dos veces.
+      **Un participante que arma puede deducir el % contra la calculadora, y se acepta (decisión del usuario, 2026-11-10).** Todo
+      lo que ve sale con el recargo (editor, comparación, pedidos de autorización, impreso), sin decir que lo hay; el % guardado en la
+      versión lo lee solo quien ve la comisión (`obras_ve_comision`). Se descartó mostrarle precios sin recargo: lo que publica no
+      coincidiría con lo que ve.
+      **El recargo va en todo renglón, también el a mano (decisión del usuario, 2026-11-10).** "Flete cerrado, US$ 500" lo ve el
+      cliente a 526,32: Marta cobra sobre todo lo contratado y la empresa se queda con los 500. Mínimos y opcionales aparte salen de
+      Catálogo, como las ventanas. Se descartó dejar el a mano como se escribió: los US$ 25 de Marta salían de la empresa.
     - **Vendedor: un % de lo contratado sin el recargo del referente, sin recargo propio.** De USD 18.000 con 900 de Marta, Juan
       cobra el 3 % de 17.100 (USD 513), solo sobre lo que le queda a la empresa. Sale del margen. Sin IVA: supuesto, sin confirmar.
     - **Base:** el módulo tiene que exponer el total aprobado, hoy "de lo contratado" sin monto (`decisiones/obras.md`), que puede venir

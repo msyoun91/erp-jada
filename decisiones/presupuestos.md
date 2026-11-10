@@ -292,6 +292,10 @@ suma a Pedro y le da ella misma Presupuestos y armar, como hoy le da Obras. Mart
 lo asigna el admin: es el mismo criterio de Catálogo, donde aprobar no se delega. Configuración tampoco, porque el tope y el plazo valen
 para todos.
 
+**Armar es una sola función, sin una por parámetro (decisión del usuario, 2026-11-10).** Se evaluó separar mantener, descuento,
+renglón a mano, variantes y formato (secciones, moneda, alícuota, IVA, opcionales) para que el editor de quien no los usa fuera más
+simple. Se descartó al ver el costo: partía la persona Vendedor y obligaba a frenar cada parámetro en la base, sobre funciones ya aplicadas.
+
 **Configuración es una vista sin función: quien la ve, configura (2026-11-06).** Es solo gerencia y nadie necesita mirarla sin cambiarla;
 las escrituras se verifican en la base contra la vista. Se sacó `presupuestos_configurar`.
 
