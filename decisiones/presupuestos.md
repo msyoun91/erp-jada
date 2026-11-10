@@ -5,7 +5,7 @@
 > presupuesto, versiones y secciones), 2a (`sql/186`: renglones de Catálogo y a mano, descuento y totales), 2b (`sql/187`:
 > opcionales y mínimos), 3a (`sql/188`: copiar, mantener, publicar y quitar variante) y 3b (`sql/189`: pedir, autorizar,
 > devolver, retirar y la lectura de Técnica) aplicados el 2026-11-06, 3c (`sql/190`: recargo del referente) y 4 (`sql/191`: aprobar,
-> rechazar, revertir y la obra) el 2026-11-10, con sus tests; ver *La base*. Falta el tramo 5 (avisos). Sin pantallas.**
+> rechazar, revertir y la obra) el 2026-11-10, con sus tests; ver *La base*. El tramo 5 (avisos, `sql/192`–`sql/193`) también, con sus tests. Sin pantallas.**
 > Se armó desde cero, sin partir del backlog, y se contrastó con él al final. Lo que falta, en `BACKLOG.md`
 > → *Presupuestos*.
 
@@ -506,7 +506,7 @@ variante, que también copia. Se descartó avisar en cada publicación: el mismo
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y
 mínimos (`sql/187`) · 3a versión nueva, mantener y publicar (`sql/188`) · 3b autorizaciones (`sql/189`) · 3c recargo del referente (`sql/190`) · 4 aprobar, rechazar y la
-obra (`sql/191`) · 5 avisos.
+obra (`sql/191`) · 5 avisos (`sql/192`–`sql/193`).
 
 **El tramo 2 se parte: 2a los renglones de Catálogo y a mano, con su precio, el descuento y los totales; 2b los opcionales y los
 mínimos (2026-11-06).** El 2b depende de todo el 2a (montos por línea, renglón aparte, mínimos en una sección) y cada mitad se
@@ -702,6 +702,11 @@ recibe un aviso por versión, no uno por tipo; pedir de nuevo desactiva el aviso
 `sql/tests/presupuestos_avisos.sql`; regresión: autorizaciones, ciclo, aprobación y `catalogo_avisos`. Fuera del SQL:
 `NotificacionesBell` (`/presupuestos/<id>` y la de Revisión técnica, aunque las pantallas no existan), `database.types.ts`,
 `db_schema/presupuestos.md` y `db_schema/notificaciones.md`.
+
+**Los avisos de un pedido y de "lista para publicar" apuntan a la versión; el de la devolución, a la fila devuelta (2026-11-10).** Pedir de
+nuevo desactiva los anteriores de esa versión (si no, al volver a `en_revision` reaparecerían), y la devolución, que es un hecho, sigue.
+Los triggers de `presupuestos_autorizaciones` son por sentencia con tabla de transición: Técnica autoriza varias ventanas juntas y
+avisa una sola vez. El texto del renglón a mano es el conteo ("2 renglones a mano"); qué cambió se ve en la versión. `sql/192`, `sql/193`.
 
 **El bloqueo por mínimos al aprobar espera a la etapa 2 (2026-11-10).** Compara contra lo que confirmó el cliente en el portal, que
 todavía no existe.

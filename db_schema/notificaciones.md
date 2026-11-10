@@ -76,6 +76,17 @@ el aviso no se ve (`decisiones/catalogo/versiones.md` → *Los avisos en la base
 Rutas en `RUTA` de `NotificacionesBell`, que las pantallas del catálogo tienen que respetar: `/catalogo/insumos`, `/catalogo/fijos`,
 `/catalogo/porcentajes`, `/catalogo/porcentajes/<id>`, `/catalogo/paquetes/versiones/<id>`.
 
+**Presupuestos (`sql/192`–`sql/193`).** Los resuelve `presupuestos_avisos(p_ids)` (DEFINER, solo los avisos propios): Técnica no lee versiones por RLS y a ella le da solo `P-0142 · v2`. Triggers sobre `presupuestos_autorizaciones` (por sentencia) y `presupuestos_versiones`. Decisión: `decisiones/presupuestos.md` → *Avisos*.
+
+| entidad | tipo | a quién | resuelve | `destino` |
+|---|---|---|---|---|
+| `presupuestos_versiones` | `presupuesto_pedido` | todos los que pueden autorizar algo de lo pendiente (`presupuestos_puede_autorizar_de`), uno por versión y persona; pedir de nuevo desactiva el anterior | `P-0142 · v2`; desaparece cuando no le queda nada pendiente que pueda autorizar | `presupuesto`; `presupuestos_revision` (sin id) si no ve el presupuesto |
+| ídem | `presupuesto_autorizado` | quien pidió, al autorizarse la última pendiente | `P-0142 · v2`; desaparece cuando la versión sale de revisión | `presupuesto` |
+| `presupuestos_autorizaciones` | `presupuesto_devuelto` | quien pidió; queda como noticia | `P-0142 · v2`; `motivo` = el de la devolución | `presupuesto` |
+| `presupuestos_versiones` | `presupuesto_a_mano` | quienes autorizan lo comercial en la obra, menos quien publica; al publicar con renglones a mano nuevos o cambiados (`presupuestos_mano_nuevos`) | `P-0142 · v2`; `motivo` = "N renglón(es) a mano" | `presupuesto` |
+
+Rutas en `RUTA` de `NotificacionesBell`: `/presupuestos/<id>` y `/presupuestos/revision` (las pantallas todavía no existen).
+
 ## Sumar un evento
 
 1. `ALTER TYPE tipo_notificacion ADD VALUE '<tipo>'`, en su propia transacción: el valor no se puede usar antes del commit y `notificaciones_listar` lo castea al crearse.
@@ -92,8 +103,8 @@ Rutas en `RUTA` de `NotificacionesBell`, que las pantallas del catálogo tienen 
 |---|---|---|
 | id | uuid PK | |
 | usuario_id | uuid FK → usuarios | destinatario |
-| tipo | enum `tipo_notificacion` | `miembro_nuevo` \| `permiso_otorgado` \| `delegador_designado` \| los veintiuno de tareas \| los ocho de obras y contactos (`sql/132`) \| los dos de tipos de cambio (`sql/155`) \| los ocho del catálogo (`sql/164`) |
-| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos`, `tareas`, `tareas_hilos`, `tareas_plantillas` (`sql/151`), `usuarios`, `obras`, `obras_participantes`, `contactos_personas` (`sql/134`), `contactos_empresas` (`sql/138`), `monedas_tipos_cambio` (`sql/156`), `catalogo_insumos`, `catalogo_categorias`, `catalogo_bajas`, `catalogo_porcentajes_valores`, `catalogo_versiones_historia` (`sql/165`) |
+| tipo | enum `tipo_notificacion` | `miembro_nuevo` \| `permiso_otorgado` \| `delegador_designado` \| los veintiuno de tareas \| los ocho de obras y contactos (`sql/132`) \| los dos de tipos de cambio (`sql/155`) \| los ocho del catálogo (`sql/164`) \| los cuatro de presupuestos (`sql/192`) |
+| entidad | text | discriminador de a qué tabla apunta `entidad_id`. CHECK `usuario_notificaciones_entidad_check`: `equipos_miembros`, `usuario_submodulos`, `tareas`, `tareas_hilos`, `tareas_plantillas` (`sql/151`), `usuarios`, `obras`, `obras_participantes`, `contactos_personas` (`sql/134`), `contactos_empresas` (`sql/138`), `monedas_tipos_cambio` (`sql/156`), `catalogo_insumos`, `catalogo_categorias`, `catalogo_bajas`, `catalogo_porcentajes_valores`, `catalogo_versiones_historia` (`sql/165`), `presupuestos_versiones`, `presupuestos_autorizaciones` (`sql/193`) |
 | entidad_id | uuid | sin FK — apunta a varias tablas |
 | actor_id | uuid FK → usuarios, nullable | quién lo provocó. Null = evento del sistema |
 | leida_at | timestamptz, nullable | |

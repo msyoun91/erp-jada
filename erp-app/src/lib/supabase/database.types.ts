@@ -4700,6 +4700,16 @@ export type Database = {
         Args: { p_obra: string; p_usuario: string }
         Returns: boolean
       }
+      presupuestos_avisos: {
+        Args: { p_ids: string[] }
+        Returns: {
+          destino: string
+          destino_id: string
+          etiqueta: string
+          motivo: string
+          notificacion_id: string
+        }[]
+      }
       presupuestos_buscar: {
         Args: { p_texto: string }
         Returns: {
@@ -5217,6 +5227,10 @@ export type Database = {
         | "catalogo_version_enviada"
         | "catalogo_version_aprobada"
         | "catalogo_version_devuelta"
+        | "presupuesto_pedido"
+        | "presupuesto_autorizado"
+        | "presupuesto_devuelto"
+        | "presupuesto_a_mano"
       tipo_obra:
         | "edificio_residencial"
         | "casa"
@@ -5481,6 +5495,10 @@ export const Constants = {
         "catalogo_version_enviada",
         "catalogo_version_aprobada",
         "catalogo_version_devuelta",
+        "presupuesto_pedido",
+        "presupuesto_autorizado",
+        "presupuesto_devuelto",
+        "presupuesto_a_mano",
       ],
       tipo_obra: [
         "edificio_residencial",

@@ -91,6 +91,10 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   catalogo_version_enviada: TriangleAlert,
   catalogo_version_aprobada: CircleCheck,
   catalogo_version_devuelta: RotateCcw,
+  presupuesto_pedido: TriangleAlert,
+  presupuesto_autorizado: CircleCheck,
+  presupuesto_devuelto: RotateCcw,
+  presupuesto_a_mano: PencilLine,
 };
 const TEXTO: Record<TipoNotificacion, string> = {
   miembro_nuevo: "Se sumó a tu equipo",
@@ -141,6 +145,10 @@ const TEXTO: Record<TipoNotificacion, string> = {
   catalogo_version_enviada: "Espera revisión:",
   catalogo_version_aprobada: "Aprobaron",
   catalogo_version_devuelta: "Devolvieron",
+  presupuesto_pedido: "Espera tu autorización:",
+  presupuesto_autorizado: "Lista para publicar:",
+  presupuesto_devuelto: "Devolvieron",
+  presupuesto_a_mano: "Renglón a mano en",
 };
 const COLOR: Record<TipoNotificacion, string> = {
   miembro_nuevo: "text-brand-500",
@@ -191,6 +199,10 @@ const COLOR: Record<TipoNotificacion, string> = {
   catalogo_version_enviada: "text-warning-text",
   catalogo_version_aprobada: "text-success-text",
   catalogo_version_devuelta: "text-warning-text",
+  presupuesto_pedido: "text-warning-text",
+  presupuesto_autorizado: "text-success-text",
+  presupuesto_devuelto: "text-warning-text",
+  presupuesto_a_mano: "text-brand-500",
 };
 
 // `destino` → ruta. Cada rama de `notificaciones_listar` que devuelva un
@@ -216,6 +228,8 @@ const RUTA: Record<string, (id: string) => string> = {
   catalogo_porcentajes: () => "/catalogo/porcentajes",
   catalogo_porcentaje: (id) => `/catalogo/porcentajes/${id}`,
   catalogo_version: (id) => `/catalogo/paquetes/versiones/${id}`,
+  presupuesto: (id) => `/presupuestos/${id}`,
+  presupuestos_revision: () => "/presupuestos/revision",
 };
 
 // `permiso_otorgado` trae el módulo en `destino` y la vista en `etiqueta`: los
@@ -321,7 +335,13 @@ export function NotificacionesBell({ notificaciones }: { notificaciones: Notific
                             <span className="t-body-m mt-0.5 block text-text-secondary">Sobre {n.motivo}</span>
                           )}
                           {n.motivo && n.tipo !== "persona_fusionada" && n.tipo !== "plantilla_disparada" && (
-                            <span className="t-body-m mt-0.5 block text-error-text">{n.motivo}</span>
+                            <span
+                              className={`t-body-m mt-0.5 block ${
+                                n.tipo === "presupuesto_a_mano" ? "text-text-secondary" : "text-error-text"
+                              }`}
+                            >
+                              {n.motivo}
+                            </span>
                           )}
                           <span className="t-caption mt-1 block">
                             {[n.actor, formatFechaHora(n.created_at)].filter(Boolean).join(" · ")}

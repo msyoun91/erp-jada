@@ -3,7 +3,7 @@
 Ficha y decisiones: `decisiones/presupuestos.md`. Tests: `sql/tests/presupuestos_registros.sql` (tramo 1),
 `sql/tests/presupuestos_renglones.sql` (2a), `sql/tests/presupuestos_opcionales.sql` (2b), `sql/tests/presupuestos_ciclo.sql` (3a),
 `sql/tests/presupuestos_autorizaciones.sql` (3b), `sql/tests/presupuestos_recargo.sql` (3c),
-`sql/tests/presupuestos_aprobacion.sql` (4).
+`sql/tests/presupuestos_aprobacion.sql` (4), `sql/tests/presupuestos_avisos.sql` (5).
 
 **Estado:** tramo 1 — `sql/185` (permisos, configuración, presupuesto, versiones, secciones, ente), aplicado el 2026-11-06.
 Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el precio de Catálogo para quien arma), aplicado el
@@ -11,7 +11,7 @@ Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el 
 2026-11-06. Tramo 3a — `sql/188` (copiar una versión, mantener o actualizar, lo que frena publicar, publicar y quitar una
 variante), aplicado el 2026-11-06. Tramo 3b — `sql/189` (pedir, autorizar, devolver y retirar; lo que frena separado de lo que
 pide autorización; la lectura de Técnica), aplicado el 2026-11-06. Tramo 3c — `sql/190` (el recargo de la comisión del referente), aplicado el 2026-11-10. Tramo 4 — `sql/191` (aprobar, rechazar, revertir y la obra que sigue a sus presupuestos), aplicado el
-2026-11-10. Siguen: avisos (5).
+2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10.
 
 ## Ver y armar: decide la obra
 
@@ -328,6 +328,13 @@ las funciones del ciclo (DEFINER).
   UPDATE llega a `obras_al_editar` a profundidad 2 (sin reglas de actor) y el evento `estado` de la obra sale con quien actuó.
 - `presupuestos_obra_estado` — trigger DEFINER sobre `obras` (BEFORE UPDATE OF estado): con un presupuesto aprobado no sale de
   `contratada` (PR025); con publicados no pasa a `perdida` (PR026). Pasar a `contratada` a mano todavía se puede (`BACKLOG.md`).
+- `presupuestos_puede_autorizar_de(tipo, obra, usuario) → boolean` — DEFINER STABLE, sin GRANT (`sql/193`): la regla de la tabla *Autoriza*
+  por usuario; `presupuestos_puede_autorizar` la envuelve con `auth.uid()`.
+- `presupuestos_mano_nuevos(version) → setof uuid` — sin GRANT: renglones a mano activos sin origen o distintos de su origen
+  (descripción, precio, cantidad o moneda).
+- `presupuestos_avisos(ids uuid[])` — DEFINER con GRANT: resuelve los avisos de la campanita (`db_schema/notificaciones.md`).
+  Triggers (sin GRANT): `presupuestos_autorizaciones_avisar_pedido` (AFTER INSERT) y `_avisar_resuelta` (AFTER UPDATE), por
+  sentencia con tabla de transición, y `presupuestos_versiones_avisar_mano` (AFTER UPDATE OF estado a `publicado`).
 - `presupuestos_clave(pieza, porcentaje) → text` — IMMUTABLE: la clave de un opcional, en `presupuestos_opcionales.clave` y en
   `lineas`.
 

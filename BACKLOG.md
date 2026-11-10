@@ -84,10 +84,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (`decisiones/presupuestos.md` → *La base*): el 1 (`sql/185`, registros), el 2a (`sql/186`, renglones de Catálogo y a mano,
   descuento, totales, formulario de venta), el 2b (`sql/187`, líneas de los opcionales, debajo y aparte, mínimos), el 3a
   (`sql/188`, copiar, mantener o actualizar, lo que frena publicar, publicar y quitar variante) y el 3b (`sql/189`, pedir,
-  autorizar, devolver, retirar y la lectura de Técnica), el 3c (`sql/190`, el recargo de la comisión del referente, abajo) y el 4
-  (`sql/191`, aprobar, rechazar, revertir y la obra que sigue a sus presupuestos) están aplicados y probados.
-  **Siguiente:** el 5, avisos, con la lista y el plan aprobados (`decisiones/presupuestos.md` → *Avisos* y *La base*): arrancar por
-  `sql/192`. Falta todo lo demás, y esto no está en la ficha:
+  autorizar, devolver, retirar y la lectura de Técnica), el 3c (`sql/190`, el recargo de la comisión del referente, abajo) el 4
+  (`sql/191`, aprobar, rechazar, revertir y la obra que sigue a sus presupuestos) y el 5 (`sql/192`–`sql/193`, avisos) están
+  aplicados y probados. **Siguiente:** las pantallas. Falta todo lo demás, y esto no está en la ficha:
   - **Del 4, con las pantallas:** frenar que la obra pase a `contratada` a mano ("contratada si y solo si hay un aprobado"). Hoy se
     puede, porque sin pantallas no hay otra forma de marcarla; rompe 4 tests de Obras (`obras_reglas`, `obras_numeros`,
     `obras_contactos_bajas`, `tareas_plantillas_sobre`) y el selector de estado de la ficha de la obra, y hay 2 obras contratadas
