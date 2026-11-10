@@ -16,7 +16,8 @@ import {
   renombrarCategoria,
   renombrarColor,
 } from "../actions";
-import { POR_UNIDAD, UNIDAD, hace, textoCosto, textoNumero } from "../etiquetas";
+import { hace } from "@/lib/utils";
+import { POR_UNIDAD, UNIDAD, textoCosto, textoNumero } from "../etiquetas";
 import type { Categoria, Color, Insumo, TipoInsumo } from "../types";
 import { CostosPanel, type FilaCosto } from "./CostosPanel";
 import { FijoFormPanel } from "./FijoFormPanel";

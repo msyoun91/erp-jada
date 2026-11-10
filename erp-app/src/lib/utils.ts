@@ -83,3 +83,17 @@ export function initials(nombre: string): string {
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
   return nombre.slice(0, 2).toUpperCase();
 }
+
+const MES = 30 * 86_400_000;
+
+// "hace 9 meses": un costo en pesos de hace un año da un precio creíble y equivocado.
+export function hace(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const dias = Math.floor(ms / 86_400_000);
+  if (dias < 1) return "hoy";
+  if (dias < 30) return dias === 1 ? "hace 1 día" : `hace ${dias} días`;
+  const meses = Math.floor(ms / MES);
+  if (meses < 12) return meses === 1 ? "hace 1 mes" : `hace ${meses} meses`;
+  const anios = Math.floor(meses / 12);
+  return anios === 1 ? "hace 1 año" : `hace ${anios} años`;
+}

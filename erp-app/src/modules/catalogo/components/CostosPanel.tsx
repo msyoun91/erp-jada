@@ -10,7 +10,8 @@ import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { MONEDAS, MONEDAS_LISTA, formatMonto, type Moneda } from "@/lib/monedas";
 import { CLASE_NIVEL, textoCambio } from "@/lib/niveles";
 import { cargarCostos, revisarCostos } from "../actions";
-import { POR_UNIDAD, hace, textoCosto } from "../etiquetas";
+import { hace } from "@/lib/utils";
+import { POR_UNIDAD, textoCosto } from "../etiquetas";
 import { costosSchema, type CostosForm, type Costo, type NivelCosto, type Unidad } from "../types";
 
 export type FilaCosto = { variante_id: string; nombre: string; unidad: Unidad; costo: Costo | null };

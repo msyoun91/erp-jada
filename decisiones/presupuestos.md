@@ -511,6 +511,12 @@ publicar*; solo lectura fuera de borrador o sin armar; quien autoriza resuelve a
 Revisión técnica `/presupuestos/revision` y `/presupuestos/revision/[version]` · Configuración · y la sección en la ficha de la obra,
 por composición en `app/`. La calculadora sin guardar sigue en Catálogo; su formulario sube a `components/` para usarlo en los dos.
 
+**La lista lee las tablas, sin función propia (2026-11-10).** *Esperan mi autorización*: pedidos `comercial` pendientes de versiones
+`en_revision`, y `presupuestos_puede_autorizar` una vez por obra. *Devueltas*: versiones en borrador cuyo pedido más nuevo quedó
+`devuelta`; pedir de nuevo crea filas más nuevas, así que retirar ese pedido no la vuelve a mostrar. Muestra todas las que se ven, no
+solo las que pidió quien mira. Los nombres salen de `obras_nombres`: quien pidió en una obra donde no figura se ve "—". Si la lista
+crece o eso molesta, una función. `modules/presupuestos/queries.ts`, `PresupuestosView.tsx`.
+
 **El nombre del presupuesto se edita hasta aprobar o rechazar (decisión del usuario, 2026-11-10).** Lo ve el cliente, pero no cambia
 precios. Hoy la base lo deja cambiar en cualquier estado (`GRANT UPDATE (nombre)` en `sql/185`, sin trigger): el freno va en la
 migración de pantallas.

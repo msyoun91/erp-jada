@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { RightPanel } from "@/components/ui/RightPanel";
 import { activarInsumo, avisoBaja, quitarColor, sumarColor } from "../actions";
-import { POR_UNIDAD, UNIDAD, hace, textoCosto, textoNumero } from "../etiquetas";
+import { hace } from "@/lib/utils";
+import { POR_UNIDAD, UNIDAD, textoCosto, textoNumero } from "../etiquetas";
 import type { AvisoBaja, Categoria, Color, Insumo, TipoInsumo, Variante } from "../types";
 import { BajaModal } from "./BajaModal";
 

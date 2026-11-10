@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Coins, Contact, Home, ListTodo, Package, UserRound, UsersRound, LogOut, type LucideIcon } from "lucide-react";
+import { Building2, Coins, Contact, FileText, Home, ListTodo, Package, UserRound, UsersRound, LogOut, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOutAction } from "@/modules/auth/actions";
@@ -14,6 +14,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   obras: Building2,
   contactos: Contact,
   catalogo: Package,
+  presupuestos: FileText,
   monedas: Coins,
   // No es un módulo ni va en NAV_ITEMS: está para que su <h1> salga del mismo lugar.
   perfil: UserRound,
@@ -26,6 +27,7 @@ export const LABEL_MAP: Record<string, string> = {
   obras: "Obras",
   contactos: "Contactos",
   catalogo: "Catálogo",
+  presupuestos: "Presupuestos",
   monedas: "Monedas",
   perfil: "Mi perfil",
 };
@@ -38,6 +40,7 @@ const NAV_ITEMS: NavItem[] = [
   { modulo: "obras", href: "/obras" },
   { modulo: "contactos", href: "/contactos" },
   { modulo: "catalogo", href: "/catalogo" },
+  { modulo: "presupuestos", href: "/presupuestos" },
   { modulo: "monedas", href: "/monedas" },
   { modulo: "usuarios", href: "/usuarios" },
 ];
