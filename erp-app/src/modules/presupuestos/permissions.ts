@@ -11,3 +11,7 @@ export function puedeAutorizar() {
 export function puedeAdministrar() {
   return tienePermiso("presupuestos_administrar");
 }
+
+export async function puedeArmar() {
+  return (await tienePermiso("presupuestos_armar")) || (await tienePermiso("presupuestos_administrar"));
+}

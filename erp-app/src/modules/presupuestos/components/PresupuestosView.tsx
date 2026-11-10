@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, ChevronRight, CircleCheck, FileText, SearchX, UserRound } from "lucide-react";
+import { Building2, ChevronRight, CircleCheck, FileText, Plus, SearchX, UserRound } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Vacio } from "@/components/ui/Vacio";
 import { ENTES } from "@/lib/entes";
 import { formatFecha, hace } from "@/lib/utils";
 import type { Pedido, PresupuestoResumen } from "../queries";
+import { AltaPresupuestoPanel } from "./AltaPresupuestoPanel";
 
 type Filtro = "todos" | "esperan" | "devueltas";
 
@@ -25,15 +26,18 @@ export function PresupuestosView({
   devueltas,
   nombres,
   yo,
+  obrasParaAlta,
 }: {
   presupuestos: PresupuestoResumen[];
   esperan?: Pedido[];
   devueltas: Pedido[];
   nombres: Record<string, string>;
   yo: string;
+  obrasParaAlta?: { id: string; nombre: string }[];
 }) {
   const [texto, setTexto] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [creando, setCreando] = useState(false);
 
   const q = texto.trim().toLowerCase();
   const quien = (id: string | null) => (id === yo ? "Vos" : ((id && nombres[id]) ?? "—"));
@@ -52,6 +56,14 @@ export function PresupuestosView({
 
   return (
     <div>
+      {obrasParaAlta && (
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <button className="btn btn-primary" onClick={() => setCreando(true)}>
+            <Plus size={16} />
+            Nuevo presupuesto
+          </button>
+        </div>
+      )}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar por número, nombre u obra…" />
         <div className="segmented" role="group" aria-label="Qué ver">
@@ -140,6 +152,7 @@ export function PresupuestosView({
           )}
         </>
       )}
+    {creando && obrasParaAlta && <AltaPresupuestoPanel obras={obrasParaAlta} onClose={() => setCreando(false)} />}
     </div>
   );
 }

@@ -77,3 +77,33 @@ export async function getNombres(): Promise<Record<string, string>> {
   if (error) throw error;
   return Object.fromEntries(data.map((n) => [n.id, n.nombre]));
 }
+
+// Las obras activas que quien llama ve; armar en una de ellas lo decide `presupuestos_alta`.
+export async function getObrasParaPresupuestar(): Promise<{ id: string; nombre: string }[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("obras").select("id, nombre").eq("activo", true).order("nombre");
+  if (error) throw error;
+  return data;
+}
+
+type Version = Database["public"]["Tables"]["presupuestos_versiones"]["Row"];
+
+export type FichaPresupuesto = Presupuesto & {
+  obra: { id: string; nombre: string };
+  versiones: Pick<Version, "id" | "numero" | "variante" | "variante_nombre" | "estado" | "vence" | "created_at">[];
+};
+
+export async function getPresupuesto(id: string): Promise<FichaPresupuesto | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("presupuestos")
+    .select(
+      "*, obra:obras!inner(id, nombre), versiones:presupuestos_versiones!presupuestos_versiones_presupuesto_id_fkey(id, numero, variante, variante_nombre, estado, vence, created_at, activo)"
+    )
+    .eq("id", id)
+    .eq("versiones.activo", true)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return { ...data, versiones: data.versiones.map(({ activo: _, ...v }) => v).sort((a, b) => b.numero - a.numero) };
+}

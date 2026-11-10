@@ -88,7 +88,7 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (`sql/191`, aprobar, rechazar, revertir y la obra que sigue a sus presupuestos) y el 5 (`sql/192`–`sql/193`, avisos) están
   aplicados y probados. **Siguiente:** las pantallas, ya definidas (`decisiones/presupuestos.md` → *Pantallas*, 2026-11-10).
   La migración que piden ya está aplicada (`sql/194`: nombre congelado, `importe_con_iva` por renglón, freno de `contratada`). Hecha la lista
-  (`/presupuestos`, con sus tres filtros; sin probar con datos, que no hay hasta que exista el alta). Siguen: ficha con el alta, editor,
+  (`/presupuestos`, con sus tres filtros; sin probar con datos, que no hay hasta que exista el alta). Hechos el alta (botón *Nuevo presupuesto* en la lista, panel con obra, nombre, moneda, IVA y sección; `presupuestos_alta`) y la ficha, de solo lectura: encabezado y una tarjeta por variante con sus versiones, sin probar en pantalla. A la ficha le faltan corregir, quitar, sumar variante y el nombre editable, que dependen del editor. Siguen: editor,
   Revisión técnica y Configuración (hasta entonces Técnica ve el módulo en el menú y cae en 404), impreso y la sección en la obra. Esto no está en la ficha:
   - **Del 4, con el portal:** no aprobar si un mínimo hace que el total difiera de lo que confirmó el cliente (etapa 2).
   - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`
