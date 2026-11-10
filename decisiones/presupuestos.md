@@ -474,6 +474,34 @@ confirmaba un total que después cambiaba.
 **Una versión imprimible desde el ERP, además del portal.** Se imprime o guarda como PDF desde el navegador, sin librería nueva y sin costos
 ni comparación. Permite usar el módulo sin el portal, y queda como respaldo.
 
+## Avisos
+
+Cuatro, en la campanita. Retirar no avisa (*Estados y versiones*); "Vencida hace 3 días" es un mensaje de la pantalla al aprobar; el
+de una confirmación del portal espera a la etapa 2.
+
+**El aviso de un pedido le llega a todos los que pueden autorizarlo, no solo a quien tiene la obra a cargo (decisión del usuario,
+2026-11-10).** Juan pide por el 12 % de P-0142, del Sur: lo reciben Laura, jefa del Sur, y Gerardo, que administra. Una sola regla,
+quien puede autorizar recibe, como `catalogo_version_enviada` y `alta_por_aprobar`; con Laura de vacaciones, Gerardo ya está avisado.
+Uno por versión y por persona, no por renglón; desaparece cuando ya no le queda nada pendiente que pueda autorizar (autorizado,
+devuelto o retirado), y a Técnica la lleva a *Revisión técnica*. Costo: gerencia recibe todos los pedidos de la empresa, también los
+de Técnica. Se descartó avisar solo a quien tiene la obra a cargo: una segunda regla, y con el jefe ausente nadie se enteraba.
+
+**"Lista para publicar" le llega a quien pidió (decisión del usuario, 2026-11-10).** Pedro arma la v2 y se va de viaje; Juan la
+termina y pide; cuando autoriza la última, Laura, el aviso es para Juan, que es quien espera. Desaparece cuando la versión sale de
+revisión. Si al pedir ya quedó todo autorizado, se publica en el mismo paso y no hay aviso. Se descartaron quien creó la versión
+(Pedro, de viaje) y todos los que arman en la obra.
+
+**La devolución le llega a quien pidió, con el motivo, y queda como noticia (decisión del usuario, 2026-11-10).** "Laura devolvió
+P-0142 · v2: bajá el descuento al 10 %" sigue en la campanita aunque Juan corrija y vuelva a pedir: es un hecho con su motivo, como
+`catalogo_version_devuelta`; lo pendiente lo muestra el filtro *Devueltas*. Apunta a la fila de la autorización devuelta. Se descartó
+que desapareciera al pedir de nuevo: una condición más para sacar algo que Juan ya leyó.
+
+**El renglón a mano avisa al publicar solo si es nuevo o cambió respecto del renglón del que se copió (decisión del usuario,
+2026-11-10).** La v1 sale con "Flete cerrado, US$ 500" y avisa; la v2, que corrige la medida de la V4 con el flete igual, no; con el
+flete a US$ 300 o un "Andamio" más, avisa y cuenta solo esos. Cambió: descripción, precio, cantidad o moneda. Uno por versión
+publicada, a quienes pueden autorizar lo comercial en esa obra, menos quien publica; queda como noticia. Vale igual al sumar una
+variante, que también copia. Se descartó avisar en cada publicación: el mismo flete en cada corrección, y el jefe deja de mirarlos.
+
 ## La base
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y
@@ -662,6 +690,18 @@ en cotización no la mueve, y pasa.
 puede (2026-11-10).** Frenarlo hoy dejaba a comercial sin forma de marcar una obra contratada hasta que Presupuestos tenga
 pantallas, y hay 2 obras así. Una contratada a mano no la mueven publicar ni rechazar: solo aprobar. Se cierra con las pantallas
 (`BACKLOG.md`). `presupuestos_obra_estado` (PR025, PR026).
+
+**El tramo 5 son cuatro tipos de aviso, con triggers sobre las tablas del ciclo y sin tocar las funciones que ya existen (plan aprobado,
+2026-11-10).** `sql/192` agrega los tipos (`presupuesto_pedido`, `presupuesto_autorizado`, `presupuesto_devuelto`, `presupuesto_a_mano`) y
+`sql/193` el resto. Un trigger sobre `presupuestos_autorizaciones` emite los tres primeros (al insertar pendientes, al autorizarse la
+última pendiente, al devolverse) y uno sobre `presupuestos_versiones`, el del renglón a mano, cuando pasa a `publicado`. Los
+destinatarios salen de `presupuestos_puede_autorizar_de(tipo, obra, usuario)`, la regla actual por usuario, que `presupuestos_puede_autorizar`
+pasa a envolver: una sola regla. Los resuelve `presupuestos_avisos(ids)` (DEFINER, como `catalogo_avisos`) porque Técnica no lee
+versiones por RLS: a ella le da solo "P-0142 · v2" y el destino *Revisión técnica*. Gerencia, que puede autorizar las dos cosas,
+recibe un aviso por versión, no uno por tipo; pedir de nuevo desactiva el aviso anterior de esa versión y emite otro. Test:
+`sql/tests/presupuestos_avisos.sql`; regresión: autorizaciones, ciclo, aprobación y `catalogo_avisos`. Fuera del SQL:
+`NotificacionesBell` (`/presupuestos/<id>` y la de Revisión técnica, aunque las pantallas no existan), `database.types.ts`,
+`db_schema/presupuestos.md` y `db_schema/notificaciones.md`.
 
 **El bloqueo por mínimos al aprobar espera a la etapa 2 (2026-11-10).** Compara contra lo que confirmó el cliente en el portal, que
 todavía no existe.
