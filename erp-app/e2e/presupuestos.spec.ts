@@ -1061,3 +1061,64 @@ test("en la lista de Obras, una contratada cuenta sus presupuestos publicados, n
   await page.screenshot({ path: "e2e/.out/obras-contratada-en-cotizacion-celular.png", fullPage: true });
   await ctx.close();
 });
+
+// Necesita e2e/datos-calculadora.sql (un servicio con mínimo). Una obra nueva por corrida, creada desde el panel de alta.
+test("la calculadora da el precio y los mínimos, y lleva la ventana a un presupuesto con una obra nueva", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const { ctx, page } = await como(browser, "admin");
+  await asegurarAprobador(page);
+  const obra = `Casa Palermo ${marca}`;
+  const paquete = "Zqx199 Ventana con mínimo";
+
+  await page.goto("/presupuestos");
+  await page.getByRole("link", { name: "Calculadora" }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/calculadora$/);
+  await page.getByLabel("Paquete").selectOption({ label: paquete });
+  const ancho = page.getByLabel(/^ancho/i);
+  await ancho.fill("1500");
+  await page.getByLabel("Moneda").selectOption("ARS");
+  await page.getByRole("button", { name: "Calcular" }).click();
+  await expect(page.getByText("$165", { exact: true })).toBeVisible();
+  await expect(page.getByText("Mínimo de Zqx199 Colocación")).toBeVisible();
+  await expect(page.getByText("+ $49.985")).toBeVisible();
+  await expect(page.getByText("$50.150")).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-calculadora.png", fullPage: true });
+
+  // Cambiar lo cargado borra el cálculo: lo que se lleva es lo que está a la vista.
+  await ancho.fill("1600");
+  await expect(page.getByRole("button", { name: "Llevar a un presupuesto" })).toHaveCount(0);
+  await ancho.fill("1500");
+  await page.getByRole("button", { name: "Calcular" }).click();
+  await page.getByRole("button", { name: "Llevar a un presupuesto" }).click();
+
+  const alta = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: "Nuevo presupuesto" }) });
+  await expect(alta.getByText(paquete)).toBeVisible();
+  await expect(alta.getByText("$165 sin IVA · cantidad 1")).toBeVisible();
+  await alta.getByRole("button", { name: "Nueva obra" }).click();
+  const nueva = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: "Nueva obra" }) });
+  await nueva.getByLabel("Nombre", { exact: true }).fill(obra);
+  await nueva.getByLabel("Dirección").fill(`Gorriti ${marca.slice(3)}`);
+  await nueva.getByLabel("Tipo de obra").selectOption({ label: "Casa" });
+  await nueva.getByLabel("Origen").selectOption({ label: "Llamado" });
+  await page.screenshot({ path: "e2e/.out/pres-calculadora-obra.png", fullPage: true });
+  await nueva.getByRole("button", { name: "Crear obra" }).click();
+  const igual = nueva.getByRole("button", { name: "Crear igual" });
+  await expect.poll(async () => (await igual.isVisible()) || !(await nueva.isVisible())).toBe(true);
+  if (await igual.isVisible()) await igual.click();
+  await expect(nueva).toBeHidden();
+  await expect(page).toHaveURL(/\/presupuestos\/calculadora$/);
+  await expect(alta.getByLabel("Obra").locator("option:checked")).toHaveText(obra);
+
+  await alta.getByLabel("Nombre", { exact: true }).fill(`Ventana ${marca}`);
+  await page.screenshot({ path: "e2e/.out/pres-calculadora-alta.png", fullPage: true });
+  await alta.getByRole("button", { name: "Crear presupuesto" }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}\/[0-9a-f-]{36}$/);
+  const general = page.getByRole("region", { name: "General" });
+  await expect(general.getByRole("listitem").filter({ hasText: paquete })).toBeVisible();
+  await expect(general.getByRole("listitem").filter({ hasText: "Zqx199 Colocación" })).toContainText("Mínimo");
+  await page.screenshot({ path: "e2e/.out/pres-calculadora-editor.png", fullPage: true });
+  await page.goto("/presupuestos/calculadora");
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.screenshot({ path: "e2e/.out/pres-calculadora-celular.png", fullPage: true });
+  await ctx.close();
+});
