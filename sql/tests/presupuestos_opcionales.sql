@@ -1,6 +1,6 @@
 -- Verificación de sql/187: lo que suma cada opcional, cómo se ve (debajo o aparte, en otra sección y otra moneda), los totales
--- con el renglón aparte y los mínimos. NO es una migración: todo corre dentro de una transacción que revierte. Termina en un DO
--- que lanza "N / M ok" y los casos que fallan.
+-- con el renglón aparte y los mínimos; y, en 04, el alta con una ventana (sql/199). NO es una migración: todo corre dentro de una
+-- transacción que revierte. Termina en un DO que lanza "N / M ok" y los casos que fallan.
 --
 -- Mundo: el de presupuestos_renglones.sql (Juan responsable de Belgrano y vendedor, Pedro participante, Ana vendedora sin la
 -- obra, JN jefe sin armar, G gerencia, T Técnica, Lucia y Carlos de Catálogo). V es la ventana de $200.000 con 1000 × 1000
@@ -271,6 +271,25 @@ CREATE FUNCTION pg_temp.cambia_minimo(p_version text, p_servicio text, p_set tex
   SELECT pg_temp.intentar(format('UPDATE presupuestos_renglones SET %s WHERE id = %L', p_set, pg_temp.minimo(p_version, p_servicio)), 'Juan');
 $f$;
 
+-- Llevar a un presupuesto: el alta con la ventana, con los parámetros por nombre como la llama la pantalla. Guarda el
+-- presupuesto, su v1 (+v) y la ventana (+r); devuelve "ok" o el error.
+CREATE FUNCTION pg_temp.llevar(p_nombre text, p_moneda text, p_v jsonb) RETURNS text LANGUAGE plpgsql AS $f$
+DECLARE
+  v text := pg_temp.consultar(format(
+    $s$SELECT presupuestos_alta(p_obra => %L, p_nombre => %L, p_moneda => %L, p_alicuota => 21,
+                                p_paquete => %L, p_entrada => %L, p_opcionales => %L)::text$s$,
+    pg_temp.id('Belgrano'), 'Zqx187 ' || p_nombre, p_moneda, p_v->>'paquete_id', p_v->'entrada',
+    ARRAY(SELECT jsonb_array_elements_text(coalesce(p_v->'opcionales', '[]')))::uuid[]), 'Juan');
+BEGIN
+  IF v IS NULL OR v !~ '^[0-9a-f-]{36}$' THEN RETURN v; END IF;
+  INSERT INTO ids VALUES (p_nombre, v::uuid);
+  INSERT INTO ids SELECT p_nombre || 'v', id FROM presupuestos_versiones WHERE presupuesto_id = v::uuid;
+  INSERT INTO ids SELECT p_nombre || 'r', r.id FROM presupuestos_renglones r
+  WHERE r.version_id = pg_temp.id(p_nombre || 'v') AND r.tipo = 'catalogo';
+  RETURN 'ok';
+END;
+$f$;
+
 -- ============================================================
 -- Montaje
 -- ============================================================
@@ -519,6 +538,44 @@ SELECT pg_temp.caso('03 moverlo lo devuelve al aparte', 'ok/Comision@General=400
   pg_temp.cambia_minimo('V3', 'Garantia', format('seccion_id = %L', pg_temp.id('General'))) || '/' || pg_temp.minimos('V3'));
 SELECT pg_temp.caso('03 aparte y mínimos en los totales', 'ARS 710000/0/21.0=147000,10.5=1050/858050/0', pg_temp.tot('V3'));
 SELECT pg_temp.caso('03 el renglón aparte', 'Garantia@Col3=6000 ARS', pg_temp.aparte('V3'));
+
+-- ============================================================
+-- 04. Llevar a un presupuesto: el alta con una ventana (sql/199)
+-- ============================================================
+-- La misma ventana, con Mosquitero, Garantía y Recargo, llevada desde la calculadora (K1) y sumada desde el editor (P4): igual
+-- precio, líneas, mínimos y totales. Siguen la Comisión con mínimo de $100.000 y la Garantía con mínimo de $10.000.
+SELECT pg_temp.alta('P4', 'V4', 'S4');
+SELECT pg_temp.caso('04 desde el editor', 'ok', pg_temp.renglon('E4', 'S4', pg_temp.todo()));
+SELECT pg_temp.caso('04 llevar', 'ok', pg_temp.llevar('K1', 'ARS', pg_temp.todo()));
+SELECT pg_temp.caso('04 una ventana en General, cantidad 1, sin designación ni ubicación', '1:General/1/-/-', (
+  SELECT count(*) || ':' || string_agg(s.nombre || '/' || trim_scale(r.cantidad) || '/' || coalesce(r.designacion, '-') || '/' ||
+         coalesce(r.ubicacion, '-'), ',')
+  FROM presupuestos_renglones r JOIN presupuestos_secciones s ON s.id = r.seccion_id
+  WHERE r.version_id = pg_temp.id('K1v') AND r.tipo = 'catalogo'));
+SELECT pg_temp.caso('04 con precio y líneas', 'true', (
+  SELECT (precio IS NOT NULL AND jsonb_array_length(lineas) = 3)::text FROM presupuestos_renglones WHERE id = pg_temp.id('K1r')));
+SELECT pg_temp.caso('04 el precio y las líneas, como desde el editor', pg_temp.precio('E4') || ' ' || pg_temp.lineas('E4'),
+  pg_temp.precio('K1r') || ' ' || pg_temp.lineas('K1r'));
+SELECT pg_temp.caso('04 con los mínimos', 'true', (pg_temp.minimos('K1v') LIKE 'Comision@General=%,Garantia@General=%')::text);
+SELECT pg_temp.caso('04 los mínimos, como desde el editor', pg_temp.minimos('V4'), pg_temp.minimos('K1v'));
+SELECT pg_temp.caso('04 los totales, como desde el editor', pg_temp.tot('V4'), pg_temp.tot('K1v'));
+
+-- En la moneda en que la vio: la sección y la ventana en dólares. $200.000 de ventana + 10 % de Comisión, a $1.000; el mínimo
+-- de la Comisión, $100.000 − $20.000.
+SELECT pg_temp.caso('04 en dólares', 'ok', pg_temp.llevar('K2', 'USD_OFICIAL', pg_temp.ventana()));
+SELECT pg_temp.caso('04 en dólares: la ventana', '220 USD_OFICIAL', pg_temp.precio('K2r'));
+SELECT pg_temp.caso('04 en dólares: el mínimo', 'Comision@General=80 USD_OFICIAL', pg_temp.minimos('K2v'));
+
+-- Sin la ventana, como antes: solo el presupuesto, su v1 y la sección.
+SELECT pg_temp.caso('04 sin ventana', 'ok/0', pg_temp.llevar('K3', 'ARS', '{}') || '/' ||
+  (SELECT count(*) FROM presupuestos_renglones WHERE version_id = pg_temp.id('K3v')));
+
+-- Un paquete que no está a la venta frena el alta entera: no queda un borrador vacío.
+SELECT pg_temp.ver('N4');
+SELECT pg_temp.caso('04 un paquete que no está a la venta', 'PR010/0', pg_temp.llevar('K4', 'ARS', pg_temp.ventana(pg_temp.e(), '{}', 'N4'))
+  || '/' || (SELECT count(*) FROM presupuestos WHERE nombre = 'Zqx187 K4'));
+SELECT pg_temp.caso('04 quien no arma la obra, tampoco con ventana', '42501', pg_temp.consultar(format(
+  $s$SELECT presupuestos_alta(%L, 'Zqx187 K5', 'ARS', 21, 'General', %L)::text$s$, pg_temp.id('Belgrano'), pg_temp.paquete('V')), 'Ana'));
 
 -- ============================================================
 -- Resultado
