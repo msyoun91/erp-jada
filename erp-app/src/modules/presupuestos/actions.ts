@@ -10,6 +10,7 @@ import {
   altaSchema,
   datosVersionSchema,
   devolverSchema,
+  nombreSchema,
   opcionalesSchema,
   renglonCatalogoSchema,
   renglonManoSchema,
@@ -19,6 +20,7 @@ import {
   type DatosVersionForm,
   type DevolverForm,
   type FormularioVenta,
+  type NombreForm,
   type OpcionalesForm,
   type RenglonCatalogoForm,
   type RenglonManoForm,
@@ -60,6 +62,55 @@ export async function crearPresupuesto(input: AltaForm) {
   if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/presupuestos", "layout");
   return { success: true as const, id };
+}
+
+// Aprobado o rechazado, el nombre no cambia (PR027).
+export async function guardarNombre(input: NombreForm): Promise<Resultado> {
+  const parsed = nombreSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  return trasGuardar(
+    errorDeUpdate(
+      await supabase.from("presupuestos").update({ nombre: parsed.data.nombre }, { count: "exact" }).eq("id", parsed.data.id)
+    )
+  );
+}
+
+// Corregir copia la publicada en la misma variante; sumar variante, en la siguiente. Otra abierta de esa variante: 23505.
+export async function copiarVersion(desde: string, varianteNueva: boolean) {
+  const parsed = z.object({ desde: idSchema, nueva: z.boolean() }).safeParse({ desde, nueva: varianteNueva });
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("presupuestos_version_copiar", {
+    p_desde: parsed.data.desde,
+    p_variante_nueva: parsed.data.nueva,
+  });
+  revalidatePath("/presupuestos", "layout");
+  if (error) {
+    return {
+      success: false as const,
+      error: error.code === "23505" ? "Esta variante ya tiene una versión abierta. Recargá la página." : mensajeError(error),
+    };
+  }
+  return { success: true as const, id: data };
+}
+
+export async function quitarVariante(version: string): Promise<Resultado> {
+  const parsed = idSchema.safeParse(version);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("presupuestos_variante_quitar", { p_version: parsed.data });
+  return trasGuardar(error ? mensajeError(error) : null);
+}
+
+// Solo un borrador, y nunca la única versión activa (PR005, PR006).
+export async function descartarVersion(id: string): Promise<Resultado> {
+  const parsed = idSchema.safeParse(id);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  return trasGuardar(
+    errorDeUpdate(await supabase.from("presupuestos_versiones").update({ activo: false }, { count: "exact" }).eq("id", parsed.data))
+  );
 }
 
 export async function guardarDatosVersion(input: DatosVersionForm): Promise<Resultado> {

@@ -104,6 +104,9 @@ type Version = Database["public"]["Tables"]["presupuestos_versiones"]["Row"];
 export type FichaPresupuesto = Presupuesto & {
   obra: { id: string; nombre: string };
   versiones: Pick<Version, "id" | "numero" | "variante" | "variante_nombre" | "estado" | "vence" | "created_at">[];
+  // Quien mira arma en la obra y el presupuesto admite cambios (activo, en borrador o publicado); lo frenan igual la RLS y
+  // las funciones.
+  arma: boolean;
 };
 
 export async function getPresupuesto(id: string): Promise<FichaPresupuesto | null> {
@@ -118,7 +121,13 @@ export async function getPresupuesto(id: string): Promise<FichaPresupuesto | nul
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  return { ...data, versiones: data.versiones.map(({ activo: _, ...v }) => v).sort((a, b) => b.numero - a.numero) };
+  let arma = false;
+  if (data.activo && (data.estado === "borrador" || data.estado === "publicado")) {
+    const r = await supabase.rpc("presupuestos_arma", { p_obra: data.obra.id });
+    if (r.error) throw r.error;
+    arma = r.data;
+  }
+  return { ...data, versiones: data.versiones.map(({ activo: _, ...v }) => v).sort((a, b) => b.numero - a.numero), arma };
 }
 
 type Tablas = Database["public"]["Tables"];

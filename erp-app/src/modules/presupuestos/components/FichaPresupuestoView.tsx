@@ -4,6 +4,9 @@ import { ENTES } from "@/lib/entes";
 import { formatFecha } from "@/lib/utils";
 import type { FichaPresupuesto } from "../queries";
 import { estadoVersion } from "../types";
+import { AccionesVariante, EditarNombre } from "./AccionesFicha";
+
+const QUITADA = { label: "Quitada", badge: "badge-neutral" };
 
 export function FichaPresupuestoView({
   presupuesto: p,
@@ -12,6 +15,7 @@ export function FichaPresupuestoView({
 }) {
   const variantes = Map.groupBy(p.versiones, (v) => v.variante);
   const estado = ENTES.presupuesto.estados[p.estado];
+  const publicadas = p.versiones.filter((v) => v.estado === "publicado").length;
 
   return (
     <div className="flex flex-col gap-4">
@@ -21,6 +25,7 @@ export function FichaPresupuestoView({
             {p.codigo} · {p.nombre}
           </h2>
           <span className={`badge ${estado.badge}`}>{estado.label}</span>
+          {p.arma && <EditarNombre id={p.id} nombre={p.nombre} />}
         </div>
         <p className="t-caption mt-1 flex items-center gap-1">
           <Building2 size={12} className="shrink-0" />
@@ -33,19 +38,40 @@ export function FichaPresupuestoView({
         )}
       </div>
 
-      {[...variantes].map(([variante, versiones]) => {
-        const nombre = versiones.find(
-          (v) => v.variante_nombre,
-        )?.variante_nombre;
+      {[...variantes].sort(([a], [b]) => a - b).map(([variante, versiones]) => {
+        const nombre =
+          versiones.find((v) => v.variante_nombre)?.variante_nombre ??
+          (variantes.size > 1 ? `Variante ${variante}` : "Presupuesto");
+        const publicada = versiones.find((v) => v.estado === "publicado");
+        const abierta = versiones.find(
+          (v) => v.estado === "borrador" || v.estado === "en_revision",
+        );
+        // Sin publicada, la reemplazada más nueva no la reemplazó nadie: se quitó.
+        const quitada = publicada
+          ? undefined
+          : versiones.find((v) => v.estado === "obsoleto");
         return (
           <div key={variante} className="card">
-            <h3 className="t-h3 mb-2">
-              {nombre ??
-                (variantes.size > 1 ? `Variante ${variante}` : "Presupuesto")}
-            </h3>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <h3 className="t-h3 min-w-0 flex-1">{nombre}</h3>
+              {p.arma && (
+                <AccionesVariante
+                  presupuestoId={p.id}
+                  nombre={nombre}
+                  publicada={publicada?.id ?? null}
+                  abierta={
+                    abierta ? { id: abierta.id, numero: abierta.numero } : null
+                  }
+                  quitable={p.estado === "publicado" && publicadas > 1}
+                  descartable={
+                    abierta?.estado === "borrador" && p.versiones.length > 1
+                  }
+                />
+              )}
+            </div>
             <div className="flex flex-col">
               {versiones.map((v) => {
-                const ev = estadoVersion(v, p);
+                const ev = v.id === quitada?.id ? QUITADA : estadoVersion(v, p);
                 return (
                   <Link
                     key={v.id}

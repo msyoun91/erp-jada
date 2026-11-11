@@ -5,7 +5,7 @@
 > presupuesto, versiones y secciones), 2a (`sql/186`: renglones de Catálogo y a mano, descuento y totales), 2b (`sql/187`:
 > opcionales y mínimos), 3a (`sql/188`: copiar, mantener, publicar y quitar variante) y 3b (`sql/189`: pedir, autorizar,
 > devolver, retirar y la lectura de Técnica) aplicados el 2026-11-06, 3c (`sql/190`: recargo del referente) y 4 (`sql/191`: aprobar,
-> rechazar, revertir y la obra) el 2026-11-10, con sus tests; ver *La base*. El tramo 5 (avisos, `sql/192`–`sql/193`) también, con sus tests. Pantallas definidas el 2026-11-10 (*Pantallas*), sin construir; la migración que piden (`sql/194`) ya está aplicada.**
+> rechazar, revertir y la obra) el 2026-11-10, con sus tests; ver *La base*. El tramo 5 (avisos, `sql/192`–`sql/193`) también, con sus tests. Pantallas definidas el 2026-11-10 (*Pantallas*), en construcción (lo hecho, en `BACKLOG.md`); la migración que piden (`sql/194`) ya está aplicada.**
 > Se armó desde cero, sin partir del backlog, y se contrastó con él al final. Lo que falta, en `BACKLOG.md`
 > → *Presupuestos*.
 
@@ -589,8 +589,23 @@ y toda ventana o mínimo a hoy, *Actualizar a hoy*: es lo que pide *Antes de pub
 con el otro. Todo escribe `mantener` en un UPDATE por ids, y escribirlo recalcula. *Todas a hoy* toma toda ventana y todo mínimo,
 no solo lo copiado: también actualiza lo que cambió, y avisa cuántos mantenidos dejan de estarlo. Mantener se ofrece solo con el
 paquete del origen (PR013): la versión trae el paquete y la fecha del origen de cada renglón. El resumen ("2 renglones mantenidos ·
-a hoy, + $ 800") es el del pedido al jefe, en *Antes de publicar*: no se repite arriba. Copiar todavía no tiene pantalla: el e2e
-arranca de `e2e/datos-mantener.sql`. `mantenerRenglones`, `AccionesRenglon.tsx`, `AccionesVersion.tsx`.
+a hoy, + $ 800") es el del pedido al jefe, en *Antes de publicar*: no se repite arriba. El e2e arranca de
+`e2e/datos-mantener.sql`, con la copia ya hecha. `mantenerRenglones`, `AccionesRenglon.tsx`, `AccionesVersion.tsx`.
+
+**Las acciones de la ficha: *Editar* (el nombre) en el encabezado; en cada variante, *Corregir* y, en su `⋯`, *Sumar variante a
+partir de esta*, *Quitar variante…* y *Descartar la versión N…* (2026-11-11).** Corregir copia la publicada, y se ofrece sin otra
+abierta en la variante: si la hay, se sigue esa. Corregir y sumar abren el editor de la nueva sin confirmar: se deshace descartándola.
+Quitar, con dos publicadas o más y el presupuesto publicado; si la variante tiene una abierta, el aviso dice que publicarla la trae
+de vuelta. Descartar, un borrador que no sea la única versión; uno en revisión se retira antes, en el editor. Va en la ficha y no
+en el editor porque ahí se ven todas las versiones de la variante. Lo ve quien arma, con el presupuesto activo en borrador o
+publicado; frena igual la base (PR003, PR005, PR006, PR015, PR016, PR027). La última versión de una variante sin publicada dice
+*Quitada*, no *Reemplazada*: nada la reemplazó (solo en la ficha; el editor no ve las demás versiones). Las tarjetas van por número
+de variante. `AccionesFicha.tsx`, `FichaPresupuestoView.tsx`.
+
+**Sumar variante copia la publicada de esa variante, o la abierta si nunca se publicó (decisión del usuario, 2026-11-11).** Con
+Aluminio v2 publicada y v3 en borrador, PVC sale de la v2: mantener en PVC deja los precios que vio el cliente. Se descartaron copiar
+la más nueva (mantener quedaba con precios de un borrador que el cliente no vio) y un botón en el editor de cada versión (un lugar
+más donde buscar la acción).
 
 **El impreso: solo lo publicado, y los datos de la empresa en un archivo de la app (decisión del usuario, 2026-11-10).** Publicado,
 todas las variantes; aprobado, la aprobada; rechazado, la última de cada una; un borrador no se imprime. Empresa: logo y datos fijos

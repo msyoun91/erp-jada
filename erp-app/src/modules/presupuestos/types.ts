@@ -30,6 +30,9 @@ export const altaSchema = z.object({
 });
 export type AltaForm = z.input<typeof altaSchema>;
 
+export const nombreSchema = altaSchema.pick({ nombre: true }).extend({ id: idSchema });
+export type NombreForm = z.input<typeof nombreSchema>;
+
 export const datosVersionSchema = z.object({
   id: idSchema,
   variante_nombre: z.string().trim().max(100, "Máximo 100 caracteres"),
