@@ -538,6 +538,23 @@ cargar). La nueva va al final con la moneda y el IVA de la primera; subir y baja
 (`presupuestos_arma`) con la versión en borrador. La clase PR entró a `mensajeError` (`lib/utils.ts`): hasta acá sus mensajes salían
 con el genérico. `AccionesVersion.tsx`, `AccionesSeccion.tsx`.
 
+**Los renglones a mano y de Catálogo se cargan en paneles, con INSERT y UPDATE directos: el precio, la moneda y los mínimos
+los pone la base (2026-11-11).** Al pie de cada sección, *De Catálogo* y *A mano*; cada renglón, editar, duplicar y sacar; un mínimo
+solo se mueve de sección (PR012). Duplicar abre el panel de uno nuevo con sus datos, para cambiar la designación y las medidas antes
+de guardar. Al guardar una ventana, si quedó sin precio, el aviso dice por qué (`mensaje`). Editando, lo cargado (paquete, entrada,
+opcionales) viaja solo si se tocó: reescribir lo mismo no recalcula, pero ida y vuelta por el formulario puede no dar el mismo
+`jsonb`, y cambiar la ubicación traía la ventana a hoy. A mano, el panel ofrece solo las secciones en su moneda (PR009), y el precio va
+como las medidas, en texto sin puntos: con `type="number"`, "150.000" quedaba en 150. Mantenida, el paquete se muestra fijo (PR013). Cambiar de paquete pasa lo cargado por nombre: el ancho y el alto no se escriben de nuevo. No hay
+subir ni bajar renglones: cada UPDATE de una ventana recalcula los mínimos de la versión (*Del 2b, por si pesa*, en `BACKLOG.md`), y
+reordenar 40 ventanas eran 40 vueltas; ordenan `orden` y la fecha de alta. `AccionesRenglon.tsx`, `RenglonPanel.tsx`.
+
+**El formulario de la calculadora subió a `components/entrada/EntradaCampos.tsx` y la entrada a `lib/entrada.ts`, para Catálogo y
+Presupuestos (2026-11-11).** Suma lo que la calculadora no hacía: lo secundario plegado en *Más opciones* (abierto si algo de adentro
+tiene valor), la pieza que requiere otra (la Cortina marca el Cajón, sacar el Cajón saca la Cortina, con aviso) y, por color, la pieza
+o la opción que no se ofrece (deshabilitada; al cambiar de color se saca con aviso). La calculadora de Catálogo ve así el formulario
+del vendedor, sin la oferta por color (no la tiene). El color va siempre a la vista: la base no marca un color como secundario. El
+predeterminado de una medida se muestra como se escribe ("1200", no "1.200"), porque el campo rechaza el punto.
+
 **El impreso: solo lo publicado, y los datos de la empresa en un archivo de la app (decisión del usuario, 2026-11-10).** Publicado,
 todas las variantes; aprobado, la aprobada; rechazado, la última de cada una; un borrador no se imprime. Empresa: logo y datos fijos
 como marcadores hasta tenerlos, sin tabla hasta que haga falta cambiarlos desde una pantalla. Cliente: nombre y dirección de la obra y
@@ -552,7 +569,7 @@ presupuesto (trabajo a mano sin valor).
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y
 mínimos (`sql/187`) · 3a versión nueva, mantener y publicar (`sql/188`) · 3b autorizaciones (`sql/189`) · 3c recargo del referente (`sql/190`) · 4 aprobar, rechazar y la
-obra (`sql/191`) · 5 avisos (`sql/192`–`sql/193`) · 6 pantallas (`sql/194`: nombre congelado PR027, `importe_con_iva`, freno de `contratada` PR028; test `presupuestos_pantallas`; `sql/195`: nombre y líneas de debajo en los importes, test en `presupuestos_opcionales`). Los tests de Obras que ponían `contratada` a mano desactivan `presupuestos_obra_estado` dentro de su transacción; el selector de estado de la obra ya no ofrece `contratada`.
+obra (`sql/191`) · 5 avisos (`sql/192`–`sql/193`) · 6 pantallas (`sql/194`: nombre congelado PR027, `importe_con_iva`, freno de `contratada` PR028; test `presupuestos_pantallas`; `sql/195`: nombre y líneas de debajo en los importes, test en `presupuestos_opcionales`; `sql/196`: todas las piezas en el formulario de venta, test en `presupuestos_renglones`). Los tests de Obras que ponían `contratada` a mano desactivan `presupuestos_obra_estado` dentro de su transacción; el selector de estado de la obra ya no ofrece `contratada`.
 
 **El tramo 2 se parte: 2a los renglones de Catálogo y a mano, con su precio, el descuento y los totales; 2b los opcionales y los
 mínimos (2026-11-06).** El 2b depende de todo el 2a (montos por línea, renglón aparte, mínimos en una sección) y cada mitad se
@@ -610,7 +627,9 @@ los mínimos, la lista a la venta y el formulario; el gerente de Catálogo sigue
 **El formulario de venta devuelve el contenido de la versión con las claves de la calculadora (2026-11-06).** Así la entrada se arma
 con `aEntrada` sin cambios. Solo lo que pregunta: piezas opcionales, variables del vendedor con su predeterminado ya calculado (el
 despiece sin entrada), materiales que elige el vendedor con sus opciones, y por color qué no se ofrece; sin fórmulas, costos ni
-condiciones. `catalogo_venta_formulario`.
+condiciones. `catalogo_venta_formulario`. **Corrección (2026-11-11, `sql/196`): trae todas las piezas, cada una con su `opcional`.** La
+entrada nombra la pieza de cada elección (`{"Hoja": {"Vidrio": …}}`) y el material apunta a su pieza por id: con solo las opcionales,
+el Vidrio de una Hoja fija no se podía cargar ni leer. El formulario sigue preguntando solo por las opcionales.
 
 **`catalogo_precio_redondear` tiene EXECUTE (2026-11-06).** No lee nada, y los totales redondean igual que el precio sin copiar la
 regla.

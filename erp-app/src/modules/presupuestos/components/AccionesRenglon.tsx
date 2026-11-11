@@ -1,0 +1,176 @@
+"use client";
+
+import { useState } from "react";
+import { ArrowRightLeft, Copy, Package, Pencil, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { ConfirmModal } from "@/components/ui/Modal";
+import { OverflowMenu } from "@/components/ui/OverflowMenu";
+import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
+import { formularioVenta, moverRenglon, sacarRenglon } from "../actions";
+import type { VersionEditor } from "../queries";
+import type { FormularioVenta } from "../types";
+import { opcionSeccion, RenglonCatalogoPanel, RenglonManoPanel, type Contexto } from "./RenglonPanel";
+
+type Renglon = VersionEditor["renglones"][number];
+
+// Al pie de cada sección, los dos que carga quien arma. Los mínimos los pone la base.
+export function AgregarRenglon({ seccionId, ...ctx }: Contexto & { seccionId: string }) {
+  const [abierto, setAbierto] = useState<"catalogo" | "mano" | null>(null);
+  const cerrar = () => setAbierto(null);
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAbierto("catalogo")}>
+        <Package size={14} />
+        De Catálogo
+      </button>
+      <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAbierto("mano")}>
+        <Plus size={14} />A mano
+      </button>
+      {abierto === "catalogo" && <RenglonCatalogoPanel {...ctx} seccionId={seccionId} onClose={cerrar} />}
+      {abierto === "mano" && <RenglonManoPanel {...ctx} seccionId={seccionId} onClose={cerrar} />}
+    </div>
+  );
+}
+
+type Abierto =
+  | { modo: "editar" | "duplicar"; formulario: FormularioVenta | null }
+  | { modo: "sacar" | "mover" }
+  | null;
+
+// `nombre`: el que ve el cliente (el paquete o la descripción), para el que no tiene designación.
+export function AccionesRenglon({ renglon: r, nombre, ...ctx }: Contexto & { renglon: Renglon; nombre: string }) {
+  const [abierto, setAbierto] = useState<Abierto>(null);
+  const cerrar = () => setAbierto(null);
+  const etiqueta = [r.designacion ?? nombre, r.ubicacion].filter(Boolean).join(" · ");
+
+  // El panel de una ventana arranca con lo cargado: el formulario de su paquete se pide antes de abrirlo.
+  async function abrir(modo: "editar" | "duplicar") {
+    if (r.tipo !== "catalogo" || !r.paquete_id) {
+      setAbierto({ modo, formulario: null });
+      return;
+    }
+    const result = await formularioVenta(r.paquete_id);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    setAbierto({ modo, formulario: result.formulario });
+  }
+
+  async function sacar() {
+    const result = await sacarRenglon(r.id);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Renglón sacado");
+  }
+
+  // Del mínimo, quien arma solo elige la sección (PR012).
+  const items =
+    r.tipo === "minimo"
+      ? ctx.secciones.length > 1
+        ? [{ label: "Mover de sección", icon: <ArrowRightLeft size={14} />, onClick: () => setAbierto({ modo: "mover" }) }]
+        : []
+      : [
+          { label: "Editar", icon: <Pencil size={14} />, onClick: () => abrir("editar") },
+          { label: "Duplicar", icon: <Copy size={14} />, onClick: () => abrir("duplicar") },
+          { label: "Sacar", icon: <Trash2 size={14} />, onClick: () => setAbierto({ modo: "sacar" }), destructive: true },
+        ];
+  if (items.length === 0) return null;
+
+  return (
+    <>
+      <OverflowMenu items={items} />
+      {(abierto?.modo === "editar" || abierto?.modo === "duplicar") &&
+        (r.tipo === "catalogo" ? (
+          <RenglonCatalogoPanel
+            {...ctx}
+            seccionId={r.seccion_id}
+            renglon={r}
+            nombre={nombre}
+            duplicar={abierto.modo === "duplicar"}
+            formulario={abierto.formulario}
+            onClose={cerrar}
+          />
+        ) : (
+          <RenglonManoPanel
+            {...ctx}
+            seccionId={r.seccion_id}
+            renglon={r}
+            duplicar={abierto.modo === "duplicar"}
+            onClose={cerrar}
+          />
+        ))}
+      {abierto?.modo === "mover" && <MoverPanel renglon={r} nombre={nombre} secciones={ctx.secciones} onClose={cerrar} />}
+      {abierto?.modo === "sacar" && (
+        <ConfirmModal
+          title="Sacar el renglón"
+          mensaje={`"${etiqueta}" deja de estar en esta versión.`}
+          confirmLabel="Sacar"
+          onConfirm={sacar}
+          onClose={cerrar}
+        />
+      )}
+    </>
+  );
+}
+
+function MoverPanel({
+  renglon,
+  nombre,
+  secciones,
+  onClose,
+}: {
+  renglon: Renglon;
+  nombre: string;
+  secciones: Contexto["secciones"];
+  onClose: () => void;
+}) {
+  const [seccion, setSeccion] = useState(renglon.seccion_id);
+  const [enviando, setEnviando] = useState(false);
+
+  async function mover() {
+    setEnviando(true);
+    const result = await moverRenglon(renglon.id, seccion);
+    setEnviando(false);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    toast.success("Renglón movido");
+    onClose();
+  }
+
+  return (
+    <RightPanel
+      title="Mover de sección"
+      subtitle={nombre}
+      onClose={onClose}
+      hayCambios={seccion !== renglon.seccion_id}
+      footer={
+        <PiePanel
+          confirmar="Mover"
+          enviando={enviando}
+          onCancelar={onClose}
+          onConfirmar={mover}
+          deshabilitado={seccion === renglon.seccion_id}
+          nota="El mínimo lo pone y lo saca la base; en otra moneda, se recalcula en esa."
+        />
+      }
+    >
+      <div className="flex flex-col gap-4 px-5 py-4">
+        <label className="flex flex-col gap-1">
+          <span className="t-label">Sección</span>
+          <select className="input" value={seccion} onChange={(e) => setSeccion(e.target.value)}>
+            {secciones.map((s) => (
+              <option key={s.id} value={s.id}>
+                {opcionSeccion(s)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </RightPanel>
+  );
+}

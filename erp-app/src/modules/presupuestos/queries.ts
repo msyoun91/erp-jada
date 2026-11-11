@@ -1,3 +1,4 @@
+import type { Entrada } from "@/lib/entrada";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import type { IvaTotal, LineaDebajo, MensajeCatalogo } from "./types";
@@ -129,10 +130,24 @@ export type VersionEditor = {
   secciones: Pick<Tablas["presupuestos_secciones"]["Row"], "id" | "nombre" | "moneda" | "alicuota" | "orden">[];
   renglones: (Pick<
     Tablas["presupuestos_renglones"]["Row"],
-    "id" | "seccion_id" | "tipo" | "designacion" | "ubicacion" | "cantidad" | "mensaje" | "mantener" | "condiciones_en"
-  > & { mensajes: MensajeCatalogo[] })[];
+    | "id"
+    | "seccion_id"
+    | "tipo"
+    | "designacion"
+    | "ubicacion"
+    | "cantidad"
+    | "mensaje"
+    | "mantener"
+    | "condiciones_en"
+    | "paquete_id"
+    | "descripcion"
+    | "precio"
+    | "moneda"
+  > & { mensajes: MensajeCatalogo[]; entrada: Entrada | null; opcionales: string[] })[];
   importes: Importe[];
   totales: Total[];
+  // Para elegir el paquete de una ventana: solo si es editable.
+  paquetes: Funciones["catalogo_venta"]["Returns"];
 };
 
 // Los importes y los totales los calcula la base, con el recargo y el redondeo: acá no se multiplica nada.
@@ -159,7 +174,9 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
       .order("nombre"),
     supabase
       .from("presupuestos_renglones")
-      .select("id, seccion_id, tipo, designacion, ubicacion, cantidad, mensaje, mensajes, mantener, condiciones_en")
+      .select(
+        "id, seccion_id, tipo, designacion, ubicacion, cantidad, mensaje, mensajes, mantener, condiciones_en, paquete_id, entrada, opcionales, descripcion, precio, moneda"
+      )
       .eq("version_id", versionId)
       .eq("activo", true)
       .order("orden")
@@ -177,14 +194,26 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
     if (error) throw error;
     editable = data;
   }
+  let paquetes: VersionEditor["paquetes"] = [];
+  if (editable) {
+    const { data, error } = await supabase.rpc("catalogo_venta");
+    if (error) throw error;
+    paquetes = data;
+  }
   return {
     presupuesto,
     version: v,
     editable,
     tope: configuracion.data?.tope_descuento ?? null,
     secciones: secciones.data ?? [],
-    renglones: (renglones.data ?? []).map((r) => ({ ...r, mensajes: (r.mensajes ?? []) as MensajeCatalogo[] })),
+    renglones: (renglones.data ?? []).map((r) => ({
+      ...r,
+      mensajes: (r.mensajes ?? []) as MensajeCatalogo[],
+      entrada: r.entrada as Entrada | null,
+      opcionales: r.opcionales ?? [],
+    })),
     importes: (importes.data ?? []).map((i) => ({ ...i, debajo: i.debajo as LineaDebajo[] | null })),
     totales: (totales.data ?? []).map((t) => ({ ...t, iva: t.iva as IvaTotal[] })),
+    paquetes,
   };
 }

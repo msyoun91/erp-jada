@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Plus, TriangleAlert } from "lucide-react";
 import { Volver } from "@/components/ui/Volver";
-import { formulaAparte, textoMedida } from "../../etiquetas";
+import { textoMedida } from "@/lib/entrada";
+import { formulaAparte } from "../../etiquetas";
 import type { Categoria, Color, Contenido, InsumoBasico, Material, Variable, Version } from "../../types";
 import { DatosVersion } from "./DatosVersion";
 import { Fila } from "./Fila";

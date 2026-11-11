@@ -4,12 +4,19 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Campo, claseInput, Etiqueta } from "@/components/ui/Campo";
+import { EntradaCampos } from "@/components/entrada/EntradaCampos";
+import { Campo, claseInput } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
+import {
+  aEntrada,
+  desdeEntrada,
+  ESTADO_VACIO,
+  hayMalEscrita,
+  type EntradaEstado,
+  type FormularioEntrada,
+} from "@/lib/entrada";
 import { MONEDAS, MONEDAS_LISTA, type Moneda } from "@/lib/monedas";
 import { calcular, guardarCaso } from "../actions";
-import { aEntrada, desdeEntrada, ESTADO_VACIO, numeroEscrito, type EntradaEstado } from "../entrada";
-import { textoMedida } from "../etiquetas";
 import {
   casoSchema,
   type Caso,
@@ -56,7 +63,6 @@ export function Calculadora({
   const [opcionales, setOpcionales] = useState<string[]>([]);
   const [pendiente, startTransition] = useTransition();
   const [guardandoCaso, setGuardandoCaso] = useState(false);
-  const nombrePieza = new Map(contenido.piezas.map((p) => [p.id, p.nombre]));
 
   function correr(e: EntradaEstado, m = moneda, o = opcionales) {
     startTransition(async () => {
@@ -82,17 +88,17 @@ export function Calculadora({
     correr(e);
   }
 
-  const set = <K extends keyof EntradaEstado>(k: K, id: string, valor: string) =>
-    setEstado((e) => ({ ...e, [k]: { ...(e[k] as Record<string, string>), [id]: valor } }));
-
-  const variables = contenido.variables.filter((v) => v.ingresa_vendedor);
-  const malEscrita = (v: Contenido["variables"][number]) => {
-    const valor = estado.variables[v.id]?.trim();
-    return !v.es_lista && !!valor && numeroEscrito(valor) === null;
+  // El mismo formulario que el renglón de un presupuesto; acá el predeterminado de una variable es su fórmula.
+  const formulario: FormularioEntrada = {
+    piezas: contenido.piezas,
+    variables: contenido.variables
+      .filter((v) => v.ingresa_vendedor)
+      .map((v) => ({ ...v, predeterminado: v.es_lista ? v.valor_predeterminado : v.formula })),
+    materiales: contenido.materiales,
+    opciones: contenido.opciones.map((o) => ({ ...o, nombre: nombreInsumo.get(o.insumo_id ?? "") ?? "" })),
+    colores: colores.map((c) => ({ id: c.color_id, nombre: c.nombre, base: c.base, piezas_fuera: [], opciones_fuera: [] })),
   };
-  const hayMalEscrita = variables.some(malEscrita);
-  const piezas = contenido.piezas.filter((p) => p.opcional);
-  const elegibles = contenido.materiales.filter((m) => m.tipo === "elige_vendedor" || m.tipo === "sigue");
+  const malEscrita = hayMalEscrita(contenido, estado);
   const serviciosOpcionales =
     resultado && "servicios" in resultado ? (resultado as PrecioDetalle).servicios.filter((s) => s.opcional) : [];
 
@@ -119,118 +125,7 @@ export function Calculadora({
           </label>
         )}
 
-        {variables.map((v) => (
-          <label key={v.id} className="flex flex-col gap-1">
-            <span className="t-label">
-              <Etiqueta
-                texto={`${v.nombre}${v.es_lista ? "" : v.es_cantidad ? " (u)" : " (mm)"}${v.pieza_id ? ` · ${nombrePieza.get(v.pieza_id)}` : ""}`}
-              />
-            </span>
-            {v.es_lista ? (
-              <select
-                className="input"
-                value={estado.variables[v.id] ?? ""}
-                onChange={(e) => set("variables", v.id, e.target.value)}
-              >
-                <option value="">
-                  {v.valor_predeterminado ? `Predeterminado: ${v.valor_predeterminado}` : "Sin elegir"}
-                </option>
-                {v.valores.map((x) => (
-                  <option key={x} value={x}>
-                    {x}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                type="text"
-                className={malEscrita(v) ? "input input-error" : claseInput()}
-                inputMode="decimal"
-                value={estado.variables[v.id] ?? ""}
-                placeholder={v.formula ? `Predeterminado: ${v.formula}` : "Obligatoria"}
-                onChange={(e) => set("variables", v.id, e.target.value)}
-              />
-            )}
-            {malEscrita(v) && (
-              <span className="input-error-text">Va sin puntos y con coma para el decimal: 1500 o 1500,5</span>
-            )}
-            {v.minimo !== null && v.maximo !== null && (
-              <span className="t-caption">
-                De {textoMedida(v.minimo)} a {textoMedida(v.maximo)}
-              </span>
-            )}
-          </label>
-        ))}
-
-        {elegibles.map((m) => {
-          const propias = contenido.opciones.filter((o) => o.material_id === m.id);
-          // Dos opciones del que elige pueden tener la misma pareja: el vendedor elige el insumo, una sola vez.
-          const opciones = [...new Map(propias.filter((o) => o.insumo_id).map((o) => [o.insumo_id, o])).values()];
-          const pred = opciones.find((o) => o.predeterminada);
-          const sigue = m.tipo === "sigue";
-          return (
-            <label key={m.id} className="flex flex-col gap-1">
-              <span className="t-label">
-                {m.nombre} · {nombrePieza.get(m.pieza_id)}
-              </span>
-              <select
-                className="input"
-                value={estado.elecciones[m.id] ?? ""}
-                onChange={(e) => set("elecciones", m.id, e.target.value)}
-              >
-                <option value="">
-                  {sigue
-                    ? "La pareja de lo elegido"
-                    : pred
-                      ? `Predeterminada: ${nombreInsumo.get(pred.insumo_id ?? "")}`
-                      : "Sin predeterminada"}
-                </option>
-                {opciones.map((o) => (
-                  <option key={o.id} value={o.insumo_id ?? ""}>
-                    {nombreInsumo.get(o.insumo_id ?? "")}
-                  </option>
-                ))}
-                {m.sin_eleccion && <option value="ninguna">Sin elección</option>}
-                {sigue && propias.some((o) => !o.insumo_id) && <option value="ninguna">Ninguna</option>}
-              </select>
-            </label>
-          );
-        })}
-
-        {piezas.map((p) => (
-          <label key={p.id} className="flex flex-col gap-1">
-            <span className="t-label">
-              <Etiqueta texto={`${p.nombre} (opcional)`} />
-            </span>
-            <select
-              className="input"
-              value={estado.piezas[p.id] ?? ""}
-              onChange={(e) => set("piezas", p.id, e.target.value)}
-            >
-              <option value="">Predeterminado: {p.incluida ? "incluida" : "sin incluir"}</option>
-              <option value="si">Incluida</option>
-              <option value="no">Sin incluir</option>
-            </select>
-          </label>
-        ))}
-
-        {colores.length > 0 && (
-          <label className="flex flex-col gap-1">
-            <span className="t-label">Color</span>
-            <select
-              className="input"
-              value={estado.color}
-              onChange={(e) => setEstado((x) => ({ ...x, color: e.target.value }))}
-            >
-              <option value="">Base: {colores.find((c) => c.base)?.nombre ?? "sin base"}</option>
-              {colores.map((c) => (
-                <option key={c.color_id} value={c.color_id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
+        <EntradaCampos key={versionId} formulario={formulario} estado={estado} onChange={setEstado} />
 
         {puedeAprobar && (
           <>
@@ -261,14 +156,14 @@ export function Calculadora({
           </>
         )}
 
-        <button type="submit" className="btn btn-primary" disabled={pendiente || hayMalEscrita}>
+        <button type="submit" className="btn btn-primary" disabled={pendiente || malEscrita}>
           {pendiente ? "Calculando…" : "Calcular"}
         </button>
         {guardaCasos && (
           <button
             type="button"
             className="btn btn-secondary"
-            disabled={hayMalEscrita}
+            disabled={malEscrita}
             onClick={() => setGuardandoCaso(true)}
           >
             Guardar como caso

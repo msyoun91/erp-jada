@@ -11,7 +11,7 @@ Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el 
 2026-11-06. Tramo 3a — `sql/188` (copiar una versión, mantener o actualizar, lo que frena publicar, publicar y quitar una
 variante), aplicado el 2026-11-06. Tramo 3b — `sql/189` (pedir, autorizar, devolver y retirar; lo que frena separado de lo que
 pide autorización; la lectura de Técnica), aplicado el 2026-11-06. Tramo 3c — `sql/190` (el recargo de la comisión del referente), aplicado el 2026-11-10. Tramo 4 — `sql/191` (aprobar, rechazar, revertir y la obra que sigue a sus presupuestos), aplicado el
-2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10. Tramo 6 — `sql/194` (lo que pidieron las pantallas: nombre congelado, importe con IVA por renglón, freno de `contratada`), aplicado el 2026-11-10. `sql/195` (el editor: nombre y líneas de debajo en los importes), aplicado el 2026-11-11.
+2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10. Tramo 6 — `sql/194` (lo que pidieron las pantallas: nombre congelado, importe con IVA por renglón, freno de `contratada`), aplicado el 2026-11-10. `sql/195` (el editor: nombre y líneas de debajo en los importes), aplicado el 2026-11-11. `sql/196` (`catalogo_venta_formulario` con todas las piezas), aplicado el 2026-11-11.
 
 ## Ver y armar: decide la obra
 

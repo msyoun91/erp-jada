@@ -1,3 +1,4 @@
+import { textoMedida } from "@/lib/entrada";
 import { formatMonto, type Moneda } from "@/lib/monedas";
 import type {
   AccionVersion,
@@ -105,10 +106,6 @@ export function versionPrincipal(p: Paquete): VersionResumen | undefined {
 // paréntesis. Los nombres entre corchetes no cuentan como operadores.
 export function formulaAparte(f: string): string {
   return /[-+−*×/]|\bsi\b/i.test(f.replace(/\[[^\]]*\]/g, "x")) ? `(${f})` : f;
-}
-
-export function textoMedida(n: number): string {
-  return n.toLocaleString("es-AR", { maximumFractionDigits: 2 });
 }
 
 // El total va en la unidad del insumo; medida, ancho y alto, en mm (`db_schema/catalogo.md` → *El despiece*).

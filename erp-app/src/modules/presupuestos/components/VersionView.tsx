@@ -4,6 +4,7 @@ import { formatMonto, MONEDAS, type Moneda } from "@/lib/monedas";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import type { VersionEditor } from "../queries";
 import { estadoVersion, formatAlicuota } from "../types";
+import { AccionesRenglon, AgregarRenglon } from "./AccionesRenglon";
 import { AccionesSeccion, NuevaSeccion } from "./AccionesSeccion";
 import { AccionesVersion } from "./AccionesVersion";
 
@@ -22,8 +23,10 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
     totales,
     editable,
     tope,
+    paquetes,
   } = datos;
   const ids = secciones.map((s) => s.id);
+  const ctx = { versionId: v.id, secciones, paquetes };
   const estado = estadoVersion(v, p);
   // Con IVA incluido se muestra el importe con IVA que da la base, no uno recalculado acá (*Pantallas*).
   const conIva = !v.iva_discriminado;
@@ -126,6 +129,15 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
                           : null,
                       ]}
                       monto={i ? mostrar(i, s.moneda) : null}
+                      acciones={
+                        editable && (
+                          <AccionesRenglon
+                            {...ctx}
+                            renglon={r}
+                            nombre={i?.nombre ?? r.descripcion ?? "—"}
+                          />
+                        )
+                      }
                     >
                       {i?.importe === null && r.mensaje && (
                         <p className="t-caption text-warning-text">
@@ -171,6 +183,7 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
                 ))}
               </ul>
             )}
+            {editable && <AgregarRenglon {...ctx} seccionId={s.id} />}
           </section>
         );
       })}
@@ -249,12 +262,14 @@ function Fila({
   detalle,
   etiquetas,
   monto,
+  acciones,
   children,
 }: {
   titulo: string;
   detalle: (string | null | undefined)[];
   etiquetas: (string | null)[];
   monto: string | null;
+  acciones?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   const texto = detalle.filter(Boolean).join(" · ");
@@ -277,6 +292,7 @@ function Fila({
         >
           {monto ?? "Sin precio"}
         </p>
+        {acciones}
       </div>
       {children}
     </li>

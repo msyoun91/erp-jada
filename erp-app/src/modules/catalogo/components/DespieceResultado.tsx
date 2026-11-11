@@ -2,7 +2,8 @@
 
 import { CircleAlert, TriangleAlert } from "lucide-react";
 import { formatMonto } from "@/lib/monedas";
-import { POR_UNIDAD, textoFila, textoMedida, textoPorcentaje } from "../etiquetas";
+import { textoMedida } from "@/lib/entrada";
+import { POR_UNIDAD, textoFila, textoPorcentaje } from "../etiquetas";
 import type { Despiece, FilaDespiece, PrecioDetalle } from "../types";
 
 function esPrecio(d: Despiece): d is PrecioDetalle {

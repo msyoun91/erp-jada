@@ -142,7 +142,7 @@ quinientos: leído como 1,5, `ancho > 1.500` daba siempre cierto sin que nadie l
 quinientos o 1,5 m de una planilla: se marca el error y no deja calcular ni guardar el caso. Con `type="number"`, el navegador se
 queda con el punto como decimal y, según el idioma, deja vacío lo que no entiende, y vacío toma el predeterminado. La entrada viaja
 como número, así que la base no ve lo escrito: es la excepción a que la regla viva en Postgres. `numeroEscrito` en
-`modules/catalogo/entrada.ts`, `Calculadora.tsx`.
+`lib/entrada.ts` (desde 2026-11-11, compartido con el renglón de Presupuestos), `components/entrada/EntradaCampos.tsx`.
 
 **Un nombre con espacios va entre corchetes: `[Perfil hoja]`.** El editor los pone al elegirlo de la lista.
 

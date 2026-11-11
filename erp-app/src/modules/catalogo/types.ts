@@ -3,6 +3,7 @@ import { Constants, type Database } from "@/lib/supabase/database.types";
 import { MONEDAS_LISTA, type Moneda } from "@/lib/monedas";
 import type { Nivel } from "@/lib/niveles";
 import { idSchema, uuidOpcional } from "@/lib/validacion";
+import { entradaSchema, type Entrada } from "@/lib/entrada";
 
 type Tablas = Database["public"]["Tables"];
 type Enums = Database["public"]["Enums"];
@@ -247,14 +248,7 @@ export type Contenido = {
   casos: Caso[];
 };
 
-// Lo que cargaría un vendedor (`db_schema/catalogo.md` → *La entrada*). La base revisa la forma (CA017).
-export const entradaSchema = z.object({
-  variables: z.record(z.string(), z.union([z.number(), z.string()])).optional(),
-  elecciones: z.record(z.string(), z.record(z.string(), idSchema.nullable())).optional(),
-  piezas: z.record(z.string(), z.boolean()).optional(),
-  color: idSchema.optional(),
-});
-export type Entrada = z.infer<typeof entradaSchema>;
+export type { Entrada };
 
 export type MensajeDespiece = {
   mensaje: string;

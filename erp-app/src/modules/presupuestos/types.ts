@@ -1,7 +1,15 @@
 import { z } from "zod";
+import {
+  entradaSchema,
+  numeroEscrito,
+  type FormularioEntrada,
+  type MaterialEntrada,
+  type PiezaEntrada,
+  type VariableEntrada,
+} from "@/lib/entrada";
 import { MONEDAS_LISTA } from "@/lib/monedas";
 import type { Database } from "@/lib/supabase/database.types";
-import { idSchema } from "@/lib/validacion";
+import { idSchema, textoOpcional } from "@/lib/validacion";
 
 type Enums = Database["public"]["Enums"];
 
@@ -49,6 +57,80 @@ export const todasSeccionesSchema = z
   })
   .refine((d) => d.moneda !== "" || d.alicuota !== "", { message: "Elegí la moneda o el IVA", path: ["moneda"] });
 export type TodasSeccionesForm = z.input<typeof todasSeccionesSchema>;
+
+const renglonBase = {
+  id: idSchema.optional(),
+  version_id: idSchema,
+  seccion_id: z.string().uuid("Elegí la sección"),
+  designacion: textoOpcional(30),
+  ubicacion: textoOpcional(100),
+  cantidad: z.coerce.number("Ingresá un número").positive("Tiene que ser mayor que 0"),
+};
+
+// El precio escrito, por unidad y sin IVA, en la moneda de la sección. Vacío no es cero, y como las medidas, va sin
+// puntos: con `type="number"`, "150.000" quedaba en 150 (`decisiones/catalogo/despiece.md` → *En la calculadora…*).
+export const renglonManoSchema = z.object({
+  ...renglonBase,
+  descripcion: z.string().trim().min(1, "Escribí la descripción").max(500, "Máximo 500 caracteres"),
+  precio: z
+    .union([z.number(), z.string()])
+    .transform((v, ctx) => {
+      const n = typeof v === "number" ? v : numeroEscrito(v);
+      if (n !== null) return n;
+      ctx.addIssue({
+        code: "custom",
+        message: String(v).trim() ? "Va sin puntos y con coma para el decimal: 150000 o 1500,5" : "Escribí el precio",
+      });
+      return z.NEVER;
+    })
+    .pipe(
+      z
+        .number("Ingresá un número")
+        .min(0, "No puede ser negativo")
+        .refine((n) => Math.abs(n * 100 - Math.round(n * 100)) < 1e-6, "Hasta 2 decimales"),
+    ),
+});
+export type RenglonManoForm = z.input<typeof renglonManoSchema>;
+
+// `entrada` y `opcionales` van solo si se tocaron: reescribir lo cargado de una ventana que no cambió no tiene por qué
+// pasar por el precio de hoy (`presupuestos_renglones_validar`). Uno nuevo los lleva siempre. El panel valida los campos;
+// lo cargado lo suma al enviar.
+export const renglonCatalogoCampos = z.object({
+  ...renglonBase,
+  paquete_id: z.string().uuid("Elegí el paquete"),
+  entrada: entradaSchema.optional(),
+  opcionales: z.array(idSchema).optional(),
+});
+export const renglonCatalogoSchema = renglonCatalogoCampos
+  .refine((d) => !!d.id || (!!d.entrada && !!d.opcionales), { message: "Falta lo cargado", path: ["paquete_id"] });
+export type RenglonCatalogoForm = z.input<typeof renglonCatalogoSchema>;
+
+// Lo que da `catalogo_venta_formulario` (`db_schema/catalogo.md` → *El precio*). Desde `sql/196`, todas las piezas.
+export type FormularioVenta = {
+  version_id: string;
+  piezas: PiezaEntrada[];
+  variables: (VariableEntrada & { predeterminado: number | string | null })[];
+  materiales: MaterialEntrada[];
+  opciones: { id: string; material_id: string; insumo_id: string | null; predeterminada: boolean; nombre: string | null }[];
+  // Sin colores, una fila con `id` NULL.
+  colores: { id: string | null; nombre: string | null; base: boolean; piezas_fuera: string[]; opciones_fuera: string[] }[];
+  servicios: { id: string; nombre: string }[];
+};
+
+// El predeterminado va como se escribe (coma decimal, sin miles): con "1.200" el vendedor copiaba un punto que el campo
+// rechaza.
+export function aFormularioEntrada(f: FormularioVenta): FormularioEntrada {
+  return {
+    piezas: f.piezas,
+    variables: f.variables.map((v) => ({
+      ...v,
+      predeterminado: v.predeterminado === null ? null : String(v.predeterminado).replace(".", ","),
+    })),
+    materiales: f.materiales,
+    opciones: f.opciones.map((o) => ({ ...o, nombre: o.nombre ?? "" })),
+    colores: f.colores.flatMap((c) => (c.id ? [{ ...c, id: c.id, nombre: c.nombre ?? "" }] : [])),
+  };
+}
 
 const ESTADO_VERSION = {
   borrador: { label: "Borrador", badge: "badge-neutral" },
