@@ -4,6 +4,8 @@ import { formatMonto, MONEDAS, type Moneda } from "@/lib/monedas";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import type { VersionEditor } from "../queries";
 import { estadoVersion, formatAlicuota } from "../types";
+import { AccionesSeccion, NuevaSeccion } from "./AccionesSeccion";
+import { AccionesVersion } from "./AccionesVersion";
 
 type Importe = VersionEditor["importes"][number];
 type Monto = { importe: number | null; importe_con_iva: number | null };
@@ -18,7 +20,10 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
     renglones,
     importes,
     totales,
+    editable,
+    tope,
   } = datos;
+  const ids = secciones.map((s) => s.id);
   const estado = estadoVersion(v, p);
   // Con IVA incluido se muestra el importe con IVA que da la base, no uno recalculado acá (*Pantallas*).
   const conIva = !v.iva_discriminado;
@@ -41,6 +46,13 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
             {v.variante_nombre && ` · ${v.variante_nombre}`}
           </h2>
           <span className={`badge ${estado.badge}`}>{estado.label}</span>
+          {editable && (
+            <AccionesVersion
+              version={v}
+              tope={tope}
+              variasSecciones={secciones.length > 1}
+            />
+          )}
         </div>
         <p className="t-caption mt-1">
           <Link href={`/presupuestos/${p.id}`} className="underline">
@@ -76,11 +88,19 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
         ];
         return (
           <section key={s.id} className="card" aria-label={s.nombre}>
-            <div className="mb-2 flex flex-wrap items-baseline gap-x-3">
+            <div className="mb-2 flex flex-wrap items-center gap-x-3">
               <h3 className="t-h3 min-w-0 flex-1">{s.nombre}</h3>
               <span className="t-caption">
                 {MONEDAS[s.moneda]} · IVA {formatAlicuota(s.alicuota)}
               </span>
+              {editable && (
+                <AccionesSeccion
+                  seccion={s}
+                  versionId={v.id}
+                  ids={ids}
+                  conRenglones={propios.length > 0 || aparte.length > 0}
+                />
+              )}
             </div>
             {propios.length === 0 && aparte.length === 0 ? (
               <p className="empty-state empty-state-sm">Sin renglones.</p>
@@ -154,6 +174,8 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
           </section>
         );
       })}
+
+      {editable && <NuevaSeccion versionId={v.id} secciones={secciones} />}
 
       {totales.length > 0 && (
         <section className="card" aria-label="Totales">

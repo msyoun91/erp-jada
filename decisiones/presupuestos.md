@@ -530,6 +530,14 @@ lee Catálogo (la RLS de `catalogo_versiones` pide la vista Paquetes), así que 
 las líneas de debajo: con el recargo, la cantidad y el IVA, el monto de una línea calculado en pantalla podía diferir en centavos del
 impreso. Se descartó una función aparte para las líneas: repetía la cuenta del recargo y el redondeo. `sql/195`, `VersionView.tsx`.
 
+**Datos de la versión y secciones se editan en paneles, sin función nueva: UPDATE e INSERT directos, y la RLS y los triggers frenan
+(2026-11-11).** *Editar* en el encabezado (variante, IVA, descuento con el tope al lado); *Todas las secciones…* en el `⋯`, con dos o
+más, es un solo UPDATE por versión con "Como está cada una" en lo que no cambia. Cada sección: editar, subir, bajar y sacar. Sacar no
+se ofrece con renglones ni en la única (la base frena lo primero con PR011; lo segundo es solo de pantalla, para no quedar sin dónde
+cargar). La nueva va al final con la moneda y el IVA de la primera; subir y bajar renumeran `orden`. Lo ve armado quien arma la obra
+(`presupuestos_arma`) con la versión en borrador. La clase PR entró a `mensajeError` (`lib/utils.ts`): hasta acá sus mensajes salían
+con el genérico. `AccionesVersion.tsx`, `AccionesSeccion.tsx`.
+
 **El impreso: solo lo publicado, y los datos de la empresa en un archivo de la app (decisión del usuario, 2026-11-10).** Publicado,
 todas las variantes; aprobado, la aprobada; rechazado, la última de cada una; un borrador no se imprime. Empresa: logo y datos fijos
 como marcadores hasta tenerlos, sin tabla hasta que haga falta cambiarlos desde una pantalla. Cliente: nombre y dirección de la obra y

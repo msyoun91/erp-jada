@@ -11,14 +11,44 @@ export function formatAlicuota(alicuota: number) {
   return `${String(alicuota).replace(".", ",")} %`;
 }
 
+const alicuotaSchema = z.coerce.number().refine((v) => (ALICUOTAS as readonly number[]).includes(v), "Alícuota inválida");
+
 export const altaSchema = z.object({
   obra: idSchema,
   nombre: z.string().trim().min(1, "Escribí el nombre").max(200, "Máximo 200 caracteres"),
   moneda: z.enum(MONEDAS_LISTA),
-  alicuota: z.coerce.number().refine((v) => (ALICUOTAS as readonly number[]).includes(v), "Alícuota inválida"),
+  alicuota: alicuotaSchema,
   seccion: z.string().trim().max(100, "Máximo 100 caracteres"),
 });
 export type AltaForm = z.input<typeof altaSchema>;
+
+export const datosVersionSchema = z.object({
+  id: idSchema,
+  variante_nombre: z.string().trim().max(100, "Máximo 100 caracteres"),
+  iva_discriminado: z.boolean(),
+  descuento: z.coerce.number("Ingresá un número").min(0, "No puede ser negativo").max(100, "Hasta 100 %"),
+});
+export type DatosVersionForm = z.input<typeof datosVersionSchema>;
+
+export const seccionSchema = z.object({
+  id: idSchema.optional(),
+  version_id: idSchema,
+  nombre: z.string().trim().min(1, "Escribí el nombre").max(100, "Máximo 100 caracteres"),
+  moneda: z.enum(MONEDAS_LISTA),
+  alicuota: alicuotaSchema,
+  orden: z.number().int(),
+});
+export type SeccionForm = z.input<typeof seccionSchema>;
+
+// "" deja como está: `z.literal("")` va primero, porque coerce lo leería como 0 %.
+export const todasSeccionesSchema = z
+  .object({
+    version_id: idSchema,
+    moneda: z.union([z.literal(""), z.enum(MONEDAS_LISTA)]),
+    alicuota: z.union([z.literal(""), alicuotaSchema]),
+  })
+  .refine((d) => d.moneda !== "" || d.alicuota !== "", { message: "Elegí la moneda o el IVA", path: ["moneda"] });
+export type TodasSeccionesForm = z.input<typeof todasSeccionesSchema>;
 
 const ESTADO_VERSION = {
   borrador: { label: "Borrador", badge: "badge-neutral" },

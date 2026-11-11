@@ -122,7 +122,11 @@ type Total = Omit<Funciones["presupuestos_version_totales"]["Returns"][number], 
 export type VersionEditor = {
   presupuesto: Pick<Presupuesto, "id" | "codigo" | "nombre" | "estado" | "version_aprobada_id"> & { obra: { id: string; nombre: string } };
   version: Pick<Version, "id" | "numero" | "variante" | "variante_nombre" | "iva_discriminado" | "descuento" | "estado" | "vence" | "created_at">;
-  secciones: Pick<Tablas["presupuestos_secciones"]["Row"], "id" | "nombre" | "moneda" | "alicuota">[];
+  // Se edita en borrador, si quien mira arma en la obra; lo frenan igual la RLS y los triggers.
+  editable: boolean;
+  // Hasta acá el descuento no pide autorización; null, sin configuración.
+  tope: number | null;
+  secciones: Pick<Tablas["presupuestos_secciones"]["Row"], "id" | "nombre" | "moneda" | "alicuota" | "orden">[];
   renglones: (Pick<
     Tablas["presupuestos_renglones"]["Row"],
     "id" | "seccion_id" | "tipo" | "designacion" | "ubicacion" | "cantidad" | "mensaje" | "mantener" | "condiciones_en"
@@ -134,12 +138,12 @@ export type VersionEditor = {
 // Los importes y los totales los calcula la base, con el recargo y el redondeo: acá no se multiplica nada.
 export async function getVersion(presupuestoId: string, versionId: string): Promise<VersionEditor | null> {
   const supabase = await createClient();
-  const [version, secciones, renglones, importes, totales] = await Promise.all([
+  const [version, secciones, renglones, importes, totales, configuracion] = await Promise.all([
     supabase
       .from("presupuestos_versiones")
       .select(
         `id, numero, variante, variante_nombre, iva_discriminado, descuento, estado, vence, created_at,
-         presupuesto:presupuestos!presupuestos_versiones_presupuesto_id_fkey!inner(id, codigo, nombre, estado, version_aprobada_id,
+         presupuesto:presupuestos!presupuestos_versiones_presupuesto_id_fkey!inner(id, codigo, nombre, estado, version_aprobada_id, activo,
            obra:obras!inner(id, nombre))`
       )
       .eq("id", versionId)
@@ -148,7 +152,7 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
       .maybeSingle(),
     supabase
       .from("presupuestos_secciones")
-      .select("id, nombre, moneda, alicuota")
+      .select("id, nombre, moneda, alicuota, orden")
       .eq("version_id", versionId)
       .eq("activo", true)
       .order("orden")
@@ -162,13 +166,22 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
       .order("created_at"),
     supabase.rpc("presupuestos_version_importes", { p_version: versionId }),
     supabase.rpc("presupuestos_version_totales", { p_version: versionId }),
+    supabase.from("presupuestos_configuracion").select("tope_descuento").eq("activo", true).maybeSingle(),
   ]);
-  for (const r of [version, secciones, renglones, importes, totales]) if (r.error) throw r.error;
+  for (const r of [version, secciones, renglones, importes, totales, configuracion]) if (r.error) throw r.error;
   if (!version.data) return null;
-  const { presupuesto, ...v } = version.data;
+  const { presupuesto: { activo, ...presupuesto }, ...v } = version.data;
+  let editable = false;
+  if (activo && v.estado === "borrador") {
+    const { data, error } = await supabase.rpc("presupuestos_arma", { p_obra: presupuesto.obra.id });
+    if (error) throw error;
+    editable = data;
+  }
   return {
     presupuesto,
     version: v,
+    editable,
+    tope: configuracion.data?.tope_descuento ?? null,
     secciones: secciones.data ?? [],
     renglones: (renglones.data ?? []).map((r) => ({ ...r, mensajes: (r.mensajes ?? []) as MensajeCatalogo[] })),
     importes: (importes.data ?? []).map((i) => ({ ...i, debajo: i.debajo as LineaDebajo[] | null })),
