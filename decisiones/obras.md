@@ -207,6 +207,13 @@ final. Cotizar la etapa 2 no la devuelve atrás: la cotización se ve en su pres
 salen de ahí. En la lista, un contador calculado al mostrar ("contratada · 1 en cotización") evita
 perderla de vista.
 
+**El contador cuenta los presupuestos publicados, no los borradores (2026-11-11).** Es el mismo criterio que
+mueve la obra (`decisiones/presupuestos.md` → *Efectos en la obra*): en cotización está lo que se
+le mandó al cliente. Es un badge "1 en cotización" al lado de "Contratada", con el color de `en_cotizacion`, en
+*Obras* y en *Todas*, y solo para quien tiene `presupuestos_ver`. En el celular, los badges de la fila se apilan:
+en fila, el nombre quedaba en "Casa Belg…". Lo lee `getEnCotizacionDeContratadas` (Presupuestos) y lo componen
+las páginas de `app/(erp-app)/obras/`. Archivos: `ObrasView.tsx`, e2e en `presupuestos.spec.ts`.
+
 Descartado: un estado de obra que resuma sus etapas (en ejecución, post-venta), guardado y movido por la
 base. Iba y venía con cada etapa, pedía una tabla de prioridades, y las plantillas de un estado se
 disparan una sola vez por obra (`decisiones/tareas/catalogo.md` → *Un disparo no se repite*): la etapa

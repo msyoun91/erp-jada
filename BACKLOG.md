@@ -92,10 +92,12 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   historial; sin SQL nuevo), y el impreso (2026-11-11: `/presupuestos/[id]/imprimir`, *Imprimir* en la ficha; lo cargado de cada
   ventana con `sql/198`; datos de la empresa como marcadores en `modules/presupuestos/empresa.ts`, a completar), y la sección en la
   obra (2026-11-11: debajo del encabezado, y *Nuevo presupuesto* con la obra puesta; sin SQL nuevo), y el aviso de obra perdida en
-  el editor (2026-11-11, `decisiones/presupuestos.md` → *Pantallas*; sin SQL nuevo). **Siguiente:** lo decidido que no entró en las
-  siete pantallas: "Llevar a un presupuesto" desde la calculadora (`decisiones/presupuestos.md` → *Efectos en la obra*; cómo vuelve
-  la ventana con una obra nueva está sin decidir), y en la lista de Obras el contador "contratada · 1 en cotización"
-  (`decisiones/obras.md` → *Los estados son solo comerciales*). Esto no está en la ficha:
+  el editor (2026-11-11, `decisiones/presupuestos.md` → *Pantallas*; sin SQL nuevo), y en la lista de Obras el contador
+  "Contratada · 1 en cotización" (2026-11-11, `decisiones/obras.md` → *Los estados son solo comerciales*; sin SQL nuevo).
+  **Siguiente:** lo decidido que no entró en las siete pantallas: "Llevar a un presupuesto" desde la calculadora
+  (`decisiones/presupuestos.md` → *Efectos en la obra*). Antes de construirlo, a decidir: cómo vuelve la ventana con una obra nueva, y
+  desde qué calculadora sale, porque la única está en la versión del paquete de Catálogo, que pide la vista Paquetes y el vendedor no la
+  tiene (la ficha le da la calculadora con `presupuestos_armar`). Esto no está en la ficha:
   - **Del 4, con el portal:** no aprobar si un mínimo hace que el total difiera de lo que confirmó el cliente (etapa 2).
   - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`
     con versión `en_revision`, y por fila `presupuestos_puede_autorizar('comercial', obra)`; si la lista crece, una función que lo

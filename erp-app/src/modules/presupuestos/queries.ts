@@ -51,6 +51,22 @@ export async function getPresupuestosDeObra(obra: string) {
   return { presupuestos: lista.data, arma: arma.data };
 }
 
+// Obra contratada → cuántos presupuestos publicados tiene: "Contratada · 1 en cotización" en la lista de Obras
+// (decisiones/obras.md → *Los estados son solo comerciales*). Solo cuentan los publicados, como para mover la obra.
+export async function getEnCotizacionDeContratadas(): Promise<Record<string, number>> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("presupuestos")
+    .select("obra_id, obra:obras!inner(estado)")
+    .eq("estado", "publicado")
+    .eq("activo", true)
+    .eq("obra.estado", "contratada");
+  if (error) throw error;
+  const cuenta: Record<string, number> = {};
+  for (const p of data) cuenta[p.obra_id] = (cuenta[p.obra_id] ?? 0) + 1;
+  return cuenta;
+}
+
 export type Configuracion = Pick<
   Database["public"]["Tables"]["presupuestos_configuracion"]["Row"],
   "id" | "tope_descuento" | "plazo_dias" | "activo" | "created_at"

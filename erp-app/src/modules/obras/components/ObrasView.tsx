@@ -33,6 +33,7 @@ function pasa(filtro: Filtro, o: ObraResumen, todas?: Todas) {
 
 // `Quien` llega solo si quien mira puede crear: el alta lo necesita y `app/`
 // lo compone desde Contactos. `porAprobar`, solo con `obras_aprobar`.
+// `enCotizacion`, de Presupuestos: cuántos publicados tiene cada contratada.
 export function ObrasView({
   obras,
   yo,
@@ -40,6 +41,7 @@ export function ObrasView({
   Quien,
   todas,
   porAprobar,
+  enCotizacion,
 }: {
   obras: ObraResumen[];
   yo: string;
@@ -47,6 +49,7 @@ export function ObrasView({
   Quien?: QuienSlot;
   todas?: Todas;
   porAprobar?: number;
+  enCotizacion?: Record<string, number>;
 }) {
   const [texto, setTexto] = useState("");
   const [filtro, setFiltro] = useState<Filtro>(todas?.responsable ? "persona" : "abiertas");
@@ -131,9 +134,15 @@ export function ObrasView({
                   </span>
                 </p>
               </div>
-              {!o.activo && <span className="badge badge-neutral">Desactivada</span>}
-              {o.activo && o.congelada && <span className="badge badge-warning">Por aprobar</span>}
-              <span className={`badge ${LABEL_ESTADO[o.estado].badge}`}>{LABEL_ESTADO[o.estado].label}</span>
+              {/* Apilados en el celular: en fila, dejaban el nombre en "Casa Belg…". */}
+              <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
+                {!o.activo && <span className="badge badge-neutral">Desactivada</span>}
+                {o.activo && o.congelada && <span className="badge badge-warning">Por aprobar</span>}
+                <span className={`badge ${LABEL_ESTADO[o.estado].badge}`}>{LABEL_ESTADO[o.estado].label}</span>
+                {enCotizacion?.[o.id] && (
+                  <span className={`badge ${LABEL_ESTADO.en_cotizacion.badge}`}>{enCotizacion[o.id]} en cotización</span>
+                )}
+              </div>
               <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
             </Link>
           ))}
