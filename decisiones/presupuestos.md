@@ -28,8 +28,9 @@ Personas                qué ve · qué hace · qué NO ve
 │                    y sus contactos
 ├── Cliente        — (etapa 2; antes recibe el impreso)
 │                    en erp-cliente, lo publicado con referencias en otras monedas · compara, elige
-│                    opcionales por ventana, confirma · costos, comparación, versiones reemplazadas.
-│                    No rechaza ni pide cambios: eso lo habla con el vendedor
+│                    opcionales por ventana, envía su elección al vendedor · costos, comparación, versiones
+│                    reemplazadas. No confirma, no rechaza ni pide cambios: eso lo habla con el vendedor
+│                    (ficha en decisiones/erp-cliente.md)
 ├── Administración, producción, logística, colocación — NO usan el módulo: trabajan en el de
 │                    ejecución y cobros (futuro), que toma lo aprobado. Producción y logística no ven precios
 └── Post-venta     — NO usa el módulo: el suyo (futuro) apunta a los ítems del presupuesto aprobado
@@ -57,8 +58,8 @@ No son entes
 │                  o retirada por quien pidió
 │                  · la de Técnica guarda lo cargado: vale mientras la ventana sea igual, también en una
 │                  versión nueva del mismo presupuesto · historial: pedir de nuevo es otra fila
-├── confirmación — (etapa 2) una por vez que el cliente confirma en el portal: versión, lo elegido por ventana,
-│                  montos por moneda que vio, cuándo confirmó y cuándo la leyó el ERP · vale la última
+├── link y visitas del portal — (etapa 2) un link por presupuesto, estado de la copia, y visitas leídas por
+│                  versión (decisiones/erp-cliente.md). La confirmación se descartó el 2026-11-11
 └── configuración — una fila vigente: tope, plazo, monedas de referencia (etapa 2) · cambiar crea otra y desactiva
                     la anterior, como las comisiones de Obras: así queda el historial
 
@@ -72,7 +73,8 @@ Acciones
 │            obsoleto; no la última) · pedir autorización · autorizar · devolver
 │            · retirar el pedido (vuelve a borrador) · descartar un borrador (activo = false; la publicada
 │              se reemplaza con una corrección o se quita)
-└── módulo: configurar (gerencia) · leer confirmaciones del portal (etapa 2; cada hora, al abrir, con un botón)
+└── módulo: configurar (gerencia) · (etapa 2) copiar al portal y leer sus visitas (cada hora, al abrir, con un
+            botón) · copiar link, anular, ver como cliente y aplicar la elección recibida (presupuestos_armar)
 
 Eventos que emite
 └── presupuesto: alta · estado — Obras escucha estado (se mueve al publicar, no al crear); los dos disparan
@@ -101,9 +103,8 @@ Pendientes:
 - **Reversión con la ejecución en marcha:** no se puede revertir si ya empezó, pero falta definirlo con ese módulo. Propuesta
   para el hilo ya generado: queda abierto con un aviso, y alguien lo cierra a mano; depende de Tareas.
 - **Flete:** probar con un caso real que Catálogo arme los paquetes por km y por hora.
-- **A qué contacto le llega en el portal:** espera la ficha de `erp-cliente` (base propia, cómo entra cada cliente). Pista: los
-  contactos ya tienen rol en la obra (cliente, decisor, arquitecto…), así que probablemente sean los que elija el vendedor entre esos
-  roles. No se suma relación hasta entonces.
+- ~~**A qué contacto le llega en el portal**~~: a ninguno en particular, el link es del presupuesto (2026-11-11,
+  `decisiones/erp-cliente.md` → *Quién entra*).
 
 ## Etapas
 
@@ -111,8 +112,9 @@ Pendientes:
 lo que se escribiera contra él se rehacía al definirlo, y la pantalla de todos los días esperaba.
 - **Etapa 1:** presupuesto, versiones, secciones con moneda e IVA, mantener o actualizar con sus autorizaciones, descuento, mínimos,
   opcionales en sus tres formas, configuración de tope y plazo, e impreso. Juan manda el impreso y registra la aprobación a mano.
-- **Etapa 2, con la ficha de `erp-cliente`:** todo *El cliente y el portal* salvo el impreso: confirmación, lectura cada hora,
-  combinaciones ya calculadas, monedas de referencia, aviso y comparación del mínimo.
+- **Etapa 2, con la ficha de `erp-cliente`** (aprobada el 2026-11-11, `decisiones/erp-cliente.md`): la copia al portal con
+  combinaciones ya calculadas y monedas de referencia, el link, las visitas, la elección que llega por link y el aviso del mínimo.
+  Sin confirmación.
 
 Costo: "más interactivo que un PDF", el objetivo, llega en la segunda. Se descartó recortar la etapa 1 (opcionales solo en el precio):
 la colocación aparte resuelve el IVA, y lo que pesa es el cálculo, no la integración con otro sistema.
@@ -450,27 +452,32 @@ no cambia de moneda mientras lo tenga. Para pasarlo, se carga de nuevo.
 
 ## El cliente y el portal
 
-**Toda la comunicación la inicia el ERP: al publicar escribe en `erp-cliente`, y de ahí lee las confirmaciones.** `erp-cliente` no envía
-nada y su confirmación queda allá como constancia, sin autoridad (`GUIDE_SYNC.md`). Se asume que el portal tiene base propia; lo define su
-ficha, que hoy no existe.
+La ficha del portal y sus decisiones están en `decisiones/erp-cliente.md` (2026-11-11).
 
-**El ERP lee como Monedas: cada hora, al abrir una página, y con un botón.** Con una confirmación nueva, Juan recibe un aviso, la ve en la
-ficha y registra `aprobado`. Si es de una versión reemplazada, no se puede aprobar: Juan habla con el cliente.
+**Toda la comunicación la inicia el ERP: al publicar escribe en `erp-cliente`, y de ahí lee.** `erp-cliente` no envía nada y no tiene
+autoridad (`GUIDE_SYNC.md`). Tiene base propia, y lo que el ERP lee son visitas, no confirmaciones (`decisiones/erp-cliente.md` →
+*Dos bases*, *Visitas*).
 
-**El cliente ve, compara, elige opcionales y confirma.** Rechazos y cambios los habla con el vendedor, y Juan los registra. No cambia
-medidas ni ve un precio nuevo: el portal no calcula ni le pide nada al ERP. Ve el precio de cada ventana, y no las versiones reemplazadas.
+~~**El ERP lee como Monedas: cada hora, al abrir una página, y con un botón.**~~ Sigue el ritmo, para copiar y para leer visitas; la
+confirmación que leía se descartó (`decisiones/erp-cliente.md` → *Sin confirmación*).
+
+~~**El cliente ve, compara, elige opcionales y confirma.**~~ No confirma: envía su elección al vendedor (`decisiones/erp-cliente.md` →
+*Sin confirmación*). Sigue valiendo que no cambia medidas ni ve un precio nuevo, que el portal no calcula ni le pide nada al ERP, y que
+ve el precio de cada ventana y no las versiones reemplazadas.
 
 **Elige opcionales ventana por ventana, todos, y el ERP le envía cada combinación ya calculada.** El efecto de un opcional no se suma: los
-servicios van en cascada. Lo elegido queda con la confirmación, y la versión no cambia. Una combinación con un bloqueo o una alerta no
-autorizada no se ofrece, para no saltear a Técnica. Aceptado: destildando, puede ver menos que con el vendedor.
+servicios van en cascada. Una combinación con un bloqueo o una alerta no autorizada no se ofrece, para no saltear a Técnica. Aceptado:
+destildando, puede ver menos que con el vendedor. Lo elegido ya no queda con una confirmación: entra en una corrección, cuando Juan
+aplica la elección (`decisiones/erp-cliente.md` → *Sin confirmación*).
 
-**Si un mínimo hace que el total exacto difiera, en alguna moneda, de lo que vio el cliente, Juan no puede aprobar hasta resolverlo.** Los mínimos dependen de
-todas las ventanas juntas, así que no salen de la suma. El ERP compara al leer la confirmación.
+~~**Si un mínimo hace que el total exacto difiera, en alguna moneda, de lo que vio el cliente, Juan no puede aprobar hasta resolverlo.**~~
+Sin confirmación no hay bloqueo al aprobar: el ERP compara al aplicar la elección y avisa antes (`decisiones/erp-cliente.md` → *Sin
+confirmación*).
 
-**Con el mínimo dentro de un renglón aparte, el portal avisa antes de confirmar si la suma quedó por debajo (decisión del usuario,
-2026-11-06).** El ERP manda, con el renglón, su piso; si al destildar la suma baja de ahí, el portal muestra "La colocación tiene un mínimo:
-el total puede ajustarse. Juan te confirma el monto." No calcula precio: compara dos números que ya recibió. Sin el aviso, el cliente
-confirmaba un total que después cambiaba.
+**Con el mínimo dentro de un renglón aparte, el portal avisa antes de enviar la elección si la suma quedó por debajo (decisión del
+usuario, 2026-11-06).** El ERP manda, con el renglón, su piso; si al destildar la suma baja de ahí, el portal muestra "La colocación tiene
+un mínimo: el total puede ajustarse. Juan te confirma el monto." No calcula precio: compara dos números que ya recibió. Sin el aviso, el
+cliente enviaba un total que después cambiaba.
 
 **Una versión imprimible desde el ERP, además del portal.** Se imprime o guarda como PDF desde el navegador, sin librería nueva y sin costos
 ni comparación. Permite usar el módulo sin el portal, y queda como respaldo.
@@ -478,7 +485,7 @@ ni comparación. Permite usar el módulo sin el portal, y queda como respaldo.
 ## Avisos
 
 Cuatro, en la campanita. Retirar no avisa (*Estados y versiones*); "Vencida hace 3 días" es un mensaje de la pantalla al aprobar; el
-de una confirmación del portal espera a la etapa 2.
+de la primera visita en el portal espera a la etapa 2 (`decisiones/erp-cliente.md` → *Visitas*).
 
 **El aviso de un pedido le llega a todos los que pueden autorizarlo, no solo a quien tiene la obra a cargo (decisión del usuario,
 2026-11-10).** Juan pide por el 12 % de P-0142, del Sur: lo reciben Laura, jefa del Sur, y Gerardo, que administra. Una sola regla,
@@ -979,5 +986,5 @@ nuevo desactiva los anteriores de esa versión (si no, al volver a `en_revision`
 Los triggers de `presupuestos_autorizaciones` son por sentencia con tabla de transición: Técnica autoriza varias ventanas juntas y
 avisa una sola vez. El texto del renglón a mano es el conteo ("2 renglones a mano"); qué cambió se ve en la versión. `sql/192`, `sql/193`.
 
-**El bloqueo por mínimos al aprobar espera a la etapa 2 (2026-11-10).** Compara contra lo que confirmó el cliente en el portal, que
-todavía no existe.
+~~**El bloqueo por mínimos al aprobar espera a la etapa 2 (2026-11-10).**~~ No se construye: sin confirmación, la comparación se
+hace al aplicar la elección (2026-11-11, `decisiones/erp-cliente.md` → *Sin confirmación*).

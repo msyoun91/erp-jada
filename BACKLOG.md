@@ -101,8 +101,7 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   e2e, 45 / 45 de a uno. Al repetir pasaron dos: `duplicados.spec.ts:35`, que corría con 30 s (ahora 120, como sus hermanos), y
   `presupuestos.spec.ts:162`, con el `⋯` de la versión que no abrió. Si vuelve: `OverflowMenu` se cierra con cualquier `scroll`,
   aunque el botón no se haya movido.
-  **Siguiente:** la etapa 2, la ficha de `erp-cliente`. Esto no está en la ficha:
-  - **Del 4, con el portal:** no aprobar si un mínimo hace que el total difiera de lo que confirmó el cliente (etapa 2).
+  **Siguiente:** la etapa 2, el SQL del portal (abajo, *erp-cliente*). Esto no está en la ficha:
   - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`
     con versión `en_revision`, y por fila `presupuestos_puede_autorizar('comercial', obra)`; si la lista crece, una función que lo
     filtre en la base. Una autorización pendiente que ya no hace falta (gerencia sube el tope en plena revisión) igual frena
@@ -170,9 +169,13 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (`decisiones/contactos.md` → *Los proveedores son empresas de Contactos*). Compras manda a presupuestar
   y lo compara con Administración, sin leer ni cargar el costo del catálogo
   (`decisiones/catalogo/insumos.md` → *El costo del insumo vive en el catálogo*).
-- **erp-cliente**: sin ficha, y el portal no abre sin ella. Ya decidido en `decisiones/presupuestos.md` → *El cliente y el portal*: de cada
-  presupuesto ve el precio y elige los opcionales, y el ERP escribe y lee, sin que el portal le envíe nada. A decidir para el catálogo
-  (2026-11-02): si el cliente ve paquetes fuera de un presupuesto, y cuáles. Falta también si tiene base propia, y cómo entra cada cliente.
+- **erp-cliente**: ficha aprobada (2026-11-11, `decisiones/erp-cliente.md`): un link por presupuesto, sin cuentas ni confirmación;
+  base propia; todo lo publicado se copia cifrado; visitas y dispositivos; la elección vuelve al ERP en un link con código y entra
+  como corrección. **Siguiente:** el SQL, por tramos. Antes de escribirlo: el usuario crea el segundo proyecto de Supabase, y se
+  resuelven los tres puntos de `decisiones/erp-cliente.md` → *A decidir al construir* (la llave en la dirección, cómo se migra ese
+  proyecto, la copia como excepción en TypeScript). Tramos propuestos: 1, en el ERP, link, estado de la copia y la función que arma
+  lo que se copia (combinaciones, pisos, orden de casillas); 2, la base del portal (link, copia, visita); 3, copiar y leer visitas,
+  con el aviso; 4, aplicar la elección. Después, las pantallas: la página del portal y lo que suma la ficha y la lista de Presupuestos.
 - **Post-venta**: módulo aislado para su equipo. La unidad (1°C, local, casa) se arma después,
   eligiendo ítems del presupuesto aprobado ("estas 4 ventanas → 1°C"); si un ítem agrupa varias
   unidades, se lleva ítem y cantidad. Una obra de un solo dueño es una unidad con todo. Propietarios e
