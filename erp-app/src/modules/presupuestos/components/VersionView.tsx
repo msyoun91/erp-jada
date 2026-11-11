@@ -7,6 +7,7 @@ import { estadoVersion, formatAlicuota } from "../types";
 import { AccionesRenglon, AgregarRenglon } from "./AccionesRenglon";
 import { AccionesSeccion, NuevaSeccion } from "./AccionesSeccion";
 import { AccionesVersion } from "./AccionesVersion";
+import { OpcionalesVentana } from "./Opcionales";
 
 type Importe = VersionEditor["importes"][number];
 type Monto = { importe: number | null; importe_con_iva: number | null };
@@ -24,9 +25,14 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
     editable,
     tope,
     paquetes,
+    formularios,
+    opcionales,
   } = datos;
   const ids = secciones.map((s) => s.id);
-  const ctx = { versionId: v.id, secciones, paquetes };
+  const ctx = { versionId: v.id, secciones, paquetes, formularios };
+  const formas = Object.fromEntries(
+    opcionales.filter((o) => o.como !== "precio").map((o) => [o.clave, o.como]),
+  );
   const estado = estadoVersion(v, p);
   // Con IVA incluido se muestra el importe con IVA que da la base, no uno recalculado acá (*Pantallas*).
   const conIva = !v.iva_discriminado;
@@ -53,7 +59,8 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
             <AccionesVersion
               version={v}
               tope={tope}
-              variasSecciones={secciones.length > 1}
+              secciones={secciones}
+              opcionales={opcionales}
             />
           )}
         </div>
@@ -101,7 +108,10 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
                   seccion={s}
                   versionId={v.id}
                   ids={ids}
-                  conRenglones={propios.length > 0 || aparte.length > 0}
+                  conRenglones={
+                    propios.length > 0 ||
+                    opcionales.some((o) => o.como === s.id)
+                  }
                 />
               )}
             </div>
@@ -111,6 +121,10 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
               <ul className="flex flex-col">
                 {propios.map((r) => {
                   const i = delRenglon.get(r.id);
+                  const formulario =
+                    editable && r.paquete_id
+                      ? formularios[r.paquete_id]
+                      : null;
                   return (
                     <Fila
                       key={r.id}
@@ -156,17 +170,32 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
                           {m.mensaje}
                         </p>
                       ))}
-                      {i?.debajo?.map((d) => (
-                        <p
-                          key={d.clave}
-                          className="t-caption flex justify-between gap-3 pl-3"
-                        >
-                          <span>{d.nombre}</span>
-                          <span className="tabular-nums">
-                            {mostrar(d, s.moneda)}
-                          </span>
-                        </p>
-                      ))}
+                      {formulario ? (
+                        <OpcionalesVentana
+                          versionId={v.id}
+                          renglon={r}
+                          formulario={formulario}
+                          formas={formas}
+                          montos={Object.fromEntries(
+                            (i?.debajo ?? []).map((d) => [
+                              d.clave,
+                              mostrar(d, s.moneda),
+                            ]),
+                          )}
+                        />
+                      ) : (
+                        i?.debajo?.map((d) => (
+                          <p
+                            key={d.clave}
+                            className="t-caption flex justify-between gap-3 pl-3"
+                          >
+                            <span>{d.nombre}</span>
+                            <span className="tabular-nums">
+                              {mostrar(d, s.moneda)}
+                            </span>
+                          </p>
+                        ))
+                      )}
                     </Fila>
                   );
                 })}

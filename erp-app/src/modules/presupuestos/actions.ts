@@ -9,6 +9,7 @@ import { errorDeUpdate, mensajeError } from "@/lib/utils";
 import {
   altaSchema,
   datosVersionSchema,
+  opcionalesSchema,
   renglonCatalogoSchema,
   renglonManoSchema,
   seccionSchema,
@@ -16,6 +17,7 @@ import {
   type AltaForm,
   type DatosVersionForm,
   type FormularioVenta,
+  type OpcionalesForm,
   type RenglonCatalogoForm,
   type RenglonManoForm,
   type SeccionForm,
@@ -179,6 +181,32 @@ export async function guardarRenglonCatalogo(input: RenglonCatalogoForm) {
   if (falla || !data) return { success: false as const, error: falla ?? "" };
   revalidatePath("/presupuestos", "layout");
   return { success: true as const, precio: data[0].precio, mensaje: data[0].mensaje };
+}
+
+// Sin fila, el opcional va en el precio; volver al precio desactiva la fila, que no vuelve (PR002): pasarlo otra vez a
+// debajo o aparte crea otra. Uno por uno, solo los que cambiaron; cada cambio toca las ventanas que lo tienen.
+export async function guardarOpcionales(input: OpcionalesForm): Promise<Resultado> {
+  const parsed = opcionalesSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const { version_id, opcionales } = parsed.data;
+  const supabase = await createClient();
+  const tabla = () => supabase.from("presupuestos_opcionales");
+  for (const o of opcionales.filter((o) => o.como !== o.inicial)) {
+    const forma = o.como === "debajo" ? ("debajo" as const) : ("aparte" as const);
+    const seccion_id = o.como === "debajo" ? null : o.como;
+    const error = !o.fila
+      ? errorDeUpdate({
+          ...(await tabla().insert({ version_id, pieza: o.pieza, porcentaje_id: o.porcentaje_id, forma, seccion_id })),
+          count: 1,
+        })
+      : errorDeUpdate(
+          await tabla()
+            .update(o.como === "precio" ? { activo: false } : { forma, seccion_id }, { count: "exact" })
+            .eq("id", o.fila)
+        );
+    if (error) return trasGuardar(error);
+  }
+  return trasGuardar(null);
 }
 
 // Un mínimo lo saca la base (PR012): de acá solo se saca una ventana o uno a mano.

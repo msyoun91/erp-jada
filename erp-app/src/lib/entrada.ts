@@ -113,6 +113,73 @@ export function aEntrada(e: EntradaEstado, c: ContenidoEntrada): Entrada {
   return entrada;
 }
 
+type Pieza = FormularioEntrada["piezas"][number];
+
+export function colorDe(f: FormularioEntrada, e: EntradaEstado) {
+  return e.color ? f.colores.find((c) => c.id === e.color) : f.colores.find((c) => c.base);
+}
+
+// Lo que no se ofrece en ese color. Si el Cajón no se ofrece, tampoco la Cortina que lo requiere.
+export function fueraDe(f: FormularioEntrada, color: FormularioEntrada["colores"][number] | undefined) {
+  const piezas = new Set(color?.piezas_fuera ?? []);
+  let crecio = true;
+  while (crecio) {
+    crecio = false;
+    for (const p of f.piezas) {
+      if (!piezas.has(p.id) && p.requiere_pieza_id && piezas.has(p.requiere_pieza_id)) {
+        piezas.add(p.id);
+        crecio = true;
+      }
+    }
+  }
+  return { piezas, opciones: new Set(color?.opciones_fuera ?? []) };
+}
+
+export function incluida(p: Pieza, e: EntradaEstado) {
+  const valor = e.piezas[p.id];
+  return valor === "si" || (!valor && p.incluida);
+}
+
+// Elegir la Cortina marca el Cajón que requiere; sacar el Cajón saca la Cortina. A la vista y con aviso
+// (`decisiones/catalogo/paquete.md` → *Al vender, elegir la Cortina…*).
+export function conPieza(f: FormularioEntrada, e: EntradaEstado, id: string, valor: "" | "si" | "no") {
+  const estado: EntradaEstado = { ...e, piezas: { ...e.piezas, [id]: valor } };
+  const porId = new Map(f.piezas.map((p) => [p.id, p]));
+  const pieza = porId.get(id);
+  const cambiadas: string[] = [];
+  if (valor === "si") {
+    const vistas = new Set([id]);
+    for (let r = pieza?.requiere_pieza_id; r && !vistas.has(r); r = porId.get(r)?.requiere_pieza_id) {
+      vistas.add(r);
+      const requerida = porId.get(r);
+      if (requerida && !incluida(requerida, estado)) {
+        estado.piezas[r] = "si";
+        cambiadas.push(requerida.nombre);
+      }
+    }
+    return { estado, aviso: cambiadas.length ? `${pieza?.nombre} lleva ${cambiadas.join(" y ")}.` : null };
+  }
+  if (valor === "no") {
+    const sin = new Set([id]);
+    let crecio = true;
+    while (crecio) {
+      crecio = false;
+      for (const p of f.piezas) {
+        if (!sin.has(p.id) && p.requiere_pieza_id && sin.has(p.requiere_pieza_id)) {
+          sin.add(p.id);
+          crecio = true;
+          if (incluida(p, estado)) {
+            estado.piezas[p.id] = "no";
+            cambiadas.push(p.nombre);
+          }
+        }
+      }
+    }
+    return { estado, aviso: cambiadas.length ? `Sin ${pieza?.nombre} no va ${cambiadas.join(" ni ")}.` : null };
+  }
+  return { estado, aviso: null };
+}
+
 export function desdeEntrada(entrada: Entrada, c: ContenidoEntrada): EntradaEstado {
   const estado: EntradaEstado = { variables: {}, piezas: {}, elecciones: {}, color: entrada.color ?? "" };
   const pieza = new Map(c.piezas.map((p) => [p.id, p.nombre]));

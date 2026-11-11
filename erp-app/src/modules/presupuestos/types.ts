@@ -132,6 +132,39 @@ export function aFormularioEntrada(f: FormularioVenta): FormularioEntrada {
   };
 }
 
+// Los opcionales de un paquete, con la clave de `presupuestos_clave`: la pieza por nombre en toda la versión (cada paquete
+// tiene la suya), el servicio por id. `id`: el de la pieza en esa versión del paquete, o el del servicio.
+export type Opcional = { clave: string; nombre: string; tipo: "pieza" | "servicio"; id: string };
+
+export function opcionalesDe(f: FormularioVenta): Opcional[] {
+  return [
+    ...f.piezas
+      .filter((p) => p.opcional)
+      .map((p) => ({ clave: `pieza:${p.nombre.trim().toLowerCase()}`, nombre: p.nombre, tipo: "pieza" as const, id: p.id })),
+    ...f.servicios.map((s) => ({ clave: `servicio:${s.id}`, nombre: s.nombre, tipo: "servicio" as const, id: s.id })),
+  ];
+}
+
+// Cómo se ve: "precio" (sin fila), "debajo", o el id de la sección del renglón aparte.
+const comoSchema = z.union([z.literal("precio"), z.literal("debajo"), idSchema]);
+
+// Va la lista entera con cómo estaba cada uno: la acción escribe solo los que cambiaron.
+export const opcionalesSchema = z.object({
+  version_id: idSchema,
+  opcionales: z.array(
+    z
+      .object({
+        fila: idSchema.nullable(),
+        pieza: z.string().trim().min(1).max(100).nullable(),
+        porcentaje_id: idSchema.nullable(),
+        inicial: comoSchema,
+        como: comoSchema,
+      })
+      .refine((o) => (o.pieza === null) !== (o.porcentaje_id === null), "Pieza o servicio, uno"),
+  ),
+});
+export type OpcionalesForm = z.input<typeof opcionalesSchema>;
+
 const ESTADO_VERSION = {
   borrador: { label: "Borrador", badge: "badge-neutral" },
   en_revision: { label: "En revisión", badge: "badge-warning" },

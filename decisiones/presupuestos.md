@@ -555,6 +555,18 @@ o la opción que no se ofrece (deshabilitada; al cambiar de color se saca con av
 del vendedor, sin la oferta por color (no la tiene). El color va siempre a la vista: la base no marca un color como secundario. El
 predeterminado de una medida se muestra como se escribe ("1200", no "1.200"), porque el campo rechaza el punto.
 
+**Cómo se ve cada opcional se elige en un panel de la versión; debajo de cada ventana, en borrador, la casilla de los que van
+debajo y un botón por los demás, y cada clic guarda (2026-11-11).** *Cómo se ven los opcionales…*, en el `⋯`: un select por
+opcional, "En el precio", "Debajo de cada ventana" o aparte en cada sección; escribe solo los que cambiaron, con INSERT y UPDATE
+directos (volver al precio desactiva la fila). Tildar en una ventana es guardar lo cargado de esa ventana, con la regla de la
+Cortina y el Cajón y lo que no se ofrece en su color (`lib/entrada.ts`, la misma del formulario): recalcula como guardar el panel,
+sin acción nueva. La lista sale del formulario de venta de cada paquete, que la versión trae una vez por paquete y usa también el
+panel del renglón (antes lo pedía al abrirlo); todo servicio en % opcional se ofrece en toda ventana, porque así lo da
+`catalogo_venta_formulario`. La clave de cada opcional se arma en pantalla como `presupuestos_clave`, solo para cruzarla con las
+filas y las líneas. Una sección con un opcional aparte no ofrece *Sacar*, aunque ya no esté en ninguna ventana (PR011 cuenta la
+fila). Fuera de borrador siguen solo las líneas de lo elegido debajo. Para el e2e, el paquete Zqx197 de `e2e/datos-opcionales.sql`.
+`Opcionales.tsx`, `AccionesVersion.tsx`.
+
 **El impreso: solo lo publicado, y los datos de la empresa en un archivo de la app (decisión del usuario, 2026-11-10).** Publicado,
 todas las variantes; aprobado, la aprobada; rechazado, la última de cada una; un borrador no se imprime. Empresa: logo y datos fijos
 como marcadores hasta tenerlos, sin tabla hasta que haga falta cambiarlos desde una pantalla. Cliente: nombre y dirección de la obra y

@@ -25,7 +25,7 @@ import {
 type Renglon = VersionEditor["renglones"][number];
 type Seccion = VersionEditor["secciones"][number];
 
-export type Contexto = { versionId: string; secciones: Seccion[]; paquetes: VersionEditor["paquetes"] };
+export type Contexto = Pick<VersionEditor, "secciones" | "paquetes" | "formularios"> & { versionId: string };
 
 // Sin `renglon`, uno nuevo en `seccionId`; con `duplicar`, uno nuevo con sus datos.
 type Props = Contexto & {

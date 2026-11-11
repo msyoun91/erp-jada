@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Layers, Pencil } from "lucide-react";
+import { Layers, ListChecks, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { MONEDAS, MONEDAS_LISTA } from "@/lib/monedas";
 import { cambiarTodasLasSecciones, guardarDatosVersion } from "../actions";
-import type { VersionEditor } from "../queries";
+import type { OpcionalVersion, VersionEditor } from "../queries";
 import {
   ALICUOTAS,
   datosVersionSchema,
@@ -19,23 +19,43 @@ import {
   type DatosVersionForm,
   type TodasSeccionesForm,
 } from "../types";
+import { OpcionalesPanel } from "./Opcionales";
 
 type Version = VersionEditor["version"];
 
-export function AccionesVersion({ version, tope, variasSecciones }: { version: Version; tope: number | null; variasSecciones: boolean }) {
-  const [abierto, setAbierto] = useState<"datos" | "secciones" | null>(null);
+export function AccionesVersion({
+  version,
+  tope,
+  secciones,
+  opcionales,
+}: {
+  version: Version;
+  tope: number | null;
+  secciones: VersionEditor["secciones"];
+  opcionales: OpcionalVersion[];
+}) {
+  const [abierto, setAbierto] = useState<"datos" | "secciones" | "opcionales" | null>(null);
   const cerrar = () => setAbierto(null);
+  const items = [
+    ...(secciones.length > 1
+      ? [{ label: "Todas las secciones…", icon: <Layers size={14} />, onClick: () => setAbierto("secciones") }]
+      : []),
+    ...(opcionales.length > 0
+      ? [{ label: "Cómo se ven los opcionales…", icon: <ListChecks size={14} />, onClick: () => setAbierto("opcionales") }]
+      : []),
+  ];
   return (
     <>
       <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAbierto("datos")}>
         <Pencil size={14} />
         Editar
       </button>
-      {variasSecciones && (
-        <OverflowMenu items={[{ label: "Todas las secciones…", icon: <Layers size={14} />, onClick: () => setAbierto("secciones") }]} />
-      )}
+      {items.length > 0 && <OverflowMenu items={items} />}
       {abierto === "datos" && <DatosVersionPanel version={version} tope={tope} onClose={cerrar} />}
       {abierto === "secciones" && <TodasSeccionesPanel versionId={version.id} onClose={cerrar} />}
+      {abierto === "opcionales" && (
+        <OpcionalesPanel versionId={version.id} opcionales={opcionales} secciones={secciones} onClose={cerrar} />
+      )}
     </>
   );
 }

@@ -4,7 +4,16 @@ import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { claseInput, Etiqueta } from "@/components/ui/Campo";
-import { malEscrita, textoMedida, type EntradaEstado, type FormularioEntrada } from "@/lib/entrada";
+import {
+  colorDe,
+  conPieza,
+  fueraDe,
+  incluida,
+  malEscrita,
+  textoMedida,
+  type EntradaEstado,
+  type FormularioEntrada,
+} from "@/lib/entrada";
 
 // Lo que carga el vendedor de un paquete: en la calculadora de Catálogo y en el renglón de un presupuesto. Lo secundario
 // va plegado en "Más opciones", con su predeterminado (`decisiones/catalogo/paquete.md`). Quien lo usa le pone `key` por
@@ -170,76 +179,8 @@ export function EntradaCampos({
   );
 }
 
-type Formulario = FormularioEntrada;
-type Pieza = Formulario["piezas"][number];
-
-function colorDe(f: Formulario, e: EntradaEstado) {
-  return e.color ? f.colores.find((c) => c.id === e.color) : f.colores.find((c) => c.base);
-}
-
-// Lo que no se ofrece en ese color. Si el Cajón no se ofrece, tampoco la Cortina que lo requiere.
-function fueraDe(f: Formulario, color: Formulario["colores"][number] | undefined) {
-  const piezas = new Set(color?.piezas_fuera ?? []);
-  let crecio = true;
-  while (crecio) {
-    crecio = false;
-    for (const p of f.piezas) {
-      if (!piezas.has(p.id) && p.requiere_pieza_id && piezas.has(p.requiere_pieza_id)) {
-        piezas.add(p.id);
-        crecio = true;
-      }
-    }
-  }
-  return { piezas, opciones: new Set(color?.opciones_fuera ?? []) };
-}
-
-function incluida(p: Pieza, e: EntradaEstado) {
-  const valor = e.piezas[p.id];
-  return valor === "si" || (!valor && p.incluida);
-}
-
-// Elegir la Cortina marca el Cajón que requiere; sacar el Cajón saca la Cortina. A la vista y con aviso
-// (`decisiones/catalogo/paquete.md` → *Al vender, elegir la Cortina…*).
-function conPieza(f: Formulario, e: EntradaEstado, id: string, valor: "" | "si" | "no") {
-  const estado: EntradaEstado = { ...e, piezas: { ...e.piezas, [id]: valor } };
-  const porId = new Map(f.piezas.map((p) => [p.id, p]));
-  const pieza = porId.get(id);
-  const cambiadas: string[] = [];
-  if (valor === "si") {
-    const vistas = new Set([id]);
-    for (let r = pieza?.requiere_pieza_id; r && !vistas.has(r); r = porId.get(r)?.requiere_pieza_id) {
-      vistas.add(r);
-      const requerida = porId.get(r);
-      if (requerida && !incluida(requerida, estado)) {
-        estado.piezas[r] = "si";
-        cambiadas.push(requerida.nombre);
-      }
-    }
-    return { estado, aviso: cambiadas.length ? `${pieza?.nombre} lleva ${cambiadas.join(" y ")}.` : null };
-  }
-  if (valor === "no") {
-    const sin = new Set([id]);
-    let crecio = true;
-    while (crecio) {
-      crecio = false;
-      for (const p of f.piezas) {
-        if (!sin.has(p.id) && p.requiere_pieza_id && sin.has(p.requiere_pieza_id)) {
-          sin.add(p.id);
-          crecio = true;
-          if (incluida(p, estado)) {
-            estado.piezas[p.id] = "no";
-            cambiadas.push(p.nombre);
-          }
-        }
-      }
-    }
-    return { estado, aviso: cambiadas.length ? `Sin ${pieza?.nombre} no va ${cambiadas.join(" ni ")}.` : null };
-  }
-  return { estado, aviso: null };
-}
-
 // La base no corrige lo elegido: una pieza incluida o una opción que no se ofrece en el color nuevo se saca acá, con aviso.
-function alColor(f: Formulario, e: EntradaEstado, id: string) {
+function alColor(f: FormularioEntrada, e: EntradaEstado, id: string) {
   const estado: EntradaEstado = { ...e, color: id, piezas: { ...e.piezas }, elecciones: { ...e.elecciones } };
   const color = colorDe(f, estado);
   const fuera = fueraDe(f, color);

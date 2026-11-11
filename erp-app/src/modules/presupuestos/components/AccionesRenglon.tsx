@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
-import { formularioVenta, moverRenglon, sacarRenglon } from "../actions";
+import { moverRenglon, sacarRenglon } from "../actions";
 import type { VersionEditor } from "../queries";
 import type { FormularioVenta } from "../types";
 import { opcionSeccion, RenglonCatalogoPanel, RenglonManoPanel, type Contexto } from "./RenglonPanel";
@@ -43,18 +43,9 @@ export function AccionesRenglon({ renglon: r, nombre, ...ctx }: Contexto & { ren
   const cerrar = () => setAbierto(null);
   const etiqueta = [r.designacion ?? nombre, r.ubicacion].filter(Boolean).join(" · ");
 
-  // El panel de una ventana arranca con lo cargado: el formulario de su paquete se pide antes de abrirlo.
-  async function abrir(modo: "editar" | "duplicar") {
-    if (r.tipo !== "catalogo" || !r.paquete_id) {
-      setAbierto({ modo, formulario: null });
-      return;
-    }
-    const result = await formularioVenta(r.paquete_id);
-    if (!result.success) {
-      toast.error(result.error);
-      return;
-    }
-    setAbierto({ modo, formulario: result.formulario });
+  // El panel de una ventana arranca con lo cargado, con el formulario de su paquete que ya trajo la versión.
+  function abrir(modo: "editar" | "duplicar") {
+    setAbierto({ modo, formulario: r.paquete_id ? (ctx.formularios[r.paquete_id] ?? null) : null });
   }
 
   async function sacar() {

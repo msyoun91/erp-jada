@@ -1,7 +1,15 @@
 import type { Entrada } from "@/lib/entrada";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
-import type { IvaTotal, LineaDebajo, MensajeCatalogo } from "./types";
+import {
+  opcionalesDe,
+  type FormularioVenta,
+  type IvaTotal,
+  type LineaDebajo,
+  type MensajeCatalogo,
+  type Opcional,
+  type OpcionalesForm,
+} from "./types";
 
 type Presupuesto = Database["public"]["Tables"]["presupuestos"]["Row"];
 type Autorizacion = Database["public"]["Tables"]["presupuestos_autorizaciones"]["Row"];
@@ -148,12 +156,25 @@ export type VersionEditor = {
   totales: Total[];
   // Para elegir el paquete de una ventana: solo si es editable.
   paquetes: Funciones["catalogo_venta"]["Returns"];
+  // El formulario del paquete de cada ventana, por paquete; NULL si salió de la venta. Solo si es editable.
+  formularios: Record<string, FormularioVenta | null>;
+  // Cada opcional de las ventanas y cómo se ve; también los que tienen fila sin estar ya en ninguna ventana, que
+  // frenan sacar la sección de su renglón aparte (PR011).
+  opcionales: OpcionalVersion[];
+};
+
+export type OpcionalVersion = Pick<Opcional, "clave" | "nombre"> & {
+  // La de `presupuestos_opcionales`; sin fila, va en el precio.
+  fila: string | null;
+  pieza: string | null;
+  porcentaje_id: string | null;
+  como: OpcionalesForm["opcionales"][number]["como"];
 };
 
 // Los importes y los totales los calcula la base, con el recargo y el redondeo: acá no se multiplica nada.
 export async function getVersion(presupuestoId: string, versionId: string): Promise<VersionEditor | null> {
   const supabase = await createClient();
-  const [version, secciones, renglones, importes, totales, configuracion] = await Promise.all([
+  const [version, secciones, renglones, importes, totales, configuracion, filas] = await Promise.all([
     supabase
       .from("presupuestos_versiones")
       .select(
@@ -184,8 +205,13 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
     supabase.rpc("presupuestos_version_importes", { p_version: versionId }),
     supabase.rpc("presupuestos_version_totales", { p_version: versionId }),
     supabase.from("presupuestos_configuracion").select("tope_descuento").eq("activo", true).maybeSingle(),
+    supabase
+      .from("presupuestos_opcionales")
+      .select("id, pieza, porcentaje_id, clave, forma, seccion_id")
+      .eq("version_id", versionId)
+      .eq("activo", true),
   ]);
-  for (const r of [version, secciones, renglones, importes, totales, configuracion]) if (r.error) throw r.error;
+  for (const r of [version, secciones, renglones, importes, totales, configuracion, filas]) if (r.error) throw r.error;
   if (!version.data) return null;
   const { presupuesto: { activo, ...presupuesto }, ...v } = version.data;
   let editable = false;
@@ -195,10 +221,43 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
     editable = data;
   }
   let paquetes: VersionEditor["paquetes"] = [];
+  const formularios: VersionEditor["formularios"] = {};
   if (editable) {
-    const { data, error } = await supabase.rpc("catalogo_venta");
-    if (error) throw error;
-    paquetes = data;
+    const ids = [...new Set((renglones.data ?? []).flatMap((r) => (r.tipo === "catalogo" && r.paquete_id ? [r.paquete_id] : [])))];
+    const [venta, ...forms] = await Promise.all([
+      supabase.rpc("catalogo_venta"),
+      ...ids.map((p) => supabase.rpc("catalogo_venta_formulario", { p_paquete: p })),
+    ]);
+    if (venta.error) throw venta.error;
+    paquetes = venta.data;
+    for (const [n, f] of forms.entries()) {
+      if (f.error) throw f.error;
+      formularios[ids[n]] = f.data as FormularioVenta | null;
+    }
+  }
+  const opcionales = new Map<string, OpcionalVersion>();
+  for (const f of Object.values(formularios)) {
+    for (const o of f ? opcionalesDe(f) : []) {
+      opcionales.set(o.clave, {
+        clave: o.clave,
+        nombre: o.nombre,
+        fila: null,
+        pieza: o.tipo === "pieza" ? o.nombre : null,
+        porcentaje_id: o.tipo === "servicio" ? o.id : null,
+        como: "precio",
+      });
+    }
+  }
+  for (const f of filas.data ?? []) {
+    const clave = f.clave ?? "";
+    opcionales.set(clave, {
+      clave,
+      nombre: opcionales.get(clave)?.nombre ?? f.pieza ?? "Un servicio que ya no está en ninguna ventana",
+      fila: f.id,
+      pieza: f.pieza,
+      porcentaje_id: f.porcentaje_id,
+      como: f.forma === "debajo" ? "debajo" : (f.seccion_id ?? ""),
+    });
   }
   return {
     presupuesto,
@@ -215,5 +274,7 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
     importes: (importes.data ?? []).map((i) => ({ ...i, debajo: i.debajo as LineaDebajo[] | null })),
     totales: (totales.data ?? []).map((t) => ({ ...t, iva: t.iva as IvaTotal[] })),
     paquetes,
+    formularios,
+    opcionales: [...opcionales.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
   };
 }
