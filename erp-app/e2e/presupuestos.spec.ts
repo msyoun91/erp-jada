@@ -157,3 +157,86 @@ test("admin carga renglones a mano y de Catálogo, los edita, duplica y saca", a
   await page.screenshot({ path: "e2e/.out/pres-renglones-final.png", fullPage: true });
   await ctx.close();
 });
+
+// Necesita el paquete y el servicio de e2e/datos-opcionales.sql.
+test("admin elige cómo se ven los opcionales y los tilda en cada ventana", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const ctx = await browser.newContext({ storageState: "e2e/.auth/admin.json" });
+  const page = await ctx.newPage();
+
+  await page.goto("/presupuestos");
+  await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+  const alta = panel(page);
+  await alta.getByLabel("Obra").selectOption({ index: 1 });
+  await alta.getByLabel("Nombre", { exact: true }).fill(`Opcionales ${marca}`);
+  await alta.getByRole("button", { name: "Crear presupuesto" }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}$/);
+  await page.getByRole("link", { name: /Versión 1/ }).click();
+  const general = page.getByRole("region", { name: "General" });
+
+  await page.getByRole("button", { name: "Nueva sección" }).click();
+  const nueva = panel(page);
+  await nueva.getByLabel("Nombre").fill("Colocación");
+  await nueva.getByLabel("IVA").selectOption("10.5");
+  await nueva.getByRole("button", { name: "Crear sección" }).click();
+  const colocacion = page.getByRole("region", { name: "Colocación" });
+  await expect(colocacion).toBeVisible();
+
+  await general.getByRole("button", { name: "De Catálogo" }).click();
+  const cat = panel(page);
+  await cat.getByLabel("Designación").fill("V1");
+  await cat.getByLabel("Paquete").selectOption({ label: "Zqx197 Ventana opcionales" });
+  await cat.getByLabel(/^ancho/).fill("1200");
+  await cat.getByLabel(/^alto/).fill("1000");
+  await cat.getByRole("button", { name: "Agregar" }).click();
+  await expect(cat).toBeHidden();
+
+  // En el precio, cada opcional es un botón.
+  const v1 = general.getByRole("listitem").filter({ hasText: "V1" });
+  const opcionales = v1.getByRole("group", { name: "Opcionales" });
+  await expect(opcionales.getByRole("button", { name: "Mosquitero" })).toHaveAttribute("aria-pressed", "false");
+  await expect(opcionales.getByRole("button", { name: "Zqx197 Colocación" })).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-opcionales-precio.png", fullPage: true });
+
+  await page.getByRole("button", { name: "Más acciones" }).first().click();
+  await page.getByRole("button", { name: "Cómo se ven los opcionales…" }).click();
+  const como = panel(page);
+  await como.getByLabel("Mosquitero").selectOption("debajo");
+  await como.getByLabel("Zqx197 Colocación").selectOption({ label: "Colocación · ARS · IVA 10,5 %" });
+  await page.screenshot({ path: "e2e/.out/pres-opcionales-panel.png", fullPage: true });
+  await como.getByRole("button", { name: "Guardar" }).click();
+  await expect(como).toBeHidden();
+
+  // Debajo, la línea es la casilla: sin elegir, sin monto.
+  const mosquitero = opcionales.getByRole("checkbox", { name: "Mosquitero" });
+  await expect(mosquitero).not.toBeChecked();
+  await mosquitero.check();
+  await expect(opcionales.getByText("$9.600")).toBeVisible();
+
+  // La Cortina lleva el Cajón.
+  await opcionales.getByRole("button", { name: "Cortina" }).click();
+  await expect(page.getByText("Cortina lleva Cajón.")).toBeVisible();
+  await expect(opcionales.getByRole("button", { name: "Cajón" })).toHaveAttribute("aria-pressed", "true");
+  await expect(opcionales.getByRole("button", { name: "Cortina" })).toHaveAttribute("aria-pressed", "true");
+
+  // Aparte: un renglón en su sección, que no se saca mientras lo tenga.
+  await opcionales.getByRole("button", { name: "Zqx197 Colocación" }).click();
+  const aparte = colocacion.getByRole("listitem").filter({ hasText: "Zqx197 Colocación" });
+  await expect(aparte.getByText("De 1 ventana")).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-opcionales-elegidos.png", fullPage: true });
+  await colocacion.getByRole("button", { name: "Más acciones" }).click();
+  await expect(page.getByRole("button", { name: "Sacar" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("button", { name: "Más acciones" }).first().click();
+  await page.getByRole("button", { name: "Cómo se ven los opcionales…" }).click();
+  const vuelta = panel(page);
+  await vuelta.getByLabel("Zqx197 Colocación").selectOption("precio");
+  await vuelta.getByRole("button", { name: "Guardar" }).click();
+  await expect(aparte).toHaveCount(0);
+  await expect(opcionales.getByRole("button", { name: "Zqx197 Colocación" })).toHaveAttribute("aria-pressed", "true");
+
+  await mosquitero.uncheck();
+  await expect(opcionales.getByText("$9.600")).toHaveCount(0);
+  await ctx.close();
+});
