@@ -496,3 +496,121 @@ test("admin renombra, corrige, descarta, suma una variante y la quita", async ({
 
   await ctx.close();
 });
+
+// Necesita e2e/datos-autorizaciones.sql (tope y plazo). Aprobar y revertir mueven la obra: no puede estar congelada (OB018).
+// Termina publicado, así la obra queda como estaba.
+test("admin aprueba, rechaza y revierte; tester no revierte; un borrador se desactiva", async ({ browser }) => {
+  test.setTimeout(300_000);
+  const { ctx, page } = await como(browser, "admin");
+  const vendedor = await como(browser, "tester");
+  const dialogo = page.getByRole("dialog");
+  const cabecera = page.locator("div.card").first();
+  const nuevo = async (nombrePres: string) => {
+    await page.goto("/presupuestos");
+    await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+    const alta = panel(page);
+    await alta.getByLabel("Obra").selectOption({ label: "Edificio Norte Zqx20218 A" });
+    await alta.getByLabel("Nombre", { exact: true }).fill(nombrePres);
+    await alta.getByRole("button", { name: "Crear presupuesto" }).click();
+    await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}$/);
+    return page.url();
+  };
+  const publicar = async () => {
+    const antes = page.getByRole("region", { name: "Antes de publicar" });
+    await antes.getByRole("button", { name: "Publicar" }).click();
+    await dialogo.getByRole("button", { name: "Publicar" }).click();
+    await expect(page.getByText("Publicada", { exact: true })).toBeVisible();
+  };
+  const revertir = async (titulo: string, causa: string) => {
+    await cabecera.getByRole("button", { name: "Más acciones" }).click();
+    await page.getByRole("button", { name: "Revertir…" }).click();
+    await expect(dialogo.getByRole("heading", { name: titulo })).toBeVisible();
+    await dialogo.getByLabel("Por qué se revierte").fill(causa);
+    await dialogo.getByRole("button", { name: "Revertir" }).click();
+    await expect(dialogo).toBeHidden();
+    await expect(cabecera.getByText("Publicado", { exact: true })).toBeVisible();
+  };
+
+  // Dos variantes publicadas y una corrección abierta.
+  const ficha = await nuevo(`Aprobar ${marca}`);
+  await expect(page.getByRole("button", { name: "Aprobar" })).toHaveCount(0);
+  await page.getByRole("link", { name: /Versión 1/ }).click();
+  await page.getByRole("region", { name: "General" }).getByRole("button", { name: "A mano" }).click();
+  const mano = panel(page);
+  await mano.getByLabel("Descripción").fill("Flete cerrado a Pilar");
+  await mano.getByLabel(/Precio por unidad/).fill("150000");
+  await mano.getByRole("button", { name: "Agregar" }).click();
+  await expect(mano).toBeHidden();
+  await publicar();
+  await page.goto(ficha);
+  await tarjeta(page, "Presupuesto").getByRole("button", { name: "Más acciones" }).click();
+  await page.getByRole("button", { name: "Sumar variante a partir de esta" }).click();
+  await expect(page.getByRole("heading", { name: "Versión 2" })).toBeVisible();
+  await page.getByRole("button", { name: "Editar" }).click();
+  const variante = panel(page);
+  await variante.getByLabel("Nombre de la variante").fill("PVC");
+  await variante.getByRole("button", { name: "Guardar" }).click();
+  await expect(variante).toBeHidden();
+  await publicar();
+  await page.goto(ficha);
+  await tarjeta(page, "Variante 1").getByRole("button", { name: "Corregir" }).click();
+  await expect(page.getByRole("heading", { name: "Versión 3" })).toBeVisible();
+
+  // Aprobar pide la variante, inhabilita la otra y descarta la abierta.
+  await page.goto(ficha);
+  await cabecera.getByRole("button", { name: "Aprobar" }).click();
+  await expect(dialogo.getByText("La versión 3, sin publicar, se descarta.", { exact: false })).toBeVisible();
+  await dialogo.getByRole("button", { name: "Aprobar" }).click();
+  await expect(dialogo.getByText("Elegí la variante que aprobó el cliente")).toBeVisible();
+  await dialogo.getByRole("radio", { name: /^PVC/ }).check();
+  await page.screenshot({ path: "e2e/.out/pres-aprobar.png", fullPage: true });
+  await dialogo.getByRole("button", { name: "Aprobar" }).click();
+  await expect(dialogo).toBeHidden();
+  await expect(cabecera.getByText("Aprobado", { exact: true })).toBeVisible();
+  await expect(tarjeta(page, "PVC").getByText("Aprobada", { exact: true })).toBeVisible();
+  await expect(tarjeta(page, "Variante 1").getByText("Inhabilitada", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Versión 3/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Editar" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Corregir" })).toHaveCount(0);
+  await page.screenshot({ path: "e2e/.out/pres-aprobado.png", fullPage: true });
+
+  // Revierte quien autoriza: Tester arma, pero no autoriza.
+  await vendedor.page.goto(ficha);
+  await expect(vendedor.page.getByText("Aprobado", { exact: true })).toBeVisible();
+  await expect(vendedor.page.locator("div.card").getByRole("button", { name: "Más acciones" })).toHaveCount(0);
+
+  await cabecera.getByRole("button", { name: "Más acciones" }).click();
+  await page.getByRole("button", { name: "Revertir…" }).click();
+  await dialogo.getByRole("button", { name: "Revertir" }).click();
+  await expect(dialogo.getByText("Escribí por qué se revierte")).toBeVisible();
+  await dialogo.getByRole("button", { name: "Volver" }).click();
+  await revertir("Revertir la aprobación", "Se aprobó PVC y el cliente eligió Aluminio");
+  await expect(cabecera.getByText("Se aprobó PVC y el cliente eligió Aluminio")).toBeVisible();
+  await expect(tarjeta(page, "PVC").getByText("Publicada", { exact: true })).toBeVisible();
+
+  // Rechazar pide motivo, y con "Otro", el detalle.
+  await cabecera.getByRole("button", { name: "Rechazar" }).click();
+  await dialogo.getByLabel("Motivo").selectOption({ label: "Otro" });
+  await dialogo.getByRole("button", { name: "Rechazar" }).click();
+  await expect(dialogo.getByText("Contá qué pasó")).toBeVisible();
+  await dialogo.getByLabel("Motivo").selectOption({ label: "Precio" });
+  await dialogo.getByLabel("Detalle").fill("Estuvimos 10% más caros");
+  await dialogo.getByRole("button", { name: "Rechazar" }).click();
+  await expect(dialogo).toBeHidden();
+  await expect(cabecera.getByText("Rechazado", { exact: true })).toBeVisible();
+  await expect(cabecera.getByText("Precio.")).toBeVisible();
+  await expect(cabecera.getByText("Estuvimos 10% más caros")).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-rechazado.png", fullPage: true });
+  await revertir("Revertir el rechazo", "Se registró en el presupuesto equivocado");
+
+  // Un borrador se desactiva y sale de la lista.
+  await nuevo(`Desactivar ${marca}`);
+  await cabecera.getByRole("button", { name: "Más acciones" }).click();
+  await page.getByRole("button", { name: "Desactivar…" }).click();
+  await dialogo.getByRole("button", { name: "Desactivar" }).click();
+  await expect(page).toHaveURL(/\/presupuestos$/);
+  await expect(page.getByText(`Desactivar ${marca}`)).toHaveCount(0);
+
+  await vendedor.ctx.close();
+  await ctx.close();
+});
