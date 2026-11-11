@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { como, panel } from "./comun";
+import { como, panel, tarjeta } from "./comun";
 
 const marca = `Zqx${Date.now() % 100000}`;
 const nombre = `Aberturas ${marca}`;
@@ -351,4 +351,59 @@ test("tester pide, retira y publica; admin devuelve y autoriza", async ({ browse
 
   await vendedor.ctx.close();
   await jefe.ctx.close();
+});
+
+// Necesita e2e/datos-mantener.sql (y antes datos-opcionales.sql): la variante 2, copiada de la 1, en borrador. Arranca y
+// termina con todo a hoy, así se puede correr de nuevo.
+test("admin mantiene o pasa a hoy cada ventana copiada, y todas juntas", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const { ctx, page } = await como(browser, "admin");
+  const confirmar = (boton: string) => page.getByRole("dialog").getByRole("button", { name: boton }).click();
+
+  await page.goto("/presupuestos");
+  await page.getByRole("link", { name: /Mantener Zqx198/ }).click();
+  await page.getByRole("link", { name: /Versión 2/ }).click();
+  const version = tarjeta(page, "Versión 2");
+  await expect(version).toBeVisible();
+  const v1 = page.getByRole("region", { name: "General" }).getByRole("listitem").filter({ hasText: "V1" }).first();
+  const antes = page.getByRole("region", { name: "Antes de publicar" });
+  const delJefe = antes.getByRole("listitem").filter({ hasText: "Del jefe comercial" });
+  const todasAHoy = async () => {
+    await version.getByRole("button", { name: "Más acciones" }).click();
+    await page.getByRole("button", { name: "Todas a hoy…" }).click();
+    await expect(page.getByRole("dialog").getByText("Las ventanas y los mínimos se recalculan")).toBeVisible();
+    await confirmar("Pasar a hoy");
+    await expect(page.getByText(/^Precios del/)).toHaveCount(0);
+    await expect(delJefe).toHaveCount(0);
+  };
+
+  await todasAHoy();
+
+  // Una por una: mantener pide autorización del jefe, aunque el precio no cambie.
+  await v1.getByRole("button", { name: "Más acciones" }).click();
+  await page.getByRole("button", { name: /^Mantener precios del/ }).click();
+  await expect(v1.getByText(/^Precios del/)).toBeVisible();
+  await expect(delJefe.getByText("1 renglón mantenido")).toBeVisible();
+  await expect(delJefe.getByText("Falta pedirla")).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-mantener-una.png", fullPage: true });
+  await v1.getByRole("button", { name: "Más acciones" }).click();
+  await expect(page.getByRole("button", { name: "Actualizar a hoy" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Pasar a hoy" }).click();
+  await expect(v1.getByText(/^Precios del/)).toHaveCount(0);
+  await expect(delJefe).toHaveCount(0);
+
+  // Todas juntas, y de vuelta a hoy.
+  await version.getByRole("button", { name: "Más acciones" }).click();
+  await page.getByRole("button", { name: "Mantener todas…" }).click();
+  await expect(page.getByRole("dialog").getByText(/Los 2 renglones copiados vuelven/)).toBeVisible();
+  await confirmar("Mantener");
+  await expect(page.getByText(/^Precios del/)).toHaveCount(2);
+  await expect(delJefe.getByText("2 renglones mantenidos")).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-mantener-todas.png", fullPage: true });
+  await version.getByRole("button", { name: "Más acciones" }).click();
+  await expect(page.getByRole("button", { name: "Mantener todas…" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await todasAHoy();
+
+  await ctx.close();
 });
