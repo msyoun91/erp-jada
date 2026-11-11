@@ -157,6 +157,14 @@ export async function getObrasParaPresupuestar(): Promise<{ id: string; nombre: 
   return data;
 }
 
+// Lo que está a la venta, por categoría y nombre: para la calculadora de venta.
+export async function getPaquetesVenta(): Promise<Funciones["catalogo_venta"]["Returns"]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("catalogo_venta");
+  if (error) throw error;
+  return data;
+}
+
 type Version = Database["public"]["Tables"]["presupuestos_versiones"]["Row"];
 
 export type FichaPresupuesto = Presupuesto & {

@@ -1,8 +1,10 @@
 import { z } from "zod";
 import {
+  desdeEntrada,
   entradaSchema,
   numeroEscrito,
   type Entrada,
+  type EntradaEstado,
   type FormularioEntrada,
   type MaterialEntrada,
   type PiezaEntrada,
@@ -43,12 +45,23 @@ export const configuracionSchema = z.object({
 });
 export type ConfiguracionForm = z.input<typeof configuracionSchema>;
 
+// Una ventana sin guardar, la de la calculadora de venta: se calcula y se lleva a un presupuesto nuevo.
+export const ventanaSchema = z.object({
+  paquete_id: z.string().uuid("Elegí el paquete"),
+  entrada: entradaSchema,
+  opcionales: z.array(idSchema),
+  moneda: z.enum(MONEDAS_LISTA),
+});
+export type VentanaForm = z.input<typeof ventanaSchema>;
+
+// Con `ventana`, va en la sección nueva, en la moneda de la sección (`presupuestos_alta`).
 export const altaSchema = z.object({
   obra: idSchema,
   nombre: z.string().trim().min(1, "Escribí el nombre").max(200, "Máximo 200 caracteres"),
   moneda: z.enum(MONEDAS_LISTA),
   alicuota: alicuotaSchema,
   seccion: z.string().trim().max(100, "Máximo 100 caracteres"),
+  ventana: ventanaSchema.omit({ moneda: true }).optional(),
 });
 export type AltaForm = z.input<typeof altaSchema>;
 
@@ -180,6 +193,22 @@ export function aFormularioEntrada(f: FormularioVenta): FormularioEntrada {
     colores: f.colores.flatMap((c) => (c.id ? [{ ...c, id: c.id, nombre: c.nombre ?? "" }] : [])),
   };
 }
+
+// Lo cargado pasa al paquete nuevo por nombre: el ancho y el alto no se escriben de nuevo. Un color o un insumo que el
+// nuevo no ofrece no pasa: el select lo mostraría vacío y la entrada lo mandaría igual.
+export function pasarAPaquete(antes: Entrada, f: FormularioVenta): EntradaEstado {
+  const nuevo = desdeEntrada(antes, f);
+  if (!f.colores.some((c) => c.id === nuevo.color)) nuevo.color = "";
+  for (const [material, insumo] of Object.entries(nuevo.elecciones)) {
+    if (insumo !== "ninguna" && !f.opciones.some((o) => o.material_id === material && o.insumo_id === insumo)) {
+      delete nuevo.elecciones[material];
+    }
+  }
+  return nuevo;
+}
+
+// Lo que da `catalogo_precio`: lo que se vende hoy, sin IVA. Sin precio, `mensaje` dice por qué, o un bloqueo en `mensajes`.
+export type PrecioCatalogo = { precio: number | null; mensaje: string | null; mensajes: MensajeCatalogo[] | null };
 
 // Los opcionales de un paquete, con la clave de `presupuestos_clave`: la pieza por nombre en toda la versión (cada paquete
 // tiene la suya), el servicio por id. `id`: el de la pieza en esa versión del paquete, o el del servicio.

@@ -20,6 +20,7 @@ import {
   revertirSchema,
   seccionSchema,
   todasSeccionesSchema,
+  ventanaSchema,
   type AltaForm,
   type AprobarForm,
   type ConfiguracionForm,
@@ -28,12 +29,14 @@ import {
   type FormularioVenta,
   type NombreForm,
   type OpcionalesForm,
+  type PrecioCatalogo,
   type RechazarForm,
   type RenglonCatalogoForm,
   type RenglonManoForm,
   type RevertirForm,
   type SeccionForm,
   type TodasSeccionesForm,
+  type VentanaForm,
 } from "./types";
 
 // Quién arma y en qué estado se edita lo deciden la RLS y los triggers: acá solo se valida la forma y se traduce el error.
@@ -55,10 +58,11 @@ function errorDeSeccion(error: { code?: string } | null): string | null {
   return error.code === "23505" ? "Ya hay una sección con ese nombre en esta versión" : mensajeError(error);
 }
 
+// Con una ventana, también la versión: se abre el editor, con la ventana a la vista.
 export async function crearPresupuesto(input: AltaForm) {
   const parsed = altaSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
-  const d = parsed.data;
+  const { ventana: v, ...d } = parsed.data;
   const supabase = await createClient();
   const { data: id, error } = await supabase.rpc("presupuestos_alta", {
     p_obra: d.obra,
@@ -66,10 +70,36 @@ export async function crearPresupuesto(input: AltaForm) {
     p_moneda: d.moneda,
     p_alicuota: d.alicuota,
     ...(d.seccion ? { p_seccion: d.seccion } : {}),
+    ...(v ? { p_paquete: v.paquete_id, p_entrada: v.entrada, p_opcionales: v.opcionales } : {}),
   });
   if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/presupuestos", "layout");
-  return { success: true as const, id };
+  if (!v) return { success: true as const, id, version: null };
+  const version = await supabase.from("presupuestos_versiones").select("id").eq("presupuesto_id", id).single();
+  return { success: true as const, id, version: version.data?.id ?? null };
+}
+
+// La calculadora de venta: el precio de hoy, sin IVA, y los mínimos que no alcanza si fuera la única ventana. No guarda nada.
+export async function calcularVentana(input: VentanaForm) {
+  const parsed = ventanaSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const { paquete_id, entrada, opcionales, moneda } = parsed.data;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("catalogo_precio", {
+    p_paquete: paquete_id,
+    p_entrada: entrada,
+    p_opcionales: opcionales,
+    p_moneda: moneda,
+  });
+  if (error) return { success: false as const, error: mensajeError(error) };
+  const precio = data as PrecioCatalogo;
+  if (precio.precio === null) return { success: true as const, precio, minimos: [] };
+  const minimos = await supabase.rpc("catalogo_precio_minimos", {
+    p_items: [{ paquete_id, cantidad: 1, entrada, opcionales }],
+    p_moneda: moneda,
+  });
+  if (minimos.error) return { success: false as const, error: mensajeError(minimos.error) };
+  return { success: true as const, precio, minimos: minimos.data.map(({ nombre, monto }) => ({ nombre, monto })) };
 }
 
 // Desactiva la vigente y crea otra: lo publicado conserva su vencimiento y un pedido ya hecho sigue pendiente.

@@ -93,11 +93,12 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   ventana con `sql/198`; datos de la empresa como marcadores en `modules/presupuestos/empresa.ts`, a completar), y la sección en la
   obra (2026-11-11: debajo del encabezado, y *Nuevo presupuesto* con la obra puesta; sin SQL nuevo), y el aviso de obra perdida en
   el editor (2026-11-11, `decisiones/presupuestos.md` → *Pantallas*; sin SQL nuevo), y en la lista de Obras el contador
-  "Contratada · 1 en cotización" (2026-11-11, `decisiones/obras.md` → *Los estados son solo comerciales*; sin SQL nuevo).
-  **Siguiente:** "Llevar a un presupuesto" desde la calculadora de venta, ya decidido (2026-11-11, `decisiones/presupuestos.md` →
-  *Pantallas*, las tres últimas). El SQL ya está: `presupuestos_alta` con una ventana opcional (`sql/199`, aplicado el 2026-11-11,
-  test en `presupuestos_opcionales` → 04). Faltan las pantallas: `/presupuestos/calculadora` con los mínimos, el panel de alta con
-  la ventana, y *+ Nueva obra* con `onCreada` en el panel de Obras. Esto no está en la ficha:
+  "Contratada · 1 en cotización" (2026-11-11, `decisiones/obras.md` → *Los estados son solo comerciales*; sin SQL nuevo), y
+  "Llevar a un presupuesto" (2026-11-11: `/presupuestos/calculadora` con los mínimos, el alta con la ventana y *+ Nueva obra*
+  encima; `sql/199`, `e2e/datos-calculadora.sql`, `decisiones/presupuestos.md` → *Pantallas*, las cuatro últimas).
+  **Siguiente:** con esto está todo lo decidido de la etapa 1 (`decisiones/presupuestos.md` → *Etapas*). Cerrarla: la suite entera
+  de SQL y de e2e, como pide `CLAUDE.md` al cerrar un módulo, y los datos de la empresa del impreso, que siguen como marcadores.
+  Después, la etapa 2: la ficha de `erp-cliente`. Esto no está en la ficha:
   - **Del 4, con el portal:** no aprobar si un mínimo hace que el total difiera de lo que confirmó el cliente (etapa 2).
   - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`
     con versión `en_revision`, y por fila `presupuestos_puede_autorizar('comercial', obra)`; si la lista crece, una función que lo

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, ChevronRight, CircleCheck, FileText, Plus, SearchX, UserRound } from "lucide-react";
+import { Building2, Calculator, ChevronRight, CircleCheck, FileText, Plus, SearchX, UserRound } from "lucide-react";
 import { Paginacion, usePaginado } from "@/components/ui/Paginacion";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Vacio } from "@/components/ui/Vacio";
@@ -83,6 +83,10 @@ export function PresupuestosView({
             <Plus size={16} />
             Nuevo presupuesto
           </button>
+          <Link href="/presupuestos/calculadora" className="btn btn-secondary">
+            <Calculator size={16} />
+            Calculadora
+          </Link>
         </div>
       )}
       <div className="mb-4 flex flex-wrap items-center gap-3">

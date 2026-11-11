@@ -729,6 +729,13 @@ ficha; la página en `app/` compone los dos, como la sección en la obra. Sin `o
 espera aprobación: el presupuesto se arma y no se publica, como ya frena la base. Se descartó ir a Obras y volver con lo cargado en
 la URL: más código, y la ventana se perdía si Juan se iba por otro lado.
 
+**La calculadora calcula con *Calcular*, y cambiar algo borra el resultado; *Llevar a un presupuesto* sale solo con precio y, al
+crear, abre el editor de la v1 (2026-11-11).** Lo que se lleva es lo que está a la vista: con el resultado viejo en pantalla, Juan
+mandaba otra medida. Sin precio no hay qué llevar, y el porqué ya está en el resultado. Sin ventana, el alta sigue yendo a la ficha.
+Cambiar de paquete pasa lo cargado por nombre, como en el renglón (`pasarAPaquete`). *+ Nueva obra* está solo en el alta que abre la
+calculadora: desde la lista no hay nada cargado que perder. El total suma los mínimos a la ventana, y es el subtotal del editor
+al crear. `CalculadoraVenta.tsx`, `calcularVentana`, `app/(erp-app)/presupuestos/calculadora/`, `e2e/datos-calculadora.sql`.
+
 ## La base
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y

@@ -153,7 +153,16 @@ function AvisoParecidas({ items, verbo }: { items: ParecidaAviso[]; verbo: strin
 
 const claseForm = "flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4";
 
-export function AltaObraPanel({ Quien, onClose }: { Quien: QuienSlot; onClose: () => void }) {
+// Con `onCreada` (la calculadora de Presupuestos), vuelve con la obra en lugar de ir a su ficha.
+export function AltaObraPanel({
+  Quien,
+  onCreada,
+  onClose,
+}: {
+  Quien: QuienSlot;
+  onCreada?: (obra: { id: string; nombre: string }) => void;
+  onClose: () => void;
+}) {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
   const [quien, setQuien] = useState<Quien | null>(null);
@@ -187,7 +196,8 @@ export function AltaObraPanel({ Quien, onClose }: { Quien: QuienSlot; onClose: (
       return;
     }
     toast.success(parecidas ? "Obra creada: espera aprobación" : "Obra creada");
-    router.push(`/obras/${result.id}`);
+    if (onCreada) onCreada({ id: result.id, nombre: data.nombre.trim() });
+    else router.push(`/obras/${result.id}`);
     onClose();
   }
 

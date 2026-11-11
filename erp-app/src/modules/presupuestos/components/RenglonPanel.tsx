@@ -15,6 +15,7 @@ import type { VersionEditor } from "../queries";
 import {
   aFormularioEntrada,
   formatAlicuota,
+  pasarAPaquete,
   renglonCatalogoCampos,
   renglonManoSchema,
   type FormularioVenta,
@@ -78,8 +79,6 @@ export function RenglonCatalogoPanel({
   const malEscrita = formulario !== null && hayMalEscrita(formulario, estado);
   const fueraDeVenta = renglon?.paquete_id && !paquetes.some((p) => p.paquete_id === renglon.paquete_id);
 
-  // Lo cargado pasa al paquete nuevo por nombre: el ancho y el alto no se escriben de nuevo. Un color o un insumo que el
-  // nuevo no ofrece no pasa: el select lo mostraría vacío y la entrada lo mandaría igual.
   async function elegirPaquete(id: string) {
     const antes: Entrada = formulario ? aEntrada(estado, formulario) : {};
     setTocado(true);
@@ -98,14 +97,7 @@ export function RenglonCatalogoPanel({
       setEstado(ESTADO_VACIO);
       return;
     }
-    const nuevo = desdeEntrada(antes, f);
-    if (!f.colores.some((c) => c.id === nuevo.color)) nuevo.color = "";
-    for (const [material, insumo] of Object.entries(nuevo.elecciones)) {
-      if (insumo !== "ninguna" && !f.opciones.some((o) => o.material_id === material && o.insumo_id === insumo)) {
-        delete nuevo.elecciones[material];
-      }
-    }
-    setEstado(nuevo);
+    setEstado(pasarAPaquete(antes, f));
     setOpcionales((o) => o.filter((s) => f.servicios.some((x) => x.id === s)));
   }
 
