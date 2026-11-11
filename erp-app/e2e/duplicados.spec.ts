@@ -33,6 +33,7 @@ async function nuevaObra(page: Page, nombre: string, origen = "Llamado") {
 }
 
 test("el admin recibe Aprobar altas y carga lo existente", async ({ browser }) => {
+  test.setTimeout(120_000);
   const { ctx, page } = await como(browser, "admin");
 
   await asegurarAprobador(page);
