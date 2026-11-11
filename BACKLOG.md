@@ -90,18 +90,18 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   La migración que piden ya está aplicada (`sql/194`: nombre congelado, `importe_con_iva` por renglón, freno de `contratada`). Hechos la lista
   (`/presupuestos`, con sus tres filtros), el alta (botón *Nuevo presupuesto* en la lista, panel con obra, nombre, moneda, IVA y sección; `presupuestos_alta`) y la ficha, de solo lectura: encabezado y una tarjeta por variante con sus versiones; los recorre `e2e/presupuestos.spec.ts`. El editor va por tramos: hechas la lectura (2026-11-11, `/presupuestos/[id]/[version]`: secciones, renglones, líneas de debajo, renglones aparte y totales por moneda, con `sql/195`) , la edición de los datos de la versión y las secciones, los renglones a mano y de Catálogo (2026-11-11, `sql/196`, con el formulario de la calculadora en `components/entrada/`) y los opcionales (2026-11-11: cómo se ve cada uno, y debajo de cada ventana la casilla o el botón; `decisiones/presupuestos.md` → *Pantallas*), y *Antes de publicar* (2026-11-11: pedir, publicar, retirar, autorizar y devolver; tope y plazo de prueba en la base y Tester como vendedor, `e2e/datos-autorizaciones.sql`), y mantener o pasar a hoy cada ventana copiada (2026-11-11: en el `⋯` de cada renglón y de la versión, `e2e/datos-mantener.sql`). Hechas también las acciones de la ficha (2026-11-11: nombre, corregir, sumar variante, quitar y descartar un borrador, y en el encabezado aprobar, rechazar, revertir y desactivar; `decisiones/presupuestos.md` → *Pantallas*), y Revisión técnica (2026-11-11: `/presupuestos/revision`, una fila por versión, y `/presupuestos/revision/[version]`, lo que espera arriba y el resto debajo, con lo cargado y *Ver despiece* en Catálogo; `sql/197`, `e2e/datos-revision.sql`), y Configuración (2026-11-11: `/presupuestos/configuracion`, lo vigente con *Cambiar* y el
   historial; sin SQL nuevo), y el impreso (2026-11-11: `/presupuestos/[id]/imprimir`, *Imprimir* en la ficha; lo cargado de cada
-  ventana con `sql/198`; datos de la empresa como marcadores en `modules/presupuestos/empresa.ts`, a completar), y la sección en la
+  ventana con `sql/198`; datos de la empresa en `modules/presupuestos/empresa.ts`), y la sección en la
   obra (2026-11-11: debajo del encabezado, y *Nuevo presupuesto* con la obra puesta; sin SQL nuevo), y el aviso de obra perdida en
   el editor (2026-11-11, `decisiones/presupuestos.md` → *Pantallas*; sin SQL nuevo), y en la lista de Obras el contador
   "Contratada · 1 en cotización" (2026-11-11, `decisiones/obras.md` → *Los estados son solo comerciales*; sin SQL nuevo), y
   "Llevar a un presupuesto" (2026-11-11: `/presupuestos/calculadora` con los mínimos, el alta con la ventana y *+ Nueva obra*
   encima; `sql/199`, `e2e/datos-calculadora.sql`, `decisiones/presupuestos.md` → *Pantallas*, las cuatro últimas).
-  **Siguiente:** con esto está todo lo decidido de la etapa 1 (`decisiones/presupuestos.md` → *Etapas*). Suite entera al cerrarla
+  Con esto está cerrada la etapa 1 (`decisiones/presupuestos.md` → *Etapas*). Suite entera al cerrarla
   (2026-11-11): SQL, los 56 archivos de `sql/tests/` en Postgres local, 5654 / 5654, y las funciones de la base iguales a `sql/`;
   e2e, 45 / 45 de a uno. Al repetir pasaron dos: `duplicados.spec.ts:35`, que corría con 30 s (ahora 120, como sus hermanos), y
   `presupuestos.spec.ts:162`, con el `⋯` de la versión que no abrió. Si vuelve: `OverflowMenu` se cierra con cualquier `scroll`,
-  aunque el botón no se haya movido. Falta: los datos de la empresa del impreso, que siguen como marcadores.
-  Después, la etapa 2: la ficha de `erp-cliente`. Esto no está en la ficha:
+  aunque el botón no se haya movido.
+  **Siguiente:** la etapa 2, la ficha de `erp-cliente`. Esto no está en la ficha:
   - **Del 4, con el portal:** no aprobar si un mínimo hace que el total difiera de lo que confirmó el cliente (etapa 2).
   - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`
     con versión `en_revision`, y por fila `presupuestos_puede_autorizar('comercial', obra)`; si la lista crece, una función que lo

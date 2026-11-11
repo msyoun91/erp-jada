@@ -623,7 +623,7 @@ más donde buscar la acción).
 
 **El impreso: solo lo publicado, y los datos de la empresa en un archivo de la app (decisión del usuario, 2026-11-10).** Publicado,
 todas las variantes; aprobado, la aprobada; rechazado, la última de cada una; un borrador no se imprime. Empresa: logo y datos fijos
-como marcadores hasta tenerlos, sin tabla hasta que haga falta cambiarlos desde una pantalla. Cliente: nombre y dirección de la obra y
+en `empresa.ts` (razón social y CUIT, dirección, web), sin tabla hasta que haga falta cambiarlos desde una pantalla. Cliente: nombre y dirección de la obra y
 sus contactos con rol `cliente`.
 
 **El impreso dice lo cargado en cada ventana: medidas, color y lo elegido, con los nombres que da la base (decisión del usuario,
