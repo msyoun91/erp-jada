@@ -1,7 +1,9 @@
 import type { Entrada } from "@/lib/entrada";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
+import { hoyISO } from "@/lib/utils";
 import {
+  estaVencida,
   opcionalesDe,
   type AutorizacionVersion,
   type FormularioVenta,
@@ -107,6 +109,11 @@ export type FichaPresupuesto = Presupuesto & {
   // Quien mira arma en la obra y el presupuesto admite cambios (activo, en borrador o publicado); lo frenan igual la RLS y
   // las funciones.
   arma: boolean;
+  // Aprobado o rechazado, quien mira autoriza lo comercial en la obra: revierte (*Quién accede*).
+  revierte: boolean;
+  // De cada publicada vencida, cuándo se calculó el precio más viejo de sus renglones (mantenido, el del origen): el aviso
+  // al aprobar. Solo para quien arma.
+  precios_del: Record<string, string>;
 };
 
 export async function getPresupuesto(id: string): Promise<FichaPresupuesto | null> {
@@ -121,13 +128,33 @@ export async function getPresupuesto(id: string): Promise<FichaPresupuesto | nul
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
+  const versiones = data.versiones.map(({ activo: _, ...v }) => v).sort((a, b) => b.numero - a.numero);
   let arma = false;
+  let revierte = false;
+  const precios_del: Record<string, string> = {};
   if (data.activo && (data.estado === "borrador" || data.estado === "publicado")) {
     const r = await supabase.rpc("presupuestos_arma", { p_obra: data.obra.id });
     if (r.error) throw r.error;
     arma = r.data;
+  } else if (data.estado === "aprobado" || data.estado === "rechazado") {
+    const r = await supabase.rpc("presupuestos_puede_autorizar", { p_obra: data.obra.id, p_tipo: "comercial" });
+    if (r.error) throw r.error;
+    revierte = r.data;
   }
-  return { ...data, versiones: data.versiones.map(({ activo: _, ...v }) => v).sort((a, b) => b.numero - a.numero), arma };
+  const hoy = hoyISO();
+  const vencidas = versiones.filter((v) => estaVencida(v, hoy)).map((v) => v.id);
+  if (arma && data.estado === "publicado" && vencidas.length > 0) {
+    const r = await supabase
+      .from("presupuestos_renglones")
+      .select("version_id, condiciones_en")
+      .in("version_id", vencidas)
+      .eq("activo", true)
+      .not("condiciones_en", "is", null)
+      .order("condiciones_en");
+    if (r.error) throw r.error;
+    for (const x of r.data) if (x.condiciones_en) precios_del[x.version_id] ??= x.condiciones_en;
+  }
+  return { ...data, versiones, arma, revierte, precios_del };
 }
 
 type Tablas = Database["public"]["Tables"];

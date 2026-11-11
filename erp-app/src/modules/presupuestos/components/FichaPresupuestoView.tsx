@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Building2, ChevronRight } from "lucide-react";
-import { ENTES } from "@/lib/entes";
-import { formatFecha } from "@/lib/utils";
+import { ENTES, MOTIVO_PERDIDA } from "@/lib/entes";
+import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
 import type { FichaPresupuesto } from "../queries";
-import { estadoVersion } from "../types";
-import { AccionesVariante, EditarNombre } from "./AccionesFicha";
+import { estadoVersion, estaVencida } from "../types";
+import { AccionesPresupuesto, AccionesVariante, EditarNombre, type Aprobable } from "./AccionesFicha";
 
 const QUITADA = { label: "Quitada", badge: "badge-neutral" };
 
@@ -14,8 +14,42 @@ export function FichaPresupuestoView({
   presupuesto: FichaPresupuesto;
 }) {
   const variantes = Map.groupBy(p.versiones, (v) => v.variante);
+  const grupos = [...variantes]
+    .sort(([a], [b]) => a - b)
+    .map(([variante, versiones]) => ({
+      variante,
+      versiones,
+      nombre:
+        versiones.find((v) => v.variante_nombre)?.variante_nombre ??
+        (variantes.size > 1 ? `Variante ${variante}` : "Presupuesto"),
+    }));
   const estado = ENTES.presupuesto.estados[p.estado];
   const publicadas = p.versiones.filter((v) => v.estado === "publicado").length;
+  const hoy = hoyISO();
+  const aprobables: Aprobable[] = grupos.flatMap((g) =>
+    g.versiones
+      .filter((v) => v.estado === "publicado")
+      .map((v) => {
+        const dias = v.vence && estaVencida(v, hoy) ? diasEntreISO(v.vence, hoy) : null;
+        const del = p.precios_del[v.id];
+        return {
+          id: v.id,
+          numero: v.numero,
+          nombre: g.nombre,
+          vencida:
+            dias === null
+              ? null
+              : `Vencida hace ${dias} ${dias === 1 ? "día" : "días"}${del ? `: los precios son del ${formatFecha(del)}` : ""}.`,
+        };
+      }),
+  );
+  const abiertas = p.versiones
+    .filter((v) => v.estado === "borrador" || v.estado === "en_revision")
+    .map((v) => v.numero)
+    .sort((a, b) => a - b);
+  // Rechazado, el motivo y el detalle; publicado con nota, la causa de una reversión (`estado_nota`).
+  const motivo = p.motivo_rechazo ? MOTIVO_PERDIDA[p.motivo_rechazo].label : null;
+  const titulo = p.estado === "rechazado" ? motivo : p.estado === "publicado" && p.estado_nota ? "Revertido" : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -25,7 +59,17 @@ export function FichaPresupuestoView({
             {p.codigo} · {p.nombre}
           </h2>
           <span className={`badge ${estado.badge}`}>{estado.label}</span>
+          {!p.activo && <span className="badge badge-neutral">Desactivado</span>}
           {p.arma && <EditarNombre id={p.id} nombre={p.nombre} />}
+          {(p.arma || p.revierte) && (
+            <AccionesPresupuesto
+              id={p.id}
+              codigo={p.codigo ?? "El presupuesto"}
+              estado={p.estado}
+              aprobables={aprobables}
+              abiertas={abiertas}
+            />
+          )}
         </div>
         <p className="t-caption mt-1 flex items-center gap-1">
           <Building2 size={12} className="shrink-0" />
@@ -33,15 +77,15 @@ export function FichaPresupuestoView({
             {p.obra.nombre}
           </Link>
         </p>
-        {p.estado === "rechazado" && p.estado_nota && (
-          <p className="t-body-m mt-2">{p.estado_nota}</p>
+        {titulo && (
+          <p className="t-body-m mt-3 rounded-md bg-bg-subtle px-3 py-2">
+            <span className="font-semibold">{titulo}. </span>
+            {p.estado_nota}
+          </p>
         )}
       </div>
 
-      {[...variantes].sort(([a], [b]) => a - b).map(([variante, versiones]) => {
-        const nombre =
-          versiones.find((v) => v.variante_nombre)?.variante_nombre ??
-          (variantes.size > 1 ? `Variante ${variante}` : "Presupuesto");
+      {grupos.map(({ variante, versiones, nombre }) => {
         const publicada = versiones.find((v) => v.estado === "publicado");
         const abierta = versiones.find(
           (v) => v.estado === "borrador" || v.estado === "en_revision",

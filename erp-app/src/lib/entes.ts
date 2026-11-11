@@ -88,6 +88,18 @@ const presupuesto: Ente<Enums["estado_presupuesto"]> = {
 
 export const ENTES = { obra, persona, empresa, presupuesto };
 
+// Por qué se perdió una obra o se rechazó un presupuesto. El ejemplo guía el detalle libre (`decisiones/obras.md` → *El motivo
+// de pérdida*).
+export const MOTIVO_PERDIDA: Record<Enums["motivo_perdida"], { label: string; ejemplo: string }> = {
+  precio: { label: "Precio", ejemplo: "Estuvimos 10% más caros" },
+  plazo: { label: "Plazo", ejemplo: "Necesitaban la entrega en marzo" },
+  producto: { label: "Producto", ejemplo: "Pedían corredizas de PVC" },
+  proveedor_habitual: { label: "Proveedor habitual", ejemplo: "Siguen con el de la obra anterior" },
+  obra_suspendida: { label: "Obra suspendida", ejemplo: "Frenaron por financiamiento" },
+  sin_respuesta: { label: "Sin respuesta", ejemplo: "Tres llamados sin contestar" },
+  otro: { label: "Otro", ejemplo: "Contá qué pasó" },
+};
+
 export type CodigoEnte = keyof typeof ENTES;
 
 // Un vínculo de Contactos trae el ente como texto: el que no está acá se muestra crudo.

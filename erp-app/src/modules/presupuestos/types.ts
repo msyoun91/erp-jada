@@ -8,7 +8,7 @@ import {
   type VariableEntrada,
 } from "@/lib/entrada";
 import { MONEDAS_LISTA } from "@/lib/monedas";
-import type { Database } from "@/lib/supabase/database.types";
+import { Constants, type Database } from "@/lib/supabase/database.types";
 import { idSchema, textoOpcional } from "@/lib/validacion";
 
 type Enums = Database["public"]["Enums"];
@@ -32,6 +32,30 @@ export type AltaForm = z.input<typeof altaSchema>;
 
 export const nombreSchema = altaSchema.pick({ nombre: true }).extend({ id: idSchema });
 export type NombreForm = z.input<typeof nombreSchema>;
+
+export const aprobarSchema = z.object({ version: z.string().uuid("Elegí la variante que aprobó el cliente") });
+export type AprobarForm = z.input<typeof aprobarSchema>;
+
+// Con "otro", el detalle (PR022); la nota va de 1 a 500.
+export const rechazarSchema = z
+  .object({
+    id: idSchema,
+    motivo: z.enum(Constants.public.Enums.motivo_perdida, "Elegí el motivo"),
+    detalle: textoOpcional(500),
+  })
+  .refine((v) => v.motivo !== "otro" || v.detalle !== null, { message: "Contá qué pasó", path: ["detalle"] });
+export type RechazarForm = z.input<typeof rechazarSchema>;
+
+export const revertirSchema = z.object({
+  id: idSchema,
+  causa: z.string().trim().min(1, "Escribí por qué se revierte").max(500, "Máximo 500 caracteres"),
+});
+export type RevertirForm = z.input<typeof revertirSchema>;
+
+// Vencida se calcula, no se guarda: sigue publicada (decisiones/presupuestos.md → *Precio*).
+export function estaVencida(v: { estado: Enums["estado_version_presupuesto"]; vence: string | null }, hoy: string) {
+  return v.estado === "publicado" && v.vence !== null && v.vence < hoy;
+}
 
 export const datosVersionSchema = z.object({
   id: idSchema,

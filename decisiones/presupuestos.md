@@ -602,6 +602,17 @@ publicado; frena igual la base (PR003, PR005, PR006, PR015, PR016, PR027). La ú
 *Quitada*, no *Reemplazada*: nada la reemplazó (solo en la ficha; el editor no ve las demás versiones). Las tarjetas van por número
 de variante. `AccionesFicha.tsx`, `FichaPresupuestoView.tsx`.
 
+**Aprobar, rechazar, revertir y desactivar van en el encabezado de la ficha: *Aprobar* y *Rechazar* a la vista con el
+presupuesto publicado; *Revertir…* y *Desactivar…*, en el `⋯` (2026-11-11).** Aprobar y rechazar son lo de todos los días de un
+publicado; revertir corrige un error, y desactivar es de un borrador (`GUIDE_DESIGN.md` → *Ficha de detalle*). Aprobar, con dos
+variantes publicadas o más, pide cuál eligió el cliente sin una marcada, para no aprobar la equivocada de un clic; dice que las demás
+quedan inhabilitadas, que la obra queda contratada y qué versiones abiertas se descartan. Si la elegida venció: "Vencida hace 3 días:
+los precios son del 1/10/26", con el `condiciones_en` más viejo de sus renglones (mantenido, es el del origen); solo a mano, sin la
+fecha. Rechazar pide el motivo de Obras y, con *Otro*, el detalle; revertir, la causa. El encabezado muestra el motivo y el detalle
+del rechazo, y "Revertido." con la causa mientras siga publicado. Aprobar y rechazar, quien arma; revertir, quien autoriza lo
+comercial en la obra (`presupuestos_puede_autorizar`). Desactivar vuelve a la lista. El mapa de motivos subió de `obras/etiquetas.ts`
+a `lib/entes.ts` (`MOTIVO_PERDIDA`): lo usan los dos módulos. `AccionesFicha.tsx`, `FichaPresupuestoView.tsx`, `getPresupuesto`.
+
 **Sumar variante copia la publicada de esa variante, o la abierta si nunca se publicó (decisión del usuario, 2026-11-11).** Con
 Aluminio v2 publicada y v3 en borrador, PVC sale de la v2: mantener en PVC deja los precios que vio el cliente. Se descartaron copiar
 la más nueva (mantener quedaba con precios de un borrador que el cliente no vio) y un botón en el editor de cada versión (un lugar

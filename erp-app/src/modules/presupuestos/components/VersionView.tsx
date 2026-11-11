@@ -3,7 +3,7 @@ import { Building2, TriangleAlert } from "lucide-react";
 import { formatMonto, MONEDAS, type Moneda } from "@/lib/monedas";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import type { VersionEditor } from "../queries";
-import { estadoVersion, formatAlicuota } from "../types";
+import { estadoVersion, estaVencida, formatAlicuota } from "../types";
 import { AccionesRenglon, AgregarRenglon } from "./AccionesRenglon";
 import { AccionesSeccion, NuevaSeccion } from "./AccionesSeccion";
 import { AccionesVersion } from "./AccionesVersion";
@@ -53,8 +53,7 @@ export function VersionView({
   const delRenglon = new Map(
     importes.filter((i) => i.clave === null).map((i) => [i.renglon_id, i]),
   );
-  const vencida =
-    v.estado === "publicado" && v.vence !== null && v.vence < hoyISO();
+  const vencida = estaVencida(v, hoyISO());
 
   return (
     <div className="flex flex-col gap-4">

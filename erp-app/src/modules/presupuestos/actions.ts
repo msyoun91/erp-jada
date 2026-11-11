@@ -8,22 +8,28 @@ import { idSchema } from "@/lib/validacion";
 import { errorDeUpdate, mensajeError } from "@/lib/utils";
 import {
   altaSchema,
+  aprobarSchema,
   datosVersionSchema,
   devolverSchema,
   nombreSchema,
   opcionalesSchema,
+  rechazarSchema,
   renglonCatalogoSchema,
   renglonManoSchema,
+  revertirSchema,
   seccionSchema,
   todasSeccionesSchema,
   type AltaForm,
+  type AprobarForm,
   type DatosVersionForm,
   type DevolverForm,
   type FormularioVenta,
   type NombreForm,
   type OpcionalesForm,
+  type RechazarForm,
   type RenglonCatalogoForm,
   type RenglonManoForm,
+  type RevertirForm,
   type SeccionForm,
   type TodasSeccionesForm,
 } from "./types";
@@ -100,6 +106,46 @@ export async function quitarVariante(version: string): Promise<Resultado> {
   if (!parsed.success) return invalido(parsed.error.issues);
   const supabase = await createClient();
   const { error } = await supabase.rpc("presupuestos_variante_quitar", { p_version: parsed.data });
+  return trasGuardar(error ? mensajeError(error) : null);
+}
+
+// Solo un borrador: lo publicado se aprueba o se rechaza (PR001). No vuelve (PR002).
+export async function desactivarPresupuesto(id: string): Promise<Resultado> {
+  const parsed = idSchema.safeParse(id);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  return trasGuardar(
+    errorDeUpdate(await supabase.from("presupuestos").update({ activo: false }, { count: "exact" }).eq("id", parsed.data))
+  );
+}
+
+// Aprobar, rechazar y revertir descartan lo abierto y mueven la obra en la base (`sql/191`).
+export async function aprobarPresupuesto(input: AprobarForm): Promise<Resultado> {
+  const parsed = aprobarSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("presupuestos_aprobar", { p_version: parsed.data.version });
+  return trasGuardar(error ? mensajeError(error) : null);
+}
+
+export async function rechazarPresupuesto(input: RechazarForm): Promise<Resultado> {
+  const parsed = rechazarSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const d = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("presupuestos_rechazar", {
+    p_presupuesto: d.id,
+    p_motivo: d.motivo,
+    ...(d.detalle ? { p_detalle: d.detalle } : {}),
+  });
+  return trasGuardar(error ? mensajeError(error) : null);
+}
+
+export async function revertirPresupuesto(input: RevertirForm): Promise<Resultado> {
+  const parsed = revertirSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("presupuestos_revertir", { p_presupuesto: parsed.data.id, p_causa: parsed.data.causa });
   return trasGuardar(error ? mensajeError(error) : null);
 }
 
