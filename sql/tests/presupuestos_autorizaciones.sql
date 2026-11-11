@@ -330,12 +330,18 @@ SELECT pg_temp.caso('01 el pedido no se escribe', '42501', pg_temp.cambia('presu
 -- Lo que lee Técnica
 SELECT pg_temp.caso('01 Juan no ve la cola de Técnica', '42501',
   pg_temp.consultar('SELECT count(*)::text FROM presupuestos_revision_pendientes()', 'Juan'));
-SELECT pg_temp.caso('01 Sofía ve la cola, con el número', 'V9 ["Muy alto"] ' || (SELECT codigo FROM presupuestos WHERE id = pg_temp.id('P1')),
-  pg_temp.consultar(format($q$SELECT string_agg(etiqueta || ' ' || motivos::text || ' ' || codigo, ',')
+SELECT pg_temp.caso('01 Sofía ve la cola, con el número, la versión y quién pidió', 'V9 ["Muy alto"] '
+  || (SELECT codigo FROM presupuestos WHERE id = pg_temp.id('P1')) || ' v1 ' || (SELECT nombre FROM usuarios WHERE id = pg_temp.id('Juan')),
+  pg_temp.consultar(format($q$SELECT string_agg(etiqueta || ' ' || motivos::text || ' ' || codigo || ' v' || version || ' ' || pedido_por_nombre, ',')
     FROM presupuestos_revision_pendientes() WHERE version_id = %s$q$, pg_temp.l('V1')), 'Sofia'));
+SELECT pg_temp.caso('01 la versión dice su número', (SELECT codigo FROM presupuestos WHERE id = pg_temp.id('P1')) || ' v1',
+  pg_temp.consultar(format($q$SELECT string_agg(DISTINCT codigo || ' v' || version, ',')
+    FROM presupuestos_revision_version(%s)$q$, pg_temp.l('V1')), 'Sofia'));
 SELECT pg_temp.caso('01 Sofía lee la versión completa', 'V4:-,V7:-,V9:pendiente', pg_temp.consultar(format($q$
   SELECT string_agg(designacion || ':' || coalesce(pedido_estado::text, '-'), ',' ORDER BY designacion)
   FROM presupuestos_revision_version(%s)$q$, pg_temp.l('V1')), 'Sofia'));
+SELECT pg_temp.caso('01 sin autorizar, nada cubierto', 'false', pg_temp.consultar(format($q$
+  SELECT string_agg(DISTINCT cubierta::text, ',') FROM presupuestos_revision_version(%s)$q$, pg_temp.l('V1')), 'Sofia'));
 SELECT pg_temp.caso('01 sin precios', '0', pg_temp.consultar(format($q$
   SELECT count(*)::text FROM presupuestos_revision_version(%s) x WHERE row_to_json(x)::text ~ '220000|264000|319000|227000'$q$,
   pg_temp.l('V1')), 'Sofia'));
@@ -468,6 +474,10 @@ SELECT pg_temp.copiar('V5', 'V4', 'G');
 SELECT pg_temp.caso('04 una alerta nueva', 'ok', pg_temp.renglon('L12', 'V5', 'V12', pg_temp.e(1000, 2700), 'G'));
 SELECT pg_temp.caso('04 gerencia autoriza también lo de Técnica', 'publicado/tecnica autorizada', pg_temp.pedir('V5', 'G')
   || '/' || pg_temp.pedidos('V5'));
+SELECT pg_temp.caso('04 en la v5, las iguales siguen cubiertas sin pedido propio', 'V10:-:true,V11:-:true,V12:autorizada:true,V4:-:false',
+  pg_temp.consultar(format($q$SELECT string_agg(designacion || ':' || coalesce(pedido_estado::text, '-') || ':' || cubierta, ','
+    ORDER BY designacion) FROM presupuestos_revision_version(%s) WHERE designacion IN ('V4', 'V10', 'V11', 'V12')$q$,
+    pg_temp.l('V5')), 'Sofia'));
 
 -- ============================================================
 -- 05. Lo que no se llama desde afuera

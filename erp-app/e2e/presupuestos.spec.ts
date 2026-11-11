@@ -361,6 +361,8 @@ test("admin mantiene o pasa a hoy cada ventana copiada, y todas juntas", async (
   const confirmar = (boton: string) => page.getByRole("dialog").getByRole("button", { name: boton }).click();
 
   await page.goto("/presupuestos");
+  // La lista se pagina, y cada corrida suma presupuestos: se busca.
+  await page.getByPlaceholder("Buscar por número, nombre u obra…").fill("Mantener Zqx198");
   await page.getByRole("link", { name: /Mantener Zqx198/ }).click();
   await page.getByRole("link", { name: /Versión 2/ }).click();
   const version = tarjeta(page, "Versión 2");
@@ -373,6 +375,8 @@ test("admin mantiene o pasa a hoy cada ventana copiada, y todas juntas", async (
     await page.getByRole("button", { name: "Todas a hoy…" }).click();
     await expect(page.getByRole("dialog").getByText("Las ventanas y los mínimos se recalculan")).toBeVisible();
     await confirmar("Pasar a hoy");
+    // Arranca ya a hoy: lo de abajo se cumple antes de que vuelva la acción, y la página redibujada cerraba el menú siguiente.
+    await expect(page.getByRole("dialog")).toBeHidden();
     await expect(page.getByText(/^Precios del/)).toHaveCount(0);
     await expect(delJefe).toHaveCount(0);
   };
@@ -613,4 +617,161 @@ test("admin aprueba, rechaza y revierte; tester no revierte; un borrador se desa
 
   await vendedor.ctx.close();
   await ctx.close();
+});
+
+// Necesita e2e/datos-revision.sql (y antes datos-opcionales.sql y datos-autorizaciones.sql): el paquete Zqx198, que avisa
+// sobre 2000 de alto, y Tester 2 como Técnica. La obra no puede estar congelada: publicar la mueve a cotización (OB018).
+test("tester pide por una alerta; Técnica la ve sin precios, mira el despiece, devuelve y autoriza", async ({ browser }) => {
+  test.setTimeout(240_000);
+  const vendedor = await como(browser, "tester");
+  const tecnica = await como(browser, "tester2");
+  const page = vendedor.page;
+  const t = tecnica.page;
+  const nombreRev = `Revisión ${marca}`;
+  const confirmar = (p: typeof page, boton: string) => p.getByRole("dialog").getByRole("button", { name: boton }).click();
+
+  await page.goto("/presupuestos");
+  await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+  const alta = panel(page);
+  await alta.getByLabel("Obra").selectOption({ label: "Edificio Norte Zqx20218 A" });
+  await alta.getByLabel("Nombre", { exact: true }).fill(nombreRev);
+  await alta.getByRole("button", { name: "Crear presupuesto" }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}$/);
+  await page.getByRole("link", { name: /Versión 1/ }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}\/[0-9a-f-]{36}$/);
+  const codigo = (await page.getByRole("link", { name: new RegExp(nombreRev) }).textContent())?.split(" · ")[0] ?? "";
+
+  const general = page.getByRole("region", { name: "General" });
+  for (const [designacion, alto] of [["V1", "2400"], ["V2", "1500"]]) {
+    await general.getByRole("button", { name: "De Catálogo" }).click();
+    const cat = panel(page);
+    await cat.getByLabel("Designación").fill(designacion);
+    await cat.getByLabel("Paquete").selectOption({ label: "Zqx198 Ventana alta" });
+    await cat.getByLabel(/^ancho/).fill("1200");
+    await cat.getByLabel(/^alto/).fill(alto);
+    await cat.getByRole("button", { name: "Agregar" }).click();
+    await expect(cat).toBeHidden();
+  }
+  const antes = page.getByRole("region", { name: "Antes de publicar" });
+  const deTecnica = antes.getByRole("listitem").filter({ hasText: "De Técnica · V1" });
+  await expect(deTecnica.getByText("Falta pedirla")).toBeVisible();
+  await antes.getByRole("button", { name: "Pedir autorización" }).click();
+  await confirmar(page, "Pedir");
+  await expect(deTecnica.getByText("Pendiente")).toBeVisible();
+
+  // Técnica no tiene la lista: el menú la lleva a su pestaña, una fila por versión.
+  await t.goto("/presupuestos");
+  await expect(t).toHaveURL(/\/presupuestos\/revision$/);
+  const fila = t.getByRole("link", { name: new RegExp(`^${codigo} · v1`) });
+  await expect(fila.getByText("Muy alta para una hoja")).toBeVisible();
+  await expect(fila.getByText(/^Tester ·/)).toBeVisible();
+  await t.screenshot({ path: "e2e/.out/pres-revision-lista.png", fullPage: true });
+
+  await fila.click();
+  await expect(t.getByRole("heading", { name: `${codigo} · v1` })).toBeVisible();
+  const esperan = t.getByRole("region", { name: "Esperan tu revisión" });
+  const v1 = esperan.getByRole("listitem").filter({ hasText: "V1" });
+  await expect(v1.getByText("ancho 1200 · alto 2400")).toBeVisible();
+  await expect(v1.getByText("Muy alta para una hoja")).toBeVisible();
+  const resto = t.getByRole("region", { name: "El resto de la versión" });
+  await expect(resto.getByText("ancho 1200 · alto 1500")).toBeVisible();
+  // La barra lateral muestra los tipos de cambio: los precios, en la página.
+  await expect(t.getByRole("main").getByText("$")).toHaveCount(0);
+  await expect(t.getByRole("main").getByText(nombreRev)).toHaveCount(0);
+  await t.screenshot({ path: "e2e/.out/pres-revision-version.png", fullPage: true });
+
+  // El despiece, en Catálogo, con lo cargado en la ventana.
+  await v1.getByRole("link", { name: "Ver despiece" }).click();
+  await expect(t).toHaveURL(/\/catalogo\/paquetes\/versiones\/[0-9a-f-]{36}\?entrada=/);
+  await expect(t.getByLabel("Caso de prueba")).toHaveValue("ventana");
+  await expect(t.getByLabel(/^alto/)).toHaveValue("2400");
+  await expect(t.getByText("Muy alta para una hoja")).toBeVisible();
+  await t.screenshot({ path: "e2e/.out/pres-revision-despiece.png", fullPage: true });
+  await t.goBack();
+
+  // Devolver una ventana devuelve la versión entera.
+  await v1.getByRole("button", { name: "Devolver" }).click();
+  const devolver = panel(t);
+  await devolver.getByLabel("Motivo").fill("Con 2400 de alto lleva refuerzo");
+  await devolver.getByRole("button", { name: "Devolver" }).click();
+  await expect(devolver).toBeHidden();
+  await expect(t.getByText("Nada espera tu revisión en esta versión.")).toBeVisible();
+  await expect(t.getByRole("region", { name: "La versión" }).getByText("Devuelta")).toBeVisible();
+
+  await page.reload();
+  await expect(antes.getByText("Con 2400 de alto lleva refuerzo")).toBeVisible();
+  await antes.getByRole("button", { name: "Pedir autorización" }).click();
+  await confirmar(page, "Pedir");
+  await expect(deTecnica.getByText("Pendiente")).toBeVisible();
+
+  await t.goto("/presupuestos/revision");
+  await fila.click();
+  await v1.getByRole("button", { name: "Autorizar" }).click();
+  await confirmar(t, "Autorizar");
+  await expect(t.getByText("Nada espera tu revisión en esta versión.")).toBeVisible();
+  await expect(t.getByRole("region", { name: "La versión" }).getByRole("listitem").filter({ hasText: "V1" }).getByText("Autorizada")).toBeVisible();
+  await t.screenshot({ path: "e2e/.out/pres-revision-autorizada.png", fullPage: true });
+  await t.goto("/presupuestos/revision");
+  await expect(fila).toHaveCount(0);
+
+  // Publica quien armó.
+  await page.reload();
+  await expect(deTecnica.getByText("Autorizada", { exact: true })).toBeVisible();
+  await antes.getByRole("button", { name: "Publicar" }).click();
+  await confirmar(page, "Publicar");
+  await expect(page.getByText("Publicada", { exact: true })).toBeVisible();
+
+  await vendedor.ctx.close();
+  await tecnica.ctx.close();
+});
+
+test("admin cambia el tope y el plazo, el historial lo guarda; tester no ve Configuración", async ({ browser }) => {
+  const admin = await como(browser, "admin");
+  const tester = await como(browser, "tester");
+  const page = admin.page;
+
+  await page.goto("/presupuestos");
+  await page.locator('[data-tour="presupuestos_tabs"]').getByRole("link", { name: "Configuración" }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/configuracion$/);
+  const vigente = page.getByRole("region", { name: "Vigente" });
+  await expect(vigente.getByText(/^Desde el /)).toBeVisible();
+
+  // Lo que había vuelve al final: los demás tests cuentan con el tope de prueba.
+  await vigente.getByRole("button", { name: "Cambiar" }).click();
+  const cambiar = panel(page);
+  const tope = cambiar.getByLabel(/^Descuento sin autorización/);
+  const plazo = cambiar.getByLabel(/^Plazo de vencimiento/);
+  const antes = { tope: await tope.inputValue(), plazo: await plazo.inputValue() };
+  await tope.fill("");
+  await plazo.fill("400");
+  await cambiar.getByRole("button", { name: "Guardar" }).click();
+  await expect(cambiar.getByText("Escribí el tope")).toBeVisible();
+  await expect(cambiar.getByText("Hasta 365 días")).toBeVisible();
+  await tope.fill("12.5");
+  await plazo.fill("20");
+  await cambiar.getByRole("button", { name: "Guardar" }).click();
+  await expect(cambiar).toBeHidden();
+  await expect(vigente.getByText("hasta 12,5 %")).toBeVisible();
+  await expect(vigente.getByText("20 días")).toBeVisible();
+  await expect(vigente.getByText(/· Admin$/)).toBeVisible();
+  const historial = page.getByRole("region", { name: "Historial" });
+  await expect(historial.getByRole("listitem").first()).toContainText("12,5 % · 20 días");
+  await expect(historial.getByRole("listitem").nth(1)).toContainText(`${antes.tope.replace(".", ",")} % · ${antes.plazo} días`);
+  await page.screenshot({ path: "e2e/.out/pres-configuracion.png", fullPage: true });
+
+  await vigente.getByRole("button", { name: "Cambiar" }).click();
+  await panel(page).getByLabel(/^Descuento sin autorización/).fill(antes.tope);
+  await panel(page).getByLabel(/^Plazo de vencimiento/).fill(antes.plazo);
+  await panel(page).getByRole("button", { name: "Guardar" }).click();
+  await expect(panel(page)).toBeHidden();
+  await expect(historial.getByRole("listitem").first()).toContainText(`${antes.tope.replace(".", ",")} % · ${antes.plazo} días`);
+
+  // Tester arma, pero no configura: sin la pestaña y sin la página.
+  await tester.page.goto("/presupuestos");
+  await expect(tester.page.locator('[data-tour="presupuestos_tabs"]')).toHaveCount(0);
+  await tester.page.goto("/presupuestos/configuracion");
+  await expect(tester.page.getByText("No encontramos esta página")).toBeVisible();
+
+  await admin.ctx.close();
+  await tester.ctx.close();
 });
