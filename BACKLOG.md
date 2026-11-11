@@ -96,8 +96,11 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   "Contratada · 1 en cotización" (2026-11-11, `decisiones/obras.md` → *Los estados son solo comerciales*; sin SQL nuevo), y
   "Llevar a un presupuesto" (2026-11-11: `/presupuestos/calculadora` con los mínimos, el alta con la ventana y *+ Nueva obra*
   encima; `sql/199`, `e2e/datos-calculadora.sql`, `decisiones/presupuestos.md` → *Pantallas*, las cuatro últimas).
-  **Siguiente:** con esto está todo lo decidido de la etapa 1 (`decisiones/presupuestos.md` → *Etapas*). Cerrarla: la suite entera
-  de SQL y de e2e, como pide `CLAUDE.md` al cerrar un módulo, y los datos de la empresa del impreso, que siguen como marcadores.
+  **Siguiente:** con esto está todo lo decidido de la etapa 1 (`decisiones/presupuestos.md` → *Etapas*). Suite entera al cerrarla
+  (2026-11-11): SQL, los 56 archivos de `sql/tests/` en Postgres local, 5654 / 5654, y las funciones de la base iguales a `sql/`;
+  e2e, 45 / 45 de a uno. Al repetir pasaron dos: `duplicados.spec.ts:35`, que corría con 30 s (ahora 120, como sus hermanos), y
+  `presupuestos.spec.ts:162`, con el `⋯` de la versión que no abrió. Si vuelve: `OverflowMenu` se cierra con cualquier `scroll`,
+  aunque el botón no se haya movido. Falta: los datos de la empresa del impreso, que siguen como marcadores.
   Después, la etapa 2: la ficha de `erp-cliente`. Esto no está en la ficha:
   - **Del 4, con el portal:** no aprobar si un mínimo hace que el total difiera de lo que confirmó el cliente (etapa 2).
   - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`
