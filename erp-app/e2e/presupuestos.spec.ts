@@ -158,6 +158,55 @@ test("admin carga renglones a mano y de Catálogo, los edita, duplica y saca", a
   await ctx.close();
 });
 
+test("admin carga dos ventanas seguidas con Seguir cargando", async ({ browser }) => {
+  test.setTimeout(120_000);
+  const ctx = await browser.newContext({ storageState: "e2e/.auth/admin.json" });
+  const page = await ctx.newPage();
+
+  await page.goto("/presupuestos");
+  await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+  const alta = panel(page);
+  await alta.getByLabel("Obra").selectOption({ index: 1 });
+  await alta.getByLabel("Nombre", { exact: true }).fill(`Seguidas ${marca}`);
+  await alta.getByRole("button", { name: "Crear presupuesto" }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}$/);
+  await page.getByRole("link", { name: /Versión 1/ }).click();
+  const general = page.getByRole("region", { name: "General" });
+
+  await general.getByRole("button", { name: "De Catálogo" }).click();
+  const cat = panel(page);
+  const paquete = cat.getByLabel("Paquete");
+  const cantidad = cat.locator("#renglon-cantidad");
+  await cat.getByLabel("Seguir cargando").check();
+  await cat.getByLabel("Designación").fill("V09");
+  await cat.getByLabel("Ubicación").fill("Lavadero");
+  await paquete.selectOption({ index: 1 });
+  const elegido = await paquete.inputValue();
+  await cat.getByLabel(/^Ancho/).fill("1200");
+  await cantidad.fill("2");
+  await cat.getByLabel(/^Alto/).fill("1000");
+  await cat.getByLabel(/^Alto/).press("Enter");
+
+  // Sigue abierto para la siguiente: avanza la designación, se limpian las medidas y queda el paquete.
+  await expect(cat.getByLabel("Designación")).toHaveValue("V10");
+  await expect(cat.getByLabel("Designación")).toBeFocused();
+  await expect(cat.getByLabel("Ubicación")).toHaveValue("");
+  await expect(cat.getByLabel(/^Ancho/)).toHaveValue("");
+  await expect(cat.getByLabel(/^Alto/)).toHaveValue("");
+  await expect(cantidad).toHaveValue("1");
+  await expect(paquete).toHaveValue(elegido);
+  await expect(general.getByRole("listitem").filter({ hasText: "V09" }).getByText(/Lavadero · 2 u\./)).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-renglon-seguir.png", fullPage: true });
+
+  await cat.getByLabel(/^Ancho/).fill("1500");
+  await cat.getByLabel(/^Alto/).fill("1100");
+  await cat.getByLabel("Seguir cargando").uncheck();
+  await cat.getByRole("button", { name: "Agregar" }).click();
+  await expect(cat).toBeHidden();
+  await expect(general.getByRole("listitem").filter({ hasText: "V10" })).toBeVisible();
+  await ctx.close();
+});
+
 // Necesita el paquete y el servicio de e2e/datos-opcionales.sql.
 test("admin elige cómo se ven los opcionales y los tilda en cada ventana", async ({ browser }) => {
   test.setTimeout(180_000);
