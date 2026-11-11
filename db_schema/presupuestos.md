@@ -11,7 +11,7 @@ Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el 
 2026-11-06. Tramo 3a — `sql/188` (copiar una versión, mantener o actualizar, lo que frena publicar, publicar y quitar una
 variante), aplicado el 2026-11-06. Tramo 3b — `sql/189` (pedir, autorizar, devolver y retirar; lo que frena separado de lo que
 pide autorización; la lectura de Técnica), aplicado el 2026-11-06. Tramo 3c — `sql/190` (el recargo de la comisión del referente), aplicado el 2026-11-10. Tramo 4 — `sql/191` (aprobar, rechazar, revertir y la obra que sigue a sus presupuestos), aplicado el
-2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10. Tramo 6 — `sql/194` (lo que pidieron las pantallas: nombre congelado, importe con IVA por renglón, freno de `contratada`), aplicado el 2026-11-10. `sql/195` (el editor: nombre y líneas de debajo en los importes), aplicado el 2026-11-11. `sql/196` (`catalogo_venta_formulario` con todas las piezas), aplicado el 2026-11-11. `sql/197` (Revisión técnica: el número de versión en las dos funciones de Técnica, quién pidió en la cola y qué ventana ya cubre una autorización), aplicado el 2026-11-11. `sql/198` (el impreso: los nombres de lo cargado en las ventanas), aplicado el 2026-11-11.
+2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10. Tramo 6 — `sql/194` (lo que pidieron las pantallas: nombre congelado, importe con IVA por renglón, freno de `contratada`), aplicado el 2026-11-10. `sql/195` (el editor: nombre y líneas de debajo en los importes), aplicado el 2026-11-11. `sql/196` (`catalogo_venta_formulario` con todas las piezas), aplicado el 2026-11-11. `sql/197` (Revisión técnica: el número de versión en las dos funciones de Técnica, quién pidió en la cola y qué ventana ya cubre una autorización), aplicado el 2026-11-11. `sql/198` (el impreso: los nombres de lo cargado en las ventanas), aplicado el 2026-11-11. `sql/199` (`presupuestos_alta` con una ventana opcional; test en `presupuestos_opcionales`), aplicado el 2026-11-11.
 
 ## Ver y armar: decide la obra
 
@@ -244,8 +244,10 @@ las funciones del ciclo (DEFINER).
 
 ## Funciones
 
-- `presupuestos_alta(obra, nombre, moneda, alicuota, seccion = 'General') → uuid` — INVOKER. El presupuesto, su v1 (variante 1)
-  y una sección. Sin armar en esa obra, 42501.
+- `presupuestos_alta(obra, nombre, moneda, alicuota, seccion = 'General', paquete = NULL, entrada = NULL, opcionales = NULL)
+  → uuid` — INVOKER. El presupuesto, su v1 (variante 1) y una sección. Sin armar en esa obra, 42501. Con paquete (`sql/199`,
+  "Llevar a un presupuesto"), también una ventana en esa sección, cantidad 1: la ponen los triggers de renglones, como desde el
+  editor; si falla (PR010), no queda nada.
 - `presupuestos_obra_desactivar` — trigger DEFINER sobre `obras` (BEFORE UPDATE OF activo): la obra con presupuestos activos
   no se desactiva (PR007).
 - `presupuestos_version_importes(version) → (renglon_id, seccion_id, moneda, alicuota, clave, nombre, importe, importe_con_iva, debajo)` — DEFINER (`sql/190`), con `presupuestos_ve`. `importe_con_iva` (`sql/194`) = redondear(importe × (1 + alícuota / 100)): con IVA incluido, editor, impreso y portal muestran ese número, no lo recalculan. Desde `sql/195`, lo que lee el cliente, porque quien arma no lee Catálogo: `nombre` en los renglones es el de la versión del paquete con que se calculó, o la descripción (a mano y mínimo); `debajo`, en los renglones, `[{clave, nombre, importe, importe_con_iva}]` de los opcionales que van debajo de la ventana, en el orden del cálculo, con el recargo y la cantidad (`[]` si no hay; NULL en el renglón aparte). No suman: ya están en el importe de la ventana. Una

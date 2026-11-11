@@ -733,7 +733,7 @@ la URL: más código, y la ventana se perdía si Juan se iba por otro lado.
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y
 mínimos (`sql/187`) · 3a versión nueva, mantener y publicar (`sql/188`) · 3b autorizaciones (`sql/189`) · 3c recargo del referente (`sql/190`) · 4 aprobar, rechazar y la
-obra (`sql/191`) · 5 avisos (`sql/192`–`sql/193`) · 6 pantallas (`sql/194`: nombre congelado PR027, `importe_con_iva`, freno de `contratada` PR028; test `presupuestos_pantallas`; `sql/195`: nombre y líneas de debajo en los importes, test en `presupuestos_opcionales`; `sql/196`: todas las piezas en el formulario de venta, test en `presupuestos_renglones`). Los tests de Obras que ponían `contratada` a mano desactivan `presupuestos_obra_estado` dentro de su transacción; el selector de estado de la obra ya no ofrece `contratada`.
+obra (`sql/191`) · 5 avisos (`sql/192`–`sql/193`) · 6 pantallas (`sql/194`: nombre congelado PR027, `importe_con_iva`, freno de `contratada` PR028; test `presupuestos_pantallas`; `sql/195`: nombre y líneas de debajo en los importes, test en `presupuestos_opcionales`; `sql/196`: todas las piezas en el formulario de venta, test en `presupuestos_renglones`; `sql/199`: el alta con una ventana, test en `presupuestos_opcionales`). Los tests de Obras que ponían `contratada` a mano desactivan `presupuestos_obra_estado` dentro de su transacción; el selector de estado de la obra ya no ofrece `contratada`.
 
 **El tramo 2 se parte: 2a los renglones de Catálogo y a mano, con su precio, el descuento y los totales; 2b los opcionales y los
 mínimos (2026-11-06).** El 2b depende de todo el 2a (montos por línea, renglón aparte, mínimos en una sección) y cada mitad se

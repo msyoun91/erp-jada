@@ -95,8 +95,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   el editor (2026-11-11, `decisiones/presupuestos.md` → *Pantallas*; sin SQL nuevo), y en la lista de Obras el contador
   "Contratada · 1 en cotización" (2026-11-11, `decisiones/obras.md` → *Los estados son solo comerciales*; sin SQL nuevo).
   **Siguiente:** "Llevar a un presupuesto" desde la calculadora de venta, ya decidido (2026-11-11, `decisiones/presupuestos.md` →
-  *Pantallas*, las tres últimas). Primero el SQL: `presupuestos_alta` con una ventana opcional (paquete, entrada, opcionales) que se
-  guarda junto con el presupuesto, y su test. Después las pantallas: `/presupuestos/calculadora` con los mínimos, el panel de alta con
+  *Pantallas*, las tres últimas). El SQL ya está: `presupuestos_alta` con una ventana opcional (`sql/199`, aplicado el 2026-11-11,
+  test en `presupuestos_opcionales` → 04). Faltan las pantallas: `/presupuestos/calculadora` con los mínimos, el panel de alta con
   la ventana, y *+ Nueva obra* con `onCreada` en el panel de Obras. Esto no está en la ficha:
   - **Del 4, con el portal:** no aprobar si un mínimo hace que el total difiera de lo que confirmó el cliente (etapa 2).
   - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`

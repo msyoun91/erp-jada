@@ -4687,9 +4687,12 @@ export type Database = {
       presupuestos_alta: {
         Args: {
           p_alicuota: number
+          p_entrada?: Json
           p_moneda: Database["public"]["Enums"]["moneda"]
           p_nombre: string
           p_obra: string
+          p_opcionales?: string[]
+          p_paquete?: string
           p_seccion?: string
         }
         Returns: string
