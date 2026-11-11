@@ -4861,6 +4861,10 @@ export type Database = {
           seccion_id: string
         }[]
       }
+      presupuestos_version_nombres: {
+        Args: { p_version: string }
+        Returns: Json
+      }
       presupuestos_version_pedido: {
         Args: { p_version: string }
         Returns: Json

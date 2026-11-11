@@ -210,6 +210,8 @@ export type VersionEditor = {
     | "mantener"
     | "condiciones_en"
     | "paquete_id"
+    | "catalogo_version_id"
+    | "porcentaje_id"
     | "descripcion"
     | "precio"
     | "moneda"
@@ -281,7 +283,7 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
     supabase
       .from("presupuestos_renglones")
       .select(
-        "id, seccion_id, tipo, designacion, ubicacion, cantidad, mensaje, mensajes, mantener, condiciones_en, paquete_id, entrada, opcionales, descripcion, precio, moneda, origen:origen_id(paquete_id, condiciones_en)"
+        "id, seccion_id, tipo, designacion, ubicacion, cantidad, mensaje, mensajes, mantener, condiciones_en, paquete_id, catalogo_version_id, porcentaje_id, entrada, opcionales, descripcion, precio, moneda, origen:origen_id(paquete_id, condiciones_en)"
       )
       .eq("version_id", versionId)
       .eq("activo", true)
@@ -371,6 +373,57 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
     opcionales: [...opcionales.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
     antes,
   };
+}
+
+export type Impreso = {
+  presupuesto: Pick<Presupuesto, "id" | "codigo" | "nombre" | "estado"> & {
+    obra: { id: string; nombre: string; direccion: string; localidad: string | null };
+  };
+  // Cada versión, con lo cargado en sus ventanas por id de renglón: "ancho 1200 · alto 1500 · Negro · Vidrio: DVH 4/9/4".
+  versiones: (VersionEditor & { cargado: Record<string, string | null> })[];
+};
+
+// Lo que se imprime (decisiones/presupuestos.md → *Pantallas*, *El impreso*): publicado y rechazado, la publicada de cada
+// variante (rechazar no las toca); aprobado, la aprobada; un borrador, nada. Los nombres de lo cargado los da la base: quien
+// ve el presupuesto no lee Catálogo. Lo que va debajo o aparte ya sale en su línea: no se repite en lo cargado.
+export async function getImpreso(id: string): Promise<Impreso | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("presupuestos")
+    .select(
+      "id, codigo, nombre, estado, version_aprobada_id, obra:obras!inner(id, nombre, direccion, localidad), versiones:presupuestos_versiones!presupuestos_versiones_presupuesto_id_fkey(id, variante, estado, activo)"
+    )
+    .eq("id", id)
+    .eq("versiones.activo", true)
+    .eq("versiones.estado", "publicado")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const { version_aprobada_id, versiones: publicadas, ...presupuesto } = data;
+  const ids =
+    presupuesto.estado === "aprobado" && version_aprobada_id
+      ? [version_aprobada_id]
+      : presupuesto.estado === "borrador"
+        ? []
+        : publicadas.sort((a, b) => a.variante - b.variante).map((v) => v.id);
+  const versiones = await Promise.all(
+    ids.map(async (v) => {
+      const [datos, r] = await Promise.all([getVersion(id, v), supabase.rpc("presupuestos_version_nombres", { p_version: v })]);
+      if (r.error) throw r.error;
+      if (!datos) return [];
+      const { nombres, orden } = r.data as { nombres: Record<string, string>; orden: Record<string, number> };
+      const mapa = new Map(Object.entries(nombres));
+      const aparte = new Set(datos.opcionales.filter((o) => o.como !== "precio" && o.pieza).map((o) => o.clave));
+      const cargado: Record<string, string | null> = {};
+      for (const x of datos.renglones) {
+        if (!x.entrada) continue;
+        const piezas = Object.entries(x.entrada.piezas ?? {}).filter(([p]) => !aparte.has(`pieza:${p.trim().toLowerCase()}`));
+        cargado[x.id] = textoCargado({ ...x.entrada, piezas: Object.fromEntries(piezas) }, mapa, (n) => orden[`${x.catalogo_version_id}:${n}`]);
+      }
+      return [{ ...datos, cargado }];
+    })
+  );
+  return { presupuesto, versiones: versiones.flat() };
 }
 
 // En borrador, lo que se va a pedir sale de `presupuestos_version_pedido`, que calcula a hoy; en revisión, de las filas del

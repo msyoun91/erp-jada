@@ -11,7 +11,7 @@ Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el 
 2026-11-06. Tramo 3a — `sql/188` (copiar una versión, mantener o actualizar, lo que frena publicar, publicar y quitar una
 variante), aplicado el 2026-11-06. Tramo 3b — `sql/189` (pedir, autorizar, devolver y retirar; lo que frena separado de lo que
 pide autorización; la lectura de Técnica), aplicado el 2026-11-06. Tramo 3c — `sql/190` (el recargo de la comisión del referente), aplicado el 2026-11-10. Tramo 4 — `sql/191` (aprobar, rechazar, revertir y la obra que sigue a sus presupuestos), aplicado el
-2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10. Tramo 6 — `sql/194` (lo que pidieron las pantallas: nombre congelado, importe con IVA por renglón, freno de `contratada`), aplicado el 2026-11-10. `sql/195` (el editor: nombre y líneas de debajo en los importes), aplicado el 2026-11-11. `sql/196` (`catalogo_venta_formulario` con todas las piezas), aplicado el 2026-11-11. `sql/197` (Revisión técnica: el número de versión en las dos funciones de Técnica, quién pidió en la cola y qué ventana ya cubre una autorización), aplicado el 2026-11-11.
+2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10. Tramo 6 — `sql/194` (lo que pidieron las pantallas: nombre congelado, importe con IVA por renglón, freno de `contratada`), aplicado el 2026-11-10. `sql/195` (el editor: nombre y líneas de debajo en los importes), aplicado el 2026-11-11. `sql/196` (`catalogo_venta_formulario` con todas las piezas), aplicado el 2026-11-11. `sql/197` (Revisión técnica: el número de versión en las dos funciones de Técnica, quién pidió en la cola y qué ventana ya cubre una autorización), aplicado el 2026-11-11. `sql/198` (el impreso: los nombres de lo cargado en las ventanas), aplicado el 2026-11-11.
 
 ## Ver y armar: decide la obra
 
@@ -253,6 +253,10 @@ las funciones del ciclo (DEFINER).
   cantidad); y cada opcional aparte de cada ventana, en la sección y la moneda de su renglón aparte, redondear(línea × cantidad).
   El renglón aparte es la suma por `clave`; su mínimo es el renglón de mínimo con ese servicio. `importe` NULL: sin precio, o sin la
   línea en esa moneda.
+- `presupuestos_version_nombres(version) → jsonb` — DEFINER con GRANT (`sql/198`), con `presupuestos_ve`; si no, vacío. Para el
+  impreso, porque quien ve el presupuesto no lee Catálogo: `{nombres, orden}`, el id → nombre del color y de lo elegido en las
+  ventanas activas de la versión (también lo dado de baja) y `"<catalogo_version_id>:<variable>"` → `orden` de las variables que
+  ingresa el vendedor. El texto lo arma la pantalla con `textoCargado`. Test: `presupuestos_autorizaciones.sql` (06).
 - `presupuestos_version_totales(version) → (moneda, subtotal, descuento, iva, total, sin_precio)` — INVOKER, la RLS decide. Una
   fila por moneda, sobre `presupuestos_version_importes`. Por alícuota: base = Σ importes, descuento = redondear(base × %), IVA =
   redondear((base − descuento) × alícuota); `iva` es `[{alicuota, monto}]`, la mayor primero. Lo sin precio no suma: `sin_precio`

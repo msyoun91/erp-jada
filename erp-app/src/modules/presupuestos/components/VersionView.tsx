@@ -1,17 +1,15 @@
 import Link from "next/link";
 import { Building2, TriangleAlert } from "lucide-react";
-import { formatMonto, MONEDAS, type Moneda } from "@/lib/monedas";
+import { MONEDAS, type Moneda } from "@/lib/monedas";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import type { VersionEditor } from "../queries";
-import { estadoVersion, estaVencida, formatAlicuota } from "../types";
+import { estadoVersion, estaVencida, formatAlicuota, montoVisible, sumarMontos, type Monto } from "../types";
 import { AccionesRenglon, AgregarRenglon } from "./AccionesRenglon";
 import { AccionesSeccion, NuevaSeccion } from "./AccionesSeccion";
 import { AccionesVersion } from "./AccionesVersion";
 import { AntesDePublicar } from "./AntesDePublicar";
 import { OpcionalesVentana } from "./Opcionales";
-
-type Importe = VersionEditor["importes"][number];
-type Monto = { importe: number | null; importe_con_iva: number | null };
+import { Totales } from "./Totales";
 
 const TIPO = { catalogo: null, mano: "A mano", minimo: "Mínimo" } as const;
 
@@ -44,12 +42,8 @@ export function VersionView({
     opcionales.filter((o) => o.como !== "precio").map((o) => [o.clave, o.como]),
   );
   const estado = estadoVersion(v, p);
-  // Con IVA incluido se muestra el importe con IVA que da la base, no uno recalculado acá (*Pantallas*).
   const conIva = !v.iva_discriminado;
-  const mostrar = (m: Monto, moneda: Moneda) => {
-    const valor = conIva ? m.importe_con_iva : m.importe;
-    return valor === null ? null : formatMonto(valor, moneda);
-  };
+  const mostrar = (m: Monto, moneda: Moneda) => montoVisible(m, moneda, conIva);
   const delRenglon = new Map(
     importes.filter((i) => i.clave === null).map((i) => [i.renglon_id, i]),
   );
@@ -217,7 +211,7 @@ export function VersionView({
                       `De ${filas.length} ${filas.length === 1 ? "ventana" : "ventanas"}`,
                     ]}
                     etiquetas={["Aparte"]}
-                    monto={mostrar(sumar(filas), s.moneda)}
+                    monto={mostrar(sumarMontos(filas), s.moneda)}
                   />
                 ))}
               </ul>
@@ -232,56 +226,7 @@ export function VersionView({
       {totales.length > 0 && (
         <section className="card" aria-label="Totales">
           <h3 className="t-h3 mb-2">Totales</h3>
-          <div className="flex flex-col gap-4">
-            {totales.map((t) => {
-              // Con IVA incluido, el descuento es subtotal − total: absorbe el redondeo y el total es el mismo (*Pantallas*).
-              const subtotal = conIva
-                ? importes
-                    .filter((i) => i.moneda === t.moneda)
-                    .reduce((s, i) => s + (i.importe_con_iva ?? 0), 0)
-                : t.subtotal;
-              const descuento = conIva ? subtotal - t.total : t.descuento;
-              return (
-                <div key={t.moneda} className="flex flex-col gap-1">
-                  {totales.length > 1 && (
-                    <p className="t-label">{MONEDAS[t.moneda]}</p>
-                  )}
-                  <Linea
-                    texto="Subtotal"
-                    valor={formatMonto(subtotal, t.moneda)}
-                  />
-                  {descuento !== 0 && (
-                    <Linea
-                      texto={`Descuento ${formatAlicuota(v.descuento)}`}
-                      valor={`− ${formatMonto(descuento, t.moneda)}`}
-                    />
-                  )}
-                  {!conIva &&
-                    t.iva
-                      .filter((x) => x.monto !== 0)
-                      .map((x) => (
-                        <Linea
-                          key={x.alicuota}
-                          texto={`IVA ${formatAlicuota(x.alicuota)}`}
-                          valor={formatMonto(x.monto, t.moneda)}
-                        />
-                      ))}
-                  <Linea
-                    texto={conIva ? "Total con IVA" : "Total"}
-                    valor={formatMonto(t.total, t.moneda)}
-                    fuerte
-                  />
-                  {t.sin_precio > 0 && (
-                    <p className="alert alert-warning mt-1">
-                      {t.sin_precio === 1
-                        ? "1 importe sin precio no suma."
-                        : `${t.sin_precio} importes sin precio no suman.`}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <Totales totales={totales} importes={importes} conIva={conIva} descuento={v.descuento} />
         </section>
       )}
 
@@ -298,14 +243,6 @@ export function VersionView({
       )}
     </div>
   );
-}
-
-function sumar(filas: Importe[]): Monto {
-  const suma = (k: keyof Monto) =>
-    filas.some((f) => f[k] === null)
-      ? null
-      : filas.reduce((s, f) => s + (f[k] ?? 0), 0);
-  return { importe: suma("importe"), importe_con_iva: suma("importe_con_iva") };
 }
 
 function Fila({
@@ -347,24 +284,5 @@ function Fila({
       </div>
       {children}
     </li>
-  );
-}
-
-function Linea({
-  texto,
-  valor,
-  fuerte,
-}: {
-  texto: string;
-  valor: string;
-  fuerte?: boolean;
-}) {
-  return (
-    <p
-      className={`flex justify-between gap-3 ${fuerte ? "t-body-l font-semibold text-text-primary" : "t-body-m"}`}
-    >
-      <span>{texto}</span>
-      <span className="tabular-nums">{valor}</span>
-    </p>
   );
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, ChevronRight } from "lucide-react";
+import { Building2, ChevronRight, Printer } from "lucide-react";
 import { ENTES, MOTIVO_PERDIDA } from "@/lib/entes";
 import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
 import type { FichaPresupuesto } from "../queries";
@@ -61,6 +61,12 @@ export function FichaPresupuestoView({
           <span className={`badge ${estado.badge}`}>{estado.label}</span>
           {!p.activo && <span className="badge badge-neutral">Desactivado</span>}
           {p.arma && <EditarNombre id={p.id} nombre={p.nombre} />}
+          {p.estado !== "borrador" && (
+            <Link href={`/presupuestos/${p.id}/imprimir`} className="btn btn-secondary btn-sm">
+              <Printer size={14} />
+              Imprimir
+            </Link>
+          )}
           {(p.arma || p.revierte) && (
             <AccionesPresupuesto
               id={p.id}

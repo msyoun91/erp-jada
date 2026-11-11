@@ -624,6 +624,22 @@ todas las variantes; aprobado, la aprobada; rechazado, la última de cada una; u
 como marcadores hasta tenerlos, sin tabla hasta que haga falta cambiarlos desde una pantalla. Cliente: nombre y dirección de la obra y
 sus contactos con rol `cliente`.
 
+**El impreso dice lo cargado en cada ventana: medidas, color y lo elegido, con los nombres que da la base (decisión del usuario,
+2026-11-11).** "V4 · Corrediza 2 hojas · Lavadero" sigue con "ancho 1200 · alto 1500 · Negro · Vidrio: DVH 4/9/4": el cliente revisa
+qué compra. Quien ve el presupuesto no lee Catálogo: `presupuestos_version_nombres` le da los nombres del color y de lo elegido en
+las ventanas de la versión y el orden de las medidas, y el texto lo arma `textoCargado`, el de Revisión técnica. Lo que va debajo o
+aparte ya tiene su línea y no se repite. Costo: lo cargado guarda solo lo que cambió el vendedor, así que un color que quedó en el
+predeterminado no sale. Se descartaron solo las medidas (sin SQL, pero sin color ni vidrio) y lo del editor (sin lo cargado). `sql/198`.
+
+**El impreso es una página, `/presupuestos/[id]/imprimir`, que el navegador imprime o guarda como PDF; en papel sale solo la hoja, en
+tema claro (2026-11-11).** *Imprimir* va en el encabezado de la ficha, fuera de borrador. Arriba, el logo y los datos de la empresa
+(`empresa.ts`) y el cliente: la obra, su dirección y sus contactos `cliente` abiertos, compuestos desde `app/`. Después, el nombre y,
+con dos variantes, "Aluminio $253.758 · PVC $253.758"; por variante, IVA y vencimiento, las secciones con moneda e IVA y el mismo pie
+que el editor (`Totales.tsx`). Sin lo interno: a mano, mantenida, alertas. El mínimo de un opcional aparte se suma a su renglón; los
+demás salen como "Mínimo de Colocación". El oscuro vale solo en pantalla (`globals.css`), y la barra lateral y el encabezado del
+módulo llevan `print:hidden`. El título de la página es el nombre que propone el PDF ("P-0142 · Torre Belgrano"). `ImpresoView.tsx`,
+`getImpreso`, `e2e/presupuestos.spec.ts`.
+
 **Revisión técnica: la lista va una fila por versión, con sus ventanas pendientes debajo; solo lo pendiente, el pedido más
 viejo primero (decisión del usuario, 2026-11-11).** Sofía resuelve en la página de la versión, y devolver una ventana devuelve la
 versión entera: por ventana, el 142 salía dos veces con el mismo destino. Lo autorizado, devuelto o retirado sale, como en *Esperan

@@ -8,7 +8,7 @@ import {
   type PiezaEntrada,
   type VariableEntrada,
 } from "@/lib/entrada";
-import { MONEDAS_LISTA } from "@/lib/monedas";
+import { formatMonto, MONEDAS_LISTA } from "@/lib/monedas";
 import { Constants, type Database } from "@/lib/supabase/database.types";
 import { idSchema, textoOpcional } from "@/lib/validacion";
 
@@ -302,3 +302,18 @@ export function textoCargado(
 }
 
 export type IvaTotal = { alicuota: number; monto: number };
+
+// Un importe de `presupuestos_version_importes`: NULL, sin precio.
+export type Monto = { importe: number | null; importe_con_iva: number | null };
+
+// Con IVA incluido se muestra el importe con IVA que da la base, no uno recalculado en pantalla (*Pantallas*).
+export function montoVisible(m: Monto, moneda: Enums["moneda"], conIva: boolean): string | null {
+  const valor = conIva ? m.importe_con_iva : m.importe;
+  return valor === null ? null : formatMonto(valor, moneda);
+}
+
+// El renglón aparte de un opcional: la suma de ese opcional en todas las ventanas. Sin precio si alguna no lo tiene.
+export function sumarMontos(filas: Monto[]): Monto {
+  const suma = (k: keyof Monto) => (filas.some((f) => f[k] === null) ? null : filas.reduce((s, f) => s + (f[k] ?? 0), 0));
+  return { importe: suma("importe"), importe_con_iva: suma("importe_con_iva") };
+}
