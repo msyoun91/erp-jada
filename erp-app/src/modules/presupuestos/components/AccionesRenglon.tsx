@@ -38,8 +38,14 @@ type Abierto =
   | { modo: "sacar" | "mover" }
   | null;
 
-// `nombre`: el que ve el cliente (el paquete o la descripción), para el que no tiene designación.
-export function AccionesRenglon({ renglon: r, nombre, ...ctx }: Contexto & { renglon: Renglon; nombre: string }) {
+// `nombre`: el que ve el cliente (el paquete o la descripción), para el que no tiene designación. `children`: el
+// encabezado de la fila.
+export function AccionesRenglon({
+  renglon: r,
+  nombre,
+  children,
+  ...ctx
+}: Contexto & { renglon: Renglon; nombre: string; children: React.ReactNode }) {
   const [abierto, setAbierto] = useState<Abierto>(null);
   const cerrar = () => setAbierto(null);
   const etiqueta = [r.designacion ?? nombre, r.ubicacion].filter(Boolean).join(" · ");
@@ -97,10 +103,23 @@ export function AccionesRenglon({ renglon: r, nombre, ...ctx }: Contexto & { ren
           ...precios,
           { label: "Sacar", icon: <Trash2 size={14} />, onClick: () => setAbierto({ modo: "sacar" }), destructive: true },
         ];
-  if (items.length === 0) return null;
+  if (items.length === 0) return children;
 
   return (
     <>
+      {r.tipo === "minimo" ? (
+        children
+      ) : (
+        // Atajo de `⋯` → Editar para el dedo y el mouse; con teclado se entra por el menú. Seleccionar texto no edita.
+        <div
+          className="flex min-w-0 flex-1 cursor-pointer items-start gap-3"
+          onClick={() => {
+            if (!window.getSelection()?.toString()) abrir("editar");
+          }}
+        >
+          {children}
+        </div>
+      )}
       <OverflowMenu items={items} />
       {(abierto?.modo === "editar" || abierto?.modo === "duplicar") &&
         (r.tipo === "catalogo" ? (

@@ -745,6 +745,32 @@ guardando y el pie entra en el celular. Arranca destildada, en el lugar de la no
 editar ni en *A mano*. El aviso nombra la ventana y no dice el precio: guardar devuelve el de una unidad sin IVA, y la fila muestra
 lo que ve el cliente. `RenglonPanel.tsx`, `e2e/presupuestos.spec.ts`.
 
+**Un renglón nuevo abre con el foco en su primer campo: la designación en el de Catálogo, la descripción en el de a mano
+(2026-11-11).** `showModal` deja el foco en la X de cerrar, y había que hacer clic antes de escribir. Solo al agregar y al duplicar:
+editando no se sabe qué campo se va a tocar, y en el celular abriría el teclado encima del panel. Los demás paneles de la app quedan
+como están. `RenglonPanel.tsx`.
+
+**Cada ventana del editor dice lo cargado, como el impreso: "Ancho 1200 · Alto 1500 · Negro · Vidrio: DVH 4/9/4" (2026-11-11).**
+Para controlar la carga contra el plano había que abrir las ventanas de a una. El texto lo arma `getVersion` para los dos (antes,
+`getImpreso`), con una vuelta más a `presupuestos_version_nombres` por carga del editor. En borrador, un opcional en el precio se lee
+dos veces: en el texto y en su botón. `queries.ts`, `VersionView.tsx`.
+
+**El selector de paquete arranca con *En este presupuesto*, los que ya tienen una ventana en la versión, y elegir uno de esos no va
+al servidor (2026-11-11).** En una obra se repiten tres o cuatro, y se buscaban en todo el catálogo; su formulario ya vino con la
+versión. Sin buscador: sería un componente nuevo, y espera a que el catálogo crezca. `RenglonPanel.tsx`.
+
+**Las medidas van de a dos por fila, y fuera de rango se marcan antes de guardar (2026-11-11).** "1200 × 1500" se lee como en el
+plano; una lista ocupa la fila entera. Pasado el máximo se marca al escribir; debajo del mínimo, al salir del campo, porque a mitad
+de escribir se pasa siempre. Es un aviso con el mínimo y el máximo que da la base: guardar sigue permitido, y el precio lo decide
+ella (`decisiones/catalogo/paquete.md` → *Una variable numérica…*). Vale también en las dos calculadoras, que usan el mismo
+formulario. Se descartó partir "1200x1500" en dos campos: Tab hace lo mismo, y el teclado numérico del celular no tiene la x.
+`components/entrada/EntradaCampos.tsx`.
+
+**Tocar una ventana o un renglón a mano abre su edición, y duplicar avanza la designación (2026-11-11).** `⋯` → *Editar* eran dos
+toques sobre un botón chico. El menú sigue, y con teclado se entra por ahí: el encabezado no es un botón, porque su nombre sería la
+fila entera. Un mínimo no se edita, y seleccionar texto no abre. Duplicar V4 propone V5, como *Seguir cargando*; sin número al final,
+queda la del original para corregirla. `AccionesRenglon.tsx`, `VersionView.tsx`, `RenglonPanel.tsx`.
+
 ## La base
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y

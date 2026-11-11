@@ -10,6 +10,7 @@ import {
   fueraDe,
   incluida,
   malEscrita,
+  numeroEscrito,
   textoMedida,
   type EntradaEstado,
   type FormularioEntrada,
@@ -56,8 +57,19 @@ export function EntradaCampos({
     onChange(r.estado);
   }
 
+  // Fuera de rango la base no da precio (`decisiones/catalogo/paquete.md` → *Una variable numérica…*): acá solo se
+  // avisa antes de guardar. Pasado el máximo, enseguida; debajo del mínimo se pasa siempre a mitad de escribir, así que
+  // recién al salir del campo.
+  const [enFoco, setEnFoco] = useState<string | null>(null);
+  function fueraDeRango(v: FormularioEntrada["variables"][number]) {
+    const n = numeroEscrito(estado.variables[v.id] ?? "");
+    if (n === null || v.minimo === null || v.maximo === null) return false;
+    return n > v.maximo || (n < v.minimo && enFoco !== v.id);
+  }
+
+  // Las medidas van de a dos por fila ("1200 × 1500"); una lista ocupa la fila entera.
   const campoVariable = (v: FormularioEntrada["variables"][number]) => (
-    <label key={v.id} className="flex flex-col gap-1">
+    <label key={v.id} className={`flex flex-col gap-1 ${v.es_lista ? "col-span-2" : ""}`}>
       <span className="t-label">
         <Etiqueta
           texto={`${v.nombre}${v.es_lista ? "" : v.es_cantidad ? " (u)" : " (mm)"}${v.pieza_id ? ` · ${nombrePieza.get(v.pieza_id)}` : ""}`}
@@ -75,18 +87,20 @@ export function EntradaCampos({
       ) : (
         <input
           type="text"
-          className={malEscrita(v, estado) ? "input input-error" : claseInput()}
+          className={malEscrita(v, estado) || fueraDeRango(v) ? "input input-error" : claseInput()}
           inputMode="decimal"
           value={estado.variables[v.id] ?? ""}
           placeholder={v.predeterminado ? `Predeterminado: ${v.predeterminado}` : "Obligatoria"}
           onChange={(e) => setVariable(v.id, e.target.value)}
+          onFocus={() => setEnFoco(v.id)}
+          onBlur={() => setEnFoco((f) => (f === v.id ? null : f))}
         />
       )}
       {malEscrita(v, estado) && (
         <span className="input-error-text">Va sin puntos y con coma para el decimal: 1500 o 1500,5</span>
       )}
       {v.minimo !== null && v.maximo !== null && (
-        <span className="t-caption">
+        <span className={fueraDeRango(v) ? "input-error-text" : "t-caption"}>
           De {textoMedida(v.minimo)} a {textoMedida(v.maximo)}
         </span>
       )}
@@ -147,10 +161,13 @@ export function EntradaCampos({
     ...opcionales.filter((p) => p.secundario).map(campoPieza),
   ];
   const base = f.colores.find((c) => c.base);
+  const principales = f.variables.filter((v) => !v.secundario);
 
   return (
     <>
-      {f.variables.filter((v) => !v.secundario).map(campoVariable)}
+      {principales.length > 0 && (
+        <div className="grid grid-cols-2 gap-x-3 gap-y-4">{principales.map(campoVariable)}</div>
+      )}
       {elegibles.filter((m) => !m.secundario).map(campoMaterial)}
       {opcionales.filter((p) => !p.secundario).map(campoPieza)}
       {f.colores.length > 0 && (

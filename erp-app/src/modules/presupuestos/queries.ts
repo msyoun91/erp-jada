@@ -268,6 +268,9 @@ export type VersionEditor = {
   })[];
   importes: Importe[];
   totales: Total[];
+  // Lo cargado en cada ventana, por id de renglón: "ancho 1200 · alto 1500 · Negro · Vidrio: DVH 4/9/4". Los nombres los da
+  // la base: quien ve el presupuesto no lee Catálogo. Lo que va debajo o aparte ya sale en su línea: no se repite acá.
+  cargado: Record<string, string | null>;
   // Para elegir el paquete de una ventana: solo si es editable.
   paquetes: Funciones["catalogo_venta"]["Returns"];
   // El formulario del paquete de cada ventana, por paquete; NULL si salió de la venta. Solo si es editable.
@@ -304,7 +307,7 @@ export type OpcionalVersion = Pick<Opcional, "clave" | "nombre"> & {
 // Los importes y los totales los calcula la base, con el recargo y el redondeo: acá no se multiplica nada.
 export async function getVersion(presupuestoId: string, versionId: string): Promise<VersionEditor | null> {
   const supabase = await createClient();
-  const [version, secciones, renglones, importes, totales, configuracion, filas] = await Promise.all([
+  const [version, secciones, renglones, importes, totales, configuracion, filas, nombresVersion] = await Promise.all([
     supabase
       .from("presupuestos_versiones")
       .select(
@@ -340,8 +343,9 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
       .select("id, pieza, porcentaje_id, clave, forma, seccion_id")
       .eq("version_id", versionId)
       .eq("activo", true),
+    supabase.rpc("presupuestos_version_nombres", { p_version: versionId }),
   ]);
-  for (const r of [version, secciones, renglones, importes, totales, configuracion, filas]) if (r.error) throw r.error;
+  for (const r of [version, secciones, renglones, importes, totales, configuracion, filas, nombresVersion]) if (r.error) throw r.error;
   if (!version.data) return null;
   const { presupuesto: { activo, ...presupuesto }, ...v } = version.data;
   const abierta = activo && (v.estado === "borrador" || v.estado === "en_revision");
@@ -395,6 +399,19 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
       como: f.forma === "debajo" ? "debajo" : (f.seccion_id ?? ""),
     });
   }
+  const { nombres = {}, orden = {} } = (nombresVersion.data ?? {}) as {
+    nombres?: Record<string, string>;
+    orden?: Record<string, number>;
+  };
+  const mapa = new Map(Object.entries(nombres));
+  const aparte = new Set([...opcionales.values()].filter((o) => o.como !== "precio" && o.pieza).map((o) => o.clave));
+  const cargado: VersionEditor["cargado"] = {};
+  for (const x of renglones.data ?? []) {
+    const entrada = x.entrada as Entrada | null;
+    if (!entrada) continue;
+    const piezas = Object.entries(entrada.piezas ?? {}).filter(([p]) => !aparte.has(`pieza:${p.trim().toLowerCase()}`));
+    cargado[x.id] = textoCargado({ ...entrada, piezas: Object.fromEntries(piezas) }, mapa, (n) => orden[`${x.catalogo_version_id}:${n}`]);
+  }
   return {
     presupuesto,
     version: v,
@@ -411,6 +428,7 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
     })),
     importes: (importes.data ?? []).map((i) => ({ ...i, debajo: i.debajo as LineaDebajo[] | null })),
     totales: (totales.data ?? []).map((t) => ({ ...t, iva: t.iva as IvaTotal[] })),
+    cargado,
     paquetes,
     formularios,
     opcionales: [...opcionales.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
@@ -422,13 +440,11 @@ export type Impreso = {
   presupuesto: Pick<Presupuesto, "id" | "codigo" | "nombre" | "estado"> & {
     obra: { id: string; nombre: string; direccion: string; localidad: string | null };
   };
-  // Cada versión, con lo cargado en sus ventanas por id de renglón: "ancho 1200 · alto 1500 · Negro · Vidrio: DVH 4/9/4".
-  versiones: (VersionEditor & { cargado: Record<string, string | null> })[];
+  versiones: VersionEditor[];
 };
 
 // Lo que se imprime (decisiones/presupuestos.md → *Pantallas*, *El impreso*): publicado y rechazado, la publicada de cada
-// variante (rechazar no las toca); aprobado, la aprobada; un borrador, nada. Los nombres de lo cargado los da la base: quien
-// ve el presupuesto no lee Catálogo. Lo que va debajo o aparte ya sale en su línea: no se repite en lo cargado.
+// variante (rechazar no las toca); aprobado, la aprobada; un borrador, nada.
 export async function getImpreso(id: string): Promise<Impreso | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -449,24 +465,8 @@ export async function getImpreso(id: string): Promise<Impreso | null> {
       : presupuesto.estado === "borrador"
         ? []
         : publicadas.sort((a, b) => a.variante - b.variante).map((v) => v.id);
-  const versiones = await Promise.all(
-    ids.map(async (v) => {
-      const [datos, r] = await Promise.all([getVersion(id, v), supabase.rpc("presupuestos_version_nombres", { p_version: v })]);
-      if (r.error) throw r.error;
-      if (!datos) return [];
-      const { nombres, orden } = r.data as { nombres: Record<string, string>; orden: Record<string, number> };
-      const mapa = new Map(Object.entries(nombres));
-      const aparte = new Set(datos.opcionales.filter((o) => o.como !== "precio" && o.pieza).map((o) => o.clave));
-      const cargado: Record<string, string | null> = {};
-      for (const x of datos.renglones) {
-        if (!x.entrada) continue;
-        const piezas = Object.entries(x.entrada.piezas ?? {}).filter(([p]) => !aparte.has(`pieza:${p.trim().toLowerCase()}`));
-        cargado[x.id] = textoCargado({ ...x.entrada, piezas: Object.fromEntries(piezas) }, mapa, (n) => orden[`${x.catalogo_version_id}:${n}`]);
-      }
-      return [{ ...datos, cargado }];
-    })
-  );
-  return { presupuesto, versiones: versiones.flat() };
+  const versiones = await Promise.all(ids.map((v) => getVersion(id, v)));
+  return { presupuesto, versiones: versiones.flatMap((v) => (v ? [v] : [])) };
 }
 
 // En borrador, lo que se va a pedir sale de `presupuestos_version_pedido`, que calcula a hoy; en revisión, de las filas del

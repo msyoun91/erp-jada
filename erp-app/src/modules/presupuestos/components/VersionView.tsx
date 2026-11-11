@@ -30,6 +30,7 @@ export function VersionView({
     renglones,
     importes,
     totales,
+    cargado,
     editable,
     tope,
     paquetes,
@@ -155,15 +156,16 @@ export function VersionView({
                           ? `Precios del ${formatFecha(r.condiciones_en)}`
                           : null,
                       ]}
+                      cargado={cargado[r.id]}
                       monto={i ? mostrar(i, s.moneda) : null}
                       acciones={
-                        editable && (
-                          <AccionesRenglon
-                            {...ctx}
-                            renglon={r}
-                            nombre={i?.nombre ?? r.descripcion ?? "—"}
-                          />
-                        )
+                        editable
+                          ? (cabecera) => (
+                              <AccionesRenglon {...ctx} renglon={r} nombre={i?.nombre ?? r.descripcion ?? "—"}>
+                                {cabecera}
+                              </AccionesRenglon>
+                            )
+                          : undefined
                       }
                     >
                       {i?.importe === null && r.mensaje && (
@@ -257,6 +259,7 @@ export function VersionView({
 function Fila({
   titulo,
   detalle,
+  cargado,
   etiquetas,
   monto,
   acciones,
@@ -264,33 +267,37 @@ function Fila({
 }: {
   titulo: string;
   detalle: (string | null | undefined)[];
+  // Medidas, color y lo elegido: para controlar la carga contra el plano sin abrir cada ventana.
+  cargado?: string | null;
   etiquetas: (string | null)[];
   monto: string | null;
-  acciones?: React.ReactNode;
+  // Recibe el encabezado de la fila, que al tocarlo edita (`AccionesRenglon`).
+  acciones?: (cabecera: React.ReactNode) => React.ReactNode;
   children?: React.ReactNode;
 }) {
   const texto = detalle.filter(Boolean).join(" · ");
+  const cabecera = (
+    <>
+      <div className="min-w-0 flex-1">
+        <p className="t-body-m font-medium text-text-primary">
+          {titulo}
+          {etiquetas.filter(Boolean).map((e) => (
+            <span key={e} className="badge badge-neutral ml-2 align-middle">
+              {e}
+            </span>
+          ))}
+        </p>
+        {texto && <p className="t-caption">{texto}</p>}
+        {cargado && <p className="t-caption">{cargado}</p>}
+      </div>
+      <p className={`t-body-m shrink-0 text-right tabular-nums ${monto ? "text-text-primary" : "text-warning-text"}`}>
+        {monto ?? "Sin precio"}
+      </p>
+    </>
+  );
   return (
     <li className="row flex flex-col gap-1 border-b border-border last:border-b-0">
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="t-body-m font-medium text-text-primary">
-            {titulo}
-            {etiquetas.filter(Boolean).map((e) => (
-              <span key={e} className="badge badge-neutral ml-2 align-middle">
-                {e}
-              </span>
-            ))}
-          </p>
-          {texto && <p className="t-caption">{texto}</p>}
-        </div>
-        <p
-          className={`t-body-m shrink-0 text-right tabular-nums ${monto ? "text-text-primary" : "text-warning-text"}`}
-        >
-          {monto ?? "Sin precio"}
-        </p>
-        {acciones}
-      </div>
+      <div className="flex items-start gap-3">{acciones ? acciones(cabecera) : cabecera}</div>
       {children}
     </li>
   );

@@ -116,7 +116,10 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
     de opcionales, para tildar o destildar de una vez la Colocación o la Garantía de vidrio en varios ítems. Cada ítem sigue guardando
     lo suyo, y la pieza se reconoce por nombre (`entrada.piezas`), así que no cambia el catálogo. A decidir con eso: si hace falta frenar
     presupuestos mezclados, que sí pediría una respuesta única guardada en el presupuesto, y cómo se cobra la colocación. Si va en un
-    renglón aparte lo elige el vendedor (`decisiones/presupuestos.md` → *Secciones y opcionales*).
+    renglón aparte lo elige el vendedor (`decisiones/presupuestos.md` → *Secciones y opcionales*). Con lo mismo, cambiar el color o
+    lo elegido en varias ventanas a la vez ("el cliente quiere todo en Negro": hoy, una edición por ventana), que pide una función
+    en la base; quedó afuera de los atajos de carga del 2026-11-11 (`decisiones/presupuestos.md` → *Pantallas*, las seis últimas)
+    hasta ver cuántas veces pasa.
   - **Comisiones: la del referente la paga el cliente en el precio; la del vendedor, no (decisión del usuario, 2026-11-06).**
     - **Referente: recargo de la versión, escondido en el precio.** El % sale de `obras_comisiones`, sin escribirse dos veces, y se
       despeja como IIBB (USD 19.000 / 0,95 = 20.000): Marta cobra el % exacto. Se reparte dentro de cada ventana, y el cliente no lo ve.

@@ -45,6 +45,7 @@ export function RenglonCatalogoPanel({
   versionId,
   secciones,
   paquetes,
+  formularios,
   seccionId,
   renglon,
   nombre,
@@ -71,7 +72,7 @@ export function RenglonCatalogoPanel({
       id: editar?.id,
       version_id: versionId,
       seccion_id: seccionId,
-      designacion: renglon?.designacion ?? "",
+      designacion: designacionInicial(renglon, duplicar),
       ubicacion: renglon?.ubicacion ?? "",
       cantidad: renglon?.cantidad ?? 1,
       paquete_id: renglon?.paquete_id ?? "",
@@ -81,25 +82,33 @@ export function RenglonCatalogoPanel({
   const paquete = useWatch({ control, name: "paquete_id" });
   const malEscrita = formulario !== null && hayMalEscrita(formulario, estado);
   const fueraDeVenta = renglon?.paquete_id && !paquetes.some((p) => p.paquete_id === renglon.paquete_id);
+  // Los que ya tienen una ventana en la versión: en una obra se repiten tres o cuatro.
+  const usados = paquetes.filter((p) => formularios[p.paquete_id]);
 
-  // En un efecto: `reset` suelta las referencias de los campos, y el foco pedido en el mismo paso no llega.
+  // Al abrir uno nuevo y después de cada alta. En un efecto: corre después del `showModal` del panel, que deja el foco en
+  // la X, y del `reset`, que suelta las referencias de los campos.
+  const nuevo = !editar;
   useEffect(() => {
-    if (agregadas > 0) setFocus("designacion", { shouldSelect: true });
-  }, [agregadas, setFocus]);
+    if (nuevo) setFocus("designacion", { shouldSelect: true });
+  }, [nuevo, agregadas, setFocus]);
 
   async function elegirPaquete(id: string) {
     const antes: Entrada = formulario ? aEntrada(estado, formulario) : {};
     setTocado(true);
     setFormulario(null);
     if (!id) return;
-    setCargando(true);
-    const r = await formularioVenta(id);
-    setCargando(false);
-    if (!r.success) {
-      toast.error(r.error);
-      return;
+    // El de un paquete que ya está en la versión vino con ella.
+    let f = formularios[id] ?? null;
+    if (!f) {
+      setCargando(true);
+      const r = await formularioVenta(id);
+      setCargando(false);
+      if (!r.success) {
+        toast.error(r.error);
+        return;
+      }
+      f = r.formulario;
     }
-    const f = r.formulario;
     setFormulario(f);
     if (!f) {
       setEstado(ESTADO_VACIO);
@@ -197,6 +206,15 @@ export function RenglonCatalogoPanel({
             >
               <option value="">Elegí el paquete</option>
               {fueraDeVenta && <option value={renglon?.paquete_id ?? ""}>{nombre} (ya no está a la venta)</option>}
+              {usados.length > 0 && (
+                <optgroup label="En este presupuesto">
+                  {usados.map((p) => (
+                    <option key={p.paquete_id} value={p.paquete_id}>
+                      {p.nombre}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
               {[...Map.groupBy(paquetes, (p) => p.categoria)].map(([categoria, lista]) => (
                 <optgroup key={categoria} label={categoria}>
                   {lista.map((p) => (
@@ -272,13 +290,13 @@ export function RenglonManoPanel({ versionId, secciones, seccionId, renglon, dup
   const editar = renglon && !duplicar ? renglon : undefined;
   // Un renglón a mano no cambia de moneda (PR009): editándolo, solo las secciones en la suya.
   const opciones = editar ? secciones.filter((s) => s.moneda === editar.moneda) : secciones;
-  const { register, handleSubmit, formState, control } = useForm<RenglonManoForm>({
+  const { register, handleSubmit, formState, control, setFocus } = useForm<RenglonManoForm>({
     resolver: zodResolver(renglonManoSchema),
     defaultValues: {
       id: editar?.id,
       version_id: versionId,
       seccion_id: seccionId,
-      designacion: renglon?.designacion ?? "",
+      designacion: designacionInicial(renglon, duplicar),
       ubicacion: renglon?.ubicacion ?? "",
       cantidad: renglon?.cantidad ?? 1,
       descripcion: renglon?.descripcion ?? "",
@@ -288,6 +306,12 @@ export function RenglonManoPanel({ versionId, secciones, seccionId, renglon, dup
   const { errors } = formState;
   const elegida = useWatch({ control, name: "seccion_id" });
   const seccion = secciones.find((s) => s.id === elegida);
+
+  // Como en el de Catálogo: uno nuevo abre con el foco en el primer campo.
+  const nuevo = !editar;
+  useEffect(() => {
+    if (nuevo) setFocus("descripcion");
+  }, [nuevo, setFocus]);
 
   async function onSubmit(data: RenglonManoForm) {
     setEnviando(true);
@@ -397,6 +421,12 @@ function CamposEtiqueta({
 function siguienteDesignacion(d: string) {
   const m = /^(.*?)(\d+)$/.exec(d);
   return m ? m[1] + String(Number(m[2]) + 1).padStart(m[2].length, "0") : "";
+}
+
+// Duplicando, avanza como al seguir cargando; sin número al final, queda la del original para corregirla.
+function designacionInicial(renglon: Renglon | undefined, duplicar: boolean | undefined) {
+  const d = renglon?.designacion ?? "";
+  return duplicar ? siguienteDesignacion(d) || d : d;
 }
 
 export function opcionSeccion(s: Seccion) {
