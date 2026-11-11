@@ -9,7 +9,7 @@ import { Campo, claseInput } from "@/components/ui/Campo";
 import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { MONEDAS, MONEDAS_LISTA } from "@/lib/monedas";
 import { crearPresupuesto } from "../actions";
-import { ALICUOTAS, altaSchema, type AltaForm } from "../types";
+import { ALICUOTAS, altaSchema, formatAlicuota, type AltaForm } from "../types";
 
 const FORM_ID = "presupuesto-alta-form";
 
@@ -69,7 +69,7 @@ export function AltaPresupuestoPanel({ obras, onClose }: { obras: { id: string; 
           <select id="pres-alicuota" aria-required className={claseInput(errors.alicuota)} {...register("alicuota")}>
             {ALICUOTAS.map((a) => (
               <option key={a} value={a}>
-                {String(a).replace(".", ",")} %
+                {formatAlicuota(a)}
               </option>
             ))}
           </select>

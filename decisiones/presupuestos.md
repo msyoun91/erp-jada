@@ -525,6 +525,11 @@ migración de pantallas.
 mostrarían centavos distintos si cada uno redondeara. `presupuestos_version_importes` suma el importe con IVA, redondeado; en el pie,
 el descuento es subtotal − total, así absorbe el redondeo y el total es el mismo que con IVA discriminado.
 
+**El editor lee lo que ve el cliente de `presupuestos_version_importes`, sin multiplicar nada en pantalla (2026-11-11).** Quien arma no
+lee Catálogo (la RLS de `catalogo_versiones` pide la vista Paquetes), así que el nombre del paquete de cada ventana sale de ahí, y también
+las líneas de debajo: con el recargo, la cantidad y el IVA, el monto de una línea calculado en pantalla podía diferir en centavos del
+impreso. Se descartó una función aparte para las líneas: repetía la cuenta del recargo y el redondeo. `sql/195`, `VersionView.tsx`.
+
 **El impreso: solo lo publicado, y los datos de la empresa en un archivo de la app (decisión del usuario, 2026-11-10).** Publicado,
 todas las variantes; aprobado, la aprobada; rechazado, la última de cada una; un borrador no se imprime. Empresa: logo y datos fijos
 como marcadores hasta tenerlos, sin tabla hasta que haga falta cambiarlos desde una pantalla. Cliente: nombre y dirección de la obra y
@@ -539,7 +544,7 @@ presupuesto (trabajo a mano sin valor).
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y
 mínimos (`sql/187`) · 3a versión nueva, mantener y publicar (`sql/188`) · 3b autorizaciones (`sql/189`) · 3c recargo del referente (`sql/190`) · 4 aprobar, rechazar y la
-obra (`sql/191`) · 5 avisos (`sql/192`–`sql/193`) · 6 pantallas (`sql/194`: nombre congelado PR027, `importe_con_iva`, freno de `contratada` PR028; test `presupuestos_pantallas`). Los tests de Obras que ponían `contratada` a mano desactivan `presupuestos_obra_estado` dentro de su transacción; el selector de estado de la obra ya no ofrece `contratada`.
+obra (`sql/191`) · 5 avisos (`sql/192`–`sql/193`) · 6 pantallas (`sql/194`: nombre congelado PR027, `importe_con_iva`, freno de `contratada` PR028; test `presupuestos_pantallas`; `sql/195`: nombre y líneas de debajo en los importes, test en `presupuestos_opcionales`). Los tests de Obras que ponían `contratada` a mano desactivan `presupuestos_obra_estado` dentro de su transacción; el selector de estado de la obra ya no ofrece `contratada`.
 
 **El tramo 2 se parte: 2a los renglones de Catálogo y a mano, con su precio, el descuento y los totales; 2b los opcionales y los
 mínimos (2026-11-06).** El 2b depende de todo el 2a (montos por línea, renglón aparte, mínimos en una sección) y cada mitad se

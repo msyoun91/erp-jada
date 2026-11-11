@@ -11,7 +11,7 @@ Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el 
 2026-11-06. Tramo 3a — `sql/188` (copiar una versión, mantener o actualizar, lo que frena publicar, publicar y quitar una
 variante), aplicado el 2026-11-06. Tramo 3b — `sql/189` (pedir, autorizar, devolver y retirar; lo que frena separado de lo que
 pide autorización; la lectura de Técnica), aplicado el 2026-11-06. Tramo 3c — `sql/190` (el recargo de la comisión del referente), aplicado el 2026-11-10. Tramo 4 — `sql/191` (aprobar, rechazar, revertir y la obra que sigue a sus presupuestos), aplicado el
-2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10. Tramo 6 — `sql/194` (lo que pidieron las pantallas: nombre congelado, importe con IVA por renglón, freno de `contratada`), aplicado el 2026-11-10.
+2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10. Tramo 6 — `sql/194` (lo que pidieron las pantallas: nombre congelado, importe con IVA por renglón, freno de `contratada`), aplicado el 2026-11-10. `sql/195` (el editor: nombre y líneas de debajo en los importes), aplicado el 2026-11-11.
 
 ## Ver y armar: decide la obra
 
@@ -247,7 +247,7 @@ las funciones del ciclo (DEFINER).
   y una sección. Sin armar en esa obra, 42501.
 - `presupuestos_obra_desactivar` — trigger DEFINER sobre `obras` (BEFORE UPDATE OF activo): la obra con presupuestos activos
   no se desactiva (PR007).
-- `presupuestos_version_importes(version) → (renglon_id, seccion_id, moneda, alicuota, clave, nombre, importe, importe_con_iva)` — DEFINER (`sql/190`), con `presupuestos_ve`. `importe_con_iva` (`sql/194`) = redondear(importe × (1 + alícuota / 100)): con IVA incluido, editor, impreso y portal muestran ese número, no lo recalculan. Una
+- `presupuestos_version_importes(version) → (renglon_id, seccion_id, moneda, alicuota, clave, nombre, importe, importe_con_iva, debajo)` — DEFINER (`sql/190`), con `presupuestos_ve`. `importe_con_iva` (`sql/194`) = redondear(importe × (1 + alícuota / 100)): con IVA incluido, editor, impreso y portal muestran ese número, no lo recalculan. Desde `sql/195`, lo que lee el cliente, porque quien arma no lee Catálogo: `nombre` en los renglones es el de la versión del paquete con que se calculó, o la descripción (a mano y mínimo); `debajo`, en los renglones, `[{clave, nombre, importe, importe_con_iva}]` de los opcionales que van debajo de la ventana, en el orden del cálculo, con el recargo y la cantidad (`[]` si no hay; NULL en el renglón aparte). No suman: ya están en el importe de la ventana. Una
   fila por importe que ve el cliente: cada renglón (`clave` NULL) sin sus opcionales aparte, redondear((precio − líneas aparte) ×
   cantidad); y cada opcional aparte de cada ventana, en la sección y la moneda de su renglón aparte, redondear(línea × cantidad).
   El renglón aparte es la suma por `clave`; su mínimo es el renglón de mínimo con ese servicio. `importe` NULL: sin precio, o sin la

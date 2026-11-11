@@ -428,6 +428,19 @@ SELECT pg_temp.caso('02 JN no', '42501', pg_temp.opcional('X', 'V2', jsonb_build
 SELECT pg_temp.caso('02 G sí', 'ok', pg_temp.opcional('OG', 'V2', jsonb_build_object(
   'porcentaje_id', pg_temp.id('Garantia'), 'forma', 'debajo'), 'G'));
 
+-- sql/195: lo que va debajo de cada ventana, por la cantidad y con IVA; el Recargo sigue en el precio.
+CREATE FUNCTION pg_temp.debajo(p_renglon text) RETURNS text LANGUAGE sql AS $f$
+  SELECT coalesce(pg_temp.consultar(format($q$
+    SELECT i.nombre || ': ' || coalesce(string_agg(replace(d->>'nombre', 'Zqx187 ', '') || '=' || (d->>'importe') || '/' ||
+           (d->>'importe_con_iva'), ',' ORDER BY n), '')
+    FROM presupuestos_version_importes(%L) i LEFT JOIN LATERAL jsonb_array_elements(i.debajo) WITH ORDINALITY AS x (d, n) ON true
+    WHERE i.renglon_id = %L AND i.clave IS NULL GROUP BY i.nombre$q$, pg_temp.id('V2'), pg_temp.id(p_renglon)), 'Juan'), '');
+$f$;
+SELECT pg_temp.caso('02 debajo: las líneas por la cantidad', 'Zqx187 V: Mosquitero=10000/12100,Garantia=6000/7260', pg_temp.debajo('T1'));
+SELECT pg_temp.caso('02 debajo: solo lo elegido', 'Zqx187 V: Mosquitero=5000/6050', pg_temp.debajo('T2'));
+SELECT pg_temp.caso('02 debajo: sin opcionales', 'Zqx187 V: ', pg_temp.debajo('T3'));
+SELECT pg_temp.caso('02 debajo: totales iguales', 'ARS 862600/0/21.0=181146/1043746/0', pg_temp.tot('V2'));
+
 SELECT pg_temp.caso('02 el mosquitero aparte, en Colocación al 10,5', 'ok', pg_temp.cambia('presupuestos_opcionales', 'OM',
   format($q$forma = 'aparte', seccion_id = %L$q$, pg_temp.id('Col'))));
 SELECT pg_temp.caso('02 aparte: el subtotal no cambia, el IVA sí', 'ARS 862600/0/21.0=177996,10.5=1575/1042171/0', pg_temp.tot('V2'));

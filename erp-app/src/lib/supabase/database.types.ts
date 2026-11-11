@@ -4848,6 +4848,7 @@ export type Database = {
         Returns: {
           alicuota: number
           clave: string
+          debajo: Json
           importe: number
           importe_con_iva: number
           moneda: Database["public"]["Enums"]["moneda"]
