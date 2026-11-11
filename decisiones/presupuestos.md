@@ -567,6 +567,21 @@ filas y las líneas. Una sección con un opcional aparte no ofrece *Sacar*, aunq
 fila). Fuera de borrador siguen solo las líneas de lo elegido debajo. Para el e2e, el paquete Zqx197 de `e2e/datos-opcionales.sql`.
 `Opcionales.tsx`, `AccionesVersion.tsx`.
 
+***Antes de publicar* es una tarjeta al final del editor: en borrador, lo que frena y lo que se va a pedir, con un botón,
+*Pedir autorización* o *Publicar*; en revisión, las filas del último pedido, y *Autorizar* y *Devolver* a quien resuelve ese
+tipo (2026-11-11).** En borrador lee `revisar` y `pedido` (a hoy); en revisión, `pedido` guardado en cada fila: quien autoriza ve
+lo que se pidió. Las filas de un pedido comparten `created_at` (el `now()` de su transacción), así que el último son las más
+nuevas, y en borrador dicen si volvió devuelta, con el motivo. Quien arma, en revisión, retira o publica (sin pendientes); confirmar
+en todo, y devolver pide motivo. Va al final: arriba, cada edición le cambiaba el alto, el navegador corría el scroll y se
+cerraba el menú abierto de un renglón. Un pedido nuevo que surge en plena revisión (gerencia bajó el tope) no se muestra: lo dice
+publicar al frenar (PR014). El nombre de quien pidió o resolvió sale de `obras_nombres`, y se omite si no figura en la obra. Costo:
+en borrador cada carga corre `revisar`, que recalcula cada ventana a hoy (~45 ms con 2 ventanas). `AntesDePublicar.tsx`,
+`getAntes` en `queries.ts`.
+
+**La base de desarrollo tiene una configuración de prueba, tope 10 % y plazo 15 días, y Tester arma sin autorizar (decisión del
+usuario, 2026-11-11).** Sin plazo, `revisar` frena todo, y Configuración no tiene pantalla; con `presupuestos_administrar`, Admin se
+autoriza solo y nunca se ve un pedido pendiente. Gerencia carga la suya al abrir el módulo. `e2e/datos-autorizaciones.sql`.
+
 **El impreso: solo lo publicado, y los datos de la empresa en un archivo de la app (decisión del usuario, 2026-11-10).** Publicado,
 todas las variantes; aprobado, la aprobada; rechazado, la última de cada una; un borrador no se imprime. Empresa: logo y datos fijos
 como marcadores hasta tenerlos, sin tabla hasta que haga falta cambiarlos desde una pantalla. Cliente: nombre y dirección de la obra y

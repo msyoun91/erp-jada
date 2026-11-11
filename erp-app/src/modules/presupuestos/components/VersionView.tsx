@@ -7,6 +7,7 @@ import { estadoVersion, formatAlicuota } from "../types";
 import { AccionesRenglon, AgregarRenglon } from "./AccionesRenglon";
 import { AccionesSeccion, NuevaSeccion } from "./AccionesSeccion";
 import { AccionesVersion } from "./AccionesVersion";
+import { AntesDePublicar } from "./AntesDePublicar";
 import { OpcionalesVentana } from "./Opcionales";
 
 type Importe = VersionEditor["importes"][number];
@@ -14,7 +15,15 @@ type Monto = { importe: number | null; importe_con_iva: number | null };
 
 const TIPO = { catalogo: null, mano: "A mano", minimo: "Mínimo" } as const;
 
-export function VersionView({ datos }: { datos: VersionEditor }) {
+export function VersionView({
+  datos,
+  nombres,
+  yo,
+}: {
+  datos: VersionEditor;
+  nombres: Record<string, string>;
+  yo: string;
+}) {
   const {
     presupuesto: p,
     version: v,
@@ -27,6 +36,7 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
     paquetes,
     formularios,
     opcionales,
+    antes,
   } = datos;
   const ids = secciones.map((s) => s.id);
   const ctx = { versionId: v.id, secciones, paquetes, formularios };
@@ -273,6 +283,18 @@ export function VersionView({ datos }: { datos: VersionEditor }) {
             })}
           </div>
         </section>
+      )}
+
+      {/* Al final: arriba, cada edición le cambia el alto y el navegador corre el scroll, que cierra los menús abiertos. */}
+      {antes && (v.estado === "borrador" || v.estado === "en_revision") && (
+        <AntesDePublicar
+          versionId={v.id}
+          numero={v.numero}
+          estado={v.estado}
+          antes={antes}
+          nombres={nombres}
+          yo={yo}
+        />
       )}
     </div>
   );

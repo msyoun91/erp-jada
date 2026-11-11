@@ -9,6 +9,7 @@ import { errorDeUpdate, mensajeError } from "@/lib/utils";
 import {
   altaSchema,
   datosVersionSchema,
+  devolverSchema,
   opcionalesSchema,
   renglonCatalogoSchema,
   renglonManoSchema,
@@ -16,6 +17,7 @@ import {
   todasSeccionesSchema,
   type AltaForm,
   type DatosVersionForm,
+  type DevolverForm,
   type FormularioVenta,
   type OpcionalesForm,
   type RenglonCatalogoForm,
@@ -207,6 +209,54 @@ export async function guardarOpcionales(input: OpcionalesForm): Promise<Resultad
     if (error) return trasGuardar(error);
   }
   return trasGuardar(null);
+}
+
+// Pedir, publicar y retirar los frena la base (PR005, PR014, PR017). Se revalida también al fallar: lo que frenó puede ser
+// algo que cambió desde que se abrió la página, y la lista de *Antes de publicar* tiene que mostrarlo.
+async function cicloVersion(
+  rpc: "presupuestos_version_pedir" | "presupuestos_version_publicar" | "presupuestos_version_retirar",
+  version: string
+) {
+  const parsed = idSchema.safeParse(version);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(rpc, { p_version: parsed.data });
+  revalidatePath("/presupuestos", "layout");
+  if (error) return { success: false as const, error: mensajeError(error) };
+  return { success: true as const, estado: data };
+}
+
+// Devuelve el estado en que quedó: `publicado` si quien pide ya podía autorizar todo.
+export async function pedirAutorizacion(version: string) {
+  return cicloVersion("presupuestos_version_pedir", version);
+}
+
+export async function publicarVersion(version: string) {
+  return cicloVersion("presupuestos_version_publicar", version);
+}
+
+export async function retirarVersion(version: string) {
+  return cicloVersion("presupuestos_version_retirar", version);
+}
+
+export async function autorizarPedido(id: string): Promise<Resultado> {
+  const parsed = idSchema.safeParse(id);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("presupuestos_pedido_resolver", { p_id: parsed.data, p_autoriza: true });
+  return trasGuardar(error ? mensajeError(error) : null);
+}
+
+export async function devolverPedido(input: DevolverForm): Promise<Resultado> {
+  const parsed = devolverSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("presupuestos_pedido_resolver", {
+    p_id: parsed.data.id,
+    p_autoriza: false,
+    p_motivo: parsed.data.motivo,
+  });
+  return trasGuardar(error ? mensajeError(error) : null);
 }
 
 // Un mínimo lo saca la base (PR012): de acá solo se saca una ventana o uno a mano.

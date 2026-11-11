@@ -183,6 +183,44 @@ export function estadoVersion(
   return ESTADO_VERSION[v.estado];
 }
 
+// Lo que pide autorización, como lo da `presupuestos_version_pedido` y como queda en `presupuestos_autorizaciones.pedido`.
+// Montos sin IVA, con el recargo; `diferencia` es a hoy menos mantenido.
+export type PedidoComercial = {
+  renglones: {
+    renglon_id: string;
+    etiqueta: string;
+    moneda: Enums["moneda"];
+    cantidad: number;
+    precio: number | null;
+    hoy: number | null;
+    condiciones_en: string | null;
+    diferencia: number | null;
+  }[];
+  diferencia: { moneda: Enums["moneda"]; monto: number }[];
+  // NULL si no pasa el tope.
+  descuento: number | null;
+  tope: number;
+  texto: string;
+};
+export type PedidoTecnica = { etiqueta: string; motivos: string[]; texto: string };
+
+// En borrador, lo que se va a pedir (`id` NULL; `estado` NULL si falta pedirlo, o `autorizada` si ya lo cubre una de
+// Técnica); en revisión, las filas del último pedido.
+export type AutorizacionVersion = {
+  id: string | null;
+  estado: "pendiente" | "autorizada" | null;
+  pedido_por: string | null;
+  pedido_en: string | null;
+  resuelto_por: string | null;
+  resuelto_en: string | null;
+} & ({ tipo: "comercial"; pedido: PedidoComercial } | { tipo: "tecnica"; pedido: PedidoTecnica });
+
+export const devolverSchema = z.object({
+  id: idSchema,
+  motivo: z.string().trim().min(1, "Escribí el motivo: lo lee quien la armó").max(500, "Máximo 500 caracteres"),
+});
+export type DevolverForm = z.input<typeof devolverSchema>;
+
 // Lo que va debajo de una ventana, como lo da `presupuestos_version_importes`.
 export type LineaDebajo = { clave: string; nombre: string; importe: number; importe_con_iva: number };
 

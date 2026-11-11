@@ -3,12 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
 import {
   opcionalesDe,
+  type AutorizacionVersion,
   type FormularioVenta,
   type IvaTotal,
   type LineaDebajo,
   type MensajeCatalogo,
   type Opcional,
   type OpcionalesForm,
+  type PedidoComercial,
+  type PedidoTecnica,
 } from "./types";
 
 type Presupuesto = Database["public"]["Tables"]["presupuestos"]["Row"];
@@ -161,6 +164,22 @@ export type VersionEditor = {
   // Cada opcional de las ventanas y cómo se ve; también los que tienen fila sin estar ya en ninguna ventana, que
   // frenan sacar la sección de su renglón aparte (PR011).
   opcionales: OpcionalVersion[];
+  // En borrador, solo para quien arma; en revisión, para quien la ve. NULL en los demás casos.
+  antes: AntesDePublicar | null;
+};
+
+export type AntesDePublicar = {
+  // Quien mira arma en la obra: pide, publica y retira.
+  arma: boolean;
+  // Lo que frena pedir y publicar (`presupuestos_version_revisar`); vacío si no arma.
+  frena: string[];
+  autorizaciones: AutorizacionVersion[];
+  // Los tipos de autorización pendientes que quien mira puede resolver.
+  resuelve: AutorizacionVersion["tipo"][];
+  // En borrador, la devolución que la trajo de vuelta, si el último pedido terminó así.
+  devuelta: Pick<Autorizacion, "motivo" | "resuelto_por" | "resuelto_en"> | null;
+  // Días hasta el vencimiento, si se publica hoy; NULL sin configuración.
+  plazo: number | null;
 };
 
 export type OpcionalVersion = Pick<Opcional, "clave" | "nombre"> & {
@@ -204,7 +223,7 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
       .order("created_at"),
     supabase.rpc("presupuestos_version_importes", { p_version: versionId }),
     supabase.rpc("presupuestos_version_totales", { p_version: versionId }),
-    supabase.from("presupuestos_configuracion").select("tope_descuento").eq("activo", true).maybeSingle(),
+    supabase.from("presupuestos_configuracion").select("tope_descuento, plazo_dias").eq("activo", true).maybeSingle(),
     supabase
       .from("presupuestos_opcionales")
       .select("id, pieza, porcentaje_id, clave, forma, seccion_id")
@@ -214,12 +233,18 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
   for (const r of [version, secciones, renglones, importes, totales, configuracion, filas]) if (r.error) throw r.error;
   if (!version.data) return null;
   const { presupuesto: { activo, ...presupuesto }, ...v } = version.data;
-  let editable = false;
-  if (activo && v.estado === "borrador") {
+  const abierta = activo && (v.estado === "borrador" || v.estado === "en_revision");
+  let arma = false;
+  if (abierta) {
     const { data, error } = await supabase.rpc("presupuestos_arma", { p_obra: presupuesto.obra.id });
     if (error) throw error;
-    editable = data;
+    arma = data;
   }
+  const editable = arma && v.estado === "borrador";
+  const antes =
+    abierta && (arma || v.estado === "en_revision")
+      ? await getAntes(versionId, v.estado, presupuesto.obra.id, arma, configuracion.data?.plazo_dias ?? null)
+      : null;
   let paquetes: VersionEditor["paquetes"] = [];
   const formularios: VersionEditor["formularios"] = {};
   if (editable) {
@@ -276,5 +301,70 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
     paquetes,
     formularios,
     opcionales: [...opcionales.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, "es")),
+    antes,
+  };
+}
+
+// En borrador, lo que se va a pedir sale de `presupuestos_version_pedido`, que calcula a hoy; en revisión, de las filas del
+// último pedido, con lo que se pidió guardado: quien autoriza ve lo que se pidió. Las filas de un mismo pedido comparten
+// `created_at` (el `now()` de su transacción).
+async function getAntes(
+  versionId: string,
+  estado: Version["estado"],
+  obra: string,
+  arma: boolean,
+  plazo: number | null
+): Promise<AntesDePublicar> {
+  const supabase = await createClient();
+  const borrador = estado === "borrador";
+  const [filas, revisar, pedido] = await Promise.all([
+    supabase
+      .from("presupuestos_autorizaciones")
+      .select("id, tipo, estado, motivo, pedido, pedido_por, resuelto_por, resuelto_en, created_at")
+      .eq("version_id", versionId)
+      .order("created_at", { ascending: false })
+      .order("tipo"),
+    arma ? supabase.rpc("presupuestos_version_revisar", { p_version: versionId }) : null,
+    arma && borrador ? supabase.rpc("presupuestos_version_pedido", { p_version: versionId }) : null,
+  ]);
+  for (const r of [filas, revisar, pedido]) if (r?.error) throw r.error;
+  const vuelta = (filas.data ?? []).filter((f, _, todas) => f.created_at === todas[0].created_at);
+
+  let autorizaciones: AutorizacionVersion[];
+  if (borrador) {
+    const p = pedido?.data as { comercial: PedidoComercial | null; tecnica: (PedidoTecnica & { estado: "autorizada" | null })[] } | undefined;
+    const sinFila = { id: null, pedido_por: null, pedido_en: null, resuelto_por: null, resuelto_en: null };
+    autorizaciones = [
+      ...(p?.comercial ? [{ ...sinFila, tipo: "comercial" as const, estado: null, pedido: p.comercial }] : []),
+      ...(p?.tecnica ?? []).map((t) => ({ ...sinFila, tipo: "tecnica" as const, estado: t.estado, pedido: t })),
+    ];
+  } else {
+    autorizaciones = vuelta.flatMap((f): AutorizacionVersion[] => {
+      if (f.estado !== "pendiente" && f.estado !== "autorizada") return [];
+      const comun = { id: f.id, estado: f.estado, pedido_por: f.pedido_por, pedido_en: f.created_at, resuelto_por: f.resuelto_por, resuelto_en: f.resuelto_en };
+      return [
+        f.tipo === "comercial"
+          ? { ...comun, tipo: "comercial", pedido: f.pedido as PedidoComercial }
+          : { ...comun, tipo: "tecnica", pedido: f.pedido as PedidoTecnica },
+      ];
+    });
+  }
+
+  const pendientes = [...new Set(autorizaciones.filter((a) => a.estado === "pendiente").map((a) => a.tipo))];
+  const puede = await Promise.all(
+    pendientes.map(async (tipo) => {
+      const { data, error } = await supabase.rpc("presupuestos_puede_autorizar", { p_tipo: tipo, p_obra: obra });
+      if (error) throw error;
+      return data;
+    })
+  );
+  const devuelta = borrador ? vuelta.find((f) => f.estado === "devuelta") : undefined;
+  return {
+    arma,
+    frena: revisar?.data ?? [],
+    autorizaciones,
+    resuelve: pendientes.filter((_, n) => puede[n]),
+    devuelta: devuelta ? { motivo: devuelta.motivo, resuelto_por: devuelta.resuelto_por, resuelto_en: devuelta.resuelto_en } : null,
+    plazo,
   };
 }
