@@ -775,3 +775,135 @@ test("admin cambia el tope y el plazo, el historial lo guarda; tester no ve Conf
   await admin.ctx.close();
   await tester.ctx.close();
 });
+
+// Necesita e2e/datos-opcionales.sql (Zqx197) y datos-autorizaciones.sql (plazo). Aprobar mueve la obra: termina revertido,
+// publicado, así la obra queda como estaba.
+test("admin imprime lo publicado: cada variante con lo cargado, debajo y aparte; aprobado, solo la aprobada", async ({ browser }) => {
+  test.setTimeout(240_000);
+  const { ctx, page } = await como(browser, "admin");
+  const dialogo = page.getByRole("dialog");
+  const cabecera = page.locator("div.card").first();
+  const publicar = async () => {
+    await page.getByRole("region", { name: "Antes de publicar" }).getByRole("button", { name: "Publicar" }).click();
+    await dialogo.getByRole("button", { name: "Publicar" }).click();
+    await expect(page.getByText("Publicada", { exact: true })).toBeVisible();
+  };
+
+  await page.goto("/presupuestos");
+  await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+  const alta = panel(page);
+  await alta.getByLabel("Obra").selectOption({ label: "Edificio Norte Zqx20218 A" });
+  await alta.getByLabel("Nombre", { exact: true }).fill(`Impreso ${marca}`);
+  await alta.getByRole("button", { name: "Crear presupuesto" }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}$/);
+  const ficha = page.url();
+
+  // Un borrador no se imprime.
+  await expect(cabecera.getByRole("link", { name: "Imprimir" })).toHaveCount(0);
+  await page.goto(`${ficha}/imprimir`);
+  await expect(page.getByText("Un borrador no se imprime: primero se publica.")).toBeVisible();
+  await page.goto(ficha);
+
+  // Aluminio: una ventana con el Mosquitero debajo, la Cortina en el precio y la Colocación aparte, y un flete a mano.
+  await page.getByRole("link", { name: /Versión 1/ }).click();
+  await expect(page.getByRole("heading", { name: "Versión 1" })).toBeVisible();
+  await page.getByRole("button", { name: "Editar" }).click();
+  await panel(page).getByLabel("Nombre de la variante").fill("Aluminio");
+  await panel(page).getByRole("button", { name: "Guardar" }).click();
+  await expect(page.getByRole("heading", { name: "Versión 1 · Aluminio" })).toBeVisible();
+  await page.getByRole("button", { name: "Nueva sección" }).click();
+  await panel(page).getByLabel("Nombre").fill("Colocación");
+  await panel(page).getByLabel("IVA").selectOption("10.5");
+  await panel(page).getByRole("button", { name: "Crear sección" }).click();
+  const general = page.getByRole("region", { name: "General" });
+  await general.getByRole("button", { name: "De Catálogo" }).click();
+  const cat = panel(page);
+  await cat.getByLabel("Designación").fill("V1");
+  await cat.getByLabel("Ubicación").fill("Lavadero");
+  await cat.getByLabel("Paquete").selectOption({ label: "Zqx197 Ventana opcionales" });
+  await cat.getByLabel(/^ancho/).fill("1200");
+  await cat.getByLabel(/^alto/).fill("1000");
+  await cat.getByRole("button", { name: "Agregar" }).click();
+  await expect(cat).toBeHidden();
+  await expect(general.getByRole("listitem").filter({ hasText: "V1" })).toBeVisible();
+  await cabecera.getByRole("button", { name: "Más acciones" }).click();
+  await page.getByRole("button", { name: "Cómo se ven los opcionales…" }).click();
+  await panel(page).getByLabel("Mosquitero").selectOption("debajo");
+  await panel(page).getByLabel("Zqx197 Colocación").selectOption({ label: "Colocación · ARS · IVA 10,5 %" });
+  await panel(page).getByRole("button", { name: "Guardar" }).click();
+  await expect(panel(page)).toBeHidden();
+  const opcionales = general.getByRole("listitem").filter({ hasText: "V1" }).getByRole("group", { name: "Opcionales" });
+  await opcionales.getByRole("checkbox", { name: "Mosquitero" }).check();
+  await expect(opcionales.getByText("$9.600")).toBeVisible();
+  await opcionales.getByRole("button", { name: "Cortina" }).click();
+  await expect(opcionales.getByRole("button", { name: "Cortina" })).toHaveAttribute("aria-pressed", "true");
+  await opcionales.getByRole("button", { name: "Zqx197 Colocación" }).click();
+  await expect(page.getByRole("region", { name: "Colocación" }).getByText("De 1 ventana")).toBeVisible();
+  await general.getByRole("button", { name: "A mano" }).click();
+  await panel(page).getByLabel("Descripción").fill("Flete cerrado a Pilar");
+  await panel(page).getByLabel(/Precio por unidad/).fill("150000");
+  await panel(page).getByRole("button", { name: "Agregar" }).click();
+  await expect(panel(page)).toBeHidden();
+  await publicar();
+
+  // PVC, a partir de Aluminio.
+  await page.goto(ficha);
+  await tarjeta(page, "Aluminio").getByRole("button", { name: "Más acciones" }).click();
+  await page.getByRole("button", { name: "Sumar variante a partir de esta" }).click();
+  await expect(page.getByRole("heading", { name: "Versión 2" })).toBeVisible();
+  await page.getByRole("button", { name: "Editar" }).click();
+  await panel(page).getByLabel("Nombre de la variante").fill("PVC");
+  await panel(page).getByRole("button", { name: "Guardar" }).click();
+  await expect(panel(page)).toBeHidden();
+  await publicar();
+
+  await page.goto(ficha);
+  await cabecera.getByRole("link", { name: "Imprimir" }).click();
+  await expect(page).toHaveURL(/\/imprimir$/);
+  await expect(page.getByRole("heading", { name: `Impreso ${marca}` })).toBeVisible();
+  await expect(page.getByText(/^Aluminio \$[\d.]+ · PVC \$[\d.]+$/)).toBeVisible();
+  const aluminio = page.getByRole("region", { name: "Aluminio" });
+  await expect(aluminio.getByText(/^IVA discriminado · Válido hasta el \d/)).toBeVisible();
+  const v1 = aluminio.getByRole("listitem").filter({ hasText: "V1" });
+  await expect(v1.getByText("Zqx197 Ventana opcionales · Lavadero")).toBeVisible();
+  // Lo cargado, sin el Mosquitero: va en su línea, debajo.
+  await expect(v1.getByText("ancho 1200 · alto 1000 · con Cajón · con Cortina", { exact: true })).toBeVisible();
+  await expect(v1.getByText("Mosquitero", { exact: true })).toBeVisible();
+  await expect(v1.getByText("$9.600")).toBeVisible();
+  await expect(aluminio.getByRole("listitem").filter({ hasText: "Zqx197 Colocación" }).getByText("De 1 ventana")).toBeVisible();
+  await expect(aluminio.getByText("Flete cerrado a Pilar")).toBeVisible();
+  await expect(aluminio.getByText("Total", { exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "PVC" })).toBeVisible();
+  // Nada de lo interno: ni etiquetas del editor ni acciones.
+  await expect(page.getByText("A mano", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("main").getByRole("button", { name: "Más acciones" })).toHaveCount(0);
+  await page.screenshot({ path: "e2e/.out/pres-impreso.png", fullPage: true });
+
+  // En papel, solo la hoja.
+  await page.emulateMedia({ media: "print" });
+  await expect(page.getByRole("heading", { name: "Presupuestos", exact: true })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Imprimir" })).toBeHidden();
+  await expect(page.getByRole("heading", { name: `Impreso ${marca}` })).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-impreso-papel.png", fullPage: true });
+  await page.pdf({ path: "e2e/.out/pres-impreso.pdf", format: "A4" });
+  await page.emulateMedia({ media: "screen" });
+
+  // Aprobado, solo la aprobada.
+  await page.goto(ficha);
+  await cabecera.getByRole("button", { name: "Aprobar" }).click();
+  await dialogo.getByRole("radio", { name: /^PVC/ }).check();
+  await dialogo.getByRole("button", { name: "Aprobar" }).click();
+  await expect(cabecera.getByText("Aprobado", { exact: true })).toBeVisible();
+  await cabecera.getByRole("link", { name: "Imprimir" }).click();
+  await expect(page.getByRole("region", { name: "PVC" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Aluminio" })).toHaveCount(0);
+  await expect(page.getByText(/^Aluminio \$/)).toHaveCount(0);
+
+  await page.goto(ficha);
+  await cabecera.getByRole("button", { name: "Más acciones" }).click();
+  await page.getByRole("button", { name: "Revertir…" }).click();
+  await dialogo.getByLabel("Por qué se revierte").fill("Prueba del impreso");
+  await dialogo.getByRole("button", { name: "Revertir" }).click();
+  await expect(cabecera.getByText("Publicado", { exact: true })).toBeVisible();
+  await ctx.close();
+});

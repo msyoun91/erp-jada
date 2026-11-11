@@ -495,6 +495,26 @@ SELECT pg_temp.caso('05 sin INSERT ni UPDATE', 'false/false',
 SELECT pg_temp.caso('05 RLS', 'true', (SELECT relrowsecurity::text FROM pg_class WHERE oid = 'public.presupuestos_autorizaciones'::regclass));
 
 -- ============================================================
+-- 06. Lo cargado, para el impreso (sql/198)
+-- ============================================================
+CREATE FUNCTION pg_temp.nombres(p_version text, p_como text) RETURNS text LANGUAGE sql AS $f$
+  SELECT pg_temp.consultar(format($q$
+    SELECT coalesce((SELECT string_agg(value, ',' ORDER BY value) FROM jsonb_each_text(x->'nombres')), '') || '/'
+      || coalesce((SELECT string_agg(split_part(key, ':', 2) || '=' || value, ',' ORDER BY value) FROM jsonb_each_text(x->'orden')), '')
+    FROM (SELECT presupuestos_version_nombres(%s) AS x) s$q$, pg_temp.l(p_version)), p_como);
+$f$;
+SELECT pg_temp.caso('06 Juan lee el vidrio de la V7 y el orden de las medidas, sin leer Catálogo', 'Zqx189 DVH/ancho=1,alto=2/0',
+  pg_temp.nombres('V1', 'Juan') || '/' || pg_temp.consultar('SELECT count(*)::text FROM catalogo_insumos', 'Juan'));
+SELECT pg_temp.caso('06 el DVH dado de baja sigue con su nombre', 'false', (SELECT activo::text FROM catalogo_insumos WHERE id = pg_temp.id('DVH')));
+SELECT pg_temp.caso('06 sin el DVH, solo las medidas', '/ancho=1,alto=2', pg_temp.nombres('V4', 'Juan'));
+SELECT pg_temp.caso('06 Ana no ve la obra', '{}/{}', pg_temp.consultar(format(
+  $q$SELECT x->>'nombres' || '/' || (x->>'orden') FROM (SELECT presupuestos_version_nombres(%s) AS x) s$q$, pg_temp.l('V1')), 'Ana'));
+SELECT pg_temp.caso('06 Técnica no la lee', '{}/{}', pg_temp.consultar(format(
+  $q$SELECT x->>'nombres' || '/' || (x->>'orden') FROM (SELECT presupuestos_version_nombres(%s) AS x) s$q$, pg_temp.l('V1')), 'Sofia'));
+SELECT pg_temp.caso('06 anon: nombres', 'false',
+  has_function_privilege('anon', 'public.presupuestos_version_nombres(uuid)', 'EXECUTE')::text);
+
+-- ============================================================
 -- Resultado
 -- ============================================================
 DO $$
