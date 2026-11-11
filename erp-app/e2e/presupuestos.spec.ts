@@ -136,7 +136,7 @@ test("admin carga renglones a mano y de Catálogo, los edita, duplica y saca", a
   await v1.getByRole("button", { name: "Duplicar" }).click();
   const dup = panel(page);
   await expect(dup.getByLabel(/^Ancho/)).toHaveValue("1200");
-  await dup.getByLabel("Designación").fill("V2");
+  await expect(dup.getByLabel("Designación")).toHaveValue("V2");
   await dup.getByRole("button", { name: "Agregar" }).click();
   await expect(dup).toBeHidden();
   const v2 = general.getByRole("listitem").filter({ hasText: "V2" });
@@ -158,7 +158,7 @@ test("admin carga renglones a mano y de Catálogo, los edita, duplica y saca", a
   await ctx.close();
 });
 
-test("admin carga dos ventanas seguidas con Seguir cargando", async ({ browser }) => {
+test("admin carga ventanas en serie: foco, rango, seguir cargando y lo cargado en la fila", async ({ browser }) => {
   test.setTimeout(120_000);
   const ctx = await browser.newContext({ storageState: "e2e/.auth/admin.json" });
   const page = await ctx.newPage();
@@ -177,12 +177,17 @@ test("admin carga dos ventanas seguidas con Seguir cargando", async ({ browser }
   const cat = panel(page);
   const paquete = cat.getByLabel("Paquete");
   const cantidad = cat.locator("#renglon-cantidad");
+  await expect(cat.getByLabel("Designación")).toBeFocused();
   await cat.getByLabel("Seguir cargando").check();
   await cat.getByLabel("Designación").fill("V09");
   await cat.getByLabel("Ubicación").fill("Lavadero");
   await paquete.selectOption({ index: 1 });
   const elegido = await paquete.inputValue();
+  // Pasado el máximo se marca al escribir, sin esperar a guardar.
+  await cat.getByLabel(/^Ancho/).fill("99999");
+  await expect(cat.getByLabel(/^Ancho/)).toHaveClass(/input-error/);
   await cat.getByLabel(/^Ancho/).fill("1200");
+  await expect(cat.getByLabel(/^Ancho/)).not.toHaveClass(/input-error/);
   await cantidad.fill("2");
   await cat.getByLabel(/^Alto/).fill("1000");
   await cat.getByLabel(/^Alto/).press("Enter");
@@ -195,7 +200,10 @@ test("admin carga dos ventanas seguidas con Seguir cargando", async ({ browser }
   await expect(cat.getByLabel(/^Alto/)).toHaveValue("");
   await expect(cantidad).toHaveValue("1");
   await expect(paquete).toHaveValue(elegido);
-  await expect(general.getByRole("listitem").filter({ hasText: "V09" }).getByText(/Lavadero · 2 u\./)).toBeVisible();
+  await expect(cat.locator('optgroup[label="En este presupuesto"] option')).toHaveCount(1);
+  const v09 = general.getByRole("listitem").filter({ hasText: "V09" });
+  await expect(v09.getByText(/Lavadero · 2 u\./)).toBeVisible();
+  await expect(v09.getByText(/ancho 1200 · alto 1000/i)).toBeVisible();
   await page.screenshot({ path: "e2e/.out/pres-renglon-seguir.png", fullPage: true });
 
   await cat.getByLabel(/^Ancho/).fill("1500");
@@ -203,7 +211,17 @@ test("admin carga dos ventanas seguidas con Seguir cargando", async ({ browser }
   await cat.getByLabel("Seguir cargando").uncheck();
   await cat.getByRole("button", { name: "Agregar" }).click();
   await expect(cat).toBeHidden();
-  await expect(general.getByRole("listitem").filter({ hasText: "V10" })).toBeVisible();
+  const v10 = general.getByRole("listitem").filter({ hasText: "V10" });
+  await expect(v10.getByText(/ancho 1500 · alto 1100/i)).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-renglones-cargado.png", fullPage: true });
+
+  // Tocar la fila edita, sin pasar por el menú.
+  await v10.getByText("V10", { exact: true }).click();
+  const editar = panel(page);
+  await expect(editar.getByRole("heading", { name: "Editar renglón" })).toBeVisible();
+  await expect(editar.getByLabel(/^Ancho/)).toHaveValue("1500");
+  await page.keyboard.press("Escape");
+  await expect(editar).toBeHidden();
   await ctx.close();
 });
 
