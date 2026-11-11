@@ -241,7 +241,8 @@ hasta que se apruebe la obra.
 
 **"Llevar a un presupuesto", desde la calculadora, pide la obra y abre un borrador con la ventana cargada (decisión del usuario,
 2026-11-06).** "¿Cuánto sale una de 150×110?" suele terminar en "mandámelo", y así no se carga dos veces. Si la obra no existe, se crea en
-Obras y la ventana vuelve con ella; cómo vuelve se decide con las pantallas. Se descartó volver a cargarla a mano.
+Obras y la ventana vuelve con ella (cómo: *Pantallas* → *La obra nueva se crea sin salir de la calculadora*). Se descartó volver a
+cargarla a mano.
 
 ## Quién accede
 
@@ -509,7 +510,8 @@ autorización*, *Devueltas*) · ficha `/presupuestos/[id]` (una tarjeta por vari
 quitar; encabezado según estado) · editor `/presupuestos/[id]/[version]` (secciones, renglones, opcionales, totales y *Antes de
 publicar*; solo lectura fuera de borrador o sin armar; quien autoriza resuelve ahí) · impreso `/presupuestos/[id]/imprimir` ·
 Revisión técnica `/presupuestos/revision` y `/presupuestos/revision/[version]` · Configuración · y la sección en la ficha de la obra,
-por composición en `app/`. La calculadora sin guardar sigue en Catálogo; su formulario sube a `components/` para usarlo en los dos.
+por composición en `app/`. La calculadora de Catálogo queda ahí; la del vendedor va en Presupuestos (*La calculadora de venta*,
+2026-11-11). El formulario sube a `components/` para usarlo en los dos.
 
 **La lista lee las tablas, sin función propia (2026-11-10).** *Esperan mi autorización*: pedidos `comercial` pendientes de versiones
 `en_revision`, y `presupuestos_puede_autorizar` una vez por obra. *Devueltas*: versiones en borrador cuyo pedido más nuevo quedó
@@ -706,6 +708,26 @@ lo ve: no publica. El motivo va en minúscula y sin el detalle, que está en la 
 corre al pasar a ese estado, no sobre lo que ya está; son la excepción a "contratada si y solo si hay un aprobado", y publicar o
 rechazar ya no las mueve. Se descartaron pasarlas a cotización (deshace algo que comercial marcó a propósito) y cargarles un
 presupuesto (trabajo a mano sin valor).
+
+**La calculadora de venta está en Presupuestos: *Calculadora*, junto a *Nuevo presupuesto* en la lista, abre
+`/presupuestos/calculadora`, con `presupuestos_armar` (decisión del usuario, 2026-11-11).** Es la consulta rápida del vendedor
+("¿cuánto sale una de 150×110?"), que no tiene la vista Paquetes; la de Catálogo sigue en la versión del paquete. Lista a la venta,
+el formulario de `components/entrada/`, moneda (arranca en la principal) y precio sin IVA; sin despiece, costos ni fórmulas.
+Debajo, los mínimos que esa ventana sola no alcanza ("Si es la única ventana: Mínimo de Colocación + US$ 114 · Total US$ 594"),
+con `catalogo_precio_minimos`: sin eso, el presupuesto llegaba con más de lo que Juan dijo. Sin recargo de comisión, que depende de la
+obra: en una con referente en %, el presupuesto sale más alto, lo aceptado en `BACKLOG.md` → *Comisiones*. Sin SQL nuevo.
+
+**"Llevar a un presupuesto" abre el panel de alta con la ventana resumida arriba, y siempre crea un presupuesto nuevo (decisión del
+usuario, 2026-11-11).** Pasan el paquete, lo cargado, los opcionales y la moneda en que la vio, que es la de la sección (se puede
+cambiar); cantidad 1, sin designación ni ubicación. Si la obra ya tiene un borrador, se suma desde su editor, que tiene el mismo
+formulario: se descartó listar los borradores en el panel. Presupuesto, v1, sección y ventana se guardan juntos: `presupuestos_alta`
+suma una ventana opcional, para no dejar un borrador vacío si la ventana falla.
+
+**La obra nueva se crea sin salir de la calculadora: *+ Nueva obra*, junto al selector, abre encima el alta de Obras, y al crearla
+vuelve al panel con la obra elegida (decisión del usuario, 2026-11-11).** El panel de Obras recibe `onCreada` en lugar de ir a la
+ficha; la página en `app/` compone los dos, como la sección en la obra. Sin `obras_crear`, no aparece. Si la obra sale parecida,
+espera aprobación: el presupuesto se arma y no se publica, como ya frena la base. Se descartó ir a Obras y volver con lo cargado en
+la URL: más código, y la ventana se perdía si Juan se iba por otro lado.
 
 ## La base
 

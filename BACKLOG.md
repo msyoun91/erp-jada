@@ -94,10 +94,10 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   obra (2026-11-11: debajo del encabezado, y *Nuevo presupuesto* con la obra puesta; sin SQL nuevo), y el aviso de obra perdida en
   el editor (2026-11-11, `decisiones/presupuestos.md` → *Pantallas*; sin SQL nuevo), y en la lista de Obras el contador
   "Contratada · 1 en cotización" (2026-11-11, `decisiones/obras.md` → *Los estados son solo comerciales*; sin SQL nuevo).
-  **Siguiente:** lo decidido que no entró en las siete pantallas: "Llevar a un presupuesto" desde la calculadora
-  (`decisiones/presupuestos.md` → *Efectos en la obra*). Antes de construirlo, a decidir: cómo vuelve la ventana con una obra nueva, y
-  desde qué calculadora sale, porque la única está en la versión del paquete de Catálogo, que pide la vista Paquetes y el vendedor no la
-  tiene (la ficha le da la calculadora con `presupuestos_armar`). Esto no está en la ficha:
+  **Siguiente:** "Llevar a un presupuesto" desde la calculadora de venta, ya decidido (2026-11-11, `decisiones/presupuestos.md` →
+  *Pantallas*, las tres últimas). Primero el SQL: `presupuestos_alta` con una ventana opcional (paquete, entrada, opcionales) que se
+  guarda junto con el presupuesto, y su test. Después las pantallas: `/presupuestos/calculadora` con los mínimos, el panel de alta con
+  la ventana, y *+ Nueva obra* con `onCreada` en el panel de Obras. Esto no está en la ficha:
   - **Del 4, con el portal:** no aprobar si un mínimo hace que el total difiera de lo que confirmó el cliente (etapa 2).
   - **Del 3b, para las pantallas:** el filtro *Esperan mi autorización* lee `presupuestos_autorizaciones` pendientes `comercial`
     con versión `en_revision`, y por fila `presupuestos_puede_autorizar('comercial', obra)`; si la lista crece, una función que lo
