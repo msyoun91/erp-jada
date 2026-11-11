@@ -736,6 +736,15 @@ Cambiar de paquete pasa lo cargado por nombre, como en el renglón (`pasarAPaque
 calculadora: desde la lista no hay nada cargado que perder. El total suma los mínimos a la ventana, y es el subtotal del editor
 al crear. `CalculadoraVenta.tsx`, `calcularVentana`, `app/(erp-app)/presupuestos/calculadora/`, `e2e/datos-calculadora.sql`.
 
+***Seguir cargando*: una casilla en el pie del panel de Catálogo deja el panel abierto al agregar, listo para la ventana siguiente
+(decisión del usuario, 2026-11-11).** Juan carga 24 ventanas con el mismo paquete, color y vidrio, y los elegía 24 veces. Quedan el
+paquete, el color, lo elegido, los opcionales y la sección; la designación avanza si termina en número (V4 → V5, PF-09 → PF-10), la
+ubicación se vacía y la cantidad vuelve a 1. Lo que se escribe en mm se limpia: olvidado, la ventana queda sin precio y el aviso lo
+dice; heredado, V5 se guardaba con el alto de V4 sin avisar. Casilla y no un segundo botón: se elige una vez por tanda, Enter sigue
+guardando y el pie entra en el celular. Arranca destildada, en el lugar de la nota del precio; al agregar y al duplicar, no al
+editar ni en *A mano*. El aviso nombra la ventana y no dice el precio: guardar devuelve el de una unidad sin IVA, y la fila muestra
+lo que ve el cliente. `RenglonPanel.tsx`, `e2e/presupuestos.spec.ts`.
+
 ## La base
 
 Esquema: `db_schema/presupuestos.md`. Tramos: 1 registros (`sql/185`) · 2a renglones y precio (`sql/186`) · 2b opcionales y

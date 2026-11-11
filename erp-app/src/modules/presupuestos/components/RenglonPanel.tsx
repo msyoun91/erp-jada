@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useWatch, type FieldError, type UseFormRegisterReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -62,7 +62,10 @@ export function RenglonCatalogoPanel({
   const [tocado, setTocado] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [enviando, setEnviando] = useState(false);
-  const { register, handleSubmit, formState, control } = useForm<RenglonCatalogoForm>({
+  // Al agregar, el panel queda abierto para la ventana siguiente (decisiones/presupuestos.md → *Seguir cargando*).
+  const [seguir, setSeguir] = useState(false);
+  const [agregadas, setAgregadas] = useState(0);
+  const { register, handleSubmit, formState, control, reset, getValues, setFocus } = useForm<RenglonCatalogoForm>({
     resolver: zodResolver(renglonCatalogoCampos),
     defaultValues: {
       id: editar?.id,
@@ -78,6 +81,11 @@ export function RenglonCatalogoPanel({
   const paquete = useWatch({ control, name: "paquete_id" });
   const malEscrita = formulario !== null && hayMalEscrita(formulario, estado);
   const fueraDeVenta = renglon?.paquete_id && !paquetes.some((p) => p.paquete_id === renglon.paquete_id);
+
+  // En un efecto: `reset` suelta las referencias de los campos, y el foco pedido en el mismo paso no llega.
+  useEffect(() => {
+    if (agregadas > 0) setFocus("designacion", { shouldSelect: true });
+  }, [agregadas, setFocus]);
 
   async function elegirPaquete(id: string) {
     const antes: Entrada = formulario ? aEntrada(estado, formulario) : {};
@@ -113,9 +121,24 @@ export function RenglonCatalogoPanel({
       toast.error(result.error);
       return;
     }
-    if (result.precio === null) toast.warning(`Quedó sin precio: ${result.mensaje ?? "revisá lo cargado"}`);
-    else toast.success(editar ? "Renglón guardado" : "Renglón agregado");
-    onClose();
+    // Con el panel abierto no se ve la fila: el aviso dice cuál entró.
+    const etiqueta = [data.designacion, data.ubicacion].filter(Boolean).join(" · ");
+    if (result.precio === null)
+      toast.warning(`${etiqueta ? `${etiqueta} quedó` : "Quedó"} sin precio: ${result.mensaje ?? "revisá lo cargado"}`);
+    else toast.success(editar ? "Renglón guardado" : etiqueta ? `Agregado: ${etiqueta}` : "Renglón agregado");
+    if (editar || !seguir) {
+      onClose();
+      return;
+    }
+    // Lo que se escribe en mm no pasa a la siguiente: olvidado, queda sin precio y avisa; heredado, no avisa.
+    const medidas = new Set(formulario?.variables.filter((v) => !v.es_lista && !v.es_cantidad).map((v) => v.id));
+    setEstado((e) => ({
+      ...e,
+      variables: Object.fromEntries(Object.entries(e.variables).filter(([id]) => !medidas.has(id))),
+    }));
+    setTocado(false);
+    reset({ ...getValues(), designacion: siguienteDesignacion(data.designacion ?? ""), ubicacion: "", cantidad: 1 });
+    setAgregadas((n) => n + 1);
   }
 
   const tocar = <T,>(set: (v: T) => void) => (v: T) => {
@@ -137,9 +160,16 @@ export function RenglonCatalogoPanel({
           form={CATALOGO_FORM}
           deshabilitado={cargando || malEscrita}
           nota={
-            editar?.mantener && editar.condiciones_en
-              ? `Mantenida: se calcula con los precios del ${formatFecha(editar.condiciones_en)}.`
-              : "El precio lo calcula Catálogo al guardar, a hoy."
+            !editar ? (
+              <label className="tap-target flex items-center gap-2">
+                <input type="checkbox" checked={seguir} onChange={(e) => setSeguir(e.target.checked)} />
+                <span className="t-body-m">Seguir cargando</span>
+              </label>
+            ) : editar.mantener && editar.condiciones_en ? (
+              `Mantenida: se calcula con los precios del ${formatFecha(editar.condiciones_en)}.`
+            ) : (
+              "El precio lo calcula Catálogo al guardar, a hoy."
+            )
           }
         />
       }
@@ -361,6 +391,12 @@ function CamposEtiqueta({
       </Campo>
     </>
   );
+}
+
+// "V4" → "V5", "PF-09" → "PF-10"; sin número al final, vacía.
+function siguienteDesignacion(d: string) {
+  const m = /^(.*?)(\d+)$/.exec(d);
+  return m ? m[1] + String(Number(m[2]) + 1).padStart(m[2].length, "0") : "";
 }
 
 export function opcionSeccion(s: Seccion) {
