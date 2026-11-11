@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Layers, ListChecks, Pencil } from "lucide-react";
+import { History, Layers, ListChecks, Pencil, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
+import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { MONEDAS, MONEDAS_LISTA } from "@/lib/monedas";
-import { cambiarTodasLasSecciones, guardarDatosVersion } from "../actions";
+import { cambiarTodasLasSecciones, guardarDatosVersion, mantenerRenglones } from "../actions";
 import type { OpcionalVersion, VersionEditor } from "../queries";
 import {
   ALICUOTAS,
@@ -28,14 +29,20 @@ export function AccionesVersion({
   tope,
   secciones,
   opcionales,
+  renglones,
 }: {
   version: Version;
   tope: number | null;
   secciones: VersionEditor["secciones"];
   opcionales: OpcionalVersion[];
+  renglones: VersionEditor["renglones"];
 }) {
-  const [abierto, setAbierto] = useState<"datos" | "secciones" | "opcionales" | null>(null);
+  const [abierto, setAbierto] = useState<"datos" | "secciones" | "opcionales" | "a_hoy" | "mantener" | null>(null);
   const cerrar = () => setAbierto(null);
+  // A hoy van las ventanas y los mínimos: también actualiza lo que ya estaba a hoy y cambió de precio.
+  const deCatalogo = renglones.filter((r) => r.tipo !== "mano");
+  const mantenidos = deCatalogo.filter((r) => r.mantener).length;
+  const mantenibles = deCatalogo.filter((r) => r.mantener_en && !r.mantener);
   const items = [
     ...(secciones.length > 1
       ? [{ label: "Todas las secciones…", icon: <Layers size={14} />, onClick: () => setAbierto("secciones") }]
@@ -43,7 +50,24 @@ export function AccionesVersion({
     ...(opcionales.length > 0
       ? [{ label: "Cómo se ven los opcionales…", icon: <ListChecks size={14} />, onClick: () => setAbierto("opcionales") }]
       : []),
+    ...(mantenibles.length > 0
+      ? [{ label: "Mantener todas…", icon: <History size={14} />, onClick: () => setAbierto("mantener") }]
+      : []),
+    ...(deCatalogo.length > 0
+      ? [{ label: "Todas a hoy…", icon: <RefreshCw size={14} />, onClick: () => setAbierto("a_hoy") }]
+      : []),
   ];
+
+  async function mantener(ids: string[], si: boolean) {
+    const result = await mantenerRenglones(version.id, ids, si);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    const sin = result.renglones.filter((r) => r.precio === null).length;
+    if (sin > 0) toast.warning(sin === 1 ? "1 ventana quedó sin precio" : `${sin} ventanas quedaron sin precio`);
+    else toast.success(si ? (ids.length === 1 ? "1 renglón mantenido" : `${ids.length} renglones mantenidos`) : "Todo a hoy");
+  }
   return (
     <>
       <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAbierto("datos")}>
@@ -55,6 +79,32 @@ export function AccionesVersion({
       {abierto === "secciones" && <TodasSeccionesPanel versionId={version.id} onClose={cerrar} />}
       {abierto === "opcionales" && (
         <OpcionalesPanel versionId={version.id} opcionales={opcionales} secciones={secciones} onClose={cerrar} />
+      )}
+      {abierto === "mantener" && (
+        <ConfirmModal
+          title="Mantener todas"
+          mensaje={`${
+            mantenibles.length === 1 ? "El renglón copiado vuelve" : `Los ${mantenibles.length} renglones copiados vuelven`
+          } a los precios de la versión de la que salió esta. Mantener pide autorización del jefe comercial, aunque el precio no cambie.`}
+          confirmLabel="Mantener"
+          onConfirm={() => mantener(mantenibles.map((r) => r.id), true)}
+          onClose={cerrar}
+        />
+      )}
+      {abierto === "a_hoy" && (
+        <ConfirmModal
+          title="Todas a hoy"
+          mensaje={`Las ventanas y los mínimos se recalculan con los precios de hoy.${
+            mantenidos === 0
+              ? ""
+              : mantenidos === 1
+                ? " El mantenido deja de estarlo."
+                : ` Los ${mantenidos} mantenidos dejan de estarlo.`
+          }`}
+          confirmLabel="Pasar a hoy"
+          onConfirm={() => mantener(deCatalogo.map((r) => r.id), false)}
+          onClose={cerrar}
+        />
       )}
     </>
   );

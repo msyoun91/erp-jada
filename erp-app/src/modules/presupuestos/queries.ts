@@ -154,7 +154,14 @@ export type VersionEditor = {
     | "descripcion"
     | "precio"
     | "moneda"
-  > & { mensajes: MensajeCatalogo[]; entrada: Entrada | null; opcionales: string[] })[];
+  > & {
+    mensajes: MensajeCatalogo[];
+    entrada: Entrada | null;
+    opcionales: string[];
+    // La fecha de los precios con que se recalcula al mantener: la del origen. NULL si no se puede mantener (sin origen, a
+    // mano, o una ventana con otro paquete que su origen: PR013).
+    mantener_en: string | null;
+  })[];
   importes: Importe[];
   totales: Total[];
   // Para elegir el paquete de una ventana: solo si es editable.
@@ -215,7 +222,7 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
     supabase
       .from("presupuestos_renglones")
       .select(
-        "id, seccion_id, tipo, designacion, ubicacion, cantidad, mensaje, mensajes, mantener, condiciones_en, paquete_id, entrada, opcionales, descripcion, precio, moneda"
+        "id, seccion_id, tipo, designacion, ubicacion, cantidad, mensaje, mensajes, mantener, condiciones_en, paquete_id, entrada, opcionales, descripcion, precio, moneda, origen:origen_id(paquete_id, condiciones_en)"
       )
       .eq("version_id", versionId)
       .eq("activo", true)
@@ -290,11 +297,13 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
     editable,
     tope: configuracion.data?.tope_descuento ?? null,
     secciones: secciones.data ?? [],
-    renglones: (renglones.data ?? []).map((r) => ({
+    renglones: (renglones.data ?? []).map(({ origen, ...r }) => ({
       ...r,
       mensajes: (r.mensajes ?? []) as MensajeCatalogo[],
       entrada: r.entrada as Entrada | null,
       opcionales: r.opcionales ?? [],
+      mantener_en:
+        origen && r.tipo !== "mano" && (r.tipo === "minimo" || origen.paquete_id === r.paquete_id) ? origen.condiciones_en : null,
     })),
     importes: (importes.data ?? []).map((i) => ({ ...i, debajo: i.debajo as LineaDebajo[] | null })),
     totales: (totales.data ?? []).map((t) => ({ ...t, iva: t.iva as IvaTotal[] })),

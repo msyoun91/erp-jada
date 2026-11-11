@@ -259,6 +259,27 @@ export async function devolverPedido(input: DevolverForm): Promise<Resultado> {
   return trasGuardar(error ? mensajeError(error) : null);
 }
 
+// Mantener o pasar a hoy, una ventana o un mínimo, o varios de una vez. Escribir `mantener` recalcula aunque no cambie: a hoy
+// también actualiza lo que ya estaba a hoy y cambió de precio (`presupuestos_renglones_a_hoy`). Mantener solo lo copiado, con
+// su paquete: lo frena la base (PR013). Devuelve cómo quedó cada uno, para avisar lo que quedó sin precio.
+export async function mantenerRenglones(version: string, ids: string[], mantener: boolean) {
+  const parsed = z
+    .object({ version: idSchema, ids: z.array(idSchema).min(1), mantener: z.boolean() })
+    .safeParse({ version, ids, mantener });
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("presupuestos_renglones")
+    .update({ mantener: parsed.data.mantener })
+    .eq("version_id", parsed.data.version)
+    .in("id", parsed.data.ids)
+    .select("precio, mensaje");
+  const falla = errorDeUpdate({ error, count: data?.length ?? 0 });
+  if (falla || !data) return { success: false as const, error: falla ?? "" };
+  revalidatePath("/presupuestos", "layout");
+  return { success: true as const, renglones: data };
+}
+
 // Un mínimo lo saca la base (PR012): de acá solo se saca una ventana o uno a mano.
 export async function sacarRenglon(id: string): Promise<Resultado> {
   const parsed = idSchema.safeParse(id);

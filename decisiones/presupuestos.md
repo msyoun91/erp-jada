@@ -582,6 +582,16 @@ en borrador cada carga corre `revisar`, que recalcula cada ventana a hoy (~45 ms
 usuario, 2026-11-11).** Sin plazo, `revisar` frena todo, y Configuración no tiene pantalla; con `presupuestos_administrar`, Admin se
 autoriza solo y nunca se ve un pedido pendiente. Gerencia carga la suya al abrir el módulo. `e2e/datos-autorizaciones.sql`.
 
+**Mantener o pasar a hoy se elige en el `⋯` de cada ventana y de cada mínimo; *Mantener todas…* y *Todas a hoy…*, en el `⋯` de
+la versión, con confirmar (2026-11-11).** Copiada, *Mantener precios del 1/10/26* (la fecha del origen); mantenida, *Pasar a hoy*;
+y toda ventana o mínimo a hoy, *Actualizar a hoy*: es lo que pide *Antes de publicar* cuando algo cambió desde que se calculó
+("actualizala o mantenela"), y hasta acá un mínimo no tenía cómo. Cada clic guarda sin confirmar, como los opcionales: se deshace
+con el otro. Todo escribe `mantener` en un UPDATE por ids, y escribirlo recalcula. *Todas a hoy* toma toda ventana y todo mínimo,
+no solo lo copiado: también actualiza lo que cambió, y avisa cuántos mantenidos dejan de estarlo. Mantener se ofrece solo con el
+paquete del origen (PR013): la versión trae el paquete y la fecha del origen de cada renglón. El resumen ("2 renglones mantenidos ·
+a hoy, + $ 800") es el del pedido al jefe, en *Antes de publicar*: no se repite arriba. Copiar todavía no tiene pantalla: el e2e
+arranca de `e2e/datos-mantener.sql`. `mantenerRenglones`, `AccionesRenglon.tsx`, `AccionesVersion.tsx`.
+
 **El impreso: solo lo publicado, y los datos de la empresa en un archivo de la app (decisión del usuario, 2026-11-10).** Publicado,
 todas las variantes; aprobado, la aprobada; rechazado, la última de cada una; un borrador no se imprime. Empresa: logo y datos fijos
 como marcadores hasta tenerlos, sin tabla hasta que haga falta cambiarlos desde una pantalla. Cliente: nombre y dirección de la obra y

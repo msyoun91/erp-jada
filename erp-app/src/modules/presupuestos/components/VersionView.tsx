@@ -71,6 +71,7 @@ export function VersionView({
               tope={tope}
               secciones={secciones}
               opcionales={opcionales}
+              renglones={renglones}
             />
           )}
         </div>

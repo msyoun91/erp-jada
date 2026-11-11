@@ -151,8 +151,9 @@ tiene se crea en la sección que más aporta, y el que ya no hace falta se desac
 RLS: como las secciones. GRANT: SELECT; INSERT (`id, version_id, seccion_id, tipo, designacion, ubicacion, cantidad, orden,
 paquete_id, entrada, opcionales, descripcion, precio, porcentaje_id, origen_id, mantener`); UPDATE (`seccion_id, designacion,
 ubicacion, cantidad, orden, paquete_id, entrada, opcionales, descripcion, precio, mantener, activo`). `porcentaje_id` se inserta
-porque el trigger de mínimos crea el renglón como quien arma. "Mantener todas": UPDATE `mantener = true` por `version_id` con
-`origen_id IS NOT NULL AND tipo <> 'mano'`; "todas a hoy", `mantener = false`.
+porque el trigger de mínimos crea el renglón como quien arma. "Mantener todas": UPDATE `mantener = true` de los copiados que
+no son a mano y, si son ventanas, tienen el paquete de su origen (PR013); "todas a hoy", `mantener = false` de toda ventana y todo
+mínimo, que también actualiza lo que ya estaba a hoy. La pantalla manda los ids (`mantenerRenglones`).
 
 ## presupuestos_opcionales
 

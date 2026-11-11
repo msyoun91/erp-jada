@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRightLeft, Copy, Package, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowRightLeft, Copy, History, Package, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
-import { moverRenglon, sacarRenglon } from "../actions";
+import { formatFecha } from "@/lib/utils";
+import { mantenerRenglones, moverRenglon, sacarRenglon } from "../actions";
 import type { VersionEditor } from "../queries";
 import type { FormularioVenta } from "../types";
 import { opcionSeccion, RenglonCatalogoPanel, RenglonManoPanel, type Contexto } from "./RenglonPanel";
@@ -57,15 +58,43 @@ export function AccionesRenglon({ renglon: r, nombre, ...ctx }: Contexto & { ren
     toast.success("Renglón sacado");
   }
 
-  // Del mínimo, quien arma solo elige la sección (PR012).
+  // Cada clic guarda, como los opcionales: se deshace con el otro.
+  async function mantener(si: boolean) {
+    const result = await mantenerRenglones(ctx.versionId, [r.id], si);
+    if (!result.success) {
+      toast.error(result.error);
+      return;
+    }
+    const [q] = result.renglones;
+    if (q.precio === null) toast.warning(`${etiqueta} quedó sin precio: ${q.mensaje ?? "revisá lo cargado"}`);
+    else toast.success(si && r.mantener_en ? `${etiqueta}, con los precios del ${formatFecha(r.mantener_en)}` : `${etiqueta}, a hoy`);
+  }
+
+  // A hoy también actualiza lo que ya estaba a hoy y cambió de precio: "actualizala o mantenela" (*Antes de publicar*).
+  const precios =
+    r.tipo === "mano"
+      ? []
+      : r.mantener
+        ? [{ label: "Pasar a hoy", icon: <RefreshCw size={14} />, onClick: () => mantener(false) }]
+        : [
+            { label: "Actualizar a hoy", icon: <RefreshCw size={14} />, onClick: () => mantener(false) },
+            ...(r.mantener_en
+              ? [{ label: `Mantener precios del ${formatFecha(r.mantener_en)}`, icon: <History size={14} />, onClick: () => mantener(true) }]
+              : []),
+          ];
+  // Del mínimo, quien arma solo elige la sección (PR012) y si se mantiene.
   const items =
     r.tipo === "minimo"
-      ? ctx.secciones.length > 1
-        ? [{ label: "Mover de sección", icon: <ArrowRightLeft size={14} />, onClick: () => setAbierto({ modo: "mover" }) }]
-        : []
+      ? [
+          ...precios,
+          ...(ctx.secciones.length > 1
+            ? [{ label: "Mover de sección", icon: <ArrowRightLeft size={14} />, onClick: () => setAbierto({ modo: "mover" as const }) }]
+            : []),
+        ]
       : [
           { label: "Editar", icon: <Pencil size={14} />, onClick: () => abrir("editar") },
           { label: "Duplicar", icon: <Copy size={14} />, onClick: () => abrir("duplicar") },
+          ...precios,
           { label: "Sacar", icon: <Trash2 size={14} />, onClick: () => setAbierto({ modo: "sacar" }), destructive: true },
         ];
   if (items.length === 0) return null;
