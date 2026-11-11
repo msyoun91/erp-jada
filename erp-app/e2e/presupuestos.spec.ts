@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { como, panel, tarjeta } from "./comun";
+import { asegurarAprobador, como, crearIgual, panel, tarjeta } from "./comun";
 
 const marca = `Zqx${Date.now() % 100000}`;
 const nombre = `Aberturas ${marca}`;
@@ -946,5 +946,51 @@ test("la ficha de la obra lista sus presupuestos y arma uno nuevo con la obra pu
   await expect(filas.first()).toContainText(segundo);
   await filas.last().click();
   await expect(page.getByRole("heading", { name: new RegExp(primero) })).toBeVisible();
+  await ctx.close();
+});
+
+// Necesita e2e/datos-autorizaciones.sql (plazo). Una obra nueva por corrida: con "Aprobar altas" no entra congelada (OB018).
+test("con la obra perdida, el editor lo avisa a quien arma y publicar la reabre", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const { ctx, page } = await como(browser, "admin");
+  await asegurarAprobador(page);
+  await page.goto("/obras");
+  await page.getByRole("button", { name: "Nueva obra" }).click();
+  const alta = panel(page);
+  await alta.getByLabel("Nombre", { exact: true }).fill(`Casa Recoleta ${marca}`);
+  await alta.getByLabel("Dirección").fill(`Av. Alvear ${marca.slice(3)}`);
+  await alta.getByLabel("Tipo de obra").selectOption({ label: "Casa" });
+  await alta.getByLabel("Origen").selectOption({ label: "Llamado" });
+  const urlObra = await crearIgual(page, alta, "Crear obra", /\/obras\/[0-9a-f-]{36}$/);
+
+  await page.getByTitle("Cambiar estado").click();
+  const estado = panel(page);
+  await estado.getByLabel("Pasa a").selectOption({ label: "Perdida" });
+  await estado.getByLabel("Motivo").selectOption({ label: "Precio" });
+  await estado.getByRole("button", { name: "Cambiar" }).click();
+  await expect(page.getByRole("button", { name: "Perdida" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+  const desde = panel(page);
+  await desde.getByLabel("Nombre", { exact: true }).fill(`Recotizado ${marca}`);
+  await desde.getByRole("button", { name: "Crear presupuesto" }).click();
+  await page.getByRole("link", { name: /Versión 1/ }).click();
+  const aviso = page.getByText("La obra está perdida (precio). Al publicar, se reabre.");
+  await expect(aviso).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-obra-perdida.png", fullPage: true });
+
+  await page.getByRole("region", { name: "General" }).getByRole("button", { name: "A mano" }).click();
+  const mano = panel(page);
+  await mano.getByLabel("Descripción").fill("Flete cerrado a Recoleta");
+  await mano.getByLabel(/Precio por unidad/).fill("150000");
+  await mano.getByRole("button", { name: "Agregar" }).click();
+  await expect(mano).toBeHidden();
+  await page.getByRole("region", { name: "Antes de publicar" }).getByRole("button", { name: "Publicar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Publicar" }).click();
+  await expect(page.getByText("Publicada", { exact: true })).toBeVisible();
+  await expect(aviso).toHaveCount(0);
+
+  await page.goto(urlObra);
+  await expect(page.getByRole("button", { name: "En cotización" })).toBeVisible();
   await ctx.close();
 });
