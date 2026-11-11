@@ -29,6 +29,8 @@ import {
 } from "../types";
 import { DespieceResultado } from "./DespieceResultado";
 
+const VENTANA = "ventana";
+
 // Lo que cargaría un vendedor, para ver el despiece (y con `catalogo_aprobar`, el precio) de cualquier
 // versión. No guarda nada: los casos de prueba se cargan en el editor.
 export function Calculadora({
@@ -46,17 +48,17 @@ export function Calculadora({
   contenido: Contenido;
   colores: ColorVersion[];
   nombreInsumo: Map<string, string>;
-  inicial: { caso: Caso | null; resultado: Despiece | null; comparado: PrecioDetalle | null };
+  // `ventana`: lo cargado en la ventana de un presupuesto, desde Revisión técnica; se vuelve a elegir como un caso más.
+  inicial: { caso: Caso | null; ventana: Entrada | null; resultado: Despiece | null; comparado: PrecioDetalle | null };
   puedeAprobar: boolean;
   monedaPrincipal: Moneda;
   comparar: { id: string; numero: number } | null;
   // Técnica, en un borrador: lo cargado se guarda como caso de prueba de la versión.
   guardaCasos: boolean;
 }) {
-  const [estado, setEstado] = useState<EntradaEstado>(
-    inicial.caso ? desdeEntrada(inicial.caso.entrada, contenido) : ESTADO_VACIO,
-  );
-  const [casoId, setCasoId] = useState(inicial.caso?.id ?? "");
+  const inicio = inicial.ventana ?? inicial.caso?.entrada;
+  const [estado, setEstado] = useState<EntradaEstado>(inicio ? desdeEntrada(inicio, contenido) : ESTADO_VACIO);
+  const [casoId, setCasoId] = useState(inicial.ventana ? VENTANA : (inicial.caso?.id ?? ""));
   const [resultado, setResultado] = useState(inicial.resultado);
   const [comparado, setComparado] = useState(inicial.comparado);
   const [moneda, setMoneda] = useState<Moneda>(monedaPrincipal);
@@ -82,8 +84,8 @@ export function Calculadora({
 
   function elegirCaso(id: string) {
     setCasoId(id);
-    const caso = contenido.casos.find((c) => c.id === id);
-    const e = caso ? desdeEntrada(caso.entrada, contenido) : ESTADO_VACIO;
+    const entrada = id === VENTANA ? inicial.ventana : contenido.casos.find((c) => c.id === id)?.entrada;
+    const e = entrada ? desdeEntrada(entrada, contenido) : ESTADO_VACIO;
     setEstado(e);
     correr(e);
   }
@@ -111,10 +113,11 @@ export function Calculadora({
           correr(estado);
         }}
       >
-        {contenido.casos.length > 0 && (
+        {(contenido.casos.length > 0 || inicial.ventana) && (
           <label className="flex flex-col gap-1">
             <span className="t-label">Caso de prueba</span>
             <select className="input" value={casoId} onChange={(e) => elegirCaso(e.target.value)}>
+              {inicial.ventana && <option value={VENTANA}>Lo cargado en la ventana</option>}
               <option value="">Ninguno: todo predeterminado</option>
               {contenido.casos.map((c) => (
                 <option key={c.id} value={c.id}>

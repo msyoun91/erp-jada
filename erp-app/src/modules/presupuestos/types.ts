@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
   entradaSchema,
   numeroEscrito,
+  type Entrada,
   type FormularioEntrada,
   type MaterialEntrada,
   type PiezaEntrada,
@@ -20,6 +21,27 @@ export function formatAlicuota(alicuota: number) {
 }
 
 const alicuotaSchema = z.coerce.number().refine((v) => (ALICUOTAS as readonly number[]).includes(v), "Alícuota inválida");
+
+const dosDecimales = (n: number) => Math.abs(n * 100 - Math.round(n * 100)) < 1e-6;
+
+// Vacío no es cero: coerce solo leía "" como 0. Llega como texto del panel y como número a la acción.
+function numeroRequerido(mensaje: string) {
+  return z.union([z.number(), z.string().trim().min(1, mensaje)]);
+}
+
+export const configuracionSchema = z.object({
+  tope_descuento: numeroRequerido("Escribí el tope").pipe(
+    z.coerce
+      .number<string | number>("Ingresá un número")
+      .min(0, "No puede ser negativo")
+      .max(100, "Hasta 100 %")
+      .refine(dosDecimales, "Hasta 2 decimales"),
+  ),
+  plazo_dias: numeroRequerido("Escribí el plazo").pipe(
+    z.coerce.number<string | number>("Ingresá un número").int("En días enteros").min(1, "Al menos 1 día").max(365, "Hasta 365 días"),
+  ),
+});
+export type ConfiguracionForm = z.input<typeof configuracionSchema>;
 
 export const altaSchema = z.object({
   obra: idSchema,
@@ -114,7 +136,7 @@ export const renglonManoSchema = z.object({
       z
         .number("Ingresá un número")
         .min(0, "No puede ser negativo")
-        .refine((n) => Math.abs(n * 100 - Math.round(n * 100)) < 1e-6, "Hasta 2 decimales"),
+        .refine(dosDecimales, "Hasta 2 decimales"),
     ),
 });
 export type RenglonManoForm = z.input<typeof renglonManoSchema>;
@@ -253,5 +275,30 @@ export type LineaDebajo = { clave: string; nombre: string; importe: number; impo
 
 // Alertas y bloqueos del paquete, como los da `catalogo_precio`.
 export type MensajeCatalogo = { mensaje: string; bloquea: boolean };
+
+// Lo cargado en una ventana, para Técnica: "Ancho 2600 · Alto 2100 · Bronce · Vidrio: DVH 4/9/4 · con Mosquitero". Solo lo
+// que escribió el vendedor (lo demás tomó el predeterminado); el color y lo elegido, si se leen sus nombres. Las medidas, en el
+// orden del paquete si se lee: el `jsonb` las da por largo del nombre, alto antes que ancho.
+export function textoCargado(
+  e: Entrada,
+  nombres: Map<string, string>,
+  orden: (variable: string) => number | undefined,
+): string | null {
+  const ultimo = Number.MAX_SAFE_INTEGER;
+  const partes = [
+    ...Object.entries(e.variables ?? {})
+      .sort(([a], [b]) => (orden(a) ?? ultimo) - (orden(b) ?? ultimo))
+      .map(([n, v]) => `${n} ${String(v).replace(".", ",")}`),
+    e.color && nombres.get(e.color),
+    ...Object.values(e.elecciones ?? {}).flatMap((m) =>
+      Object.entries(m).map(([material, insumo]) =>
+        insumo === null ? `sin ${material}` : nombres.has(insumo) && `${material}: ${nombres.get(insumo)}`,
+      ),
+    ),
+    ...Object.entries(e.piezas ?? {}).map(([p, si]) => `${si ? "con" : "sin"} ${p}`),
+  ];
+  const texto = [...new Set(partes.filter((p): p is string => !!p))].join(" · ");
+  return texto || null;
+}
 
 export type IvaTotal = { alicuota: number; monto: number };

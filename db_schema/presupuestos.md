@@ -11,7 +11,7 @@ Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el 
 2026-11-06. Tramo 3a — `sql/188` (copiar una versión, mantener o actualizar, lo que frena publicar, publicar y quitar una
 variante), aplicado el 2026-11-06. Tramo 3b — `sql/189` (pedir, autorizar, devolver y retirar; lo que frena separado de lo que
 pide autorización; la lectura de Técnica), aplicado el 2026-11-06. Tramo 3c — `sql/190` (el recargo de la comisión del referente), aplicado el 2026-11-10. Tramo 4 — `sql/191` (aprobar, rechazar, revertir y la obra que sigue a sus presupuestos), aplicado el
-2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10. Tramo 6 — `sql/194` (lo que pidieron las pantallas: nombre congelado, importe con IVA por renglón, freno de `contratada`), aplicado el 2026-11-10. `sql/195` (el editor: nombre y líneas de debajo en los importes), aplicado el 2026-11-11. `sql/196` (`catalogo_venta_formulario` con todas las piezas), aplicado el 2026-11-11.
+2026-11-10. Tramo 5 — `sql/192`–`sql/193` (los cuatro avisos), aplicado el 2026-11-10. Tramo 6 — `sql/194` (lo que pidieron las pantallas: nombre congelado, importe con IVA por renglón, freno de `contratada`), aplicado el 2026-11-10. `sql/195` (el editor: nombre y líneas de debajo en los importes), aplicado el 2026-11-11. `sql/196` (`catalogo_venta_formulario` con todas las piezas), aplicado el 2026-11-11. `sql/197` (Revisión técnica: el número de versión en las dos funciones de Técnica, quién pidió en la cola y qué ventana ya cubre una autorización), aplicado el 2026-11-11.
 
 ## Ver y armar: decide la obra
 
@@ -303,13 +303,15 @@ las funciones del ciclo (DEFINER).
   pedirla ("Pide …") y los pedidos pendientes ("Espera la …"). Guarda `vence`, la publicada de esa variante pasa a `obsoleto`, la
   versión a `publicado` y el presupuesto a `publicado`.
 - `presupuestos_revision_pendientes()` — DEFINER; con `presupuestos_revision`, o `presupuestos_ver` y `presupuestos_administrar`;
-  si no, 42501. Los pedidos de Técnica pendientes: `pedido_id`, `version_id`, `codigo`, `etiqueta`, `motivos`, `pedido_por`,
-  `pedido_en`, los más viejos primero.
+  si no, 42501. Los pedidos de Técnica pendientes: `pedido_id`, `version_id`, `codigo`, `version` (número, desde `sql/197`),
+  `etiqueta`, `motivos`, `pedido_por`, `pedido_por_nombre` (desde `sql/197`: Técnica no lee `usuarios` de otros), `pedido_en`,
+  los más viejos primero.
 - `presupuestos_revision_version(version)` — DEFINER; con `presupuestos_revision` si el presupuesto tiene algún pedido de Técnica,
-  o `presupuestos_ver` y `presupuestos_administrar`; si no, 42501. Por renglón de Catálogo o a mano: `codigo`, `tipo`,
+  o `presupuestos_ver` y `presupuestos_administrar`; si no, 42501. Por renglón de Catálogo o a mano: `codigo`, `version`, `tipo`,
   `designacion`, `ubicacion`, `cantidad`, `paquete_id`, `paquete` (nombre de su versión), `catalogo_version_id`, `catalogo_version`
   (número), `entrada`, `mensajes`, `descripcion`, y el último pedido de Técnica del renglón (`pedido_id`, `pedido_estado`,
-  `motivos`; el pendiente primero). Sin precios, montos, obra ni nombre.
+  `motivos`; el pendiente primero), y `cubierta` (desde `sql/197`): una autorización de Técnica del presupuesto la cubre, con
+  `presupuestos_tecnica_cubre` y las alertas guardadas (sin lo dado de baja de una mantenida). Sin precios, montos, obra ni nombre.
 - `presupuestos_variante_quitar(version)` — DEFINER; sin armar, 42501. Presupuesto `publicado` (PR003), versión `publicado`
   (PR015), y queda otra publicada (PR016): pasa a `obsoleto`.
 - `presupuestos_aprobar(version)` — DEFINER; sin armar, 42501. Presupuesto activo en `publicado` (PR003) y versión `publicado`

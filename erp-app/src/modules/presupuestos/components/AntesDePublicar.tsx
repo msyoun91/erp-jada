@@ -27,6 +27,9 @@ const ESTADO = {
   autorizada: { label: "Autorizada", badge: "badge-success" },
 } as const;
 
+// Lo que autoriza Técnica, acá y en Revisión técnica (`presupuestos_pedido_resolver`, `presupuestos_tecnica_cubre`).
+export const AUTORIZAR_TECNICA = "Autoriza también las ventanas iguales de esta versión, y vale para esta ventana mientras no cambie.";
+
 // Lo que frena, lo que pide autorización y en qué está, y el paso que sigue: pedir o publicar en borrador; en revisión,
 // autorizar o devolver quien puede, y retirar o publicar quien arma (decisiones/presupuestos.md → *Pantallas*).
 export function AntesDePublicar({
@@ -99,7 +102,7 @@ export function AntesDePublicar({
       mensaje:
         a.tipo === "comercial"
           ? "Autorizás lo que se pidió, como se ve arriba. Cuando no espere nada más, a quien la pidió le llega un aviso para publicarla."
-          : "Autoriza también las ventanas iguales de esta versión, y vale para esta ventana mientras no cambie.",
+          : AUTORIZAR_TECNICA,
       boton: "Autorizar",
       accion: () => hacer(autorizarPedido(a.id ?? ""), "Autorizada"),
     });
@@ -289,7 +292,15 @@ function Comercial({ pedido: p }: { pedido: PedidoComercial }) {
   );
 }
 
-function DevolverModal({ id, onClose }: { id: string; onClose: () => void }) {
+export function DevolverModal({
+  id,
+  ejemplo = "Ej: el descuento va hasta 8 %",
+  onClose,
+}: {
+  id: string;
+  ejemplo?: string;
+  onClose: () => void;
+}) {
   const { register, handleSubmit, formState } = useForm<DevolverForm>({
     resolver: zodResolver(devolverSchema),
     defaultValues: { id, motivo: "" },
@@ -321,7 +332,7 @@ function DevolverModal({ id, onClose }: { id: string; onClose: () => void }) {
           id="devolver-motivo"
           rows={4}
           aria-required
-          placeholder="Ej: el descuento va hasta 8 %"
+          placeholder={ejemplo}
           className={claseInput(errors.motivo)}
           {...register("motivo")}
         />

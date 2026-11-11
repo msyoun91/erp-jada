@@ -4807,6 +4807,8 @@ export type Database = {
           pedido_en: string
           pedido_id: string
           pedido_por: string
+          pedido_por_nombre: string
+          version: number
           version_id: string
         }[]
       }
@@ -4817,6 +4819,7 @@ export type Database = {
           catalogo_version: number
           catalogo_version_id: string
           codigo: string
+          cubierta: boolean
           descripcion: string
           designacion: string
           entrada: Json
@@ -4829,6 +4832,7 @@ export type Database = {
           renglon_id: string
           tipo: Database["public"]["Enums"]["tipo_renglon_presupuesto"]
           ubicacion: string
+          version: number
         }[]
       }
       presupuestos_variante_quitar: {

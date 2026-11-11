@@ -9,6 +9,7 @@ import { errorDeUpdate, mensajeError } from "@/lib/utils";
 import {
   altaSchema,
   aprobarSchema,
+  configuracionSchema,
   datosVersionSchema,
   devolverSchema,
   nombreSchema,
@@ -21,6 +22,7 @@ import {
   todasSeccionesSchema,
   type AltaForm,
   type AprobarForm,
+  type ConfiguracionForm,
   type DatosVersionForm,
   type DevolverForm,
   type FormularioVenta,
@@ -68,6 +70,18 @@ export async function crearPresupuesto(input: AltaForm) {
   if (error) return { success: false as const, error: mensajeError(error) };
   revalidatePath("/presupuestos", "layout");
   return { success: true as const, id };
+}
+
+// Desactiva la vigente y crea otra: lo publicado conserva su vencimiento y un pedido ya hecho sigue pendiente.
+export async function configurar(input: ConfiguracionForm): Promise<Resultado> {
+  const parsed = configuracionSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("presupuestos_configurar", {
+    p_tope: parsed.data.tope_descuento,
+    p_plazo: parsed.data.plazo_dias,
+  });
+  return trasGuardar(error ? mensajeError(error) : null);
 }
 
 // Aprobado o rechazado, el nombre no cambia (PR027).

@@ -10,6 +10,17 @@ export const entradaSchema = z.object({
 });
 export type Entrada = z.infer<typeof entradaSchema>;
 
+// Lo cargado de una ventana en la URL (`?entrada=`), como lo arma Revisión técnica para abrir la calculadora de Catálogo.
+export function entradaDeUrl(texto: string | string[] | undefined): Entrada | null {
+  if (typeof texto !== "string") return null;
+  try {
+    const r = entradaSchema.safeParse(JSON.parse(texto));
+    return r.success ? r.data : null;
+  } catch {
+    return null;
+  }
+}
+
 // Lo que el formulario lee del contenido de una versión. Lo cumplen el contenido de Catálogo y lo que da
 // `catalogo_venta_formulario`, con las mismas claves.
 export type PiezaEntrada = {

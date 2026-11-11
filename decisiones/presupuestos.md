@@ -579,8 +579,9 @@ en borrador cada carga corre `revisar`, que recalcula cada ventana a hoy (~45 ms
 `getAntes` en `queries.ts`.
 
 **La base de desarrollo tiene una configuración de prueba, tope 10 % y plazo 15 días, y Tester arma sin autorizar (decisión del
-usuario, 2026-11-11).** Sin plazo, `revisar` frena todo, y Configuración no tiene pantalla; con `presupuestos_administrar`, Admin se
-autoriza solo y nunca se ve un pedido pendiente. Gerencia carga la suya al abrir el módulo. `e2e/datos-autorizaciones.sql`.
+usuario, 2026-11-11).** Sin plazo, `revisar` frena todo; con `presupuestos_administrar`, Admin se autoriza solo y nunca se ve un
+pedido pendiente. Gerencia carga la suya al abrir el módulo. Los e2e cuentan con ese tope: el de Configuración lo cambia y lo
+deja como estaba. `e2e/datos-autorizaciones.sql`.
 
 **Mantener o pasar a hoy se elige en el `⋯` de cada ventana y de cada mínimo; *Mantener todas…* y *Todas a hoy…*, en el `⋯` de
 la versión, con confirmar (2026-11-11).** Copiada, *Mantener precios del 1/10/26* (la fecha del origen); mantenida, *Pasar a hoy*;
@@ -622,6 +623,55 @@ más donde buscar la acción).
 todas las variantes; aprobado, la aprobada; rechazado, la última de cada una; un borrador no se imprime. Empresa: logo y datos fijos
 como marcadores hasta tenerlos, sin tabla hasta que haga falta cambiarlos desde una pantalla. Cliente: nombre y dirección de la obra y
 sus contactos con rol `cliente`.
+
+**Revisión técnica: la lista va una fila por versión, con sus ventanas pendientes debajo; solo lo pendiente, el pedido más
+viejo primero (decisión del usuario, 2026-11-11).** Sofía resuelve en la página de la versión, y devolver una ventana devuelve la
+versión entera: por ventana, el 142 salía dos veces con el mismo destino. Lo autorizado, devuelto o retirado sale, como en *Esperan
+mi autorización*. Pide el número de versión en `presupuestos_revision_pendientes` y `presupuestos_revision_version`: dos
+variantes del 142 en revisión se veían como dos "P-0142". La cola trae también el nombre de quien pidió: Técnica no lee
+`usuarios` de otros ni ve la obra (`obras_nombres` no le da a nadie), y su aviso ya lo dice. `sql/197`, `RevisionView.tsx`.
+
+**La página de la versión va en dos bloques: *Esperan tu revisión*, con autorizar y devolver, y *El resto de la versión*, en su
+orden (decisión del usuario, 2026-11-11).** De 24 ventanas esperan 2: arriba, sin buscarlas. El resto es el contexto que pide la
+ficha (la V5 al lado de la V4, del mismo paquete), con su alerta y lo ya autorizado marcado; lo a mano, con su descripción. Sin
+secciones ni mínimos: la función no los da, y moneda e IVA no le cambian nada a Técnica.
+
+**"Autorizada" en una ventana lo dice la base, con `presupuestos_tecnica_cubre`, no el pedido de la versión (2026-11-11).** La V2
+autorizada en la v1 no tiene pedido en la v2 (pedir no crea fila para lo que ya está cubierto) y se veía con su alerta sin
+resolver. `presupuestos_revision_version` suma `cubierta`, con las alertas guardadas del renglón: sin lo dado de baja de una
+mantenida, que pide recalcularla. En revisión da lo mismo que `presupuestos_version_pedido`, porque lo no cubierto ya tiene su
+pedido pendiente; solo en un borrador devuelto una mantenida podría verse autorizada de más. Una autorizada que después cambió
+no se marca. Devuelta, si su último pedido terminó así. `sql/197`, `RevisionVersionView.tsx`.
+
+**El despiece de cada ventana se ve en Catálogo: *Ver despiece* abre la versión del paquete con la calculadora cargada con lo de
+esa ventana (decisión del usuario, 2026-11-11).** "Ancho 2600: supera el máximo recomendado" se decide mirando qué sale con esas
+medidas, y eso ya lo muestra la calculadora. La página de la versión toma lo cargado de la URL en lugar del primer caso de prueba,
+sin saber de presupuestos. El link sale solo con la vista Paquetes. Se descartó el despiece dentro de la revisión: repetía
+Catálogo y pedía el mismo permiso.
+
+**Lo cargado va en una línea bajo cada ventana, solo lo que escribió el vendedor, con los nombres que Técnica lee de Catálogo
+(decisión del usuario, 2026-11-11).** "Ancho 2600 · Alto 2100 · Bronce · Vidrio: DVH 4/9/4 · con Mosquitero · sin Cajón"; lo que
+falta tomó el predeterminado. La entrada guarda el color y lo elegido por id: la página los lee de `catalogo_colores` y
+`catalogo_insumos`, que se leen con cualquier vista de Catálogo. Sin ella, solo medidas y piezas. Se descartó que los diera la
+función: más SQL para un caso delegado que sin despiece igual no revisa. Las medidas van en el orden del paquete
+(`catalogo_variables.orden`, con la vista Paquetes): el `jsonb` ordena las claves por largo y ponía el alto antes que el ancho.
+`textoCargado` en `types.ts`, `getRevisionVersion`. *Ver despiece* manda la entrada en `?entrada=` (`entradaDeUrl` en
+`lib/entrada.ts`), y la calculadora la ofrece como un caso más, *Lo cargado en la ventana*.
+
+**Técnica entra a Presupuestos por su pestaña: `/presupuestos` la lleva a `/presupuestos/revision` si no tiene la lista
+(2026-11-11).** Hasta acá el menú le mostraba el módulo y caía en 404. Las pestañas salen de las dos vistas; gerencia, que no tiene
+Revisión técnica, resuelve lo de Técnica en *Antes de publicar*. Autorizar y devolver, con `presupuestos_autorizar_tecnica` (la
+base lo vuelve a mirar), con las mismas acciones del editor. Para el e2e, el paquete Zqx198 y Tester 2 como Técnica
+(`e2e/datos-revision.sql`).
+
+**Configuración: lo vigente en una tarjeta con *Cambiar*, que abre el panel, y debajo el historial (decisión del usuario,
+2026-11-11).** Laura sube el tope de 10 % a 12 %: cada cambio es otra fila (`presupuestos_configurar`), y el historial dice
+cuándo, quién, tope y plazo, lo más nuevo primero y sin paginar (cambia pocas veces por año). Sin configurar, el estado vacío dice
+que no se puede publicar y que todo descuento pide autorización. El panel avisa lo que no cambia: lo publicado conserva su
+vencimiento, y un pedido ya hecho sigue pendiente aunque quede dentro del tope nuevo. El nombre sale de `usuarios_con_permiso`,
+porque `usuarios` no deja ver otros equipos: quien ya no tiene la vista se ve "—". Quien solo configura entra por
+`/presupuestos`, que lo lleva a su pestaña, como a Técnica. Se descartaron el formulario en la página (se apartaba del panel
+lateral) y no mostrar el historial (nadie veía quién lo cambió). `ConfiguracionView.tsx`, `getConfiguraciones`.
 
 **Las 2 obras contratadas sin presupuesto quedan como están (decisión del usuario, 2026-11-10).** El freno de `contratada` a mano
 corre al pasar a ese estado, no sobre lo que ya está; son la excepción a "contratada si y solo si hay un aprobado", y publicar o

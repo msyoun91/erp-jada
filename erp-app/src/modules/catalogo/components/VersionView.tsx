@@ -12,6 +12,7 @@ import type {
   Categoria,
   Contenido,
   Despiece,
+  Entrada,
   InsumoBasico,
   Oferta,
   PrecioDetalle,
@@ -43,7 +44,7 @@ export function VersionView({
   frena: string[] | null;
   oferta: Oferta[];
   casos: CasoCalculado[];
-  inicial: { caso: Caso | null; resultado: Despiece | null; comparado: PrecioDetalle | null };
+  inicial: { caso: Caso | null; ventana: Entrada | null; resultado: Despiece | null; comparado: PrecioDetalle | null };
   puedeArmar: boolean;
   puedeAprobar: boolean;
   monedaPrincipal: Moneda;

@@ -5,6 +5,7 @@ import { hoyISO } from "@/lib/utils";
 import {
   estaVencida,
   opcionalesDe,
+  textoCargado,
   type AutorizacionVersion,
   type FormularioVenta,
   type IvaTotal,
@@ -31,6 +32,28 @@ export async function getPresupuestos(): Promise<PresupuestoResumen[]> {
     .order("numero", { ascending: false });
   if (error) throw error;
   return data.map(({ obra, ...p }) => ({ ...p, obra: obra.nombre }));
+}
+
+export type Configuracion = Pick<
+  Database["public"]["Tables"]["presupuestos_configuracion"]["Row"],
+  "id" | "tope_descuento" | "plazo_dias" | "activo" | "created_at"
+> & { quien: string | null };
+
+// La vigente y el historial, lo más nuevo primero. `usuarios` no deja ver otros equipos: el nombre sale de quienes hoy
+// tienen la vista, y el de quien ya no la tiene, "—".
+export async function getConfiguraciones(): Promise<Configuracion[]> {
+  const supabase = await createClient();
+  const [filas, usuarios] = await Promise.all([
+    supabase
+      .from("presupuestos_configuracion")
+      .select("id, tope_descuento, plazo_dias, activo, creado_por, created_at")
+      .order("created_at", { ascending: false }),
+    supabase.rpc("usuarios_con_permiso", { p_codigo: "presupuestos_configuracion" }),
+  ]);
+  if (filas.error) throw filas.error;
+  if (usuarios.error) throw usuarios.error;
+  const nombres = new Map(usuarios.data.map((u) => [u.id, u.nombre]));
+  return filas.data.map(({ creado_por, ...c }) => ({ ...c, quien: nombres.get(creado_por) ?? null }));
 }
 
 export type Pedido = Pick<Autorizacion, "id" | "tipo" | "estado" | "motivo" | "pedido_por" | "resuelto_por" | "resuelto_en" | "created_at"> & {
@@ -411,5 +434,74 @@ async function getAntes(
     resuelve: pendientes.filter((_, n) => puede[n]),
     devuelta: devuelta ? { motivo: devuelta.motivo, resuelto_por: devuelta.resuelto_por, resuelto_en: devuelta.resuelto_en } : null,
     plazo,
+  };
+}
+
+type PendienteTecnica = Funciones["presupuestos_revision_pendientes"]["Returns"][number];
+
+export type RevisionPendiente = Pick<PendienteTecnica, "version_id" | "codigo" | "version" | "pedido_por_nombre" | "pedido_en"> & {
+  ventanas: { pedido_id: string; etiqueta: string; motivos: string[] }[];
+};
+
+// Revisión técnica: una fila por versión, con sus ventanas (decisiones/presupuestos.md → *Pantallas*). Lo pendiente de una
+// versión es de un solo pedido: pedir de nuevo pasa antes por borrador, que retira lo pendiente.
+export async function getRevisionPendientes(): Promise<RevisionPendiente[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("presupuestos_revision_pendientes");
+  if (error) throw error;
+  const versiones = new Map<string, RevisionPendiente>();
+  for (const { pedido_id, etiqueta, motivos, pedido_por: _, ...v } of data) {
+    const fila = versiones.get(v.version_id) ?? { ...v, ventanas: [] };
+    fila.ventanas.push({ pedido_id, etiqueta, motivos: motivos as string[] });
+    versiones.set(v.version_id, fila);
+  }
+  return [...versiones.values()];
+}
+
+type RenglonTecnica = Funciones["presupuestos_revision_version"]["Returns"][number];
+
+export type RevisionVersion = {
+  codigo: string;
+  version: number;
+  renglones: (Omit<RenglonTecnica, "codigo" | "version" | "entrada" | "mensajes" | "motivos"> & {
+    entrada: Entrada | null;
+    mensajes: MensajeCatalogo[];
+    motivos: string[];
+    cargado: string | null;
+  })[];
+};
+
+// Lo que lee Técnica, sin precios ni obra. El color y lo elegido van por id en la entrada: sus nombres salen de Catálogo, que
+// se lee con cualquiera de sus vistas; sin ella, lo cargado queda en medidas y piezas.
+export async function getRevisionVersion(versionId: string): Promise<RevisionVersion | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("presupuestos_revision_version", { p_version: versionId });
+  if (error?.code === "42501") return null;
+  if (error) throw error;
+  if (data.length === 0) return null;
+  const entradas = data.map((r) => r.entrada as Entrada | null);
+  const colores = [...new Set(entradas.flatMap((e) => (e?.color ? [e.color] : [])))];
+  const insumos = [
+    ...new Set(entradas.flatMap((e) => Object.values(e?.elecciones ?? {}).flatMap((m) => Object.values(m).flatMap((i) => (i ? [i] : []))))),
+  ];
+  const versiones = [...new Set(data.flatMap((r) => (r.catalogo_version_id ? [r.catalogo_version_id] : [])))];
+  const [c, i, v] = await Promise.all([
+    colores.length > 0 ? supabase.from("catalogo_colores").select("id, nombre").in("id", colores) : null,
+    insumos.length > 0 ? supabase.from("catalogo_insumos").select("id, nombre").in("id", insumos) : null,
+    versiones.length > 0 ? supabase.from("catalogo_variables").select("version_id, nombre, orden").in("version_id", versiones) : null,
+  ]);
+  for (const r of [c, i, v]) if (r?.error) throw r.error;
+  const nombres = new Map([...(c?.data ?? []), ...(i?.data ?? [])].map((x) => [x.id, x.nombre]));
+  const orden = new Map((v?.data ?? []).map((x) => [`${x.version_id}:${x.nombre}`, x.orden]));
+  return {
+    codigo: data[0].codigo,
+    version: data[0].version,
+    renglones: data.map(({ codigo: _, version: __, ...r }, n) => ({
+      ...r,
+      entrada: entradas[n],
+      mensajes: (r.mensajes ?? []) as MensajeCatalogo[],
+      motivos: (r.motivos ?? []) as string[],
+      cargado: entradas[n] ? textoCargado(entradas[n], nombres, (x) => orden.get(`${r.catalogo_version_id}:${x}`)) : null,
+    })),
   };
 }

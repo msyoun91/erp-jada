@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { entradaDeUrl } from "@/lib/entrada";
 import { idSchema } from "@/lib/validacion";
 import { calcular } from "@/modules/catalogo/actions";
 import { puedeAprobar, puedeArmar, puedeVerPaquetes } from "@/modules/catalogo/permissions";
@@ -16,6 +17,7 @@ import { VersionView } from "@/modules/catalogo/components/VersionView";
 
 export default async function VersionPage(props: PageProps<"/catalogo/paquetes/versiones/[id]">) {
   const { id } = await props.params;
+  const ventana = entradaDeUrl((await props.searchParams).entrada);
   if (!(await puedeVerPaquetes()) || !idSchema.safeParse(id).success) notFound();
 
   const version = await getVersion(id);
@@ -34,12 +36,13 @@ export default async function VersionPage(props: PageProps<"/catalogo/paquetes/v
     getMonedaPrincipal(),
   ]);
 
-  // Abre con el primer caso de prueba: son las medidas que eligió Técnica para revisarla.
-  const caso = contenido.casos[0] ?? null;
+  // Abre con el primer caso de prueba: son las medidas que eligió Técnica para revisarla. Desde Revisión técnica, con lo
+  // cargado en la ventana.
+  const caso = ventana ? null : (contenido.casos[0] ?? null);
   const publicada = version.paquete.versiones.find((v) => v.estado === "publicado");
   const r = await calcular({
     version_id: id,
-    entrada: caso?.entrada ?? {},
+    entrada: ventana ?? caso?.entrada ?? {},
     precio: aprobar
       ? {
           moneda: monedaPrincipal,
@@ -60,6 +63,7 @@ export default async function VersionPage(props: PageProps<"/catalogo/paquetes/v
       casos={casos}
       inicial={{
         caso,
+        ventana,
         resultado: r.success ? r.resultado : null,
         comparado: r.success ? r.comparado : null,
       }}
