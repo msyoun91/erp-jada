@@ -407,3 +407,92 @@ test("admin mantiene o pasa a hoy cada ventana copiada, y todas juntas", async (
 
   await ctx.close();
 });
+
+// Necesita e2e/datos-autorizaciones.sql (tope y plazo). Publicar mueve la obra a cotización: no puede estar congelada (OB018).
+test("admin renombra, corrige, descarta, suma una variante y la quita", async ({ browser }) => {
+  test.setTimeout(240_000);
+  const { ctx, page } = await como(browser, "admin");
+  const confirmar = (boton: string) => page.getByRole("dialog").getByRole("button", { name: boton }).click();
+  const menu = async (card: ReturnType<typeof tarjeta>, accion: string | RegExp) => {
+    await card.getByRole("button", { name: "Más acciones" }).click();
+    await page.getByRole("button", { name: accion }).click();
+  };
+  const publicar = async () => {
+    const antes = page.getByRole("region", { name: "Antes de publicar" });
+    await antes.getByRole("button", { name: "Publicar" }).click();
+    await confirmar("Publicar");
+    await expect(page.getByText("Publicada", { exact: true })).toBeVisible();
+  };
+
+  await page.goto("/presupuestos");
+  await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+  const alta = panel(page);
+  await alta.getByLabel("Obra").selectOption({ label: "Edificio Norte Zqx20218 A" });
+  await alta.getByLabel("Nombre", { exact: true }).fill(`Ficha ${marca}`);
+  await alta.getByRole("button", { name: "Crear presupuesto" }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}$/);
+  const ficha = page.url();
+
+  await page.getByRole("button", { name: "Editar" }).click();
+  const datos = panel(page);
+  await datos.getByLabel("Nombre").fill(`Ficha ${marca} Belgrano`);
+  await datos.getByRole("button", { name: "Guardar" }).click();
+  await expect(page.getByRole("heading", { name: new RegExp(`Ficha ${marca} Belgrano`) })).toBeVisible();
+
+  // Un borrador solo no se corrige ni se descarta.
+  const unica = tarjeta(page, "Presupuesto");
+  await expect(unica.getByRole("button", { name: "Corregir" })).toHaveCount(0);
+  await unica.getByRole("button", { name: "Más acciones" }).click();
+  await expect(page.getByRole("button", { name: /^Descartar/ })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("link", { name: /Versión 1/ }).click();
+  await page.getByRole("region", { name: "General" }).getByRole("button", { name: "A mano" }).click();
+  const mano = panel(page);
+  await mano.getByLabel("Descripción").fill("Flete cerrado a Pilar");
+  await mano.getByLabel(/Precio por unidad/).fill("150000");
+  await mano.getByRole("button", { name: "Agregar" }).click();
+  await expect(mano).toBeHidden();
+  await publicar();
+
+  // Corregir abre la versión 2 en borrador; descartarla deja de nuevo la publicada sola.
+  await page.goto(ficha);
+  await unica.getByRole("button", { name: "Corregir" }).click();
+  await expect(page.getByRole("heading", { name: "Versión 2" })).toBeVisible();
+  await expect(page.getByText("Borrador", { exact: true })).toBeVisible();
+  await page.goto(ficha);
+  await expect(unica.getByRole("button", { name: "Corregir" })).toHaveCount(0);
+  await page.screenshot({ path: "e2e/.out/pres-ficha-corrigiendo.png", fullPage: true });
+  await menu(unica, "Descartar la versión 2…");
+  await expect(page.getByRole("dialog").getByText("El cliente sigue viendo la publicada")).toBeVisible();
+  await confirmar("Descartar");
+  await expect(page.getByRole("link", { name: /Versión 2/ })).toHaveCount(0);
+  await expect(unica.getByRole("button", { name: "Corregir" })).toBeVisible();
+
+  // Sumar variante copia la publicada; se publica con nombre, y con dos publicadas una se quita.
+  await menu(unica, "Sumar variante a partir de esta");
+  await expect(page.getByRole("heading", { name: "Versión 3" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "General" }).getByText("Flete cerrado a Pilar")).toBeVisible();
+  await page.getByRole("button", { name: "Editar" }).click();
+  const variante = panel(page);
+  await variante.getByLabel("Nombre de la variante").fill("PVC");
+  await variante.getByRole("button", { name: "Guardar" }).click();
+  await expect(variante).toBeHidden();
+  await publicar();
+
+  await page.goto(ficha);
+  const pvc = tarjeta(page, "PVC");
+  await expect(tarjeta(page, "Variante 1")).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-ficha-variantes.png", fullPage: true });
+  await menu(pvc, "Quitar variante…");
+  await expect(page.getByRole("dialog").getByText(/^PVC deja de ofrecerse/)).toBeVisible();
+  await confirmar("Quitar");
+  await expect(pvc.getByText("Quitada", { exact: true })).toBeVisible();
+  await expect(pvc.getByRole("button", { name: "Corregir" })).toHaveCount(0);
+  await tarjeta(page, "Variante 1").getByRole("button", { name: "Más acciones" }).click();
+  await expect(page.getByRole("button", { name: "Quitar variante…" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await page.screenshot({ path: "e2e/.out/pres-ficha-quitada.png", fullPage: true });
+
+  await ctx.close();
+});

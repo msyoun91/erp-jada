@@ -1,6 +1,6 @@
 -- Datos para `presupuestos.spec.ts` → mantener: el presupuesto "Mantener Zqx198", con la variante 1 y su copia, la variante 2,
--- en borrador, con dos ventanas del paquete de e2e/datos-opcionales.sql (que se corre antes). Copiar no tiene pantalla todavía
--- (las acciones de la ficha). Se corre una vez por MCP (`execute_sql`); si ya existe, no hace nada.
+-- en borrador, con dos ventanas del paquete de e2e/datos-opcionales.sql (que se corre antes). Ya copiada, el test arranca en la
+-- versión 2 sin publicar antes. Se corre una vez por MCP (`execute_sql`); si ya existe, no hace nada.
 
 DO $$
 DECLARE
