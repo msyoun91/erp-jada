@@ -994,3 +994,70 @@ test("con la obra perdida, el editor lo avisa a quien arma y publicar la reabre"
   await expect(page.getByRole("button", { name: "En cotización" })).toBeVisible();
   await ctx.close();
 });
+
+// Necesita e2e/datos-autorizaciones.sql (plazo). Una obra nueva por corrida, como la de arriba.
+test("en la lista de Obras, una contratada cuenta sus presupuestos publicados, no los borradores", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const { ctx, page } = await como(browser, "admin");
+  await asegurarAprobador(page);
+  const obra = `Casa Belgrano ${marca}`;
+  await page.goto("/obras");
+  await page.getByRole("button", { name: "Nueva obra" }).click();
+  const alta = panel(page);
+  await alta.getByLabel("Nombre", { exact: true }).fill(obra);
+  await alta.getByLabel("Dirección").fill(`Juramento ${marca.slice(3)}`);
+  await alta.getByLabel("Tipo de obra").selectOption({ label: "Casa" });
+  await alta.getByLabel("Origen").selectOption({ label: "Llamado" });
+  const urlObra = await crearIgual(page, alta, "Crear obra", /\/obras\/[0-9a-f-]{36}$/);
+
+  const presupuesto = async (nombrePres: string) => {
+    await page.goto(urlObra);
+    await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+    const desde = panel(page);
+    await desde.getByLabel("Nombre", { exact: true }).fill(nombrePres);
+    await desde.getByRole("button", { name: "Crear presupuesto" }).click();
+    await expect(page.getByRole("heading", { name: new RegExp(nombrePres) })).toBeVisible();
+    const ficha = page.url();
+    await page.getByRole("link", { name: /Versión 1/ }).click();
+    await page.getByRole("region", { name: "General" }).getByRole("button", { name: "A mano" }).click();
+    const mano = panel(page);
+    await mano.getByLabel("Descripción").fill("Flete cerrado a Belgrano");
+    await mano.getByLabel(/Precio por unidad/).fill("150000");
+    await mano.getByRole("button", { name: "Agregar" }).click();
+    await expect(mano).toBeHidden();
+    return { ficha, version: page.url() };
+  };
+  const publicar = async () => {
+    await page.getByRole("region", { name: "Antes de publicar" }).getByRole("button", { name: "Publicar" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Publicar" }).click();
+    await expect(page.getByText("Publicada", { exact: true })).toBeVisible();
+  };
+  const fila = async () => {
+    await page.goto("/obras");
+    await page.getByLabel("Filtrar por estado").selectOption({ label: "Contratadas" });
+    await page.getByPlaceholder("Buscar por nombre o dirección…").fill(obra);
+    return page.getByRole("link", { name: new RegExp(obra) });
+  };
+
+  const etapa1 = await presupuesto(`Etapa 1 ${marca}`);
+  await publicar();
+  await page.goto(etapa1.ficha);
+  await page.locator("div.card").first().getByRole("button", { name: "Aprobar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Aprobar" }).click();
+  await expect(page.locator("div.card").first().getByText("Aprobado", { exact: true })).toBeVisible();
+
+  // El borrador de la etapa 2 no cuenta: todavía no se mandó.
+  const etapa2 = await presupuesto(`Etapa 2 ${marca}`);
+  let contratada = await fila();
+  await expect(contratada).toContainText("Contratada");
+  await expect(contratada).not.toContainText("en cotización");
+
+  await page.goto(etapa2.version);
+  await publicar();
+  contratada = await fila();
+  await expect(contratada).toContainText("1 en cotización");
+  await page.screenshot({ path: "e2e/.out/obras-contratada-en-cotizacion.png", fullPage: true });
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.screenshot({ path: "e2e/.out/obras-contratada-en-cotizacion-celular.png", fullPage: true });
+  await ctx.close();
+});
