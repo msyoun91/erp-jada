@@ -56,9 +56,11 @@ type Props = ObraCompleta & {
   contactos: React.ReactNode;
   // Los hilos sobre la obra, de Tareas.
   hilos: React.ReactNode;
+  // Sus presupuestos, de Presupuestos: llevan el estado de la obra, por eso van debajo del encabezado.
+  presupuestos: React.ReactNode;
 };
 
-export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, admin, nombres, candidatos, estadoInicial, contactos, hilos }: Props) {
+export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, admin, nombres, candidatos, estadoInicial, contactos, hilos, presupuestos }: Props) {
   const router = useRouter();
   // Congelada no cambia de estado, no se transfiere ni suma (OB018): se edita.
   const congelada = obra.activo && obra.congelada;
@@ -146,6 +148,8 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
         )}
         {obra.notas && <p className="t-body-m whitespace-pre-wrap">{obra.notas}</p>}
       </div>
+
+      {presupuestos}
 
       {contactos}
 

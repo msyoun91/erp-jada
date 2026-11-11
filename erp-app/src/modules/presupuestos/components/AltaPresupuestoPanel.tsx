@@ -13,12 +13,14 @@ import { ALICUOTAS, altaSchema, formatAlicuota, type AltaForm } from "../types";
 
 const FORM_ID = "presupuesto-alta-form";
 
+// Con una sola obra (la ficha de la obra), va puesta y no se elige.
 export function AltaPresupuestoPanel({ obras, onClose }: { obras: { id: string; nombre: string }[]; onClose: () => void }) {
   const router = useRouter();
   const [enviando, setEnviando] = useState(false);
+  const fija = obras.length === 1 ? obras[0] : null;
   const { register, handleSubmit, formState } = useForm<AltaForm>({
     resolver: zodResolver(altaSchema),
-    defaultValues: { obra: "", nombre: "", moneda: "ARS", alicuota: 21, seccion: "" },
+    defaultValues: { obra: fija?.id ?? "", nombre: "", moneda: "ARS", alicuota: 21, seccion: "" },
   });
   const { errors } = formState;
 
@@ -44,14 +46,18 @@ export function AltaPresupuestoPanel({ obras, onClose }: { obras: { id: string; 
     >
       <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-5 py-4">
         <Campo id="pres-obra" label="Obra" requerido error={errors.obra}>
-          <select id="pres-obra" aria-required className={claseInput(errors.obra)} {...register("obra")}>
-            <option value="">Elegí la obra</option>
-            {obras.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.nombre}
-              </option>
-            ))}
-          </select>
+          {fija ? (
+            <input id="pres-obra" className="input" value={fija.nombre} disabled />
+          ) : (
+            <select id="pres-obra" aria-required className={claseInput(errors.obra)} {...register("obra")}>
+              <option value="">Elegí la obra</option>
+              {obras.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.nombre}
+                </option>
+              ))}
+            </select>
+          )}
         </Campo>
         <Campo id="pres-nombre" label="Nombre" requerido error={errors.nombre}>
           <input id="pres-nombre" aria-required placeholder="Ej: Aberturas planta baja" className={claseInput(errors.nombre)} {...register("nombre")} />

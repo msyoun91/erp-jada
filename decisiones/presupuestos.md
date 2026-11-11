@@ -689,6 +689,14 @@ porque `usuarios` no deja ver otros equipos: quien ya no tiene la vista se ve "�
 `/presupuestos`, que lo lleva a su pestaña, como a Técnica. Se descartaron el formulario en la página (se apartaba del panel
 lateral) y no mostrar el historial (nadie veía quién lo cambió). `ConfiguracionView.tsx`, `getConfiguraciones`.
 
+**La sección en la ficha de la obra: sus presupuestos activos, el más nuevo primero, con número, nombre y estado, debajo del
+encabezado; *Nuevo presupuesto* abre el alta con la obra puesta (2026-11-11).** Va antes de Contactos porque los presupuestos mueven
+el estado que muestra el encabezado. Sin montos, como define Obras (`decisiones/obras.md` → *Los estados son solo comerciales*):
+cada fila pedía los totales de sus versiones publicadas. Sin `presupuestos_ver`, `app/` no la compone; *Nuevo presupuesto* lo ve
+quien arma en la obra (`presupuestos_arma`), con la obra activa. Con una sola obra, el panel de alta la muestra fija: también en la
+lista, si quien arma ve una sola. La fila es la de la lista, sin la obra (`FilaPresupuesto`). `PresupuestosDeObra.tsx`,
+`getPresupuestosDeObra`, `obras/[id]/ficha.tsx`.
+
 **Las 2 obras contratadas sin presupuesto quedan como están (decisión del usuario, 2026-11-10).** El freno de `contratada` a mano
 corre al pasar a ese estado, no sobre lo que ya está; son la excepción a "contratada si y solo si hay un aprobado", y publicar o
 rechazar ya no las mueve. Se descartaron pasarlas a cotización (deshace algo que comercial marcó a propósito) y cargarles un

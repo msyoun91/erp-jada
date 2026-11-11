@@ -15,6 +15,27 @@ type Filtro = "todos" | "esperan" | "devueltas";
 
 const FILA = "row flex items-center gap-3 border-b border-border last:border-b-0 hover:bg-bg-subtle";
 
+// En la lista, con la obra debajo; en la ficha de la obra, sin ella.
+export function FilaPresupuesto({ p, obra }: { p: Omit<PresupuestoResumen, "obra">; obra?: string }) {
+  return (
+    <Link href={`/presupuestos/${p.id}`} className={FILA}>
+      <div className="min-w-0 flex-1">
+        <p className="t-body-m truncate font-medium text-text-primary">
+          {p.codigo} · {p.nombre}
+        </p>
+        {obra && (
+          <p className="t-caption flex min-w-0 items-center gap-1">
+            <Building2 size={12} className="shrink-0" />
+            <span className="truncate">{obra}</span>
+          </p>
+        )}
+      </div>
+      <span className={`badge ${ENTES.presupuesto.estados[p.estado].badge}`}>{ENTES.presupuesto.estados[p.estado].label}</span>
+      <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
+    </Link>
+  );
+}
+
 function incluye(q: string, ...textos: (string | null)[]) {
   return textos.some((t) => t?.toLowerCase().includes(q));
 }
@@ -95,21 +116,7 @@ export function PresupuestosView({
           ) : (
             <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
               {paginadoTodos.visibles.map((p) => (
-                <Link key={p.id} href={`/presupuestos/${p.id}`} className={FILA}>
-                  <div className="min-w-0 flex-1">
-                    <p className="t-body-m truncate font-medium text-text-primary">
-                      {p.codigo} · {p.nombre}
-                    </p>
-                    <p className="t-caption flex min-w-0 items-center gap-1">
-                      <Building2 size={12} className="shrink-0" />
-                      <span className="truncate">{p.obra}</span>
-                    </p>
-                  </div>
-                  <span className={`badge ${ENTES.presupuesto.estados[p.estado].badge}`}>
-                    {ENTES.presupuesto.estados[p.estado].label}
-                  </span>
-                  <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
-                </Link>
+                <FilaPresupuesto key={p.id} p={p} obra={p.obra} />
               ))}
             </div>
           )}

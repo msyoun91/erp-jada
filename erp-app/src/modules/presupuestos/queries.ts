@@ -34,6 +34,23 @@ export async function getPresupuestos(): Promise<PresupuestoResumen[]> {
   return data.map(({ obra, ...p }) => ({ ...p, obra: obra.nombre }));
 }
 
+// La sección de la ficha de la obra: sus presupuestos, el más nuevo primero, y si quien mira arma ahí.
+export async function getPresupuestosDeObra(obra: string) {
+  const supabase = await createClient();
+  const [lista, arma] = await Promise.all([
+    supabase
+      .from("presupuestos")
+      .select("id, codigo, nombre, estado")
+      .eq("obra_id", obra)
+      .eq("activo", true)
+      .order("numero", { ascending: false }),
+    supabase.rpc("presupuestos_arma", { p_obra: obra }),
+  ]);
+  if (lista.error) throw lista.error;
+  if (arma.error) throw arma.error;
+  return { presupuestos: lista.data, arma: arma.data };
+}
+
 export type Configuracion = Pick<
   Database["public"]["Tables"]["presupuestos_configuracion"]["Row"],
   "id" | "tope_descuento" | "plazo_dias" | "activo" | "created_at"
