@@ -697,6 +697,11 @@ quien arma en la obra (`presupuestos_arma`), con la obra activa. Con una sola ob
 lista, si quien arma ve una sola. La fila es la de la lista, sin la obra (`FilaPresupuesto`). `PresupuestosDeObra.tsx`,
 `getPresupuestosDeObra`, `obras/[id]/ficha.tsx`.
 
+**El aviso de obra perdida (*Efectos en la obra*) va en el encabezado del editor, para quien arma, en borrador y también en
+revisión (2026-11-11).** En revisión, quien arma publica después de la autorización y la obra se reabre igual. Quien solo mira no
+lo ve: no publica. El motivo va en minúscula y sin el detalle, que está en la obra, a un clic. `VersionView.tsx`, `getVersion`,
+`e2e/presupuestos.spec.ts`.
+
 **Las 2 obras contratadas sin presupuesto quedan como están (decisión del usuario, 2026-11-10).** El freno de `contratada` a mano
 corre al pasar a ese estado, no sobre lo que ya está; son la excepción a "contratada si y solo si hay un aprobado", y publicar o
 rechazar ya no las mueve. Se descartaron pasarlas a cotización (deshace algo que comercial marcó a propósito) y cargarles un

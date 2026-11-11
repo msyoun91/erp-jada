@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Building2, TriangleAlert } from "lucide-react";
+import { MOTIVO_PERDIDA } from "@/lib/entes";
 import { MONEDAS, type Moneda } from "@/lib/monedas";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import type { VersionEditor } from "../queries";
@@ -90,6 +91,14 @@ export function VersionView({
             .filter(Boolean)
             .join(" · ")}
         </p>
+        {antes?.arma && p.obra.estado === "perdida" && (
+          <p className="alert alert-warning mt-2 flex items-start gap-2">
+            <TriangleAlert size={16} className="mt-0.5 shrink-0" />
+            La obra está perdida
+            {p.obra.motivo_perdida && ` (${MOTIVO_PERDIDA[p.obra.motivo_perdida].label.toLowerCase()})`}. Al publicar, se
+            reabre.
+          </p>
+        )}
       </div>
 
       {secciones.map((s) => {

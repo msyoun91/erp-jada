@@ -208,7 +208,9 @@ type Importe = Omit<Funciones["presupuestos_version_importes"]["Returns"][number
 type Total = Omit<Funciones["presupuestos_version_totales"]["Returns"][number], "iva"> & { iva: IvaTotal[] };
 
 export type VersionEditor = {
-  presupuesto: Pick<Presupuesto, "id" | "codigo" | "nombre" | "estado" | "version_aprobada_id"> & { obra: { id: string; nombre: string } };
+  presupuesto: Pick<Presupuesto, "id" | "codigo" | "nombre" | "estado" | "version_aprobada_id"> & {
+    obra: Pick<Database["public"]["Tables"]["obras"]["Row"], "id" | "nombre" | "estado" | "motivo_perdida">;
+  };
   version: Pick<Version, "id" | "numero" | "variante" | "variante_nombre" | "iva_discriminado" | "descuento" | "estado" | "vence" | "created_at">;
   // Se edita en borrador, si quien mira arma en la obra; lo frenan igual la RLS y los triggers.
   editable: boolean;
@@ -284,7 +286,7 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
       .select(
         `id, numero, variante, variante_nombre, iva_discriminado, descuento, estado, vence, created_at,
          presupuesto:presupuestos!presupuestos_versiones_presupuesto_id_fkey!inner(id, codigo, nombre, estado, version_aprobada_id, activo,
-           obra:obras!inner(id, nombre))`
+           obra:obras!inner(id, nombre, estado, motivo_perdida))`
       )
       .eq("id", versionId)
       .eq("presupuesto_id", presupuestoId)
