@@ -324,8 +324,8 @@ SELECT pg_temp.caso('00 formulario: las variables del vendedor, en orden', 'anch
   $q$(SELECT string_agg(x->>'nombre', ',') FROM jsonb_array_elements(f->'variables') x)$q$));
 SELECT pg_temp.caso('00 formulario: predeterminado calculado', '1200', pg_temp.form(
   $q$(SELECT x->>'predeterminado' FROM jsonb_array_elements(f->'variables') x WHERE x->>'nombre' = 'ancho')$q$));
-SELECT pg_temp.caso('00 formulario: solo las piezas opcionales', 'Mosquitero/false', pg_temp.form(
-  $q$(SELECT string_agg((x->>'nombre') || '/' || (x->>'incluida'), ',') FROM jsonb_array_elements(f->'piezas') x)$q$));
+SELECT pg_temp.caso('00 formulario: todas las piezas, con su opcional (sql/196)', 'Marco/false/false,Hoja/false/false,Mosquitero/true/false', pg_temp.form(
+  $q$(SELECT string_agg((x->>'nombre') || '/' || (x->>'opcional') || '/' || (x->>'incluida'), ',') FROM jsonb_array_elements(f->'piezas') x)$q$));
 SELECT pg_temp.caso('00 formulario: lo que elige el vendedor', 'Vidrio', pg_temp.form(
   $q$(SELECT string_agg(x->>'nombre', ',') FROM jsonb_array_elements(f->'materiales') x)$q$));
 SELECT pg_temp.caso('00 formulario: sus opciones, la predeterminada primero', 'Zqx186 Float/true,Zqx186 DVH/false', pg_temp.form(

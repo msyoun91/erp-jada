@@ -75,3 +75,85 @@ test("admin da de alta un presupuesto y ve la lista, la ficha y la versión", as
   }
   await ctx.close();
 });
+
+test("admin carga renglones a mano y de Catálogo, los edita, duplica y saca", async ({ browser }) => {
+  test.setTimeout(180_000);
+  const ctx = await browser.newContext({ storageState: "e2e/.auth/admin.json" });
+  const page = await ctx.newPage();
+
+  await page.goto("/presupuestos");
+  await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+  const alta = panel(page);
+  await alta.getByLabel("Obra").selectOption({ index: 1 });
+  await alta.getByLabel("Nombre", { exact: true }).fill(`Renglones ${marca}`);
+  await alta.getByRole("button", { name: "Crear presupuesto" }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}$/);
+  await page.getByRole("link", { name: /Versión 1/ }).click();
+  const general = page.getByRole("region", { name: "General" });
+
+  await general.getByRole("button", { name: "A mano" }).click();
+  const mano = panel(page);
+  await mano.getByLabel("Descripción").fill("Flete cerrado a Pilar");
+  await mano.getByLabel(/Precio por unidad/).fill("150.000");
+  await mano.getByLabel("Cantidad").fill("2");
+  await mano.getByRole("button", { name: "Agregar" }).click();
+  await expect(mano.getByText("Va sin puntos")).toBeVisible();
+  await mano.getByLabel(/Precio por unidad/).fill("150000");
+  await page.screenshot({ path: "e2e/.out/pres-renglon-mano.png", fullPage: true });
+  await mano.getByRole("button", { name: "Agregar" }).click();
+  await expect(mano).toBeHidden();
+  const flete = general.getByRole("listitem").filter({ hasText: "Flete cerrado a Pilar" });
+  await expect(flete.getByText("$300.000")).toBeVisible();
+  await expect(flete.getByText("A mano")).toBeVisible();
+
+  await flete.getByRole("button", { name: "Más acciones" }).click();
+  await flete.getByRole("button", { name: "Editar" }).click();
+  const editarMano = panel(page);
+  await editarMano.getByLabel("Cantidad").fill("1");
+  await editarMano.getByRole("button", { name: "Guardar" }).click();
+  await expect(flete.getByText("$150.000")).toBeVisible();
+
+  await general.getByRole("button", { name: "De Catálogo" }).click();
+  const cat = panel(page);
+  await cat.getByLabel("Designación").fill("V1");
+  await cat.getByLabel("Ubicación").fill("Lavadero");
+  await cat.getByLabel("Paquete").selectOption({ index: 1 });
+  const ancho = cat.getByLabel(/^Ancho/);
+  await expect(ancho).toBeVisible();
+  await ancho.fill("1.200");
+  await expect(cat.getByText("Va sin puntos y con coma")).toBeVisible();
+  await expect(cat.getByRole("button", { name: "Agregar" })).toBeDisabled();
+  await ancho.fill("1200");
+  await cat.getByLabel(/^Alto/).fill("1000");
+  await page.screenshot({ path: "e2e/.out/pres-renglon-catalogo.png", fullPage: true });
+  await cat.getByRole("button", { name: "Agregar" }).click();
+  await expect(cat).toBeHidden();
+  const v1 = general.getByRole("listitem").filter({ hasText: "V1" });
+  await expect(v1.getByText(/Lavadero/)).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-renglones.png", fullPage: true });
+
+  await v1.getByRole("button", { name: "Más acciones" }).click();
+  await v1.getByRole("button", { name: "Duplicar" }).click();
+  const dup = panel(page);
+  await expect(dup.getByLabel(/^Ancho/)).toHaveValue("1200");
+  await dup.getByLabel("Designación").fill("V2");
+  await dup.getByRole("button", { name: "Agregar" }).click();
+  await expect(dup).toBeHidden();
+  const v2 = general.getByRole("listitem").filter({ hasText: "V2" });
+  await expect(v2).toBeVisible();
+
+  await v2.getByRole("button", { name: "Más acciones" }).click();
+  await v2.getByRole("button", { name: "Editar" }).click();
+  const ed = panel(page);
+  await expect(ed.getByLabel(/^Alto/)).toHaveValue("1000");
+  await ed.getByLabel("Ubicación").fill("Cocina");
+  await ed.getByRole("button", { name: "Guardar" }).click();
+  await expect(v2.getByText(/Cocina/)).toBeVisible();
+
+  await v2.getByRole("button", { name: "Más acciones" }).click();
+  await v2.getByRole("button", { name: "Sacar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Sacar" }).click();
+  await expect(v2).toHaveCount(0);
+  await page.screenshot({ path: "e2e/.out/pres-renglones-final.png", fullPage: true });
+  await ctx.close();
+});
