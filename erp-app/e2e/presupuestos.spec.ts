@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { panel } from "./comun";
+import { como, panel } from "./comun";
 
 const marca = `Zqx${Date.now() % 100000}`;
 const nombre = `Aberturas ${marca}`;
@@ -239,4 +239,116 @@ test("admin elige cómo se ven los opcionales y los tilda en cada ventana", asyn
   await mosquitero.uncheck();
   await expect(opcionales.getByText("$9.600")).toHaveCount(0);
   await ctx.close();
+});
+
+// Necesita e2e/datos-autorizaciones.sql: tope 10 %, Tester arma sin autorizar y Admin autoriza. La obra no puede estar
+// congelada: publicar la mueve a cotización (OB018).
+test("tester pide, retira y publica; admin devuelve y autoriza", async ({ browser }) => {
+  test.setTimeout(240_000);
+  const vendedor = await como(browser, "tester");
+  const jefe = await como(browser, "admin");
+  const page = vendedor.page;
+  const nombreAut = `Autorizar ${marca}`;
+  const confirmar = (p: typeof page, boton: string) => p.getByRole("dialog").getByRole("button", { name: boton }).click();
+
+  await page.goto("/presupuestos");
+  await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+  const alta = panel(page);
+  await alta.getByLabel("Obra").selectOption({ label: "Edificio Norte Zqx20218 A" });
+  await alta.getByLabel("Nombre", { exact: true }).fill(nombreAut);
+  await alta.getByRole("button", { name: "Crear presupuesto" }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}$/);
+  await page.getByRole("link", { name: /Versión 1/ }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}\/[0-9a-f-]{36}$/);
+  const url = page.url();
+
+  const antes = page.getByRole("region", { name: "Antes de publicar" });
+  await expect(antes.getByText("La versión no tiene renglones")).toBeVisible();
+  await expect(antes.getByRole("button", { name: "Publicar" })).toBeDisabled();
+
+  // A mano no pide nada; el descuento sobre el tope, al jefe.
+  await page.getByRole("region", { name: "General" }).getByRole("button", { name: "A mano" }).click();
+  const mano = panel(page);
+  await mano.getByLabel("Descripción").fill("Flete cerrado a Pilar");
+  await mano.getByLabel(/Precio por unidad/).fill("150000");
+  await mano.getByRole("button", { name: "Agregar" }).click();
+  await expect(mano).toBeHidden();
+  await expect(antes.getByText("Nada pide autorización: se puede publicar.")).toBeVisible();
+  await page.getByRole("button", { name: "Editar" }).click();
+  const datos = panel(page);
+  await datos.getByLabel("Descuento").fill("15");
+  await datos.getByRole("button", { name: "Guardar" }).click();
+  await expect(datos).toBeHidden();
+  const delJefe = antes.getByRole("listitem").filter({ hasText: "Del jefe comercial" });
+  await expect(delJefe.getByText("Falta pedirla")).toBeVisible();
+  await expect(delJefe.getByText("Descuento de 15 %, sobre el tope de 10 %")).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-antes-borrador.png", fullPage: true });
+
+  await antes.getByRole("button", { name: "Pedir autorización" }).click();
+  await confirmar(page, "Pedir");
+  await expect(delJefe.getByText("Pendiente")).toBeVisible();
+  await expect(page.getByText("En revisión", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Editar" })).toHaveCount(0);
+  await expect(antes.getByRole("button", { name: "Publicar" })).toBeDisabled();
+  await page.screenshot({ path: "e2e/.out/pres-antes-revision.png", fullPage: true });
+
+  await antes.getByRole("button", { name: "Retirar de revisión" }).click();
+  await confirmar(page, "Retirar");
+  await expect(delJefe.getByText("Falta pedirla")).toBeVisible();
+  await antes.getByRole("button", { name: "Pedir autorización" }).click();
+  await confirmar(page, "Pedir");
+  await expect(delJefe.getByText("Pendiente")).toBeVisible();
+
+  // El jefe la encuentra en su filtro y la devuelve.
+  const j = jefe.page;
+  await j.goto("/presupuestos");
+  await j.getByRole("button", { name: /Esperan mi autorización/ }).click();
+  await j.getByRole("link", { name: new RegExp(nombreAut) }).click();
+  await expect(j).toHaveURL(url);
+  const antesJefe = j.getByRole("region", { name: "Antes de publicar" });
+  await expect(antesJefe.getByText("Pedida por Tester")).toBeVisible();
+  await j.screenshot({ path: "e2e/.out/pres-antes-jefe.png", fullPage: true });
+  await antesJefe.getByRole("button", { name: "Devolver" }).click();
+  const devolver = panel(j);
+  await devolver.getByRole("button", { name: "Devolver" }).click();
+  await expect(devolver.getByText("Escribí el motivo")).toBeVisible();
+  await devolver.getByLabel("Motivo").fill("El descuento va hasta 12 %");
+  await devolver.getByRole("button", { name: "Devolver" }).click();
+  await expect(devolver).toBeHidden();
+  await expect(antesJefe.getByText("Devuelta por vos")).toBeVisible();
+
+  // Quien armó ve el motivo, corrige y pide de nuevo.
+  // El nombre de quien resolvió sale de `obras_nombres`: Admin está solo si actuó en la obra.
+  await page.reload();
+  await expect(antes.getByText(/^Devuelta( por Admin)? el/)).toBeVisible();
+  await expect(antes.getByText("El descuento va hasta 12 %")).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-antes-devuelta.png", fullPage: true });
+  await page.getByRole("button", { name: "Editar" }).click();
+  const corregir = panel(page);
+  await corregir.getByLabel("Descuento").fill("12");
+  await corregir.getByRole("button", { name: "Guardar" }).click();
+  await expect(corregir).toBeHidden();
+  await antes.getByRole("button", { name: "Pedir autorización" }).click();
+  await confirmar(page, "Pedir");
+  await expect(delJefe.getByText("Pendiente")).toBeVisible();
+
+  await j.reload();
+  await antesJefe.getByRole("button", { name: "Autorizar" }).click();
+  await confirmar(j, "Autorizar");
+  await expect(antesJefe.getByText("Autorizada por vos")).toBeVisible();
+  await expect(antesJefe.getByText("Autorizaron todo: lista para publicar.")).toBeVisible();
+
+  // Publica quien armó.
+  await page.reload();
+  await expect(delJefe.getByText(/^Autorizada( por Admin)? el/)).toBeVisible();
+  await antes.getByRole("button", { name: "Publicar" }).click();
+  await expect(page.getByRole("dialog").getByText("vence en 15 días")).toBeVisible();
+  await confirmar(page, "Publicar");
+  await expect(page.getByText("Publicada", { exact: true })).toBeVisible();
+  await expect(antes).toHaveCount(0);
+  await expect(page.getByText(/Vence el/)).toBeVisible();
+  await page.screenshot({ path: "e2e/.out/pres-antes-publicada.png", fullPage: true });
+
+  await vendedor.ctx.close();
+  await jefe.ctx.close();
 });
