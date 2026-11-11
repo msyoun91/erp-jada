@@ -907,3 +907,44 @@ test("admin imprime lo publicado: cada variante con lo cargado, debajo y aparte;
   await expect(cabecera.getByText("Publicado", { exact: true })).toBeVisible();
   await ctx.close();
 });
+
+test("la ficha de la obra lista sus presupuestos y arma uno nuevo con la obra puesta", async ({ browser }) => {
+  test.setTimeout(120_000);
+  const { ctx, page } = await como(browser, "admin");
+  const obra = "Edificio Norte Zqx20218 A";
+  const primero = `En la obra ${marca}`;
+  const segundo = `Desde la obra ${marca}`;
+
+  await page.goto("/presupuestos");
+  await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+  const alta = panel(page);
+  await alta.getByLabel("Obra").selectOption({ label: obra });
+  await alta.getByLabel("Nombre", { exact: true }).fill(primero);
+  await alta.getByRole("button", { name: "Crear presupuesto" }).click();
+  await expect(page).toHaveURL(/\/presupuestos\/[0-9a-f-]{36}$/);
+  await page.getByRole("link", { name: obra }).click();
+  await expect(page).toHaveURL(/\/obras\/[0-9a-f-]{36}$/);
+  const urlObra = page.url();
+
+  const fila = page.getByRole("link", { name: new RegExp(primero) });
+  await expect(fila).toContainText("Borrador");
+  await page.screenshot({ path: "e2e/.out/pres-en-obra.png", fullPage: true });
+
+  await page.getByRole("button", { name: "Nuevo presupuesto" }).click();
+  const desde = panel(page);
+  await expect(desde.getByLabel("Obra")).toBeDisabled();
+  await expect(desde.getByLabel("Obra")).toHaveValue(obra);
+  await desde.getByLabel("Nombre", { exact: true }).fill(segundo);
+  await page.screenshot({ path: "e2e/.out/pres-en-obra-alta.png", fullPage: true });
+  await desde.getByRole("button", { name: "Crear presupuesto" }).click();
+  await expect(page.getByRole("heading", { name: new RegExp(segundo) })).toBeVisible();
+
+  // El más nuevo, primero; la fila abre su ficha.
+  await page.goto(urlObra);
+  const filas = page.getByRole("link", { name: new RegExp(`(${primero}|${segundo})`) });
+  await expect(filas).toHaveCount(2);
+  await expect(filas.first()).toContainText(segundo);
+  await filas.last().click();
+  await expect(page.getByRole("heading", { name: new RegExp(primero) })).toBeVisible();
+  await ctx.close();
+});
