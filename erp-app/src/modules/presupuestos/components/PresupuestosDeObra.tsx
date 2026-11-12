@@ -14,7 +14,7 @@ export function PresupuestosDeObra({
   arma,
 }: {
   obra: { id: string; nombre: string };
-  presupuestos: Omit<PresupuestoResumen, "obra">[];
+  presupuestos: Omit<PresupuestoResumen, "obra" | "portal">[];
   arma: boolean;
 }) {
   const [creando, setCreando] = useState(false);

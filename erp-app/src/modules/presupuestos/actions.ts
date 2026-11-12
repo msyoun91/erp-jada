@@ -6,12 +6,16 @@ import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { idSchema } from "@/lib/validacion";
 import { errorDeUpdate, mensajeError } from "@/lib/utils";
+import { sincronizarPortal } from "./portal";
 import {
   altaSchema,
   aprobarSchema,
   configuracionSchema,
   datosVersionSchema,
   devolverSchema,
+  eleccionAplicadaSchema,
+  eleccionLeidaSchema,
+  eleccionSchema,
   nombreSchema,
   opcionalesSchema,
   rechazarSchema,
@@ -26,6 +30,9 @@ import {
   type ConfiguracionForm,
   type DatosVersionForm,
   type DevolverForm,
+  type EleccionAplicada,
+  type EleccionForm,
+  type EleccionLeida,
   type FormularioVenta,
   type NombreForm,
   type OpcionalesForm,
@@ -444,4 +451,68 @@ export async function moverRenglon(id: string, seccion: string): Promise<Resulta
         .eq("id", parsed.data.id)
     )
   );
+}
+
+// El link del portal. La base da la llave solo a quien arma; la dirección sale de PORTAL_URL (solo servidor).
+function direccionPortal(llave: string) {
+  return `${process.env.PORTAL_URL ?? ""}/p#${llave}`;
+}
+
+export async function linkDelPortal(presupuesto: string, copiar: boolean) {
+  const parsed = idSchema.safeParse(presupuesto);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  if (!process.env.PORTAL_URL) return { success: false as const, error: "Falta PORTAL_URL en el servidor" };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("presupuestos_link_llave", { p_presupuesto: parsed.data, p_copiar: copiar });
+  if (error) return { success: false as const, error: mensajeError(error) };
+  if (copiar) revalidatePath("/presupuestos", "layout");
+  return { success: true as const, url: direccionPortal(data) };
+}
+
+export async function anularLink(presupuesto: string): Promise<Resultado> {
+  const parsed = idSchema.safeParse(presupuesto);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("presupuestos_link_anular", { p_presupuesto: parsed.data });
+  if (error) return trasGuardar(mensajeError(error));
+  await sincronizarPortal(false);
+  return trasGuardar(null);
+}
+
+// Copiar es del servidor y sin usuario: acá se verifica que quien pide arme en la obra del presupuesto.
+export async function reintentarPortal(presupuesto: string): Promise<Resultado> {
+  const parsed = idSchema.safeParse(presupuesto);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("presupuestos").select("obra_id").eq("id", parsed.data).maybeSingle();
+  if (error) return { success: false, error: mensajeError(error) };
+  if (!data) return { success: false, error: "No se encontró el presupuesto" };
+  const arma = await supabase.rpc("presupuestos_arma", { p_obra: data.obra_id });
+  if (arma.error || !arma.data) return { success: false, error: "No tenés permiso para actualizar el portal" };
+  const r = await sincronizarPortal(true);
+  if (r === "falla") return { success: false, error: "El portal no respondió. Se reintenta solo en una hora." };
+  return trasGuardar(null);
+}
+
+export async function leerEleccion(input: EleccionForm): Promise<{ success: true; eleccion: EleccionLeida } | { success: false; error: string }> {
+  const parsed = eleccionSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("presupuestos_eleccion_leer", { p_texto: parsed.data.texto });
+  if (error) return { success: false, error: mensajeError(error) };
+  const eleccion = eleccionLeidaSchema.safeParse(data);
+  if (!eleccion.success) return { success: false, error: "La base devolvió una elección que no se entiende" };
+  return { success: true, eleccion: eleccion.data };
+}
+
+export async function aplicarEleccion(input: EleccionForm): Promise<{ success: true; aplicada: EleccionAplicada } | { success: false; error: string }> {
+  const parsed = eleccionSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("presupuestos_eleccion_aplicar", { p_texto: parsed.data.texto });
+  if (error) return { success: false, error: mensajeError(error) };
+  const aplicada = eleccionAplicadaSchema.safeParse(data);
+  if (!aplicada.success) return { success: false, error: "Se aplicó, pero la respuesta no se entiende. Revisá la versión nueva." };
+  revalidatePath("/presupuestos", "layout");
+  return { success: true, aplicada: aplicada.data };
 }

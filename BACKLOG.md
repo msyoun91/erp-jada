@@ -176,9 +176,12 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   link y el estado de su copia (`sql/200`, test 67 / 67), y **1b**, lo que se copia y las monedas de referencia (`sql/201`, test
   93 / 93), **2**, la base del portal (`sql/portal/001`, test 46 / 46, `db_schema/portal.md`), y **3**, copiar y leer visitas
   con el aviso (`sql/202`–`203` 11 / 11, `sql/portal/002` 5 / 5, `modules/presupuestos/portal.ts`), y **4**, leer y aplicar la
-  elección (`sql/204`, test 83 / 83). **Sigue: las pantallas.** Del 4 quedan para ellas: el encoder del código en erp-cliente (formato
-  en `db_schema/presupuestos.md` → *La elección del cliente*), la ruta `/presupuestos/eleccion/[codigo]` y "Pegar elección", que
-  muestran `presupuestos_eleccion_leer` y aplican con `presupuestos_eleccion_aplicar`. Pendientes del 3: cargar `PORTAL_SUPABASE_SERVICE_ROLE_KEY` en `.env.local` y en el hosting (sin ella, el ERP no copia
+  elección (`sql/204`, test 83 / 83). **Hecho (2026-11-12): las pantallas del ERP**: tarjeta "Portal del cliente" en la ficha (copiar link, anular, reintentar, estado
+  de la copia, visitas), "Pegar elección" y la ruta `/presupuestos/eleccion/[codigo]`, columna de visitas y filtro "Sin abrir" en la
+  lista. Probado en el navegador (2026-11-12): copiar, anular, pegar y aplicar la elección; las visitas no, falta levantar erp-cliente.
+  La página del portal (`/p#{link}`) y el encoder vinieron de `da518a5`. **Sigue:** probar erp-cliente de punta a punta (visitas,
+  código con ventanas que cambian), "Ver como cliente" y las monedas en Configuración.
+  Pendientes del 3: cargar `PORTAL_SUPABASE_SERVICE_ROLE_KEY` en el hosting (sin ella, el ERP no copia
   y lo anota en el log); el botón "Reintentar" de la ficha llama `sincronizarPortal(true)` cuando exista la pantalla; la pantalla
   de Configuración todavía no elige las monedas. La llave es hexadecimal de 32: la dirección queda `/p#` + 32 caracteres. Tramos propuestos: 1, en el ERP, link, estado de la copia y la función que arma
   lo que se copia (combinaciones, pisos, orden de casillas); 2, la base del portal (link, copia, visita); 3, copiar y leer visitas,

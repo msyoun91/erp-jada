@@ -20,18 +20,42 @@ import {
 type Presupuesto = Database["public"]["Tables"]["presupuestos"]["Row"];
 type Autorizacion = Database["public"]["Tables"]["presupuestos_autorizaciones"]["Row"];
 
-export type PresupuestoResumen = Pick<Presupuesto, "id" | "codigo" | "nombre" | "estado"> & { obra: string };
+// `portal`: solo si alguien copió el link; `visitas` 0 es "Sin abrir".
+export type PresupuestoResumen = Pick<Presupuesto, "id" | "codigo" | "nombre" | "estado"> & {
+  obra: string;
+  portal: { visitas: number; dispositivos: number } | null;
+};
 
 // La RLS decide cuáles: los de las obras que quien llama ve o, con `presupuestos_administrar`, todos.
 export async function getPresupuestos(): Promise<PresupuestoResumen[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("presupuestos")
-    .select("id, codigo, nombre, estado, obra:obras!inner(nombre)")
-    .eq("activo", true)
-    .order("numero", { ascending: false });
-  if (error) throw error;
-  return data.map(({ obra, ...p }) => ({ ...p, obra: obra.nombre }));
+  const [lista, links] = await Promise.all([
+    supabase
+      .from("presupuestos")
+      .select("id, codigo, nombre, estado, obra:obras!inner(nombre)")
+      .eq("activo", true)
+      .order("numero", { ascending: false }),
+    supabase
+      .from("presupuestos_links")
+      .select("presupuesto_id, visitas:presupuestos_links_visitas(visitas, dispositivos, activo)")
+      .eq("activo", true)
+      .not("link_copiado_en", "is", null),
+  ]);
+  if (lista.error) throw lista.error;
+  if (links.error) throw links.error;
+  const portal = new Map(
+    links.data.map(({ presupuesto_id, visitas }) => {
+      const vivas = visitas.filter((v) => v.activo);
+      return [
+        presupuesto_id,
+        {
+          visitas: vivas.reduce((n, v) => n + v.visitas, 0),
+          dispositivos: vivas.reduce((n, v) => n + v.dispositivos, 0),
+        },
+      ];
+    }),
+  );
+  return lista.data.map(({ obra, ...p }) => ({ ...p, obra: obra.nombre, portal: portal.get(p.id) ?? null }));
 }
 
 // La sección de la ficha de la obra: sus presupuestos, el más nuevo primero, y si quien mira arma ahí.
@@ -178,7 +202,40 @@ export type FichaPresupuesto = Presupuesto & {
   // De cada publicada vencida, cuándo se calculó el precio más viejo de sus renglones (mantenido, el del origen): el aviso
   // al aprobar. Solo para quien arma.
   precios_del: Record<string, string>;
+  // El link vigente y lo que el portal muestra; null si el presupuesto nunca salió de borrador.
+  portal: PortalFicha | null;
 };
+
+export type PortalFicha = {
+  revision: number;
+  copia_revision: number | null;
+  copia_versiones: number[] | null;
+  link_copiado_en: string | null;
+  visitas: { numero: number; visitas: number; dispositivos: number; ultima: string }[];
+};
+
+async function getPortal(presupuesto: string): Promise<PortalFicha | null> {
+  const supabase = await createClient();
+  const { data: link, error } = await supabase
+    .from("presupuestos_links")
+    .select("id, revision, copia_revision, copia_versiones, link_copiado_en")
+    .eq("presupuesto_id", presupuesto)
+    .eq("activo", true)
+    .maybeSingle();
+  if (error) throw error;
+  if (!link) return null;
+  const { data: visitas, error: errVisitas } = await supabase
+    .from("presupuestos_links_visitas")
+    .select("visitas, dispositivos, ultima, version:presupuestos_versiones!inner(numero)")
+    .eq("link_id", link.id)
+    .eq("activo", true);
+  if (errVisitas) throw errVisitas;
+  const { id: _, ...resto } = link;
+  return {
+    ...resto,
+    visitas: visitas.map(({ version, ...v }) => ({ numero: version.numero, ...v })).sort((a, b) => b.numero - a.numero),
+  };
+}
 
 export async function getPresupuesto(id: string): Promise<FichaPresupuesto | null> {
   const supabase = await createClient();
@@ -218,7 +275,8 @@ export async function getPresupuesto(id: string): Promise<FichaPresupuesto | nul
     if (r.error) throw r.error;
     for (const x of r.data) if (x.condiciones_en) precios_del[x.version_id] ??= x.condiciones_en;
   }
-  return { ...data, versiones, arma, revierte, precios_del };
+  const portal = data.estado === "borrador" ? null : await getPortal(id);
+  return { ...data, versiones, arma, revierte, precios_del, portal };
 }
 
 type Tablas = Database["public"]["Tables"];

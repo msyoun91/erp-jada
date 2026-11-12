@@ -4,6 +4,7 @@ import { ENTES, MOTIVO_PERDIDA } from "@/lib/entes";
 import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
 import type { FichaPresupuesto } from "../queries";
 import { estadoVersion, estaVencida } from "../types";
+import { PortalFicha } from "./PortalFicha";
 import { AccionesPresupuesto, AccionesVariante, EditarNombre, type Aprobable } from "./AccionesFicha";
 
 const QUITADA = { label: "Quitada", badge: "badge-neutral" };
@@ -90,6 +91,8 @@ export function FichaPresupuestoView({
           </p>
         )}
       </div>
+
+      {p.portal && <PortalFicha id={p.id} portal={p.portal} arma={p.arma} publicado={p.estado === "publicado"} />}
 
       {grupos.map(({ variante, versiones, nombre }) => {
         const publicada = versiones.find((v) => v.estado === "publicado");

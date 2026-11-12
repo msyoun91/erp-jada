@@ -11,12 +11,12 @@ import { formatFecha, hace } from "@/lib/utils";
 import type { Pedido, PresupuestoResumen } from "../queries";
 import { AltaPresupuestoPanel } from "./AltaPresupuestoPanel";
 
-type Filtro = "todos" | "esperan" | "devueltas";
+type Filtro = "todos" | "esperan" | "devueltas" | "sin_abrir";
 
 const FILA = "row flex items-center gap-3 border-b border-border last:border-b-0 hover:bg-bg-subtle";
 
 // En la lista, con la obra debajo; en la ficha de la obra, sin ella.
-export function FilaPresupuesto({ p, obra }: { p: Omit<PresupuestoResumen, "obra">; obra?: string }) {
+export function FilaPresupuesto({ p, obra }: { p: Omit<PresupuestoResumen, "obra" | "portal"> & Partial<Pick<PresupuestoResumen, "portal">>; obra?: string }) {
   return (
     <Link href={`/presupuestos/${p.id}`} className={FILA}>
       <div className="min-w-0 flex-1">
@@ -30,6 +30,11 @@ export function FilaPresupuesto({ p, obra }: { p: Omit<PresupuestoResumen, "obra
           </p>
         )}
       </div>
+      {p.portal && (
+        <span className={`badge ${p.portal.visitas === 0 ? "badge-warning" : "badge-neutral"}`}>
+          {p.portal.visitas === 0 ? "Sin abrir" : `${p.portal.visitas} ${p.portal.visitas === 1 ? "visita" : "visitas"}`}
+        </span>
+      )}
       <span className={`badge ${ENTES.presupuesto.estados[p.estado].badge}`}>{ENTES.presupuesto.estados[p.estado].label}</span>
       <ChevronRight size={16} className="shrink-0 text-text-tertiary" />
     </Link>
@@ -65,7 +70,10 @@ export function PresupuestosView({
   const pedidos = (filtro === "esperan" ? (esperan ?? []) : devueltas).filter((p) =>
     incluye(q, p.presupuesto.codigo, p.presupuesto.nombre)
   );
-  const filtrados = presupuestos.filter((p) => incluye(q, p.codigo, p.nombre, p.obra));
+  const sinAbrir = presupuestos.filter((p) => p.portal?.visitas === 0).length;
+  const filtrados = presupuestos.filter(
+    (p) => incluye(q, p.codigo, p.nombre, p.obra) && (filtro !== "sin_abrir" || p.portal?.visitas === 0),
+  );
   const paginadoTodos = usePaginado(filtrados);
   const paginadoPedidos = usePaginado(pedidos);
 
@@ -73,6 +81,7 @@ export function PresupuestosView({
     { valor: "todos", label: "Todos" },
     ...(esperan ? [{ valor: "esperan" as const, label: `Esperan mi autorización (${esperan.length})` }] : []),
     { valor: "devueltas", label: `Devueltas (${devueltas.length})` },
+    ...(sinAbrir > 0 ? [{ valor: "sin_abrir" as const, label: `Sin abrir (${sinAbrir})` }] : []),
   ];
 
   return (
@@ -105,7 +114,7 @@ export function PresupuestosView({
         </div>
       </div>
 
-      {filtro === "todos" ? (
+      {filtro === "todos" || filtro === "sin_abrir" ? (
         <>
           <Paginacion {...paginadoTodos} etiqueta="presupuestos" />
           {filtrados.length === 0 ? (

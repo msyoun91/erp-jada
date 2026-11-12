@@ -346,3 +346,45 @@ export function sumarMontos(filas: Monto[]): Monto {
   const suma = (k: keyof Monto) => (filas.some((f) => f[k] === null) ? null : filas.reduce((s, f) => s + (f[k] ?? 0), 0));
   return { importe: suma("importe"), importe_con_iva: suma("importe_con_iva") };
 }
+
+export const eleccionSchema = z.object({
+  texto: z.string().trim().min(1, "Pegá el link o el mensaje del cliente").max(5000, "El texto es demasiado largo"),
+});
+export type EleccionForm = z.infer<typeof eleccionSchema>;
+
+const totalSchema = z.object({
+  moneda: z.enum(MONEDAS_LISTA),
+  total: z.number(),
+  sin_precio: z.number(),
+});
+export type TotalEleccion = z.infer<typeof totalSchema>;
+
+export const eleccionLeidaSchema = z.object({
+  presupuesto_id: z.string(),
+  codigo: z.string(),
+  version_id: z.string(),
+  numero: z.number(),
+  variante_nombre: z.string().nullable(),
+  descarta: z.object({ numero: z.number(), estado: z.string() }).nullable(),
+  ventanas: z.array(
+    z.object({
+      renglon_id: z.string(),
+      etiqueta: z.string(),
+      casillas: z.array(z.object({ clave: z.string(), nombre: z.string() })),
+      antes: z.array(z.string()),
+      despues: z.array(z.string()),
+    }),
+  ),
+  cliente: z.array(totalSchema),
+});
+export type EleccionLeida = z.infer<typeof eleccionLeidaSchema>;
+
+export const eleccionAplicadaSchema = z.object({
+  version_id: z.string(),
+  numero: z.number(),
+  descartada: z.number().nullable(),
+  cliente: z.array(totalSchema),
+  publicada: z.array(totalSchema),
+  hoy: z.array(totalSchema),
+});
+export type EleccionAplicada = z.infer<typeof eleccionAplicadaSchema>;
