@@ -2329,6 +2329,66 @@ export type Database = {
           },
         ]
       }
+      presupuestos_links: {
+        Row: {
+          activo: boolean
+          copia_en: string | null
+          copia_revision: number | null
+          copia_versiones: number[] | null
+          creado_por: string | null
+          created_at: string
+          id: string
+          link_copiado_en: string | null
+          llave: string
+          presupuesto_id: string
+          revision: number
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          copia_en?: string | null
+          copia_revision?: number | null
+          copia_versiones?: number[] | null
+          creado_por?: string | null
+          created_at?: string
+          id?: string
+          link_copiado_en?: string | null
+          llave?: string
+          presupuesto_id: string
+          revision?: number
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          copia_en?: string | null
+          copia_revision?: number | null
+          copia_versiones?: number[] | null
+          creado_por?: string | null
+          created_at?: string
+          id?: string
+          link_copiado_en?: string | null
+          llave?: string
+          presupuesto_id?: string
+          revision?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presupuestos_links_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_links_presupuesto_id_fkey"
+            columns: ["presupuesto_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presupuestos_opcionales: {
         Row: {
           activo: boolean
@@ -4733,6 +4793,28 @@ export type Database = {
       presupuestos_etiqueta: {
         Args: { p_id: string; p_tipo: string }
         Returns: string
+      }
+      presupuestos_link_anular: {
+        Args: { p_presupuesto: string }
+        Returns: undefined
+      }
+      presupuestos_link_llave: {
+        Args: { p_copiar?: boolean; p_presupuesto: string }
+        Returns: string
+      }
+      presupuestos_portal_copiada: {
+        Args: { p_link: string; p_revision: number; p_versiones: number[] }
+        Returns: undefined
+      }
+      presupuestos_portal_pendientes: {
+        Args: never
+        Returns: {
+          activo: boolean
+          link_id: string
+          llave: string
+          presupuesto_id: string
+          revision: number
+        }[]
       }
       presupuestos_minimos_calcular: {
         Args: {

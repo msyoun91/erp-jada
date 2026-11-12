@@ -48,7 +48,7 @@ Avisos: al vendedor, la primera visita de cada versión
 Eventos: ninguno
 
 Portal
-└── Presupuesto (página /p/{link}, sin permiso: el link es la llave) — invitado
+└── Presupuesto (página /p#{link}, sin permiso: el link es la llave) — invitado
 ERP — Presupuestos, sin submódulos nuevos
 ├── ficha: link, estado de la copia, visitas, Ver como cliente, Pegar elección — presupuestos_ver lee,
 │          presupuestos_armar actúa
@@ -85,6 +85,10 @@ US$ 20.000, sube el aluminio, Carlos manda su elección por 21.400: en la v4 Jua
 autorización de Laura). Se descartó guardar la elección aparte y aprobar la v3 con ella: dos lugares donde mirar qué se vendió, y
 una puerta para cerrar a precio viejo sin la autorización de *Precio*. Sin cambios en Catálogo, actualizar es gratis y da lo mismo.
 
+**El WhatsApp de "Enviar mi elección" es el del responsable de la obra (decisión del usuario, 2026-11-12).** Juan arma, se va de
+vacaciones y Laura publica la v4: a Carlos le sigue apareciendo el número de Juan, el que ya tiene. Sale de `usuarios.telefono`
+del `responsable_id` de la obra; si la obra se transfiere, cambia en la copia siguiente. Se descartó el de quien publicó.
+
 ## Visitas
 
 **El portal anota visitas y dispositivos, sin identificar a nadie (decisión del usuario, 2026-11-11).** "Portal — 9 visitas,
@@ -112,6 +116,44 @@ base guarda la huella del link, no el link; y cada copia va cifrada con una llav
 Un presupuesto cuyo link nunca salió del ERP no se lee ni con la base entera del portal. La copia lleva solo lo que ve el cliente.
 "Sin abrir" cuenta los que tuvieron "Copiar link", que el ERP anota la primera vez. Se descartó copiar recién al pedir el link.
 
+**El link va después del `#` y descifra el navegador: `/p#{link}` (decisión del usuario, 2026-11-12).** Lo que sigue al `#` no
+sale del navegador: el hosting registra solo `/p`, y el servidor del portal entrega la copia cifrada por huella sin ver el
+presupuesto. El navegador deriva del link la huella y la llave (WebCrypto; el ERP cifra con lo mismo desde Node). Se descartó
+`/p/{link}`: cada link abierto quedaba en los registros de acceso. Y `/p/{id}#{llave}`: la huella ya sale del link, un dato menos.
+Aceptado: sin JavaScript no muestra nada, la vista previa de WhatsApp es genérica, y reenviar el texto sigue abriendo (el `#`
+viaja con el link). Las visitas no cambian: ya las anotaba el navegador.
+
+**Copiar y leer visitas es TypeScript: excepción explícita a "regla de negocio → Postgres" (2026-11-12).** Una función no escribe
+en dos proyectos, y el cifrado necesita el link fuera de la base. El reparto: la base del ERP decide qué falta copiar y arma lo
+que se copia; TypeScript solo cifra, lleva y trae, y le avisa a la base que llegó; la base del portal valida lo que recibe.
+Corre como el pedido de Monedas: `after()` desde el Sidebar cada hora, y el botón espera para decir si anduvo.
+
+**El SQL del portal vive en `sql/portal/` y se aplica con el MCP `supabase-portal` (2026-11-12).** Proyecto `gprkjktlbtemzzjanijn`,
+segundo servidor en `.mcp.json`; el MCP `supabase` sigue atado al ERP. Misma regla que `sql/`: `apply_migration` con el texto
+exacto del archivo. Numeración propia, para que un archivo no se aplique en la base equivocada por el número.
+
+## La base
+
+Tramo 1a, en el ERP (`sql/200_presupuestos_links.sql`, `sql/tests/presupuestos_links.sql`, `db_schema/presupuestos.md` →
+*presupuestos_links*). Aplicado el 2026-11-11; el 2026-11-12 el archivo no estaba en el repo y se recuperó de la base, con el mismo
+md5 que la migración aplicada. Lo de abajo se lee del SQL: el texto original de esta sección se perdió con los archivos.
+
+**El link nace solo al salir de borrador, y cada cambio en lo que ve el cliente es una revisión.** `revision` sube con el estado, el
+nombre o la versión elegida del presupuesto, y con cada versión que entra o sale de `publicado`. Al día es `copia_revision =
+revision`: versión entera y monotónica, sin fechas (`GUIDE_SYNC.md`). Reintentar una copia no rompe nada.
+
+**Una autorización de Técnica también es una revisión.** Vale para las ventanas iguales de todo el presupuesto, así que puede
+habilitar una combinación de opcionales en una versión ya publicada.
+
+**La llave no se lee de la tabla: la da una función, solo a quien arma.** Quien ve el presupuesto lee el estado de la copia y las
+visitas, pero no puede sacar el link. La misma función sirve a "Copiar link" (anota la primera vez) y a "Ver como cliente" (no anota).
+
+**Anular deja al link viejo pendiente hasta que el portal confirma el corte.** Si el portal está caído, el corte se reintenta como
+cualquier copia, y la ficha lo muestra.
+
+**Lo que falta copiar y la confirmación son funciones solo para `service_role`.** El servidor del ERP copia sin usuario (cada hora),
+como Monedas.
+
 ## Qué muestra según el estado
 
 **Vencida: muestra todo con "Venció el 30/11: los precios pueden cambiar", y "Enviar mi elección" apagado (2026-11-11).** Sigue
@@ -123,9 +165,6 @@ disponible" (2026-11-11).**
 
 ## A decidir al construir
 
-- **La llave en la dirección queda en los registros del hosting.** Con `/p/{link}`, cada link abierto queda en los logs de acceso.
-  Propuesta: `/p/{id}#{llave}`: lo que va después de `#` no llega al servidor y descifra el navegador (WebCrypto), con lo que el
-  servidor del portal tampoco ve el presupuesto en claro.
-- **Migraciones del proyecto del portal:** el MCP de las sesiones está atado al proyecto del ERP.
-- **La copia entre dos bases es orquestación en TypeScript:** excepción a "regla de negocio → Postgres", a registrar acá con el
-  primer tramo. Qué se copia lo arma una función de la base del ERP.
+- ~~**La llave en la dirección**~~ → *Dos bases*, *El link va después del `#`*.
+- ~~**Migraciones del proyecto del portal**~~ → *Dos bases*, la última.
+- ~~**La copia entre dos bases**~~ → *Dos bases*, *Copiar y leer visitas es TypeScript*.

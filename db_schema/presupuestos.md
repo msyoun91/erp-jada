@@ -3,7 +3,11 @@
 Ficha y decisiones: `decisiones/presupuestos.md`. Tests: `sql/tests/presupuestos_registros.sql` (tramo 1),
 `sql/tests/presupuestos_renglones.sql` (2a), `sql/tests/presupuestos_opcionales.sql` (2b), `sql/tests/presupuestos_ciclo.sql` (3a),
 `sql/tests/presupuestos_autorizaciones.sql` (3b), `sql/tests/presupuestos_recargo.sql` (3c),
-`sql/tests/presupuestos_aprobacion.sql` (4), `sql/tests/presupuestos_avisos.sql` (5), `sql/tests/presupuestos_pantallas.sql` (6).
+`sql/tests/presupuestos_aprobacion.sql` (4), `sql/tests/presupuestos_avisos.sql` (5), `sql/tests/presupuestos_pantallas.sql` (6),
+`sql/tests/presupuestos_links.sql` (portal, 1a).
+
+**Portal, tramo 1a** — `sql/200` (el link de cada presupuesto y el estado de su copia), aplicado el 2026-11-11. El archivo se
+recuperó de la base el 2026-11-12 (md5 igual al de la migración `200_presupuestos_links_tecnica`); el test se reescribió.
 
 **Estado:** tramo 1 — `sql/185` (permisos, configuración, presupuesto, versiones, secciones, ente), aplicado el 2026-11-06.
 Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el precio de Catálogo para quien arma), aplicado el
@@ -242,6 +246,40 @@ mismo paquete, versión y `entrada`, por los mismos motivos o menos (`presupuest
 RLS: SELECT si se ve la versión (quien ve el presupuesto, con los montos). Técnica no la lee. GRANT: SELECT. Se escribe solo por
 las funciones del ciclo (DEFINER).
 
+## presupuestos_links
+
+El link del portal y el estado de su copia (`sql/200`, `decisiones/erp-cliente.md`). Uno activo por presupuesto, desde que sale de
+`borrador`. Al día: `copia_revision = revision`. Uno anulado sigue pendiente hasta que el portal confirma que lo cortó.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| presupuesto_id | uuid FK → presupuestos | unique parcial `WHERE activo` |
+| llave | text | 128 bits al azar, 32 hexadecimales (`extensions.gen_random_bytes`). Única. **Fuera del GRANT SELECT**: la da `presupuestos_link_llave` |
+| revision | integer | ≥ 1. Sube cada vez que cambia lo que el portal tiene que mostrar |
+| copia_revision | integer, nullable | la última que el portal confirmó; NULL: nunca se copió. CHECK `presupuestos_links_copia`: entre 1 y `revision`, y presente junto con `copia_en` y `copia_versiones` |
+| copia_en | timestamptz, nullable | cuándo confirmó |
+| copia_versiones | integer[], nullable | los números de versión que muestra el portal: "sin actualizar, muestra la v2". `{}`: cortado o no disponible |
+| link_copiado_en | timestamptz, nullable | el primer "Copiar link": desde ahí cuenta "Sin abrir" |
+| creado_por | uuid FK → usuarios, nullable | default `auth.uid()`: quien publicó o anuló. NULL en los que ya estaban publicados |
+| activo | boolean | false = anulado. No vuelve (PR002, `presupuestos_links_no_reactivar`) |
+| created_at / updated_at | timestamptz | |
+
+RLS: SELECT si se ve el presupuesto. GRANT: SELECT de todo menos `llave`. Sin escritura directa.
+
+- `presupuestos_links_cambio` — trigger DEFINER, sin GRANT. Sube `revision` del link activo; sin link, lo crea si el presupuesto ya
+  no está en `borrador`. Sobre `presupuestos` (AFTER UPDATE OF estado, nombre, version_aprobada_id, si cambiaron),
+  `presupuestos_versiones` (una versión entra o sale de `publicado`) y `presupuestos_autorizaciones` (una de Técnica queda
+  `autorizada`: vale para las ventanas iguales de todo el presupuesto, y puede habilitar una combinación en lo ya publicado).
+- `presupuestos_link_llave(presupuesto, copiar = false) → text` — DEFINER; sin armar, 42501; sin link, PR029. La llave del link
+  vigente. Con `copiar` ("Copiar link") anota `link_copiado_en` la primera vez; sin él ("Ver como cliente"), no anota.
+- `presupuestos_link_anular(presupuesto)` — DEFINER; sin armar, 42501; sin link, PR029. El vigente queda `activo = false` con una
+  revisión más, y nace otro.
+- `presupuestos_portal_pendientes() → (link_id, presupuesto_id, llave, revision, activo)` — DEFINER, GRANT solo `service_role`.
+  Lo que falta copiar o cortar, lo más viejo primero.
+- `presupuestos_portal_copiada(link, revision, versiones)` — DEFINER, GRANT solo `service_role`. Anota la revisión confirmada.
+  Una más vieja que la confirmada, o mayor que `revision`, no hace nada.
+
 ## Funciones
 
 - `presupuestos_alta(obra, nombre, moneda, alicuota, seccion = 'General', paquete = NULL, entrada = NULL, opcionales = NULL)
@@ -385,4 +423,4 @@ mantiene lo copiado, con su paquete · PR014 algo frena publicar · PR015 solo s
 variante no se quita · PR017 la versión no está en revisión · PR018 el pedido ya no está pendiente · PR019 devolver pide motivo · PR020 las comisiones
 de los referentes llegan al 100 % · PR021 solo se aprueba una versión publicada · PR022 rechazar pide motivo (y detalle, con
 "otro") · PR023 solo se revierte lo aprobado o rechazado · PR024 revertir pide la causa · PR025 la obra tiene un presupuesto
-aprobado: no sale de contratada · PR026 la obra tiene presupuestos publicados: no pasa a perdida · PR027 el nombre de un presupuesto aprobado o rechazado no cambia · PR028 la obra pasa a contratada al aprobar un presupuesto.
+aprobado: no sale de contratada · PR026 la obra tiene presupuestos publicados: no pasa a perdida · PR027 el nombre de un presupuesto aprobado o rechazado no cambia · PR028 la obra pasa a contratada al aprobar un presupuesto · PR029 el presupuesto no tiene link: nunca se publicó.
