@@ -615,3 +615,38 @@ export async function getEleccion(texto: string): Promise<{ eleccion: Eleccion }
   }
   return { eleccion: data as unknown as Eleccion };
 }
+
+export type EstadoPortal = {
+  copia: "sin_copiar" | "sin_actualizar" | "al_dia";
+  // Las versiones que muestra el portal cuando va atrasado.
+  muestra: number[];
+  copiado: boolean;
+  visitas: { numero: number; visitas: number; dispositivos: number; ultima: string }[];
+};
+
+// Quien ve el presupuesto lee el estado de la copia y las visitas; la llave no (`presupuestos_link_llave`).
+export async function getPortal(presupuestoId: string): Promise<EstadoPortal | null> {
+  const supabase = await createClient();
+  const { data: link, error } = await supabase
+    .from("presupuestos_links")
+    .select("id, revision, copia_revision, copia_versiones, link_copiado_en")
+    .eq("presupuesto_id", presupuestoId)
+    .eq("activo", true)
+    .maybeSingle();
+  if (error) throw error;
+  if (!link) return null;
+  const v = await supabase
+    .from("presupuestos_links_visitas")
+    .select("visitas, dispositivos, ultima, version:presupuestos_versiones!inner(numero)")
+    .eq("link_id", link.id)
+    .eq("activo", true);
+  if (v.error) throw v.error;
+  return {
+    copia: link.copia_revision === null ? "sin_copiar" : link.copia_revision < link.revision ? "sin_actualizar" : "al_dia",
+    muestra: link.copia_versiones ?? [],
+    copiado: link.link_copiado_en !== null,
+    visitas: v.data
+      .map(({ version, ...x }) => ({ numero: version.numero, ...x }))
+      .sort((a, b) => a.numero - b.numero),
+  };
+}

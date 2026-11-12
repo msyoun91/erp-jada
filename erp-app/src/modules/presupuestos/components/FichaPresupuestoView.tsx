@@ -2,16 +2,21 @@ import Link from "next/link";
 import { Building2, ChevronRight, Printer } from "lucide-react";
 import { ENTES, MOTIVO_PERDIDA } from "@/lib/entes";
 import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
-import type { FichaPresupuesto } from "../queries";
+import type { EstadoPortal, FichaPresupuesto } from "../queries";
 import { estadoVersion, estaVencida } from "../types";
+import { PortalFicha } from "./PortalFicha";
 import { AccionesPresupuesto, AccionesVariante, EditarNombre, PegarEleccion, type Aprobable } from "./AccionesFicha";
 
 const QUITADA = { label: "Quitada", badge: "badge-neutral" };
 
 export function FichaPresupuestoView({
   presupuesto: p,
+  portal,
+  portalUrl,
 }: {
   presupuesto: FichaPresupuesto;
+  portal: EstadoPortal | null;
+  portalUrl: string | null;
 }) {
   const variantes = Map.groupBy(p.versiones, (v) => v.variante);
   const grupos = [...variantes]
@@ -91,6 +96,8 @@ export function FichaPresupuestoView({
           </p>
         )}
       </div>
+
+      {portal && <PortalFicha id={p.id} estado={portal} portalUrl={portalUrl} arma={p.arma} />}
 
       {grupos.map(({ variante, versiones, nombre }) => {
         const publicada = versiones.find((v) => v.estado === "publicado");

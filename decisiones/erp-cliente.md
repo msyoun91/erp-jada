@@ -261,6 +261,15 @@ de otro presupuesto que el abierto. Sin `presupuestos_armar` o `administrar`, 40
 ofrecida (PR030–PR032) se muestra en la página. Los tres totales (lo que vio el cliente, con los precios de la publicada, a hoy) salen
 al aplicar, en el aviso: la vista previa solo trae lo que vio el cliente.
 
+## La ficha del ERP
+
+Hecha el 2026-11-12 (`PortalFicha.tsx`, `getPortal`, acciones `llaveDelPortal`, `anularLinkPortal`, `reintentarPortal`). Sin probar en el navegador.
+
+**La dirección del portal sale de `PORTAL_URL`, solo servidor (2026-11-12).** La ficha arma `{PORTAL_URL}/p#{llave}`; sin ella los botones de link
+quedan apagados y la tarjeta lo dice. La tarjeta se muestra desde que el presupuesto sale de borrador; los botones, a quien arma.
+"Ver como cliente" abre `…?previa` en una pestaña abierta antes del `await` (si no, el navegador la bloquea) y no anota. "Reintentar" fuerza
+`sincronizarPortal(true)` y solo se ofrece con la copia atrasada.
+
 ## La página del portal
 
 Hecha el 2026-11-12 (`erp-cliente/src/app/p/`, `src/lib/`, `src/app/api/`). Probada con una base simulada y Playwright en celular; sin

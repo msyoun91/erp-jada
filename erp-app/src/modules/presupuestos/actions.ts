@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
+import { sincronizarPortal } from "./portal";
 import { idSchema } from "@/lib/validacion";
 import { errorDeUpdate, mensajeError } from "@/lib/utils";
 import {
@@ -458,4 +459,36 @@ export async function aplicarEleccion(input: EleccionForm) {
   revalidatePath("/presupuestos", "layout");
   if (error) return { success: false as const, error: mensajeError(error) };
   return { success: true as const, aplicada: data as unknown as EleccionAplicada };
+}
+
+// La llave la da la base solo a quien arma (42501). `copiar` anota el primer "Copiar link"; "Ver como cliente" no anota.
+export async function llaveDelPortal(presupuesto: string, copiar: boolean) {
+  const parsed = z.object({ id: idSchema, copiar: z.boolean() }).safeParse({ id: presupuesto, copiar });
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("presupuestos_link_llave", { p_presupuesto: parsed.data.id, p_copiar: parsed.data.copiar });
+  if (error) return { success: false as const, error: mensajeError(error) };
+  if (parsed.data.copiar) revalidatePath("/presupuestos", "layout");
+  return { success: true as const, llave: data };
+}
+
+export async function anularLinkPortal(presupuesto: string): Promise<Resultado> {
+  const parsed = idSchema.safeParse(presupuesto);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("presupuestos_link_anular", { p_presupuesto: parsed.data });
+  const r = trasGuardar(error ? mensajeError(error) : null);
+  if (r.success) await sincronizarPortal(false);
+  return r;
+}
+
+// Solo si el presupuesto se ve: la RLS de `presupuestos_links` lo decide.
+export async function reintentarPortal(presupuesto: string): Promise<Resultado> {
+  const parsed = idSchema.safeParse(presupuesto);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("presupuestos_links").select("id").eq("presupuesto_id", parsed.data).limit(1);
+  if (error || data.length === 0) return { success: false, error: "No se pudo completar la operación. Intentá de nuevo." };
+  if ((await sincronizarPortal(true)) === "falla") return { success: false, error: "El portal no respondió. Se reintenta solo." };
+  return trasGuardar(null);
 }
