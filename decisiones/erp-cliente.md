@@ -270,6 +270,10 @@ quedan apagados y la tarjeta lo dice. La tarjeta se muestra desde que el presupu
 "Ver como cliente" abre `…?previa` en una pestaña abierta antes del `await` (si no, el navegador la bloquea) y no anota. "Reintentar" fuerza
 `sincronizarPortal(true)` y solo se ofrece con la copia atrasada.
 
+**La lista muestra las visitas y filtra "Sin abrir" (2026-11-12).** `getPresupuestos` suma las visitas de las versiones del link activo; solo los
+presupuestos con "Copiar link" tienen cuenta (los demás, nada). "Sin abrir" = link copiado y cero visitas. Son visitas, no dispositivos: los
+dispositivos de dos versiones se pueden repetir y no se suman.
+
 ## La página del portal
 
 Hecha el 2026-11-12 (`erp-cliente/src/app/p/`, `src/lib/`, `src/app/api/`). Probada con una base simulada y Playwright en celular; sin

@@ -21,18 +21,30 @@ import {
 type Presupuesto = Database["public"]["Tables"]["presupuestos"]["Row"];
 type Autorizacion = Database["public"]["Tables"]["presupuestos_autorizaciones"]["Row"];
 
-export type PresupuestoResumen = Pick<Presupuesto, "id" | "codigo" | "nombre" | "estado"> & { obra: string };
+// `visitas`: null si el link nunca se copió; 0, "Sin abrir" (decisiones/erp-cliente.md → *El portal anota visitas*).
+export type PresupuestoResumen = Pick<Presupuesto, "id" | "codigo" | "nombre" | "estado"> & { obra: string; visitas?: number | null };
 
 // La RLS decide cuáles: los de las obras que quien llama ve o, con `presupuestos_administrar`, todos.
 export async function getPresupuestos(): Promise<PresupuestoResumen[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("presupuestos")
-    .select("id, codigo, nombre, estado, obra:obras!inner(nombre)")
-    .eq("activo", true)
-    .order("numero", { ascending: false });
-  if (error) throw error;
-  return data.map(({ obra, ...p }) => ({ ...p, obra: obra.nombre }));
+  const [lista, links] = await Promise.all([
+    supabase
+      .from("presupuestos")
+      .select("id, codigo, nombre, estado, obra:obras!inner(nombre)")
+      .eq("activo", true)
+      .order("numero", { ascending: false }),
+    supabase
+      .from("presupuestos_links")
+      .select("presupuesto_id, visitas:presupuestos_links_visitas(visitas, activo)")
+      .eq("activo", true)
+      .not("link_copiado_en", "is", null),
+  ]);
+  if (lista.error) throw lista.error;
+  if (links.error) throw links.error;
+  const visitas = new Map(
+    links.data.map((l) => [l.presupuesto_id, l.visitas.filter((v) => v.activo).reduce((n, v) => n + v.visitas, 0)])
+  );
+  return lista.data.map(({ obra, ...p }) => ({ ...p, obra: obra.nombre, visitas: visitas.get(p.id) ?? null }));
 }
 
 // La sección de la ficha de la obra: sus presupuestos, el más nuevo primero, y si quien mira arma ahí.
