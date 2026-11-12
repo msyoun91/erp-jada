@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Ban, Link2, RefreshCw } from "lucide-react";
+import { Ban, Eye, Link2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmModal } from "@/components/ui/Modal";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
@@ -44,6 +44,23 @@ export function PortalFicha({ id, portal, arma, publicado }: { id: string; porta
     }
   }
 
+  // La pestaña se abre en el click: abierta después del await, el navegador la bloquea.
+  async function verComoCliente() {
+    const pestana = window.open("", "_blank");
+    const r = await linkDelPortal(id, false);
+    if (!r.success) {
+      pestana?.close();
+      toast.error(r.error);
+      return;
+    }
+    if (!pestana) {
+      toast.error("El navegador bloqueó la pestaña nueva");
+      return;
+    }
+    pestana.opener = null;
+    pestana.location.href = `${r.url}?previa`;
+  }
+
   async function reintentar() {
     setEnviando(true);
     const r = await reintentarPortal(id);
@@ -65,6 +82,7 @@ export function PortalFicha({ id, portal, arma, publicado }: { id: string; porta
             </button>
             <OverflowMenu
               items={[
+                { label: "Ver como cliente", icon: <Eye size={14} />, onClick: verComoCliente },
                 ...(copia.alDia ? [] : [{ label: "Reintentar la copia", icon: <RefreshCw size={14} />, onClick: reintentar }]),
                 { label: "Anular el link…", icon: <Ban size={14} />, onClick: () => setAnular(true), destructive: true },
               ]}

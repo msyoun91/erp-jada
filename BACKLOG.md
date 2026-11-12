@@ -182,8 +182,9 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   (2026-11-12):** el portal muestra las versiones y anota visitas (por dispositivo y versión, 30 min); la ficha las muestra; el
   código de elección vuelve al ERP con "saca X" y el total que vio el cliente, y si la variante tiene un borrador más nuevo avisa
   "Se descarta la versión N". La lectura horaria de visitas no se vio correr (el recargado en caliente no resetea la hora); se
-  probó el mismo camino por SQL. La página del portal (`/p#{link}`) y el encoder vinieron de `da518a5`. **Sigue:** "Ver como
-  cliente" y las monedas en Configuración.
+  probó el mismo camino por SQL. La página del portal (`/p#{link}`) y el encoder vinieron de `da518a5`. "Ver como cliente",
+  en el menú de la tarjeta: abre `#{link}?previa` sin anotar visita ni "copiado" (probado 2026-11-12). **Sigue:** las monedas
+  en Configuración.
   Pendientes del 3: cargar `PORTAL_SUPABASE_SERVICE_ROLE_KEY` en el hosting (sin ella, el ERP no copia
   y lo anota en el log); la pantalla de Configuración todavía no elige las monedas. La llave es hexadecimal de 32: la dirección queda `/p#` + 32 caracteres. Tramos propuestos: 1, en el ERP, link, estado de la copia y la función que arma
   lo que se copia (combinaciones, pisos, orden de casillas); 2, la base del portal (link, copia, visita); 3, copiar y leer visitas,
