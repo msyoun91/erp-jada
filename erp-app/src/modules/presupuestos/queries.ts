@@ -1,12 +1,13 @@
 import type { Entrada } from "@/lib/entrada";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
-import { hoyISO } from "@/lib/utils";
+import { hoyISO, mensajeError } from "@/lib/utils";
 import {
   estaVencida,
   opcionalesDe,
   textoCargado,
   type AutorizacionVersion,
+  type Eleccion,
   type FormularioVenta,
   type IvaTotal,
   type LineaDebajo,
@@ -600,4 +601,17 @@ export async function getRevisionVersion(versionId: string): Promise<RevisionVer
       cargado: entradas[n] ? textoCargado(entradas[n], nombres, (x) => orden.get(`${r.catalogo_version_id}:${x}`)) : null,
     })),
   };
+}
+
+// Sin armar el presupuesto (42501) no hay página; un código roto, una versión reemplazada o una combinación no ofrecida
+// (PR030–PR032) se le dicen a quien pegó.
+export async function getEleccion(texto: string): Promise<{ eleccion: Eleccion } | { error: string } | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("presupuestos_eleccion_leer", { p_texto: texto });
+  if (error?.code === "42501") return null;
+  if (error) {
+    if (/^PR03\d$/.test(error.code)) return { error: mensajeError(error) };
+    throw error;
+  }
+  return { eleccion: data as unknown as Eleccion };
 }

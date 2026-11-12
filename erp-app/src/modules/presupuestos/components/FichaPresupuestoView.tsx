@@ -4,7 +4,7 @@ import { ENTES, MOTIVO_PERDIDA } from "@/lib/entes";
 import { diasEntreISO, formatFecha, hoyISO } from "@/lib/utils";
 import type { FichaPresupuesto } from "../queries";
 import { estadoVersion, estaVencida } from "../types";
-import { AccionesPresupuesto, AccionesVariante, EditarNombre, type Aprobable } from "./AccionesFicha";
+import { AccionesPresupuesto, AccionesVariante, EditarNombre, PegarEleccion, type Aprobable } from "./AccionesFicha";
 
 const QUITADA = { label: "Quitada", badge: "badge-neutral" };
 
@@ -61,6 +61,7 @@ export function FichaPresupuestoView({
           <span className={`badge ${estado.badge}`}>{estado.label}</span>
           {!p.activo && <span className="badge badge-neutral">Desactivado</span>}
           {p.arma && <EditarNombre id={p.id} nombre={p.nombre} />}
+          {p.arma && p.estado === "publicado" && <PegarEleccion id={p.id} />}
           {p.estado !== "borrador" && (
             <Link href={`/presupuestos/${p.id}/imprimir`} className="btn btn-secondary btn-sm">
               <Printer size={14} />

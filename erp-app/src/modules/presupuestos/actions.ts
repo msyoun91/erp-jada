@@ -11,6 +11,7 @@ import {
   aprobarSchema,
   configuracionSchema,
   datosVersionSchema,
+  eleccionSchema,
   devolverSchema,
   nombreSchema,
   opcionalesSchema,
@@ -26,6 +27,8 @@ import {
   type ConfiguracionForm,
   type DatosVersionForm,
   type DevolverForm,
+  type EleccionAplicada,
+  type EleccionForm,
   type FormularioVenta,
   type NombreForm,
   type OpcionalesForm,
@@ -444,4 +447,15 @@ export async function moverRenglon(id: string, seccion: string): Promise<Resulta
         .eq("id", parsed.data.id)
     )
   );
+}
+
+// Arma la corrección con la elección del cliente: la base valida versión, combinaciones y permiso (PR030–PR032, 42501).
+export async function aplicarEleccion(input: EleccionForm) {
+  const parsed = eleccionSchema.safeParse(input);
+  if (!parsed.success) return invalido(parsed.error.issues);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("presupuestos_eleccion_aplicar", { p_texto: parsed.data.texto });
+  revalidatePath("/presupuestos", "layout");
+  if (error) return { success: false as const, error: mensajeError(error) };
+  return { success: true as const, aplicada: data as unknown as EleccionAplicada };
 }

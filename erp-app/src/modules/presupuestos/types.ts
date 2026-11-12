@@ -346,3 +346,33 @@ export function sumarMontos(filas: Monto[]): Monto {
   const suma = (k: keyof Monto) => (filas.some((f) => f[k] === null) ? null : filas.reduce((s, f) => s + (f[k] ?? 0), 0));
   return { importe: suma("importe"), importe_con_iva: suma("importe_con_iva") };
 }
+
+export const eleccionSchema = z.object({ texto: z.string().trim().min(1, "Pegá el mensaje o el link").max(4000, "El texto es demasiado largo") });
+export type EleccionForm = z.input<typeof eleccionSchema>;
+
+type TotalEleccion = { moneda: Database["public"]["Enums"]["moneda"]; total: number; sin_precio: number };
+
+// Lo que devuelve `presupuestos_eleccion_leer` (db_schema/presupuestos.md → *La elección del cliente*).
+export type Eleccion = {
+  presupuesto_id: string;
+  codigo: string;
+  numero: number;
+  variante_nombre: string | null;
+  descarta: { numero: number; estado: Enums["estado_version_presupuesto"] } | null;
+  ventanas: {
+    renglon_id: string;
+    etiqueta: string;
+    casillas: { clave: string; nombre: string }[];
+    antes: string[];
+    despues: string[];
+  }[];
+  cliente: TotalEleccion[];
+};
+
+export type EleccionAplicada = {
+  version_id: string;
+  numero: number;
+  cliente: TotalEleccion[];
+  publicada: TotalEleccion[];
+  hoy: TotalEleccion[];
+};

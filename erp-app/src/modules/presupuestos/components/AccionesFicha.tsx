@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Archive, Check, Copy, Pencil, Trash2, TriangleAlert, Undo2, X } from "lucide-react";
+import { Archive, Check, ClipboardPaste, Copy, Pencil, Trash2, TriangleAlert, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { FormModal } from "@/components/ui/FormModal";
@@ -25,10 +25,12 @@ import {
 } from "../actions";
 import {
   aprobarSchema,
+  eleccionSchema,
   nombreSchema,
   rechazarSchema,
   revertirSchema,
   type AprobarForm,
+  type EleccionForm,
   type NombreForm,
   type RechazarForm,
   type RevertirForm,
@@ -438,6 +440,39 @@ export function AccionesVariante({
           onConfirm={async () => avisar(await descartarVersion(abierta.id), "Borrador descartado")}
           onClose={cerrar}
         />
+      )}
+    </>
+  );
+}
+
+// La base busca el código en el texto y frena el que no sirve (PR030–PR032): acá solo se pasa a la página que lo muestra.
+export function PegarEleccion({ id }: { id: string }) {
+  const router = useRouter();
+  const [abierto, setAbierto] = useState(false);
+  const { register, handleSubmit, formState } = useForm<EleccionForm>({ resolver: zodResolver(eleccionSchema), defaultValues: { texto: "" } });
+  const { errors, isSubmitting } = formState;
+  return (
+    <>
+      <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAbierto(true)}>
+        <ClipboardPaste size={14} />
+        Pegar elección
+      </button>
+      {abierto && (
+        <FormModal
+          title="Pegar elección"
+          confirmLabel="Ver cambios"
+          onClose={() => setAbierto(false)}
+          enviando={isSubmitting}
+          hayCambios={formState.isDirty}
+          onSubmit={handleSubmit((d) => {
+            router.push(`/presupuestos/eleccion/${encodeURIComponent(d.texto)}?desde=${id}`);
+          })}
+        >
+          <Campo id="eleccion-texto" label="Mensaje o link del cliente" requerido error={errors.texto}>
+            <textarea id="eleccion-texto" rows={5} aria-required className={claseInput(errors.texto)} {...register("texto")} />
+            <p className="t-caption mt-1">Antes de aplicar, ves lo que cambia.</p>
+          </Campo>
+        </FormModal>
       )}
     </>
   );

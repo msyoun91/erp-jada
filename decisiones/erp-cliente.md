@@ -250,6 +250,17 @@ permutadas (salvo 0 ↔ Z), y es una línea en SQL y en el navegador. No es segu
 estaban en la copia, y los mínimos como se publicaron (el portal no los recalcula). La cuenta de los totales pasó a
 `presupuestos_totales_de`, que también usa `presupuestos_version_totales`.
 
+## La pantalla de la elección
+
+Hecha el 2026-11-12 (`erp-app/src/app/(erp-app)/presupuestos/eleccion/[codigo]/`, `EleccionView.tsx`, `PegarEleccion` en `AccionesFicha.tsx`).
+Sin probar en el navegador.
+
+**El segmento de la ruta es el código o el mensaje entero (2026-11-12).** "Pegar elección" no extrae el código: manda el texto
+a la ruta y la base lo busca (`presupuestos_eleccion_leer`), así la regla vive en un solo lugar. `?desde=<id>` avisa si la elección es
+de otro presupuesto que el abierto. Sin `presupuestos_armar` o `administrar`, 404; un código roto, versión reemplazada o combinación no
+ofrecida (PR030–PR032) se muestra en la página. Los tres totales (lo que vio el cliente, con los precios de la publicada, a hoy) salen
+al aplicar, en el aviso: la vista previa solo trae lo que vio el cliente.
+
 ## La página del portal
 
 Hecha el 2026-11-12 (`erp-cliente/src/app/p/`, `src/lib/`, `src/app/api/`). Probada con una base simulada y Playwright en celular; sin
