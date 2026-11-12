@@ -1,7 +1,7 @@
 # Decisiones — erp-cliente (portal)
 
-> **Estado: ficha aprobada (2026-11-11), revisada punto por punto con el usuario. SQL completo (tramos 1a–4, 2026-11-12); sin
-> pantallas.** Es la etapa 2 de
+> **Estado: ficha aprobada (2026-11-11), revisada punto por punto con el usuario. SQL completo (tramos 1a–4, 2026-11-12); página del portal hecha
+> (2026-11-12); faltan las pantallas del ERP.** Es la etapa 2 de
 > Presupuestos (`decisiones/presupuestos.md` → *Etapas*). Lo que falta, en `BACKLOG.md` → *erp-cliente*.
 
 ## Ficha del módulo
@@ -249,6 +249,38 @@ permutadas (salvo 0 ↔ Z), y es una línea en SQL y en el navegador. No es segu
 **"Lo que vio el cliente" se calcula en el ERP, con la regla de los totales (2026-11-12).** Las combinaciones elegidas tal como
 estaban en la copia, y los mínimos como se publicaron (el portal no los recalcula). La cuenta de los totales pasó a
 `presupuestos_totales_de`, que también usa `presupuestos_version_totales`.
+
+## La pantalla de la elección
+
+Hecha el 2026-11-12 (`erp-app/src/app/(erp-app)/presupuestos/eleccion/[codigo]/`, `EleccionView.tsx`, `PegarEleccion` en `AccionesFicha.tsx`).
+Sin probar en el navegador.
+
+**El segmento de la ruta es el código o el mensaje entero (2026-11-12).** "Pegar elección" no extrae el código: manda el texto
+a la ruta y la base lo busca (`presupuestos_eleccion_leer`), así la regla vive en un solo lugar. `?desde=<id>` avisa si la elección es
+de otro presupuesto que el abierto. Sin `presupuestos_armar` o `administrar`, 404; un código roto, versión reemplazada o combinación no
+ofrecida (PR030–PR032) se muestra en la página. Los tres totales (lo que vio el cliente, con los precios de la publicada, a hoy) salen
+al aplicar, en el aviso: la vista previa solo trae lo que vio el cliente.
+
+## La página del portal
+
+Hecha el 2026-11-12 (`erp-cliente/src/app/p/`, `src/lib/`, `src/app/api/`). Probada con una base simulada y Playwright en celular; sin
+probar contra el portal real (falta cargar las variables, ver `BACKLOG.md`).
+
+**El navegador descifra y el servidor del portal solo reparte (2026-11-12).** `/p` lee el `#`, deriva huella y llave con WebCrypto
+(`lib/cifrado.ts`), pide la copia a `/api/copia` (`portal_leer` + `portal_monedas_leer`, con `fetch` a PostgREST: sin librería nueva)
+y anota la visita en `/api/visita`. Ambas rutas validan la forma de lo que reciben; el permiso lo da la base.
+
+**La vista previa es `#{link}?previa` (2026-11-12).** No anota visitas y muestra "Vista previa — no cuenta como visita". El ERP la
+arma al construir "Ver como cliente".
+
+**El total que ve el cliente lo suma el navegador con la regla del ERP (`lib/totales.ts`); el que vale lo recalcula el ERP al aplicar
+(2026-11-12).** Duplica a propósito la cuenta de `presupuestos_totales_de`: sin ella el cliente no vería el total mientras tilda. Un
+tilde solo se permite si da una combinación ofrecida, y el `n` del código sale de esa combinación.
+
+**El link al ERP sale de `NEXT_PUBLIC_ERP_URL`, que se lee al compilar.** Sin ella, "Enviar mi elección" queda apagado.
+
+Sin hacer: el piso de los renglones aparte, `ThemeToggle`, y el cartel de "Aprobado" con casillas para variantes ya aprobadas más allá
+de lo que trae la copia.
 
 ## Qué muestra según el estado
 
