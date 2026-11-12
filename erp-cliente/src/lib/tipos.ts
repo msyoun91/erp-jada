@@ -1,3 +1,5 @@
+import type { Entrada } from "./cargado";
+
 // La forma de lo que copia el ERP (db_schema/presupuestos.md → presupuestos_portal_copia). Lo descifrado llega como unknown
 // hasta que se lo trata como Copia: lo escribe solo el ERP.
 export type Linea = { clave: string; nombre: string; importe: number | null; importe_con_iva: number | null };
@@ -20,6 +22,7 @@ export type Renglon = {
   cantidad: number;
   nombre: string | null;
   minimo_de: string | null;
+  entrada: Entrada | null;
   casillas: { clave: string; nombre: string }[];
   ancho: number;
   combinaciones: Combinacion[];
@@ -35,6 +38,8 @@ export type Version = {
   secciones: Seccion[];
   aparte: { clave: string; seccion_id: string; piso: number | null }[];
   renglones: Renglon[];
+  nombres: Record<string, string>;
+  orden: Record<string, number>;
 };
 export type Copia = {
   revision: number;

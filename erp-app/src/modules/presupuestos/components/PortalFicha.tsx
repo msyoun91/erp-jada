@@ -28,9 +28,11 @@ export function PortalFicha({ id, portal, arma, publicado }: { id: string; porta
   const copia = estadoCopia(portal);
   const sinVisitas = textoVisitas(portal);
 
+  // Sin la copia al día, el cliente que abre ya mismo lee "No encontramos este presupuesto": primero se fuerza la copia.
   async function copiar() {
     setEnviando(true);
     const r = await linkDelPortal(id, true);
+    const portalAlDia = copia.alDia || (r.success && (await reintentarPortal(id)).success);
     setEnviando(false);
     if (!r.success) {
       toast.error(r.error);
@@ -38,7 +40,8 @@ export function PortalFicha({ id, portal, arma, publicado }: { id: string; porta
     }
     try {
       await navigator.clipboard.writeText(r.url);
-      toast.success("Link copiado");
+      if (portalAlDia) toast.success("Link copiado");
+      else toast.warning("Link copiado, pero el portal todavía no lo muestra. Reintentá desde la tarjeta.");
     } catch {
       toast.error("No se pudo copiar al portapapeles");
     }
@@ -83,21 +86,33 @@ export function PortalFicha({ id, portal, arma, publicado }: { id: string; porta
             <OverflowMenu
               items={[
                 { label: "Ver como cliente", icon: <Eye size={14} />, onClick: verComoCliente },
-                ...(copia.alDia ? [] : [{ label: "Reintentar la copia", icon: <RefreshCw size={14} />, onClick: reintentar }]),
                 { label: "Anular el link…", icon: <Ban size={14} />, onClick: () => setAnular(true), destructive: true },
               ]}
             />
           </>
         )}
       </div>
-      <p className="t-caption mt-1">Portal: {copia.texto}</p>
+      {copia.alDia ? (
+        <p className="t-caption mt-1">Portal: {copia.texto}</p>
+      ) : (
+        <div className="alert alert-warning mt-2 flex flex-wrap items-center gap-2">
+          <span className="min-w-0 flex-1">Portal: {copia.texto}.</span>
+          {arma && (
+            <button type="button" className="btn btn-secondary btn-sm" disabled={enviando} onClick={reintentar}>
+              <RefreshCw size={14} />
+              Reintentar
+            </button>
+          )}
+        </div>
+      )}
       {sinVisitas ? (
         <p className="t-body-m mt-2">{sinVisitas}</p>
       ) : (
         <div className="mt-2 flex flex-col">
           {portal.visitas.map((v) => (
-            <p key={v.numero} className="t-body-m border-b border-border py-1 last:border-b-0">
-              Versión {v.numero}: {v.visitas} {v.visitas === 1 ? "visita" : "visitas"}, {v.dispositivos}{" "}
+            <p key={v.numero} className={`t-body-m border-b border-border py-1 last:border-b-0 ${v.vigente ? "" : "text-text-tertiary"}`}>
+              {v.variante ? `${v.variante} · v${v.numero}` : `Versión ${v.numero}`}
+              {v.vigente ? " (la que ve hoy)" : " (reemplazada)"}: {v.visitas} {v.visitas === 1 ? "visita" : "visitas"}, {v.dispositivos}{" "}
               {v.dispositivos === 1 ? "dispositivo" : "dispositivos"}
               <span className="t-caption"> · última {hace(v.ultima)}</span>
             </p>

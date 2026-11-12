@@ -211,7 +211,8 @@ export type PortalFicha = {
   copia_revision: number | null;
   copia_versiones: number[] | null;
   link_copiado_en: string | null;
-  visitas: { numero: number; visitas: number; dispositivos: number; ultima: string }[];
+  // `vigente`: la que el portal muestra hoy; las demás quedaron reemplazadas.
+  visitas: { numero: number; variante: string | null; vigente: boolean; visitas: number; dispositivos: number; ultima: string }[];
 };
 
 async function getPortal(presupuesto: string): Promise<PortalFicha | null> {
@@ -226,14 +227,22 @@ async function getPortal(presupuesto: string): Promise<PortalFicha | null> {
   if (!link) return null;
   const { data: visitas, error: errVisitas } = await supabase
     .from("presupuestos_links_visitas")
-    .select("visitas, dispositivos, ultima, version:presupuestos_versiones!inner(numero)")
+    .select("visitas, dispositivos, ultima, version:presupuestos_versiones!inner(numero, variante_nombre, estado)")
     .eq("link_id", link.id)
     .eq("activo", true);
   if (errVisitas) throw errVisitas;
   const { id: _, ...resto } = link;
   return {
     ...resto,
-    visitas: visitas.map(({ version, ...v }) => ({ numero: version.numero, ...v })).sort((a, b) => b.numero - a.numero),
+    visitas: visitas
+      .map(({ version, ...v }) => ({
+        numero: version.numero,
+        variante: version.variante_nombre,
+        // Lo que el portal confirmó que muestra; sin copia todavía, la publicada.
+        vigente: link.copia_versiones?.includes(version.numero) ?? version.estado === "publicado",
+        ...v,
+      }))
+      .sort((a, b) => Number(b.vigente) - Number(a.vigente) || b.numero - a.numero),
   };
 }
 

@@ -18,6 +18,27 @@ function totalesTexto(totales: TotalEleccion[]) {
     .join(" · ");
 }
 
+// Lo que importa después de aplicar: si a hoy cambió respecto de lo que vio el cliente, por moneda.
+function Diferencia({ cliente, hoy }: { cliente: TotalEleccion[]; hoy: TotalEleccion[] }) {
+  const cambios = hoy.flatMap((h) => {
+    const c = cliente.find((x) => x.moneda === h.moneda);
+    const dif = h.total - (c?.total ?? 0);
+    return dif === 0 ? [] : [{ h, c, dif }];
+  });
+  if (cambios.length === 0) return <p className="alert alert-success">Mismo total que vio el cliente.</p>;
+  return (
+    <div className="alert alert-warning flex flex-col gap-1">
+      {cambios.map(({ h, c, dif }) => (
+        <p key={h.moneda}>
+          A hoy da {formatMonto(Math.abs(dif), h.moneda)} {dif > 0 ? "más" : "menos"} que lo que vio el cliente (
+          {c ? formatMonto(c.total, h.moneda) : "—"} → {formatMonto(h.total, h.moneda)}).
+        </p>
+      ))}
+      <p>La versión quedó a hoy. Para sostener el precio del cliente, abrila y usá &ldquo;Mantener todas&rdquo;.</p>
+    </div>
+  );
+}
+
 // Lo que cambia en cada ventana: las casillas con nombre, de la clave que guarda la base.
 function Ventanas({ eleccion }: { eleccion: EleccionLeida }) {
   const cambian = eleccion.ventanas.filter(
@@ -72,9 +93,7 @@ export function EleccionVista({ eleccion, texto }: { eleccion: EleccionLeida; te
           <div>Con los precios de la publicada: <span className="font-semibold">{totalesTexto(aplicada.publicada)}</span></div>
           <div>A hoy: <span className="font-semibold">{totalesTexto(aplicada.hoy)}</span></div>
         </dl>
-        <p className="t-caption">
-          La versión quedó a hoy. Para sostener el precio del cliente, abrila y usá &ldquo;Mantener todas&rdquo;.
-        </p>
+        <Diferencia cliente={aplicada.cliente} hoy={aplicada.hoy} />
         <Link href={`/presupuestos/${eleccion.presupuesto_id}/${aplicada.version_id}`} className="btn btn-primary btn-sm self-start">
           Abrir la versión {aplicada.numero}
         </Link>

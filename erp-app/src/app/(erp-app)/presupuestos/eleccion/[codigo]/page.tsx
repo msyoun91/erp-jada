@@ -12,7 +12,11 @@ export default async function EleccionPage(props: PageProps<"/presupuestos/elecc
   const r = await leerEleccion({ texto });
   return (
     <div className="flex flex-col gap-4">
-      <Volver href="/presupuestos">Presupuestos</Volver>
+      {r.success ? (
+        <Volver href={`/presupuestos/${r.eleccion.presupuesto_id}`}>{r.eleccion.codigo}</Volver>
+      ) : (
+        <Volver href="/presupuestos">Presupuestos</Volver>
+      )}
       <div className="card flex flex-col gap-3">
         <h2 className="t-h2">Elección del cliente</h2>
         {r.success ? <EleccionVista eleccion={r.eleccion} texto={texto} /> : <p className="alert alert-warning">{r.error}</p>}

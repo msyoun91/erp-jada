@@ -255,9 +255,17 @@ estaban en la copia, y los mínimos como se publicaron (el portal no los recalcu
 Hecha el 2026-11-12 (`erp-app/src/app/(erp-app)/presupuestos/eleccion/[codigo]/`, `EleccionView.tsx`, `PegarEleccion` en `AccionesFicha.tsx`).
 Sin probar en el navegador.
 
-**El segmento de la ruta es el código o el mensaje entero (2026-11-12).** "Pegar elección" no extrae el código: manda el texto
-a la ruta y la base lo busca (`presupuestos_eleccion_leer`), así la regla vive en un solo lugar. `?desde=<id>` avisa si la elección es
-de otro presupuesto que el abierto. Sin `presupuestos_armar` o `administrar`, 404; un código roto, versión reemplazada o combinación no
+**El segmento de la ruta es el código o el mensaje entero (2026-11-12).** Ni la ruta ni "Pegar elección" extraen el código: la base
+lo busca en el texto (`presupuestos_eleccion_leer`), así la regla vive en un solo lugar. "Pegar elección" es un modal en la ficha que
+llama a la misma lectura y avisa si la elección es de otro presupuesto; la ruta es para tocar el link, y su "Volver" lleva a la ficha
+del presupuesto de la elección.
+
+**Después de aplicar, la diferencia entre lo que vio el cliente y a hoy va en un aviso, por moneda: "A hoy da US$ 700 más que lo que
+vio el cliente (21.400 → 22.100)"; sin diferencia, "Mismo total que vio el cliente" (2026-11-12).** Los tres totales siguen; el aviso
+dice si hay que decidir mantener.
+
+**Las visitas de la tarjeta nombran la variante y marcan la que el portal muestra hoy: "Aluminio · v3 (la que ve hoy)"; las
+reemplazadas, abajo y en gris (2026-11-12).** "Hoy" es lo que el portal confirmó (`copia_versiones`); sin copia, la publicada. Sin `presupuestos_armar` o `administrar`, 404; un código roto, versión reemplazada o combinación no
 ofrecida (PR030–PR032) se muestra en la página. Los tres totales (lo que vio el cliente, con los precios de la publicada, a hoy) salen
 al aplicar, en el aviso: la vista previa solo trae lo que vio el cliente.
 
@@ -279,17 +287,62 @@ tilde solo se permite si da una combinación ofrecida, y el `n` del código sale
 
 **El link al ERP sale de `NEXT_PUBLIC_ERP_URL`, que se lee al compilar.** Sin ella, "Enviar mi elección" queda apagado.
 
+**Cada ventana se ve como en el impreso: designación, paquete, ubicación, cantidad y lo cargado; con IVA incluido, los importes con
+IVA (2026-11-12).** El cliente controla contra el plano lo que compra, y las ventanas suman el total. `textoCargado` está copiado en
+`lib/cargado.ts` (las apps no se importan); la copia no trae la versión de Catálogo del renglón, así que el orden de las medidas se
+toma por nombre. Se descartó restaurar `sync-contracts` por una sola función.
+
+**La lista va por sección, como el impreso: nombre, moneda e IVA, y el subtotal con dos secciones o más (2026-11-12).** El renglón
+aparte es una línea en su sección ("Colocación · De 12 ventanas"), con el mínimo sumado si está en la misma sección, y sigue a lo
+tildado; el otro mínimo sale como "Mínimo de Colocación". Debajo de la ventana, la casilla tildada muestra su monto. Sin esto el
+cliente veía la colocación repetida en cada ventana y el mínimo como si fuera la colocación entera.
+
+**El pie es el del impreso: subtotal, descuento con su %, IVA por alícuota (o "Total con IVA") y total; "Válido hasta el …" siempre
+arriba; la referencia convierte el total entero, con la fecha del cambio: "Todo en pesos ≈ $ 19.940.000 (cambio del 12/11/26)"
+(2026-11-12).** Es lo decidido en *Moneda e IVA*; antes convertía cada moneda por separado. Fechas como el ERP (30/11/26) y en hora
+argentina: con UTC, después de las 21 la versión se veía vencida un día antes.
+
+**Tocar una casilla que no da una combinación ofrecida aplica la ofrecida más parecida y lo dice: "Sacamos también Cortina: no se
+ofrece sin Cajón" (2026-11-12).** Lo mismo que hace el formulario del ERP (`lib/entrada.ts`); antes la casilla quedaba atenuada y el
+cliente no sabía por qué. Más parecida: respeta lo tocado y cambia lo menos del resto; en empate, menos casillas. Elige solo entre
+las que trae la copia, así que nunca saltea a Técnica. Sin ninguna, "No disponible en esta ventana". `cercana` en `lib/eleccion.ts`.
+
 Sin hacer: el piso de los renglones aparte, `ThemeToggle`, y el cartel de "Aprobado" con casillas para variantes ya aprobadas más allá
 de lo que trae la copia.
 
 ## Qué muestra según el estado
 
-**Vencida: muestra todo con "Venció el 30/11: los precios pueden cambiar", y "Enviar mi elección" apagado (2026-11-11).** Sigue
-lo decidido en Presupuestos (el portal no deja avanzar sobre una vencida; Juan puede aprobarla igual). Se descartó esconder los
+~~**Vencida: muestra todo con "Venció el 30/11: los precios pueden cambiar", y "Enviar mi elección" apagado (2026-11-11).**~~ Ver
+la siguiente.
+
+**Vencida: muestra todo con el aviso, y en lugar de "Enviar mi elección", "Pedir precios actualizados por WhatsApp" (2026-11-12).**
+El mensaje dice el número, el nombre y cuándo venció; sin WhatsApp, "Pedile los precios actualizados a quien te lo mandó". Sigue sin
+dejar elegir sobre una vencida, pero el cliente ya no queda con dos botones apagados sin explicación. Se descartó esconder los
 precios: el impreso de la misma versión los sigue mostrando.
 
-**Aprobado: lo aprobado, sin casillas, con "Aprobado el 14/11". Rechazado o desactivado: "Este presupuesto ya no está
-disponible" (2026-11-11).**
+**El mensaje va por opcional, como lo pide *Sin confirmación*: "Mosquitero: V1, V3, V7 · Colocación: todas · Cortina: ninguna"
+(2026-11-12).** Hasta acá iba una línea por ventana, 24 con "sin opcionales". Todas y ninguna cuentan solo donde el opcional existe;
+la ventana se nombra por designación, ubicación o paquete. El encabezado suma el número ("P-0142 · Torre Belgrano"); el código del
+link no cambia y el ERP lo busca igual (la regex pide `-V`).
+
+**Las variantes se eligen con un `.segmented` que muestra el total de cada una con lo tildado, y cada una recuerda sus tildes
+(2026-11-12).** Carlos compara Aluminio y PVC sin perder los mosquiteros que tildó en una al pasar a la otra. Se descartó ponerlas
+lado a lado en pantalla grande: con el total en el selector ya se compara, y era mucho más código.
+
+**Vigente, arriba de los botones: "No confirma la compra: te contactamos para cerrarla" (2026-11-12).** Sin confirmación
+(*Sin confirmación*), el cliente podía creer que enviar era comprar. Si copiar falla, el mensaje queda en un campo para copiarlo a
+mano.
+
+**Sin copia, el portal dice "No encontramos este presupuesto. Si te lo acaban de mandar, probá en unos minutos; si no, pedile el link
+actualizado a quien te lo mandó" (2026-11-12).** No distingue un link anulado de una copia que todavía no llegó (no confirma qué
+huellas existen), y "ya no está disponible" le hacía creer al cliente que lo habían retirado. El error de red ofrece "Probar de nuevo".
+
+**"Copiar link" con el portal sin actualizar fuerza la copia antes; si no llega, copia igual y avisa (2026-11-12).** Juan publica y
+copia al instante: sin esto, Carlos abría antes de la copia. "Sin actualizar" es un aviso con *Reintentar* a la vista, no texto gris
+con el botón en el `⋯`. `PortalFicha.tsx`.
+
+**Aprobado: lo aprobado, sin casillas, con "Aprobado el 14/11". Rechazado o desactivado: no se muestra (2026-11-11).** El
+texto es el de un link sin copia (arriba, 2026-11-12).
 
 ## A decidir al construir
 

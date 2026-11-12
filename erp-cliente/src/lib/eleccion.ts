@@ -1,4 +1,22 @@
-const ALFABETO = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+import type { Combinacion, Renglon } from "./tipos";
+
+// La combinación ofrecida más parecida a tocar `clave`: respeta lo tocado y cambia lo menos posible del resto; en empate, la de
+// menos casillas. Solo elige entre las que trae la copia: nunca arma una que no se ofrece. Null si ninguna respeta lo tocado.
+export function cercana(r: Pick<Renglon, "combinaciones">, actual: string[], clave: string): Combinacion | null {
+  const quiere = !actual.includes(clave);
+  const deseadas = quiere ? [...actual, clave] : actual.filter((c) => c !== clave);
+  let mejor: Combinacion | null = null;
+  let costo = Infinity;
+  for (const c of r.combinaciones) {
+    if (c.casillas.includes(clave) !== quiere) continue;
+    const distintas = c.casillas.filter((x) => !deseadas.includes(x)).length + deseadas.filter((x) => !c.casillas.includes(x)).length;
+    const k = distintas * 1000 + c.casillas.length;
+    if (k < costo) [mejor, costo] = [c, k];
+  }
+  return mejor;
+}
+
+const ALFABETO ="0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
 export type VentanaElegida = { ancho: number; n: number };
 
