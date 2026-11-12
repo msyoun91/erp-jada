@@ -119,7 +119,7 @@ INSERT INTO obras (id, nombre, direccion, origen, tipo, responsable_id, creado_p
 INSERT INTO obras_participantes (obra_id, usuario_id, agregado_por)
 VALUES (pg_temp.id('Belgrano'), pg_temp.id('Juan'), pg_temp.id('Laura'));
 
-SELECT pg_temp.caso('00 gerencia configura', 'ok', pg_temp.consultar($s$SELECT 'ok' FROM presupuestos_configurar(10, 15, NULL)$s$, 'G'));
+SELECT pg_temp.caso('00 gerencia configura', 'ok', pg_temp.consultar($s$SELECT 'ok' FROM presupuestos_configurar(10, 15, '[]')$s$, 'G'));
 SELECT pg_temp.caso('00 a mano, sin aprobado, no pasa a contratada', 'PR028/idea',
   pg_temp.mover('Belgrano', $s$estado = 'contratada'$s$, 'Laura') || '/' || pg_temp.obra('Belgrano'));
 SELECT pg_temp.alta('P1', 'Belgrano');

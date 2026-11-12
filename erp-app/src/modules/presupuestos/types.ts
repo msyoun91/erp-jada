@@ -31,6 +31,14 @@ function numeroRequerido(mensaje: string) {
   return z.union([z.number(), z.string().trim().min(1, mensaje)]);
 }
 
+// Un bloque de los términos generales. `id` vacío: nuevo, la base le da uno (`presupuestos_configurar`).
+export const bloqueSchema = z.object({
+  id: z.string(),
+  titulo: z.string().trim().min(1, "Escribí el título").max(100, "Máximo 100 caracteres"),
+  texto: z.string().trim().min(1, "Escribí el texto").max(3000, "Máximo 3000 caracteres"),
+});
+export type Bloque = z.output<typeof bloqueSchema>;
+
 export const configuracionSchema = z.object({
   tope_descuento: numeroRequerido("Escribí el tope").pipe(
     z.coerce
@@ -43,7 +51,10 @@ export const configuracionSchema = z.object({
     z.coerce.number<string | number>("Ingresá un número").int("En días enteros").min(1, "Al menos 1 día").max(365, "Hasta 365 días"),
   ),
   monedas_referencia: z.array(z.enum(MONEDAS_LISTA)),
-  terminos: z.string().trim().max(5000, "Máximo 5000 caracteres"),
+  terminos: z
+    .array(bloqueSchema)
+    .max(30, "Hasta 30 bloques")
+    .refine((b) => new Set(b.map((x) => x.titulo.toLowerCase())).size === b.length, "Hay dos bloques con el mismo título"),
 });
 export type ConfiguracionForm = z.input<typeof configuracionSchema>;
 
@@ -100,6 +111,7 @@ export const datosVersionSchema = z.object({
   iva_discriminado: z.boolean(),
   descuento: z.coerce.number("Ingresá un número").min(0, "No puede ser negativo").max(100, "Hasta 100 %"),
   condiciones: z.string().trim().max(3000, "Máximo 3000 caracteres"),
+  terminos_fuera: z.array(idSchema),
 });
 export type DatosVersionForm = z.input<typeof datosVersionSchema>;
 

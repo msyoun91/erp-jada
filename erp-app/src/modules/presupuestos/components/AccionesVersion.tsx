@@ -27,12 +27,14 @@ type Version = VersionEditor["version"];
 export function AccionesVersion({
   version,
   tope,
+  terminos,
   secciones,
   opcionales,
   renglones,
 }: {
   version: Version;
   tope: number | null;
+  terminos: VersionEditor["terminos"];
   secciones: VersionEditor["secciones"];
   opcionales: OpcionalVersion[];
   renglones: VersionEditor["renglones"];
@@ -75,7 +77,7 @@ export function AccionesVersion({
         Editar
       </button>
       {items.length > 0 && <OverflowMenu items={items} />}
-      {abierto === "datos" && <DatosVersionPanel version={version} tope={tope} onClose={cerrar} />}
+      {abierto === "datos" && <DatosVersionPanel version={version} tope={tope} terminos={terminos} onClose={cerrar} />}
       {abierto === "secciones" && <TodasSeccionesPanel versionId={version.id} onClose={cerrar} />}
       {abierto === "opcionales" && (
         <OpcionalesPanel versionId={version.id} opcionales={opcionales} secciones={secciones} onClose={cerrar} />
@@ -112,9 +114,19 @@ export function AccionesVersion({
 
 const DATOS_FORM = "presupuesto-version-datos";
 
-function DatosVersionPanel({ version: v, tope, onClose }: { version: Version; tope: number | null; onClose: () => void }) {
+function DatosVersionPanel({
+  version: v,
+  tope,
+  terminos,
+  onClose,
+}: {
+  version: Version;
+  tope: number | null;
+  terminos: VersionEditor["terminos"];
+  onClose: () => void;
+}) {
   const [enviando, setEnviando] = useState(false);
-  const { register, handleSubmit, formState } = useForm<DatosVersionForm>({
+  const { register, handleSubmit, formState, watch, setValue } = useForm<DatosVersionForm>({
     resolver: zodResolver(datosVersionSchema),
     defaultValues: {
       id: v.id,
@@ -122,9 +134,11 @@ function DatosVersionPanel({ version: v, tope, onClose }: { version: Version; to
       iva_discriminado: v.iva_discriminado,
       descuento: v.descuento,
       condiciones: v.condiciones ?? "",
+      terminos_fuera: v.terminos_fuera,
     },
   });
   const { errors } = formState;
+  const fuera = watch("terminos_fuera");
 
   async function onSubmit(data: DatosVersionForm) {
     setEnviando(true);
@@ -187,9 +201,29 @@ function DatosVersionPanel({ version: v, tope, onClose }: { version: Version; to
             {...register("condiciones")}
           />
           <p className="t-caption mt-1">
-            Las de esta obra. Van al cliente junto con los términos generales de Configuración, que se toman al publicar.
+            Las de este presupuesto. Van al cliente antes de los términos generales.
           </p>
         </Campo>
+        {terminos.length > 0 && (
+          <fieldset className="flex flex-col gap-1">
+            <legend className="t-label mb-1">Términos que van</legend>
+            <p className="t-caption mb-1">Los de Configuración. Destildá los que no aplican a este presupuesto.</p>
+            {terminos.map((b) => (
+              <label key={b.id} className="tap-target flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={!fuera.includes(b.id)}
+                  onChange={(e) =>
+                    setValue("terminos_fuera", e.target.checked ? fuera.filter((x) => x !== b.id) : [...fuera, b.id], {
+                      shouldDirty: true,
+                    })
+                  }
+                />
+                <span className="t-body-m">{b.titulo}</span>
+              </label>
+            ))}
+          </fieldset>
+        )}
       </form>
     </RightPanel>
   );

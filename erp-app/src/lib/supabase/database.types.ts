@@ -2299,7 +2299,7 @@ export type Database = {
           id: string
           monedas_referencia: Database["public"]["Enums"]["moneda"][]
           plazo_dias: number
-          terminos: string | null
+          terminos: Json
           tope_descuento: number
           updated_at: string
         }
@@ -2310,7 +2310,7 @@ export type Database = {
           id?: string
           monedas_referencia?: Database["public"]["Enums"]["moneda"][]
           plazo_dias: number
-          terminos?: string | null
+          terminos?: Json
           tope_descuento: number
           updated_at?: string
         }
@@ -2321,7 +2321,7 @@ export type Database = {
           id?: string
           monedas_referencia?: Database["public"]["Enums"]["moneda"][]
           plazo_dias?: number
-          terminos?: string | null
+          terminos?: Json
           tope_descuento?: number
           updated_at?: string
         }
@@ -2724,6 +2724,7 @@ export type Database = {
           numero: number
           origen_id: string | null
           presupuesto_id: string
+          terminos_fuera: string[]
           updated_at: string
           variante: number
           variante_nombre: string | null
@@ -2742,6 +2743,7 @@ export type Database = {
           numero: number
           origen_id?: string | null
           presupuesto_id: string
+          terminos_fuera?: string[]
           updated_at?: string
           variante: number
           variante_nombre?: string | null
@@ -2760,6 +2762,7 @@ export type Database = {
           numero?: number
           origen_id?: string | null
           presupuesto_id?: string
+          terminos_fuera?: string[]
           updated_at?: string
           variante?: number
           variante_nombre?: string | null
@@ -4863,7 +4866,7 @@ export type Database = {
         Args: {
           p_monedas?: Database["public"]["Enums"]["moneda"][]
           p_plazo: number
-          p_terminos: string
+          p_terminos: Json
           p_tope: number
         }
         Returns: string
@@ -5024,6 +5027,7 @@ export type Database = {
           total: number
         }[]
       }
+      presupuestos_terminos_validos: { Args: { p: Json }; Returns: boolean }
       presupuestos_variante_quitar: {
         Args: { p_version: string }
         Returns: undefined
@@ -5073,6 +5077,10 @@ export type Database = {
       presupuestos_version_revisar: {
         Args: { p_version: string }
         Returns: string[]
+      }
+      presupuestos_version_terminos: {
+        Args: { p_version: string }
+        Returns: Json
       }
       presupuestos_version_totales: {
         Args: { p_version: string }

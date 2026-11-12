@@ -65,6 +65,7 @@ export function VersionView({
             <AccionesVersion
               version={v}
               tope={tope}
+              terminos={datos.terminos}
               secciones={secciones}
               opcionales={opcionales}
               renglones={renglones}
@@ -254,9 +255,9 @@ export function VersionView({
         </section>
       )}
 
-      {(v.condiciones || datos.terminos) && (
+      {(v.condiciones || datos.terminos.some((b) => b.incluido)) && (
         <section className="card flex flex-col gap-3" aria-label="Condiciones">
-          <Condiciones particulares={v.condiciones} generales={datos.terminos} />
+          <Condiciones particulares={v.condiciones} generales={datos.terminos.filter((b) => b.incluido)} />
         </section>
       )}
 

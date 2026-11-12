@@ -1,6 +1,6 @@
--- Verificación de sql/205: términos generales en la configuración, condiciones particulares en la versión, congelados al
--- publicar. NO es una migración: todo corre dentro de una transacción que revierte. Termina en un DO que lanza "N / M ok" y
--- los casos que fallan.
+-- Verificación de sql/205 y sql/206: términos generales en bloques en la configuración, la versión elige cuáles van, condiciones
+-- particulares en la versión, todo congelado al publicar. NO es una migración: todo corre dentro de una transacción que revierte.
+-- Termina en un DO que lanza "N / M ok" y los casos que fallan.
 --
 -- Mundo: Juan responsable de Belgrano y vendedor, G gerencia (configura). P1 con un renglón a mano. Lo creado lleva Zqx205.
 
@@ -35,6 +35,21 @@ EXCEPTION WHEN OTHERS THEN
   PERFORM set_config('request.jwt.claims', '', true);
   RETURN SQLSTATE;
 END;
+$f$;
+
+CREATE FUNCTION pg_temp.configurar(p_terminos jsonb, p_quien text DEFAULT 'G') RETURNS text LANGUAGE sql AS $f$
+  SELECT pg_temp.como(format($s$SELECT 'ok' FROM presupuestos_configurar(10, 15, %L)$s$, p_terminos), p_quien);
+$f$;
+
+-- El id del bloque vigente con ese título.
+CREATE FUNCTION pg_temp.bloque(p_titulo text) RETURNS text LANGUAGE sql AS $f$
+  SELECT b->>'id' FROM presupuestos_configuracion c, jsonb_array_elements(c.terminos) b WHERE c.activo AND b->>'titulo' = p_titulo;
+$f$;
+
+-- Los bloques de una versión como los ve Juan: "Título" o "-Título" si está fuera.
+CREATE FUNCTION pg_temp.de_version(p_version text) RETURNS text LANGUAGE sql AS $f$
+  SELECT pg_temp.como(format($s$SELECT string_agg(CASE WHEN (b->>'incluido')::boolean THEN '' ELSE '-' END || (b->>'titulo'), ',' ORDER BY n)
+    FROM jsonb_array_elements(presupuestos_version_terminos(%L)) WITH ORDINALITY t(b, n)$s$, pg_temp.id(p_version)), 'Juan');
 $f$;
 
 -- ============================================================
@@ -72,70 +87,85 @@ SELECT pg_temp.caso('montaje: a mano', 'ok', pg_temp.como(format(
   pg_temp.id('V1')), 'Juan'));
 
 -- ============================================================
--- 01 Configurar los términos generales
+-- 01 Configurar los bloques
 -- ============================================================
-SELECT pg_temp.caso('01 Juan no configura', '42501',
-  pg_temp.como($s$SELECT presupuestos_configurar(10, 15, 'Seña 50 %')::text$s$, 'Juan'));
-SELECT pg_temp.caso('01 G configura con términos', 'ok',
-  pg_temp.como($s$SELECT 'ok' FROM presupuestos_configurar(10, 15, '  Seña 50 %  ')$s$, 'G'));
-SELECT pg_temp.caso('01 se guardan sin espacios a los lados', 'Seña 50 %',
-  (SELECT terminos FROM presupuestos_configuracion WHERE activo));
-SELECT pg_temp.caso('01 de más de 5000, no', '23514',
-  pg_temp.como(format('SELECT presupuestos_configurar(10, 15, %L)::text', repeat('x', 5001)), 'G'));
-SELECT pg_temp.como($s$SELECT 'ok' FROM presupuestos_configurar(10, 15, '   ')$s$, 'G');
-SELECT pg_temp.caso('01 vacío queda sin términos', 'NULL',
-  (SELECT coalesce(terminos, 'NULL') FROM presupuestos_configuracion WHERE activo));
-SELECT pg_temp.como($s$SELECT 'ok' FROM presupuestos_configurar(10, 15, 'Seña 50 %')$s$, 'G');
-INSERT INTO ids VALUES ('C50', (SELECT id FROM presupuestos_configuracion WHERE activo));
+SELECT pg_temp.caso('01 Juan no configura', '42501', pg_temp.configurar('[]', 'Juan'));
+SELECT pg_temp.caso('01 los términos van en una lista', '22023', pg_temp.configurar('{"titulo": "x"}'));
+SELECT pg_temp.caso('01 sin título, no', '23514', pg_temp.configurar('[{"titulo": " ", "texto": "x"}]'));
+SELECT pg_temp.caso('01 títulos repetidos, no', '23514',
+  pg_temp.configurar('[{"titulo": "Pago", "texto": "x"}, {"titulo": "pago", "texto": "y"}]'));
+SELECT pg_temp.caso('01 más de 30, no', '23514', pg_temp.configurar(
+  (SELECT jsonb_agg(jsonb_build_object('titulo', 'B' || i, 'texto', 'x')) FROM generate_series(1, 31) i)));
+SELECT pg_temp.caso('01 G configura dos bloques', 'ok', pg_temp.configurar(
+  '[{"titulo": " Colocación ", "texto": "Vano terminado"}, {"titulo": "Forma de pago", "texto": "Seña 50 %"}]'));
+SELECT pg_temp.caso('01 en orden, sin espacios, con id', 'Colocación,Forma de pago/2', (
+  SELECT string_agg(b->>'titulo', ',' ORDER BY n) || '/' || count(b->>'id')
+  FROM presupuestos_configuracion c, jsonb_array_elements(c.terminos) WITH ORDINALITY t(b, n) WHERE c.activo));
+INSERT INTO ids VALUES ('Colocación', pg_temp.bloque('Colocación')::uuid), ('Pago', pg_temp.bloque('Forma de pago')::uuid);
+INSERT INTO ids VALUES ('C1', (SELECT id FROM presupuestos_configuracion WHERE activo));
 
 -- ============================================================
--- 02 Condiciones particulares en el borrador
+-- 02 La versión en borrador: los vigentes, y elige cuáles
 -- ============================================================
-SELECT pg_temp.caso('02 Juan escribe las particulares', 'ok', pg_temp.como(format(
-  $s$UPDATE presupuestos_versiones SET condiciones = 'Entrega en 60 días' WHERE id = %L RETURNING 'ok'$s$, pg_temp.id('V1')), 'Juan'));
-SELECT pg_temp.caso('02 con espacios a los lados, no', '23514', pg_temp.como(format(
+SELECT pg_temp.caso('02 el borrador ve los vigentes, todos', 'Colocación,Forma de pago', pg_temp.de_version('V1'));
+SELECT pg_temp.caso('02 Juan saca Colocación y escribe las particulares', 'ok', pg_temp.como(format(
+  $s$UPDATE presupuestos_versiones SET terminos_fuera = ARRAY[%L]::uuid[], condiciones = 'Entrega en 60 días' WHERE id = %L RETURNING 'ok'$s$,
+  pg_temp.id('Colocación'), pg_temp.id('V1')), 'Juan'));
+SELECT pg_temp.caso('02 Colocación queda fuera', '-Colocación,Forma de pago', pg_temp.de_version('V1'));
+SELECT pg_temp.caso('02 particulares con espacios a los lados, no', '23514', pg_temp.como(format(
   $s$UPDATE presupuestos_versiones SET condiciones = ' x' WHERE id = %L RETURNING 'ok'$s$, pg_temp.id('V1')), 'Juan'));
 SELECT pg_temp.caso('02 Juan no escribe configuracion_id', '42501', pg_temp.como(format(
-  $s$UPDATE presupuestos_versiones SET configuracion_id = %L WHERE id = %L RETURNING 'ok'$s$, pg_temp.id('C50'), pg_temp.id('V1')), 'Juan'));
-SELECT pg_temp.caso('02 el borrador no tiene configuración', 'NULL',
-  (SELECT coalesce(configuracion_id::text, 'NULL') FROM presupuestos_versiones WHERE id = pg_temp.id('V1')));
+  $s$UPDATE presupuestos_versiones SET configuracion_id = %L WHERE id = %L RETURNING 'ok'$s$, pg_temp.id('C1'), pg_temp.id('V1')), 'Juan'));
 
 -- ============================================================
 -- 03 Publicar congela la configuración
 -- ============================================================
 SELECT pg_temp.caso('03 Juan publica', 'ok', pg_temp.como(format('SELECT presupuestos_version_publicar(%L)', pg_temp.id('V1')), 'Juan'));
 SELECT pg_temp.caso('03 guarda la vigente y el vencimiento', 'true/true', (
-  SELECT (configuracion_id = pg_temp.id('C50'))::text || '/'
+  SELECT (configuracion_id = pg_temp.id('C1'))::text || '/'
          || (vence = (now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date + 15)::text
   FROM presupuestos_versiones WHERE id = pg_temp.id('V1')));
-SELECT pg_temp.caso('03 publicada, las particulares no cambian', 'PR005', pg_temp.como(format(
+SELECT pg_temp.caso('03 publicada, no cambia qué bloques van', 'PR005', pg_temp.como(format(
+  $s$UPDATE presupuestos_versiones SET terminos_fuera = '{}' WHERE id = %L RETURNING 'ok'$s$, pg_temp.id('V1')), 'Juan'));
+SELECT pg_temp.caso('03 publicada, no cambian las particulares', 'PR005', pg_temp.como(format(
   $s$UPDATE presupuestos_versiones SET condiciones = 'Otra' WHERE id = %L RETURNING 'ok'$s$, pg_temp.id('V1')), 'Juan'));
 
--- G cambia los generales: lo publicado sigue con los de antes.
-SELECT pg_temp.como($s$SELECT 'ok' FROM presupuestos_configurar(10, 15, 'Seña 60 %')$s$, 'G');
+-- G conserva Colocación (mismo id), cambia la seña y suma Otros: lo publicado sigue con los de antes.
+SELECT pg_temp.caso('03 G cambia los bloques', 'ok', pg_temp.configurar(jsonb_build_array(
+  jsonb_build_object('id', pg_temp.id('Colocación'), 'titulo', 'Colocación', 'texto', 'Vano terminado'),
+  jsonb_build_object('id', pg_temp.id('Pago'), 'titulo', 'Forma de pago', 'texto', 'Seña 60 %'),
+  jsonb_build_object('titulo', 'Otros', 'texto', 'Garantía 1 año'))));
+SELECT pg_temp.caso('03 la publicada sigue con los de cuando se publicó', '-Colocación,Forma de pago', pg_temp.de_version('V1'));
 INSERT INTO ids VALUES ('L1', (SELECT id FROM presupuestos_links WHERE presupuesto_id = pg_temp.id('P1') AND activo));
-SELECT pg_temp.caso('03 el portal copia los de cuando se publicó', 'Entrega en 60 días/Seña 50 %', (
-  SELECT (x->>'condiciones') || '/' || (x->>'terminos')
+SELECT pg_temp.caso('03 el portal copia solo los incluidos, sin la marca', 'Entrega en 60 días/Forma de pago: Seña 50 %/false', (
+  SELECT (x->>'condiciones') || '/'
+         || (SELECT string_agg((b->>'titulo') || ': ' || (b->>'texto'), ',') FROM jsonb_array_elements(x->'terminos') b) || '/'
+         || (x->'terminos'->0 ? 'incluido')::text
   FROM jsonb_array_elements(presupuestos_portal_copia(pg_temp.id('L1'))->'versiones') x));
 
 -- ============================================================
--- 04 Copiar lleva las particulares; publicar la copia toma los generales nuevos
+-- 04 Copiar lleva lo elegido; publicar la copia toma los bloques nuevos
 -- ============================================================
 CREATE TEMP TABLE copia ON COMMIT DROP AS
 SELECT pg_temp.como(format('SELECT presupuestos_version_copiar(%L)::text', pg_temp.id('V1')), 'Juan') AS x;
 SELECT pg_temp.caso('04 Juan copia la v1', 'uuid', (SELECT CASE WHEN x ~ '^[0-9a-f-]{36}$' THEN 'uuid' ELSE x END FROM copia));
 INSERT INTO ids SELECT 'V2', x::uuid FROM copia WHERE x ~ '^[0-9a-f-]{36}$';
-SELECT pg_temp.caso('04 la copia lleva las particulares', 'Entrega en 60 días',
-  (SELECT condiciones FROM presupuestos_versiones WHERE id = pg_temp.id('V2')));
-SELECT pg_temp.caso('04 la copia no lleva configuración', 'NULL',
-  (SELECT coalesce(configuracion_id::text, 'NULL') FROM presupuestos_versiones WHERE id = pg_temp.id('V2')));
+SELECT pg_temp.caso('04 la copia lleva las particulares, sin configuración', 'Entrega en 60 días/NULL', (
+  SELECT condiciones || '/' || coalesce(configuracion_id::text, 'NULL') FROM presupuestos_versiones WHERE id = pg_temp.id('V2')));
+SELECT pg_temp.caso('04 la copia ve los vigentes, Colocación sigue fuera', '-Colocación,Forma de pago,Otros', pg_temp.de_version('V2'));
 SELECT pg_temp.caso('04 Juan publica la copia', 'ok', pg_temp.como(format('SELECT presupuestos_version_publicar(%L)', pg_temp.id('V2')), 'Juan'));
-SELECT pg_temp.caso('04 el portal copia los nuevos', 'Seña 60 %', (
-  SELECT string_agg(x->>'terminos', ',')
-  FROM jsonb_array_elements(presupuestos_portal_copia(pg_temp.id('L1'))->'versiones') x));
-SELECT pg_temp.caso('04 la v1 sigue con los de antes', 'Seña 50 %', (
-  SELECT c.terminos FROM presupuestos_versiones v JOIN presupuestos_configuracion c ON c.id = v.configuracion_id
-  WHERE v.id = pg_temp.id('V1')));
+SELECT pg_temp.caso('04 el portal copia los nuevos', 'Forma de pago: Seña 60 %,Otros: Garantía 1 año', (
+  SELECT string_agg((b->>'titulo') || ': ' || (b->>'texto'), ',')
+  FROM jsonb_array_elements(presupuestos_portal_copia(pg_temp.id('L1'))->'versiones') x, jsonb_array_elements(x->'terminos') b));
+
+-- ============================================================
+-- 05 Permisos
+-- ============================================================
+SELECT pg_temp.caso('05 anon: ' || f, 'false', has_function_privilege('anon', 'public.' || f, 'EXECUTE')::text)
+FROM unnest(ARRAY['presupuestos_version_terminos(uuid)', 'presupuestos_terminos_validos(jsonb)',
+  'presupuestos_configurar(numeric,integer,jsonb,moneda[])']) AS f;
+SELECT pg_temp.caso('05 el CHECK corre como quien escribe: valida', 'true',
+  has_function_privilege('authenticated', 'public.presupuestos_terminos_validos(jsonb)', 'EXECUTE')::text);
 
 -- ============================================================
 -- Resultado

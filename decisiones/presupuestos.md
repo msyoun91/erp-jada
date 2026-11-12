@@ -479,11 +479,17 @@ usuario, 2026-11-06).** El ERP manda, con el renglón, su piso; si al destildar 
 un mínimo: el total puede ajustarse. Juan te confirma el monto." No calcula precio: compara dos números que ya recibió. Sin el aviso, el
 cliente enviaba un total que después cambiaba.
 
-**Términos y condiciones: los generales en la Configuración, las particulares en la versión; publicar congela cuáles (2026-11-12).**
-Los generales casi no cambian: un solo texto que gerencia edita, con historial como el tope y el plazo. Las particulares son de cada
-presupuesto, no de la obra: si vivieran en la obra, editarlas cambiaría lo que el cliente ya recibió. Publicar guarda la configuración
-vigente (`configuracion_id`), así un cambio de gerencia no toca lo publicado. Van al final, en el editor, el impreso y el portal.
-`sql/205`, `Condiciones.tsx`, `ConfiguracionView.tsx`, `AccionesVersion.tsx`, `erp-cliente/src/app/p/Presupuesto.tsx`.
+~~**Términos y condiciones: los generales en la Configuración, las particulares en la versión; publicar congela cuáles (2026-11-12).**~~
+Los generales pasaron a bloques: ver la siguiente.
+
+**Términos generales en bloques numerados, y cada versión elige cuáles van, todos por defecto (decisión del usuario, 2026-11-12).**
+Gerencia los arma en la Configuración ("1. Colocación", "2. Forma de pago"), con historial como el tope y el plazo; el vendedor destilda en
+la versión los que no aplican (un presupuesto sin colocación). Que salgan solos según el contenido se descartó: no hay forma confiable de
+saber que un bloque no aplica. Cada bloque tiene id fijo: si gerencia lo renombra o cambia su texto, sigue fuera donde se sacó. Las
+particulares siguen siendo un texto de la versión, no de la obra: si vivieran en la obra, editarlas cambiaría lo que el cliente ya recibió.
+Publicar guarda la configuración vigente (`configuracion_id`): un cambio de gerencia no toca lo publicado. Qué bloques van lo decide una sola
+función (`presupuestos_version_terminos`). Van al final, en el editor, el impreso y el portal.
+`sql/205`, `sql/206`, `Condiciones.tsx`, `ConfiguracionView.tsx`, `AccionesVersion.tsx`, `erp-cliente/src/app/p/Presupuesto.tsx`.
 
 **Una versión imprimible desde el ERP, además del portal.** Se imprime o guarda como PDF desde el navegador, sin librería nueva y sin costos
 ni comparación. Permite usar el módulo sin el portal, y queda como respaldo.

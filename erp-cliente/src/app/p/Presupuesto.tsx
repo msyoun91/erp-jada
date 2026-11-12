@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { descifrar, huellaDe } from "@/lib/cifrado";
 import { ordenPorNombre, textoCargado } from "@/lib/cargado";
 import { cercana, codigoEleccion } from "@/lib/eleccion";
-import type { Combinacion, Copia, Moneda, Renglon, Version } from "@/lib/tipos";
+import type { Bloque, Combinacion, Copia, Moneda, Renglon, Version } from "@/lib/tipos";
 import { totalesDe, type Total } from "@/lib/totales";
 
 type Carga = { estado: "cargando" } | { estado: "no" } | { estado: "error" } | { estado: "listo"; copia: Copia; monedas: Moneda[] };
@@ -284,12 +284,13 @@ function Impreso({ copia, tildadas }: { copia: Copia; tildadas: Record<number, T
           )}
         </section>
       ))}
-      {/* Como en el impreso del ERP: los términos de cada variante, cada texto una vez. */}
-      {[...new Set(versiones.map(({ v }) => v.terminos))].map(
-        (t) =>
-          t && (
-            <div key={t} className="mt-6 border-t border-border pt-4">
-              <Condiciones generales={t} />
+      {/* Como en el impreso del ERP: los mismos bloques, una vez; si difieren, cada variante con su nombre. */}
+      {[...new Map(versiones.map((x) => [JSON.stringify(x.v.terminos ?? []), x])).entries()].map(
+        ([clave, x], _, todas) =>
+          (x.v.terminos ?? []).length > 0 && (
+            <div key={clave} className="mt-6 border-t border-border pt-4">
+              {todas.length > 1 && x.nombre && <p className="t-h3 mb-2">{x.nombre}</p>}
+              <Condiciones generales={x.v.terminos} />
             </div>
           ),
       )}
@@ -298,21 +299,29 @@ function Impreso({ copia, tildadas }: { copia: Copia; tildadas: Record<number, T
 }
 
 // Copia de erp-app/src/modules/presupuestos/components/Condiciones.tsx: las apps no se importan entre sí.
-function Condiciones({ particulares, generales }: { particulares?: string | null; generales?: string | null }) {
+function Condiciones({ particulares, generales = [] }: { particulares?: string | null; generales?: Bloque[] }) {
   return (
     <>
-      {particulares && <BloqueCondiciones titulo="Condiciones particulares" texto={particulares} />}
-      {generales && <BloqueCondiciones titulo="Términos y condiciones" texto={generales} />}
+      {particulares && (
+        <div className="break-inside-avoid">
+          <p className="t-label mb-1">Condiciones particulares</p>
+          <p className="t-body-m whitespace-pre-line">{particulares}</p>
+        </div>
+      )}
+      {generales.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="t-label">Términos y condiciones</p>
+          {generales.map((b, i) => (
+            <div key={b.id} className="break-inside-avoid">
+              <p className="t-body-m font-semibold text-text-primary">
+                {i + 1}. {b.titulo}
+              </p>
+              <p className="t-body-m whitespace-pre-line">{b.texto}</p>
+            </div>
+          ))}
+        </div>
+      )}
     </>
-  );
-}
-
-function BloqueCondiciones({ titulo, texto }: { titulo: string; texto: string }) {
-  return (
-    <div className="break-inside-avoid">
-      <p className="t-label mb-1">{titulo}</p>
-      <p className="t-body-m whitespace-pre-line">{texto}</p>
-    </div>
   );
 }
 
@@ -632,7 +641,7 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
           </p>
         ))}
       </section>
-      {(version.condiciones || version.terminos) && (
+      {(version.condiciones || (version.terminos ?? []).length > 0) && (
         <section className="card flex flex-col gap-3" aria-label="Condiciones">
           <Condiciones particulares={version.condiciones} generales={version.terminos} />
         </section>

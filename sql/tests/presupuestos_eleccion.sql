@@ -269,7 +269,7 @@ SELECT pg_temp.mete(NULL, 'catalogo_condiciones', 'V', jsonb_build_object(
 SELECT pg_temp.mete(NULL, 'catalogo_casos', 'V', '{"nombre": "base", "entrada": {"variables": {"ancho": 1000, "alto": 1000}}}');
 SELECT pg_temp.caso('enviar V', 'ok', pg_temp.llamar('catalogo_version_enviar', 'V', 'Lucia'));
 SELECT pg_temp.caso('aprobar V', 'ok', pg_temp.llamar('catalogo_version_aprobar', 'V', 'Carlos'));
-SELECT pg_temp.consultar('SELECT presupuestos_configurar(10, 15, NULL)::text', 'Jefe');
+SELECT pg_temp.consultar('SELECT presupuestos_configurar(10, 15, ''[]'')::text', 'Jefe');
 
 -- P1, v1: L1 (V1, cantidad 2) con Mosquitero y Colocacion, L3 (V3) sin nada, el flete a mano. La Colocacion de L1 aporta 41.000:
 -- el mínimo pone 59.000.

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Pencil, Settings } from "lucide-react";
+import { ArrowDown, ArrowUp, Pencil, Plus, Settings, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
@@ -12,6 +12,7 @@ import { MONEDAS, MONEDAS_LISTA, type Moneda } from "@/lib/monedas";
 import { formatFecha } from "@/lib/utils";
 import { configurar } from "../actions";
 import type { Configuracion } from "../queries";
+import { Condiciones } from "./Condiciones";
 import { configuracionSchema, formatAlicuota, type ConfiguracionForm } from "../types";
 
 function dias(n: number) {
@@ -63,8 +64,13 @@ export function ConfiguracionView({ configuraciones }: { configuraciones: Config
           <Linea texto="Las versiones vencen a los" valor={dias(vigente.plazo_dias)} />
           <Linea texto="Referencias en el portal" valor={referencias(vigente.monedas_referencia)} />
         </div>
-        <p className="t-label mt-3">Términos y condiciones</p>
-        <p className="t-body-m whitespace-pre-line">{vigente.terminos ?? "Sin cargar"}</p>
+        <div className="mt-3 flex flex-col gap-2">
+          {vigente.terminos.length > 0 ? (
+            <Condiciones generales={vigente.terminos} />
+          ) : (
+            <p className="t-caption">Sin términos y condiciones.</p>
+          )}
+        </div>
         <p className="t-caption mt-2">
           Desde el {formatFecha(vigente.created_at)} · {vigente.quien ?? "—"}
         </p>
@@ -105,16 +111,17 @@ const FORM = "presupuestos-configuracion";
 
 function ConfiguracionPanel({ vigente, onClose }: { vigente: Configuracion | undefined; onClose: () => void }) {
   const [enviando, setEnviando] = useState(false);
-  const { register, handleSubmit, formState } = useForm<ConfiguracionForm>({
+  const { register, handleSubmit, formState, control } = useForm<ConfiguracionForm>({
     resolver: zodResolver(configuracionSchema),
     defaultValues: {
       tope_descuento: vigente ? String(vigente.tope_descuento) : "",
       plazo_dias: vigente ? String(vigente.plazo_dias) : "",
       monedas_referencia: vigente ? vigente.monedas_referencia : ["ARS", "USD_OFICIAL"],
-      terminos: vigente?.terminos ?? "",
+      terminos: vigente?.terminos ?? [],
     },
   });
   const { errors } = formState;
+  const { fields, append, remove, move } = useFieldArray({ control, name: "terminos" });
 
   async function onSubmit(data: ConfiguracionForm) {
     setEnviando(true);
@@ -182,12 +189,59 @@ function ConfiguracionPanel({ vigente, onClose }: { vigente: Configuracion | und
             </label>
           ))}
         </fieldset>
-        <Campo id="conf-terminos" label="Términos y condiciones" error={errors.terminos}>
-          <textarea id="conf-terminos" rows={10} className={claseInput(errors.terminos)} {...register("terminos")} />
-          <p className="t-caption mt-1">
-            Van al final de cada presupuesto. Lo ya publicado conserva los que tenía; los nuevos toman estos.
+        <div className="flex flex-col gap-3">
+          <p className="t-label">Términos y condiciones</p>
+          <p className="t-caption">
+            Van al final de cada presupuesto, numerados; el vendedor saca los que no aplican. Lo ya publicado conserva los que
+            tenía.
           </p>
-        </Campo>
+          {fields.map((f, i) => {
+            const e = errors.terminos?.[i];
+            return (
+              <fieldset key={f.id} className="flex flex-col gap-3 rounded-lg border border-border p-3">
+                <input type="hidden" {...register(`terminos.${i}.id`)} />
+                <div className="flex items-center gap-1">
+                  <legend className="t-label flex-1">Bloque {i + 1}</legend>
+                  <button type="button" className="btn btn-ghost btn-sm" aria-label="Subir" disabled={i === 0} onClick={() => move(i, i - 1)}>
+                    <ArrowUp size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    aria-label="Bajar"
+                    disabled={i === fields.length - 1}
+                    onClick={() => move(i, i + 1)}
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+                  <button type="button" className="btn btn-ghost btn-sm text-error-text" aria-label="Quitar bloque" onClick={() => remove(i)}>
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+                <Campo id={`conf-bloque-titulo-${i}`} label="Título" requerido error={e?.titulo}>
+                  <input
+                    id={`conf-bloque-titulo-${i}`}
+                    aria-required
+                    placeholder="Ej: Colocación"
+                    className={claseInput(e?.titulo)}
+                    {...register(`terminos.${i}.titulo`)}
+                  />
+                </Campo>
+                <Campo id={`conf-bloque-texto-${i}`} label="Texto" requerido error={e?.texto}>
+                  <textarea id={`conf-bloque-texto-${i}`} rows={4} aria-required className={claseInput(e?.texto)} {...register(`terminos.${i}.texto`)} />
+                </Campo>
+              </fieldset>
+            );
+          })}
+          {errors.terminos?.root && <p className="t-caption text-error-text">{errors.terminos.root.message}</p>}
+          {errors.terminos?.message && <p className="t-caption text-error-text">{errors.terminos.message}</p>}
+          {fields.length < 30 && (
+            <button type="button" className="btn btn-secondary btn-sm self-start" onClick={() => append({ id: "", titulo: "", texto: "" })}>
+              <Plus size={14} />
+              Bloque
+            </button>
+          )}
+        </div>
       </form>
     </RightPanel>
   );

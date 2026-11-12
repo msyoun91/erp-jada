@@ -306,7 +306,7 @@ SELECT pg_temp.caso('montaje: el mínimo, movido a Col', 'ok/Comision@Col=280000
 SELECT pg_temp.caso('01 sin configuración', 'Falta configurar el plazo de vencimiento, en Presupuestos → Configuración',
   pg_temp.revisar('V1'));
 SELECT pg_temp.caso('01 sin configuración no publica', 'PR014', pg_temp.publicar('V1'));
-SELECT pg_temp.caso('01 gerencia configura', 'ok', pg_temp.intentar('SELECT presupuestos_configurar(10, 15, NULL)', 'G'));
+SELECT pg_temp.caso('01 gerencia configura', 'ok', pg_temp.intentar('SELECT presupuestos_configurar(10, 15, ''[]'')', 'G'));
 SELECT pg_temp.caso('01 revisar: nada', '', pg_temp.revisar('V1'));
 SELECT pg_temp.caso('01 revisar: Ana no arma la obra', '42501', pg_temp.revisar('V1', 'Ana'));
 SELECT pg_temp.caso('01 Ana no publica', '42501', pg_temp.publicar('V1', 'Ana'));

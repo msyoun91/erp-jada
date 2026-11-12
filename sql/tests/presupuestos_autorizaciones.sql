@@ -306,7 +306,7 @@ SELECT pg_temp.caso('montaje: precios', '220000,264000,319000', (
 SELECT pg_temp.caso('montaje: el mínimo', 'Zqx189 Comision=227000', (
   SELECT string_agg(x.descripcion || '=' || trim_scale(x.precio), ',') FROM presupuestos_renglones x
   WHERE x.version_id = pg_temp.id('V1') AND x.tipo = 'minimo' AND x.activo));
-SELECT pg_temp.caso('montaje: gerencia configura', 'ok', pg_temp.intentar('SELECT presupuestos_configurar(10, 15, NULL)', 'G'));
+SELECT pg_temp.caso('montaje: gerencia configura', 'ok', pg_temp.intentar('SELECT presupuestos_configurar(10, 15, ''[]'')', 'G'));
 
 -- ============================================================
 -- 01. Solo Técnica: una alerta

@@ -304,13 +304,13 @@ SELECT pg_temp.caso('05 aprobado no admite versiones', 'PR003', pg_temp.intentar
 -- ============================================================
 UPDATE presupuestos_configuracion SET activo = false WHERE activo;
 SELECT pg_temp.caso('06 G configura 5 % y 15 días', 'ok', pg_temp.intentar(
-  'SELECT presupuestos_configurar(5, 15, NULL)', 'G'));
-SELECT pg_temp.caso('06 Juan no', '42501', pg_temp.intentar('SELECT presupuestos_configurar(50, 90, NULL)', 'Juan'));
+  'SELECT presupuestos_configurar(5, 15, ''[]'')', 'G'));
+SELECT pg_temp.caso('06 Juan no', '42501', pg_temp.intentar('SELECT presupuestos_configurar(50, 90, ''[]'')', 'Juan'));
 SELECT pg_temp.caso('06 Juan no inserta directo', '42501', pg_temp.intentar(
   'INSERT INTO presupuestos_configuracion (tope_descuento, plazo_dias) VALUES (50, 90)', 'Juan'));
-SELECT pg_temp.caso('06 tope 150 no', '23514', pg_temp.intentar('SELECT presupuestos_configurar(150, 15, NULL)', 'G'));
+SELECT pg_temp.caso('06 tope 150 no', '23514', pg_temp.intentar('SELECT presupuestos_configurar(150, 15, ''[]'')', 'G'));
 SELECT pg_temp.caso('06 G la cambia a 7 % y 20 días', 'ok', pg_temp.intentar(
-  'SELECT presupuestos_configurar(7, 20, NULL)', 'G'));
+  'SELECT presupuestos_configurar(7, 20, ''[]'')', 'G'));
 SELECT pg_temp.caso('06 una vigente, la nueva', '7.00/20', (
   SELECT string_agg(tope_descuento || '/' || plazo_dias, ',') FROM presupuestos_configuracion WHERE activo));
 SELECT pg_temp.caso('06 la anterior queda de historial', 'true', (

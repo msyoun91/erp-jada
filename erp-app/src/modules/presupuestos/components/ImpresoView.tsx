@@ -50,12 +50,13 @@ export function ImpresoView({ impreso, clientes, hoy }: { impreso: Impreso; clie
         <VersionImpresa key={v.version.id} v={v} nombre={nombre(v)} />
       ))}
 
-      {/* Las variantes publicadas en distintos momentos pueden tener términos distintos: cada texto, una vez. */}
-      {[...new Set(versiones.map((v) => v.terminos))].map(
-        (t) =>
-          t && (
-            <div key={t} className="mt-6 border-t border-border pt-4">
-              <Condiciones generales={t} />
+      {/* Cada variante elige sus bloques y pudo publicarse con otros: los mismos, una vez; si no, cada una con su nombre. */}
+      {[...new Map(versiones.map((v) => [JSON.stringify(v.terminos.filter((b) => b.incluido)), v])).entries()].map(
+        ([clave, v], _, todas) =>
+          v.terminos.some((b) => b.incluido) && (
+            <div key={clave} className="mt-6 border-t border-border pt-4">
+              {todas.length > 1 && nombre(v) && <p className="t-h3 mb-2">{nombre(v)}</p>}
+              <Condiciones generales={v.terminos.filter((b) => b.incluido)} />
             </div>
           ),
       )}

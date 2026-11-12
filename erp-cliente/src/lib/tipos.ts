@@ -28,6 +28,9 @@ export type Renglon = {
   combinaciones: Combinacion[];
 };
 export type Seccion = { id: string; nombre: string; moneda: string; alicuota: number };
+// Un bloque de los términos generales, ya filtrado por la versión (sql/206).
+export type Bloque = { id: string; titulo: string; texto: string };
+
 export type Version = {
   numero: number;
   variante: string;
@@ -37,7 +40,7 @@ export type Version = {
   vence: string | null;
   // Las copias anteriores a sql/205 no las traen.
   condiciones?: string | null;
-  terminos?: string | null;
+  terminos?: Bloque[];
   secciones: Seccion[];
   aparte: { clave: string; seccion_id: string; piso: number | null }[];
   renglones: Renglon[];
