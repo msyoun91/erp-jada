@@ -479,6 +479,12 @@ usuario, 2026-11-06).** El ERP manda, con el renglón, su piso; si al destildar 
 un mínimo: el total puede ajustarse. Juan te confirma el monto." No calcula precio: compara dos números que ya recibió. Sin el aviso, el
 cliente enviaba un total que después cambiaba.
 
+**Términos y condiciones: los generales en la Configuración, las particulares en la versión; publicar congela cuáles (2026-11-12).**
+Los generales casi no cambian: un solo texto que gerencia edita, con historial como el tope y el plazo. Las particulares son de cada
+presupuesto, no de la obra: si vivieran en la obra, editarlas cambiaría lo que el cliente ya recibió. Publicar guarda la configuración
+vigente (`configuracion_id`), así un cambio de gerencia no toca lo publicado. Van al final, en el editor, el impreso y el portal.
+`sql/205`, `Condiciones.tsx`, `ConfiguracionView.tsx`, `AccionesVersion.tsx`, `erp-cliente/src/app/p/Presupuesto.tsx`.
+
 **Una versión imprimible desde el ERP, además del portal.** Se imprime o guarda como PDF desde el navegador, sin librería nueva y sin costos
 ni comparación. Permite usar el módulo sin el portal, y queda como respaldo.
 

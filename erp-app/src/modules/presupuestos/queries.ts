@@ -93,7 +93,7 @@ export async function getEnCotizacionDeContratadas(): Promise<Record<string, num
 
 export type Configuracion = Pick<
   Database["public"]["Tables"]["presupuestos_configuracion"]["Row"],
-  "id" | "tope_descuento" | "plazo_dias" | "monedas_referencia" | "activo" | "created_at"
+  "id" | "tope_descuento" | "plazo_dias" | "monedas_referencia" | "terminos" | "activo" | "created_at"
 > & { quien: string | null };
 
 // La vigente y el historial, lo más nuevo primero. `usuarios` no deja ver otros equipos: el nombre sale de quienes hoy
@@ -103,7 +103,7 @@ export async function getConfiguraciones(): Promise<Configuracion[]> {
   const [filas, usuarios] = await Promise.all([
     supabase
       .from("presupuestos_configuracion")
-      .select("id, tope_descuento, plazo_dias, monedas_referencia, activo, creado_por, created_at")
+      .select("id, tope_descuento, plazo_dias, monedas_referencia, terminos, activo, creado_por, created_at")
       .order("created_at", { ascending: false }),
     supabase.rpc("usuarios_con_permiso", { p_codigo: "presupuestos_configuracion" }),
   ]);
@@ -302,7 +302,12 @@ export type VersionEditor = {
   presupuesto: Pick<Presupuesto, "id" | "codigo" | "nombre" | "estado" | "version_aprobada_id"> & {
     obra: Pick<Database["public"]["Tables"]["obras"]["Row"], "id" | "nombre" | "estado" | "motivo_perdida">;
   };
-  version: Pick<Version, "id" | "numero" | "variante" | "variante_nombre" | "iva_discriminado" | "descuento" | "estado" | "vence" | "created_at">;
+  version: Pick<
+    Version,
+    "id" | "numero" | "variante" | "variante_nombre" | "iva_discriminado" | "descuento" | "condiciones" | "estado" | "vence" | "created_at"
+  >;
+  // Los generales: publicada, los que regían al publicar; abierta, los vigentes, que son los que va a tomar.
+  terminos: string | null;
   // Se edita en borrador, si quien mira arma en la obra; lo frenan igual la RLS y los triggers.
   editable: boolean;
   // Hasta acá el descuento no pide autorización; null, sin configuración.
@@ -378,7 +383,8 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
     supabase
       .from("presupuestos_versiones")
       .select(
-        `id, numero, variante, variante_nombre, iva_discriminado, descuento, estado, vence, created_at,
+        `id, numero, variante, variante_nombre, iva_discriminado, descuento, condiciones, estado, vence, created_at,
+         configuracion:presupuestos_configuracion!presupuestos_versiones_configuracion_id_fkey(terminos),
          presupuesto:presupuestos!presupuestos_versiones_presupuesto_id_fkey!inner(id, codigo, nombre, estado, version_aprobada_id, activo,
            obra:obras!inner(id, nombre, estado, motivo_perdida))`
       )
@@ -404,7 +410,7 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
       .order("created_at"),
     supabase.rpc("presupuestos_version_importes", { p_version: versionId }),
     supabase.rpc("presupuestos_version_totales", { p_version: versionId }),
-    supabase.from("presupuestos_configuracion").select("tope_descuento, plazo_dias").eq("activo", true).maybeSingle(),
+    supabase.from("presupuestos_configuracion").select("tope_descuento, plazo_dias, terminos").eq("activo", true).maybeSingle(),
     supabase
       .from("presupuestos_opcionales")
       .select("id, pieza, porcentaje_id, clave, forma, seccion_id")
@@ -414,7 +420,7 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
   ]);
   for (const r of [version, secciones, renglones, importes, totales, configuracion, filas, nombresVersion]) if (r.error) throw r.error;
   if (!version.data) return null;
-  const { presupuesto: { activo, ...presupuesto }, ...v } = version.data;
+  const { presupuesto: { activo, ...presupuesto }, configuracion: regia, ...v } = version.data;
   const abierta = activo && (v.estado === "borrador" || v.estado === "en_revision");
   let arma = false;
   if (abierta) {
@@ -482,6 +488,7 @@ export async function getVersion(presupuestoId: string, versionId: string): Prom
   return {
     presupuesto,
     version: v,
+    terminos: regia ? regia.terminos : abierta ? (configuracion.data?.terminos ?? null) : null,
     editable,
     tope: configuracion.data?.tope_descuento ?? null,
     secciones: secciones.data ?? [],

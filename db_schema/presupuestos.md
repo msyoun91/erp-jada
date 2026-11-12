@@ -5,7 +5,7 @@ Ficha y decisiones: `decisiones/presupuestos.md`. Tests: `sql/tests/presupuestos
 `sql/tests/presupuestos_autorizaciones.sql` (3b), `sql/tests/presupuestos_recargo.sql` (3c),
 `sql/tests/presupuestos_aprobacion.sql` (4), `sql/tests/presupuestos_avisos.sql` (5), `sql/tests/presupuestos_pantallas.sql` (6),
 `sql/tests/presupuestos_links.sql` (portal, 1a), `sql/tests/presupuestos_portal_copia.sql` (portal, 1b),
-`sql/tests/presupuestos_eleccion.sql` (portal, 4).
+`sql/tests/presupuestos_eleccion.sql` (portal, 4), `sql/tests/presupuestos_terminos.sql` (términos, `sql/205`).
 
 **Portal, tramo 1a** — `sql/200` (el link de cada presupuesto y el estado de su copia), aplicado el 2026-11-11. El archivo se
 recuperó de la base el 2026-11-12 (md5 igual al de la migración `200_presupuestos_links_tecnica`); el test se reescribió. **Tramo 1b** — `sql/201` (lo que se
@@ -67,6 +67,8 @@ GRANT: SELECT; INSERT (`id, nombre, obra_id`); UPDATE (`nombre, activo`); USAGE 
 | estado | enum `estado_version_presupuesto` (`borrador`\|`en_revision`\|`publicado`\|`obsoleto`) | default `borrador`. Sin GRANT: lo cambian pedir, retirar, devolver, publicar y quitar |
 | origen_id | uuid FK → presupuestos_versiones, nullable | la versión de la que se copió (`presupuestos_version_copiar`): otra activa del mismo presupuesto (23503). No cambia |
 | vence | date, nullable | lo pone publicar: hoy (Buenos Aires) + el plazo vigente. Sin GRANT |
+| condiciones | text, nullable | 1–3000, sin espacios a los lados: las condiciones particulares. Solo en `borrador` (PR005); copiar las lleva (`sql/205`) |
+| configuracion_id | uuid FK → presupuestos_configuracion, nullable | la vigente al publicar: de ahí salen sus términos generales. Sin GRANT (`sql/205`) |
 | creado_por | uuid FK → usuarios | default `auth.uid()` |
 | activo | boolean | false = descartada. Solo un borrador (PR005), nunca la única activa del presupuesto (PR006); no vuelve (PR002) |
 | created_at / updated_at | timestamptz | |
@@ -74,12 +76,12 @@ GRANT: SELECT; INSERT (`id, nombre, obra_id`); UPDATE (`nombre, activo`); USAGE 
 Únicos parciales `WHERE activo`: una abierta (`borrador`, `en_revision`) y una `publicado` por (`presupuesto_id`, `variante`).
 
 Trigger `presupuestos_versiones_validar` (BEFORE INSERT OR UPDATE): al crear, toma el presupuesto `FOR UPDATE`, exige que esté
-activo y en `borrador` o `publicado` (PR003), valida el origen, pone el número y valida la variante. Al editar, nombre, IVA y
-descuento solo en `borrador` (PR005).
+activo y en `borrador` o `publicado` (PR003), valida el origen, pone el número y valida la variante. Al editar, nombre, IVA,
+descuento y condiciones solo en `borrador` (PR005).
 
 RLS: SELECT si se ve el presupuesto; INSERT y UPDATE si se arma y el presupuesto está activo. GRANT: SELECT; INSERT (`id,
-presupuesto_id, variante, variante_nombre, iva_discriminado, descuento, origen_id`); UPDATE (`variante_nombre, iva_discriminado,
-descuento, activo`).
+presupuesto_id, variante, variante_nombre, iva_discriminado, descuento, origen_id, condiciones`); UPDATE (`variante_nombre,
+iva_discriminado, descuento, condiciones, activo`).
 
 ## presupuestos_secciones
 
@@ -216,14 +218,15 @@ Funciones, todas sin GRANT salvo las ya existentes:
 | tope_descuento | numeric(5,2) | 0–100: hasta acá, el descuento no pide autorización |
 | plazo_dias | integer | 1–365: el vencimiento que se guarda al publicar |
 | monedas_referencia | `moneda[]` | default `{ARS,USD_OFICIAL}`, sin NULL: las referencias que ve el cliente en el portal (`sql/201`) |
+| terminos | text, nullable | 1–5000, sin espacios a los lados: los términos y condiciones generales (`sql/205`) |
 | creado_por | uuid FK → usuarios | default `auth.uid()` |
 | activo | boolean | unique parcial `(activo) WHERE activo`: una vigente; las demás son el historial. No vuelve (PR002) |
 | created_at / updated_at | timestamptz | |
 
-`presupuestos_configurar(tope, plazo, monedas = NULL) → uuid` (INVOKER): desactiva la vigente y crea otra; sin `monedas`, siguen
-las de la vigente. Sin la vista `presupuestos_configuracion`, 42501. Arranca sin fila: hasta que gerencia configure, no hay tope ni plazo. RLS: SELECT con
+`presupuestos_configurar(tope, plazo, terminos, monedas = NULL) → uuid` (INVOKER): desactiva la vigente y crea otra; sin `monedas`, siguen
+las de la vigente. `terminos` va siempre: vacío o NULL, sin términos. Sin la vista `presupuestos_configuracion`, 42501. Arranca sin fila: hasta que gerencia configure, no hay tope ni plazo. RLS: SELECT con
 `presupuestos_ver` o `presupuestos_configuracion`; INSERT y UPDATE con `presupuestos_configuracion`. GRANT: SELECT; INSERT
-(`id, tope_descuento, plazo_dias, monedas_referencia`); UPDATE (`activo`).
+(`id, tope_descuento, plazo_dias, monedas_referencia, terminos`); UPDATE (`activo`).
 
 ## presupuestos_autorizaciones
 
@@ -288,7 +291,8 @@ RLS: SELECT si se ve el presupuesto. GRANT: SELECT de todo menos `llave`. Sin es
   `revision` que tenía el link al armarlo (la que se confirma). `{revision, estado: 'cortado'}` si el link se anuló;
   `{revision, estado: 'no_disponible'}` si el presupuesto está rechazado o desactivado; si no, `{revision, estado, codigo, nombre,
   aprobado_en (último evento a aprobado), whatsapp (usuarios.telefono del responsable de la obra), versiones}`: publicado, cada
-  variante publicada con casillas; aprobado, solo la elegida, sin. NULL si el link no existe.
+  variante publicada con casillas; aprobado, solo la elegida, sin. Cada versión suma `condiciones` y `terminos` (los de su
+  `configuracion_id`, `sql/205`). NULL si el link no existe.
 - `presupuestos_portal_links() → (link_id, llave)` — DEFINER, GRANT solo `service_role` (`sql/203`). Los links con copia
   confirmada alguna vez: los que se leen para traer visitas.
 - `presupuestos_portal_visitas(visitas jsonb)` — DEFINER, GRANT solo `service_role` (`sql/203`). `[{link, version (número),
@@ -387,7 +391,7 @@ RLS: SELECT si se ve el link (quien ve el presupuesto). GRANT: SELECT. Se escrib
 - `presupuestos_renglon_monedas(version, moneda) → moneda[]` — INVOKER: la de la sección y las de los renglones aparte en otra.
 - `presupuestos_renglon_etiqueta(designacion, ubicacion, descripcion) → text` — "V4 · Lavadero".
 - `presupuestos_version_copiar(desde, variante_nueva = false) → uuid` — INVOKER: la RLS y los triggers deciden. Corregir o
-  actualizar (la misma variante) o sumar variante (la siguiente, sin nombre): copia IVA, descuento, nombre de la variante (si es
+  actualizar (la misma variante) o sumar variante (la siguiente, sin nombre): copia IVA, descuento, condiciones, nombre de la variante (si es
   la misma), secciones, cómo se ve cada opcional, ventanas y renglones a mano activos, con `origen_id`. Las ventanas arrancan a hoy;
   los mínimos los pone la base. Otra abierta de esa variante: 23505.
 - `presupuestos_version_revisar(version) → text[]` — INVOKER; sin armar, 42501. Lo que frena pedir y publicar, una línea por cosa:
@@ -418,7 +422,7 @@ RLS: SELECT si se ve el link (quien ve el presupuesto). GRANT: SELECT. Se escrib
   `entrada`, y los `motivos` del autorizado contienen los del pedido.
 - `presupuestos_version_publicar(version)` — DEFINER; sin armar, 42501. Presupuesto activo en `borrador` o `publicado` (PR003),
   versión en `borrador` o `en_revision` (PR005). Frena (PR014, con las líneas) lo de `revisar`, lo que pide autorización sin
-  pedirla ("Pide …") y los pedidos pendientes ("Espera la …"). Guarda `vence`, la publicada de esa variante pasa a `obsoleto`, la
+  pedirla ("Pide …") y los pedidos pendientes ("Espera la …"). Guarda `vence` y `configuracion_id` (la vigente), la publicada de esa variante pasa a `obsoleto`, la
   versión a `publicado` y el presupuesto a `publicado`.
 - `presupuestos_revision_pendientes()` — DEFINER; con `presupuestos_revision`, o `presupuestos_ver` y `presupuestos_administrar`;
   si no, 42501. Los pedidos de Técnica pendientes: `pedido_id`, `version_id`, `codigo`, `version` (número, desde `sql/197`),

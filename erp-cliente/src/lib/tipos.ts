@@ -35,6 +35,9 @@ export type Version = {
   iva_discriminado: boolean;
   descuento: number;
   vence: string | null;
+  // Las copias anteriores a sql/205 no las traen.
+  condiciones?: string | null;
+  terminos?: string | null;
   secciones: Seccion[];
   aparte: { clave: string; seccion_id: string; piso: number | null }[];
   renglones: Renglon[];

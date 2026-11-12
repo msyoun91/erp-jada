@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Building2, TriangleAlert } from "lucide-react";
 import { MOTIVO_PERDIDA } from "@/lib/entes";
-import { MONEDAS, type Moneda } from "@/lib/monedas";
+import { MONEDAS, formatMontoCliente, type Moneda } from "@/lib/monedas";
 import { formatFecha, hoyISO } from "@/lib/utils";
 import type { VersionEditor } from "../queries";
 import { estadoVersion, estaVencida, formatAlicuota, montoVisible, sumarMontos, type Monto } from "../types";
@@ -9,6 +9,7 @@ import { AccionesRenglon, AgregarRenglon } from "./AccionesRenglon";
 import { AccionesSeccion, NuevaSeccion } from "./AccionesSeccion";
 import { AccionesVersion } from "./AccionesVersion";
 import { AntesDePublicar } from "./AntesDePublicar";
+import { Condiciones } from "./Condiciones";
 import { OpcionalesVentana } from "./Opcionales";
 import { Totales } from "./Totales";
 
@@ -92,6 +93,18 @@ export function VersionView({
             .filter(Boolean)
             .join(" · ")}
         </p>
+        {totales.length > 0 && (
+          <p className="mt-3 flex flex-wrap items-baseline gap-x-3 border-t border-border pt-3">
+            <span className="t-label flex-1">{conIva ? "Total con IVA" : "Total"}</span>
+            {totales.map((t, i) => (
+              <span key={t.moneda} className="t-body-l font-semibold tabular-nums text-text-primary">
+                {i > 0 && <span className="t-caption mr-3">·</span>}
+                {formatMontoCliente(t.total, t.moneda)}
+                {t.sin_precio > 0 && <span title="Hay importes sin precio que no suman">*</span>}
+              </span>
+            ))}
+          </p>
+        )}
         {antes?.arma && p.obra.estado === "perdida" && (
           <p className="alert alert-warning mt-2 flex items-start gap-2">
             <TriangleAlert size={16} className="mt-0.5 shrink-0" />
@@ -238,6 +251,12 @@ export function VersionView({
         <section data-tour="presupuestos_version_totales" className="card" aria-label="Totales">
           <h3 className="t-h3 mb-2">Totales</h3>
           <Totales totales={totales} importes={importes} conIva={conIva} descuento={v.descuento} />
+        </section>
+      )}
+
+      {(v.condiciones || datos.terminos) && (
+        <section className="card flex flex-col gap-3" aria-label="Condiciones">
+          <Condiciones particulares={v.condiciones} generales={datos.terminos} />
         </section>
       )}
 

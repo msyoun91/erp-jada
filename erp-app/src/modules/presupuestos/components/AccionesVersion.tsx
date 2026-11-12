@@ -116,7 +116,13 @@ function DatosVersionPanel({ version: v, tope, onClose }: { version: Version; to
   const [enviando, setEnviando] = useState(false);
   const { register, handleSubmit, formState } = useForm<DatosVersionForm>({
     resolver: zodResolver(datosVersionSchema),
-    defaultValues: { id: v.id, variante_nombre: v.variante_nombre ?? "", iva_discriminado: v.iva_discriminado, descuento: v.descuento },
+    defaultValues: {
+      id: v.id,
+      variante_nombre: v.variante_nombre ?? "",
+      iva_discriminado: v.iva_discriminado,
+      descuento: v.descuento,
+      condiciones: v.condiciones ?? "",
+    },
   });
   const { errors } = formState;
 
@@ -170,6 +176,18 @@ function DatosVersionPanel({ version: v, tope, onClose }: { version: Version; to
             {tope === null
               ? "Gerencia todavía no configuró el tope: cualquier descuento pide autorización."
               : `Hasta ${formatAlicuota(tope)} no pide autorización.`}
+          </p>
+        </Campo>
+        <Campo id="ver-condiciones" label="Condiciones particulares" error={errors.condiciones}>
+          <textarea
+            id="ver-condiciones"
+            rows={5}
+            placeholder="Ej: Entrega en 60 días desde la seña."
+            className={claseInput(errors.condiciones)}
+            {...register("condiciones")}
+          />
+          <p className="t-caption mt-1">
+            Las de esta obra. Van al cliente junto con los términos generales de Configuración, que se toman al publicar.
           </p>
         </Campo>
       </form>

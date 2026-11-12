@@ -4,6 +4,7 @@ import { formatFecha } from "@/lib/utils";
 import { EMPRESA } from "../empresa";
 import type { Impreso } from "../queries";
 import { formatAlicuota, montoVisible, sumarMontos, type Monto } from "../types";
+import { Condiciones } from "./Condiciones";
 import { Totales } from "./Totales";
 
 type Version = Impreso["versiones"][number];
@@ -48,6 +49,16 @@ export function ImpresoView({ impreso, clientes, hoy }: { impreso: Impreso; clie
       {versiones.map((v) => (
         <VersionImpresa key={v.version.id} v={v} nombre={nombre(v)} />
       ))}
+
+      {/* Las variantes publicadas en distintos momentos pueden tener términos distintos: cada texto, una vez. */}
+      {[...new Set(versiones.map((v) => v.terminos))].map(
+        (t) =>
+          t && (
+            <div key={t} className="mt-6 border-t border-border pt-4">
+              <Condiciones generales={t} />
+            </div>
+          ),
+      )}
     </article>
   );
 }
@@ -136,6 +147,11 @@ function VersionImpresa({ v, nombre }: { v: Version; nombre: string | null }) {
       <div className="mt-4 ml-auto w-full max-w-xs border-t border-border-strong pt-3 print:break-inside-avoid">
         <Totales totales={v.totales} importes={v.importes} conIva={conIva} descuento={v.version.descuento} />
       </div>
+      {v.version.condiciones && (
+        <div className="mt-4">
+          <Condiciones particulares={v.version.condiciones} />
+        </div>
+      )}
     </section>
   );
 }

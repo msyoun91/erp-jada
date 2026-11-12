@@ -277,9 +277,42 @@ function Impreso({ copia, tildadas }: { copia: Copia; tildadas: Record<number, T
               );
             })}
           </div>
+          {v.condiciones && (
+            <div className="mt-4">
+              <Condiciones particulares={v.condiciones} />
+            </div>
+          )}
         </section>
       ))}
+      {/* Como en el impreso del ERP: los términos de cada variante, cada texto una vez. */}
+      {[...new Set(versiones.map(({ v }) => v.terminos))].map(
+        (t) =>
+          t && (
+            <div key={t} className="mt-6 border-t border-border pt-4">
+              <Condiciones generales={t} />
+            </div>
+          ),
+      )}
     </article>
+  );
+}
+
+// Copia de erp-app/src/modules/presupuestos/components/Condiciones.tsx: las apps no se importan entre sí.
+function Condiciones({ particulares, generales }: { particulares?: string | null; generales?: string | null }) {
+  return (
+    <>
+      {particulares && <BloqueCondiciones titulo="Condiciones particulares" texto={particulares} />}
+      {generales && <BloqueCondiciones titulo="Términos y condiciones" texto={generales} />}
+    </>
+  );
+}
+
+function BloqueCondiciones({ titulo, texto }: { titulo: string; texto: string }) {
+  return (
+    <div className="break-inside-avoid">
+      <p className="t-label mb-1">{titulo}</p>
+      <p className="t-body-m whitespace-pre-line">{texto}</p>
+    </div>
   );
 }
 
@@ -453,6 +486,11 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
 
   return (
     <>
+      {/* En el celular ya lo da el pie fijo de abajo. */}
+      <p className="card hidden flex-wrap items-baseline justify-between gap-x-3 sm:flex">
+        <span className="t-label">{version.iva_discriminado ? "Total" : "Total con IVA"}</span>
+        <span className="t-h3 tabular-nums">{totales.map((t) => dinero(t.total, t.moneda)).join(" + ")}</span>
+      </p>
       {version.vence && !aprobado &&
         (vencida ? (
           <p className="alert alert-warning">Venció el {fecha(version.vence)}: los precios pueden cambiar.</p>
@@ -594,6 +632,11 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
           </p>
         ))}
       </section>
+      {(version.condiciones || version.terminos) && (
+        <section className="card flex flex-col gap-3" aria-label="Condiciones">
+          <Condiciones particulares={version.condiciones} generales={version.terminos} />
+        </section>
+      )}
       {!aprobado && vencida && version.vence && (
         // Vencida no se elige (*Qué muestra según el estado*), pero el cliente no queda sin salida: pide precios nuevos.
         whatsapp ? (

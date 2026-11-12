@@ -118,6 +118,7 @@ export async function configurar(input: ConfiguracionForm): Promise<Resultado> {
     p_tope: parsed.data.tope_descuento,
     p_plazo: parsed.data.plazo_dias,
     p_monedas: parsed.data.monedas_referencia,
+    p_terminos: parsed.data.terminos,
   });
   if (error) return trasGuardar(mensajeError(error));
   // Sin esperar la hora: el portal muestra las referencias nuevas al próximo que abra.
@@ -217,13 +218,13 @@ export async function descartarVersion(id: string): Promise<Resultado> {
 export async function guardarDatosVersion(input: DatosVersionForm): Promise<Resultado> {
   const parsed = datosVersionSchema.safeParse(input);
   if (!parsed.success) return invalido(parsed.error.issues);
-  const { id, variante_nombre, ...datos } = parsed.data;
+  const { id, variante_nombre, condiciones, ...datos } = parsed.data;
   const supabase = await createClient();
   return trasGuardar(
     errorDeUpdate(
       await supabase
         .from("presupuestos_versiones")
-        .update({ ...datos, variante_nombre: variante_nombre || null }, { count: "exact" })
+        .update({ ...datos, variante_nombre: variante_nombre || null, condiciones: condiciones || null }, { count: "exact" })
         .eq("id", id)
     )
   );

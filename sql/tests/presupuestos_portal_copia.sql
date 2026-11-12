@@ -232,15 +232,15 @@ CREATE FUNCTION pg_temp.config() RETURNS text LANGUAGE sql AS $f$
   SELECT (SELECT trim_scale(c.tope_descuento) || '/' || c.monedas_referencia::text FROM presupuestos_configuracion c WHERE c.activo);
 $f$;
 
-SELECT pg_temp.consultar('SELECT presupuestos_configurar(10, 15)::text', 'G');
+SELECT pg_temp.consultar('SELECT presupuestos_configurar(10, 15, NULL)::text', 'G');
 SELECT pg_temp.caso('00 gerencia configura: arrancan pesos y dólar oficial', '10/{ARS,USD_OFICIAL}', pg_temp.config());
-SELECT pg_temp.consultar($s$SELECT presupuestos_configurar(10, 15, '{EUR}')::text$s$, 'G');
+SELECT pg_temp.consultar($s$SELECT presupuestos_configurar(10, 15, NULL, '{EUR}')::text$s$, 'G');
 SELECT pg_temp.caso('00 gerencia las elige', '10/{EUR}', pg_temp.config());
-SELECT pg_temp.consultar('SELECT presupuestos_configurar(5, 15)::text', 'G');
+SELECT pg_temp.consultar('SELECT presupuestos_configurar(5, 15, NULL)::text', 'G');
 SELECT pg_temp.caso('00 cambiar el tope no las toca', '5/{EUR}', pg_temp.config());
-SELECT pg_temp.caso('00 quien no configura', '42501', pg_temp.consultar($s$SELECT presupuestos_configurar(10, 15, '{EUR}')::text$s$, 'Juan'));
+SELECT pg_temp.caso('00 quien no configura', '42501', pg_temp.consultar($s$SELECT presupuestos_configurar(10, 15, NULL, '{EUR}')::text$s$, 'Juan'));
 SELECT pg_temp.caso('00 una moneda vacía no entra', '23514', pg_temp.consultar(
-  'SELECT presupuestos_configurar(10, 15, ARRAY[NULL]::moneda[])::text', 'G'));
+  'SELECT presupuestos_configurar(10, 15, NULL, ARRAY[NULL]::moneda[])::text', 'G'));
 
 -- ============================================================
 -- 01. Publicado: renglones, casillas y combinaciones
@@ -402,7 +402,7 @@ SELECT pg_temp.caso('05 un usuario no pide la copia', '42501', pg_temp.consultar
 SELECT pg_temp.caso('05 anon: ' || f, 'false', has_function_privilege('anon', 'public.' || f, 'EXECUTE')::text)
 FROM unnest(ARRAY['presupuestos_portal_copia(uuid)', 'presupuestos_portal_version(uuid,boolean)',
   'presupuestos_portal_combinaciones(uuid,uuid,timestamptz,jsonb,uuid[],moneda[])', 'presupuestos_importes_de(uuid,jsonb)',
-  'presupuestos_nombres_de(uuid)', 'presupuestos_configurar(numeric,integer,moneda[])']) AS f;
+  'presupuestos_nombres_de(uuid)', 'presupuestos_configurar(numeric,integer,text,moneda[])']) AS f;
 SELECT pg_temp.caso('05 un usuario no llama: ' || f, 'false', has_function_privilege('authenticated', 'public.' || f, 'EXECUTE')::text)
 FROM unnest(ARRAY['presupuestos_portal_copia(uuid)', 'presupuestos_portal_version(uuid,boolean)',
   'presupuestos_portal_combinaciones(uuid,uuid,timestamptz,jsonb,uuid[],moneda[])', 'presupuestos_importes_de(uuid,jsonb)',

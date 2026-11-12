@@ -63,6 +63,8 @@ export function ConfiguracionView({ configuraciones }: { configuraciones: Config
           <Linea texto="Las versiones vencen a los" valor={dias(vigente.plazo_dias)} />
           <Linea texto="Referencias en el portal" valor={referencias(vigente.monedas_referencia)} />
         </div>
+        <p className="t-label mt-3">Términos y condiciones</p>
+        <p className="t-body-m whitespace-pre-line">{vigente.terminos ?? "Sin cargar"}</p>
         <p className="t-caption mt-2">
           Desde el {formatFecha(vigente.created_at)} · {vigente.quien ?? "—"}
         </p>
@@ -109,6 +111,7 @@ function ConfiguracionPanel({ vigente, onClose }: { vigente: Configuracion | und
       tope_descuento: vigente ? String(vigente.tope_descuento) : "",
       plazo_dias: vigente ? String(vigente.plazo_dias) : "",
       monedas_referencia: vigente ? vigente.monedas_referencia : ["ARS", "USD_OFICIAL"],
+      terminos: vigente?.terminos ?? "",
     },
   });
   const { errors } = formState;
@@ -179,6 +182,12 @@ function ConfiguracionPanel({ vigente, onClose }: { vigente: Configuracion | und
             </label>
           ))}
         </fieldset>
+        <Campo id="conf-terminos" label="Términos y condiciones" error={errors.terminos}>
+          <textarea id="conf-terminos" rows={10} className={claseInput(errors.terminos)} {...register("terminos")} />
+          <p className="t-caption mt-1">
+            Van al final de cada presupuesto. Lo ya publicado conserva los que tenía; los nuevos toman estos.
+          </p>
+        </Campo>
       </form>
     </RightPanel>
   );

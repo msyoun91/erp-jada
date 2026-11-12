@@ -2299,6 +2299,7 @@ export type Database = {
           id: string
           monedas_referencia: Database["public"]["Enums"]["moneda"][]
           plazo_dias: number
+          terminos: string | null
           tope_descuento: number
           updated_at: string
         }
@@ -2309,6 +2310,7 @@ export type Database = {
           id?: string
           monedas_referencia?: Database["public"]["Enums"]["moneda"][]
           plazo_dias: number
+          terminos?: string | null
           tope_descuento: number
           updated_at?: string
         }
@@ -2319,6 +2321,7 @@ export type Database = {
           id?: string
           monedas_referencia?: Database["public"]["Enums"]["moneda"][]
           plazo_dias?: number
+          terminos?: string | null
           tope_descuento?: number
           updated_at?: string
         }
@@ -2710,6 +2713,8 @@ export type Database = {
       presupuestos_versiones: {
         Row: {
           activo: boolean
+          condiciones: string | null
+          configuracion_id: string | null
           creado_por: string
           created_at: string
           descuento: number
@@ -2726,6 +2731,8 @@ export type Database = {
         }
         Insert: {
           activo?: boolean
+          condiciones?: string | null
+          configuracion_id?: string | null
           creado_por?: string
           created_at?: string
           descuento?: number
@@ -2742,6 +2749,8 @@ export type Database = {
         }
         Update: {
           activo?: boolean
+          condiciones?: string | null
+          configuracion_id?: string | null
           creado_por?: string
           created_at?: string
           descuento?: number
@@ -2757,6 +2766,13 @@ export type Database = {
           vence?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "presupuestos_versiones_configuracion_id_fkey"
+            columns: ["configuracion_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_configuracion"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "presupuestos_versiones_creado_por_fkey"
             columns: ["creado_por"]
@@ -4847,6 +4863,7 @@ export type Database = {
         Args: {
           p_monedas?: Database["public"]["Enums"]["moneda"][]
           p_plazo: number
+          p_terminos: string
           p_tope: number
         }
         Returns: string

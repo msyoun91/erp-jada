@@ -43,6 +43,7 @@ export const configuracionSchema = z.object({
     z.coerce.number<string | number>("Ingresá un número").int("En días enteros").min(1, "Al menos 1 día").max(365, "Hasta 365 días"),
   ),
   monedas_referencia: z.array(z.enum(MONEDAS_LISTA)),
+  terminos: z.string().trim().max(5000, "Máximo 5000 caracteres"),
 });
 export type ConfiguracionForm = z.input<typeof configuracionSchema>;
 
@@ -98,6 +99,7 @@ export const datosVersionSchema = z.object({
   variante_nombre: z.string().trim().max(100, "Máximo 100 caracteres"),
   iva_discriminado: z.boolean(),
   descuento: z.coerce.number("Ingresá un número").min(0, "No puede ser negativo").max(100, "Hasta 100 %"),
+  condiciones: z.string().trim().max(3000, "Máximo 3000 caracteres"),
 });
 export type DatosVersionForm = z.input<typeof datosVersionSchema>;
 
