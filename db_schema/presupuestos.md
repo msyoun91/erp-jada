@@ -4,11 +4,14 @@ Ficha y decisiones: `decisiones/presupuestos.md`. Tests: `sql/tests/presupuestos
 `sql/tests/presupuestos_renglones.sql` (2a), `sql/tests/presupuestos_opcionales.sql` (2b), `sql/tests/presupuestos_ciclo.sql` (3a),
 `sql/tests/presupuestos_autorizaciones.sql` (3b), `sql/tests/presupuestos_recargo.sql` (3c),
 `sql/tests/presupuestos_aprobacion.sql` (4), `sql/tests/presupuestos_avisos.sql` (5), `sql/tests/presupuestos_pantallas.sql` (6),
-`sql/tests/presupuestos_links.sql` (portal, 1a), `sql/tests/presupuestos_portal_copia.sql` (portal, 1b).
+`sql/tests/presupuestos_links.sql` (portal, 1a), `sql/tests/presupuestos_portal_copia.sql` (portal, 1b),
+`sql/tests/presupuestos_eleccion.sql` (portal, 4).
 
 **Portal, tramo 1a** — `sql/200` (el link de cada presupuesto y el estado de su copia), aplicado el 2026-11-11. El archivo se
 recuperó de la base el 2026-11-12 (md5 igual al de la migración `200_presupuestos_links_tecnica`); el test se reescribió. **Tramo 1b** — `sql/201` (lo que se
-copia de cada link y las monedas de referencia), aplicado el 2026-11-12.
+copia de cada link y las monedas de referencia), aplicado el 2026-11-12. **Tramo 3** — `sql/202`–`sql/203` (visitas leídas, su
+aviso y las monedas que se mandan), aplicado el 2026-11-12. **Tramo 4** — `sql/204` (leer y aplicar la elección del cliente; `n` y
+`ancho` en la copia; los totales sobre importes dados), aplicado el 2026-11-12.
 
 **Estado:** tramo 1 — `sql/185` (permisos, configuración, presupuesto, versiones, secciones, ente), aplicado el 2026-11-06.
 Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el precio de Catálogo para quien arma), aplicado el
@@ -286,11 +289,21 @@ RLS: SELECT si se ve el presupuesto. GRANT: SELECT de todo menos `llave`. Sin es
   `{revision, estado: 'no_disponible'}` si el presupuesto está rechazado o desactivado; si no, `{revision, estado, codigo, nombre,
   aprobado_en (último evento a aprobado), whatsapp (usuarios.telefono del responsable de la obra), versiones}`: publicado, cada
   variante publicada con casillas; aprobado, solo la elegida, sin. NULL si el link no existe.
+- `presupuestos_portal_links() → (link_id, llave)` — DEFINER, GRANT solo `service_role` (`sql/203`). Los links con copia
+  confirmada alguna vez: los que se leen para traer visitas.
+- `presupuestos_portal_visitas(visitas jsonb)` — DEFINER, GRANT solo `service_role` (`sql/203`). `[{link, version (número),
+  visitas, dispositivos, primera, ultima}]` como los da `portal_visitas_de`: alta o reemplazo en `presupuestos_links_visitas`. Una
+  versión que no es del presupuesto del link no entra.
+- `presupuestos_portal_monedas() → jsonb` — DEFINER, GRANT solo `service_role` (`sql/203`). `[{moneda, valor, fecha, referencia}]`:
+  ARS (1, fecha fija 2000-01-01) y cada moneda con valor en `monedas_hoy()`; `referencia` según `monedas_referencia` de la
+  configuración vigente (sin configuración, `{ARS,USD_OFICIAL}`).
 - `presupuestos_portal_version(version, casillas) → jsonb` — sin GRANT. `{numero, variante, variante_nombre, iva_discriminado,
   descuento, vence, secciones, aparte, renglones, nombres, orden}`. Renglón: `{id, seccion_id, tipo, designacion, ubicacion,
   cantidad, nombre, entrada (sin piezas), minimo_de (clave del servicio, en el mínimo), casillas [{clave, nombre}] en orden,
-  combinaciones}`. Combinación: `{casillas (claves), publicada, importe, importe_con_iva, debajo, aparte [{clave, nombre,
-  seccion_id, importe, importe_con_iva}]}`, la publicada primero con el precio guardado. Una combinación con alertas sale solo si
+  ancho, combinaciones}`. Combinación: `{n, casillas (claves), publicada, importe, importe_con_iva, debajo, aparte [{clave, nombre,
+  seccion_id, importe, importe_con_iva}]}`, la publicada primero con el precio guardado. `n` (`sql/204`): un bit por casilla de
+  la lista entera de `presupuestos_portal_combinaciones`; `ancho`: la casilla más alta entre las combinaciones con precio, ofrecidas
+  o no (0 sin casillas o si lo publicado no sale del cálculo). Los dos son fijos para una versión publicada: los usa el código. Una combinación con alertas sale solo si
   la cubre una autorización de Técnica del presupuesto; si lo publicado no sale del cálculo, la ventana va sin casillas. `aparte`:
   `[{clave, seccion_id, piso}]`, el mínimo del servicio en la moneda de su sección, con el recargo (NULL sin mínimo).
 - `presupuestos_portal_combinaciones(paquete, version, fecha, entrada, opcionales, monedas)` — sin GRANT. `(n, casillas, entrada,
@@ -300,6 +313,46 @@ RLS: SELECT si se ve el presupuesto. GRANT: SELECT de todo menos `llave`. Sin es
 - `presupuestos_importes_de(version, renglones jsonb)` y `presupuestos_nombres_de(version)` — sin GRANT (`sql/201`): la cuenta de
   `presupuestos_version_importes` y de `presupuestos_version_nombres`, sin mirar quién pregunta. Las dos públicas las envuelven con
   `presupuestos_ve`; el portal les pasa combinaciones que no están guardadas.
+
+**La elección del cliente** (`sql/204`, `decisiones/erp-cliente.md` → *Aplicar la elección*). Código `P-0142-V3-7K2M-9QX4-B`:
+número del presupuesto, de la versión, por cada renglón con `ancho` > 0 (orden de la copia) el `n` elegido en `ancho` bits (el más
+alto primero), ceros hasta completar la letra, Crockford base32 en grupos de 4, y el dígito de control.
+- `presupuestos_eleccion_digito(texto) → text` — IMMUTABLE, sin GRANT. Σ peso × valor (Crockford) de `<numero>V<version><letras>`,
+  pesos 1..30 que se repiten, módulo 31, como letra.
+- `presupuestos_eleccion_leer(texto) → jsonb` — DEFINER STABLE con GRANT. Busca el código en el texto (link o mensaje pegado,
+  mayúsculas o no; O → 0, I/L → 1). Sin armar ese presupuesto, 42501. PR030 roto, PR031 versión reemplazada o presupuesto no
+  publicado, PR032 combinación no ofrecida. `{presupuesto_id, codigo, version_id, numero, variante, variante_nombre, descarta
+  ({version_id, numero, estado}: la abierta de la variante, o null), ventanas [{renglon_id, etiqueta, casillas, antes, despues}]
+  (claves), cliente (los totales de lo que vio: las combinaciones elegidas y lo demás como se publicó, con
+  `presupuestos_totales_de`)}`. No escribe.
+- `presupuestos_eleccion_aplicar(texto) → jsonb` — INVOKER con GRANT. Lee; la abierta de la variante en revisión se retira
+  (`presupuestos_version_retirar`) y se descarta; copia la publicada (`presupuestos_version_copiar`) y a cada ventana copiada le
+  pone las piezas y servicios elegidos con `mantener`; guarda los totales; pasa todo a hoy. `{version_id, numero, descartada,
+  cliente, publicada (con los precios de la publicada y los mínimos exactos), hoy}`.
+- `presupuestos_totales_de(version, importes jsonb) → (moneda, subtotal, descuento, iva, total, sin_precio)` — INVOKER con GRANT:
+  la cuenta de los totales sobre `[{moneda, alicuota, importe}]`. `presupuestos_version_totales` la llama con sus importes
+  (verificado el 2026-11-12: las 119 versiones dan lo mismo).
+
+## presupuestos_links_visitas
+
+Las visitas que el portal anotó, leídas cada hora (`sql/203`, test `sql/tests/presupuestos_portal_visitas.sql`). Una fila por link y
+versión; cada lectura pisa la cuenta, que el portal guarda entera.
+
+| columna | tipo | notas |
+|---|---|---|
+| id | uuid PK | |
+| link_id | uuid FK → presupuestos_links | unique parcial `(link_id, version_id) WHERE activo` |
+| version_id | uuid FK → presupuestos_versiones | la versión que se abrió |
+| visitas | integer | ≥ 1 |
+| dispositivos | integer | entre 1 y `visitas` |
+| primera / ultima | timestamptz | `ultima ≥ primera` |
+| activo | boolean | de regla; nada las desactiva hoy |
+| created_at / updated_at | timestamptz | |
+
+RLS: SELECT si se ve el link (quien ve el presupuesto). GRANT: SELECT. Se escribe solo por `presupuestos_portal_visitas`.
+
+- `presupuestos_links_visitas_avisar` — trigger DEFINER por sentencia, AFTER INSERT: `presupuesto_visto` al responsable de la obra,
+  una vez por versión, aunque la vean por otro link.
 
 ## Funciones
 
@@ -319,7 +372,7 @@ RLS: SELECT si se ve el presupuesto. GRANT: SELECT de todo menos `llave`. Sin es
   ventanas activas de la versión (también lo dado de baja) y `"<catalogo_version_id>:<variable>"` → `orden` de las variables que
   ingresa el vendedor. El texto lo arma la pantalla con `textoCargado`. Test: `presupuestos_autorizaciones.sql` (06).
 - `presupuestos_version_totales(version) → (moneda, subtotal, descuento, iva, total, sin_precio)` — INVOKER, la RLS decide. Una
-  fila por moneda, sobre `presupuestos_version_importes`. Por alícuota: base = Σ importes, descuento = redondear(base × %), IVA =
+  fila por moneda, sobre `presupuestos_version_importes`; la cuenta, desde `sql/204`, en `presupuestos_totales_de`. Por alícuota: base = Σ importes, descuento = redondear(base × %), IVA =
   redondear((base − descuento) × alícuota); `iva` es `[{alicuota, monto}]`, la mayor primero. Lo sin precio no suma: `sin_precio`
   lo cuenta. Redondea con `catalogo_precio_redondear` (ARS a entero, el resto a 2 decimales). Con IVA incluido los números son los
   mismos.
@@ -444,4 +497,6 @@ mantiene lo copiado, con su paquete · PR014 algo frena publicar · PR015 solo s
 variante no se quita · PR017 la versión no está en revisión · PR018 el pedido ya no está pendiente · PR019 devolver pide motivo · PR020 las comisiones
 de los referentes llegan al 100 % · PR021 solo se aprueba una versión publicada · PR022 rechazar pide motivo (y detalle, con
 "otro") · PR023 solo se revierte lo aprobado o rechazado · PR024 revertir pide la causa · PR025 la obra tiene un presupuesto
-aprobado: no sale de contratada · PR026 la obra tiene presupuestos publicados: no pasa a perdida · PR027 el nombre de un presupuesto aprobado o rechazado no cambia · PR028 la obra pasa a contratada al aprobar un presupuesto · PR029 el presupuesto no tiene link: nunca se publicó.
+aprobado: no sale de contratada · PR026 la obra tiene presupuestos publicados: no pasa a perdida · PR027 el nombre de un presupuesto aprobado o rechazado no cambia · PR028 la obra pasa a contratada al aprobar un presupuesto · PR029 el presupuesto no tiene link: nunca se publicó · PR030 el código de la elección está roto o
+no está · PR031 la elección es de una versión reemplazada o de un presupuesto que ya no está publicado · PR032 la elección tiene una
+combinación que no se ofrece.

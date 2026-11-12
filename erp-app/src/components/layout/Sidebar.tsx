@@ -6,6 +6,7 @@ import { NotificacionesBell } from "@/modules/notificaciones/components/Notifica
 import { TiposCambioBarra } from "@/modules/monedas/components/TiposCambioBarra";
 import { pedirSiHaceFalta } from "@/modules/monedas/monedapi";
 import { getAvisos, getTiposCambioHoy } from "@/modules/monedas/queries";
+import { sincronizarPortalDespues } from "@/modules/presupuestos/portal";
 import { SidebarNav } from "./SidebarNav";
 import { MobileNav } from "./MobileNav";
 
@@ -24,6 +25,7 @@ export async function Sidebar() {
     getAvisos(),
   ]);
   pedirSiHaceFalta(tiposCambio[0]?.ultima_consulta ?? null);
+  sincronizarPortalDespues();
 
   const modulosVisibles = [...new Set(codigos.map((c) => c.split("_")[0]))];
   const nombre = usuario?.nombre ?? user.email ?? "";

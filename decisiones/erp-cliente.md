@@ -1,6 +1,7 @@
 # Decisiones — erp-cliente (portal)
 
-> **Estado: ficha aprobada (2026-11-11), revisada punto por punto con el usuario. Sin SQL ni pantallas.** Es la etapa 2 de
+> **Estado: ficha aprobada (2026-11-11), revisada punto por punto con el usuario. SQL completo (tramos 1a–4, 2026-11-12); sin
+> pantallas.** Es la etapa 2 de
 > Presupuestos (`decisiones/presupuestos.md` → *Etapas*). Lo que falta, en `BACKLOG.md` → *erp-cliente*.
 
 ## Ficha del módulo
@@ -195,6 +196,59 @@ tenga el link. Cortar un link que nunca se copió deja la fila cortada, para que
 
 **Una visita es un dispositivo con una versión, sin 30 min de pausa entre aperturas.** Abrir la v1 y después la v3 son dos. Una
 versión que la copia no muestra, o un link cortado, no anota y no da error: el portal no confirma qué huellas existen.
+
+Tramo 3: copiar y leer visitas (`sql/202`–`203`, test 11 / 11; `sql/portal/002`, test 5 / 5; `modules/presupuestos/portal.ts` y
+`cifrado.ts`, check `erp-app/scripts/cifrado-check.mts` 6 / 6), aplicado el 2026-11-12.
+
+**Huella y llave salen del link con SHA-256 y un prefijo: `huella:` y `llave:` (2026-11-12).** La huella va en hexadecimal; la llave
+es la de AES-256-GCM, y la copia es base64 de iv (12) ‖ cifrado ‖ tag (16), lo que WebCrypto espera. Sin prefijos, la huella que
+guarda el portal sería la llave. El link ya es de 128 bits al azar: no hace falta un derivador lento.
+
+**El aviso de la primera visita le llega al responsable de la obra (decisión del usuario, 2026-11-12).** Juan armó, Laura publica la
+v4 en sus vacaciones: el aviso de la v4 le llega a Juan, como el WhatsApp. Una versión ya vista por otro link (anulado) no avisa de
+nuevo. Se descartaron quien publicó y los dos.
+
+**Las visitas se guardan en el ERP por link y versión, con la cuenta entera del portal.** Cada lectura pisa la anterior; el aviso lo
+da el alta de la fila, en la base.
+
+**Los tipos de cambio van al portal todos, con la marca de cuáles son referencia (2026-11-12).** El portal necesita el de la moneda
+de cada sección para convertir, no solo el de las referencias. ARS va con valor 1 y fecha fija, para no reemplazarla cada hora. Van
+en la misma pasada horaria que las visitas: MonedAPI tampoco cambia más seguido.
+
+**Copiar corre en cada página que se abre; leer visitas y monedas, una vez por hora por proceso (2026-11-12).** `after()` desde el
+Sidebar, como Monedas. Lo pendiente es una consulta que casi siempre vuelve vacía; la hora se cuenta en memoria del servidor, sin
+tabla (`shortcut` en `portal.ts`). Las variables `PORTAL_SUPABASE_URL` y `PORTAL_SUPABASE_SERVICE_ROLE_KEY`: solo servidor.
+
+## Aplicar la elección
+
+Tramo 4 (`sql/204_presupuestos_eleccion.sql`, `sql/tests/presupuestos_eleccion.sql`, 83 / 83), aplicado el 2026-11-12. El formato
+del código, en el encabezado del SQL y en `db_schema/presupuestos.md` → *La elección del cliente*: lo arma erp-cliente con esa regla.
+
+**El código lleva el número del presupuesto: `…/presupuestos/eleccion/P-0142-V3-7K2M-9QX4-B` (decisión del usuario, 2026-11-12).**
+El número de versión es por presupuesto: sin el código, el link no sabía de cuál. "Pegar elección" en la ficha de otro presupuesto
+lo dice. Se descartaron el id en la ruta (ilegible) y el link solo desde la ficha (se perdía tocar el link).
+
+**Aplicar descarta la versión abierta de esa variante (decisión del usuario, 2026-11-12).** v3 publicada, Juan arrancó la v4 para
+sumar la ventana del lavadero y llega la elección de Carlos sobre la v3: la v4 se descarta (si estaba en revisión, se retira antes y
+sus pedidos quedan retirados) y la elección queda en la v5, desde la v3. Lo dice la vista previa antes de aplicar ("Se descarta la
+v4"). Se descartaron aplicar sobre la v4 (mezclaba lo de Juan con lo de Carlos) y frenar siempre.
+
+**La corrección queda a hoy, y Juan ve tres totales (decisión del usuario, 2026-11-12).** "Carlos vio 21.400 · con precios de la v3
+da 21.650 (mínimo de colocación) · a hoy 22.100". A hoy no le pide nada a Laura; si Juan quiere sostener el precio, "Mantener
+todas" y la autorización de siempre. Sin cambios en Catálogo, los dos últimos dan igual. Se descartó arrancar mantenida: pedía
+autorización aunque no hubiera subido nada.
+
+**El código guarda el `n` de cada ventana, no el orden de las combinaciones ofrecidas (2026-11-12).** Una autorización de Técnica
+posterior suma combinaciones y corría las posiciones; el `n` y el `ancho` salen de la versión de Catálogo y la fecha de la ventana,
+fijos para una versión publicada. Por eso la copia los lleva y los links se volvieron a copiar.
+
+**El dígito de control es una suma con pesos módulo 31, no un hash (2026-11-12).** Detecta siempre una letra cambiada o dos vecinas
+permutadas (salvo 0 ↔ Z), y es una línea en SQL y en el navegador. No es seguridad: lo que entra lo valida el ERP igual
+(versión publicada, combinación ofrecida, permiso de armar).
+
+**"Lo que vio el cliente" se calcula en el ERP, con la regla de los totales (2026-11-12).** Las combinaciones elegidas tal como
+estaban en la copia, y los mínimos como se publicaron (el portal no los recalcula). La cuenta de los totales pasó a
+`presupuestos_totales_de`, que también usa `presupuestos_version_totales`.
 
 ## Qué muestra según el estado
 

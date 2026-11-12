@@ -9,6 +9,7 @@ import {
   Bell,
   CheckCheck,
   CircleCheck,
+  Eye,
   CirclePlay,
   CircleX,
   Coins,
@@ -95,6 +96,7 @@ const ICONO: Record<TipoNotificacion, LucideIcon> = {
   presupuesto_autorizado: CircleCheck,
   presupuesto_devuelto: RotateCcw,
   presupuesto_a_mano: PencilLine,
+  presupuesto_visto: Eye,
 };
 const TEXTO: Record<TipoNotificacion, string> = {
   miembro_nuevo: "Se sumó a tu equipo",
@@ -149,6 +151,7 @@ const TEXTO: Record<TipoNotificacion, string> = {
   presupuesto_autorizado: "Lista para publicar:",
   presupuesto_devuelto: "Devolvieron",
   presupuesto_a_mano: "Renglón a mano en",
+  presupuesto_visto: "Primera visita en el portal:",
 };
 const COLOR: Record<TipoNotificacion, string> = {
   miembro_nuevo: "text-brand-500",
@@ -203,6 +206,7 @@ const COLOR: Record<TipoNotificacion, string> = {
   presupuesto_autorizado: "text-success-text",
   presupuesto_devuelto: "text-warning-text",
   presupuesto_a_mano: "text-brand-500",
+  presupuesto_visto: "text-success-text",
 };
 
 // `destino` → ruta. Cada rama de `notificaciones_listar` que devuelva un

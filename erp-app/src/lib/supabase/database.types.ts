@@ -2332,6 +2332,60 @@ export type Database = {
           },
         ]
       }
+      presupuestos_links_visitas: {
+        Row: {
+          activo: boolean
+          created_at: string
+          dispositivos: number
+          id: string
+          link_id: string
+          primera: string
+          ultima: string
+          updated_at: string
+          version_id: string
+          visitas: number
+        }
+        Insert: {
+          activo?: boolean
+          created_at?: string
+          dispositivos: number
+          id?: string
+          link_id: string
+          primera: string
+          ultima: string
+          updated_at?: string
+          version_id: string
+          visitas: number
+        }
+        Update: {
+          activo?: boolean
+          created_at?: string
+          dispositivos?: number
+          id?: string
+          link_id?: string
+          primera?: string
+          ultima?: string
+          updated_at?: string
+          version_id?: string
+          visitas?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presupuestos_links_visitas_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_links"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presupuestos_links_visitas_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "presupuestos_versiones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presupuestos_links: {
         Row: {
           activo: boolean
@@ -4797,6 +4851,8 @@ export type Database = {
         }
         Returns: string
       }
+      presupuestos_eleccion_aplicar: { Args: { p_texto: string }; Returns: Json }
+      presupuestos_eleccion_leer: { Args: { p_texto: string }; Returns: Json }
       presupuestos_etiqueta: {
         Args: { p_id: string; p_tipo: string }
         Returns: string
@@ -4810,6 +4866,18 @@ export type Database = {
         Returns: string
       }
       presupuestos_portal_copia: { Args: { p_link: string }; Returns: Json }
+      presupuestos_portal_links: {
+        Args: never
+        Returns: {
+          link_id: string
+          llave: string
+        }[]
+      }
+      presupuestos_portal_monedas: { Args: never; Returns: Json }
+      presupuestos_portal_visitas: {
+        Args: { p_visitas: Json }
+        Returns: undefined
+      }
       presupuestos_portal_copiada: {
         Args: { p_link: string; p_revision: number; p_versiones: number[] }
         Returns: undefined
@@ -4926,6 +4994,17 @@ export type Database = {
           tipo: Database["public"]["Enums"]["tipo_renglon_presupuesto"]
           ubicacion: string
           version: number
+        }[]
+      }
+      presupuestos_totales_de: {
+        Args: { p_importes: Json; p_version: string }
+        Returns: {
+          descuento: number
+          iva: Json
+          moneda: Database["public"]["Enums"]["moneda"]
+          sin_precio: number
+          subtotal: number
+          total: number
         }[]
       }
       presupuestos_variante_quitar: {
@@ -5334,6 +5413,7 @@ export type Database = {
         | "presupuesto_autorizado"
         | "presupuesto_devuelto"
         | "presupuesto_a_mano"
+        | "presupuesto_visto"
       tipo_obra:
         | "edificio_residencial"
         | "casa"
@@ -5602,6 +5682,7 @@ export const Constants = {
         "presupuesto_autorizado",
         "presupuesto_devuelto",
         "presupuesto_a_mano",
+        "presupuesto_visto",
       ],
       tipo_obra: [
         "edificio_residencial",
