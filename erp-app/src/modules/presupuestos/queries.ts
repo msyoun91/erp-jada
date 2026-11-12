@@ -93,7 +93,7 @@ export async function getEnCotizacionDeContratadas(): Promise<Record<string, num
 
 export type Configuracion = Pick<
   Database["public"]["Tables"]["presupuestos_configuracion"]["Row"],
-  "id" | "tope_descuento" | "plazo_dias" | "activo" | "created_at"
+  "id" | "tope_descuento" | "plazo_dias" | "monedas_referencia" | "activo" | "created_at"
 > & { quien: string | null };
 
 // La vigente y el historial, lo más nuevo primero. `usuarios` no deja ver otros equipos: el nombre sale de quienes hoy
@@ -103,7 +103,7 @@ export async function getConfiguraciones(): Promise<Configuracion[]> {
   const [filas, usuarios] = await Promise.all([
     supabase
       .from("presupuestos_configuracion")
-      .select("id, tope_descuento, plazo_dias, activo, creado_por, created_at")
+      .select("id, tope_descuento, plazo_dias, monedas_referencia, activo, creado_por, created_at")
       .order("created_at", { ascending: false }),
     supabase.rpc("usuarios_con_permiso", { p_codigo: "presupuestos_configuracion" }),
   ]);

@@ -117,8 +117,12 @@ export async function configurar(input: ConfiguracionForm): Promise<Resultado> {
   const { error } = await supabase.rpc("presupuestos_configurar", {
     p_tope: parsed.data.tope_descuento,
     p_plazo: parsed.data.plazo_dias,
+    p_monedas: parsed.data.monedas_referencia,
   });
-  return trasGuardar(error ? mensajeError(error) : null);
+  if (error) return trasGuardar(mensajeError(error));
+  // Sin esperar la hora: el portal muestra las referencias nuevas al próximo que abra.
+  await sincronizarPortal(true);
+  return trasGuardar(null);
 }
 
 // Aprobado o rechazado, el nombre no cambia (PR027).

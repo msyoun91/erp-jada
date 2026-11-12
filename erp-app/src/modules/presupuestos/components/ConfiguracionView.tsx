@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Campo, claseInput } from "@/components/ui/Campo";
 import { PiePanel, RightPanel } from "@/components/ui/RightPanel";
 import { Vacio } from "@/components/ui/Vacio";
+import { MONEDAS, MONEDAS_LISTA, type Moneda } from "@/lib/monedas";
 import { formatFecha } from "@/lib/utils";
 import { configurar } from "../actions";
 import type { Configuracion } from "../queries";
@@ -15,6 +16,10 @@ import { configuracionSchema, formatAlicuota, type ConfiguracionForm } from "../
 
 function dias(n: number) {
   return n === 1 ? "1 día" : `${n} días`;
+}
+
+function referencias(monedas: Moneda[]) {
+  return monedas.length ? monedas.map((m) => MONEDAS[m]).join(", ") : "Ninguna";
 }
 
 // Cambiar crea otra fila y desactiva la vigente: el historial son todas (decisiones/presupuestos.md → *Pantallas*).
@@ -56,6 +61,7 @@ export function ConfiguracionView({ configuraciones }: { configuraciones: Config
         <div className="flex flex-col gap-1">
           <Linea texto="Descuento sin autorización" valor={`hasta ${formatAlicuota(vigente.tope_descuento)}`} />
           <Linea texto="Las versiones vencen a los" valor={dias(vigente.plazo_dias)} />
+          <Linea texto="Referencias en el portal" valor={referencias(vigente.monedas_referencia)} />
         </div>
         <p className="t-caption mt-2">
           Desde el {formatFecha(vigente.created_at)} · {vigente.quien ?? "—"}
@@ -72,7 +78,7 @@ export function ConfiguracionView({ configuraciones }: { configuraciones: Config
                   {formatFecha(c.created_at)} · {c.quien ?? "—"}
                 </span>
                 <span className="t-body-m text-text-primary">
-                  {formatAlicuota(c.tope_descuento)} · {dias(c.plazo_dias)}
+                  {formatAlicuota(c.tope_descuento)} · {dias(c.plazo_dias)} · {referencias(c.monedas_referencia)}
                 </span>
               </li>
             ))}
@@ -102,6 +108,7 @@ function ConfiguracionPanel({ vigente, onClose }: { vigente: Configuracion | und
     defaultValues: {
       tope_descuento: vigente ? String(vigente.tope_descuento) : "",
       plazo_dias: vigente ? String(vigente.plazo_dias) : "",
+      monedas_referencia: vigente ? vigente.monedas_referencia : ["ARS", "USD_OFICIAL"],
     },
   });
   const { errors } = formState;
@@ -159,6 +166,19 @@ function ConfiguracionPanel({ vigente, onClose }: { vigente: Configuracion | und
             Cuenta desde que se publica la versión. Lo ya publicado conserva su vencimiento.
           </p>
         </Campo>
+        <fieldset className="flex flex-col gap-1">
+          <legend className="t-label mb-1">Referencias en el portal</legend>
+          <p className="t-caption mb-1">
+            El cliente ve el total también en estas monedas, al cambio del día, solo como referencia. Vale para todos los
+            links, también los ya enviados.
+          </p>
+          {MONEDAS_LISTA.map((m) => (
+            <label key={m} className="tap-target flex items-center gap-2">
+              <input type="checkbox" value={m} {...register("monedas_referencia")} />
+              <span className="t-body-m">{MONEDAS[m]}</span>
+            </label>
+          ))}
+        </fieldset>
       </form>
     </RightPanel>
   );

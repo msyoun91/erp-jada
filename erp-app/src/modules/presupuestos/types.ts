@@ -42,6 +42,7 @@ export const configuracionSchema = z.object({
   plazo_dias: numeroRequerido("Escribí el plazo").pipe(
     z.coerce.number<string | number>("Ingresá un número").int("En días enteros").min(1, "Al menos 1 día").max(365, "Hasta 365 días"),
   ),
+  monedas_referencia: z.array(z.enum(MONEDAS_LISTA)),
 });
 export type ConfiguracionForm = z.input<typeof configuracionSchema>;
 
