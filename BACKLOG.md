@@ -178,12 +178,14 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   con el aviso (`sql/202`–`203` 11 / 11, `sql/portal/002` 5 / 5, `modules/presupuestos/portal.ts`), y **4**, leer y aplicar la
   elección (`sql/204`, test 83 / 83). **Hecho (2026-11-12): las pantallas del ERP**: tarjeta "Portal del cliente" en la ficha (copiar link, anular, reintentar, estado
   de la copia, visitas), "Pegar elección" y la ruta `/presupuestos/eleccion/[codigo]`, columna de visitas y filtro "Sin abrir" en la
-  lista. Probado en el navegador (2026-11-12): copiar, anular, pegar y aplicar la elección; las visitas no, falta levantar erp-cliente.
-  La página del portal (`/p#{link}`) y el encoder vinieron de `da518a5`. **Sigue:** probar erp-cliente de punta a punta (visitas,
-  código con ventanas que cambian), "Ver como cliente" y las monedas en Configuración.
+  lista. Probado en el navegador (2026-11-12): copiar, anular, pegar y aplicar la elección. **De punta a punta con erp-cliente
+  (2026-11-12):** el portal muestra las versiones y anota visitas (por dispositivo y versión, 30 min); la ficha las muestra; el
+  código de elección vuelve al ERP con "saca X" y el total que vio el cliente, y si la variante tiene un borrador más nuevo avisa
+  "Se descarta la versión N". La lectura horaria de visitas no se vio correr (el recargado en caliente no resetea la hora); se
+  probó el mismo camino por SQL. La página del portal (`/p#{link}`) y el encoder vinieron de `da518a5`. **Sigue:** "Ver como
+  cliente" y las monedas en Configuración.
   Pendientes del 3: cargar `PORTAL_SUPABASE_SERVICE_ROLE_KEY` en el hosting (sin ella, el ERP no copia
-  y lo anota en el log); el botón "Reintentar" de la ficha llama `sincronizarPortal(true)` cuando exista la pantalla; la pantalla
-  de Configuración todavía no elige las monedas. La llave es hexadecimal de 32: la dirección queda `/p#` + 32 caracteres. Tramos propuestos: 1, en el ERP, link, estado de la copia y la función que arma
+  y lo anota en el log); la pantalla de Configuración todavía no elige las monedas. La llave es hexadecimal de 32: la dirección queda `/p#` + 32 caracteres. Tramos propuestos: 1, en el ERP, link, estado de la copia y la función que arma
   lo que se copia (combinaciones, pisos, orden de casillas); 2, la base del portal (link, copia, visita); 3, copiar y leer visitas,
   con el aviso; 4, aplicar la elección. Después, las pantallas: la página del portal y lo que suma la ficha y la lista de Presupuestos.
 - **Post-venta**: módulo aislado para su equipo. La unidad (1°C, local, casa) se arma después,
