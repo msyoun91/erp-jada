@@ -17,7 +17,8 @@
   --success-bg: #DCFCE7; --success-text: #0A3B1F; --warning-bg: #FEF3C7; --warning-text: #5C3200;
   --error-bg: #FEE2E2; --error-text: #5C0A0A; --info-bg: #DBEAFE; --info-text: #0C2461;
 }
-[data-theme="dark"] {
+/* Solo en pantalla: el papel siempre sale en claro, aunque el cliente use el modo oscuro. */
+@media screen { [data-theme="dark"] {
   --bg-page: #070B14; --bg-surface: #0E1525; --bg-subtle: #131C30; --bg-nav: #0B1322;
   --text-primary: #EDF2FF; --text-secondary: #9DB2D8; --text-tertiary: #6F86AE; --text-brand: #5FA3E0;
   --border-default: rgba(255,255,255,.09); --border-strong: rgba(255,255,255,.18);
@@ -27,7 +28,10 @@
   --primary: #1A6DC8; --primary-hover: #155BAA;
   --success-bg: #052E16; --success-text: #BBF7D0; --warning-bg: #451A03; --warning-text: #FDE68A;
   --error-bg: #450A0A; --error-text: #FECACA; --info-bg: #172554; --info-text: #BFDBFE;
-}
+} }
+
+/* Como el impreso del ERP. */
+@page { margin: 15mm; }
 
 @theme inline {
   --color-brand-50: var(--brand-50);
@@ -120,10 +124,10 @@
 }
 
 @layer base {
-  body { @apply bg-bg-page text-text-primary font-sans; -webkit-font-smoothing: antialiased; }
+  body { @apply bg-bg-page text-text-primary font-sans print:bg-white; -webkit-font-smoothing: antialiased; }
   a { @apply text-text-brand; }
   a:hover { @apply text-brand-500; }
-  [data-theme="dark"] .logo { filter: brightness(0) invert(1); }
+  @media screen { [data-theme="dark"] .logo { filter: brightness(0) invert(1); } }
   /* Tailwind 4 les sacó la manito a los botones. */
   button:not(:disabled) { cursor: pointer; }
   /* Un solo foco visible para todo lo interactivo: .input tiene el suyo

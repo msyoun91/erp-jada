@@ -102,8 +102,8 @@ export function Presupuesto() {
   }, []);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 px-4 py-6">
-      <Image src="/logo.svg" alt="JADA" width={109} height={40} priority className="logo" />
+    <main className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col gap-4 p-4 lg:p-8 print:max-w-none print:p-0">
+      <Image src="/logo.svg" alt="JADA" width={109} height={40} priority className="logo print:hidden" />
       {carga.estado === "cargando" && <p className="t-body-m">Cargando…</p>}
       {carga.estado === "error" && (
         <div className="flex flex-col items-start gap-3">
@@ -130,6 +130,11 @@ function Cuerpo({ copia, monedas, link, previa }: { copia: Copia; monedas: Moned
     } catch {}
   }, [copia, tildadas]);
 
+  // El nombre que el navegador propone al guardar como PDF, como en el ERP: "P-0142 · Torre Belgrano.pdf".
+  useEffect(() => {
+    document.title = `${copia.codigo} · ${copia.nombre}`;
+  }, [copia]);
+
   useEffect(() => {
     if (previa || !version) return;
     const d = dispositivo();
@@ -144,11 +149,17 @@ function Cuerpo({ copia, monedas, link, previa }: { copia: Copia; monedas: Moned
 
   return (
     <>
+    <div className="flex flex-col gap-4 print:hidden">
       {previa && <p className="alert alert-warning">Vista previa — no cuenta como visita.</p>}
-      <header>
-        <p className="t-label">{copia.codigo}</p>
-        <h1 className="t-h1">{copia.nombre}</h1>
-        {aprobado && copia.aprobado_en && <p className="badge badge-success mt-2 inline-block">Aprobado el {fecha(copia.aprobado_en)}</p>}
+      <header className="flex flex-wrap items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="t-label">{copia.codigo}</p>
+          <h1 className="t-h1">{copia.nombre}</h1>
+          {aprobado && copia.aprobado_en && <p className="badge badge-success mt-2 inline-block">Aprobado el {fecha(copia.aprobado_en)}</p>}
+        </div>
+        <button type="button" className="btn btn-secondary min-h-11" onClick={() => window.print()}>
+          Imprimir
+        </button>
       </header>
       {copia.versiones.length > 1 && (
         <div className="segmented w-full max-w-full flex-wrap" role="group" aria-label="Variantes">
@@ -165,7 +176,128 @@ function Cuerpo({ copia, monedas, link, previa }: { copia: Copia; monedas: Moned
       )}
       <Variante key={version.numero} copia={copia} version={version} monedas={monedas} aprobado={aprobado}
         tildadas={tildadas[version.numero] ?? {}} setTildadas={(t) => setTildadas({ ...tildadas, [version.numero]: t })} />
+    </div>
+    <Impreso copia={copia} tildadas={tildadas} />
     </>
+  );
+}
+
+// Los datos del pie del logo, copiados de erp-app/src/modules/presupuestos/empresa.ts: las apps no se importan entre sí.
+const EMPRESA = [
+  "Somos Jada Aberturas S.R.L. · CUIT 30-71860117-3",
+  "Del Progreso 7037, 9 de Abril, Esteban Echeverría",
+  "www.somosjada.com",
+];
+
+// El impreso del ERP (ImpresoView) con lo que el cliente tildó en cada variante. Sin el bloque Cliente: el portal no
+// trae la obra ni sus contactos (*Ficha del módulo*), ni las referencias en otras monedas, que el impreso no tiene.
+function Impreso({ copia, tildadas }: { copia: Copia; tildadas: Record<number, Tildadas> }) {
+  const versiones = copia.versiones.map((v) => {
+    const elegidas = elegidasDe(v, tildadas[v.numero] ?? {});
+    return { v, elegidas, totales: totalesDe(v, elegidas), nombre: v.variante_nombre ?? (copia.versiones.length > 1 ? `Variante ${v.variante}` : null) };
+  });
+  const total = (t: Total[]) => t.map((x) => dinero(x.total, x.moneda)).join(" + ");
+  return (
+    <article className="hidden print:block">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
+        <div>
+          <Image src="/logo.svg" alt="JADA" width={96} height={35} className="logo mb-2" />
+          {EMPRESA.map((l) => (
+            <p key={l} className="t-caption">{l}</p>
+          ))}
+        </div>
+        <div className="text-right">
+          <p className="t-label">Presupuesto</p>
+          <p className="t-h3">{copia.codigo}</p>
+          <p className="t-caption">{fecha(hoy())}</p>
+        </div>
+      </header>
+      <h2 className="t-h2 mt-4">{copia.nombre}</h2>
+      {versiones.length > 1 && <p className="t-body-m mt-1">{versiones.map((x) => `${x.nombre} ${total(x.totales)}`).join(" · ")}</p>}
+      {versiones.map(({ v, elegidas, totales, nombre }) => (
+        <section key={v.numero} aria-label={nombre ?? "Presupuesto"} className="mt-6">
+          <div className="flex flex-wrap items-baseline gap-x-3 border-b border-border-strong pb-1 break-after-avoid">
+            {nombre && <h3 className="t-h3 min-w-0 flex-1">{nombre}</h3>}
+            <p className="t-caption ml-auto">
+              {[v.iva_discriminado ? "IVA discriminado" : "IVA incluido", v.vence && `Válido hasta el ${fecha(v.vence)}`].filter(Boolean).join(" · ")}
+            </p>
+          </div>
+          {v.secciones.map((s) => {
+            const { filas, aparte } = porSeccion(v, elegidas, s.id);
+            const monto = (x: number | null) => (x === null ? null : dinero(x, s.moneda));
+            return (
+              <div key={s.id} className="mt-4">
+                <div className="flex flex-wrap items-baseline gap-x-3 break-after-avoid">
+                  <h4 className="t-body-m min-w-0 flex-1 font-semibold text-text-primary">{s.nombre}</h4>
+                  <span className="t-caption">{SIMBOLO[s.moneda] ?? s.moneda} · IVA {alicuota(s.alicuota)}</span>
+                </div>
+                <ul className="flex flex-col">
+                  {filas.map((r) => {
+                    const c = elegidas[r.id];
+                    return (
+                      <RenglonImpreso key={r.id}
+                        titulo={r.tipo === "minimo" ? `Mínimo de ${r.nombre ?? "servicio"}` : (r.designacion ?? r.nombre ?? "—")}
+                        detalle={r.tipo === "minimo" ? "" : detalle(r)}
+                        cargado={r.entrada ? textoCargado(r.entrada, v.nombres ?? {}, ordenPorNombre(v.orden ?? {})) : null}
+                        monto={c ? monto(visible(c, v)) : null}>
+                        {c?.debajo.map((d) => (
+                          <p key={d.clave} className="t-caption flex justify-between gap-3 pl-3">
+                            <span>{d.nombre}</span>
+                            <span className="tabular-nums">{monto(visible(d, v))}</span>
+                          </p>
+                        ))}
+                      </RenglonImpreso>
+                    );
+                  })}
+                  {[...aparte].map(([clave, g]) => (
+                    <RenglonImpreso key={clave} titulo={g.nombre} detalle={deVentanas(g.ventanas)} cargado={null} monto={monto(suma(g.montos))} />
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+          <div className="mt-4 ml-auto flex w-full max-w-xs flex-col gap-4 border-t border-border-strong pt-3 break-inside-avoid">
+            {totales.map((t) => {
+              const subtotal = v.iva_discriminado ? t.subtotal : t.subtotalConIva;
+              const descuento = v.iva_discriminado ? t.descuento : subtotal - t.total;
+              return (
+                <div key={t.moneda} className="flex flex-col gap-1">
+                  {totales.length > 1 && <p className="t-label">{SIMBOLO[t.moneda] ?? t.moneda}</p>}
+                  <Linea texto="Subtotal" valor={dinero(subtotal, t.moneda)} />
+                  {descuento !== 0 && <Linea texto={`Descuento ${alicuota(v.descuento)}`} valor={`− ${dinero(descuento, t.moneda)}`} />}
+                  {v.iva_discriminado &&
+                    t.iva.filter((x) => x.monto !== 0).map((x) => <Linea key={x.alicuota} texto={`IVA ${alicuota(x.alicuota)}`} valor={dinero(x.monto, t.moneda)} />)}
+                  <Linea texto={v.iva_discriminado ? "Total" : "Total con IVA"} valor={dinero(t.total, t.moneda)} fuerte />
+                  {t.sinPrecio > 0 && (
+                    <p className="alert alert-warning mt-1">
+                      {t.sinPrecio === 1 ? "1 importe sin precio no suma." : `${t.sinPrecio} importes sin precio no suman.`}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </article>
+  );
+}
+
+function RenglonImpreso({ titulo, detalle, cargado, monto, children }: {
+  titulo: string; detalle: string; cargado: string | null; monto: string | null; children?: React.ReactNode;
+}) {
+  return (
+    <li className="flex flex-col gap-0.5 border-b border-border py-2 break-inside-avoid last:border-b-0">
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="t-body-m font-medium text-text-primary">{titulo}</p>
+          {detalle && <p className="t-caption">{detalle}</p>}
+          {cargado && <p className="t-caption">{cargado}</p>}
+        </div>
+        <p className="t-body-m shrink-0 text-right tabular-nums text-text-primary">{monto ?? "—"}</p>
+      </div>
+      {children}
+    </li>
   );
 }
 
@@ -204,6 +336,32 @@ function porOpcional(v: Version, tildadas: Tildadas) {
     }
   return [...m.values()];
 }
+
+// El renglón aparte de cada opcional: la suma de sus líneas en todas las ventanas, con su mínimo si está en esta sección, como
+// el impreso del ERP (*Secciones y opcionales*). Lo leen la pantalla y el impreso.
+function porSeccion(v: Version, elegidas: Record<string, Combinacion>, seccionId: string) {
+  const propios = v.renglones.filter((r) => r.seccion_id === seccionId);
+  const aparte = new Map<string, { nombre: string; ventanas: number; montos: (number | null)[] }>();
+  for (const r of v.renglones)
+    for (const a of elegidas[r.id]?.aparte ?? [])
+      if (a.seccion_id === seccionId) {
+        const g = aparte.get(a.clave) ?? { nombre: a.nombre, ventanas: 0, montos: [] };
+        g.ventanas += 1;
+        g.montos.push(visible(a, v));
+        aparte.set(a.clave, g);
+      }
+  const sumados = new Set<string>();
+  for (const r of propios) {
+    const g = r.tipo === "minimo" && r.minimo_de ? aparte.get(r.minimo_de) : undefined;
+    if (g && elegidas[r.id]) {
+      g.montos.push(visible(elegidas[r.id], v));
+      sumados.add(r.id);
+    }
+  }
+  return { filas: propios.filter((r) => !sumados.has(r.id)), aparte };
+}
+const suma = (montos: (number | null)[]) => (montos.some((m) => m === null) ? null : montos.reduce<number>((t, m) => t + (m ?? 0), 0));
+const deVentanas = (n: number) => `De ${n} ${n === 1 ? "ventana" : "ventanas"}`;
 
 function elegidasDe(v: Version, tildadas: Tildadas): Record<string, Combinacion> {
   const e: Record<string, Combinacion> = {};
@@ -334,30 +492,9 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
         </button>
       )}
       {version.secciones.map((s) => {
-        const propios = version.renglones.filter((r) => r.seccion_id === s.id);
-        // El renglón aparte de cada opcional: la suma de sus líneas en todas las ventanas, con su mínimo si está en esta
-        // sección, como el impreso (*Secciones y opcionales*).
-        const aparte = new Map<string, { nombre: string; ventanas: number; montos: (number | null)[] }>();
-        for (const r of version.renglones)
-          for (const a of elegidas[r.id]?.aparte ?? [])
-            if (a.seccion_id === s.id) {
-              const g = aparte.get(a.clave) ?? { nombre: a.nombre, ventanas: 0, montos: [] };
-              g.ventanas += 1;
-              g.montos.push(visible(a, version));
-              aparte.set(a.clave, g);
-            }
-        const sumados = new Set<string>();
-        for (const r of propios) {
-          const g = r.tipo === "minimo" && r.minimo_de ? aparte.get(r.minimo_de) : undefined;
-          if (g && elegidas[r.id]) {
-            g.montos.push(visible(elegidas[r.id], version));
-            sumados.add(r.id);
-          }
-        }
-        const filas = propios.filter((r) => !sumados.has(r.id));
+        const { filas, aparte } = porSeccion(version, elegidas, s.id);
         if (filas.length === 0 && aparte.size === 0) return null;
-        const montos = [...filas.map((r) => (elegidas[r.id] ? visible(elegidas[r.id], version) : null)), ...[...aparte.values()].flatMap((g) => g.montos)];
-        const subtotal = montos.some((m) => m === null) ? null : montos.reduce<number>((t, m) => t + (m ?? 0), 0);
+        const subtotal = suma([...filas.map((r) => (elegidas[r.id] ? visible(elegidas[r.id], version) : null)), ...[...aparte.values()].flatMap((g) => g.montos)]);
         return (
           <section key={s.id} aria-label={s.nombre} className="flex flex-col gap-3">
             <div className="flex flex-wrap items-baseline gap-x-3">
@@ -409,14 +546,14 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
                 );
               })}
               {[...aparte].map(([clave, g]) => {
-                const suma = g.montos.some((m) => m === null) ? null : g.montos.reduce<number>((t, m) => t + (m ?? 0), 0);
+                const total = suma(g.montos);
                 return (
                   <li key={clave} className="card flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="t-h3">{g.nombre}</h3>
-                      <p className="t-caption">De {g.ventanas} {g.ventanas === 1 ? "ventana" : "ventanas"}</p>
+                      <p className="t-caption">{deVentanas(g.ventanas)}</p>
                     </div>
-                    <p className="t-h3 shrink-0 tabular-nums">{suma != null ? dinero(suma, s.moneda) : "Consultar"}</p>
+                    <p className="t-h3 shrink-0 tabular-nums">{total != null ? dinero(total, s.moneda) : "Consultar"}</p>
                   </li>
                 );
               })}

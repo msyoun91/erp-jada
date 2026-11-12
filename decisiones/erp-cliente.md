@@ -314,6 +314,14 @@ ofrece sin Cajón" (2026-11-12).** Lo mismo que hace el formulario del ERP (`lib
 cliente no sabía por qué. Más parecida: respeta lo tocado y cambia lo menos del resto; en empate, menos casillas. Elige solo entre
 las que trae la copia, así que nunca saltea a Técnica. Sin ninguna, "No disponible en esta ventana". `cercana` en `lib/eleccion.ts`.
 
+**"Imprimir" saca el impreso del ERP (`ImpresoView`), con lo que el cliente tildó en cada variante; todas las variantes, como el
+ERP (2026-11-12).** La pantalla se oculta al imprimir y se muestra un `Impreso` aparte que copia el del ERP: logo y datos de la
+empresa (copiados de `empresa.ts`: las apps no se importan), código y fecha, variantes con su total, secciones, lo elegido debajo
+de cada ventana, renglón aparte y pie. **Sin el bloque Cliente**: el invitado no ve la obra ni sus contactos (*Ficha del módulo*).
+Sin las referencias en otras monedas, que el impreso no tiene. `window.print()`, margen de 15 mm y el título del PDF
+("P-0142 · Torre Belgrano") como el ERP; siempre en claro (el modo oscuro va dentro de `@media screen`). `porSeccion` lo leen la
+pantalla y el impreso.
+
 Sin hacer: el piso de los renglones aparte, `ThemeToggle`, y el cartel de "Aprobado" con casillas para variantes ya aprobadas más allá
 de lo que trae la copia.
 
