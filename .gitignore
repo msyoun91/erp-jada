@@ -38,5 +38,8 @@ Thumbs.db
 # Vercel
 .vercel/
 
+# Supabase CLI
+supabase/.temp/
+
 # Estado de sesión (mod sesion-erp)
 .claude/retomar.md
