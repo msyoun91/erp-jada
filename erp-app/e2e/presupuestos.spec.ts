@@ -103,7 +103,7 @@ test("admin carga renglones a mano y de Catálogo, los edita, duplica y saca", a
   await mano.getByRole("button", { name: "Agregar" }).click();
   await expect(mano).toBeHidden();
   const flete = general.getByRole("listitem").filter({ hasText: "Flete cerrado a Pilar" });
-  await expect(flete.getByText("$300.000")).toBeVisible();
+  await expect(flete.getByText("$ 300.000")).toBeVisible();
   await expect(flete.getByText("A mano")).toBeVisible();
 
   await flete.getByRole("button", { name: "Más acciones" }).click();
@@ -111,7 +111,7 @@ test("admin carga renglones a mano y de Catálogo, los edita, duplica y saca", a
   const editarMano = panel(page);
   await editarMano.getByLabel("Cantidad").fill("1");
   await editarMano.getByRole("button", { name: "Guardar" }).click();
-  await expect(flete.getByText("$150.000")).toBeVisible();
+  await expect(flete.getByText("$ 150.000")).toBeVisible();
 
   await general.getByRole("button", { name: "De Catálogo" }).click();
   const cat = panel(page);
@@ -278,7 +278,7 @@ test("admin elige cómo se ven los opcionales y los tilda en cada ventana", asyn
   const mosquitero = opcionales.getByRole("checkbox", { name: "Mosquitero" });
   await expect(mosquitero).not.toBeChecked();
   await mosquitero.check();
-  await expect(opcionales.getByText("$9.600")).toBeVisible();
+  await expect(opcionales.getByText("$ 9.600")).toBeVisible();
 
   // La Cortina lleva el Cajón.
   await opcionales.getByRole("button", { name: "Cortina" }).click();
@@ -304,7 +304,7 @@ test("admin elige cómo se ven los opcionales y los tilda en cada ventana", asyn
   await expect(opcionales.getByRole("button", { name: "Zqx197 Colocación" })).toHaveAttribute("aria-pressed", "true");
 
   await mosquitero.uncheck();
-  await expect(opcionales.getByText("$9.600")).toHaveCount(0);
+  await expect(opcionales.getByText("$ 9.600")).toHaveCount(0);
   await ctx.close();
 });
 
@@ -901,7 +901,7 @@ test("admin imprime lo publicado: cada variante con lo cargado, debajo y aparte;
   await expect(panel(page)).toBeHidden();
   const opcionales = general.getByRole("listitem").filter({ hasText: "V1" }).getByRole("group", { name: "Opcionales" });
   await opcionales.getByRole("checkbox", { name: "Mosquitero" }).check();
-  await expect(opcionales.getByText("$9.600")).toBeVisible();
+  await expect(opcionales.getByText("$ 9.600")).toBeVisible();
   await opcionales.getByRole("button", { name: "Cortina" }).click();
   await expect(opcionales.getByRole("button", { name: "Cortina" })).toHaveAttribute("aria-pressed", "true");
   await opcionales.getByRole("button", { name: "Zqx197 Colocación" }).click();
@@ -936,7 +936,7 @@ test("admin imprime lo publicado: cada variante con lo cargado, debajo y aparte;
   // Lo cargado, sin el Mosquitero: va en su línea, debajo.
   await expect(v1.getByText("ancho 1200 · alto 1000 · con Cajón · con Cortina", { exact: true })).toBeVisible();
   await expect(v1.getByText("Mosquitero", { exact: true })).toBeVisible();
-  await expect(v1.getByText("$9.600")).toBeVisible();
+  await expect(v1.getByText("$ 9.600")).toBeVisible();
   await expect(aluminio.getByRole("listitem").filter({ hasText: "Zqx197 Colocación" }).getByText("De 1 ventana")).toBeVisible();
   await expect(aluminio.getByText("Flete cerrado a Pilar")).toBeVisible();
   await expect(aluminio.getByText("Total", { exact: true })).toBeVisible();

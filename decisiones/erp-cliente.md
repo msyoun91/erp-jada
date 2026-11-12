@@ -264,6 +264,13 @@ del presupuesto de la elección.
 vio el cliente (21.400 → 22.100)"; sin diferencia, "Mismo total que vio el cliente" (2026-11-12).** Los tres totales siguen; el aviso
 dice si hay que decidir mantener.
 
+**En el celular, "Copiar link" abre el menú de compartir del teléfono (`navigator.share`); en la compu, copia (2026-11-12).** Juan en
+obra lo manda por WhatsApp sin pasar por el portapapeles. Anota "copiado" igual.
+
+**Lo que lee el cliente usa "US$ 7.180,00" y "$ 1.240.000", en el portal, el impreso y el editor (2026-11-12).** `formatMontoCliente`
+en `lib/monedas.ts`: "USD oficial" es una palabra interna y el cliente veía dos formatos para el mismo presupuesto. Lo interno
+(*Antes de publicar*, calculadora, Monedas) sigue con `formatMonto`.
+
 **Las visitas de la tarjeta nombran la variante y marcan la que el portal muestra hoy: "Aluminio · v3 (la que ve hoy)"; las
 reemplazadas, abajo y en gris (2026-11-12).** "Hoy" es lo que el portal confirmó (`copia_versiones`); sin copia, la publicada. Sin `presupuestos_armar` o `administrar`, 404; un código roto, versión reemplazada o combinación no
 ofrecida (PR030–PR032) se muestra en la página. Los tres totales (lo que vio el cliente, con los precios de la publicada, a hoy) salen
@@ -324,6 +331,15 @@ precios: el impreso de la misma versión los sigue mostrando.
 (2026-11-12).** Hasta acá iba una línea por ventana, 24 con "sin opcionales". Todas y ninguna cuentan solo donde el opcional existe;
 la ventana se nombra por designación, ubicación o paquete. El encabezado suma el número ("P-0142 · Torre Belgrano"); el código del
 link no cambia y el ERP lo busca igual (la regex pide `-V`).
+
+**Para el que tiene 24 ventanas: "En todas las ventanas" (Todas / Ninguna por opcional), el total fijo abajo en el celular con
+*Enviar*, y "+ US$ 45" al lado de cada casilla sin tildar (2026-11-12).** "Todas" pasa cada ventana por `cercana`, como un tilde a
+mano, y dice dónde no se ofrece. El "+" es lo que cambia el total, ventana y renglón aparte, por moneda: no muestra nada que no se
+dedujera tildando (*Secciones y opcionales*: ningún % ni costo).
+
+**Lo tildado queda en el navegador, por presupuesto y revisión, con "Volver a lo cotizado" (2026-11-12).** Recargar o volver mañana
+no lo pierde; una copia nueva arranca de lo publicado, y lo guardado que ya no se ofrece se descarta. `localStorage`, como el
+dispositivo: sin él, arranca de lo publicado.
 
 **Las variantes se eligen con un `.segmented` que muestra el total de cada una con lo tildado, y cada una recuerda sus tildes
 (2026-11-12).** Carlos compara Aluminio y PVC sin perder los mosquiteros que tildó en una al pasar a la otra. Se descartó ponerlas

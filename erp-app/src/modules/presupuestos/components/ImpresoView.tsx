@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { formatMonto, MONEDAS } from "@/lib/monedas";
+import { formatMontoCliente, simboloCliente } from "@/lib/monedas";
 import { formatFecha } from "@/lib/utils";
 import { EMPRESA } from "../empresa";
 import type { Impreso } from "../queries";
@@ -13,7 +13,7 @@ type Version = Impreso["versiones"][number];
 export function ImpresoView({ impreso, clientes, hoy }: { impreso: Impreso; clientes: string[]; hoy: string }) {
   const { presupuesto: p, versiones } = impreso;
   const nombre = (v: Version) => v.version.variante_nombre ?? (versiones.length > 1 ? `Variante ${v.version.variante}` : null);
-  const total = (v: Version) => v.totales.map((t) => formatMonto(t.total, t.moneda)).join(" + ");
+  const total = (v: Version) => v.totales.map((t) => formatMontoCliente(t.total, t.moneda)).join(" + ");
 
   return (
     <article className="card mx-auto w-full max-w-[820px] print:max-w-none print:rounded-none print:border-0 print:p-0">
@@ -89,7 +89,7 @@ function VersionImpresa({ v, nombre }: { v: Version; nombre: string | null }) {
             <div className="flex flex-wrap items-baseline gap-x-3 print:break-after-avoid">
               <h4 className="t-body-m min-w-0 flex-1 font-semibold text-text-primary">{s.nombre}</h4>
               <span className="t-caption">
-                {MONEDAS[s.moneda]} · IVA {formatAlicuota(s.alicuota)}
+                {simboloCliente(s.moneda)} · IVA {formatAlicuota(s.alicuota)}
               </span>
             </div>
             <ul className="flex flex-col">

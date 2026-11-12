@@ -7,14 +7,14 @@ import { ClipboardPaste } from "lucide-react";
 import { toast } from "sonner";
 import { claseInput } from "@/components/ui/Campo";
 import { Modal } from "@/components/ui/Modal";
-import { formatMonto } from "@/lib/monedas";
+import { formatMontoCliente } from "@/lib/monedas";
 import { aplicarEleccion, leerEleccion } from "../actions";
 import type { EleccionAplicada, EleccionLeida, TotalEleccion } from "../types";
 
 function totalesTexto(totales: TotalEleccion[]) {
   if (totales.length === 0) return "sin importes";
   return totales
-    .map((t) => formatMonto(t.total, t.moneda) + (t.sin_precio > 0 ? ` (${t.sin_precio} sin precio)` : ""))
+    .map((t) => formatMontoCliente(t.total, t.moneda) + (t.sin_precio > 0 ? ` (${t.sin_precio} sin precio)` : ""))
     .join(" · ");
 }
 
@@ -30,8 +30,8 @@ function Diferencia({ cliente, hoy }: { cliente: TotalEleccion[]; hoy: TotalElec
     <div className="alert alert-warning flex flex-col gap-1">
       {cambios.map(({ h, c, dif }) => (
         <p key={h.moneda}>
-          A hoy da {formatMonto(Math.abs(dif), h.moneda)} {dif > 0 ? "más" : "menos"} que lo que vio el cliente (
-          {c ? formatMonto(c.total, h.moneda) : "—"} → {formatMonto(h.total, h.moneda)}).
+          A hoy da {formatMontoCliente(Math.abs(dif), h.moneda)} {dif > 0 ? "más" : "menos"} que lo que vio el cliente (
+          {c ? formatMontoCliente(c.total, h.moneda) : "—"} → {formatMontoCliente(h.total, h.moneda)}).
         </p>
       ))}
       <p>La versión quedó a hoy. Para sostener el precio del cliente, abrila y usá &ldquo;Mantener todas&rdquo;.</p>

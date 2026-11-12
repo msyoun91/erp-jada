@@ -1,4 +1,4 @@
-import { formatMonto, MONEDAS } from "@/lib/monedas";
+import { formatMontoCliente, simboloCliente } from "@/lib/monedas";
 import type { VersionEditor } from "../queries";
 import { formatAlicuota } from "../types";
 
@@ -24,18 +24,18 @@ export function Totales({
         const descuento = conIva ? subtotal - t.total : t.descuento;
         return (
           <div key={t.moneda} className="flex flex-col gap-1">
-            {totales.length > 1 && <p className="t-label">{MONEDAS[t.moneda]}</p>}
-            <Linea texto="Subtotal" valor={formatMonto(subtotal, t.moneda)} />
+            {totales.length > 1 && <p className="t-label">{simboloCliente(t.moneda)}</p>}
+            <Linea texto="Subtotal" valor={formatMontoCliente(subtotal, t.moneda)} />
             {descuento !== 0 && (
-              <Linea texto={`Descuento ${formatAlicuota(porcentaje)}`} valor={`− ${formatMonto(descuento, t.moneda)}`} />
+              <Linea texto={`Descuento ${formatAlicuota(porcentaje)}`} valor={`− ${formatMontoCliente(descuento, t.moneda)}`} />
             )}
             {!conIva &&
               t.iva
                 .filter((x) => x.monto !== 0)
                 .map((x) => (
-                  <Linea key={x.alicuota} texto={`IVA ${formatAlicuota(x.alicuota)}`} valor={formatMonto(x.monto, t.moneda)} />
+                  <Linea key={x.alicuota} texto={`IVA ${formatAlicuota(x.alicuota)}`} valor={formatMontoCliente(x.monto, t.moneda)} />
                 ))}
-            <Linea texto={conIva ? "Total con IVA" : "Total"} valor={formatMonto(t.total, t.moneda)} fuerte />
+            <Linea texto={conIva ? "Total con IVA" : "Total"} valor={formatMontoCliente(t.total, t.moneda)} fuerte />
             {t.sin_precio > 0 && (
               <p className="alert alert-warning mt-1">
                 {t.sin_precio === 1 ? "1 importe sin precio no suma." : `${t.sin_precio} importes sin precio no suman.`}

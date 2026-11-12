@@ -38,6 +38,16 @@ export function PortalFicha({ id, portal, arma, publicado }: { id: string; porta
       toast.error(r.error);
       return;
     }
+    // En el celular, el menú de compartir del teléfono (WhatsApp directo); en la compu, el portapapeles.
+    if (navigator.share && matchMedia("(pointer: coarse)").matches) {
+      try {
+        await navigator.share({ title: "Presupuesto", url: r.url });
+        if (!portalAlDia) toast.warning("El portal todavía no lo muestra. Reintentá desde la tarjeta.");
+      } catch (e) {
+        if (!(e instanceof DOMException && e.name === "AbortError")) toast.error("No se pudo compartir");
+      }
+      return;
+    }
     try {
       await navigator.clipboard.writeText(r.url);
       if (portalAlDia) toast.success("Link copiado");

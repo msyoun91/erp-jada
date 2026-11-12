@@ -123,9 +123,12 @@ function Cuerpo({ copia, monedas, link, previa }: { copia: Copia; monedas: Moned
   const [variante, setVariante] = useState(copia.versiones[0]?.variante ?? "");
   const version = copia.versiones.find((v) => v.variante === variante) ?? copia.versiones[0];
   // Por versión, para que ir a otra variante y volver no borre lo tildado.
-  const [tildadas, setTildadas] = useState<Record<number, Tildadas>>(() =>
-    Object.fromEntries(copia.versiones.map((v) => [v.numero, inicialDe(v)])),
-  );
+  const [tildadas, setTildadas] = useState<Record<number, Tildadas>>(() => guardadas(copia));
+  useEffect(() => {
+    try {
+      localStorage.setItem(claveTildes(copia), JSON.stringify(tildadas));
+    } catch {}
+  }, [copia, tildadas]);
 
   useEffect(() => {
     if (previa || !version) return;
@@ -171,6 +174,37 @@ type Tildadas = Record<string, string[]>;
 // La primera combinación de cada ventana es la publicada (presupuestos_portal_version).
 const inicialDe = (v: Version): Tildadas => Object.fromEntries(v.renglones.map((r) => [r.id, r.combinaciones[0]?.casillas ?? []]));
 
+// Lo tildado queda en este navegador, por presupuesto y revisión: una copia nueva (otra versión, otra combinación ofrecida)
+// arranca de lo publicado. Lo guardado que ya no es una combinación ofrecida se descarta.
+const claveTildes = (c: Copia) => `jada-tildes:${c.codigo}:${c.revision}`;
+
+function guardadas(copia: Copia): Record<number, Tildadas> {
+  const base: Record<number, Tildadas> = Object.fromEntries(copia.versiones.map((v) => [v.numero, inicialDe(v)]));
+  try {
+    const g = JSON.parse(localStorage.getItem(claveTildes(copia)) ?? "{}") as Record<string, Record<string, unknown>>;
+    for (const v of copia.versiones)
+      for (const r of v.renglones) {
+        const t = g[v.numero]?.[r.id];
+        if (Array.isArray(t) && t.every((x) => typeof x === "string") && r.combinaciones.some((c) => mismas(c.casillas, t)))
+          base[v.numero][r.id] = t;
+      }
+  } catch {}
+  return base;
+}
+
+// Cada opcional con las ventanas donde existe y donde está tildado: el mensaje y "en todas" leen lo mismo.
+function porOpcional(v: Version, tildadas: Tildadas) {
+  const m = new Map<string, { clave: string; nombre: string; con: Renglon[]; de: Renglon[] }>();
+  for (const r of v.renglones)
+    for (const c of r.casillas) {
+      const g = m.get(c.clave) ?? { clave: c.clave, nombre: c.nombre, con: [], de: [] };
+      g.de.push(r);
+      if ((tildadas[r.id] ?? []).includes(c.clave)) g.con.push(r);
+      m.set(c.clave, g);
+    }
+  return [...m.values()];
+}
+
 function elegidasDe(v: Version, tildadas: Tildadas): Record<string, Combinacion> {
   const e: Record<string, Combinacion> = {};
   for (const r of v.renglones) {
@@ -191,6 +225,45 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
   const totales = useMemo(() => totalesDe(version, elegidas), [version, elegidas]);
   const orden = useMemo(() => ordenPorNombre(version.orden ?? {}), [version]);
   const vencida = version.vence !== null && version.vence < hoy();
+  const inicial = useMemo(() => inicialDe(version), [version]);
+  const cambiada = version.renglones.some((r) => !mismas(tildadas[r.id] ?? [], inicial[r.id] ?? []));
+  const opcionales = useMemo(() => porOpcional(version, tildadas), [version, tildadas]);
+  const [avisoTodas, setAvisoTodas] = useState<string | null>(null);
+  const monedaDe = (seccionId: string) => version.secciones.find((s) => s.id === seccionId)?.moneda;
+
+  // Un opcional en todas las ventanas donde existe, o en ninguna. Cada ventana pasa por `cercana`, como un tilde a mano.
+  function enTodas(clave: string, quiere: boolean) {
+    const nuevas = { ...tildadas };
+    const no: string[] = [];
+    for (const r of version.renglones) {
+      const actual = nuevas[r.id] ?? [];
+      if (!r.casillas.some((c) => c.clave === clave) || actual.includes(clave) === quiere) continue;
+      const c = cercana(r, actual, clave);
+      if (c) nuevas[r.id] = c.casillas;
+      else no.push(etiqueta(r));
+    }
+    setTildadas(nuevas);
+    setAvisos({});
+    const nombre = opcionales.find((g) => g.clave === clave)?.nombre ?? "";
+    setAvisoTodas(no.length ? `${nombre} no se ${quiere ? "ofrece" : "puede sacar"} en ${no.join(", ")}.` : null);
+  }
+
+  // Lo que cambia el total tildar esta casilla, por moneda: la ventana y su renglón aparte. El monto ya se deducía tildando.
+  function diferencia(r: Renglon, clave: string, moneda: string): string | null {
+    const antes = elegidas[r.id];
+    const despues = cercana(r, tildadas[r.id] ?? [], clave);
+    if (!antes || !despues) return null;
+    const m = new Map<string, number>();
+    const sumar = (mon: string | undefined, x: number | null, signo: number) => {
+      if (mon && x !== null) m.set(mon, (m.get(mon) ?? 0) + signo * x);
+    };
+    sumar(moneda, visible(despues, version), 1);
+    sumar(moneda, visible(antes, version), -1);
+    for (const a of despues.aparte) sumar(monedaDe(a.seccion_id), visible(a, version), 1);
+    for (const a of antes.aparte) sumar(monedaDe(a.seccion_id), visible(a, version), -1);
+    const partes = [...m].filter(([, x]) => Math.abs(x) >= 0.005).map(([mon, x]) => `${x > 0 ? "+" : "−"} ${dinero(Math.abs(x), mon)}`);
+    return partes.length ? partes.join(" · ") : null;
+  }
 
   function alternar(r: Renglon, clave: string) {
     const actual = tildadas[r.id] ?? [];
@@ -212,16 +285,8 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
   const mensaje = () => {
     const codigo = codigoEleccion(copia.codigo, version.numero, version.renglones.filter((r) => r.ancho > 0).map((r) => ({ ancho: r.ancho, n: elegidas[r.id]?.n ?? 0 })));
     // Por opcional y no por ventana: "Mosquitero: V1, V3, V7". Todas y ninguna cuentan solo donde ese opcional existe.
-    const porOpcional = new Map<string, { nombre: string; con: string[]; de: number }>();
-    for (const r of version.renglones)
-      for (const c of r.casillas) {
-        const g = porOpcional.get(c.clave) ?? { nombre: c.nombre, con: [], de: 0 };
-        g.de += 1;
-        if ((tildadas[r.id] ?? []).includes(c.clave)) g.con.push(etiqueta(r));
-        porOpcional.set(c.clave, g);
-      }
-    const lineas = [...porOpcional.values()].map(
-      (g) => `${g.nombre}: ${g.con.length === 0 ? "ninguna" : g.con.length === g.de ? "todas" : g.con.join(", ")}`,
+    const lineas = opcionales.map(
+      (g) => `${g.nombre}: ${g.con.length === 0 ? "ninguna" : g.con.length === g.de.length ? "todas" : g.con.map(etiqueta).join(", ")}`,
     );
     const total = totales.map((t) => dinero(t.total, t.moneda)).join(" + ");
     return [`Mi elección — ${copia.codigo} · ${copia.nombre}${version.variante_nombre ? ` (${version.variante_nombre})` : ""}`, ...lineas, `Total ${total}`, "", `${ERP_URL}/presupuestos/eleccion/${codigo}`].join("\n");
@@ -236,6 +301,38 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
         ) : (
           <p className="t-body-m">Válido hasta el {fecha(version.vence)}</p>
         ))}
+      {!aprobado && opcionales.some((g) => g.de.length > 1) && (
+        <section className="card flex flex-col gap-2" aria-label="Opcionales en todas las ventanas">
+          <h2 className="t-label">En todas las ventanas</h2>
+          {opcionales
+            .filter((g) => g.de.length > 1)
+            .map((g) => (
+              <div key={g.clave} className="flex flex-wrap items-center gap-2">
+                <p className="t-body-m min-w-0 flex-1">
+                  {g.nombre} <span className="t-caption">· en {g.con.length} de {g.de.length}</span>
+                </p>
+                <button type="button" className="btn btn-secondary btn-sm min-h-11" disabled={g.con.length === g.de.length} onClick={() => enTodas(g.clave, true)}>
+                  Todas
+                </button>
+                <button type="button" className="btn btn-secondary btn-sm min-h-11" disabled={g.con.length === 0} onClick={() => enTodas(g.clave, false)}>
+                  Ninguna
+                </button>
+              </div>
+            ))}
+          <p className="t-caption" aria-live="polite">{avisoTodas}</p>
+          {cambiada && (
+            <button type="button" className="btn btn-ghost btn-sm min-h-11 self-start"
+              onClick={() => { setTildadas(inicial); setAvisos({}); setAvisoTodas(null); }}>
+              Volver a lo cotizado
+            </button>
+          )}
+        </section>
+      )}
+      {!aprobado && cambiada && !opcionales.some((g) => g.de.length > 1) && (
+        <button type="button" className="btn btn-ghost btn-sm min-h-11 self-start" onClick={() => { setTildadas(inicial); setAvisos({}); }}>
+          Volver a lo cotizado
+        </button>
+      )}
       {version.secciones.map((s) => {
         const propios = version.renglones.filter((r) => r.seccion_id === s.id);
         // El renglón aparte de cada opcional: la suma de sus líneas en todas las ventanas, con su mínimo si está en esta
@@ -292,6 +389,7 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
                           // Debajo de la ventana, la casilla es la línea: tildada, con su monto (*Secciones y opcionales*).
                           const linea = marcada ? combinacion?.debajo.find((d) => d.clave === c.clave) : undefined;
                           const importe = linea ? visible(linea, version) : null;
+                          const suma = !marcada && posible && !aprobado ? diferencia(r, c.clave, s.moneda) : null;
                           return (
                             <label key={c.clave} className={`flex min-h-11 items-center gap-3 text-body-m ${posible ? "" : "opacity-50"}`}>
                               <input type="checkbox" className="size-5" checked={marcada} disabled={!posible} onChange={() => alternar(r, c.clave)} />
@@ -300,6 +398,7 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
                                 {!posible && <span className="t-caption block">No disponible en esta ventana</span>}
                               </span>
                               {importe != null && <span className="tabular-nums">{dinero(importe, s.moneda)}</span>}
+                              {suma && <span className="t-caption tabular-nums">{suma}</span>}
                             </label>
                           );
                         })}
@@ -370,7 +469,7 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
         )
       )}
       {!aprobado && !vencida && (
-        <div className="flex flex-col gap-3">
+        <div id="enviar" className="flex scroll-mt-4 flex-col gap-3">
           <p className="t-body-m">Tildá los opcionales que quieras y enviá tu elección. No confirma la compra: te contactamos para cerrarla.</p>
           <div className="flex flex-wrap gap-3">
             {whatsapp &&
@@ -406,6 +505,18 @@ function Variante({ copia, version, monedas, aprobado, tildadas, setTildadas }: 
           )}
         </div>
       )}
+      {/* En el celular el pie queda lejos de la ventana que se tilda: el total acompaña el scroll. */}
+      <div className="sticky bottom-0 z-10 -mx-4 flex items-center justify-between gap-3 border-t border-border bg-bg-surface px-4 py-3 sm:hidden">
+        <div className="min-w-0">
+          <p className="t-caption">{version.iva_discriminado ? "Total" : "Total con IVA"}</p>
+          <p className="t-h3 tabular-nums" aria-live="polite">{totales.map((t) => dinero(t.total, t.moneda)).join(" + ")}</p>
+        </div>
+        {!aprobado && !vencida && (
+          <a href="#enviar" className="btn btn-primary btn-sm shrink-0 text-white hover:text-white">
+            Enviar
+          </a>
+        )}
+      </div>
     </>
   );
 }
