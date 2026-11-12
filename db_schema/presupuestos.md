@@ -4,10 +4,11 @@ Ficha y decisiones: `decisiones/presupuestos.md`. Tests: `sql/tests/presupuestos
 `sql/tests/presupuestos_renglones.sql` (2a), `sql/tests/presupuestos_opcionales.sql` (2b), `sql/tests/presupuestos_ciclo.sql` (3a),
 `sql/tests/presupuestos_autorizaciones.sql` (3b), `sql/tests/presupuestos_recargo.sql` (3c),
 `sql/tests/presupuestos_aprobacion.sql` (4), `sql/tests/presupuestos_avisos.sql` (5), `sql/tests/presupuestos_pantallas.sql` (6),
-`sql/tests/presupuestos_links.sql` (portal, 1a).
+`sql/tests/presupuestos_links.sql` (portal, 1a), `sql/tests/presupuestos_portal_copia.sql` (portal, 1b).
 
 **Portal, tramo 1a** — `sql/200` (el link de cada presupuesto y el estado de su copia), aplicado el 2026-11-11. El archivo se
-recuperó de la base el 2026-11-12 (md5 igual al de la migración `200_presupuestos_links_tecnica`); el test se reescribió.
+recuperó de la base el 2026-11-12 (md5 igual al de la migración `200_presupuestos_links_tecnica`); el test se reescribió. **Tramo 1b** — `sql/201` (lo que se
+copia de cada link y las monedas de referencia), aplicado el 2026-11-12.
 
 **Estado:** tramo 1 — `sql/185` (permisos, configuración, presupuesto, versiones, secciones, ente), aplicado el 2026-11-06.
 Tramo 2a — `sql/186` (renglones de Catálogo y a mano, descuento, totales; el precio de Catálogo para quien arma), aplicado el
@@ -211,14 +212,15 @@ Funciones, todas sin GRANT salvo las ya existentes:
 | id | uuid PK | |
 | tope_descuento | numeric(5,2) | 0–100: hasta acá, el descuento no pide autorización |
 | plazo_dias | integer | 1–365: el vencimiento que se guarda al publicar |
+| monedas_referencia | `moneda[]` | default `{ARS,USD_OFICIAL}`, sin NULL: las referencias que ve el cliente en el portal (`sql/201`) |
 | creado_por | uuid FK → usuarios | default `auth.uid()` |
 | activo | boolean | unique parcial `(activo) WHERE activo`: una vigente; las demás son el historial. No vuelve (PR002) |
 | created_at / updated_at | timestamptz | |
 
-`presupuestos_configurar(tope, plazo) → uuid` (INVOKER): desactiva la vigente y crea otra; sin la vista
-`presupuestos_configuracion`, 42501. Arranca sin fila: hasta que gerencia configure, no hay tope ni plazo. RLS: SELECT con
+`presupuestos_configurar(tope, plazo, monedas = NULL) → uuid` (INVOKER): desactiva la vigente y crea otra; sin `monedas`, siguen
+las de la vigente. Sin la vista `presupuestos_configuracion`, 42501. Arranca sin fila: hasta que gerencia configure, no hay tope ni plazo. RLS: SELECT con
 `presupuestos_ver` o `presupuestos_configuracion`; INSERT y UPDATE con `presupuestos_configuracion`. GRANT: SELECT; INSERT
-(`id, tope_descuento, plazo_dias`); UPDATE (`activo`).
+(`id, tope_descuento, plazo_dias, monedas_referencia`); UPDATE (`activo`).
 
 ## presupuestos_autorizaciones
 
@@ -279,6 +281,25 @@ RLS: SELECT si se ve el presupuesto. GRANT: SELECT de todo menos `llave`. Sin es
   Lo que falta copiar o cortar, lo más viejo primero.
 - `presupuestos_portal_copiada(link, revision, versiones)` — DEFINER, GRANT solo `service_role`. Anota la revisión confirmada.
   Una más vieja que la confirmada, o mayor que `revision`, no hace nada.
+- `presupuestos_portal_copia(link) → jsonb` — DEFINER, GRANT solo `service_role` (`sql/201`). Lo que se cifra y se copia, con la
+  `revision` que tenía el link al armarlo (la que se confirma). `{revision, estado: 'cortado'}` si el link se anuló;
+  `{revision, estado: 'no_disponible'}` si el presupuesto está rechazado o desactivado; si no, `{revision, estado, codigo, nombre,
+  aprobado_en (último evento a aprobado), whatsapp (usuarios.telefono del responsable de la obra), versiones}`: publicado, cada
+  variante publicada con casillas; aprobado, solo la elegida, sin. NULL si el link no existe.
+- `presupuestos_portal_version(version, casillas) → jsonb` — sin GRANT. `{numero, variante, variante_nombre, iva_discriminado,
+  descuento, vence, secciones, aparte, renglones, nombres, orden}`. Renglón: `{id, seccion_id, tipo, designacion, ubicacion,
+  cantidad, nombre, entrada (sin piezas), minimo_de (clave del servicio, en el mínimo), casillas [{clave, nombre}] en orden,
+  combinaciones}`. Combinación: `{casillas (claves), publicada, importe, importe_con_iva, debajo, aparte [{clave, nombre,
+  seccion_id, importe, importe_con_iva}]}`, la publicada primero con el precio guardado. Una combinación con alertas sale solo si
+  la cubre una autorización de Técnica del presupuesto; si lo publicado no sale del cálculo, la ventana va sin casillas. `aparte`:
+  `[{clave, seccion_id, piso}]`, el mínimo del servicio en la moneda de su sección, con el recargo (NULL sin mínimo).
+- `presupuestos_portal_combinaciones(paquete, version, fecha, entrada, opcionales, monedas)` — sin GRANT. `(n, casillas, entrada,
+  precio, lineas, motivos)`: cada combinación de casillas con precio, a la versión y la fecha de la ventana. Casillas: piezas
+  opcionales por orden y nombre, después servicios opcionales vigentes a esa fecha por paso y nombre; uno que no aplica ni con
+  todo tildado no es casilla. Lo que el cálculo deja distinto de lo tildado (una pieza sin la que requiere) no sale.
+- `presupuestos_importes_de(version, renglones jsonb)` y `presupuestos_nombres_de(version)` — sin GRANT (`sql/201`): la cuenta de
+  `presupuestos_version_importes` y de `presupuestos_version_nombres`, sin mirar quién pregunta. Las dos públicas las envuelven con
+  `presupuestos_ve`; el portal les pasa combinaciones que no están guardadas.
 
 ## Funciones
 

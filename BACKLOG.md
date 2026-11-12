@@ -173,8 +173,8 @@ Ya decidido para los módulos que vienen detrás, al fichar Obras:
   base propia; todo lo publicado se copia cifrado; visitas y dispositivos; la elección vuelve al ERP en un link con código y entra
   como corrección. **Siguiente:** el SQL, por tramos. El segundo proyecto de Supabase ya existe, vacío, con su MCP, y los tres puntos
   de *A decidir al construir* están cerrados (2026-11-12: `/p#{link}`, `sql/portal/`, la copia en TypeScript). **Hecho: 1a**, el
-  link y el estado de su copia (`sql/200`, test 67 / 67). **Sigue: 1b**, la función que arma lo que se copia, y con ella las
-  monedas de referencia en `presupuestos_configuracion`. La llave es hexadecimal de 32: la dirección queda `/p#` + 32 caracteres. Tramos propuestos: 1, en el ERP, link, estado de la copia y la función que arma
+  link y el estado de su copia (`sql/200`, test 67 / 67), y **1b**, lo que se copia y las monedas de referencia (`sql/201`, test
+  93 / 93). **Sigue: 2**, la base del portal; la pantalla de Configuración todavía no elige las monedas. La llave es hexadecimal de 32: la dirección queda `/p#` + 32 caracteres. Tramos propuestos: 1, en el ERP, link, estado de la copia y la función que arma
   lo que se copia (combinaciones, pisos, orden de casillas); 2, la base del portal (link, copia, visita); 3, copiar y leer visitas,
   con el aviso; 4, aplicar la elección. Después, las pantallas: la página del portal y lo que suma la ficha y la lista de Presupuestos.
 - **Post-venta**: módulo aislado para su equipo. La unidad (1°C, local, casa) se arma después,

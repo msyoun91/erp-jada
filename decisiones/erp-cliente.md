@@ -154,6 +154,34 @@ cualquier copia, y la ficha lo muestra.
 **Lo que falta copiar y la confirmación son funciones solo para `service_role`.** El servidor del ERP copia sin usuario (cada hora),
 como Monedas.
 
+Tramo 1b (`sql/201_presupuestos_portal_copia.sql`, `sql/tests/presupuestos_portal_copia.sql`, 93 / 93), aplicado el 2026-11-12.
+
+**La copia la arma `presupuestos_portal_copia(link)`, con la revisión que tenía el link al armarla.** Esa es la que el servidor
+confirma: si sube otra mientras copia, el link sigue pendiente. TypeScript cifra el jsonb tal cual.
+
+**Cada combinación sale de la versión de Catálogo y la fecha de la ventana, como lo publicado.** Juan publicó el lunes, el aluminio
+subió el miércoles: el viernes Carlos destilda el mosquitero y ve el precio del lunes sin mosquitero, no uno de hoy. La publicada va
+con el precio guardado, no recalculado.
+
+**Las casillas son las de la versión de Catálogo de cada ventana, en orden fijo: piezas opcionales (orden, nombre), después servicios
+opcionales vigentes a esa fecha (paso, nombre).** Es el orden del código de "Enviar mi elección". Un servicio que no aplica a esa
+ventana ni con todo tildado no es casilla. Una combinación que el cálculo deja distinta de lo tildado (la Cortina sin su Cajón) no
+se ofrece: es otra.
+
+**Una combinación con alertas sale solo si la cubre una autorización de Técnica, y con otras piezas Técnica no la vio.** Mismas
+piezas que lo publicado, cambiando servicios: es la ventana que Técnica autorizó. Con otra pieza, no se ofrece (*Elige opcionales
+ventana por ventana*, `decisiones/presupuestos.md`). Aprobado: solo lo aprobado, sin casillas.
+
+**El piso del renglón aparte es el mínimo del servicio, en la moneda de su sección y con el recargo, a la fecha de las ventanas.**
+El portal lo compara con lo que suma el renglón; no calcula.
+
+**Los importes de cada combinación salen de la misma función que los del ERP.** La cuenta de `presupuestos_version_importes` pasó a
+`presupuestos_importes_de`, que recibe los renglones; la pública la envuelve. Verificado: los importes y los nombres de las 119
+versiones de la base dieron el mismo md5 antes y después.
+
+**Las monedas de referencia son de la configuración, para todos, y no van en la copia (2026-11-12).** Arrancan pesos y dólar oficial.
+Van al portal con los tipos de cambio, cada vez que el ERP los actualiza (tramo 3): cambiarlas no revisa cada link.
+
 ## Qué muestra según el estado
 
 **Vencida: muestra todo con "Venció el 30/11: los precios pueden cambiar", y "Enviar mi elección" apagado (2026-11-11).** Sigue

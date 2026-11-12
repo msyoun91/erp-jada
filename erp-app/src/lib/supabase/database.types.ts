@@ -2297,6 +2297,7 @@ export type Database = {
           creado_por: string
           created_at: string
           id: string
+          monedas_referencia: Database["public"]["Enums"]["moneda"][]
           plazo_dias: number
           tope_descuento: number
           updated_at: string
@@ -2306,6 +2307,7 @@ export type Database = {
           creado_por?: string
           created_at?: string
           id?: string
+          monedas_referencia?: Database["public"]["Enums"]["moneda"][]
           plazo_dias: number
           tope_descuento: number
           updated_at?: string
@@ -2315,6 +2317,7 @@ export type Database = {
           creado_por?: string
           created_at?: string
           id?: string
+          monedas_referencia?: Database["public"]["Enums"]["moneda"][]
           plazo_dias?: number
           tope_descuento?: number
           updated_at?: string
@@ -4787,7 +4790,11 @@ export type Database = {
         Returns: string
       }
       presupuestos_configurar: {
-        Args: { p_plazo: number; p_tope: number }
+        Args: {
+          p_monedas?: Database["public"]["Enums"]["moneda"][]
+          p_plazo: number
+          p_tope: number
+        }
         Returns: string
       }
       presupuestos_etiqueta: {
@@ -4802,6 +4809,7 @@ export type Database = {
         Args: { p_copiar?: boolean; p_presupuesto: string }
         Returns: string
       }
+      presupuestos_portal_copia: { Args: { p_link: string }; Returns: Json }
       presupuestos_portal_copiada: {
         Args: { p_link: string; p_revision: number; p_versiones: number[] }
         Returns: undefined
