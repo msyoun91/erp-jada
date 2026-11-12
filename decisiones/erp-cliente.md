@@ -182,6 +182,20 @@ versiones de la base dieron el mismo md5 antes y después.
 **Las monedas de referencia son de la configuración, para todos, y no van en la copia (2026-11-12).** Arrancan pesos y dólar oficial.
 Van al portal con los tipos de cambio, cada vez que el ERP los actualiza (tramo 3): cambiarlas no revisa cada link.
 
+Tramo 2, en la base del portal (`sql/portal/001_portal_base.sql`, `sql/portal/tests/portal_base.sql`, 46 / 46,
+`db_schema/portal.md`), aplicado el 2026-11-12.
+
+**El servidor del portal entra con la clave publicable y dos funciones; el del ERP, con `service_role` (2026-11-12).** `anon` solo
+lee una copia por huella y anota visitas, sin GRANT en las tablas: si se filtra la clave del portal, no se escribe una copia ni se
+leen visitas. Los avisos del linter (RLS sin policies, `SECURITY DEFINER` para `anon`) son esto, a propósito.
+
+**Una copia es una fila por link, con la revisión del ERP; la más nueva gana y un cortado no vuelve.** Reintentar o que llegue tarde
+una copia vieja no pisa nada, así el ERP puede repetir sin coordinar. Cortar borra la copia: lo cifrado ya no está ni para quien
+tenga el link. Cortar un link que nunca se copió deja la fila cortada, para que una copia atrasada no lo abra.
+
+**Una visita es un dispositivo con una versión, sin 30 min de pausa entre aperturas.** Abrir la v1 y después la v3 son dos. Una
+versión que la copia no muestra, o un link cortado, no anota y no da error: el portal no confirma qué huellas existen.
+
 ## Qué muestra según el estado
 
 **Vencida: muestra todo con "Venció el 30/11: los precios pueden cambiar", y "Enviar mi elección" apagado (2026-11-11).** Sigue
