@@ -4,11 +4,18 @@ Config del repo (`.claude/settings.json`, `.mcp.json`) viaja con el clone. Esto 
 
 ## MCP — Supabase
 
-`.mcp.json` en el repo define el server `supabase` (proyecto `qbpudocgdvpeadcyyhfh`). En máquina nueva:
+`.mcp.json` en el repo define los servers `supabase` (ERP) y `supabase-portal` (portal), apuntados a **desarrollo**. En máquina nueva:
 
 1. Abrir Claude Code en el repo, correr `/mcp`
 2. Autenticar contra Supabase (OAuth, browser) cuando lo pida
 3. Confirmar "Connected to supabase"
+
+| | Desarrollo (`.mcp.json`, `.env.local`) | Producción |
+|---|---|---|
+| ERP | `tadmujaqqpwvaaxwyxlg` | `qbpudocgdvpeadcyyhfh` |
+| Portal | `fuwcgqclopiahtwieffe` | `gprkjktlbtemzzjanijn` |
+
+`.env.local` no viaja con el clone: en cada PC, URL y keys de los proyectos de desarrollo.
 
 ## Skills — caveman
 

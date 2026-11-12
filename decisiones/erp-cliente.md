@@ -129,8 +129,8 @@ en dos proyectos, y el cifrado necesita el link fuera de la base. El reparto: la
 que se copia; TypeScript solo cifra, lleva y trae, y le avisa a la base que llegó; la base del portal valida lo que recibe.
 Corre como el pedido de Monedas: `after()` desde el Sidebar cada hora, y el botón espera para decir si anduvo.
 
-**El SQL del portal vive en `sql/portal/` y se aplica con el MCP `supabase-portal` (2026-11-12).** Proyecto `gprkjktlbtemzzjanijn`,
-segundo servidor en `.mcp.json`; el MCP `supabase` sigue atado al ERP. Misma regla que `sql/`: `apply_migration` con el texto
+**El SQL del portal vive en `sql/portal/` y se aplica con el MCP `supabase-portal` (2026-11-12).** Proyecto de desarrollo `fuwcgqclopiahtwieffe`
+(producción: `gprkjktlbtemzzjanijn`), segundo servidor en `.mcp.json`; el MCP `supabase` sigue atado al ERP. Misma regla que `sql/`: `apply_migration` con el texto
 exacto del archivo. Numeración propia, para que un archivo no se aplique en la base equivocada por el número.
 
 ## La base

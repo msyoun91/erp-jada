@@ -50,7 +50,7 @@ Tocar `entes`, `lib/entes.ts`, las funciones cross-módulo de core, disparadores
 
 ## `infra.md`
 
-Tocar infraestructura: proxy, dashboard, sidebar, notificaciones, regla de negocio en Postgres, `argsRpc()`, advisors, organización de la documentación.
+Tocar infraestructura: entornos (desarrollo/producción), proxy, dashboard, sidebar, notificaciones, regla de negocio en Postgres, `argsRpc()`, advisors, organización de la documentación.
 
 - `middleware.ts` → `proxy.ts` (Next.js 16)
 - Dashboard = ruta `/`, no `/dashboard`
@@ -67,3 +67,5 @@ Tocar infraestructura: proxy, dashboard, sidebar, notificaciones, regla de negoc
 - ~~Tests de pantalla: Playwright en `erp-app/e2e/`, solo lectura contra la base real~~
 - Tests de pantalla: Playwright puede escribir — la base no es de producción (2026-09-25)
 - La base es la fuente de verdad del esquema; `sql/` es un reflejo que puede atrasar (`sql/083`, `sql/084`)
+- Desarrollo y producción en proyectos Supabase separados (2026-11-12)
+- Limpieza de producción antes del arranque: excepción única a "Nunca DELETE" (2026-11-12)

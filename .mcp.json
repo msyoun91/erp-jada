@@ -2,11 +2,11 @@
   "mcpServers": {
     "supabase": {
       "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=qbpudocgdvpeadcyyhfh&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
+      "url": "https://mcp.supabase.com/mcp?project_ref=tadmujaqqpwvaaxwyxlg&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
     },
     "supabase-portal": {
       "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=gprkjktlbtemzzjanijn&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
+      "url": "https://mcp.supabase.com/mcp?project_ref=fuwcgqclopiahtwieffe&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching"
     }
   }
 }

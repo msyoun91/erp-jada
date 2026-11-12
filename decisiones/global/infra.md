@@ -229,3 +229,17 @@ Superada por "Tests de pantalla: Playwright puede escribir — la base no es de 
 Dos usuarios (admin y tester) con credenciales en `erp-app/.env.test` (ignorado; plantilla en `.env.test.example`); `auth.setup.ts` loguea una vez y guarda la sesión en `e2e/.auth/`. Un proyecto de Playwright por usuario: `admin.spec.ts`, `tester.spec.ts`, `sin-sesion.spec.ts`. Correr con `npm run e2e`.
 
 Archivos: `erp-app/playwright.config.ts`, `erp-app/e2e/`. Los agentes `tester` y `tester-ui` se retiraron el 2026-09-28 (`CLAUDE.md` → *Sin agentes*).
+
+## Desarrollo y producción en proyectos Supabase separados (2026-11-12)
+
+**`.mcp.json` y `.env.local` apuntan a desarrollo; producción no se toca desde el día a día.** Hasta acá se desarrolló sobre los proyectos que pasan a ser producción; se copiaron a desarrollo con `pg_dump` (esquema `public`, datos, `auth.users`/`identities`, buckets, políticas de Storage, triggers de auth) y se verificó tabla por tabla, función por función (`md5`) y permiso efectivo por rol. Refs en `SETUP_ENTORNO.md`.
+
+**Por qué:** probar sin ensuciar datos reales. Un cambio de esquema se aplica primero en desarrollo y después el mismo archivo de `sql/` en producción, antes de mergear el código que lo usa.
+
+Al copiar: un proyecto nuevo trae `ALTER DEFAULT PRIVILEGES` que dan todo a `anon`/`authenticated`; `pg_dump` solo agrega `GRANT`, no quita. Tras importar, `REVOKE ALL` en `public` y reaplicar los `GRANT` del dump. Archivos: `.mcp.json`, `SETUP_ENTORNO.md`.
+
+## Limpieza de producción antes del arranque (2026-11-12)
+
+**Excepción única a "Nunca DELETE": se vació producción porque todo lo cargado era de prueba.** Producción nunca se usó en serio; hasta esta fecha fue la base de desarrollo. Queda `somosjada@gmail.com` con sus permisos, `submodulos`, `submodulo_reglas`, `entes`, `presupuestos_configuracion`, `monedas_principal` y `portal_monedas`; el resto (catálogo incluido) se vació con `TRUNCATE` y se borraron los otros usuarios de `auth.users`. Desde acá vuelve a regir "Nunca DELETE".
+
+Archivo: `sql/limpieza_prod_2026-11-12.sql` (probado sobre la copia de desarrollo con rollback).
