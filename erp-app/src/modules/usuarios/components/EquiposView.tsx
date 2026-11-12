@@ -100,7 +100,7 @@ export function EquiposView({
   return (
     <div>
       {puedeGestionar && (
-        <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div data-tour="usuarios_equipos_acciones" className="mb-4 flex flex-wrap items-center gap-3">
           <button className="btn btn-primary" onClick={() => setEditando("nuevo")}>
             <Plus size={16} />
             Nuevo equipo
@@ -119,7 +119,7 @@ export function EquiposView({
             : "Todavía no hay equipos armados."}
         </Vacio>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div data-tour="usuarios_equipos_lista" className="flex flex-col gap-4">
           {activos.map((equipo) => {
             const miembros = miembrosDe(equipo.id);
             const hayDelegador = miembros.some((m) => tiene(m.id, idDelegar));

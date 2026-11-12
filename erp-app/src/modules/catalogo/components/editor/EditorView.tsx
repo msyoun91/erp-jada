@@ -125,7 +125,7 @@ export function EditorView({
 
       <DatosVersion version={version} categorias={categorias} colores={colores} />
 
-      <section className="flex flex-col gap-2">
+      <section data-tour="catalogo_editor_variables" className="flex flex-col gap-2">
         <h3 className="t-label">Variables por sí solas</h3>
         <p className="t-caption">De todo el paquete, fuera de toda pieza: ancho, alto.</p>
         <ul className="flex flex-col">{filasVariables(sueltas)}</ul>
@@ -138,7 +138,7 @@ export function EditorView({
         </button>
       </section>
 
-      <section className="flex flex-col gap-3">
+      <section data-tour="catalogo_editor_piezas" className="flex flex-col gap-3">
         <h3 className="t-label">Piezas armadas</h3>
         {contenido.piezas.length === 0 && <p className="t-body-m">El paquete está vacío: sumá su primera pieza.</p>}
         {contenido.piezas.map((p) => {

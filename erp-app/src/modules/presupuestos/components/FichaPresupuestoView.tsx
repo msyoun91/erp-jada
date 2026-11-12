@@ -54,7 +54,7 @@ export function FichaPresupuestoView({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="card">
+      <div data-tour="presupuestos_ficha_cabecera" className="card">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="t-h2 min-w-0 flex-1">
             {p.codigo} · {p.nombre}
@@ -104,7 +104,7 @@ export function FichaPresupuestoView({
           ? undefined
           : versiones.find((v) => v.estado === "obsoleto");
         return (
-          <div key={variante} className="card">
+          <div key={variante} data-tour="presupuestos_ficha_variante" className="card">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <h3 className="t-h3 min-w-0 flex-1">{nombre}</h3>
               {p.arma && (

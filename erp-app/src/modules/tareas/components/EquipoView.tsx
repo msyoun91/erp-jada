@@ -134,7 +134,7 @@ function Contenido({ pasos, cadena, hilos }: Datos) {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="segmented" role="group" aria-label="Qué ver">
+        <div data-tour="tareas_equipo_tipos" className="segmented" role="group" aria-label="Qué ver">
           {TIPOS.map((t) => (
             <button
               key={t.valor}

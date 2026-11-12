@@ -243,3 +243,26 @@ Al copiar: un proyecto nuevo trae `ALTER DEFAULT PRIVILEGES` que dan todo a `ano
 **Excepción única a "Nunca DELETE": se vació producción porque todo lo cargado era de prueba.** Producción nunca se usó en serio; hasta esta fecha fue la base de desarrollo. Queda `somosjada@gmail.com` con sus permisos, `submodulos`, `submodulo_reglas`, `entes`, `presupuestos_configuracion`, `monedas_principal` y `portal_monedas`; el resto (catálogo incluido) se vació con `TRUNCATE` y se borraron los otros usuarios de `auth.users`. Desde acá vuelve a regir "Nunca DELETE".
 
 Archivo: `sql/limpieza_prod_2026-11-12.sql` (probado sobre la copia de desarrollo con rollback).
+
+## Tutorial guiado en todos los módulos (2026-11-12)
+
+**Un solo `Tutorial` en `components/layout/`, montado por `Modulo` al lado del `<h1>`; cada módulo trae su guion en
+`modules/<modulo>/tutorial.ts`.** Es el de Tareas (`39ddf04`, `master`) hecho genérico: globos en secuencia sobre los
+elementos reales, se abren solos la primera vez y el `?` del título los vuelve a pasar. Las razones de ese diseño siguen
+valiendo y no se repiten acá: el código del paso es también el ancla `[data-tour]`, el estado es por paso y no por
+vista, persistencia en `usuario_tutorial` y no en `localStorage`, el guion explica lo que la pantalla no dice sola.
+
+**Por persona sin código de persona.** Un paso cuyo ancla no está en el DOM se saltea y no se marca como visto: el botón
+que la persona no tiene no se explica, y cuando le dan el permiso, el tutorial se abre solo con ese paso. Por eso los
+guiones no preguntan permisos — los preguntó la vista al renderizar.
+
+**El guion se elige por ruta, con los uuid como `[id]`** (`/obras/[id]`, `/presupuestos/[id]/[id]`): sin eso, las
+fichas no tenían tutorial. Una vista que se reusa en dos rutas (Personas/Empresas, Insumos/Servicios fijos) arma el
+código con su tipo, para que ver una no dé por vista la otra.
+
+**El foco lleva `outline`, no `ring`.** `ring` de Tailwind es `box-shadow`, y la sombra que oscurece la página lo pisaba:
+en tema oscuro no se veía qué señalaba.
+
+Archivos: `components/layout/Tutorial.tsx`, `components/layout/Modulo.tsx`, `lib/tutorial.ts`,
+`modules/*/tutorial.ts`, los `layout.tsx` de cada módulo y los `data-tour` en sus vistas. Sin tutorial: Inicio y Perfil
+(no hay nada que la pantalla no diga sola), la calculadora y la elección del cliente en Presupuestos.

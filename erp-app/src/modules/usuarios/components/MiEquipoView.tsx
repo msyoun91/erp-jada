@@ -31,7 +31,7 @@ export function MiEquipoView({
 
   return (
     <div>
-      <section className="rounded-lg border border-border bg-bg-surface">
+      <section data-tour="usuarios_equipo_miembros" className="rounded-lg border border-border bg-bg-surface">
         <header className="border-b border-border px-5 py-3">
           <h2 className="t-h3 truncate">{equipo.nombre}</h2>
           <p className="t-caption">

@@ -53,7 +53,7 @@ export function VersionView({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="card">
+      <div data-tour="presupuestos_version_cabecera" className="card">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="t-h2 min-w-0 flex-1">
             Versión {v.numero}
@@ -111,7 +111,7 @@ export function VersionView({
           ),
         ];
         return (
-          <section key={s.id} className="card" aria-label={s.nombre}>
+          <section key={s.id} data-tour="presupuestos_version_seccion" className="card" aria-label={s.nombre}>
             <div className="mb-2 flex flex-wrap items-center gap-x-3">
               <h3 className="t-h3 min-w-0 flex-1">{s.nombre}</h3>
               <span className="t-caption">
@@ -235,7 +235,7 @@ export function VersionView({
       {editable && <NuevaSeccion versionId={v.id} secciones={secciones} />}
 
       {totales.length > 0 && (
-        <section className="card" aria-label="Totales">
+        <section data-tour="presupuestos_version_totales" className="card" aria-label="Totales">
           <h3 className="t-h3 mb-2">Totales</h3>
           <Totales totales={totales} importes={importes} conIva={conIva} descuento={v.descuento} />
         </section>

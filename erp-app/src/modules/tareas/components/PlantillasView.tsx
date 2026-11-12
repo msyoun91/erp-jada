@@ -201,6 +201,7 @@ function Contenido({
           si dependiera de la vista elegida, el botón saltaría al cambiarla. */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <button
+          data-tour="tareas_plantillas_nueva"
           className="btn btn-primary"
           onClick={() => {
             setVer("mias");
@@ -213,7 +214,7 @@ function Contenido({
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <div className="segmented" role="group" aria-label="Qué ver">
+        <div data-tour="tareas_plantillas_ver" className="segmented" role="group" aria-label="Qué ver">
           {vistas.map((v) => (
             <button
               key={v.valor}

@@ -56,7 +56,7 @@ export function PorcentajesView({
         [1, 2, 3].map((paso) => {
           const lista = visibles.filter((p) => p.paso === paso);
           return (
-            <section key={paso} className="flex flex-col gap-2">
+            <section key={paso} data-tour={paso === 1 ? "catalogo_porcentajes_pasos" : undefined} className="flex flex-col gap-2">
               <div className="flex items-baseline justify-between gap-2">
                 <h2 className="t-label">{PASO[paso].titulo}</h2>
                 {paso === 3 && <span className="t-caption">Suman {textoPorcentaje(sumaPaso3)}</span>}

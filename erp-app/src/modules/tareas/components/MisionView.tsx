@@ -116,7 +116,7 @@ export function MisionView({
     <div className={`mx-auto grid w-full items-start gap-6 ${lado ? "max-w-6xl lg:grid-cols-2" : "max-w-2xl"}`}>
       <div className={`${fichaMobile ? "hidden lg:flex" : "flex"} min-w-0 flex-col gap-4`}>
         <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-3">
+          <div data-tour="tareas_mision_cola" className="flex items-center justify-between gap-3">
             <p className="t-label">
               Paso {posicion + 1} de {total}
             </p>
@@ -165,7 +165,7 @@ export function MisionView({
             <TextoConReferencias texto={actual.descripcion} enlaces={enlaces} pestanas={visibles.map((p) => p.ref)} onPestana={verFicha} />
           )}
 
-          <div className="flex flex-wrap gap-2">
+          <div data-tour="tareas_mision_acciones" className="flex flex-wrap gap-2">
             {actual.estado === "solicitada" ? (
               <>
                 <button
@@ -233,7 +233,7 @@ function Esperando({ pasos, motivo }: { pasos: PasoMision[]; motivo: (p: PasoMis
 
   return (
     <div className="flex flex-col gap-2">
-      <button className="btn btn-ghost btn-sm self-start" onClick={() => setAbierto(!abierto)}>
+      <button data-tour="tareas_mision_esperan" className="btn btn-ghost btn-sm self-start" onClick={() => setAbierto(!abierto)}>
         <Clock size={14} />
         {pasos.length} {pasos.length === 1 ? "paso esperando" : "pasos esperando"}
         {abierto ? <ChevronUp size={14} /> : <ChevronDown size={14} />}

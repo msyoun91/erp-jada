@@ -14,7 +14,7 @@ export function RevisionView({ pendientes }: { pendientes: RevisionPendiente[] }
     );
   }
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
+    <div data-tour="presupuestos_revision_lista" className="flex flex-col rounded-lg border border-border bg-bg-surface">
       {pendientes.map((p) => (
         <Link
           key={p.version_id}

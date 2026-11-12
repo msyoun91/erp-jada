@@ -69,3 +69,4 @@ Tocar infraestructura: entornos (desarrollo/producción), proxy, dashboard, side
 - La base es la fuente de verdad del esquema; `sql/` es un reflejo que puede atrasar (`sql/083`, `sql/084`)
 - Desarrollo y producción en proyectos Supabase separados (2026-11-12)
 - Limpieza de producción antes del arranque: excepción única a "Nunca DELETE" (2026-11-12)
+- Tutorial guiado en todos los módulos: un `Tutorial` en `Modulo`, un guion por módulo (2026-11-12)

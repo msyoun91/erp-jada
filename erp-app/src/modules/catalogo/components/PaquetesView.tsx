@@ -69,7 +69,7 @@ export function PaquetesView({
   return (
     <div className="flex flex-col gap-4">
       {puedeAprobar && porRevisar.length > 0 && (
-        <section className="flex flex-col gap-2">
+        <section data-tour="catalogo_paquetes_revisar" className="flex flex-col gap-2">
           <h2 className="t-label">Por revisar ({porRevisar.length})</h2>
           <ul className="flex flex-col rounded-lg border border-border bg-bg-surface">
             {porRevisar.map((v) => (
@@ -92,13 +92,13 @@ export function PaquetesView({
 
       <div className="flex flex-wrap items-center gap-3">
         {puedeArmar && (
-          <button className="btn btn-primary" onClick={() => setCreando(true)}>
+          <button data-tour="catalogo_paquetes_nuevo" className="btn btn-primary" onClick={() => setCreando(true)}>
             <Plus size={16} />
             Nuevo paquete
           </button>
         )}
         {puedeAprobar && (
-          <Link href="/catalogo/paquetes/referencia" className="btn btn-secondary">
+          <Link data-tour="catalogo_paquetes_referencia" href="/catalogo/paquetes/referencia" className="btn btn-secondary">
             Precios de referencia
           </Link>
         )}
@@ -137,6 +137,7 @@ export function PaquetesView({
           value={estado}
           onChange={(e) => setEstado(e.target.value as Estado)}
           aria-label="Filtrar por estado"
+          data-tour="catalogo_paquetes_estado"
         >
           {ESTADOS.map((e) => (
             <option key={e.valor} value={e.valor}>

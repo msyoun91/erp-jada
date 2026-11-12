@@ -87,7 +87,7 @@ export function PresupuestosView({
   return (
     <div>
       {obrasParaAlta && (
-        <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div data-tour="presupuestos_ver_alta" className="mb-4 flex flex-wrap items-center gap-3">
           <button className="btn btn-primary" onClick={() => setCreando(true)}>
             <Plus size={16} />
             Nuevo presupuesto
@@ -100,7 +100,7 @@ export function PresupuestosView({
       )}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <SearchInput value={texto} onChange={setTexto} placeholder="Buscar por número, nombre u obra…" />
-        <div className="segmented" role="group" aria-label="Qué ver">
+        <div data-tour="presupuestos_ver_filtros" className="segmented" role="group" aria-label="Qué ver">
           {filtros.map((f) => (
             <button
               key={f.valor}

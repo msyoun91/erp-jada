@@ -72,12 +72,12 @@ export function ContactosView({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <button className="btn btn-primary" onClick={() => setCreando(true)}>
+        <button data-tour={`contactos_${tipo}_nueva`} className="btn btn-primary" onClick={() => setCreando(true)}>
           <Plus size={16} />
           {t.nueva}
         </button>
         {porAprobar !== undefined && (
-          <Link href="/contactos/por-aprobar" className="btn btn-secondary">
+          <Link data-tour="contactos_por_aprobar" href="/contactos/por-aprobar" className="btn btn-secondary">
             <ShieldCheck size={16} />
             Por aprobar{porAprobar > 0 && <span className="badge badge-warning">{porAprobar}</span>}
           </Link>
@@ -92,6 +92,7 @@ export function ContactosView({
             value={filtro}
             onChange={(e) => setFiltro(e.target.value as Filtro)}
             aria-label="Filtrar"
+            data-tour="contactos_huerfanas"
           >
             <option value="todas">Todas</option>
             <option value="huerfanas">Huérfanas</option>
@@ -110,7 +111,7 @@ export function ContactosView({
           {filas.length === 0 ? t.vacio : filtro === "huerfanas" && !q ? t.sinHuerfanas : "Probá con otro nombre."}
         </Vacio>
       ) : (
-        <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
+        <div data-tour={`contactos_${tipo}_lista`} className="flex flex-col rounded-lg border border-border bg-bg-surface">
           {visibles.map((f) => (
             <Link
               key={f.id}

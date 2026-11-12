@@ -50,7 +50,7 @@ export function HilosView({
     <div>
       {!vacio && (
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <button className="btn btn-primary" onClick={() => setCreando(true)}>
+          <button data-tour="tareas_ver_nuevo" className="btn btn-primary" onClick={() => setCreando(true)}>
             <Plus size={16} />
             Nuevo hilo
           </button>
@@ -97,7 +97,7 @@ export function HilosView({
 export function HilosLista({ hilos, yo, nombres }: { hilos: HiloResumen[]; yo: string; nombres: Record<string, string> }) {
   const hoy = hoyISO();
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
+    <div data-tour="tareas_ver_lista" className="flex flex-col rounded-lg border border-border bg-bg-surface">
       {hilos.map((h) => {
         const pasos = h.tareas.filter((t) => t.activo && t.estado !== "cancelada");
         const completados = pasos.filter((t) => t.estado === "completada").length;

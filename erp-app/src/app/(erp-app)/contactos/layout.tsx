@@ -1,4 +1,6 @@
 import { Modulo } from "@/components/layout/Modulo";
+import { getTutorialVistos } from "@/lib/tutorial";
+import { TUTORIAL_CONTACTOS } from "@/modules/contactos/tutorial";
 import { puedeAuditar, puedeVerContactos } from "@/modules/contactos/permissions";
 
 // Auditoría es una vista aparte: el auditor no necesita ver la agenda.
@@ -15,7 +17,7 @@ export default async function ContactosLayout({ children }: { children: React.Re
   ];
 
   return (
-    <Modulo modulo="contactos" tabs={tabs}>
+    <Modulo modulo="contactos" tabs={tabs} tutorial={{ guion: TUTORIAL_CONTACTOS, vistos: await getTutorialVistos() }}>
       {children}
     </Modulo>
   );

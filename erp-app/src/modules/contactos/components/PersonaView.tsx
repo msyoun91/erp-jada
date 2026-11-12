@@ -132,7 +132,7 @@ export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin,
   return (
     <div className="flex flex-col gap-4">
       <div className="card flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+        <div data-tour="contactos_persona_cabecera" className="flex flex-wrap items-center gap-2">
           <IconoContacto tipo="persona" />
           <h2 className="t-h2 min-w-0 flex-1">{persona.nombre}</h2>
           {!persona.activo && <span className="badge badge-neutral">Desactivada</span>}
@@ -164,7 +164,7 @@ export function PersonaView({ persona, empresas, vinculos, ediciones, yo, admin,
             )}
           </div>
         ) : (
-          <div>
+          <div data-tour="contactos_persona_ver_contacto">
             <button className="btn btn-secondary btn-sm" onClick={onVerContacto} disabled={viendo}>
               <Eye size={14} />
               {viendo ? "Buscando…" : "Ver contacto"}

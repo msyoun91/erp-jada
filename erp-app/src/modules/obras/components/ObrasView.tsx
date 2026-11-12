@@ -68,13 +68,13 @@ export function ObrasView({
       {(Quien || porAprobar !== undefined) && (
         <div className="mb-4 flex flex-wrap items-center gap-3">
           {Quien && (
-            <button className="btn btn-primary" onClick={() => setCreando(true)}>
+            <button data-tour="obras_ver_nueva" className="btn btn-primary" onClick={() => setCreando(true)}>
               <Plus size={16} />
               Nueva obra
             </button>
           )}
           {porAprobar !== undefined && (
-            <Link href="/obras/por-aprobar" className="btn btn-secondary">
+            <Link data-tour="obras_por_aprobar" href="/obras/por-aprobar" className="btn btn-secondary">
               <ShieldCheck size={16} />
               Por aprobar{porAprobar > 0 && <span className="badge badge-warning">{porAprobar}</span>}
             </Link>
@@ -89,6 +89,7 @@ export function ObrasView({
           value={filtro}
           onChange={(e) => setFiltro(e.target.value as Filtro)}
           aria-label="Filtrar por estado"
+          data-tour={todas ? "obras_todas_filtro" : "obras_ver_filtro"}
         >
           {FILTROS.map((f) => (
             <option key={f.valor} value={f.valor}>
@@ -114,7 +115,7 @@ export function ObrasView({
               : "Probá con otro término o cambiá el filtro de estado."}
         </Vacio>
       ) : (
-        <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
+        <div data-tour={todas ? undefined : "obras_ver_lista"} className="flex flex-col rounded-lg border border-border bg-bg-surface">
           {visibles.map((o) => (
             <Link
               key={o.id}

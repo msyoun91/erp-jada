@@ -62,7 +62,7 @@ export function VersionView({
     <div className="flex flex-col gap-6">
       <Volver href="/catalogo/paquetes">Paquetes</Volver>
 
-      <section className="card flex flex-col gap-3">
+      <section data-tour="catalogo_version_cabecera" className="card flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="t-h2 min-w-0 flex-1">
             {version.nombre} · v{version.numero}
@@ -134,7 +134,7 @@ export function VersionView({
         </section>
       )}
 
-      <section className="card flex flex-col gap-3">
+      <section data-tour="catalogo_version_probar" className="card flex flex-col gap-3">
         <div>
           <h3 className="t-h3">{puedeAprobar ? "Probar el despiece y el precio" : "Probar el despiece"}</h3>
           <p className="t-caption">Cambiá los datos y tocá Calcular, que no guarda nada.</p>
@@ -158,7 +158,7 @@ export function VersionView({
         />
       </section>
 
-      <section className="flex flex-col gap-2">
+      <section data-tour="catalogo_version_casos" className="flex flex-col gap-2">
         <h3 className="t-label">Casos de prueba</h3>
         {editable && (
           <p className="t-caption">Se cargan con la calculadora de arriba: &quot;Guardar como caso&quot;.</p>

@@ -1,4 +1,6 @@
 import { Modulo } from "@/components/layout/Modulo";
+import { getTutorialVistos } from "@/lib/tutorial";
+import { TUTORIAL_TAREAS } from "@/modules/tareas/tutorial";
 import { puedeVerEquipo, puedeVerMision, puedeVerPlantillas, puedeVerTareas, puedeVerTodas } from "@/modules/tareas/permissions";
 
 export default async function TareasLayout({ children }: { children: React.ReactNode }) {
@@ -18,7 +20,7 @@ export default async function TareasLayout({ children }: { children: React.React
   ];
 
   return (
-    <Modulo modulo="tareas" tabs={tabs}>
+    <Modulo modulo="tareas" tabs={tabs} tutorial={{ guion: TUTORIAL_TAREAS, vistos: await getTutorialVistos() }}>
       {children}
     </Modulo>
   );

@@ -1,4 +1,6 @@
 import { Modulo } from "@/components/layout/Modulo";
+import { getTutorialVistos } from "@/lib/tutorial";
+import { TUTORIAL_PRESUPUESTOS } from "@/modules/presupuestos/tutorial";
 import { puedeConfigurar, puedeRevisar, puedeVerPresupuestos } from "@/modules/presupuestos/permissions";
 
 export default async function PresupuestosLayout({ children }: { children: React.ReactNode }) {
@@ -10,7 +12,7 @@ export default async function PresupuestosLayout({ children }: { children: React
   ];
 
   return (
-    <Modulo modulo="presupuestos" tabs={tabs}>
+    <Modulo modulo="presupuestos" tabs={tabs} tutorial={{ guion: TUTORIAL_PRESUPUESTOS, vistos: await getTutorialVistos() }}>
       {children}
     </Modulo>
   );

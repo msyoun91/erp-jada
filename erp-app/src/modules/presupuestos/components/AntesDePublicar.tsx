@@ -127,7 +127,7 @@ export function AntesDePublicar({
   }
 
   return (
-    <section className="card flex flex-col gap-3" aria-label="Antes de publicar">
+    <section data-tour="presupuestos_version_publicar" className="card flex flex-col gap-3" aria-label="Antes de publicar">
       <h3 className="t-h3">Antes de publicar</h3>
 
       {devuelta && (

@@ -1,4 +1,6 @@
 import { Modulo } from "@/components/layout/Modulo";
+import { getTutorialVistos } from "@/lib/tutorial";
+import { TUTORIAL_USUARIOS } from "@/modules/usuarios/tutorial";
 import { puedeVerEquipos, puedeVerMiEquipo, puedeVerUsuarios } from "@/modules/usuarios/permissions";
 
 export default async function UsuariosLayout({
@@ -18,7 +20,7 @@ export default async function UsuariosLayout({
   ];
 
   return (
-    <Modulo modulo="usuarios" tabs={tabs}>
+    <Modulo modulo="usuarios" tabs={tabs} tutorial={{ guion: TUTORIAL_USUARIOS, vistos: await getTutorialVistos() }}>
       {children}
     </Modulo>
   );

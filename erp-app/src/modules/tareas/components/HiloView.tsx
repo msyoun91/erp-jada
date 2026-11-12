@@ -114,7 +114,7 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="card flex flex-col gap-2">
+      <div data-tour="tareas_hilo_cabecera" className="card flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="t-h2 min-w-0 flex-1">{hilo.titulo}</h2>
           <span className={`badge ${ESTADO_HILO[hilo.estado].badge}`}>{ESTADO_HILO[hilo.estado].label}</span>
@@ -160,7 +160,7 @@ function Contenido({ hilo, pasos, notas, ediciones, enlaces, menciones, sobre, c
         </div>
       )}
 
-      <div>
+      <div data-tour="tareas_hilo_pasos">
         <div className="mb-2 flex items-center">
           <p className="t-label flex-1">Pasos</p>
           {vivo && dueno && plantillas.length > 0 && (

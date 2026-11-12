@@ -144,7 +144,7 @@ export function EmpresaView({
   return (
     <div className="flex flex-col gap-4">
       <div className="card flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+        <div data-tour="contactos_empresa_cabecera" className="flex flex-wrap items-center gap-2">
           <IconoContacto tipo="empresa" />
           <h2 className="t-h2 min-w-0 flex-1">{empresa.nombre}</h2>
           {!empresa.activo && <span className="badge badge-neutral">Desactivada</span>}

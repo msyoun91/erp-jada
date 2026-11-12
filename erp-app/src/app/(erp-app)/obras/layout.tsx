@@ -1,4 +1,6 @@
 import { Modulo } from "@/components/layout/Modulo";
+import { getTutorialVistos } from "@/lib/tutorial";
+import { TUTORIAL_OBRAS } from "@/modules/obras/tutorial";
 import { puedeVerObras, puedeVerTodas } from "@/modules/obras/permissions";
 
 export default async function ObrasLayout({ children }: { children: React.ReactNode }) {
@@ -9,7 +11,7 @@ export default async function ObrasLayout({ children }: { children: React.ReactN
   ];
 
   return (
-    <Modulo modulo="obras" tabs={tabs}>
+    <Modulo modulo="obras" tabs={tabs} tutorial={{ guion: TUTORIAL_OBRAS, vistos: await getTutorialVistos() }}>
       {children}
     </Modulo>
   );

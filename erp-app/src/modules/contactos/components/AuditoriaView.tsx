@@ -57,7 +57,7 @@ export function AuditoriaView({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
+      <div data-tour="contactos_auditoria_filtros" className="flex flex-wrap items-center gap-3">
         <FiltroDias href={url({ usuario, persona })} dias={dias} etiqueta="Período" />
         {usuario && <Chip label={nombreUsuario} quitar={url({ dias, persona })} />}
         {persona ? (
@@ -68,7 +68,7 @@ export function AuditoriaView({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-        <section className="flex flex-col gap-2">
+        <section data-tour="contactos_auditoria_resumen" className="flex flex-col gap-2">
           <h2 className="t-h3">Quién miró contactos</h2>
           {resumen.length === 0 ? (
             <div className="empty-state empty-state-sm">

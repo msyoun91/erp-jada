@@ -47,7 +47,7 @@ export function MonedasView({
 
       <Principal principal={principal} puedeElegir={puedeElegirPrincipal} />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div data-tour="monedas_ver_tarjetas" className="grid gap-4 md:grid-cols-3">
         {monedas.map((m) => (
           <TarjetaMoneda
             key={m.moneda}
@@ -76,7 +76,7 @@ function Principal({ principal, puedeElegir }: { principal: Moneda; puedeElegir:
   }
 
   return (
-    <section className="flex flex-col gap-2">
+    <section data-tour="monedas_ver_principal" className="flex flex-col gap-2">
       <h2 className="t-label">Moneda principal</h2>
       <p className="t-body-m">
         Viene elegida en un presupuesto nuevo y al cargar un monto, y los totales se muestran en ella, cada monto
@@ -135,7 +135,7 @@ function TarjetaMoneda({
       </div>
 
       {pendiente && (
-        <div className="alert alert-warning">
+        <div data-tour="monedas_ver_pendiente" className="alert alert-warning">
           <p>
             MonedAPI trajo {formatPesos(pendiente.valor)}
             {pendiente.anterior !== null && ` (${textoCambio(pendiente.anterior, pendiente.valor)})`}. No rige hasta

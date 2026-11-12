@@ -84,7 +84,7 @@ export function UsuariosView({
   return (
     <div>
       {puedeGestionar && (
-        <div className="mb-4 flex flex-wrap items-center gap-3">
+        <div data-tour="usuarios_ver_nuevo" className="mb-4 flex flex-wrap items-center gap-3">
           <button className="btn btn-primary" onClick={() => setPanelCrear(true)}>
             <UserPlus size={16} />
             Nuevo usuario
@@ -123,7 +123,7 @@ export function UsuariosView({
             : "Probá con otro término de búsqueda o cambiá el filtro de estado."}
         </Vacio>
       ) : (
-        <div className="flex flex-col rounded-lg border border-border bg-bg-surface">
+        <div data-tour="usuarios_ver_lista" className="flex flex-col rounded-lg border border-border bg-bg-surface">
           {visibles.map((usuario) => (
             <div
               key={usuario.id}

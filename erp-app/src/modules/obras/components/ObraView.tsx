@@ -100,6 +100,7 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
           <h2 className="t-h2 min-w-0 flex-1">{obra.nombre}</h2>
           {trabaja && !congelada ? (
             <button
+              data-tour="obras_ficha_estado"
               className={`badge ${LABEL_ESTADO[obra.estado].badge} cursor-pointer`}
               onClick={() => setDialogo("estado")}
               title="Cambiar estado"
@@ -155,7 +156,7 @@ export function ObraView({ obra, participantes, historial, trabaja, aCargo, yo, 
 
       {hilos}
 
-      <div>
+      <div data-tour="obras_ficha_participantes">
         <div className="mb-2 flex items-center">
           <p className="t-label flex-1">Participantes</p>
           {aCargo && !congelada && (

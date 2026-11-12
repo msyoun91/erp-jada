@@ -102,13 +102,14 @@ export function InsumosView({
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         {puedeEditar && (
-          <button className="btn btn-primary" onClick={() => setEditando("nuevo")}>
+          <button data-tour={`catalogo_${tipo}_nuevo`} className="btn btn-primary" onClick={() => setEditando("nuevo")}>
             <Plus size={16} />
             {t.nuevo}
           </button>
         )}
         {puedeCostos && cargables.length > 0 && (
           <button
+            data-tour={`catalogo_${tipo}_costos`}
             className="btn btn-secondary"
             onClick={() => setCostos({ titulo: `Cargar costos (${cargables.length})`, filas: cargables })}
           >

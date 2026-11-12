@@ -50,6 +50,7 @@ export function TodasView({
           value={filtro}
           onChange={(e) => setFiltro(e.target.value as Filtro)}
           aria-label="Qué hilos ver"
+          data-tour="tareas_todas_filtro"
         >
           <option value="todos">Todos los hilos</option>
           <option value="huerfanos">Huérfanos</option>

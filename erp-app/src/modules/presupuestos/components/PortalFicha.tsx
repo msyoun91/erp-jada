@@ -83,7 +83,7 @@ export function PortalFicha({ id, portal, arma, publicado }: { id: string; porta
   }
 
   return (
-    <div className="card">
+    <div data-tour="presupuestos_ficha_portal" className="card">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="t-h3 min-w-0 flex-1">Portal del cliente</h3>
         {arma && publicado && <PegarEleccion presupuestoId={id} />}

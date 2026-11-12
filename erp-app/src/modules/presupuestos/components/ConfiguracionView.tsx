@@ -50,7 +50,7 @@ export function ConfiguracionView({ configuraciones }: { configuraciones: Config
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="card" aria-label="Vigente">
+      <section data-tour="presupuestos_config_vigente" className="card" aria-label="Vigente">
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <h2 className="t-h3 min-w-0 flex-1">Vigente</h2>
           <button type="button" className="btn btn-secondary btn-sm" onClick={() => setAbierto(true)}>

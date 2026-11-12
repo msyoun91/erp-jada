@@ -82,7 +82,7 @@ function Tarjeta({ obra }: { obra: PorAprobar }) {
   const vinculos = obra.guardados.map((g) => `${g.nombre}${g.roles?.length ? ` (${g.roles.map((r) => labelRol("obra", r)).join(", ")})` : ""}`);
 
   return (
-    <div className="card flex flex-col gap-3">
+    <div data-tour="obras_aprobar_tarjeta" className="card flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="t-h3 min-w-0 flex-1">{obra.nombre}</h2>
         <span className="badge badge-warning">{esAlta ? "Alta" : "Cambio"}</span>

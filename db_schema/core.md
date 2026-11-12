@@ -108,7 +108,7 @@ Trigger `equipos_miembros_validar` (`sql/105`): `equipo_id`/`usuario_id` inmutab
 
 Qué pasos del tutorial guiado ya vio cada usuario (`sql/019`). Infra cross-módulo como `usuario_widgets`: el namespace vive en el código del paso, no en el nombre de la tabla.
 
-Hoy está vacía: los únicos pasos que existían eran de tareas y se fueron con el módulo (`sql/101`). La tabla se queda porque su esquema no sabe nada de tareas — `usuario_id` y `paso text`.
+La leen y escriben `lib/tutorial.ts` y `components/layout/Tutorial.tsx`; los códigos de paso viven en `modules/<modulo>/tutorial.ts` (decisión: `decisiones/global/infra.md` → *Tutorial guiado en todos los módulos*).
 
 | columna | tipo | notas |
 |---|---|---|
